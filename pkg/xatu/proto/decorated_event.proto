@@ -1,0 +1,130 @@
+syntax = "proto3";
+package xatu;
+
+option go_package = "pkg/xatu";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+message ClientMeta {
+  // Name is the name of the client.
+  string name = 1;
+  // Version is the Xatu-sentry version of the client.
+  string version = 2;
+  // ID is the unique ID of the client. This will usually be the peer id.
+  string id = 3;
+  // Implmentation is the implementation of the client.
+  string implementation = 4;
+  // OS is the operating system of the client.
+  string os = 5;
+
+  message Event {
+    enum Name {
+      BEACON_API_ETH_V1_EVENTS_UNKNOWN= 0;
+      BEACON_API_ETH_V1_EVENTS_BLOCK = 1;
+      BEACON_API_ETH_V1_EVENTS_CHAIN_REORG = 2;
+      BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT = 3;
+      BEACON_API_ETH_V1_EVENTS_HEAD = 4;
+      BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
+      BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
+    }
+    // Name is the name of the event.
+     Name name = 1;
+    // DateTime is the date and time of the event as seen by the client.
+     google.protobuf.Timestamp date_time = 2;
+  }
+
+  // Event contains information about what type of event this is.
+   Event event = 6;
+
+  message Ethereum {
+    // NetworkID is the network ID of the Ethereum network.
+     int64 network_id = 1;
+    // NetworkName is the name of the Ethereum network.
+     string network_name = 2;
+     message Execution {
+      // Implementation is the name of the execution client.
+       string implementation = 1;
+      // Version is the version of the execution client.
+       string version = 2;
+     }
+     message Consensus {
+      // Implementation is the name of the consensus client.
+       string implementation = 1;
+      // Version is the version of the consensus client.
+       string version = 2;
+     }
+    // ExecutionClient is the name of the execution client.
+     Execution execution = 3;
+    // ConsensusClient is the name of the consensus client.
+     Consensus consensus = 4;
+  }
+
+  // Ethereum contains information about the Ethereum network and configuration.
+   Ethereum ethereum = 7;
+
+  // Labels contains additional labels as set by the client.
+  map<string, string> labels = 8;
+
+  message AdditionalAttestationData {
+    message AttestationDataEpoch {
+      // Number is the epoch number.
+       uint64 number = 1;
+      // StartDateTime is the epoch start time.
+       google.protobuf.Timestamp start_date_time = 2;
+    }
+    message AttestationDataSlot {
+      // Number is the slot number.
+       uint64 number = 1;
+      // StartDateTime is the slot start time.
+       google.protobuf.Timestamp start_date_time = 2;
+      // Diff is the diff of thhe attestation.
+       uint64 diff = 3;
+    }
+  
+    // Epoch contains the epoch information for the attestation.
+     AttestationDataEpoch epoch = 1;
+  
+    // Slot contains the slot information for the attestation.
+    AttestationDataSlot slot = 2;
+  }
+
+  // AdditionalData contains additional, computed data as set by the client about the event.
+  oneof AdditionalData {
+    // Attestation contains additional data about the attestation.
+    AdditionalAttestationData attestation = 9;
+  }
+}
+
+message ServerMeta {
+  message Event {
+    /// DateTime is the date and time of the event as seen by the server.
+    google.protobuf.Timestamp date_time = 1;
+  }
+
+  message Client {
+    // IP is the ip of the client as far as the server is concerned.
+    string IP = 1;
+  }
+
+  // Event contains information about the event from the server's perspective.
+   Event event = 1;
+
+  // Client contains information about the client from the server's perspective.
+   Client client = 2;
+
+  // AdditionalData contains additional data as set by the server.
+  map<string, string> additional_data = 3;
+}
+
+message Meta {
+  // Client contains information about the event that is from the client.
+  ClientMeta client = 1;
+  // Server contains information about the event that is from the server.
+  ServerMeta server = 2;
+}
+
+// DecoratedEvent is an event that has been decorated with additional information.
+message DecoratedEvent {
+  Meta meta = 1;
+  google.protobuf.Any event = 2;
+}

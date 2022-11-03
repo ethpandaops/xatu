@@ -1,0 +1,21 @@
+name: goerli-lighthouse-geth-001
+
+labels:
+  region: us-west-2
+
+ethereum:
+  network: goerli
+  beacon_node_address: http://localhost:5052
+  consensus_client: lighthouse
+  execution_client: geth
+  
+outputs:
+- name: basic
+  type: http
+  config:
+    type: http
+    address: localhost:8080
+    batch_size: 500
+    batch_interval_seconds: 3
+
+

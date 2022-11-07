@@ -2,6 +2,7 @@ package sentry
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -35,6 +36,7 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 					Epoch: uint64(event.Data.Target.Epoch),
 					Root:  xatuethv1.RootAsString(event.Data.Target.Root),
 				},
+				Signature: fmt.Sprintf("%#x", event.Signature),
 			},
 		},
 	}

@@ -26,7 +26,7 @@ var sentryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("cfgFile", sentryCfgFile).Info("loading config")
+		log.WithField("location", sentryCfgFile).Info("loading config")
 
 		config, err := loadSentryConfigFromFile(sentryCfgFile)
 		if err != nil {
@@ -35,7 +35,7 @@ var sentryCmd = &cobra.Command{
 
 		log.WithField("config", config).Info("config loaded")
 
-		sentry, err := sentry.New(log, config)
+		sentry, err := sentry.New(cmd.Context(), log, config)
 		if err != nil {
 			log.Fatal(err)
 		}

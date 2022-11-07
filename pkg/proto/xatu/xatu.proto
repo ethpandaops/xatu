@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package xatu;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+import "google/protobuf/timestamp.proto";
+
+import "pkg/proto/eth/v1/attestation.proto";
+import "pkg/proto/eth/v1/events.proto";
+
+message AdditionalEpochData {
+  // Number is the epoch number.
+  uint64 number = 1;
+  // StartDateTime is the epoch start time.
+  google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
+}
+
+message AdditionalSlotData {
+  // Number is the slot number.
+   uint64 number = 1;
+  // StartDateTime is the slot start time.
+   google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
+  // PropogationDiff is the diff of thhe attestation (in milliseconds).
+   uint64 propagation_diff = 3 [json_name="propagation_diff"];
+}
+
+message ClientMeta {
+  // Name is the name of the client.
+  string name = 1;
+  // Version is the Xatu-sentry version of the client.
+  string version = 2;
+  // ID is the unique ID of the client. This will usually be the peer id.
+  string id = 3;
+  // Implmentation is the implementation of the client.
+  string implementation = 4;
+  // OS is the operating system of the client.
+  string os = 5;
+
+  message Event {
+    enum Name {
+      BEACON_API_ETH_V1_EVENTS_UNKNOWN = 0;
+      BEACON_API_ETH_V1_EVENTS_BLOCK = 1;
+      BEACON_API_ETH_V1_EVENTS_CHAIN_REORG = 2;
+      BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT = 3;
+      BEACON_API_ETH_V1_EVENTS_HEAD = 4;
+      BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
+      BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
+    }
+    // Name is the name of the event.
+     Name name = 1;
+    // DateTime is the date and time of the event as seen by the client.
+     google.protobuf.Timestamp date_time = 2 [json_name="date_time"];
+  }
+
+  // Event contains information about what type of event this is.
+   Event event = 6;
+
+  message Ethereum {
+    message Network {
+      // Name is the name of the network.
+      string name = 1;
+      // ID is the network ID of the network.
+      uint64 id = 2;
+    }
+    // Network contains information about the network.
+    Network network = 1;
+
+    message Execution {
+      // Implementation is the name of the execution client.
+       string implementation = 1;
+      // Version is the version of the execution client.
+       string version = 2;
+     }
+     message Consensus {
+      // Implementation is the name of the consensus client.
+       string implementation = 1;
+      // Version is the version of the consensus client.
+       string version = 2;
+     }
+    // ExecutionClient is the name of the execution client.
+     Execution execution = 2;
+    // ConsensusClient is the name of the consensus client.
+     Consensus consensus = 3;
+  }
+
+  // Ethereum contains information about the Ethereum network and configuration.
+   Ethereum ethereum = 7;
+
+  // Labels contains additional labels as set by the client.
+  map<string, string> labels = 8;
+
+  message AdditionalAttestationData {  
+    // Source contains the epoch information for the source.
+    AdditionalEpochData source = 1;
+    
+    // Target contains the epoch information for the target
+    AdditionalEpochData target = 2;
+  
+    // Slot contains the slot information for the attestation.
+    AdditionalSlotData slot = 3;
+  }
+
+  message AdditionalHeadData {  
+    // Epoch contains the epoch information for the head.
+    AdditionalEpochData epoch = 1;
+  
+    // Slot contains the slot information for the head event.
+    AdditionalSlotData slot = 2;
+  }
+
+  message AdditionalBlockData {
+    // Epoch contains the epoch information for the block.
+    AdditionalEpochData epoch = 1;
+
+    // Slot contains the slot information for the block.
+    AdditionalSlotData slot = 2;
+  }
+
+  message AdditionalVoluntaryExitData {
+    // Epoch contains the epoch information for the voluntary exit.
+    AdditionalEpochData epoch = 1;
+  }
+
+  message AdditionalFinalizedCheckpointData {
+    // Epoch contains the epoch information for the finalized checkpoint.
+    AdditionalEpochData epoch = 1;
+  }
+
+  message AdditionalChainReorgData {
+    // Epoch contains the epoch information for the chain reorg.
+    AdditionalEpochData epoch = 1;
+    // Slot contains the slot information for the chain reorg.
+    AdditionalSlotData slot = 2;
+  }
+
+  message AdditionalContributionAndProofgData {
+    // Epoch contains the epoch information for the contribution and proof.
+    AdditionalEpochData epoch = 1;
+    // Slot contains the slot information for the contribution and proof.
+    AdditionalSlotData slot = 2;
+  }
+
+  // AdditionalData contains additional, computed data as set by the client about the event.
+  oneof AdditionalData {
+    // Attestation contains additional data about an attestation event.
+    AdditionalAttestationData attestation = 9 [json_name="additional_data"];
+    // Head contains additional data about the head event.
+    AdditionalHeadData head = 10 [json_name="additional_data"];
+    // Block contains additional data about the head event.
+    AdditionalBlockData block = 11 [json_name="additional_data"];
+    // VoluntaryExit contains additional data about the voluntary exit event.
+    AdditionalVoluntaryExitData voluntary_exit = 12 [json_name="additional_data"];
+    // FinalizedCheckpoint contains additional data about the finalized checkpoint event.
+    AdditionalFinalizedCheckpointData finalized_checkpoint = 13 [json_name="additional_data"];
+    // ChainReorg contains additional data about the chain reorg event.
+    AdditionalChainReorgData chain_reorg = 14 [json_name="additional_data"]; 
+    // ContributionAndProof contains additional data about the chain reorg event.
+    AdditionalChainReorgData contribution_and_proof = 15 [json_name="additional_data"]; 
+  }
+}
+
+message ServerMeta {
+  message Event {
+    /// DateTime is the date and time of the event as seen by the server.
+    google.protobuf.Timestamp date_time = 1;
+  }
+
+  message Client {
+    // IP is the ip of the client as far as the server is concerned.
+    string IP = 1;
+  }
+
+  // Event contains information about the event from the server's perspective.
+  Event event = 1;
+
+  // Client contains information about the client from the server's perspective.
+  Client client = 2;
+
+  // AdditionalData contains additional data as set by the server.
+  map<string, string> additional_data = 3 [json_name="additional_data"];
+}
+
+message Meta {
+  // Client contains information about the event that is from the client.
+  ClientMeta client = 1;
+  // Server contains information about the event that is from the server.
+  ServerMeta server = 2;
+}
+
+// DecoratedEvent is an event that has been decorated with additional information.
+message DecoratedEvent {
+  Meta meta = 1;
+  oneof event {
+    xatu.eth.v1.Attestation eth_v1_attestation = 2 [json_name = "event"];
+    xatu.eth.v1.EventBlock eth_v1_block = 3 [json_name = "event"];
+    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 4 [json_name = "event"];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 5 [json_name = "event"];
+    xatu.eth.v1.EventHead eth_v1_head = 6 [json_name = "event"];
+
+    // xatu.eth.v1.EventVoluntaryExit ethereum_eth_v1_voluntary_exit = 7;
+    // xatu.eth.v1.EventContributionAndProof ethereum_eth_v1_contribution_and_proof = 7;
+  };
+}

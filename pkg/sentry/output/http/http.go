@@ -2,11 +2,11 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
-	"github.com/ethpandaops/xatu/pkg/xatu"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const SinkType = "http"
@@ -36,7 +36,7 @@ func (h *HTTP) Type() string {
 }
 
 func (h *HTTP) HandleNewDecoratedEvent(ctx context.Context, event xatu.DecoratedEvent) error {
-	asJson, err := json.Marshal(event)
+	asJson, err := protojson.Marshal(&event)
 	if err != nil {
 		return err
 	}

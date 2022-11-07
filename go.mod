@@ -10,7 +10,7 @@ require (
 	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/ferranbt/fastssz v0.1.1 // indirect
-	github.com/go-co-op/gocron v1.16.2 // indirect
+	github.com/go-co-op/gocron v1.17.1 // indirect
 	github.com/goccy/go-yaml v1.9.5 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect

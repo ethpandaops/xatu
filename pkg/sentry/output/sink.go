@@ -3,8 +3,8 @@ package output
 import (
 	"context"
 
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/output/http"
-	"github.com/ethpandaops/xatu/pkg/xatu"
 )
 
 type SinkType string

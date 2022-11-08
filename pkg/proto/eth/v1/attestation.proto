@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+
+message Checkpoint {
+  uint64 epoch = 1;
+
+  string root = 2;
+}
+
+message Attestation {
+  string aggregation_bits = 1 [json_name="aggregation_bits"];
+
+  uint64 slot = 2;
+
+  uint64 index = 3;
+
+  string beacon_block_root = 4 [json_name="beacon_block_root"];
+
+  Checkpoint source = 5;
+
+  Checkpoint target = 6;
+
+  string signature = 7;
+}
+
+message AggregateAttestationAndProof {
+  uint64 aggregator_index = 1 [json_name="aggregator_index"];
+
+  Attestation aggregate = 3;
+
+  string selection_proof = 2 [json_name="selection_proof"];
+}
+
+message SignedAggregateAttestationAndProof {
+  AggregateAttestationAndProof message = 1;
+
+  string signature = 2;
+}
+

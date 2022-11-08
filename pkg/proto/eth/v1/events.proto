@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+
+message EventHead {
+  uint64 slot = 1;
+
+  string block = 2;
+
+  string state = 3;
+
+  bool epoch_transition = 4 [json_name="epoch_transition"];
+
+  string previous_duty_dependent_root = 5 [json_name="previous_duty_dependent_root"];
+
+  string current_duty_dependent_root = 6 [json_name="current_duty_dependent_root"];
+}
+
+message EventBlock {
+  uint64 slot = 1;
+
+  string block = 2;
+
+  bool execution_optimistic = 3 [json_name="execution_optimistic"];
+}
+
+message EventChainReorg {
+  uint64 slot = 1;
+
+  uint64 depth = 2;
+
+  string old_head_block = 3 [json_name="old_head_block"];
+
+  string new_head_block = 4 [json_name="new_head_block"];
+
+  string old_head_state = 5 [json_name="old_head_state"];
+
+  string new_head_state = 6 [json_name="new_head_state"];
+
+  uint64 epoch = 7;
+}
+
+message EventFinalizedCheckpoint {
+  string block = 1;
+
+  string state = 2;
+
+  uint64 epoch = 3;
+}

@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -54,7 +53,6 @@ func (h *HTTP) Type() string {
 
 func (h *HTTP) Start(ctx context.Context) error {
 	h.buf.OnAdded(func(ctx context.Context, event *xatu.DecoratedEvent) {
-		h.log.WithField("buffer_size", h.buf.Len()).Info("Added new item to buffer")
 		if h.buf.Len() >= h.config.BatchSize {
 			if err := h.send(ctx); err != nil {
 				h.log.WithError(err).Error("Failed to send batch of events to HTTP sink")
@@ -79,6 +77,10 @@ func (h *HTTP) send(ctx context.Context) error {
 
 	h.log.WithField("events", len(events)).Info("Sending batch of events to HTTP sink")
 
+	if err := h.sendUpstream(ctx, events); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -98,12 +100,7 @@ func (h *HTTP) sendUpstream(ctx context.Context, events []*xatu.DecoratedEvent) 
 		body += string(eventAsJSON) + "\n"
 	}
 
-	jsonData, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest(httpMethod, h.config.Address, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(httpMethod, h.config.Address, bytes.NewBufferString(body))
 	if err != nil {
 		return err
 	}
@@ -112,7 +109,7 @@ func (h *HTTP) sendUpstream(ctx context.Context, events []*xatu.DecoratedEvent) 
 		req.Header.Set(k, v)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-ndjson")
 
 	rsp, err = h.client.Do(req)
 	if err != nil {

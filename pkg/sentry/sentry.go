@@ -57,6 +57,8 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 }
 
 func (s *Sentry) Start(ctx context.Context) error {
+	s.log.WithField("version", xatu.Full()).Info("Starting Xatu in sentry mode")
+
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
 
@@ -89,9 +91,9 @@ func (s *Sentry) Start(ctx context.Context) error {
 func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_Event_Name) (*xatu.ClientMeta, error) {
 	return &xatu.ClientMeta{
 		Name:           s.Config.Name,
-		Version:        "0.0.0/dev/dev",
+		Version:        xatu.Full(),
 		Id:             "00000000000000000",
-		Implementation: "xatu",
+		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
 		Event: &xatu.ClientMeta_Event{
 			Name:     topic,
@@ -104,11 +106,11 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 			},
 			Execution: &xatu.ClientMeta_Ethereum_Execution{
 				Implementation: s.Config.Ethereum.ExecutionClient,
-				Version:        "0.0.0/dev/dev",
+				Version:        "",
 			},
 			Consensus: &xatu.ClientMeta_Ethereum_Consensus{
 				Implementation: s.Config.Ethereum.ConsensusClient,
-				Version:        "0.0.0/dev/dev",
+				Version:        "",
 			},
 		},
 		Labels: s.Config.Labels,

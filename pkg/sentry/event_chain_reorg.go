@@ -17,7 +17,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 		return err
 	}
 
-	decoratedEvent := xatu.DecoratedEvent{
+	decoratedEvent := &xatu.DecoratedEvent{
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -29,7 +29,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 				OldHeadState: xatuethv1.RootAsString(event.OldHeadState),
 				NewHeadBlock: xatuethv1.RootAsString(event.NewHeadBlock),
 				NewHeadState: xatuethv1.RootAsString(event.NewHeadState),
-				Depth:        uint64(event.Depth),
+				Depth:        event.Depth,
 			},
 		},
 	}
@@ -46,6 +46,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
+//nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalChainReorgData, error) {
 	extra := &xatu.ClientMeta_AdditionalChainReorgData{}
 	eventTime := meta.Event.DateTime.AsTime()
@@ -62,7 +63,7 @@ func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEven
 	}
 
 	extra.Epoch = &xatu.AdditionalEpochData{
-		Number:        uint64(epoch.Number()),
+		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

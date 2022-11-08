@@ -18,7 +18,7 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 		return err
 	}
 
-	decoratedEvent := xatu.DecoratedEvent{
+	decoratedEvent := &xatu.DecoratedEvent{
 		Meta: &xatu.Meta{
 			Client: meta,
 		},

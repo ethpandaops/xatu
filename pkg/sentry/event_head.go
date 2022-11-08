@@ -17,7 +17,7 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 		return err
 	}
 
-	decoratedEvent := xatu.DecoratedEvent{
+	decoratedEvent := &xatu.DecoratedEvent{
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -45,6 +45,7 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
+//nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalHeadData, error) {
 	extra := &xatu.ClientMeta_AdditionalHeadData{}
 	eventTime := meta.Event.DateTime.AsTime()
@@ -61,7 +62,7 @@ func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xat
 	}
 
 	extra.Epoch = &xatu.AdditionalEpochData{
-		Number:        uint64(epoch.Number()),
+		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

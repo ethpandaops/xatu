@@ -9,7 +9,7 @@ type Epoch struct {
 	window *TimeWindow
 }
 
-func NewEpoch(number uint64, start time.Time, end time.Time) Epoch {
+func NewEpoch(number uint64, start, end time.Time) Epoch {
 	return Epoch{
 		number: number,
 		window: NewTimeWindow(start, end),

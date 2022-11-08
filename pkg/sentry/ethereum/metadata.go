@@ -26,9 +26,9 @@ type MetadataService struct {
 	wallclock *wallclock.EthereumBeaconChain
 }
 
-func NewMetadataService(log logrus.FieldLogger, beacon beacon.Node) MetadataService {
+func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
 	return MetadataService{
-		beacon: beacon,
+		beacon: sbeacon,
 		log:    log.WithField("module", "sentry/ethereum/metadata"),
 	}
 }

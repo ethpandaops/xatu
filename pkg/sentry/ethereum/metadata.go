@@ -42,7 +42,7 @@ func (m *MetadataService) Start(ctx context.Context) error {
 	s := gocron.NewScheduler(time.Local)
 
 	if _, err := s.Every("5m").Do(func() {
-		m.RefreshAll(ctx)
+		_ = m.RefreshAll(ctx)
 	}); err != nil {
 		return err
 	}

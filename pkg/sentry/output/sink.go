@@ -15,6 +15,7 @@ const (
 )
 
 type Sink interface {
+	Start(ctx context.Context) error
 	Type() string
 	HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error
 }

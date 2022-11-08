@@ -85,6 +85,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 }
 
 func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_Event_Name) (*xatu.ClientMeta, error) {
+	network, err := s.beacon.Metadata().NetworkName()
+	if err != nil {
+		return nil, err
+	}
+
 	return &xatu.ClientMeta{
 		Name:           s.Config.Name,
 		Version:        xatu.Full(),
@@ -97,16 +102,16 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 		},
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
-				Name: s.Config.Ethereum.Network,
+				Name: network,
 				Id:   999, // TODO(sam.calder-mason): Derive dynamically
 			},
 			Execution: &xatu.ClientMeta_Ethereum_Execution{
-				Implementation: s.Config.Ethereum.ExecutionClient,
+				Implementation: "",
 				Version:        "",
 			},
 			Consensus: &xatu.ClientMeta_Ethereum_Consensus{
-				Implementation: s.Config.Ethereum.ConsensusClient,
-				Version:        "",
+				Implementation: s.beacon.Metadata().Client(ctx),
+				Version:        s.beacon.Metadata().NodeVersion(ctx),
 			},
 		},
 		Labels: s.Config.Labels,

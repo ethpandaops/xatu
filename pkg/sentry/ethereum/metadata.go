@@ -3,9 +3,11 @@ package ethereum
 import (
 	"context"
 	"errors"
+	"time"
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/ethpandaops/xatu/pkg/wallclock"
+	"github.com/go-co-op/gocron"
 	"github.com/samcm/beacon"
 	"github.com/samcm/beacon/state"
 	"github.com/sirupsen/logrus"
@@ -16,9 +18,6 @@ type MetadataService struct {
 	log    logrus.FieldLogger
 
 	NetworkID uint64
-
-	ConsensusImplementation string
-	ConsensusVersion        string
 
 	Genesis *v1.Genesis
 	Spec    *state.Spec
@@ -35,12 +34,20 @@ func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataSer
 
 func (m *MetadataService) Start(ctx context.Context) error {
 	m.beacon.OnReady(ctx, func(ctx context.Context, event *beacon.ReadyEvent) error {
-		m.log.WithField("event", event).Info("Beacon node is ready")
+		m.log.Info("Beacon node is ready")
 
 		return m.RefreshAll(ctx)
 	})
 
-	// TODO(sam.calder-mason): Add a ticker to refresh the metadata periodically.
+	s := gocron.NewScheduler(time.Local)
+
+	if _, err := s.Every("5m").Do(func() {
+		m.RefreshAll(ctx)
+	}); err != nil {
+		return err
+	}
+
+	s.StartAsync()
 
 	return nil
 }
@@ -54,7 +61,9 @@ func (m *MetadataService) Ready() error {
 		return errors.New("spec is not available")
 	}
 
-	// TODO(sam.calder-mason): Check for version, network name/id.
+	if m.NodeVersion(context.Background()) == "" {
+		return errors.New("node version is not available")
+	}
 
 	return nil
 }
@@ -62,17 +71,17 @@ func (m *MetadataService) Ready() error {
 func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	if err := m.fetchSpec(ctx); err != nil {
 		m.log.WithError(err).Error("Failed to fetch spec for refresh")
-
-		return err
 	}
 
 	if err := m.fetchGenesis(ctx); err != nil {
 		m.log.WithError(err).Error("Failed to fetch genesis for refresh")
-
-		return err
 	}
 
-	m.wallclock = wallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
+	m.fetchStatus(ctx)
+
+	if m.Genesis != nil && m.Spec != nil {
+		m.wallclock = wallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
+	}
 
 	return nil
 }
@@ -109,4 +118,18 @@ func (m *MetadataService) fetchGenesis(ctx context.Context) error {
 	m.Genesis = genesis
 
 	return nil
+}
+
+func (m *MetadataService) fetchStatus(ctx context.Context) {
+	m.NetworkID = m.beacon.GetStatus(ctx).NetworkID()
+}
+
+func (m *MetadataService) NodeVersion(ctx context.Context) string {
+	version, _ := m.beacon.GetNodeVersion(ctx)
+
+	return version
+}
+
+func (m *MetadataService) Client(ctx context.Context) string {
+	return string(ClientFromString(m.NodeVersion(ctx)))
 }

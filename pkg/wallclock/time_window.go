@@ -7,7 +7,7 @@ type TimeWindow struct {
 	end   time.Time
 }
 
-func NewTimeWindow(start time.Time, end time.Time) *TimeWindow {
+func NewTimeWindow(start, end time.Time) *TimeWindow {
 	return &TimeWindow{
 		start: start,
 		end:   end,
@@ -27,9 +27,9 @@ func (t *TimeWindow) Active() bool {
 }
 
 func (t *TimeWindow) EndsIn() time.Duration {
-	return t.end.Sub(time.Now())
+	return time.Until(t.end)
 }
 
 func (t *TimeWindow) StartsIn() time.Duration {
-	return t.start.Sub(time.Now())
+	return time.Until(t.start)
 }

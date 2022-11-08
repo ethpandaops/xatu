@@ -19,12 +19,14 @@ func NewEthereumBeaconChain(genesis time.Time, durationPerSlot time.Duration, sl
 func (e *EthereumBeaconChain) Now() (Slot, Epoch, error) {
 	slot := e.slots.Current()
 	epoch := e.epochs.Current()
+
 	return slot, epoch, nil
 }
 
 func (e *EthereumBeaconChain) FromTime(t time.Time) (Slot, Epoch, error) {
 	slot := e.slots.FromTime(t)
 	epoch := e.epochs.FromTime(t)
+
 	return slot, epoch, nil
 }
 

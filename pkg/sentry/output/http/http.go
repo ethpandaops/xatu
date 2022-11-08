@@ -35,13 +35,13 @@ func (h *HTTP) Type() string {
 	return SinkType
 }
 
-func (h *HTTP) HandleNewDecoratedEvent(ctx context.Context, event xatu.DecoratedEvent) error {
-	asJson, err := protojson.Marshal(&event)
+func (h *HTTP) HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	asJSON, err := protojson.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	h.log.WithField("event", string(asJson)).Info("HTTP sink received event")
+	h.log.WithField("event", string(asJSON)).Info("HTTP sink received event")
 
 	return nil
 }

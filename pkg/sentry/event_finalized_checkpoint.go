@@ -17,7 +17,7 @@ func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.Finali
 		return err
 	}
 
-	decoratedEvent := xatu.DecoratedEvent{
+	decoratedEvent := &xatu.DecoratedEvent{
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -53,7 +53,7 @@ func (s *Sentry) getFinalizedCheckpointData(ctx context.Context, event *v1.Final
 	}
 
 	extra.Epoch = &xatu.AdditionalEpochData{
-		Number:        uint64(epoch.Number()),
+		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

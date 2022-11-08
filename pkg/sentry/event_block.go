@@ -17,7 +17,7 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 		return err
 	}
 
-	decoratedEvent := xatu.DecoratedEvent{
+	decoratedEvent := &xatu.DecoratedEvent{
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -42,6 +42,7 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
+//nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalBlockData, error) {
 	extra := &xatu.ClientMeta_AdditionalBlockData{}
 	eventTime := meta.Event.DateTime.AsTime()
@@ -58,7 +59,7 @@ func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *x
 	}
 
 	extra.Epoch = &xatu.AdditionalEpochData{
-		Number:        uint64(epoch.Number()),
+		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

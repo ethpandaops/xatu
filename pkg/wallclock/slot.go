@@ -9,7 +9,7 @@ type Slot struct {
 	window *TimeWindow
 }
 
-func NewSlot(number uint64, start time.Time, end time.Time) Slot {
+func NewSlot(number uint64, start, end time.Time) Slot {
 	return Slot{
 		number: number,
 		window: NewTimeWindow(start, end),

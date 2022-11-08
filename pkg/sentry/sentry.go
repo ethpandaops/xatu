@@ -3,7 +3,6 @@ package sentry
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"os/signal"
 	"runtime"
@@ -12,7 +11,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/output"
-	"github.com/ethpandaops/xatu/pkg/wallclock"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -25,8 +23,6 @@ type Sentry struct {
 	beacon *ethereum.BeaconNode
 
 	log logrus.FieldLogger
-
-	wallclock *wallclock.EthereumBeaconChain
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -83,7 +79,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
-	log.Printf("Caught signal: %v", sig)
+	s.log.Printf("Caught signal: %v", sig)
 
 	return nil
 }
@@ -102,7 +98,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
 				Name: s.Config.Ethereum.Network,
-				Id:   999, // TODO
+				Id:   999, // TODO(sam.calder-mason): Derive dynamically
 			},
 			Execution: &xatu.ClientMeta_Ethereum_Execution{
 				Implementation: s.Config.Ethereum.ExecutionClient,
@@ -117,7 +113,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 	}, nil
 }
 
-func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event xatu.DecoratedEvent) error {
+func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
 	for _, sink := range s.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			s.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")

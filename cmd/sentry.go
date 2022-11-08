@@ -22,7 +22,7 @@ var sentryCmd = &cobra.Command{
 	Use:   "sentry",
 	Short: "Runs Xatu in Sentry mode.",
 	Long: `Runs Xatu in Sentry mode, which means it will listen for events from
-	an Ethereum beacon node and forward the data on to the configured sinks.`,
+	an Ethereum beacon node and forward the data on to 	the configured sinks.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
@@ -33,7 +33,7 @@ var sentryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log.WithField("config", config).Info("config loaded")
+		log.Info("config loaded")
 
 		sentry, err := sentry.New(cmd.Context(), log, config)
 		if err != nil {

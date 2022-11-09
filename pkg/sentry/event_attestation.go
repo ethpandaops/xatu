@@ -22,7 +22,7 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Event: &xatu.DecoratedEvent_EthV1Attestation{
+		Data: &xatu.DecoratedEvent_EthV1Attestation{
 			EthV1Attestation: &xatuethv1.Attestation{
 				AggregationBits: xatuethv1.BytesToString(event.AggregationBits),
 				Data: &xatuethv1.AttestationData{
@@ -60,16 +60,12 @@ func (s *Sentry) getAttestationData(ctx context.Context, event *phase0.Attestati
 
 	eventTime := meta.Event.DateTime.AsTime()
 
-	// Get the wallclock time window for when we saw the event
-	slot, _, err := s.beacon.Metadata().Wallclock().FromTime(eventTime)
-	if err != nil {
-		return extra, err
-	}
+	attestionSlot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Data.Slot))
 
 	extra.Slot = &xatu.AdditionalSlotData{
-		Number:          slot.Number(),
-		StartDateTime:   timestamppb.New(slot.TimeWindow().Start()),
-		PropagationDiff: uint64(eventTime.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		Number:          attestionSlot.Number(),
+		StartDateTime:   timestamppb.New(attestionSlot.TimeWindow().Start()),
+		PropagationDiff: uint64(eventTime.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	// Build out the target section

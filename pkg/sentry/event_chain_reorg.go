@@ -21,7 +21,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Event: &xatu.DecoratedEvent_EthV1ChainReorg{
+		Data: &xatu.DecoratedEvent_EthV1ChainReorg{
 			EthV1ChainReorg: &xatuethv1.EventChainReorg{
 				Slot:         uint64(event.Slot),
 				Epoch:        uint64(event.Epoch),
@@ -49,13 +49,9 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 //nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalChainReorgData, error) {
 	extra := &xatu.ClientMeta_AdditionalChainReorgData{}
-	eventTime := meta.Event.DateTime.AsTime()
 
-	// Get the wallclock time window for when we saw the event
-	slot, epoch, err := s.beacon.Metadata().Wallclock().FromTime(eventTime)
-	if err != nil {
-		return extra, err
-	}
+	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
+	epoch := s.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(event.Slot))
 
 	extra.Slot = &xatu.AdditionalSlotData{
 		StartDateTime:   timestamppb.New(slot.TimeWindow().Start()),

@@ -21,7 +21,7 @@ func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.Finali
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Event: &xatu.DecoratedEvent_EthV1FinalizedCheckpoint{
+		Data: &xatu.DecoratedEvent_EthV1FinalizedCheckpoint{
 			EthV1FinalizedCheckpoint: &xatuethv1.EventFinalizedCheckpoint{
 				Epoch: uint64(event.Epoch),
 				State: xatuethv1.RootAsString(event.State),
@@ -44,13 +44,8 @@ func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.Finali
 
 func (s *Sentry) getFinalizedCheckpointData(ctx context.Context, event *v1.FinalizedCheckpointEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalFinalizedCheckpointData, error) {
 	extra := &xatu.ClientMeta_AdditionalFinalizedCheckpointData{}
-	eventTime := meta.Event.DateTime.AsTime()
 
-	// Get the wallclock time window for when we saw the event
-	_, epoch, err := s.beacon.Metadata().Wallclock().FromTime(eventTime)
-	if err != nil {
-		return extra, err
-	}
+	epoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Epoch))
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),

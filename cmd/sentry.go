@@ -22,14 +22,14 @@ var sentryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", sentryCfgFile).Info("loading config")
+		log.WithField("location", sentryCfgFile).Info("Loading config")
 
 		config, err := loadSentryConfigFromFile(sentryCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Info("config loaded")
+		log.Info("Config loaded")
 
 		sentry, err := sentry.New(cmd.Context(), log, config)
 		if err != nil {
@@ -40,7 +40,7 @@ var sentryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log.Info("sentry exited")
+		log.Info("Xatu sentry exited - cya!")
 	},
 }
 

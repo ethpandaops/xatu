@@ -1,0 +1,19 @@
+name: example-instance
+
+labels:
+  ethpandaops: rocks
+
+ethereum:
+  beacon_node_address: http://localhost:5052
+  
+outputs:
+- name: basic
+  type: http
+  config:
+    type: http
+    address: http://localhost:8080
+    headers:
+      Authorization: Someb64Value
+    batch_size: 300
+    batch_interval_seconds: 3
+    max_items: 100000

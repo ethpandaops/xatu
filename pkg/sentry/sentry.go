@@ -71,6 +71,12 @@ func (s *Sentry) Start(ctx context.Context) error {
 		return nil
 	})
 
+	for _, sink := range s.sinks {
+		if err := sink.Start(ctx); err != nil {
+			return err
+		}
+	}
+
 	if err := s.beacon.Start(ctx); err != nil {
 		return err
 	}

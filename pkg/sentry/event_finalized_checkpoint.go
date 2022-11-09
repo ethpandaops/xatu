@@ -52,7 +52,7 @@ func (s *Sentry) getFinalizedCheckpointData(ctx context.Context, event *v1.Final
 		return extra, err
 	}
 
-	extra.Epoch = &xatu.AdditionalEpochData{
+	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}

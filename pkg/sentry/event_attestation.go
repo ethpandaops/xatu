@@ -25,16 +25,18 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 		Event: &xatu.DecoratedEvent_EthV1Attestation{
 			EthV1Attestation: &xatuethv1.Attestation{
 				AggregationBits: xatuethv1.BytesToString(event.AggregationBits),
-				Slot:            uint64(event.Data.Slot),
-				Index:           uint64(event.Data.Index),
-				BeaconBlockRoot: xatuethv1.RootAsString(event.Data.BeaconBlockRoot),
-				Source: &xatuethv1.Checkpoint{
-					Epoch: uint64(event.Data.Source.Epoch),
-					Root:  xatuethv1.RootAsString(event.Data.Source.Root),
-				},
-				Target: &xatuethv1.Checkpoint{
-					Epoch: uint64(event.Data.Target.Epoch),
-					Root:  xatuethv1.RootAsString(event.Data.Target.Root),
+				Data: &xatuethv1.AttestationData{
+					Slot:            uint64(event.Data.Slot),
+					Index:           uint64(event.Data.Index),
+					BeaconBlockRoot: xatuethv1.RootAsString(event.Data.BeaconBlockRoot),
+					Source: &xatuethv1.Checkpoint{
+						Epoch: uint64(event.Data.Source.Epoch),
+						Root:  xatuethv1.RootAsString(event.Data.Source.Root),
+					},
+					Target: &xatuethv1.Checkpoint{
+						Epoch: uint64(event.Data.Target.Epoch),
+						Root:  xatuethv1.RootAsString(event.Data.Target.Root),
+					},
 				},
 				Signature: fmt.Sprintf("%#x", event.Signature),
 			},
@@ -73,13 +75,19 @@ func (s *Sentry) getAttestationData(ctx context.Context, event *phase0.Attestati
 	// Build out the target section
 	targetEpoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Data.Target.Epoch))
 	extra.Target = &xatu.AdditionalEpochData{
-		StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
+		Epoch: &xatu.Epoch{
+			Number:        targetEpoch.Number(),
+			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
+		},
 	}
 
 	// Build out the source section
 	sourceEpoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Data.Source.Epoch))
 	extra.Source = &xatu.AdditionalEpochData{
-		StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
+		Epoch: &xatu.Epoch{
+			Number:        sourceEpoch.Number(),
+			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
+		},
 	}
 
 	return extra, nil

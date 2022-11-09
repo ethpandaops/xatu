@@ -62,7 +62,7 @@ func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEven
 		PropagationDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
-	extra.Epoch = &xatu.AdditionalEpochData{
+	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}

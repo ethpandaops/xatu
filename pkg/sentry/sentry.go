@@ -98,7 +98,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 
 	return &xatu.ClientMeta{
 		Name:           s.Config.Name,
-		Version:        xatu.Full(),
+		Version:        xatu.Short(),
 		Id:             "00000000000000000",
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,

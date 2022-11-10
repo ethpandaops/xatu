@@ -33,3 +33,7 @@ func (e *DefaultEpochCreator) FromTime(t time.Time) Epoch {
 	number := uint64(t.Sub(e.genesis) / (e.durationPerSlot * time.Duration(e.slotsPerEpoch)))
 	return e.FromNumber(number)
 }
+
+func (e *DefaultEpochCreator) FromSlot(slot uint64) Epoch {
+	return e.FromNumber(slot / e.slotsPerEpoch)
+}

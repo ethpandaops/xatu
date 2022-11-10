@@ -21,7 +21,7 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Event: &xatu.DecoratedEvent_EthV1Head{
+		Data: &xatu.DecoratedEvent_EthV1Head{
 			EthV1Head: &xatuethv1.EventHead{
 				Slot:                      uint64(event.Slot),
 				Block:                     xatuethv1.RootAsString(event.Block),
@@ -48,20 +48,16 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 //nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalHeadData, error) {
 	extra := &xatu.ClientMeta_AdditionalHeadData{}
-	eventTime := meta.Event.DateTime.AsTime()
 
-	// Get the wallclock time window for when we saw the event
-	slot, epoch, err := s.beacon.Metadata().Wallclock().FromTime(eventTime)
-	if err != nil {
-		return extra, err
-	}
+	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
+	epoch := s.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(event.Slot))
 
 	extra.Slot = &xatu.AdditionalSlotData{
 		StartDateTime:   timestamppb.New(slot.TimeWindow().Start()),
 		PropagationDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
-	extra.Epoch = &xatu.AdditionalEpochData{
+	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}

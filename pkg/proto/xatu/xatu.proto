@@ -8,11 +8,15 @@ import "google/protobuf/timestamp.proto";
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
 
-message AdditionalEpochData {
+message Epoch {
   // Number is the epoch number.
   uint64 number = 1;
   // StartDateTime is the epoch start time.
   google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
+}
+
+message AdditionalEpochData {
+  Epoch epoch = 1;
 }
 
 message AdditionalSlotData {
@@ -102,7 +106,7 @@ message ClientMeta {
 
   message AdditionalHeadData {  
     // Epoch contains the epoch information for the head.
-    AdditionalEpochData epoch = 1;
+    Epoch epoch = 1;
   
     // Slot contains the slot information for the head event.
     AdditionalSlotData slot = 2;
@@ -110,7 +114,7 @@ message ClientMeta {
 
   message AdditionalBlockData {
     // Epoch contains the epoch information for the block.
-    AdditionalEpochData epoch = 1;
+    Epoch epoch = 1;
 
     // Slot contains the slot information for the block.
     AdditionalSlotData slot = 2;
@@ -118,26 +122,28 @@ message ClientMeta {
 
   message AdditionalVoluntaryExitData {
     // Epoch contains the epoch information for the voluntary exit.
-    AdditionalEpochData epoch = 1;
+    Epoch epoch = 1;
   }
 
   message AdditionalFinalizedCheckpointData {
     // Epoch contains the epoch information for the finalized checkpoint.
-    AdditionalEpochData epoch = 1;
+    Epoch epoch = 1;
   }
 
   message AdditionalChainReorgData {
     // Epoch contains the epoch information for the chain reorg.
-    AdditionalEpochData epoch = 1;
+    Epoch epoch = 1;
     // Slot contains the slot information for the chain reorg.
     AdditionalSlotData slot = 2;
   }
 
-  message AdditionalContributionAndProofgData {
-    // Epoch contains the epoch information for the contribution and proof.
-    AdditionalEpochData epoch = 1;
-    // Slot contains the slot information for the contribution and proof.
-    AdditionalSlotData slot = 2;
+  message AdditionalContributionAndProofData {
+    message Contribution {
+      // Epoch contains the epoch information for the contribution and proof.
+      Epoch epoch = 1;
+      // Slot contains the slot information for the contribution and proof.
+      AdditionalSlotData slot = 2;
+    }
   }
 
   // AdditionalData contains additional, computed data as set by the client about the event.
@@ -155,7 +161,7 @@ message ClientMeta {
     // ChainReorg contains additional data about the chain reorg event.
     AdditionalChainReorgData chain_reorg = 14 [json_name="additional_data"]; 
     // ContributionAndProof contains additional data about the chain reorg event.
-    AdditionalChainReorgData contribution_and_proof = 15 [json_name="additional_data"]; 
+    AdditionalContributionAndProofData contribution_and_proof = 15 [json_name="additional_data"]; 
   }
 }
 
@@ -190,12 +196,12 @@ message Meta {
 // DecoratedEvent is an event that has been decorated with additional information.
 message DecoratedEvent {
   Meta meta = 1;
-  oneof event {
-    xatu.eth.v1.Attestation eth_v1_attestation = 2 [json_name = "event"];
-    xatu.eth.v1.EventBlock eth_v1_block = 3 [json_name = "event"];
-    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 4 [json_name = "event"];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 5 [json_name = "event"];
-    xatu.eth.v1.EventHead eth_v1_head = 6 [json_name = "event"];
+  oneof data {
+    xatu.eth.v1.Attestation eth_v1_attestation = 2 [json_name = "data"];
+    xatu.eth.v1.EventBlock eth_v1_block = 3 [json_name = "data"];
+    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 4 [json_name = "data"];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 5 [json_name = "data"];
+    xatu.eth.v1.EventHead eth_v1_head = 6 [json_name = "data"];
 
     // xatu.eth.v1.EventVoluntaryExit ethereum_eth_v1_voluntary_exit = 7;
     // xatu.eth.v1.EventContributionAndProof ethereum_eth_v1_contribution_and_proof = 7;

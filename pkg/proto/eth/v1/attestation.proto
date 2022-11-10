@@ -17,17 +17,21 @@ message Checkpoint {
 message Attestation {
   string aggregation_bits = 1 [json_name="aggregation_bits"];
 
-  uint64 slot = 2;
+  string signature = 2;
 
-  uint64 index = 3;
+  AttestationData data = 3;
+}
 
-  string beacon_block_root = 4 [json_name="beacon_block_root"];
+message AttestationData {
+  uint64 slot = 1;
 
-  Checkpoint source = 5;
+  uint64 index = 2;
 
-  Checkpoint target = 6;
+  string beacon_block_root = 3 [json_name="beacon_block_root"];
 
-  string signature = 7;
+  Checkpoint source = 4;
+
+  Checkpoint target = 5;
 }
 
 message AggregateAttestationAndProof {

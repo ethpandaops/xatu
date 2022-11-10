@@ -98,10 +98,6 @@ func (h *HTTP) sendUpstream(ctx context.Context, events []*xatu.DecoratedEvent) 
 		}
 
 		body += string(eventAsJSON) + "\n"
-
-		// if event.Meta.Client.Event.Name == xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION {
-		// 	h.log.WithField("event", string(eventAsJSON)).Info("Sending attestation to HTTP sink")
-		// }
 	}
 
 	req, err := http.NewRequest(httpMethod, h.config.Address, bytes.NewBufferString(body))

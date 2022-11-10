@@ -48,15 +48,18 @@ func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *x
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
 	epoch := s.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(event.Slot))
 
-	extra.Slot = &xatu.AdditionalSlotData{
-		StartDateTime:   timestamppb.New(slot.TimeWindow().Start()),
-		Number:          uint64(event.Slot),
-		PropagationDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
+	extra.Slot = &xatu.Slot{
+		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+		Number:        uint64(event.Slot),
 	}
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	extra.Propagation = &xatu.Propagation{
+		SlotStartDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

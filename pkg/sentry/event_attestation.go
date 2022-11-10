@@ -61,16 +61,25 @@ func (s *Sentry) getAttestationData(ctx context.Context, event *phase0.Attestati
 	eventTime := meta.Event.DateTime.AsTime()
 
 	attestionSlot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Data.Slot))
+	epoch := s.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(event.Data.Slot))
 
-	extra.Slot = &xatu.AdditionalSlotData{
-		Number:          attestionSlot.Number(),
-		StartDateTime:   timestamppb.New(attestionSlot.TimeWindow().Start()),
-		PropagationDiff: uint64(eventTime.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
+	extra.Slot = &xatu.Slot{
+		Number:        attestionSlot.Number(),
+		StartDateTime: timestamppb.New(attestionSlot.TimeWindow().Start()),
+	}
+
+	extra.Epoch = &xatu.Epoch{
+		Number:        epoch.Number(),
+		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	extra.Propagation = &xatu.Propagation{
+		SlotStartDiff: uint64(eventTime.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	// Build out the target section
 	targetEpoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Data.Target.Epoch))
-	extra.Target = &xatu.AdditionalEpochData{
+	extra.Target = &xatu.ClientMeta_AdditionalAttestationTargetData{
 		Epoch: &xatu.Epoch{
 			Number:        targetEpoch.Number(),
 			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
@@ -79,7 +88,7 @@ func (s *Sentry) getAttestationData(ctx context.Context, event *phase0.Attestati
 
 	// Build out the source section
 	sourceEpoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Data.Source.Epoch))
-	extra.Source = &xatu.AdditionalEpochData{
+	extra.Source = &xatu.ClientMeta_AdditionalAttestationSourceData{
 		Epoch: &xatu.Epoch{
 			Number:        sourceEpoch.Number(),
 			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),

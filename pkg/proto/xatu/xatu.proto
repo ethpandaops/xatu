@@ -15,17 +15,16 @@ message Epoch {
   google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
 }
 
-message AdditionalEpochData {
-  Epoch epoch = 1;
-}
-
-message AdditionalSlotData {
+message Slot {
   // Number is the slot number.
    uint64 number = 1;
   // StartDateTime is the slot start time.
    google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
-  // PropogationDiff is the diff of thhe attestation (in milliseconds).
-   uint64 propagation_diff = 3 [json_name="propagation_diff"];
+}
+
+message Propagation {
+  // SlotStartDiff is the difference between the slot start time and the attestation received time (in milliseconds).
+   uint64 slot_start_diff = 3 [json_name="slot_start_diff"];
 }
 
 message ClientMeta {
@@ -93,15 +92,31 @@ message ClientMeta {
   // Labels contains additional labels as set by the client.
   map<string, string> labels = 8;
 
-  message AdditionalAttestationData {  
-    // Source contains the epoch information for the source.
-    AdditionalEpochData source = 1;
-    
-    // Target contains the epoch information for the target
-    AdditionalEpochData target = 2;
+  message AdditionalAttestationSourceData {
+    // Epoch contains the epoch information for the source.
+    Epoch epoch = 1;
+  }
+
+  message AdditionalAttestationTargetData {
+    // Epoch contains the epoch information for the source.
+    Epoch epoch = 1;
+  }
+
+  message AdditionalAttestationData {
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalAttestationSourceData source = 1;
+  
+    // Target contains information of the block at the start of the current epoch.
+    AdditionalAttestationTargetData target = 2;
   
     // Slot contains the slot information for the attestation.
-    AdditionalSlotData slot = 3;
+    Slot slot = 3;
+  
+    // Epoch contains the epoch information for the attestation.
+    Epoch epoch = 4;
+
+    // Propagation contains information about the propagation of the attestation.
+    Propagation propagation = 5;
   }
 
   message AdditionalHeadData {  
@@ -109,7 +124,10 @@ message ClientMeta {
     Epoch epoch = 1;
   
     // Slot contains the slot information for the head event.
-    AdditionalSlotData slot = 2;
+    Slot slot = 2;
+
+    // Propagation contains information about the propagation of the head.
+    Propagation propagation = 3;
   }
 
   message AdditionalBlockData {
@@ -117,7 +135,10 @@ message ClientMeta {
     Epoch epoch = 1;
 
     // Slot contains the slot information for the block.
-    AdditionalSlotData slot = 2;
+    Slot slot = 2;
+
+    // Propagation contains information about the propagation of the block.
+    Propagation propagation = 3;
   }
 
   message AdditionalVoluntaryExitData {
@@ -133,17 +154,27 @@ message ClientMeta {
   message AdditionalChainReorgData {
     // Epoch contains the epoch information for the chain reorg.
     Epoch epoch = 1;
+
     // Slot contains the slot information for the chain reorg.
-    AdditionalSlotData slot = 2;
+    Slot slot = 2;
+
+    // Propagation contains information about the propagation of the chain reorg.
+    Propagation propagation = 3;
+  }
+
+  message AdditionalContributionAndProofContributionData {
+    // Epoch contains the epoch information for the contribution and proof.
+    Epoch epoch = 1;
+
+    // Slot contains the slot information for the contribution and proof.
+    Slot slot = 2;
+
+    // Propagation contains information about the propagation of the contribution and proof.
+    Propagation propagation = 3;
   }
 
   message AdditionalContributionAndProofData {
-    message Contribution {
-      // Epoch contains the epoch information for the contribution and proof.
-      Epoch epoch = 1;
-      // Slot contains the slot information for the contribution and proof.
-      AdditionalSlotData slot = 2;
-    }
+    AdditionalContributionAndProofContributionData contribution = 1;
   }
 
   // AdditionalData contains additional, computed data as set by the client about the event.

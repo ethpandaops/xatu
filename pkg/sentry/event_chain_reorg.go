@@ -53,14 +53,17 @@ func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEven
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
 	epoch := s.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(event.Slot))
 
-	extra.Slot = &xatu.AdditionalSlotData{
-		StartDateTime:   timestamppb.New(slot.TimeWindow().Start()),
-		PropagationDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
+	extra.Slot = &xatu.Slot{
+		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 	}
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	extra.Propagation = &xatu.Propagation{
+		SlotStartDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

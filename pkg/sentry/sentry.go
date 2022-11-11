@@ -7,10 +7,13 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
+	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/output"
+	"github.com/go-co-op/gocron"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -21,6 +24,8 @@ type Sentry struct {
 	sinks []output.Sink
 
 	beacon *ethereum.BeaconNode
+
+	clockDrift time.Duration
 
 	log logrus.FieldLogger
 }
@@ -45,10 +50,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 	}
 
 	return &Sentry{
-		Config: config,
-		sinks:  sinks,
-		beacon: beacon,
-		log:    log,
+		Config:     config,
+		sinks:      sinks,
+		beacon:     beacon,
+		clockDrift: time.Duration(0),
+		log:        log,
 	}, nil
 }
 
@@ -70,6 +76,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 		return nil
 	})
+
+	if err := s.startCrons(ctx); err != nil {
+		s.log.WithError(err).Fatal("Failed to start crons")
+	}
 
 	for _, sink := range s.sinks {
 		if err := sink.Start(ctx); err != nil {
@@ -102,10 +112,12 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 		Id:             "00000000000000000",
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
+		ClockDrift:     uint64(s.clockDrift.Milliseconds()),
 		Event: &xatu.ClientMeta_Event{
 			Name:     topic,
-			DateTime: timestamppb.Now(),
+			DateTime: timestamppb.New(time.Now().Add(s.clockDrift)),
 		},
+
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
 				Name: network,
@@ -122,6 +134,39 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 		},
 		Labels: s.Config.Labels,
 	}, nil
+}
+
+func (s *Sentry) startCrons(ctx context.Context) error {
+	c := gocron.NewScheduler(time.Local)
+
+	if _, err := c.Every("5m").Do(func() {
+		if err := s.syncClockDrift(ctx); err != nil {
+			s.log.WithError(err).Error("Failed to sync clock drift")
+		}
+	}); err != nil {
+		return err
+	}
+
+	c.StartAsync()
+
+	return nil
+}
+
+func (s *Sentry) syncClockDrift(ctx context.Context) error {
+	response, err := ntp.Query(s.Config.NTPServer)
+	if err != nil {
+		return err
+	}
+
+	err = response.Validate()
+	if err != nil {
+		return err
+	}
+
+	s.clockDrift = response.ClockOffset
+	s.log.WithField("drift", s.clockDrift).Debug("Updated clock drift")
+
+	return err
 }
 
 func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {

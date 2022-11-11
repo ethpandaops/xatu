@@ -14,6 +14,7 @@ outputs:
     address: http://localhost:8080
     headers:
       Authorization: Someb64Value
-    batch_size: 300
-    batch_interval_seconds: 3
-    max_items: 100000
+    max_queue_size: 2048
+    batch_timeout: 5s
+    export_timeout: 30s
+    batch_interval_seconds: 512

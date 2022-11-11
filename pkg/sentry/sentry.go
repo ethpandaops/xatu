@@ -87,6 +87,14 @@ func (s *Sentry) Start(ctx context.Context) error {
 	sig := <-cancel
 	s.log.Printf("Caught signal: %v", sig)
 
+	s.log.Printf("Flushing sinks")
+
+	for _, sink := range s.sinks {
+		if err := sink.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -1,14 +1,17 @@
 package http
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type Config struct {
-	Address              string            `yaml:"address"`
-	Headers              map[string]string `yaml:"headers"`
-	TimeoutSeconds       int               `yaml:"timeout_seconds"`
-	BatchSize            int               `yaml:"batch_size" default:"1000"`
-	BatchIntervalSeconds int               `yaml:"batch_interval_seconds" default:"5"`
-	MaxItems             int               `yaml:"max_items" default:"100000"`
+	Address            string            `yaml:"address"`
+	Headers            map[string]string `yaml:"headers"`
+	MaxQueueSize       int               `yaml:"max_queue_size" default:"2048"`
+	BatchTimeout       time.Duration     `yaml:"batch_timeout" default:"5s"`
+	ExportTimeout      time.Duration     `yaml:"export_timeout" default:"30s"`
+	MaxExportBatchSize int               `yaml:"batch_interval_seconds" default:"512"`
 }
 
 func (c *Config) Validate() error {

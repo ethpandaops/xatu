@@ -22,7 +22,7 @@ outputs:
     ntp_server: pool.ntp.org
     headers:
       Authorization: Someb64Value
-    max_queue_size: 2048
+    max_queue_size: 51200
     batch_timeout: 5s
     export_timeout: 30s
-    batch_interval_seconds: 512
+    max_export_batch_size: 512

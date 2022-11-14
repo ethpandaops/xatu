@@ -41,7 +41,7 @@ type EventExporter interface {
 
 // Defaults for BatchDecoratedEventProcessorOptions.
 const (
-	DefaultMaxQueueSize       = 2048
+	DefaultMaxQueueSize       = 51200
 	DefaultScheduleDelay      = 5000
 	DefaultExportTimeout      = 30000
 	DefaultMaxExportBatchSize = 512
@@ -55,7 +55,7 @@ type BatchDecoratedEventProcessorOption func(o *BatchDecoratedEventProcessorOpti
 type BatchDecoratedEventProcessorOptions struct {
 	// MaxQueueSize is the maximum queue size to buffer events for delayed processing. If the
 	// queue gets full it drops the events.
-	// The default value of MaxQueueSize is 2048.
+	// The default value of MaxQueueSize is 51200.
 	MaxQueueSize int
 
 	// BatchTimeout is the maximum duration for constructing a batch. Processor

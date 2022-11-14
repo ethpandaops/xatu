@@ -38,6 +38,8 @@ message ClientMeta {
   string implementation = 4;
   // OS is the operating system of the client.
   string os = 5;
+  // ClockDrift is the NTP calculated clock drift of the client.
+  uint64 clock_drift = 6;
 
   message Event {
     enum Name {
@@ -56,7 +58,7 @@ message ClientMeta {
   }
 
   // Event contains information about what type of event this is.
-   Event event = 6;
+  Event event = 7;
 
   message Ethereum {
     message Network {
@@ -87,10 +89,10 @@ message ClientMeta {
   }
 
   // Ethereum contains information about the Ethereum network and configuration.
-   Ethereum ethereum = 7;
+   Ethereum ethereum = 8;
 
   // Labels contains additional labels as set by the client.
-  map<string, string> labels = 8;
+  map<string, string> labels = 9;
 
   message AdditionalAttestationSourceData {
     // Epoch contains the epoch information for the source.
@@ -180,19 +182,19 @@ message ClientMeta {
   // AdditionalData contains additional, computed data as set by the client about the event.
   oneof AdditionalData {
     // Attestation contains additional data about an attestation event.
-    AdditionalAttestationData attestation = 9 [json_name="additional_data"];
+    AdditionalAttestationData attestation = 10 [json_name="additional_data"];
     // Head contains additional data about the head event.
-    AdditionalHeadData head = 10 [json_name="additional_data"];
+    AdditionalHeadData head = 11 [json_name="additional_data"];
     // Block contains additional data about the head event.
-    AdditionalBlockData block = 11 [json_name="additional_data"];
+    AdditionalBlockData block = 12 [json_name="additional_data"];
     // VoluntaryExit contains additional data about the voluntary exit event.
-    AdditionalVoluntaryExitData voluntary_exit = 12 [json_name="additional_data"];
+    AdditionalVoluntaryExitData voluntary_exit = 13 [json_name="additional_data"];
     // FinalizedCheckpoint contains additional data about the finalized checkpoint event.
-    AdditionalFinalizedCheckpointData finalized_checkpoint = 13 [json_name="additional_data"];
+    AdditionalFinalizedCheckpointData finalized_checkpoint = 14 [json_name="additional_data"];
     // ChainReorg contains additional data about the chain reorg event.
-    AdditionalChainReorgData chain_reorg = 14 [json_name="additional_data"]; 
+    AdditionalChainReorgData chain_reorg = 15 [json_name="additional_data"]; 
     // ContributionAndProof contains additional data about the chain reorg event.
-    AdditionalContributionAndProofData contribution_and_proof = 15 [json_name="additional_data"]; 
+    AdditionalContributionAndProofData contribution_and_proof = 16 [json_name="additional_data"]; 
   }
 }
 

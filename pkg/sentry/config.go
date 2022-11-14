@@ -20,6 +20,9 @@ type Config struct {
 
 	// Labels configures the sentry with labels
 	Labels map[string]string `yaml:"labels"`
+
+	// NTP Server to use for clock drift correction
+	NTPServer string `yaml:"ntp_server" default:"pool.ntp.org"`
 }
 
 func (c *Config) Validate() error {

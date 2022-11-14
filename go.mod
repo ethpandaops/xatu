@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/attestantio/go-eth2-client v0.14.1
+	github.com/beevik/ntp v0.3.0
 	github.com/creasty/defaults v1.6.0
 	github.com/go-co-op/gocron v1.17.1
 	github.com/pkg/errors v0.9.1

@@ -5,6 +5,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/sentry"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -30,6 +31,13 @@ var sentryCmd = &cobra.Command{
 		}
 
 		log.Info("Config loaded")
+
+		logLevel, err := logrus.ParseLevel(config.LoggingLevel)
+		if err != nil {
+			log.WithField("logLevel", config.LoggingLevel).Fatal("invalid logging level")
+		}
+
+		log.SetLevel(logLevel)
 
 		sentry, err := sentry.New(cmd.Context(), log, config)
 		if err != nil {

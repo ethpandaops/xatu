@@ -9,6 +9,9 @@ import (
 )
 
 type Config struct {
+	LoggingLevel string `yaml:"logging" default:"info"`
+	MetricsAddr  string `yaml:"metricsAddr" default:":9090"`
+
 	// The name of the sentry
 	Name string `yaml:"name"`
 

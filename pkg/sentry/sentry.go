@@ -3,6 +3,7 @@ package sentry
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/go-co-op/gocron"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -59,6 +61,10 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 }
 
 func (s *Sentry) Start(ctx context.Context) error {
+	if err := s.ServeMetrics(ctx); err != nil {
+		return err
+	}
+
 	s.log.WithField("version", xatu.Full()).Info("Starting Xatu in sentry mode")
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
@@ -104,6 +110,25 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (s *Sentry) ServeMetrics(ctx context.Context) error {
+	go func() {
+		server := &http.Server{
+			Addr:              s.Config.MetricsAddr,
+			ReadHeaderTimeout: 15 * time.Second,
+		}
+
+		server.Handler = promhttp.Handler()
+
+		s.log.Infof("Serving metrics at %s", s.Config.MetricsAddr)
+
+		if err := server.ListenAndServe(); err != nil {
+			s.log.Fatal(err)
+		}
+	}()
 
 	return nil
 }

@@ -1,3 +1,6 @@
+logging: "debug" # panic,fatal,warm,info,debug,trace
+metricsAddr: ":9090"
+
 name: example-instance
 
 labels:

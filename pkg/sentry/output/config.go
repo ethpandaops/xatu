@@ -3,6 +3,7 @@ package output
 import (
 	"errors"
 
+	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/sentry/output/http"
 	"github.com/sirupsen/logrus"
 )
@@ -31,6 +32,10 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 		conf := &http.Config{}
 
 		if err := config.Unmarshal(conf); err != nil {
+			return nil, err
+		}
+
+		if err := defaults.Set(conf); err != nil {
 			return nil, err
 		}
 

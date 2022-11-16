@@ -85,6 +85,20 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 		return errors.Wrap(err, "metadata service is not ready")
 	}
 
+	status := b.beacon.GetStatus(ctx)
+	if status == nil {
+		return errors.New("failed to get beacon node status")
+	}
+
+	syncState := status.SyncState()
+	if syncState == nil {
+		return errors.New("missing beacon node status sync state")
+	}
+
+	if syncState.IsSyncing {
+		return errors.New("beacon node is syncing")
+	}
+
 	for _, callback := range b.onReadyCallbacks {
 		if err := callback(ctx); err != nil {
 			b.log.WithError(err).Error("failed to run on ready callback")

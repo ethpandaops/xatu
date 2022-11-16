@@ -203,6 +203,16 @@ func (s *Sentry) syncClockDrift(ctx context.Context) error {
 }
 
 func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	status := s.beacon.Node().GetStatus(ctx)
+	if status == nil {
+		return nil
+	}
+
+	syncState := status.SyncState()
+	if syncState == nil || syncState.IsSyncing {
+		return nil
+	}
+
 	for _, sink := range s.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			s.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")

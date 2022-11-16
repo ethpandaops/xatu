@@ -9,17 +9,18 @@ labels:
 ethereum:
   beacon_node_address: http://localhost:5052
   
+  
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+ntp_server: pool.ntp.org
+
 outputs:
 - name: basic
   type: http
   config:
-    type: http
     address: http://localhost:8080
-    # Better to use a NTP server close eg.
-    #   time.aws.com - AWS
-    #   time.windows.com - Azure
-    #   time.google.com - GCP
-    ntp_server: pool.ntp.org
     headers:
       Authorization: Someb64Value
     max_queue_size: 51200

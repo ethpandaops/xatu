@@ -5,6 +5,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/sentry/output/http"
+	"github.com/ethpandaops/xatu/pkg/sentry/output/stdout"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,6 +41,10 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 		}
 
 		return http.New(conf, log)
+	case SinkTypeStdOut:
+		conf := &stdout.Config{}
+
+		return stdout.New(conf, log)
 	default:
 		return nil, errors.New("sink type is unknown")
 	}

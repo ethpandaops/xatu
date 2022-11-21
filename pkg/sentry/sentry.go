@@ -12,6 +12,7 @@ import (
 
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/cache"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/go-co-op/gocron"
@@ -30,6 +31,8 @@ type Sentry struct {
 	clockDrift time.Duration
 
 	log logrus.FieldLogger
+
+	duplicateCache *cache.DuplicateCache
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -51,12 +54,16 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		return nil, err
 	}
 
+	duplicateCache := cache.NewDuplicateCache()
+	duplicateCache.Start()
+
 	return &Sentry{
-		Config:     config,
-		sinks:      sinks,
-		beacon:     beacon,
-		clockDrift: time.Duration(0),
-		log:        log,
+		Config:         config,
+		sinks:          sinks,
+		beacon:         beacon,
+		clockDrift:     time.Duration(0),
+		log:            log,
+		duplicateCache: duplicateCache,
 	}, nil
 }
 

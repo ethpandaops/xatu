@@ -1,4 +1,4 @@
-logging: "debug" # panic,fatal,warm,info,debug,trace
+logging: "debug" # panic,fatal,warn,info,debug,trace
 metricsAddr: ":9090"
 
 name: example-instance

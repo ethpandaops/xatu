@@ -3,15 +3,35 @@ package sentry
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/mitchellh/hashstructure/v2"
+	"github.com/savid/ttlcache/v3"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestation) error {
 	s.log.Debug("Attestation received")
+
+	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
+	if err != nil {
+		return err
+	}
+
+	item, retrieved := s.duplicateCache.Attestation.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	if retrieved {
+		s.log.WithFields(logrus.Fields{
+			"hash":                   hash,
+			"time_since_first_event": time.Since(item.Value()),
+			"slot":                   event.Data.Slot,
+		}).Debug("Duplicate attestation event received")
+		// TODO(savid): add metrics
+		return nil
+	}
 
 	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION)
 	if err != nil {

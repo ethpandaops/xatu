@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const SinkType = "StdOut"
+const SinkType = "stdout"
 
 type StdOut struct {
 	config *Config

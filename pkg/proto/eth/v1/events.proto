@@ -53,3 +53,9 @@ message EventFinalizedCheckpoint {
 
   uint64 epoch = 3;
 }
+
+message EventVoluntaryExit {
+  uint64 epoch = 1;
+
+  uint64 validator_index = 2 [json_name="validator_index"];
+}

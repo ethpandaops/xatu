@@ -235,8 +235,7 @@ message DecoratedEvent {
     xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 4 [json_name = "data"];
     xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 5 [json_name = "data"];
     xatu.eth.v1.EventHead eth_v1_head = 6 [json_name = "data"];
-
-    // xatu.eth.v1.EventVoluntaryExit ethereum_eth_v1_voluntary_exit = 7;
+    xatu.eth.v1.EventVoluntaryExit ethereum_eth_v1_voluntary_exit = 7 [json_name = "data"];
     // xatu.eth.v1.EventContributionAndProof ethereum_eth_v1_contribution_and_proof = 7;
   };
 }

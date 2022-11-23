@@ -12,6 +12,7 @@ type DuplicateCache struct {
 	ChainReorg          *ttlcache.Cache[string, time.Time]
 	FinalizedCheckpoint *ttlcache.Cache[string, time.Time]
 	Head                *ttlcache.Cache[string, time.Time]
+	VoluntaryExit       *ttlcache.Cache[string, time.Time]
 }
 
 func NewDuplicateCache() *DuplicateCache {
@@ -31,6 +32,9 @@ func NewDuplicateCache() *DuplicateCache {
 		Head: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](30 * time.Minute),
 		),
+		VoluntaryExit: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](30 * time.Minute),
+		),
 	}
 }
 
@@ -40,4 +44,5 @@ func (d *DuplicateCache) Start() {
 	go d.ChainReorg.Start()
 	go d.FinalizedCheckpoint.Start()
 	go d.Head.Start()
+	go d.VoluntaryExit.Start()
 }

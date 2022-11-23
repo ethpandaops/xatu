@@ -271,7 +271,6 @@ type ClientMeta struct {
 	// AdditionalData contains additional, computed data as set by the client about the event.
 	//
 	// Types that are assignable to AdditionalData:
-	//
 	//	*ClientMeta_Attestation
 	//	*ClientMeta_Head
 	//	*ClientMeta_Block
@@ -617,12 +616,12 @@ type DecoratedEvent struct {
 
 	Meta *Meta `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
 	// Types that are assignable to Data:
-	//
 	//	*DecoratedEvent_EthV1Attestation
 	//	*DecoratedEvent_EthV1Block
 	//	*DecoratedEvent_EthV1ChainReorg
 	//	*DecoratedEvent_EthV1FinalizedCheckpoint
 	//	*DecoratedEvent_EthV1Head
+	//	*DecoratedEvent_EthereumEthV1VoluntaryExit
 	Data isDecoratedEvent_Data `protobuf_oneof:"data"`
 }
 
@@ -707,6 +706,13 @@ func (x *DecoratedEvent) GetEthV1Head() *v1.EventHead {
 	return nil
 }
 
+func (x *DecoratedEvent) GetEthereumEthV1VoluntaryExit() *v1.EventVoluntaryExit {
+	if x, ok := x.GetData().(*DecoratedEvent_EthereumEthV1VoluntaryExit); ok {
+		return x.EthereumEthV1VoluntaryExit
+	}
+	return nil
+}
+
 type isDecoratedEvent_Data interface {
 	isDecoratedEvent_Data()
 }
@@ -731,6 +737,10 @@ type DecoratedEvent_EthV1Head struct {
 	EthV1Head *v1.EventHead `protobuf:"bytes,6,opt,name=eth_v1_head,json=data,proto3,oneof"`
 }
 
+type DecoratedEvent_EthereumEthV1VoluntaryExit struct {
+	EthereumEthV1VoluntaryExit *v1.EventVoluntaryExit `protobuf:"bytes,7,opt,name=ethereum_eth_v1_voluntary_exit,json=data,proto3,oneof"`
+}
+
 func (*DecoratedEvent_EthV1Attestation) isDecoratedEvent_Data() {}
 
 func (*DecoratedEvent_EthV1Block) isDecoratedEvent_Data() {}
@@ -740,6 +750,8 @@ func (*DecoratedEvent_EthV1ChainReorg) isDecoratedEvent_Data() {}
 func (*DecoratedEvent_EthV1FinalizedCheckpoint) isDecoratedEvent_Data() {}
 
 func (*DecoratedEvent_EthV1Head) isDecoratedEvent_Data() {}
+
+func (*DecoratedEvent_EthereumEthV1VoluntaryExit) isDecoratedEvent_Data() {}
 
 type ClientMeta_Event struct {
 	state         protoimpl.MessageState
@@ -1627,7 +1639,7 @@ type ServerMeta_Event struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// / DateTime is the date and time of the event as seen by the server.
+	/// DateTime is the date and time of the event as seen by the server.
 	DateTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=date_time,json=dateTime,proto3" json:"date_time,omitempty"`
 }
 
@@ -1970,7 +1982,7 @@ var file_pkg_proto_xatu_xatu_proto_rawDesc = []byte{
 	0x74, 0x61, 0x52, 0x06, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x12, 0x28, 0x0a, 0x06, 0x73, 0x65,
 	0x72, 0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x78, 0x61, 0x74,
 	0x75, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4d, 0x65, 0x74, 0x61, 0x52, 0x06, 0x73, 0x65,
-	0x72, 0x76, 0x65, 0x72, 0x22, 0xf8, 0x02, 0x0a, 0x0e, 0x44, 0x65, 0x63, 0x6f, 0x72, 0x61, 0x74,
+	0x72, 0x76, 0x65, 0x72, 0x22, 0xc9, 0x03, 0x0a, 0x0e, 0x44, 0x65, 0x63, 0x6f, 0x72, 0x61, 0x74,
 	0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1e, 0x0a, 0x04, 0x6d, 0x65, 0x74, 0x61, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x4d, 0x65, 0x74,
 	0x61, 0x52, 0x04, 0x6d, 0x65, 0x74, 0x61, 0x12, 0x3c, 0x0a, 0x12, 0x65, 0x74, 0x68, 0x5f, 0x76,
@@ -1993,11 +2005,16 @@ var file_pkg_proto_xatu_xatu_proto_rawDesc = []byte{
 	0x74, 0x61, 0x12, 0x33, 0x0a, 0x0b, 0x65, 0x74, 0x68, 0x5f, 0x76, 0x31, 0x5f, 0x68, 0x65, 0x61,
 	0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
 	0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x48, 0x65, 0x61, 0x64, 0x48,
-	0x00, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42,
-	0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74,
-	0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70,
-	0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x00, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x4f, 0x0a, 0x1e, 0x65, 0x74, 0x68, 0x65, 0x72,
+	0x65, 0x75, 0x6d, 0x5f, 0x65, 0x74, 0x68, 0x5f, 0x76, 0x31, 0x5f, 0x76, 0x6f, 0x6c, 0x75, 0x6e,
+	0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1f, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x56, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74,
+	0x48, 0x00, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61,
+	0x42, 0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65,
+	0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f,
+	0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2048,6 +2065,7 @@ var file_pkg_proto_xatu_xatu_proto_goTypes = []interface{}{
 	(*v1.EventChainReorg)(nil),                                        // 30: xatu.eth.v1.EventChainReorg
 	(*v1.EventFinalizedCheckpoint)(nil),                               // 31: xatu.eth.v1.EventFinalizedCheckpoint
 	(*v1.EventHead)(nil),                                              // 32: xatu.eth.v1.EventHead
+	(*v1.EventVoluntaryExit)(nil),                                     // 33: xatu.eth.v1.EventVoluntaryExit
 }
 var file_pkg_proto_xatu_xatu_proto_depIdxs = []int32{
 	27, // 0: xatu.Epoch.start_date_time:type_name -> google.protobuf.Timestamp
@@ -2073,39 +2091,40 @@ var file_pkg_proto_xatu_xatu_proto_depIdxs = []int32{
 	30, // 20: xatu.DecoratedEvent.eth_v1_chain_reorg:type_name -> xatu.eth.v1.EventChainReorg
 	31, // 21: xatu.DecoratedEvent.eth_v1_finalized_checkpoint:type_name -> xatu.eth.v1.EventFinalizedCheckpoint
 	32, // 22: xatu.DecoratedEvent.eth_v1_head:type_name -> xatu.eth.v1.EventHead
-	0,  // 23: xatu.ClientMeta.Event.name:type_name -> xatu.ClientMeta.Event.Name
-	27, // 24: xatu.ClientMeta.Event.date_time:type_name -> google.protobuf.Timestamp
-	21, // 25: xatu.ClientMeta.Ethereum.network:type_name -> xatu.ClientMeta.Ethereum.Network
-	22, // 26: xatu.ClientMeta.Ethereum.execution:type_name -> xatu.ClientMeta.Ethereum.Execution
-	23, // 27: xatu.ClientMeta.Ethereum.consensus:type_name -> xatu.ClientMeta.Ethereum.Consensus
-	1,  // 28: xatu.ClientMeta.AdditionalAttestationSourceData.epoch:type_name -> xatu.Epoch
-	1,  // 29: xatu.ClientMeta.AdditionalAttestationTargetData.epoch:type_name -> xatu.Epoch
-	11, // 30: xatu.ClientMeta.AdditionalAttestationData.source:type_name -> xatu.ClientMeta.AdditionalAttestationSourceData
-	12, // 31: xatu.ClientMeta.AdditionalAttestationData.target:type_name -> xatu.ClientMeta.AdditionalAttestationTargetData
-	2,  // 32: xatu.ClientMeta.AdditionalAttestationData.slot:type_name -> xatu.Slot
-	1,  // 33: xatu.ClientMeta.AdditionalAttestationData.epoch:type_name -> xatu.Epoch
-	3,  // 34: xatu.ClientMeta.AdditionalAttestationData.propagation:type_name -> xatu.Propagation
-	1,  // 35: xatu.ClientMeta.AdditionalHeadData.epoch:type_name -> xatu.Epoch
-	2,  // 36: xatu.ClientMeta.AdditionalHeadData.slot:type_name -> xatu.Slot
-	3,  // 37: xatu.ClientMeta.AdditionalHeadData.propagation:type_name -> xatu.Propagation
-	1,  // 38: xatu.ClientMeta.AdditionalBlockData.epoch:type_name -> xatu.Epoch
-	2,  // 39: xatu.ClientMeta.AdditionalBlockData.slot:type_name -> xatu.Slot
-	3,  // 40: xatu.ClientMeta.AdditionalBlockData.propagation:type_name -> xatu.Propagation
-	1,  // 41: xatu.ClientMeta.AdditionalVoluntaryExitData.epoch:type_name -> xatu.Epoch
-	1,  // 42: xatu.ClientMeta.AdditionalFinalizedCheckpointData.epoch:type_name -> xatu.Epoch
-	1,  // 43: xatu.ClientMeta.AdditionalChainReorgData.epoch:type_name -> xatu.Epoch
-	2,  // 44: xatu.ClientMeta.AdditionalChainReorgData.slot:type_name -> xatu.Slot
-	3,  // 45: xatu.ClientMeta.AdditionalChainReorgData.propagation:type_name -> xatu.Propagation
-	1,  // 46: xatu.ClientMeta.AdditionalContributionAndProofContributionData.epoch:type_name -> xatu.Epoch
-	2,  // 47: xatu.ClientMeta.AdditionalContributionAndProofContributionData.slot:type_name -> xatu.Slot
-	3,  // 48: xatu.ClientMeta.AdditionalContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
-	19, // 49: xatu.ClientMeta.AdditionalContributionAndProofData.contribution:type_name -> xatu.ClientMeta.AdditionalContributionAndProofContributionData
-	27, // 50: xatu.ServerMeta.Event.date_time:type_name -> google.protobuf.Timestamp
-	51, // [51:51] is the sub-list for method output_type
-	51, // [51:51] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	33, // 23: xatu.DecoratedEvent.ethereum_eth_v1_voluntary_exit:type_name -> xatu.eth.v1.EventVoluntaryExit
+	0,  // 24: xatu.ClientMeta.Event.name:type_name -> xatu.ClientMeta.Event.Name
+	27, // 25: xatu.ClientMeta.Event.date_time:type_name -> google.protobuf.Timestamp
+	21, // 26: xatu.ClientMeta.Ethereum.network:type_name -> xatu.ClientMeta.Ethereum.Network
+	22, // 27: xatu.ClientMeta.Ethereum.execution:type_name -> xatu.ClientMeta.Ethereum.Execution
+	23, // 28: xatu.ClientMeta.Ethereum.consensus:type_name -> xatu.ClientMeta.Ethereum.Consensus
+	1,  // 29: xatu.ClientMeta.AdditionalAttestationSourceData.epoch:type_name -> xatu.Epoch
+	1,  // 30: xatu.ClientMeta.AdditionalAttestationTargetData.epoch:type_name -> xatu.Epoch
+	11, // 31: xatu.ClientMeta.AdditionalAttestationData.source:type_name -> xatu.ClientMeta.AdditionalAttestationSourceData
+	12, // 32: xatu.ClientMeta.AdditionalAttestationData.target:type_name -> xatu.ClientMeta.AdditionalAttestationTargetData
+	2,  // 33: xatu.ClientMeta.AdditionalAttestationData.slot:type_name -> xatu.Slot
+	1,  // 34: xatu.ClientMeta.AdditionalAttestationData.epoch:type_name -> xatu.Epoch
+	3,  // 35: xatu.ClientMeta.AdditionalAttestationData.propagation:type_name -> xatu.Propagation
+	1,  // 36: xatu.ClientMeta.AdditionalHeadData.epoch:type_name -> xatu.Epoch
+	2,  // 37: xatu.ClientMeta.AdditionalHeadData.slot:type_name -> xatu.Slot
+	3,  // 38: xatu.ClientMeta.AdditionalHeadData.propagation:type_name -> xatu.Propagation
+	1,  // 39: xatu.ClientMeta.AdditionalBlockData.epoch:type_name -> xatu.Epoch
+	2,  // 40: xatu.ClientMeta.AdditionalBlockData.slot:type_name -> xatu.Slot
+	3,  // 41: xatu.ClientMeta.AdditionalBlockData.propagation:type_name -> xatu.Propagation
+	1,  // 42: xatu.ClientMeta.AdditionalVoluntaryExitData.epoch:type_name -> xatu.Epoch
+	1,  // 43: xatu.ClientMeta.AdditionalFinalizedCheckpointData.epoch:type_name -> xatu.Epoch
+	1,  // 44: xatu.ClientMeta.AdditionalChainReorgData.epoch:type_name -> xatu.Epoch
+	2,  // 45: xatu.ClientMeta.AdditionalChainReorgData.slot:type_name -> xatu.Slot
+	3,  // 46: xatu.ClientMeta.AdditionalChainReorgData.propagation:type_name -> xatu.Propagation
+	1,  // 47: xatu.ClientMeta.AdditionalContributionAndProofContributionData.epoch:type_name -> xatu.Epoch
+	2,  // 48: xatu.ClientMeta.AdditionalContributionAndProofContributionData.slot:type_name -> xatu.Slot
+	3,  // 49: xatu.ClientMeta.AdditionalContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
+	19, // 50: xatu.ClientMeta.AdditionalContributionAndProofData.contribution:type_name -> xatu.ClientMeta.AdditionalContributionAndProofContributionData
+	27, // 51: xatu.ServerMeta.Event.date_time:type_name -> google.protobuf.Timestamp
+	52, // [52:52] is the sub-list for method output_type
+	52, // [52:52] is the sub-list for method input_type
+	52, // [52:52] is the sub-list for extension type_name
+	52, // [52:52] is the sub-list for extension extendee
+	0,  // [0:52] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_xatu_xatu_proto_init() }
@@ -2418,6 +2437,7 @@ func file_pkg_proto_xatu_xatu_proto_init() {
 		(*DecoratedEvent_EthV1ChainReorg)(nil),
 		(*DecoratedEvent_EthV1FinalizedCheckpoint)(nil),
 		(*DecoratedEvent_EthV1Head)(nil),
+		(*DecoratedEvent_EthereumEthV1VoluntaryExit)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -5,12 +5,14 @@ go 1.18
 require (
 	github.com/attestantio/go-eth2-client v0.14.3
 	github.com/beevik/ntp v0.3.0
+	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/creasty/defaults v1.6.0
 	github.com/go-co-op/gocron v1.18.0
+	github.com/google/uuid v1.3.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
-	github.com/samcm/beacon v0.7.0
+	github.com/samcm/beacon v0.8.0
 	github.com/savid/ttlcache/v3 v3.0.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
@@ -21,7 +23,6 @@ require (
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -29,7 +30,6 @@ require (
 	github.com/ferranbt/fastssz v0.1.2 // indirect
 	github.com/goccy/go-yaml v1.9.6 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

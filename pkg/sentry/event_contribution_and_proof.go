@@ -47,7 +47,7 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 					SelectionProof:  xatuethv1.BLSSignatureToString(&event.Message.SelectionProof),
 					Contribution: &xatuethv1.ContributionAndProof_SyncCommitteeContribution{
 						Slot:              uint64(event.Message.Contribution.Slot),
-						SubcommitteeIndex: uint64(event.Message.Contribution.SubcommitteeIndex),
+						SubcommitteeIndex: event.Message.Contribution.SubcommitteeIndex,
 						AggregationBits:   xatuethv1.BytesToString(event.Message.Contribution.AggregationBits.Bytes()),
 						Signature:         xatuethv1.BLSSignatureToString(&event.Message.Contribution.Signature),
 						BeaconBlockRoot:   xatuethv1.RootAsString(event.Message.Contribution.BeaconBlockRoot),

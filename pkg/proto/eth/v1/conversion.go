@@ -18,7 +18,7 @@ func EpochAsString(epoch phase0.Epoch) string {
 	return fmt.Sprintf("%d", epoch)
 }
 
-func BLSSignatureToString(s phase0.BLSSignature) string {
+func BLSSignatureToString(s *phase0.BLSSignature) string {
 	return fmt.Sprintf("%#x", s)
 }
 

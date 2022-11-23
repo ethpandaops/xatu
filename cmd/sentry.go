@@ -7,7 +7,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (

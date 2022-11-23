@@ -45,7 +45,7 @@ func AllNetworkIdentifierSlots() []phase0.Slot {
 	}
 
 	slotsSlice := make([]phase0.Slot, 0, len(slots))
-	for slot, _ := range slots {
+	for slot := range slots {
 		slotsSlice = append(slotsSlice, slot)
 	}
 

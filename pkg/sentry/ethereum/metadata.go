@@ -7,7 +7,7 @@ import (
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	backoff "github.com/cenkalti/backoff/v4"
-	xatuv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/networks"
 	"github.com/ethpandaops/xatu/pkg/wallclock"
 	"github.com/go-co-op/gocron"
@@ -111,34 +111,17 @@ func (m *MetadataService) Wallclock() *wallclock.EthereumBeaconChain {
 }
 
 func (m *MetadataService) DeriveNetworkName(ctx context.Context) error {
-	for _, slot := range networks.AllNetworkIdentifierSlots() {
-		// Grab the block that is at the slot.
-		block, err := m.beacon.FetchBlock(ctx, xatuv1.SlotAsString(slot))
-		if err != nil {
-			// A block in that slot might not exist, or the connection to the node may be bad.
-			continue
-		}
-
-		root, err := block.Root()
-		if err != nil {
-			// Invalid block root probably means the slot is empty.
-			continue
-		}
-
-		network := networks.DeriveNetworkName(slot, xatuv1.RootAsString(root))
-		if network == networks.NetworkNameUnknown {
-			// Unknown network. Try the next slot.
-			continue
-		}
-
-		if m.NetworkName == networks.NetworkNameNone {
-			m.log.WithField("network", network).Info("Detected ethereum network")
-		}
-
-		m.NetworkName = network
-
-		break
+	if m.Genesis == nil {
+		return errors.New("genesis is not available")
 	}
+
+	network := networks.DeriveNetworkName(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
+
+	if network != m.NetworkName {
+		m.log.WithField("network", network).Info("Detected ethereum network")
+	}
+
+	m.NetworkName = network
 
 	return nil
 }

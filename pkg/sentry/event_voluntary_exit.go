@@ -60,7 +60,6 @@ func (s *Sentry) handleVoluntaryExit(ctx context.Context, event *phase0.Voluntar
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-//nolint:dupl // Not worth refactoring to save a few lines.
 func (s *Sentry) getVoluntaryExitData(ctx context.Context, event *phase0.VoluntaryExit, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalVoluntaryExitData, error) {
 	extra := &xatu.ClientMeta_AdditionalVoluntaryExitData{}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/go-co-op/gocron"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -33,6 +34,8 @@ type Sentry struct {
 	log logrus.FieldLogger
 
 	duplicateCache *cache.DuplicateCache
+
+	id uuid.UUID
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -64,6 +67,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		clockDrift:     time.Duration(0),
 		log:            log,
 		duplicateCache: duplicateCache,
+		id:             uuid.New(),
 	}, nil
 }
 
@@ -72,7 +76,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		return err
 	}
 
-	s.log.WithField("version", xatu.Full()).Info("Starting Xatu in sentry mode")
+	s.log.
+		WithField("version", xatu.Full()).
+		WithField("id", s.id.String()).
+		Info("Starting Xatu in sentry mode")
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
@@ -146,7 +153,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context, topic xatu.ClientMeta_
 	return &xatu.ClientMeta{
 		Name:           s.Config.Name,
 		Version:        xatu.Short(),
-		Id:             "00000000000000000",
+		Id:             s.id.String(),
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(s.clockDrift.Milliseconds()),

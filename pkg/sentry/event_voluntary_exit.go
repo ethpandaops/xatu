@@ -40,8 +40,8 @@ func (s *Sentry) handleVoluntaryExit(ctx context.Context, event *phase0.Voluntar
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Data: &xatu.DecoratedEvent_EthereumEthV1VoluntaryExit{
-			EthereumEthV1VoluntaryExit: &xatuethv1.EventVoluntaryExit{
+		Data: &xatu.DecoratedEvent_EthV1VoluntaryExit{
+			EthV1VoluntaryExit: &xatuethv1.EventVoluntaryExit{
 				Epoch:          uint64(event.Epoch),
 				ValidatorIndex: uint64(event.ValidatorIndex),
 			},

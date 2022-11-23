@@ -94,6 +94,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 		s.beacon.Node().OnVoluntaryExit(ctx, s.handleVoluntaryExit)
 
+		s.beacon.Node().OnContributionAndProof(ctx, s.handleContributionAndProof)
+
 		return nil
 	})
 

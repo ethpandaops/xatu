@@ -22,10 +22,12 @@ type BeaconNode struct {
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
-	opts := *beacon.DefaultOptions().EnableDefaultBeaconSubscription()
-	opts.BeaconSubscription.Enabled = true
+	opts := *beacon.
+		DefaultOptions().
+		DisableFetchingProposerDuties().
+		EnableDefaultBeaconSubscription()
 
-	opts.HealthCheck.Interval.Duration = time.Second * 5
+	opts.HealthCheck.Interval.Duration = time.Second * 3
 	opts.HealthCheck.SuccessfulResponses = 1
 
 	node := beacon.NewNode(log, &beacon.Config{

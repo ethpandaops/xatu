@@ -29,6 +29,7 @@ require (
 	github.com/ferranbt/fastssz v0.1.2 // indirect
 	github.com/goccy/go-yaml v1.9.6 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

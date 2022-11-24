@@ -210,7 +210,7 @@ func (s *Sentry) syncClockDrift(ctx context.Context) error {
 	}
 
 	s.clockDrift = response.ClockOffset
-	s.log.WithField("drift", s.clockDrift).Debug("Updated clock drift")
+	s.log.WithField("drift", s.clockDrift).Info("Updated clock drift")
 
 	return err
 }

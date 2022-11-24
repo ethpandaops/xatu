@@ -14,7 +14,8 @@ ethereum:
 #   time.aws.com - AWS
 #   time.windows.com - Azure
 #   time.google.com - GCP
-ntp_server: pool.ntp.org
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntp_server: time.google.com
 
 outputs:
 - name: basic

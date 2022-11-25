@@ -41,15 +41,15 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 		},
 		Data: &xatu.DecoratedEvent_EthV1ContributionAndProof{
 			EthV1ContributionAndProof: &xatuethv1.EventContributionAndProof{
-				Signature: xatuethv1.BLSSignatureToString(&event.Signature),
+				Signature: xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&event.Signature)),
 				Message: &xatuethv1.ContributionAndProof{
 					AggregatorIndex: uint64(event.Message.AggregatorIndex),
-					SelectionProof:  xatuethv1.BLSSignatureToString(&event.Message.SelectionProof),
+					SelectionProof:  xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&event.Message.SelectionProof)),
 					Contribution: &xatuethv1.ContributionAndProof_SyncCommitteeContribution{
 						Slot:              uint64(event.Message.Contribution.Slot),
 						SubcommitteeIndex: event.Message.Contribution.SubcommitteeIndex,
 						AggregationBits:   xatuethv1.BytesToString(event.Message.Contribution.AggregationBits.Bytes()),
-						Signature:         xatuethv1.BLSSignatureToString(&event.Message.Contribution.Signature),
+						Signature:         xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&event.Message.Contribution.Signature)),
 						BeaconBlockRoot:   xatuethv1.RootAsString(event.Message.Contribution.BeaconBlockRoot),
 					},
 				},

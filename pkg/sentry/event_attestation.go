@@ -8,14 +8,18 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/mitchellh/hashstructure/v2"
-	"github.com/savid/ttlcache/v3"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
+	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestation) error {
 	s.log.Debug("Attestation received")
+
+	if err := s.beacon.Synced(ctx); err != nil {
+		return nil
+	}
 
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {

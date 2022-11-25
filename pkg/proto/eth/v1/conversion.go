@@ -25,3 +25,11 @@ func BLSSignatureToString(s *phase0.BLSSignature) string {
 func BytesToString(b []byte) string {
 	return fmt.Sprintf("%#x", b)
 }
+
+func TrimmedString(s string) string {
+	if len(s) <= 12 {
+		return s
+	}
+
+	return s[:5] + "..." + s[len(s)-5:]
+}

@@ -58,7 +58,7 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 						Root:  xatuethv1.RootAsString(event.Data.Target.Root),
 					},
 				},
-				Signature: fmt.Sprintf("%#x", event.Signature),
+				Signature: xatuethv1.TrimmedString(fmt.Sprintf("%#x", event.Signature)),
 			},
 		},
 	}

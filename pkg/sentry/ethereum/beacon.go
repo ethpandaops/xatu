@@ -89,10 +89,6 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 		return errors.New("missing beacon node status sync state")
 	}
 
-	if syncState.IsSyncing {
-		return errors.New("beacon node is syncing")
-	}
-
 	if syncState.SyncDistance > 3 {
 		return errors.New("beacon node is not synced")
 	}
@@ -132,10 +128,6 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 	syncState := status.SyncState()
 	if syncState == nil {
 		return errors.New("missing beacon node status sync state")
-	}
-
-	if syncState.IsSyncing {
-		return errors.New("beacon node is syncing")
 	}
 
 	if syncState.SyncDistance > 3 {

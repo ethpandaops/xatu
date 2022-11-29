@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/output/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/output/processor"
 	"github.com/sirupsen/logrus"
 )
 

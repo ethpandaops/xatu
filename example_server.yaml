@@ -1,0 +1,17 @@
+logging: "info" # panic,fatal,warn,info,debug,trace
+addr: ":8080"
+metricsAddr: ":9090"
+
+labels:
+  ethpandaops: rocks
+ 
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntp_server: time.google.com
+
+outputs:
+- name: stdout
+  type: stdout

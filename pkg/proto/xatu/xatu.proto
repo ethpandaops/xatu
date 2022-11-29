@@ -8,6 +8,18 @@ import "google/protobuf/timestamp.proto";
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
 
+service Xatu {
+  rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
+}
+
+message CreateEventsRequest {
+  repeated DecoratedEvent events = 1;
+}
+
+message CreateEventsResponse {
+
+}
+
 message Epoch {
   // Number is the epoch number.
   uint64 number = 1;
@@ -32,14 +44,14 @@ message ClientMeta {
   string name = 1;
   // Version is the Xatu-sentry version of the client.
   string version = 2;
-  // ID is the unique ID of the client. This will usually be the peer id.
+  // ID is the unique ID of the client.
   string id = 3;
   // Implmentation is the implementation of the client.
   string implementation = 4;
   // OS is the operating system of the client.
   string os = 5;
   // ClockDrift is the NTP calculated clock drift of the client.
-  uint64 clock_drift = 6;
+  uint64 clock_drift = 6  [json_name="clock_drift"];
 
   message Event {
     enum Name {
@@ -202,12 +214,12 @@ message ClientMeta {
 message ServerMeta {
   message Event {
     /// DateTime is the date and time of the event as seen by the server.
-    google.protobuf.Timestamp date_time = 1;
+    google.protobuf.Timestamp date_time = 1  [json_name="date_time"];
   }
 
   message Client {
     // IP is the ip of the client as far as the server is concerned.
-    string IP = 1;
+    string IP = 1  [json_name="ip"];
   }
 
   // Event contains information about the event from the server's perspective.

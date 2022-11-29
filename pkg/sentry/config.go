@@ -3,8 +3,8 @@ package sentry
 import (
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/sirupsen/logrus"
 )
 

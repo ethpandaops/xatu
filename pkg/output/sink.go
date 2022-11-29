@@ -3,9 +3,10 @@ package output
 import (
 	"context"
 
+	"github.com/ethpandaops/xatu/pkg/output/http"
+	"github.com/ethpandaops/xatu/pkg/output/stdout"
+	xatuSink "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/output/http"
-	"github.com/ethpandaops/xatu/pkg/sentry/output/stdout"
 )
 
 type SinkType string
@@ -14,6 +15,7 @@ const (
 	SinkTypeUnknown SinkType = "unknown"
 	SinkTypeHTTP    SinkType = http.SinkType
 	SinkTypeStdOut  SinkType = stdout.SinkType
+	SinkTypeXatu    SinkType = xatuSink.SinkType
 )
 
 type Sink interface {

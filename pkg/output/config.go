@@ -4,8 +4,9 @@ import (
 	"errors"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/sentry/output/http"
-	"github.com/ethpandaops/xatu/pkg/sentry/output/stdout"
+	"github.com/ethpandaops/xatu/pkg/output/http"
+	"github.com/ethpandaops/xatu/pkg/output/stdout"
+	"github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,6 +46,18 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 		conf := &stdout.Config{}
 
 		return stdout.New(conf, log)
+	case SinkTypeXatu:
+		conf := &xatu.Config{}
+
+		if err := config.Unmarshal(conf); err != nil {
+			return nil, err
+		}
+
+		if err := defaults.Set(conf); err != nil {
+			return nil, err
+		}
+
+		return xatu.New(conf, log)
 	default:
 		return nil, errors.New("sink type is unknown")
 	}

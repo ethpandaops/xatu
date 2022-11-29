@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/cache"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

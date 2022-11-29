@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	//nolint:blank-imports // Required for grpc.WithCompression
 	_ "google.golang.org/grpc/encoding/gzip"
@@ -69,11 +72,27 @@ func (x *Xatu) Start(ctx context.Context) error {
 	return grpcServer.Serve(lis)
 }
 
-func (x *Xatu) CreateEvents(ctx context.Context, in *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
-	x.log.WithField("events", len(in.Events)).Debug("Received batch of events")
+func (x *Xatu) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
+	x.log.WithField("events", len(req.Events)).Debug("Received batch of events")
+
+	// TODO(sam.calder-mason): Add clock drift
+	receivedAt := timestamppb.New(time.Now())
+
+	p, _ := peer.FromContext(ctx)
+
+	for _, event := range req.Events {
+		event.Meta.Server = &xatu.ServerMeta{
+			Event: &xatu.ServerMeta_Event{
+				DateTime: receivedAt,
+			},
+			Client: &xatu.ServerMeta_Client{
+				IP: p.Addr.String(),
+			},
+		}
+	}
 
 	for _, sink := range x.sinks {
-		for _, event := range in.Events {
+		for _, event := range req.Events {
 			if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 				return nil, err
 			}

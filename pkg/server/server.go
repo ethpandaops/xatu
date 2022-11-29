@@ -9,6 +9,9 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+
+	//nolint:blank-imports // Required for grpc.WithCompression
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 type Xatu struct {

@@ -62,7 +62,7 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 	}
 
 	buf := bytes.NewBufferString(body)
-	if e.config.GzipCompression {
+	if e.config.Compression == CompressionStrategyGzip {
 		compressed, err := e.gzip(buf)
 		if err != nil {
 			return err
@@ -83,7 +83,7 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 
 	req.Header.Set("Content-Type", "application/x-ndjson")
 
-	if e.config.GzipCompression {
+	if e.config.Compression == CompressionStrategyGzip {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 

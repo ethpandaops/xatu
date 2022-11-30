@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,18 +24,20 @@ import (
 type Xatu struct {
 	xatu.UnimplementedXatuServer
 
-	ctx    context.Context
-	log    logrus.FieldLogger
-	config *Config
+	ctx     context.Context
+	log     logrus.FieldLogger
+	config  *Config
+	metrics *Metrics
 
 	sinks []output.Sink
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) *Xatu {
 	return &Xatu{
-		config: conf,
-		log:    log.WithField("component", "server"),
-		ctx:    ctx,
+		config:  conf,
+		log:     log.WithField("component", "server"),
+		ctx:     ctx,
+		metrics: NewMetrics("xatu_server"),
 	}
 }
 
@@ -58,18 +64,45 @@ func (x *Xatu) Start(ctx context.Context) error {
 
 	x.sinks = sinks
 
+	g, _ := errgroup.WithContext(ctx)
+
+	g.Go(x.startMetrics)
+	g.Go(x.startGrpcServer)
+
+	return g.Wait()
+}
+
+func (x *Xatu) startGrpcServer() error {
 	lis, err := net.Listen("tcp", x.config.Addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	var opts []grpc.ServerOption
+	opts := []grpc.ServerOption{
+		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
+		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+	}
 	grpcServer := grpc.NewServer(opts...)
 	xatu.RegisterXatuServer(grpcServer, x)
+
+	grpc_prometheus.Register(grpcServer)
 
 	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server")
 
 	return grpcServer.Serve(lis)
+}
+
+func (x *Xatu) startMetrics() error {
+	http.Handle("/metrics", promhttp.Handler())
+
+	x.log.WithField("addr", x.config.MetricsAddr).Info("Starting metrics server")
+
+	server := &http.Server{
+		Addr:              x.config.MetricsAddr,
+		ReadHeaderTimeout: 15 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }
 
 func (x *Xatu) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
@@ -81,6 +114,10 @@ func (x *Xatu) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) 
 	p, _ := peer.FromContext(ctx)
 
 	for _, event := range req.Events {
+		// TODO(sam.calder-mason): Validate event
+		// TODO(sam.calder-mason): Derive client id/name from the request jwt
+		x.metrics.AddDecoratedEventReceived(1, event.Meta.Client.Event.Name.String(), "unknown")
+
 		event.Meta.Server = &xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{
 				DateTime: receivedAt,

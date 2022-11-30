@@ -12,6 +12,7 @@ type Config struct {
 	BatchTimeout       time.Duration     `yaml:"batch_timeout" default:"5s"`
 	ExportTimeout      time.Duration     `yaml:"export_timeout" default:"30s"`
 	MaxExportBatchSize int               `yaml:"max_export_batch_size" default:"512"`
+	GzipCompression    bool              `yaml:"gzip_compression" default:"false"`
 }
 
 func (c *Config) Validate() error {

@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -60,8 +61,18 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 		body += string(eventAsJSON) + "\n"
 	}
 
+	buf := bytes.NewBufferString(body)
+	if e.config.Compression == CompressionStrategyGzip {
+		compressed, err := e.gzip(buf)
+		if err != nil {
+			return err
+		}
+
+		buf = compressed
+	}
+
 	// TODO: check that this also handles processor timeout
-	req, err := http.NewRequestWithContext(ctx, httpMethod, e.config.Address, bytes.NewBufferString(body))
+	req, err := http.NewRequestWithContext(ctx, httpMethod, e.config.Address, buf)
 	if err != nil {
 		return err
 	}
@@ -71,6 +82,10 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 	}
 
 	req.Header.Set("Content-Type", "application/x-ndjson")
+
+	if e.config.Compression == CompressionStrategyGzip {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
 
 	rsp, err = e.client.Do(req)
 	if err != nil {
@@ -89,4 +104,20 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 	}
 
 	return nil
+}
+
+func (e *EventExporter) gzip(in *bytes.Buffer) (*bytes.Buffer, error) {
+	out := &bytes.Buffer{}
+	g := gzip.NewWriter(out)
+
+	_, err := g.Write(in.Bytes())
+	if err != nil {
+		return out, err
+	}
+
+	if err := g.Close(); err != nil {
+		return out, err
+	}
+
+	return out, nil
 }

@@ -20,6 +20,6 @@ func NewMetrics(namespace string) *Metrics {
 	return m
 }
 
-func (m *Metrics) AddDecoratedEventReceived(count int, event string, sentryID string) {
+func (m *Metrics) AddDecoratedEventReceived(count int, event, sentryID string) {
 	m.decoratedEventsTotal.WithLabelValues(event, sentryID).Add(float64(count))
 }

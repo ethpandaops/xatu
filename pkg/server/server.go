@@ -64,7 +64,7 @@ func (x *Xatu) Start(ctx context.Context) error {
 
 	x.sinks = sinks
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(x.startMetrics)
 	g.Go(x.startGrpcServer)
@@ -97,7 +97,12 @@ func (x *Xatu) startMetrics() error {
 
 	x.log.WithField("addr", x.config.MetricsAddr).Info("Starting metrics server")
 
-	return http.ListenAndServe(x.config.MetricsAddr, nil)
+	server := &http.Server{
+		Addr:              x.config.MetricsAddr,
+		ReadHeaderTimeout: 15 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }
 
 func (x *Xatu) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {

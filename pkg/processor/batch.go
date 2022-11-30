@@ -14,12 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
 
-type EventExporter interface {
-	// ExportEvents exports a batch of events.
+type ItemExporter[T any] interface {
+	// ExportItems exports a batch of items.
 	//
 	// This function is called synchronously, so there is no concurrency
 	// safety requirement. However, due to the synchronous calling pattern,
@@ -30,7 +29,7 @@ type EventExporter interface {
 	// calls this function will not implement any retry logic. All errors
 	// returned by this function are considered unrecoverable and will be
 	// reported to a configured error Handler.
-	ExportEvents(ctx context.Context, events []*xatu.DecoratedEvent) error
+	ExportItems(ctx context.Context, items []*T) error
 
 	// Shutdown notifies the exporter of a pending halt to operations. The
 	// exporter is expected to preform any cleanup or synchronization it
@@ -39,7 +38,7 @@ type EventExporter interface {
 	Shutdown(ctx context.Context) error
 }
 
-// Defaults for BatchDecoratedEventProcessorOptions.
+// Defaults for BatchItemProcessorOptions.
 const (
 	DefaultMaxQueueSize       = 51200
 	DefaultScheduleDelay      = 5000
@@ -47,46 +46,46 @@ const (
 	DefaultMaxExportBatchSize = 512
 )
 
-// BatchDecoratedEventProcessorOption configures a BatchDecoratedEventProcessor.
-type BatchDecoratedEventProcessorOption func(o *BatchDecoratedEventProcessorOptions)
+// BatchItemProcessorOption configures a BatchItemProcessor.
+type BatchItemProcessorOption func(o *BatchItemProcessorOptions)
 
-// BatchDecoratedEventProcessorOptions is configuration settings for a
-// BatchDecoratedEventProcessor.
-type BatchDecoratedEventProcessorOptions struct {
-	// MaxQueueSize is the maximum queue size to buffer events for delayed processing. If the
-	// queue gets full it drops the events.
+// BatchItemProcessorOptions is configuration settings for a
+// BatchItemProcessor.
+type BatchItemProcessorOptions struct {
+	// MaxQueueSize is the maximum queue size to buffer items for delayed processing. If the
+	// queue gets full it drops the items.
 	// The default value of MaxQueueSize is 51200.
 	MaxQueueSize int
 
 	// BatchTimeout is the maximum duration for constructing a batch. Processor
-	// forcefully sends available events when timeout is reached.
+	// forcefully sends available items when timeout is reached.
 	// The default value of BatchTimeout is 5000 msec.
 	BatchTimeout time.Duration
 
-	// ExportTimeout specifies the maximum duration for exporting events. If the timeout
+	// ExportTimeout specifies the maximum duration for exporting items. If the timeout
 	// is reached, the export will be cancelled.
 	// The default value of ExportTimeout is 30000 msec.
 	ExportTimeout time.Duration
 
-	// MaxExportBatchSize is the maximum number of events to process in a single batch.
-	// If there are more than one batch worth of events then it processes multiple batches
-	// of events one batch after the other without any delay.
+	// MaxExportBatchSize is the maximum number of items to process in a single batch.
+	// If there are more than one batch worth of items then it processes multiple batches
+	// of items one batch after the other without any delay.
 	// The default value of MaxExportBatchSize is 512.
 	MaxExportBatchSize int
 }
 
-// BatchDecoratedEventProcessor is a buffer that batches asynchronously-received
-// events and sends them to a exporter when complete.
-type BatchDecoratedEventProcessor struct {
-	e EventExporter
-	o BatchDecoratedEventProcessorOptions
+// BatchItemProcessor is a buffer that batches asynchronously-received
+// items and sends them to a exporter when complete.
+type BatchItemProcessor[T any] struct {
+	e ItemExporter[T]
+	o BatchItemProcessorOptions
 
 	log logrus.FieldLogger
 
-	queue   chan *xatu.DecoratedEvent
+	queue   chan *T
 	dropped uint32
 
-	batch      []*xatu.DecoratedEvent
+	batch      []*T
 	batchMutex sync.Mutex
 	timer      *time.Timer
 	stopWait   sync.WaitGroup
@@ -94,11 +93,11 @@ type BatchDecoratedEventProcessor struct {
 	stopCh     chan struct{}
 }
 
-// NewBatchDecoratedEventProcessor creates a new DecoratedEventProcessor that will send completed
-// event batches to the exporter with the supplied options.
+// NewBatchItemProcessor creates a new ItemProcessor that will send completed
+// item batches to the exporter with the supplied options.
 //
-// If the exporter is nil, the event processor will preform no action.
-func NewBatchDecoratedEventProcessor(exporter EventExporter, log logrus.FieldLogger, options ...BatchDecoratedEventProcessorOption) *BatchDecoratedEventProcessor {
+// If the exporter is nil, the item processor will preform no action.
+func NewBatchItemProcessor[T any](exporter ItemExporter[T], log logrus.FieldLogger, options ...BatchItemProcessorOption) *BatchItemProcessor[T] {
 	maxQueueSize := DefaultMaxQueueSize
 	maxExportBatchSize := DefaultMaxExportBatchSize
 
@@ -110,7 +109,7 @@ func NewBatchDecoratedEventProcessor(exporter EventExporter, log logrus.FieldLog
 		}
 	}
 
-	o := BatchDecoratedEventProcessorOptions{
+	o := BatchItemProcessorOptions{
 		BatchTimeout:       time.Duration(DefaultScheduleDelay) * time.Millisecond,
 		ExportTimeout:      time.Duration(DefaultExportTimeout) * time.Millisecond,
 		MaxQueueSize:       maxQueueSize,
@@ -120,13 +119,13 @@ func NewBatchDecoratedEventProcessor(exporter EventExporter, log logrus.FieldLog
 		opt(&o)
 	}
 
-	bvp := &BatchDecoratedEventProcessor{
+	bvp := BatchItemProcessor[T]{
 		e:      exporter,
 		o:      o,
 		log:    log,
-		batch:  make([]*xatu.DecoratedEvent, 0, o.MaxExportBatchSize),
+		batch:  make([]*T, 0, o.MaxExportBatchSize),
 		timer:  time.NewTimer(o.BatchTimeout),
-		queue:  make(chan *xatu.DecoratedEvent, o.MaxQueueSize),
+		queue:  make(chan *T, o.MaxQueueSize),
 		stopCh: make(chan struct{}),
 	}
 
@@ -138,12 +137,12 @@ func NewBatchDecoratedEventProcessor(exporter EventExporter, log logrus.FieldLog
 		bvp.drainQueue()
 	}()
 
-	return bvp
+	return &bvp
 }
 
-// OnEnd method enqueues a *xatu.DecoratedEvent for later processing.
-func (bvp *BatchDecoratedEventProcessor) Write(s *xatu.DecoratedEvent) {
-	// Do not enqueue events if we are just going to drop them.
+// OnEnd method enqueues a item for later processing.
+func (bvp *BatchItemProcessor[T]) Write(s *T) {
+	// Do not enqueue items if we are just going to drop them.
 	if bvp.e == nil {
 		return
 	}
@@ -151,9 +150,9 @@ func (bvp *BatchDecoratedEventProcessor) Write(s *xatu.DecoratedEvent) {
 	bvp.enqueue(s)
 }
 
-// Shutdown flushes the queue and waits until all events are processed.
+// Shutdown flushes the queue and waits until all items are processed.
 // It only executes once. Subsequent call does nothing.
-func (bvp *BatchDecoratedEventProcessor) Shutdown(ctx context.Context) error {
+func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 	var err error
 
 	bvp.stopOnce.Do(func() {
@@ -179,15 +178,15 @@ func (bvp *BatchDecoratedEventProcessor) Shutdown(ctx context.Context) error {
 	return err
 }
 
-// ForceFlush exports all ended events that have not yet been exported.
-func (bvp *BatchDecoratedEventProcessor) ForceFlush(ctx context.Context) error {
+// ForceFlush exports all ended items that have not yet been exported.
+func (bvp *BatchItemProcessor[T]) ForceFlush(ctx context.Context) error {
 	var err error
 
 	if bvp.e != nil {
 		wait := make(chan error)
 
 		go func() {
-			wait <- bvp.exportEvents(ctx)
+			wait <- bvp.exportItems(ctx)
 			close(wait)
 		}()
 
@@ -202,42 +201,42 @@ func (bvp *BatchDecoratedEventProcessor) ForceFlush(ctx context.Context) error {
 	return err
 }
 
-// WithMaxQueueSize returns a BatchDecoratedEventProcessorOption that configures the
-// maximum queue size allowed for a BatchDecoratedEventProcessor.
-func WithMaxQueueSize(size int) BatchDecoratedEventProcessorOption {
-	return func(o *BatchDecoratedEventProcessorOptions) {
+// WithMaxQueueSize returns a BatchItemProcessorOption that configures the
+// maximum queue size allowed for a BatchItemProcessor.
+func WithMaxQueueSize(size int) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
 		o.MaxQueueSize = size
 	}
 }
 
-// WithMaxExportBatchSize returns a BatchDecoratedEventProcessorOption that configures
-// the maximum export batch size allowed for a BatchDecoratedEventProcessor.
-func WithMaxExportBatchSize(size int) BatchDecoratedEventProcessorOption {
-	return func(o *BatchDecoratedEventProcessorOptions) {
+// WithMaxExportBatchSize returns a BatchItemProcessorOption that configures
+// the maximum export batch size allowed for a BatchItemProcessor.
+func WithMaxExportBatchSize(size int) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
 		o.MaxExportBatchSize = size
 	}
 }
 
-// WithBatchTimeout returns a BatchDecoratedEventProcessorOption that configures the
-// maximum delay allowed for a BatchDecoratedEventProcessor before it will export any
-// held event (whether the queue is full or not).
-func WithBatchTimeout(delay time.Duration) BatchDecoratedEventProcessorOption {
-	return func(o *BatchDecoratedEventProcessorOptions) {
+// WithBatchTimeout returns a BatchItemProcessorOption that configures the
+// maximum delay allowed for a BatchItemProcessor before it will export any
+// held item (whether the queue is full or not).
+func WithBatchTimeout(delay time.Duration) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
 		o.BatchTimeout = delay
 	}
 }
 
-// WithExportTimeout returns a BatchDecoratedEventProcessorOption that configures the
-// amount of time a BatchDecoratedEventProcessor waits for an exporter to export before
+// WithExportTimeout returns a BatchItemProcessorOption that configures the
+// amount of time a BatchItemProcessor waits for an exporter to export before
 // abandoning the export.
-func WithExportTimeout(timeout time.Duration) BatchDecoratedEventProcessorOption {
-	return func(o *BatchDecoratedEventProcessorOptions) {
+func WithExportTimeout(timeout time.Duration) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
 		o.ExportTimeout = timeout
 	}
 }
 
-// exportEvents is a subroutine of processing and draining the queue.
-func (bvp *BatchDecoratedEventProcessor) exportEvents(ctx context.Context) error {
+// exportItems is a subroutine of processing and draining the queue.
+func (bvp *BatchItemProcessor[T]) exportItems(ctx context.Context) error {
 	bvp.timer.Reset(bvp.o.BatchTimeout)
 
 	bvp.batchMutex.Lock()
@@ -254,9 +253,9 @@ func (bvp *BatchDecoratedEventProcessor) exportEvents(ctx context.Context) error
 		bvp.log.WithFields(logrus.Fields{
 			"count":         len(bvp.batch),
 			"total_dropped": atomic.LoadUint32(&bvp.dropped),
-		}).Debug("exporting events")
+		}).Debug("exporting items")
 
-		err := bvp.e.ExportEvents(ctx, bvp.batch)
+		err := bvp.e.ExportItems(ctx, bvp.batch)
 
 		// A new batch is always created after exporting, even if the batch failed to be exported.
 		//
@@ -272,10 +271,10 @@ func (bvp *BatchDecoratedEventProcessor) exportEvents(ctx context.Context) error
 	return nil
 }
 
-// processQueue removes events from the `queue` channel until processor
+// processQueue removes items from the `queue` channel until processor
 // is shut down. It calls the exporter in batches of up to MaxExportBatchSize
 // waiting up to BatchTimeout to form a batch.
-func (bvp *BatchDecoratedEventProcessor) processQueue() {
+func (bvp *BatchItemProcessor[T]) processQueue() {
 	defer bvp.timer.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -286,8 +285,8 @@ func (bvp *BatchDecoratedEventProcessor) processQueue() {
 		case <-bvp.stopCh:
 			return
 		case <-bvp.timer.C:
-			if err := bvp.exportEvents(ctx); err != nil {
-				bvp.log.WithError(err).Error("failed to export events")
+			if err := bvp.exportItems(ctx); err != nil {
+				bvp.log.WithError(err).Error("failed to export items")
 			}
 		case sd := <-bvp.queue:
 			bvp.batchMutex.Lock()
@@ -300,8 +299,8 @@ func (bvp *BatchDecoratedEventProcessor) processQueue() {
 					<-bvp.timer.C
 				}
 
-				if err := bvp.exportEvents(ctx); err != nil {
-					bvp.log.WithError(err).Error("failed to export events")
+				if err := bvp.exportItems(ctx); err != nil {
+					bvp.log.WithError(err).Error("failed to export items")
 				}
 			}
 		}
@@ -310,7 +309,7 @@ func (bvp *BatchDecoratedEventProcessor) processQueue() {
 
 // drainQueue awaits the any caller that had added to bvp.stopWait
 // to finish the enqueue, then exports the final batch.
-func (bvp *BatchDecoratedEventProcessor) drainQueue() {
+func (bvp *BatchItemProcessor[T]) drainQueue() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -318,8 +317,8 @@ func (bvp *BatchDecoratedEventProcessor) drainQueue() {
 		select {
 		case sd := <-bvp.queue:
 			if sd == nil {
-				if err := bvp.exportEvents(ctx); err != nil {
-					bvp.log.WithError(err).Error("failed to export events")
+				if err := bvp.exportItems(ctx); err != nil {
+					bvp.log.WithError(err).Error("failed to export items")
 				}
 
 				return
@@ -331,8 +330,8 @@ func (bvp *BatchDecoratedEventProcessor) drainQueue() {
 			bvp.batchMutex.Unlock()
 
 			if shouldExport {
-				if err := bvp.exportEvents(ctx); err != nil {
-					bvp.log.WithError(err).Error("failed to export events")
+				if err := bvp.exportItems(ctx); err != nil {
+					bvp.log.WithError(err).Error("failed to export items")
 				}
 			}
 		default:
@@ -341,7 +340,7 @@ func (bvp *BatchDecoratedEventProcessor) drainQueue() {
 	}
 }
 
-func (bvp *BatchDecoratedEventProcessor) enqueue(sd *xatu.DecoratedEvent) {
+func (bvp *BatchItemProcessor[T]) enqueue(sd *T) {
 	ctx := context.TODO()
 	bvp.enqueueDrop(ctx, sd)
 }
@@ -359,7 +358,7 @@ func recoverSendOnClosedChan() {
 	panic(x)
 }
 
-func (bvp *BatchDecoratedEventProcessor) enqueueDrop(ctx context.Context, sd *xatu.DecoratedEvent) bool {
+func (bvp *BatchItemProcessor[T]) enqueueDrop(ctx context.Context, sd *T) bool {
 	// This ensures the bvp.queue<- below does not panic as the
 	// processor shuts down.
 	defer recoverSendOnClosedChan()

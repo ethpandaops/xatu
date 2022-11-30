@@ -2,6 +2,7 @@ package output
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/output/http"
@@ -59,6 +60,6 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 
 		return xatu.New(conf, log)
 	default:
-		return nil, errors.New("sink type is unknown")
+		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}
 }

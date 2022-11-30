@@ -25,9 +25,9 @@ func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.Finali
 	item, retrieved := s.duplicateCache.FinalizedCheckpoint.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"epoch":                  event.Epoch,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"epoch":                 event.Epoch,
 		}).Debug("Duplicate finalized checkpoint event received")
 		// TODO(savid): add metrics
 		return nil

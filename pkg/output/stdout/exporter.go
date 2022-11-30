@@ -8,34 +8,34 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type EventExporter struct {
+type ItemExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 }
 
-func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, error) {
-	return EventExporter{
+func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+	return ItemExporter{
 		config: config,
 		log:    log,
 	}, nil
 }
 
-func (e EventExporter) ExportEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
-	e.log.WithField("events", len(events)).Info("Sending batch of events to stdout sink")
+func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	e.log.WithField("events", len(items)).Info("Sending batch of events to stdout sink")
 
-	if err := e.sendUpstream(ctx, events); err != nil {
+	if err := e.sendUpstream(ctx, items); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e EventExporter) Shutdown(ctx context.Context) error {
+func (e ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.DecoratedEvent) error {
-	for _, event := range events {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	for _, event := range items {
 		eventAsJSON, err := protojson.Marshal(event)
 		if err != nil {
 			return err

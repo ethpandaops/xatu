@@ -1,3 +1,4 @@
+//nolint:dupl // disable duplicate code warning for cmds
 package cmd
 
 import (

@@ -25,9 +25,9 @@ func (s *Sentry) handleAttestation(ctx context.Context, event *phase0.Attestatio
 	item, retrieved := s.duplicateCache.Attestation.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"slot":                   event.Data.Slot,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"slot":                  event.Data.Slot,
 		}).Debug("Duplicate attestation event received")
 		// TODO(savid): add metrics
 		return nil

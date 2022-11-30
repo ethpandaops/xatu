@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package xatu;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+
+service Coordinator {
+  rpc CreateNodeRecords(CreateNodeRecordsRequest) returns (CreateNodeRecordsResponse) {}
+}
+
+message CreateNodeRecordsRequest {
+  repeated string node_records = 1;
+}
+
+message CreateNodeRecordsResponse {
+
+}

@@ -13,15 +13,15 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type EventExporter struct {
+type ItemExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 
 	client *http.Client
 }
 
-func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, error) {
-	return EventExporter{
+func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+	return ItemExporter{
 		config: config,
 		log:    log,
 
@@ -31,28 +31,28 @@ func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, er
 	}, nil
 }
 
-func (e EventExporter) ExportEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
-	e.log.WithField("events", len(events)).Info("Sending batch of events to HTTP sink")
+func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	e.log.WithField("events", len(items)).Info("Sending batch of events to HTTP sink")
 
-	if err := e.sendUpstream(ctx, events); err != nil {
+	if err := e.sendUpstream(ctx, items); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e EventExporter) Shutdown(ctx context.Context) error {
+func (e ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	httpMethod := "POST"
 
 	var rsp *http.Response
 
 	body := ""
 
-	for _, event := range events {
+	for _, event := range items {
 		eventAsJSON, err := protojson.Marshal(event)
 		if err != nil {
 			return err
@@ -106,7 +106,7 @@ func (e *EventExporter) sendUpstream(ctx context.Context, events []*xatu.Decorat
 	return nil
 }
 
-func (e *EventExporter) gzip(in *bytes.Buffer) (*bytes.Buffer, error) {
+func (e *ItemExporter) gzip(in *bytes.Buffer) (*bytes.Buffer, error) {
 	out := &bytes.Buffer{}
 	g := gzip.NewWriter(out)
 

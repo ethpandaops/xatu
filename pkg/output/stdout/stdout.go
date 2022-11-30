@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ethpandaops/xatu/pkg/output/processor"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +14,7 @@ const SinkType = "stdout"
 type StdOut struct {
 	config *Config
 	log    logrus.FieldLogger
-	proc   *processor.BatchDecoratedEventProcessor
+	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 }
 
 func New(config *Config, log logrus.FieldLogger) (*StdOut, error) {
@@ -26,12 +26,12 @@ func New(config *Config, log logrus.FieldLogger) (*StdOut, error) {
 		return nil, err
 	}
 
-	exporter, err := NewEventExporter(config, log)
+	exporter, err := NewItemExporter(config, log)
 	if err != nil {
 		return nil, err
 	}
 
-	proc := processor.NewBatchDecoratedEventProcessor(exporter, log)
+	proc := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter, log)
 
 	return &StdOut{
 		config: config,

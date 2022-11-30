@@ -45,7 +45,7 @@ func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*EventInges
 	return e, nil
 }
 
-func (e *EventIngester) Start(grpcServer *grpc.Server) error {
+func (e *EventIngester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 	e.log.Info("starting module")
 
 	xatu.RegisterEventIngesterServer(grpcServer, e)
@@ -53,7 +53,7 @@ func (e *EventIngester) Start(grpcServer *grpc.Server) error {
 	return nil
 }
 
-func (e *EventIngester) Stop() error {
+func (e *EventIngester) Stop(ctx context.Context) error {
 	e.log.Info("stopping module")
 
 	return nil

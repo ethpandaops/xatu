@@ -1,3 +1,4 @@
 sentry.yaml
 server.yaml
+discovery.yaml
 dist

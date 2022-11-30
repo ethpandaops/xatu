@@ -1,6 +1,6 @@
 # Xatu
 
-Ethereum network monitoring with a sentry client and a centralized server for event collection and streaming.
+Ethereum network monitoring an edge client and a centralized server for event collection and streaming.
 
 ## Table of contents
 
@@ -15,6 +15,7 @@ Ethereum network monitoring with a sentry client and a centralized server for ev
     - [Docker](#docker)
       - [Images](#images)
     - [Kubernetes via Helm](#kubernetes-via-helm)
+- [Discovery](#discovery)
 - [Server](#server)
 - [Events](#events)
   - [Meta](#meta)
@@ -32,20 +33,20 @@ Ethereum network monitoring with a sentry client and a centralized server for ev
 ## Overview
 
 ```
-┌───────────┐   ┌───────────┐   ┌───────────┐
-│ CONSENSUS │   │ CONSENSUS │   │ CONSENSUS │
-│   CLIENT  │   │   CLIENT  │   │   CLIENT  │
-└─────▲┌────┘   └─────▲┌────┘   └─────▲┌────┘
-      ││              ││              ││
-      ││              ││              ││
-  ┌───┘▼───┐      ┌───┘▼───┐      ┌───┘▼───┐
-  │  XATU  │      │  XATU  │      │  XATU  │
-  │ SENTRY │      │ SENTRY │      │ SENTRY │
-  └────┬───┘      └────┬───┘      └───┬────┘
-       │               │              │
-       │               │              │
-       │          ┌────▼───┐          │
-       └──────────►  XATU  ◄──────────┘
+┌───────────┐   ┌───────────┐
+│ CONSENSUS │   │ CONSENSUS │
+│   CLIENT  │   │   CLIENT  │
+└─────▲┌────┘   └─────▲┌────┘
+      ││              ││
+      ││              ││
+  ┌───┘▼───┐      ┌───┘▼───┐      ┌───────────┐
+  │  XATU  │      │  XATU  │      │   XATU    │
+  │ SENTRY │      │ SENTRY │      │ DISCOVERY │
+  └────┬───┘      └────┬───┘      └─────┬─────┘
+       │               │                │
+       │               │                │
+       │          ┌────▼───┐            │
+       └──────────►  XATU  ◄────────────┘
                   │ SERVER │
                   └────┬───┘
                        │
@@ -155,6 +156,14 @@ helm repo add ethereum-helm-charts https://ethpandaops.github.io/ethereum-helm-c
 
 helm install xatu ethereum-helm-charts/xatu -f your_values.yaml
 ```
+
+## Discovery
+
+Use [go-ethereum's](https://github.com/ethereum/go-ethereum/p2p/discover) implementation of [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) to discover ethereum nodes around the network.
+
+Todo;
+- persistence in server layer of discovered nodes
+- verification in server layer to determine if execution/beacon node and what network its on
 
 ## Server
 

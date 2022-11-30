@@ -1,7 +1,29 @@
 package service
 
-type Config struct {
-	ServiceType Type `yaml:"type"`
+import (
+	"fmt"
 
-	Config *RawMessage `yaml:"config"`
+	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
+	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
+)
+
+type Config struct {
+	EventIngester eventingester.Config `yaml:"event_ingester"`
+	Coordinator   coordinator.Config   `yaml:"coordinator"`
+}
+
+func (c *Config) Validate() error {
+	if !c.EventIngester.Enabled && !c.Coordinator.Enabled {
+		return fmt.Errorf("no services configured")
+	}
+
+	if err := c.EventIngester.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Coordinator.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }

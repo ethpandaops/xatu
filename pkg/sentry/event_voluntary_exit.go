@@ -23,9 +23,9 @@ func (s *Sentry) handleVoluntaryExit(ctx context.Context, event *phase0.Voluntar
 	item, retrieved := s.duplicateCache.VoluntaryExit.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"epoch":                  event.Epoch,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"epoch":                 event.Epoch,
 		}).Debug("Duplicate voluntary exit event received")
 		// TODO(savid): add metrics
 		return nil

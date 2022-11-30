@@ -25,9 +25,9 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 	item, retrieved := s.duplicateCache.Head.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"slot":                   event.Slot,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"slot":                  event.Slot,
 		}).Debug("Duplicate head event received")
 		// TODO(savid): add metrics
 		return nil

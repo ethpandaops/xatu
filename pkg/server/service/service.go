@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/creasty/defaults"
+	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -13,8 +13,8 @@ import (
 // GRPCService is a service that implements a single gRPC service as defined in
 // our Protobuf definition.
 type GRPCService interface {
-	Start(server *grpc.Server) error
-	Stop() error
+	Start(ctx context.Context, server *grpc.Server) error
+	Stop(ctx context.Context) error
 }
 
 type Type string
@@ -22,13 +22,31 @@ type Type string
 const (
 	ServiceTypeUnknown       Type = "unknown"
 	ServiceTypeEventIngester Type = eventingester.ServiceType
+	ServiceTypeCoordinator   Type = coordinator.ServiceType
 )
 
-func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, serviceConfigs []Config) ([]GRPCService, error) {
-	services := make([]GRPCService, 0, len(serviceConfigs))
+func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config) ([]GRPCService, error) {
+	services := []GRPCService{}
 
-	for _, conf := range serviceConfigs {
-		service, err := CreateGRPCService(ctx, conf.ServiceType, conf.Config, log)
+	if cfg.EventIngester.Enabled {
+		if err := defaults.Set(&cfg.EventIngester); err != nil {
+			return nil, err
+		}
+
+		service, err := eventingester.New(ctx, log, &cfg.EventIngester)
+		if err != nil {
+			return nil, err
+		}
+
+		services = append(services, service)
+	}
+
+	if cfg.Coordinator.Enabled {
+		if err := defaults.Set(&cfg.Coordinator); err != nil {
+			return nil, err
+		}
+
+		service, err := coordinator.New(ctx, log, &cfg.Coordinator)
 		if err != nil {
 			return nil, err
 		}
@@ -37,23 +55,4 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, serviceConf
 	}
 
 	return services, nil
-}
-
-func CreateGRPCService(ctx context.Context, name Type, config *RawMessage, log logrus.FieldLogger) (GRPCService, error) {
-	switch name {
-	case eventingester.ServiceType:
-		conf := &eventingester.Config{}
-
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
-			return nil, err
-		}
-
-		return eventingester.New(ctx, log, conf)
-	default:
-		return nil, fmt.Errorf("unknown service name: %s", name)
-	}
 }

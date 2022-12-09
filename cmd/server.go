@@ -39,7 +39,10 @@ var serverCmd = &cobra.Command{
 
 		log.SetLevel(logLevel)
 
-		server := server.NewXatu(cmd.Context(), log, config)
+		server, err := server.NewXatu(cmd.Context(), log, config)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		if err := server.Start(cmd.Context()); err != nil {
 			log.Fatal(err)

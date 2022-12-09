@@ -17,11 +17,11 @@ type GRPCService interface {
 	Stop() error
 }
 
-type ServiceType string
+type Type string
 
 const (
-	ServiceTypeUnknown       ServiceType = "unknown"
-	ServiceTypeEventIngester ServiceType = eventingester.ServiceType
+	ServiceTypeUnknown       Type = "unknown"
+	ServiceTypeEventIngester Type = eventingester.ServiceType
 )
 
 func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, serviceConfigs []Config) ([]GRPCService, error) {
@@ -39,7 +39,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, serviceConf
 	return services, nil
 }
 
-func CreateGRPCService(ctx context.Context, name ServiceType, config *RawMessage, log logrus.FieldLogger) (GRPCService, error) {
+func CreateGRPCService(ctx context.Context, name Type, config *RawMessage, log logrus.FieldLogger) (GRPCService, error) {
 	switch name {
 	case eventingester.ServiceType:
 		conf := &eventingester.Config{}

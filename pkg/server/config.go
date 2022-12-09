@@ -19,7 +19,7 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	// Check for duplicate service names.
-	names := make(map[service.ServiceType]struct{}, len(c.Services))
+	names := make(map[service.Type]struct{}, len(c.Services))
 	for _, service := range c.Services {
 		if _, ok := names[service.ServiceType]; ok {
 			return fmt.Errorf("duplicate service: %s", service.ServiceType)

@@ -46,7 +46,6 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 }
 
 func (x *Xatu) Start(ctx context.Context) error {
-
 	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(x.startMetrics)

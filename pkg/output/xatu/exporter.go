@@ -15,7 +15,7 @@ type EventExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 
-	client pb.XatuClient
+	client pb.EventIngesterClient
 	conn   *grpc.ClientConn
 }
 
@@ -32,7 +32,7 @@ func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, er
 		config: config,
 		log:    log,
 		conn:   conn,
-		client: pb.NewXatuClient(conn),
+		client: pb.NewEventIngesterClient(conn),
 	}, nil
 }
 

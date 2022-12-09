@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
 
-service Xatu {
+service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
 

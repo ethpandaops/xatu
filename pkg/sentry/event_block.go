@@ -25,10 +25,10 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 	item, retrieved := s.duplicateCache.Block.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"block":                  event.Block,
-			"slot":                   event.Slot,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"block":                 event.Block,
+			"slot":                  event.Slot,
 		}).Debug("Duplicate block event received")
 		// TODO(savid): add metrics
 		return nil

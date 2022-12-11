@@ -23,8 +23,8 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 	item, retrieved := s.duplicateCache.ContributionAndProof.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
 		}).Debug("Duplicate contribution_and_proof event received")
 		// TODO(savid): add metrics
 		return nil

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 )
 
-type EventExporter struct {
+type ItemExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 
@@ -19,16 +19,16 @@ type EventExporter struct {
 	conn   *grpc.ClientConn
 }
 
-func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, error) {
+func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	conn, err := grpc.Dial(config.Address, opts...)
 	if err != nil {
-		return EventExporter{}, fmt.Errorf("fail to dial: %v", err)
+		return ItemExporter{}, fmt.Errorf("fail to dial: %v", err)
 	}
 
-	return EventExporter{
+	return ItemExporter{
 		config: config,
 		log:    log,
 		conn:   conn,
@@ -36,23 +36,23 @@ func NewEventExporter(config *Config, log logrus.FieldLogger) (EventExporter, er
 	}, nil
 }
 
-func (e EventExporter) ExportEvents(ctx context.Context, events []*pb.DecoratedEvent) error {
-	e.log.WithField("events", len(events)).Info("Sending batch of events to Xatu sink")
+func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEvent) error {
+	e.log.WithField("events", len(items)).Info("Sending batch of events to Xatu sink")
 
-	if err := e.sendUpstream(ctx, events); err != nil {
+	if err := e.sendUpstream(ctx, items); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e EventExporter) Shutdown(ctx context.Context) error {
+func (e ItemExporter) Shutdown(ctx context.Context) error {
 	return e.conn.Close()
 }
 
-func (e *EventExporter) sendUpstream(ctx context.Context, events []*pb.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEvent) error {
 	req := &pb.CreateEventsRequest{
-		Events: events,
+		Events: items,
 	}
 
 	rsp, err := e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))

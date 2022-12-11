@@ -25,9 +25,9 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 	item, retrieved := s.duplicateCache.ChainReorg.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"slot":                   event.Slot,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"slot":                  event.Slot,
 		}).Debug("Duplicate chain reorg event received")
 		// TODO(savid): add metrics
 		return nil

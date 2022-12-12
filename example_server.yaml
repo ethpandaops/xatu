@@ -17,7 +17,7 @@ services:
     enabled: true
     persistence:
       driver_name: postgres
-      connection_string: postgres://username:password@localhost:5432/xatu?sslmode=disable
+      connection_string: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
       max_queue_size: 51200
       batch_timeout: 5s
       export_timeout: 30s

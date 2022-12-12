@@ -15,12 +15,16 @@ import (
 )
 
 func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.SignedContributionAndProof) error {
+	s.log.Debug("Contribution and proof received")
+
+	now := time.Now().Add(s.clockDrift)
+
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.ContributionAndProof.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.ContributionAndProof.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
 			"hash":                  hash,
@@ -30,12 +34,16 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -57,7 +65,7 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 		},
 	}
 
-	additionalData, err := s.getContributionAndProofData(ctx, event, meta)
+	additionalData, err := s.getContributionAndProofData(ctx, event, meta, now)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get extra voluntary exit data")
 	} else {
@@ -69,11 +77,9 @@ func (s *Sentry) handleContributionAndProof(ctx context.Context, event *altair.S
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (s *Sentry) getContributionAndProofData(ctx context.Context, event *altair.SignedContributionAndProof, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalContributionAndProofData, error) {
+func (s *Sentry) getContributionAndProofData(ctx context.Context, event *altair.SignedContributionAndProof, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalContributionAndProofData, error) {
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Message.Contribution.Slot))
 	epoch := s.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(event.Message.Contribution.Slot))
-
-	eventTime := meta.Event.DateTime.AsTime()
 
 	extra := &xatu.ClientMeta_AdditionalContributionAndProofData{
 		Contribution: &xatu.ClientMeta_AdditionalContributionAndProofContributionData{

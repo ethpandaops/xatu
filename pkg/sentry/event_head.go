@@ -17,12 +17,14 @@ import (
 func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 	s.log.Debug("Head received")
 
+	now := time.Now().Add(s.clockDrift)
+
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.Head.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.Head.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
 			"hash":                  hash,
@@ -33,12 +35,16 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_HEAD)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -54,7 +60,7 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 		},
 	}
 
-	additionalData, err := s.getHeadData(ctx, event, meta)
+	additionalData, err := s.getHeadData(ctx, event, meta, now)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get extra head data")
 	} else {
@@ -67,7 +73,7 @@ func (s *Sentry) handleHead(ctx context.Context, event *v1.HeadEvent) error {
 }
 
 //nolint:dupl // Not worth refactoring to save a few lines.
-func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalHeadData, error) {
+func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalHeadData, error) {
 	extra := &xatu.ClientMeta_AdditionalHeadData{}
 
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
@@ -83,7 +89,7 @@ func (s *Sentry) getHeadData(ctx context.Context, event *v1.HeadEvent, meta *xat
 	}
 
 	extra.Propagation = &xatu.Propagation{
-		SlotStartDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiff: uint64(eventTime.Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

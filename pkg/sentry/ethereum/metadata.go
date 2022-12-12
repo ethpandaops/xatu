@@ -7,9 +7,9 @@ import (
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/ethpandaops/ethwallclock"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/networks"
-	"github.com/ethpandaops/xatu/pkg/wallclock"
 	"github.com/go-co-op/gocron"
 	"github.com/samcm/beacon"
 	"github.com/samcm/beacon/state"
@@ -25,7 +25,7 @@ type MetadataService struct {
 	Genesis *v1.Genesis
 	Spec    *state.Spec
 
-	wallclock *wallclock.EthereumBeaconChain
+	wallclock *ethwallclock.EthereumBeaconChain
 }
 
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
@@ -96,7 +96,7 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	}
 
 	if m.Genesis != nil && m.Spec != nil {
-		m.wallclock = wallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
+		m.wallclock = ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
 	}
 
 	if err := m.DeriveNetworkName(ctx); err != nil {
@@ -106,7 +106,7 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	return nil
 }
 
-func (m *MetadataService) Wallclock() *wallclock.EthereumBeaconChain {
+func (m *MetadataService) Wallclock() *ethwallclock.EthereumBeaconChain {
 	return m.wallclock
 }
 

@@ -70,11 +70,11 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 	for _, event := range req.Events {
 		// TODO(sam.calder-mason): Validate event
 		// TODO(sam.calder-mason): Derive client id/name from the request jwt
-		e.metrics.AddDecoratedEventReceived(1, event.Meta.Client.Event.Name.String(), "unknown")
+		e.metrics.AddDecoratedEventReceived(1, event.Event.Name.String(), "unknown")
 
 		event.Meta.Server = &xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{
-				DateTime: receivedAt,
+				ReceivedDateTime: receivedAt,
 			},
 			Client: &xatu.ServerMeta_Client{
 				IP: p.Addr.String(),

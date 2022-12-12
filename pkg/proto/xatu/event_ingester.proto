@@ -53,26 +53,6 @@ message ClientMeta {
   // ClockDrift is the NTP calculated clock drift of the client.
   uint64 clock_drift = 6  [json_name="clock_drift"];
 
-  message Event {
-    enum Name {
-      BEACON_API_ETH_V1_EVENTS_UNKNOWN = 0;
-      BEACON_API_ETH_V1_EVENTS_BLOCK = 1;
-      BEACON_API_ETH_V1_EVENTS_CHAIN_REORG = 2;
-      BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT = 3;
-      BEACON_API_ETH_V1_EVENTS_HEAD = 4;
-      BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
-      BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
-      BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
-    }
-    // Name is the name of the event.
-     Name name = 1;
-    // DateTime is the date and time of the event as seen by the client.
-     google.protobuf.Timestamp date_time = 2 [json_name="date_time"];
-  }
-
-  // Event contains information about what type of event this is.
-  Event event = 7;
-
   message Ethereum {
     message Network {
       // Name is the name of the network.
@@ -214,9 +194,9 @@ message ClientMeta {
 message ServerMeta {
   message Event {
     /// DateTime is the date and time of the event as seen by the server.
-    google.protobuf.Timestamp date_time = 1  [json_name="date_time"];
+    google.protobuf.Timestamp received_date_time = 1  [json_name="received_date_time"];
   }
-
+  
   message Client {
     // IP is the ip of the client as far as the server is concerned.
     string IP = 1  [json_name="ip"];
@@ -239,16 +219,34 @@ message Meta {
   ServerMeta server = 2;
 }
 
+message Event {
+  enum Name {
+    BEACON_API_ETH_V1_EVENTS_UNKNOWN = 0;
+    BEACON_API_ETH_V1_EVENTS_BLOCK = 1;
+    BEACON_API_ETH_V1_EVENTS_CHAIN_REORG = 2;
+    BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT = 3;
+    BEACON_API_ETH_V1_EVENTS_HEAD = 4;
+    BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
+    BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
+    BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
+  }
+  // Name is the name of the event.
+   Name name = 1;
+  // DateTime is the date and time of the event as seen by the client.
+   google.protobuf.Timestamp date_time = 2 [json_name="date_time"];
+}
+
 // DecoratedEvent is an event that has been decorated with additional information.
 message DecoratedEvent {
-  Meta meta = 1;
+  Event event = 1;
+  Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_attestation = 2 [json_name = "data"];
-    xatu.eth.v1.EventBlock eth_v1_block = 3 [json_name = "data"];
-    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 4 [json_name = "data"];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 5 [json_name = "data"];
-    xatu.eth.v1.EventHead eth_v1_head = 6 [json_name = "data"];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 7 [json_name = "data"];
-    xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 8 [json_name = "data"];
+    xatu.eth.v1.Attestation eth_v1_attestation = 3 [json_name = "data"];
+    xatu.eth.v1.EventBlock eth_v1_block = 4 [json_name = "data"];
+    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 5 [json_name = "data"];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 6 [json_name = "data"];
+    xatu.eth.v1.EventHead eth_v1_head = 7 [json_name = "data"];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 8 [json_name = "data"];
+    xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 9 [json_name = "data"];
   };
 }

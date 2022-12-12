@@ -17,12 +17,14 @@ import (
 func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent) error {
 	s.log.Debug("ChainReorg received")
 
+	now := time.Now().Add(s.clockDrift)
+
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.ChainReorg.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.ChainReorg.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
 			"hash":                  hash,
@@ -33,12 +35,16 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -55,7 +61,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 		},
 	}
 
-	additionalData, err := s.getChainReorgData(ctx, event, meta)
+	additionalData, err := s.getChainReorgData(ctx, event, meta, now)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get extra block data")
 	} else {
@@ -68,7 +74,7 @@ func (s *Sentry) handleChainReOrg(ctx context.Context, event *v1.ChainReorgEvent
 }
 
 //nolint:dupl // Not worth refactoring to save a few lines.
-func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalChainReorgData, error) {
+func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEvent, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalChainReorgData, error) {
 	extra := &xatu.ClientMeta_AdditionalChainReorgData{}
 
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
@@ -84,7 +90,7 @@ func (s *Sentry) getChainReorgData(ctx context.Context, event *v1.ChainReorgEven
 	}
 
 	extra.Propagation = &xatu.Propagation{
-		SlotStartDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiff: uint64(eventTime.Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

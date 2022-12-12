@@ -17,12 +17,14 @@ import (
 func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.FinalizedCheckpointEvent) error {
 	s.log.Debug("FinalizedCheckpoint received")
 
+	now := time.Now().Add(s.clockDrift)
+
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.FinalizedCheckpoint.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.FinalizedCheckpoint.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
 			"hash":                  hash,
@@ -33,12 +35,16 @@ func (s *Sentry) handleFinalizedCheckpoint(ctx context.Context, event *v1.Finali
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},

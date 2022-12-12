@@ -17,7 +17,8 @@ This sentry can output events to various sinks and it is **not** a hard requirem
   - [Complex example with multiple outputs example](#complex-example-with-multiple-outputs-example)
 - [Running locally](#running-locally)
 - [Events](#events)
-  - [Meta](#meta)
+  - [Event field](#event-field)
+  - [Meta field](#meta-field)
   - [Beacon API - Event Stream](#beacon-api---event-stream)
     - [Head](#head)
     - [Block](#Block)
@@ -178,15 +179,20 @@ go run main.go sentry --config sentry.yaml
 
 ## Events
 
-All events output from a **sentry** contain **two** root fields; `meta` and `data`.
+All events output from a **sentry** contain the following fields;
 
-- `meta` being the metadata of the event, including specific event details as well as sentry/server computed info
-- `data` being the raw data collected for the event. This could be the Beacon API payload or a transaction.
+- `event` - name and date time of the event
+- `meta` - metadata of the event, including specific event details as well as sentry/server computed info
+- `data` - raw data collected for the event. This could be the Beacon API payload or a transaction.
 
 An example event payload of a Beacon API event stream for the block topic;
 
 ```json
 {
+  "event": {
+    "name": "BEACON_API_ETH_V1_EVENTS_BLOCK",
+    "date_time": "2022-01-01T10:12:10.050Z"
+  },
   "meta": {
     "client": {
       "name": "some-client-001",
@@ -194,10 +200,6 @@ An example event payload of a Beacon API event stream for the block topic;
       "id": "0697583c-3c65-4f9a-bcd0-b57ef919dc6c",
       "os": "amiga4000-68040",
       "clock_drift": 51,
-      "event": {
-        "name": "BEACON_API_ETH_V1_EVENTS_BLOCK",
-        "date_time": "2022-01-01T10:12:10.050Z"
-      }
       "labels": {
         "network-class": "tincan"
       },
@@ -233,7 +235,14 @@ An example event payload of a Beacon API event stream for the block topic;
 }
 ```
 
-### Meta
+### Event field
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| event.name | string | `required` | Event name |
+| event.date_time | string | `required` | When the event occured |
+
+### Meta field
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -244,8 +253,6 @@ An example event payload of a Beacon API event stream for the block topic;
 | meta.client.implementation | string | `required` | Sentry implementation eg. Xatu |
 | meta.client.os | string | `optional` | Sentry operating system |
 | meta.client.clock_drift | int | `optional` | NTP calculated clock drift of the sentry |
-| meta.client.event.name | string | `required` | Event name |
-| meta.client.event.date_time | string | `required` | When the event occured |
 | meta.client.labels | object |  | A key value map of labels |
 | meta.client.ethereum.network.name | string | `required` | Ethereum network name eg. `mainnet`, `sepolia` |
 | meta.client.ethereum.consensus.implementation | string | `optional` | Ethereum consensus client name upstream from this sentry |

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/metadata"
 )
 
 type ItemExporter struct {
@@ -60,6 +61,9 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*string) error 
 	req := &pb.CreateNodeRecordsRequest{
 		NodeRecords: records,
 	}
+
+	md := metadata.New(e.config.Headers)
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	rsp, err := e.client.CreateNodeRecords(ctx, req, grpc.UseCompressor(gzip.Name))
 	if err != nil {

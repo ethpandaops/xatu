@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/metadata"
 )
 
 type ItemExporter struct {
@@ -54,6 +55,9 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	req := &pb.CreateEventsRequest{
 		Events: items,
 	}
+
+	md := metadata.New(e.config.Headers)
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	rsp, err := e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
 	if err != nil {

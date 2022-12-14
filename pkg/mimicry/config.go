@@ -1,11 +1,11 @@
-package sentry
+package mimicry
 
 import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,16 +13,16 @@ type Config struct {
 	LoggingLevel string `yaml:"logging" default:"info"`
 	MetricsAddr  string `yaml:"metricsAddr" default:":9090"`
 
-	// The name of the sentry
+	// The name of the mimicry
 	Name string `yaml:"name"`
 
 	// Ethereum configuration
-	Ethereum ethereum.Config `yaml:"ethereum"`
+	Coordinator coordinator.Config `yaml:"coordinator"`
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 
-	// Labels configures the sentry with labels
+	// Labels configures the mimicry with labels
 	Labels map[string]string `yaml:"labels"`
 
 	// NTP Server to use for clock drift correction
@@ -34,7 +34,7 @@ func (c *Config) Validate() error {
 		return errors.New("name is required")
 	}
 
-	if err := c.Ethereum.Validate(); err != nil {
+	if err := c.Coordinator.Validate(); err != nil {
 		return err
 	}
 

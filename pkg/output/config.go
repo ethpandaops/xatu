@@ -12,6 +12,7 @@ import (
 )
 
 type Config struct {
+	Name     string   `yaml:"name"`
 	SinkType SinkType `yaml:"type"`
 
 	Config *RawMessage `yaml:"config"`
@@ -45,6 +46,14 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 		return http.New(conf, log)
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
+
+		if err := config.Unmarshal(conf); err != nil {
+			return nil, err
+		}
+
+		if err := defaults.Set(conf); err != nil {
+			return nil, err
+		}
 
 		return stdout.New(conf, log)
 	case SinkTypeXatu:

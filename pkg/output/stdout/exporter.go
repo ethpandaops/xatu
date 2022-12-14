@@ -36,12 +36,34 @@ func (e ItemExporter) Shutdown(ctx context.Context) error {
 
 func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	for _, event := range items {
-		eventAsJSON, err := protojson.Marshal(event)
-		if err != nil {
+		if err := e.logEvent(event); err != nil {
 			return err
 		}
+	}
 
-		e.log.WithField("event", string(eventAsJSON)).Info("stdout sink event")
+	return nil
+}
+
+func (e *ItemExporter) logEvent(event *xatu.DecoratedEvent) error {
+	eventAsJSON, err := protojson.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	entry := e.log.WithField("event", string(eventAsJSON))
+	msg := "stdout sink event"
+
+	switch e.config.LoggingLevel {
+	case "debug":
+		entry.Debug(msg)
+	case "info":
+		entry.Info(msg)
+	case "warn":
+		entry.Warn(msg)
+	case "error":
+		entry.Error(msg)
+	default:
+		entry.Info(msg)
 	}
 
 	return nil

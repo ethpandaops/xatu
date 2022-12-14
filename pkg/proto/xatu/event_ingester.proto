@@ -39,6 +39,11 @@ message Propagation {
    uint64 slot_start_diff = 3 [json_name="slot_start_diff"];
 }
 
+message ForkID {
+  string hash = 1 [json_name="hash"];
+  string next = 2 [json_name="next"];
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -68,6 +73,10 @@ message ClientMeta {
        string implementation = 1;
       // Version is the version of the execution client.
        string version = 2;
+       // ForkID is the fork ID of the execution client.
+       ForkID fork_id = 3 [json_name="fork_id"];
+       // NodeRecord is the ENR/ENode of the execution client.
+       string node_record = 4 [json_name="node_record"];
      }
      message Consensus {
       // Implementation is the name of the consensus client.
@@ -82,7 +91,7 @@ message ClientMeta {
   }
 
   // Ethereum contains information about the Ethereum network and configuration.
-   Ethereum ethereum = 8;
+  Ethereum ethereum = 8;
 
   // Labels contains additional labels as set by the client.
   map<string, string> labels = 9;
@@ -172,6 +181,14 @@ message ClientMeta {
     AdditionalContributionAndProofContributionData contribution = 1;
   }
 
+  message AdditionalTransactionData {
+    // Size is the transaction size in bytes.
+    string size = 1;
+
+    // CallDataSize is the call data size in bytes.
+    string call_data_size = 2 [json_name="call_data_size"];
+  }
+
   // AdditionalData contains additional, computed data as set by the client about the event.
   oneof AdditionalData {
     // Attestation contains additional data about an attestation event.
@@ -188,6 +205,8 @@ message ClientMeta {
     AdditionalChainReorgData chain_reorg = 15 [json_name="additional_data"]; 
     // ContributionAndProof contains additional data about the chain reorg event.
     AdditionalContributionAndProofData contribution_and_proof = 16 [json_name="additional_data"]; 
+    // Transaction contains additional data about the transaction event.
+    AdditionalTransactionData transaction = 17 [json_name="additional_data"]; 
   }
 }
 
@@ -229,6 +248,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
     BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
     BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
+    EXECUTION_TRANSACTION = 8;
   }
   // Name is the name of the event.
    Name name = 1;
@@ -248,5 +268,6 @@ message DecoratedEvent {
     xatu.eth.v1.EventHead eth_v1_head = 7 [json_name = "data"];
     xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 8 [json_name = "data"];
     xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 9 [json_name = "data"];
+    xatu.eth.v1.EventTransaction eth_v1_transaction = 10 [json_name = "data"];
   };
 }

@@ -6,16 +6,15 @@ name: example-instance
 labels:
   ethpandaops: rocks
 
-ethereum:
-  beacon_node_address: http://localhost:5052
-  
-  
 # Better to use a NTP server close eg.
 #   time.aws.com - AWS
 #   time.windows.com - Azure
 #   time.google.com - GCP
 #   pool.ntp.org - https://www.pool.ntp.org/zone/@
 ntp_server: time.google.com
+
+ethereum:
+  beacon_node_address: http://localhost:5052
 
 outputs:
 - name: basic

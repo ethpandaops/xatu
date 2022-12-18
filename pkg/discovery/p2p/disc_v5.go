@@ -75,7 +75,7 @@ func (d *DiscV5) createListener(
 ) (*discover.UDPv5, error) {
 	var bindIP net.IP
 
-	ipAddr := net.ParseIP("0.0.0.0")
+	ipAddr := net.IPv4zero
 
 	bindIP = ipAddr
 	udpAddr := &net.UDPAddr{

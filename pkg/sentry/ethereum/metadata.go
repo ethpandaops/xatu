@@ -8,8 +8,8 @@ import (
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/ethwallclock"
+	"github.com/ethpandaops/xatu/pkg/networks"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/networks"
 	"github.com/go-co-op/gocron"
 	"github.com/samcm/beacon"
 	"github.com/samcm/beacon/state"
@@ -20,7 +20,7 @@ type MetadataService struct {
 	beacon beacon.Node
 	log    logrus.FieldLogger
 
-	NetworkName networks.NetworkName
+	Network *networks.Network
 
 	Genesis *v1.Genesis
 	Spec    *state.Spec
@@ -30,9 +30,9 @@ type MetadataService struct {
 
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
 	return MetadataService{
-		beacon:      sbeacon,
-		log:         log.WithField("module", "sentry/ethereum/metadata"),
-		NetworkName: networks.NetworkNameNone,
+		beacon:  sbeacon,
+		log:     log.WithField("module", "sentry/ethereum/metadata"),
+		Network: &networks.Network{Name: networks.NetworkNameNone},
 	}
 }
 
@@ -79,7 +79,7 @@ func (m *MetadataService) Ready() error {
 		return errors.New("node version is not available")
 	}
 
-	if m.NetworkName == networks.NetworkNameNone {
+	if m.Network.Name == networks.NetworkNameNone {
 		return errors.New("network name is not available")
 	}
 
@@ -99,7 +99,7 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 		m.wallclock = ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
 	}
 
-	if err := m.DeriveNetworkName(ctx); err != nil {
+	if err := m.DeriveNetwork(ctx); err != nil {
 		m.log.WithError(err).Error("Failed to derive network name for refresh")
 	}
 
@@ -110,18 +110,18 @@ func (m *MetadataService) Wallclock() *ethwallclock.EthereumBeaconChain {
 	return m.wallclock
 }
 
-func (m *MetadataService) DeriveNetworkName(ctx context.Context) error {
+func (m *MetadataService) DeriveNetwork(ctx context.Context) error {
 	if m.Genesis == nil {
 		return errors.New("genesis is not available")
 	}
 
-	network := networks.DeriveNetworkName(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
+	network := networks.DeriveFromGenesisRoot(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
 
-	if network != m.NetworkName {
+	if network.Name != m.Network.Name {
 		m.log.WithField("network", network).Info("Detected ethereum network")
 	}
 
-	m.NetworkName = network
+	m.Network = network
 
 	return nil
 }

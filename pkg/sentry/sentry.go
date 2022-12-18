@@ -149,7 +149,15 @@ func (s *Sentry) ServeMetrics(ctx context.Context) error {
 }
 
 func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
-	network := s.beacon.Metadata().NetworkName
+	var networkMeta *xatu.ClientMeta_Ethereum_Network
+
+	network := s.beacon.Metadata().Network
+	if network == nil {
+		networkMeta = &xatu.ClientMeta_Ethereum_Network{
+			Name: string(network.Name),
+			Id:   network.ID,
+		}
+	}
 
 	return &xatu.ClientMeta{
 		Name:           s.Config.Name,
@@ -159,10 +167,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(s.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{
-			Network: &xatu.ClientMeta_Ethereum_Network{
-				Name: string(network),
-				Id:   999, // TODO(sam.calder-mason): Derive dynamically
-			},
+			Network: networkMeta,
 			Execution: &xatu.ClientMeta_Ethereum_Execution{
 				Implementation: "",
 				Version:        "",

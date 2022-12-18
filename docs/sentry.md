@@ -58,7 +58,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ethereum.beacon_node_address | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
 | ntp_server | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| outputs | array |  | List of outputs for the sentry to send data to |
+| outputs | array<object> |  | List of outputs for the sentry to send data to |
 | outputs[].name | string |  | Name of the output |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `stdout`) |
 | outputs[].config | object |  | Output type configuration [`xatu`](#output-xatu-configuration)/[`http`](#output-http-configuration) |
@@ -145,10 +145,10 @@ name: example-instance
 labels:
   ethpandaops: rocks
 
+ntp_server: time.google.com
+
 ethereum:
   beacon_node_address: http://localhost:5052
-
-ntp_server: time.google.com
 
 outputs:
 - name: log

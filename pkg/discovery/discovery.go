@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -24,6 +26,7 @@ type Discovery struct {
 	coordinator *coordinator.Client
 
 	discV5 *p2p.DiscV5
+	status *p2p.Status
 
 	log logrus.FieldLogger
 
@@ -72,10 +75,29 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return err
 	}
 
-	d.discV5 = p2p.NewDiscV5(ctx, &d.Config.P2P, d.log, d.handleNode)
-	err := d.discV5.Start(ctx)
+	d.discV5 = p2p.NewDiscV5(ctx, &d.Config.P2P, d.log)
 
+	err := d.discV5.Start(ctx)
 	if err != nil {
+		return err
+	}
+
+	d.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+		return d.handleNewNodeRecord(ctx, node.String())
+	})
+
+	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
+
+	err = d.status.Start(ctx)
+	if err != nil {
+		return err
+	}
+
+	d.status.OnStatus(ctx, func(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
+		return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
+	})
+
+	if err := d.startCrons(ctx); err != nil {
 		return err
 	}
 
@@ -85,7 +107,13 @@ func (d *Discovery) Start(ctx context.Context) error {
 	sig := <-cancel
 	d.log.Printf("Caught signal: %v", sig)
 
-	d.log.Printf("Flushing sinks")
+	if err := d.discV5.Stop(ctx); err != nil {
+		return err
+	}
+
+	if err := d.status.Stop(ctx); err != nil {
+		return err
+	}
 
 	if err := d.coordinator.Stop(ctx); err != nil {
 		return err
@@ -109,6 +137,32 @@ func (d *Discovery) ServeMetrics(ctx context.Context) error {
 			d.log.Fatal(err)
 		}
 	}()
+
+	return nil
+}
+
+func (d *Discovery) startCrons(ctx context.Context) error {
+	c := gocron.NewScheduler(time.Local)
+
+	if _, err := c.Every("5s").Do(func() {
+		d.log.WithFields(logrus.Fields{
+			"records": d.status.Active(),
+		}).Info("execution records currently trying to dial")
+		if d.status.Active() == 0 {
+			d.log.Info("no active execution records to dial, requesting stale records from coordinator")
+			nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
+			if err != nil {
+				d.log.WithError(err).Error("Failed to list stale node records")
+				return
+			}
+			d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
+			d.status.AddNodeRecords(ctx, nodeRecords)
+		}
+	}); err != nil {
+		return err
+	}
+
+	c.StartAsync()
 
 	return nil
 }

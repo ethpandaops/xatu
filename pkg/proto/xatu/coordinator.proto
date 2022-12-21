@@ -5,13 +5,70 @@ package xatu;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
 
 service Coordinator {
-  rpc CreateNodeRecords(CreateNodeRecordsRequest) returns (CreateNodeRecordsResponse) {}
+  rpc CreateNodeRecords(CreateNodeRecordsRequest)
+      returns (CreateNodeRecordsResponse) {}
+  rpc ListStalledExecutionNodeRecords(ListStalledExecutionNodeRecordsRequest)
+      returns (ListStalledExecutionNodeRecordsResponse) {}
+  rpc CreateExecutionNodeRecordStatus(CreateExecutionNodeRecordStatusRequest)
+      returns (CreateExecutionNodeRecordStatusResponse) {}
+  rpc CoordinateExecutionNodeRecords(CoordinateExecutionNodeRecordsRequest)
+      returns (CoordinateExecutionNodeRecordsResponse) {}
 }
 
-message CreateNodeRecordsRequest {
+
+message CreateNodeRecordsRequest { repeated string node_records = 1; }
+
+message CreateNodeRecordsResponse {}
+
+message ListStalledExecutionNodeRecordsRequest {
+  int32 page_size = 1;
+}
+
+message ListStalledExecutionNodeRecordsResponse { repeated string node_records = 1; }
+
+message ExecutionNodeStatus {
+  message Capability {
+    string name = 1;
+    uint32 version = 2;
+  }
+
+  message ForkID {
+    bytes hash = 1 [ json_name = "hash" ];
+    uint64 next = 2 [ json_name = "next" ];
+  }
+
+  string node_record = 1;
+  string name = 2;
+  repeated Capability capabilities = 3;
+  uint64 protocol_version = 4;
+  uint64 network_id = 5;
+  string total_difficulty = 6;
+  bytes head = 7;
+  bytes genesis = 8;
+  ForkID fork_id = 9;
+}
+
+message CreateExecutionNodeRecordStatusRequest {
+  ExecutionNodeStatus status = 1;
+}
+
+message CreateExecutionNodeRecordStatusResponse {}
+
+message CoordinatedNodeRecord {
+  string node_record = 1;
+  bool connected = 2;
+  uint32 connection_attempts = 3;
+}
+
+message CoordinateExecutionNodeRecordsRequest {
+  repeated CoordinatedNodeRecord node_records = 1;
+  uint32 limit = 2;
+  repeated uint64 network_ids = 3;
+  repeated bytes fork_id_hashes = 4;
+  string client_id = 5;
+}
+
+message CoordinateExecutionNodeRecordsResponse {
   repeated string node_records = 1;
-}
-
-message CreateNodeRecordsResponse {
-
+  uint32 retry_delay = 2;
 }

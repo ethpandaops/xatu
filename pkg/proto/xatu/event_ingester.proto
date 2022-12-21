@@ -12,36 +12,35 @@ service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
 
-message CreateEventsRequest {
-  repeated DecoratedEvent events = 1;
-}
+message CreateEventsRequest { repeated DecoratedEvent events = 1; }
 
-message CreateEventsResponse {
-
-}
+message CreateEventsResponse {}
 
 message Epoch {
   // Number is the epoch number.
   uint64 number = 1;
   // StartDateTime is the epoch start time.
-  google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
+  google.protobuf.Timestamp start_date_time = 2
+      [ json_name = "start_date_time" ];
 }
 
 message Slot {
   // Number is the slot number.
-   uint64 number = 1;
+  uint64 number = 1;
   // StartDateTime is the slot start time.
-   google.protobuf.Timestamp start_date_time = 2 [json_name="start_date_time"];
-}
-
-message Propagation {
-  // SlotStartDiff is the difference between the slot start time and the attestation received time (in milliseconds).
-   uint64 slot_start_diff = 3 [json_name="slot_start_diff"];
+  google.protobuf.Timestamp start_date_time = 2
+      [ json_name = "start_date_time" ];
 }
 
 message ForkID {
-  string hash = 1 [json_name="hash"];
-  string next = 2 [json_name="next"];
+  string hash = 1 [ json_name = "hash" ];
+  string next = 2 [ json_name = "next" ];
+}
+
+message Propagation {
+  // SlotStartDiff is the difference between the slot start time and the
+  // attestation received time (in milliseconds).
+  uint64 slot_start_diff = 3 [ json_name = "slot_start_diff" ];
 }
 
 message ClientMeta {
@@ -56,7 +55,7 @@ message ClientMeta {
   // OS is the operating system of the client.
   string os = 5;
   // ClockDrift is the NTP calculated clock drift of the client.
-  uint64 clock_drift = 6  [json_name="clock_drift"];
+  uint64 clock_drift = 6 [ json_name = "clock_drift" ];
 
   message Ethereum {
     message Network {
@@ -70,24 +69,24 @@ message ClientMeta {
 
     message Execution {
       // Implementation is the name of the execution client.
-       string implementation = 1;
+      string implementation = 1;
       // Version is the version of the execution client.
-       string version = 2;
-       // ForkID is the fork ID of the execution client.
-       ForkID fork_id = 3 [json_name="fork_id"];
-       // NodeRecord is the ENR/ENode of the execution client.
-       string node_record = 4 [json_name="node_record"];
-     }
-     message Consensus {
+      string version = 2;
+      // ForkID is the fork ID of the execution client.
+      ForkID fork_id = 3 [ json_name = "fork_id" ];
+      // NodeRecord is the ENR/ENode of the execution client.
+      string node_record = 4 [ json_name = "node_record" ];
+    }
+    message Consensus {
       // Implementation is the name of the consensus client.
-       string implementation = 1;
+      string implementation = 1;
       // Version is the version of the consensus client.
-       string version = 2;
-     }
+      string version = 2;
+    }
     // ExecutionClient is the name of the execution client.
-     Execution execution = 2;
+    Execution execution = 2;
     // ConsensusClient is the name of the consensus client.
-     Consensus consensus = 3;
+    Consensus consensus = 3;
   }
 
   // Ethereum contains information about the Ethereum network and configuration.
@@ -109,24 +108,26 @@ message ClientMeta {
   message AdditionalAttestationData {
     // Source contains information for the best currently justified checkpoint.
     AdditionalAttestationSourceData source = 1;
-  
-    // Target contains information of the block at the start of the current epoch.
+
+    // Target contains information of the block at the start of the current
+    // epoch.
     AdditionalAttestationTargetData target = 2;
-  
+
     // Slot contains the slot information for the attestation.
     Slot slot = 3;
-  
+
     // Epoch contains the epoch information for the attestation.
     Epoch epoch = 4;
 
-    // Propagation contains information about the propagation of the attestation.
+    // Propagation contains information about the propagation of the
+    // attestation.
     Propagation propagation = 5;
   }
 
-  message AdditionalHeadData {  
+  message AdditionalHeadData {
     // Epoch contains the epoch information for the head.
     Epoch epoch = 1;
-  
+
     // Slot contains the slot information for the head event.
     Slot slot = 2;
 
@@ -162,7 +163,8 @@ message ClientMeta {
     // Slot contains the slot information for the chain reorg.
     Slot slot = 2;
 
-    // Propagation contains information about the propagation of the chain reorg.
+    // Propagation contains information about the propagation of the chain
+    // reorg.
     Propagation propagation = 3;
   }
 
@@ -173,7 +175,8 @@ message ClientMeta {
     // Slot contains the slot information for the contribution and proof.
     Slot slot = 2;
 
-    // Propagation contains information about the propagation of the contribution and proof.
+    // Propagation contains information about the propagation of the
+    // contribution and proof.
     Propagation propagation = 3;
   }
 
@@ -186,39 +189,48 @@ message ClientMeta {
     string size = 1;
 
     // CallDataSize is the call data size in bytes.
-    string call_data_size = 2 [json_name="call_data_size"];
+    string call_data_size = 2 [ json_name = "call_data_size" ];
   }
 
-  // AdditionalData contains additional, computed data as set by the client about the event.
+  // AdditionalData contains additional, computed data as set by the client
+  // about the event.
   oneof AdditionalData {
     // Attestation contains additional data about an attestation event.
-    AdditionalAttestationData attestation = 10 [json_name="additional_data"];
+    AdditionalAttestationData attestation = 10
+        [ json_name = "additional_data" ];
     // Head contains additional data about the head event.
-    AdditionalHeadData head = 11 [json_name="additional_data"];
+    AdditionalHeadData head = 11 [ json_name = "additional_data" ];
     // Block contains additional data about the head event.
-    AdditionalBlockData block = 12 [json_name="additional_data"];
+    AdditionalBlockData block = 12 [ json_name = "additional_data" ];
     // VoluntaryExit contains additional data about the voluntary exit event.
-    AdditionalVoluntaryExitData voluntary_exit = 13 [json_name="additional_data"];
-    // FinalizedCheckpoint contains additional data about the finalized checkpoint event.
-    AdditionalFinalizedCheckpointData finalized_checkpoint = 14 [json_name="additional_data"];
+    AdditionalVoluntaryExitData voluntary_exit = 13
+        [ json_name = "additional_data" ];
+    // FinalizedCheckpoint contains additional data about the finalized
+    // checkpoint event.
+    AdditionalFinalizedCheckpointData finalized_checkpoint = 14
+        [ json_name = "additional_data" ];
     // ChainReorg contains additional data about the chain reorg event.
-    AdditionalChainReorgData chain_reorg = 15 [json_name="additional_data"]; 
-    // ContributionAndProof contains additional data about the chain reorg event.
-    AdditionalContributionAndProofData contribution_and_proof = 16 [json_name="additional_data"]; 
+    AdditionalChainReorgData chain_reorg = 15 [ json_name = "additional_data" ];
+    // ContributionAndProof contains additional data about the chain reorg
+    // event.
+    AdditionalContributionAndProofData contribution_and_proof = 16
+        [ json_name = "additional_data" ];
     // Transaction contains additional data about the transaction event.
-    AdditionalTransactionData transaction = 17 [json_name="additional_data"]; 
+    AdditionalTransactionData transaction = 17
+        [ json_name = "additional_data" ];
   }
 }
 
 message ServerMeta {
   message Event {
     /// DateTime is the date and time of the event as seen by the server.
-    google.protobuf.Timestamp received_date_time = 1  [json_name="received_date_time"];
+    google.protobuf.Timestamp received_date_time = 1
+        [ json_name = "received_date_time" ];
   }
-  
+
   message Client {
     // IP is the ip of the client as far as the server is concerned.
-    string IP = 1  [json_name="ip"];
+    string IP = 1 [ json_name = "ip" ];
   }
 
   // Event contains information about the event from the server's perspective.
@@ -228,7 +240,7 @@ message ServerMeta {
   Client client = 2;
 
   // AdditionalData contains additional data as set by the server.
-  map<string, string> additional_data = 3 [json_name="additional_data"];
+  map<string, string> additional_data = 3 [ json_name = "additional_data" ];
 }
 
 message Meta {
@@ -251,23 +263,27 @@ message Event {
     EXECUTION_TRANSACTION = 8;
   }
   // Name is the name of the event.
-   Name name = 1;
+  Name name = 1;
   // DateTime is the date and time of the event as seen by the client.
-   google.protobuf.Timestamp date_time = 2 [json_name="date_time"];
+  google.protobuf.Timestamp date_time = 2 [ json_name = "date_time" ];
 }
 
-// DecoratedEvent is an event that has been decorated with additional information.
+// DecoratedEvent is an event that has been decorated with additional
+// information.
 message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_attestation = 3 [json_name = "data"];
-    xatu.eth.v1.EventBlock eth_v1_block = 4 [json_name = "data"];
-    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 5 [json_name = "data"];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 6 [json_name = "data"];
-    xatu.eth.v1.EventHead eth_v1_head = 7 [json_name = "data"];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 8 [json_name = "data"];
-    xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 9 [json_name = "data"];
-    xatu.eth.v1.EventTransaction eth_v1_transaction = 10 [json_name = "data"];
+    xatu.eth.v1.Attestation eth_v1_attestation = 3 [ json_name = "data" ];
+    xatu.eth.v1.EventBlock eth_v1_block = 4 [ json_name = "data" ];
+    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 5 [ json_name = "data" ];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 6
+        [ json_name = "data" ];
+    xatu.eth.v1.EventHead eth_v1_head = 7 [ json_name = "data" ];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 8
+        [ json_name = "data" ];
+    xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 9
+        [ json_name = "data" ];
+    xatu.eth.v1.EventTransaction eth_v1_transaction = 10 [ json_name = "data" ];
   };
 }

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
 
 package xatu.eth.v1;
 
@@ -15,11 +16,13 @@ message EventHead {
 
   string state = 3;
 
-  bool epoch_transition = 4 [json_name="epoch_transition"];
+  bool epoch_transition = 4 [ json_name = "epoch_transition" ];
 
-  string previous_duty_dependent_root = 5 [json_name="previous_duty_dependent_root"];
+  string previous_duty_dependent_root = 5
+      [ json_name = "previous_duty_dependent_root" ];
 
-  string current_duty_dependent_root = 6 [json_name="current_duty_dependent_root"];
+  string current_duty_dependent_root = 6
+      [ json_name = "current_duty_dependent_root" ];
 }
 
 message EventBlock {
@@ -27,7 +30,7 @@ message EventBlock {
 
   string block = 2;
 
-  bool execution_optimistic = 3 [json_name="execution_optimistic"];
+  bool execution_optimistic = 3 [ json_name = "execution_optimistic" ];
 }
 
 message EventChainReorg {
@@ -35,13 +38,13 @@ message EventChainReorg {
 
   uint64 depth = 2;
 
-  string old_head_block = 3 [json_name="old_head_block"];
+  string old_head_block = 3 [ json_name = "old_head_block" ];
 
-  string new_head_block = 4 [json_name="new_head_block"];
+  string new_head_block = 4 [ json_name = "new_head_block" ];
 
-  string old_head_state = 5 [json_name="old_head_state"];
+  string old_head_state = 5 [ json_name = "old_head_state" ];
 
-  string new_head_state = 6 [json_name="new_head_state"];
+  string new_head_state = 6 [ json_name = "new_head_state" ];
 
   uint64 epoch = 7;
 }
@@ -57,27 +60,27 @@ message EventFinalizedCheckpoint {
 message EventVoluntaryExit {
   uint64 epoch = 1;
 
-  uint64 validator_index = 2 [json_name="validator_index"];
+  uint64 validator_index = 2 [ json_name = "validator_index" ];
 }
 
 message ContributionAndProof {
   message SyncCommitteeContribution {
     uint64 slot = 1;
 
-    uint64 subcommittee_index = 2 [json_name="subcommittee_index"];
+    uint64 subcommittee_index = 2 [ json_name = "subcommittee_index" ];
 
-    string aggregation_bits = 3 [json_name="aggregation_bits"];
+    string aggregation_bits = 3 [ json_name = "aggregation_bits" ];
 
     string signature = 4;
 
-    string beacon_block_root = 5 [json_name="beacon_block_root"];
+    string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
   }
 
-  uint64 aggregator_index = 1 [json_name="aggregator_index"];
+  uint64 aggregator_index = 1 [ json_name = "aggregator_index" ];
 
   SyncCommitteeContribution contribution = 2;
 
-  string selection_proof = 3 [json_name="selection_proof"];
+  string selection_proof = 3 [ json_name = "selection_proof" ];
 }
 
 message EventContributionAndProof {
@@ -86,13 +89,12 @@ message EventContributionAndProof {
   ContributionAndProof message = 2;
 }
 
-// TODO: should this be in a diff proto package?
 message EventTransaction {
-  string hash = 1 [json_name="hash"];
-  string from = 2 [json_name="from"];
-  string to = 3 [json_name="to"];
-  uint64 nonce = 4 [json_name="nonce"];
-  string gas_price = 5 [json_name="gas_price"];
-  uint64 gas = 6 [json_name="gas"];
-  string value = 7 [json_name="value"];
+  string hash = 1 [ json_name = "hash" ];
+  string from = 2 [ json_name = "from" ];
+  string to = 3 [ json_name = "to" ];
+  uint64 nonce = 4 [ json_name = "nonce" ];
+  string gas_price = 5 [ json_name = "gas_price" ];
+  uint64 gas = 6 [ json_name = "gas" ];
+  string value = 7 [ json_name = "value" ];
 }

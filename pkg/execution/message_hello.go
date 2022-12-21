@@ -44,17 +44,8 @@ func (h *Hello) ETHCap() *p2p.Cap {
 	return nil
 }
 
-func (h *Hello) MaxETHProtocolVersion() uint {
-	ethCap := h.ETHCap()
-	if ethCap == nil {
-		return ETHProtocolVersion
-	}
-
-	if ethCap.Version > ETHProtocolVersion {
-		return ETHProtocolVersion
-	}
-
-	return ethCap.Version
+func (h *Hello) ETHProtocolVersion() uint {
+	return minETHProtocolVersion
 }
 
 func (h *Hello) Validate() error {
@@ -62,13 +53,27 @@ func (h *Hello) Validate() error {
 		return fmt.Errorf("peer is using unsupported p2p protocol version: %d", h.Version)
 	}
 
-	ethCap := h.ETHCap()
-	if ethCap == nil {
+	supportsOurETHProtocolVersion := false
+	highestETHProtocolVersion := uint(0)
+
+	for _, cap := range h.Caps {
+		if cap.Name == "eth" {
+			if cap.Version == minETHProtocolVersion {
+				supportsOurETHProtocolVersion = true
+			}
+
+			if cap.Version > highestETHProtocolVersion {
+				highestETHProtocolVersion = cap.Version
+			}
+		}
+	}
+
+	if highestETHProtocolVersion == 0 {
 		return fmt.Errorf("peer does not support eth protocol")
 	}
 
-	if ethCap.Version < minETHProtocolVersion {
-		return fmt.Errorf("peer is using unsupported eth protocol version: %d", ethCap.Version)
+	if !supportsOurETHProtocolVersion {
+		return fmt.Errorf("peer is using unsupported eth protocol version: %d", minETHProtocolVersion)
 	}
 
 	return nil
@@ -97,7 +102,7 @@ func (c *Client) sendHello(ctx context.Context, ethProtocolVersion uint) error {
 	c.log.WithFields(logrus.Fields{
 		"code":                 HelloCode,
 		"eth_protocol_version": ethProtocolVersion,
-	}).Debug("sending NewPooledTransactionHashes")
+	}).Debug("sending Hello")
 
 	pub0 := crypto.FromECDSAPub(&c.privateKey.PublicKey)[1:]
 	hello := &Hello{

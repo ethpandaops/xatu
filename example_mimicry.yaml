@@ -26,10 +26,9 @@ coordinator:
   #   address: localhost:8080
   #   headers:
   #     Authorization: Someb64Value
-  #   max_queue_size: 51200
-  #   batch_timeout: 5s
-  #   export_timeout: 30s
-  #   max_export_batch_size: 512
+  #   network_ids: [1]
+  #   fork_id_hashes: [0xf0afd0e3]
+  #   max_peers: 100
 
 outputs:
 - name: basic

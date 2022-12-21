@@ -24,7 +24,7 @@ type Manual struct {
 	cache *cache.SharedCache
 }
 
-func New(config *Config, handlers *handler.Peer, log logrus.FieldLogger) (*Manual, error) {
+func New(name string, config *Config, handlers *handler.Peer, log logrus.FieldLogger) (*Manual, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -55,16 +55,26 @@ func (m *Manual) Start(ctx context.Context) error {
 						return err
 					}
 
+					defer func() {
+						if peer != nil {
+							if err = peer.Stop(ctx); err != nil {
+								m.log.WithError(err).Warn("failed to stop peer")
+							}
+						}
+					}()
+
 					disconnect, err := peer.Start(ctx)
 					if err != nil {
 						return err
 					}
 
-					return <-disconnect
+					response := <-disconnect
+
+					return response
 				},
 				retry.Attempts(0),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					m.log.WithError(err).Error("peer failed")
+					m.log.WithError(err).Debug("peer failed")
 					return m.config.RetryInterval
 				}),
 			)

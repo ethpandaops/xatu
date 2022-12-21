@@ -131,6 +131,10 @@ func parseTCP6(node *enode.Node) *uint32 {
 
 	f := uint32(field)
 
+	if f == 0 {
+		return nil
+	}
+
 	return &f
 }
 
@@ -153,6 +157,10 @@ func parseUDP6(node *enode.Node) *uint32 {
 	}
 
 	f := uint32(field)
+
+	if f == 0 {
+		return nil
+	}
 
 	return &f
 }

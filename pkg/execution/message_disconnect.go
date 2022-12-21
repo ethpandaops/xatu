@@ -21,10 +21,10 @@ func (h *Disconnect) Code() int { return DisconnectCode }
 func (h *Disconnect) ReqID() uint64 { return 0 }
 
 func (c *Client) handleDisconnect(ctx context.Context, data []byte) *Disconnect {
-	d := new(Disconnect)
+	d := new(p2p.DiscReason)
 	if err := rlp.DecodeBytes(data, &d); err != nil {
-		c.log.WithError(err).Error("Error decoding disconnect")
+		c.log.WithError(err).Debug("Error decoding disconnect")
 	}
 
-	return d
+	return &Disconnect{Reason: *d}
 }

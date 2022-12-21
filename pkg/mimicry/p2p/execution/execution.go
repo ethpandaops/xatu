@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/xatu/pkg/execution"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
@@ -43,9 +44,12 @@ type Peer struct {
 	chainConfig *params.ChainConfig
 	signer      types.Signer
 
-	implmentation string
-	version       string
-	forkID        *xatu.ForkID
+	name            string
+	protocolVersion uint64
+	implmentation   string
+	version         string
+	forkID          *xatu.ForkID
+	capabilities    *[]p2p.Cap
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, sharedCache *coordCache.SharedCache) (*Peer, error) {
@@ -70,6 +74,10 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 }
 
 func (p *Peer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+	if p.handlers.CreateNewClientMeta == nil {
+		return nil, nil
+	}
+
 	meta, err := p.handlers.CreateNewClientMeta(ctx)
 	if err != nil {
 		return nil, err
@@ -119,7 +127,12 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		// setup client implementation and version info
 		split := strings.SplitN(hello.Name, "/", 2)
 		p.implmentation = split[0]
-		p.version = split[1]
+		if len(split) > 1 {
+			p.version = split[1]
+		}
+		p.name = hello.Name
+		p.capabilities = &hello.Caps
+		p.protocolVersion = hello.Version
 
 		p.log.WithFields(logrus.Fields{
 			"implementation": p.implmentation,
@@ -130,6 +143,37 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	})
 
 	p.client.OnStatus(ctx, func(ctx context.Context, status *execution.Status) error {
+		if p.handlers.ExecutionStatus != nil {
+			s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
+
+			s.Name = p.name
+			s.ProtocolVersion = p.protocolVersion
+
+			if p.capabilities != nil {
+				for _, cap := range *p.capabilities {
+					s.Capabilities = append(s.Capabilities, &xatu.ExecutionNodeStatus_Capability{
+						Name:    cap.Name,
+						Version: uint32(cap.Version),
+					})
+				}
+			}
+
+			if status != nil {
+				s.NetworkId = status.NetworkID
+				s.TotalDifficulty = status.TD.String()
+				s.Head = status.Head[:]
+				s.Genesis = status.Genesis[:]
+				s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
+					Hash: status.ForkID.Hash[:],
+					Next: status.ForkID.Next,
+				}
+			}
+
+			if serr := p.handlers.ExecutionStatus(ctx, s); serr != nil {
+				p.log.WithError(serr).Error("failed to handle execution status")
+			}
+		}
+
 		// setup signer and chain config for working out transaction "from" addresses
 		networkID := status.NetworkID
 		p.chainConfig = params.AllEthashProtocolChanges
@@ -156,7 +200,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *execution.NewPooledTransactionHashes) error {
 		now := time.Now()
-		if hashes != nil {
+		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			for _, hash := range *hashes {
 				// check if transaction is already in the shared cache
 				tx := p.sharedCache.Transaction.Get(hash.String())
@@ -185,7 +229,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	})
 
 	p.client.OnTransactions(ctx, func(ctx context.Context, txs *execution.Transactions) error {
-		if txs != nil {
+		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
 				p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
@@ -210,13 +254,20 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			str = reason.Reason.String()
 		}
 
+		p.log.WithFields(logrus.Fields{
+			"reason": str,
+		}).Info("disconnected from client")
+
 		response <- errors.New("disconnected from peer (reason " + str + ")")
 
 		return nil
 	})
 
+	p.log.Info("attempting to connect to client")
+
 	err = p.client.Start(ctx)
 	if err != nil {
+		p.log.WithError(err).Info("failed to dial client")
 		return nil, err
 	}
 

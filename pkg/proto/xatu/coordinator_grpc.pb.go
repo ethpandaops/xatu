@@ -23,6 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CoordinatorClient interface {
 	CreateNodeRecords(ctx context.Context, in *CreateNodeRecordsRequest, opts ...grpc.CallOption) (*CreateNodeRecordsResponse, error)
+	ListStalledExecutionNodeRecords(ctx context.Context, in *ListStalledExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledExecutionNodeRecordsResponse, error)
+	CreateExecutionNodeRecordStatus(ctx context.Context, in *CreateExecutionNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateExecutionNodeRecordStatusResponse, error)
+	CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error)
 }
 
 type coordinatorClient struct {
@@ -42,11 +45,41 @@ func (c *coordinatorClient) CreateNodeRecords(ctx context.Context, in *CreateNod
 	return out, nil
 }
 
+func (c *coordinatorClient) ListStalledExecutionNodeRecords(ctx context.Context, in *ListStalledExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledExecutionNodeRecordsResponse, error) {
+	out := new(ListStalledExecutionNodeRecordsResponse)
+	err := c.cc.Invoke(ctx, "/xatu.Coordinator/ListStalledExecutionNodeRecords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) CreateExecutionNodeRecordStatus(ctx context.Context, in *CreateExecutionNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateExecutionNodeRecordStatusResponse, error) {
+	out := new(CreateExecutionNodeRecordStatusResponse)
+	err := c.cc.Invoke(ctx, "/xatu.Coordinator/CreateExecutionNodeRecordStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error) {
+	out := new(CoordinateExecutionNodeRecordsResponse)
+	err := c.cc.Invoke(ctx, "/xatu.Coordinator/CoordinateExecutionNodeRecords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServer is the server API for Coordinator service.
 // All implementations must embed UnimplementedCoordinatorServer
 // for forward compatibility
 type CoordinatorServer interface {
 	CreateNodeRecords(context.Context, *CreateNodeRecordsRequest) (*CreateNodeRecordsResponse, error)
+	ListStalledExecutionNodeRecords(context.Context, *ListStalledExecutionNodeRecordsRequest) (*ListStalledExecutionNodeRecordsResponse, error)
+	CreateExecutionNodeRecordStatus(context.Context, *CreateExecutionNodeRecordStatusRequest) (*CreateExecutionNodeRecordStatusResponse, error)
+	CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
 }
 
@@ -56,6 +89,15 @@ type UnimplementedCoordinatorServer struct {
 
 func (UnimplementedCoordinatorServer) CreateNodeRecords(context.Context, *CreateNodeRecordsRequest) (*CreateNodeRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateNodeRecords not implemented")
+}
+func (UnimplementedCoordinatorServer) ListStalledExecutionNodeRecords(context.Context, *ListStalledExecutionNodeRecordsRequest) (*ListStalledExecutionNodeRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStalledExecutionNodeRecords not implemented")
+}
+func (UnimplementedCoordinatorServer) CreateExecutionNodeRecordStatus(context.Context, *CreateExecutionNodeRecordStatusRequest) (*CreateExecutionNodeRecordStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateExecutionNodeRecordStatus not implemented")
+}
+func (UnimplementedCoordinatorServer) CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CoordinateExecutionNodeRecords not implemented")
 }
 func (UnimplementedCoordinatorServer) mustEmbedUnimplementedCoordinatorServer() {}
 
@@ -88,6 +130,60 @@ func _Coordinator_CreateNodeRecords_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ListStalledExecutionNodeRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStalledExecutionNodeRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListStalledExecutionNodeRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xatu.Coordinator/ListStalledExecutionNodeRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListStalledExecutionNodeRecords(ctx, req.(*ListStalledExecutionNodeRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_CreateExecutionNodeRecordStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateExecutionNodeRecordStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CreateExecutionNodeRecordStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xatu.Coordinator/CreateExecutionNodeRecordStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CreateExecutionNodeRecordStatus(ctx, req.(*CreateExecutionNodeRecordStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_CoordinateExecutionNodeRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CoordinateExecutionNodeRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CoordinateExecutionNodeRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xatu.Coordinator/CoordinateExecutionNodeRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CoordinateExecutionNodeRecords(ctx, req.(*CoordinateExecutionNodeRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Coordinator_ServiceDesc is the grpc.ServiceDesc for Coordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +194,18 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateNodeRecords",
 			Handler:    _Coordinator_CreateNodeRecords_Handler,
+		},
+		{
+			MethodName: "ListStalledExecutionNodeRecords",
+			Handler:    _Coordinator_ListStalledExecutionNodeRecords_Handler,
+		},
+		{
+			MethodName: "CreateExecutionNodeRecordStatus",
+			Handler:    _Coordinator_CreateExecutionNodeRecordStatus_Handler,
+		},
+		{
+			MethodName: "CoordinateExecutionNodeRecords",
+			Handler:    _Coordinator_CoordinateExecutionNodeRecords_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -8,14 +8,18 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/mitchellh/hashstructure/v2"
-	"github.com/savid/ttlcache/v3"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
+	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Sentry) handleVoluntaryExit(ctx context.Context, event *phase0.VoluntaryExit) error {
 	s.log.Debug("Voluntary exit received")
+
+	if err := s.beacon.Synced(ctx); err != nil {
+		return nil
+	}
 
 	now := time.Now().Add(s.clockDrift)
 

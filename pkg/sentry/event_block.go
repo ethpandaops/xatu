@@ -8,14 +8,20 @@ import (
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/mitchellh/hashstructure/v2"
-	"github.com/savid/ttlcache/v3"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
+	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 	s.log.Debug("BlockEvent received")
+
+	if err := s.beacon.Synced(ctx); err != nil {
+		s.log.WithError(err).Error("Not synced, skipping block")
+
+		return nil
+	}
 
 	now := time.Now().Add(s.clockDrift)
 

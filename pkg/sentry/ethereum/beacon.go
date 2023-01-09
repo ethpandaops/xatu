@@ -78,6 +78,39 @@ func (b *BeaconNode) OnReady(ctx context.Context, callback func(ctx context.Cont
 	b.onReadyCallbacks = append(b.onReadyCallbacks, callback)
 }
 
+func (b *BeaconNode) Synced(ctx context.Context) error {
+	status := b.beacon.GetStatus(ctx)
+	if status == nil {
+		return errors.New("missing beacon status")
+	}
+
+	syncState := status.SyncState()
+	if syncState == nil {
+		return errors.New("missing beacon node status sync state")
+	}
+
+	if syncState.SyncDistance > 3 {
+		return errors.New("beacon node is not synced")
+	}
+
+	wallclock := b.metadata.Wallclock()
+	if wallclock == nil {
+		return errors.New("missing wallclock")
+	}
+
+	currentSlot := wallclock.Slots().Current()
+
+	if currentSlot.Number()-uint64(syncState.HeadSlot) > 3 {
+		return errors.New("beacon node is too far behind head")
+	}
+
+	if !b.readyPublished {
+		return errors.New("internal beacon node is not ready")
+	}
+
+	return nil
+}
+
 func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 	if b.readyPublished {
 		return nil
@@ -97,8 +130,8 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 		return errors.New("missing beacon node status sync state")
 	}
 
-	if syncState.IsSyncing {
-		return errors.New("beacon node is syncing")
+	if syncState.SyncDistance > 3 {
+		return errors.New("beacon node is not synced")
 	}
 
 	for _, callback := range b.onReadyCallbacks {

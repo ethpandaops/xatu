@@ -215,14 +215,8 @@ func (s *Sentry) syncClockDrift(ctx context.Context) error {
 }
 
 func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
-	status := s.beacon.Node().GetStatus(ctx)
-	if status == nil {
-		return nil
-	}
-
-	syncState := status.SyncState()
-	if syncState == nil || syncState.IsSyncing {
-		return nil
+	if err := s.beacon.Synced(ctx); err != nil {
+		return err
 	}
 
 	for _, sink := range s.sinks {

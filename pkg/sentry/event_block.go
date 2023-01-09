@@ -23,29 +23,35 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 		return nil
 	}
 
+	now := time.Now().Add(s.clockDrift)
+
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.Block.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.Block.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"block":                  event.Block,
-			"slot":                   event.Slot,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"block":                 event.Block,
+			"slot":                  event.Slot,
 		}).Debug("Duplicate block event received")
 		// TODO(savid): add metrics
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_BLOCK)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
@@ -58,7 +64,7 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 		},
 	}
 
-	additionalData, err := s.getBlockData(ctx, event, meta)
+	additionalData, err := s.getBlockData(ctx, event, meta, now)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get extra block data")
 	} else {
@@ -70,7 +76,7 @@ func (s *Sentry) handleBlock(ctx context.Context, event *v1.BlockEvent) error {
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *xatu.ClientMeta) (*xatu.ClientMeta_AdditionalBlockData, error) {
+func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalBlockData, error) {
 	extra := &xatu.ClientMeta_AdditionalBlockData{}
 
 	slot := s.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(event.Slot))
@@ -87,7 +93,7 @@ func (s *Sentry) getBlockData(ctx context.Context, event *v1.BlockEvent, meta *x
 	}
 
 	extra.Propagation = &xatu.Propagation{
-		SlotStartDiff: uint64(meta.Event.DateTime.AsTime().Sub(slot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiff: uint64(eventTime.Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

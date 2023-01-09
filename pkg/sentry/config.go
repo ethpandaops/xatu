@@ -2,9 +2,10 @@ package sentry
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/ethpandaops/xatu/pkg/sentry/output"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,10 +38,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	// TODO: wrap these errors with the parent field name
 	for _, output := range c.Outputs {
 		if err := output.Validate(); err != nil {
-			return err
+			return fmt.Errorf("output %s: %w", output.Name, err)
 		}
 	}
 

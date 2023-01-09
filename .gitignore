@@ -1,3 +1,5 @@
 sentry.yaml
 server.yaml
+discovery.yaml
+mimicry.yaml
 dist

@@ -15,32 +15,40 @@ import (
 )
 
 func (s *Sentry) handleVoluntaryExit(ctx context.Context, event *phase0.VoluntaryExit) error {
+	s.log.Debug("Voluntary exit received")
+
 	if err := s.beacon.Synced(ctx); err != nil {
 		return nil
 	}
+
+	now := time.Now().Add(s.clockDrift)
 
 	hash, err := hashstructure.Hash(event, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
-	item, retrieved := s.duplicateCache.VoluntaryExit.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := s.duplicateCache.VoluntaryExit.GetOrSet(fmt.Sprint(hash), now, ttlcache.DefaultTTL)
 	if retrieved {
 		s.log.WithFields(logrus.Fields{
-			"hash":                   hash,
-			"time_since_first_event": time.Since(item.Value()),
-			"epoch":                  event.Epoch,
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+			"epoch":                 event.Epoch,
 		}).Debug("Duplicate voluntary exit event received")
 		// TODO(savid): add metrics
 		return nil
 	}
 
-	meta, err := s.createNewClientMeta(ctx, xatu.ClientMeta_Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT)
+	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		return err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT,
+			DateTime: timestamppb.New(now),
+		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},

@@ -1,0 +1,43 @@
+logging: "debug" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9090"
+
+name: example-instance
+
+labels:
+  ethpandaops: rocks
+
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntp_server: time.google.com
+
+coordinator:
+  type: manual
+  config:
+    retry_interval: 60s
+    # can be ENR or ENODE format
+    node_records:
+      - enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8
+      - enode://dd47aff4da11c82496fec9253a1d2dac8c4abdbf93ff7458cf7965447355c265907b41dbd8c4b1dded6ae28b5a4d2d6b4d3fdad2950e5b6ef56169958b80b450@127.0.0.1:30301
+  # type: xatu
+  # config:
+  #   address: localhost:8080
+  #   headers:
+  #     Authorization: Someb64Value
+  #   network_ids: [1]
+  #   fork_id_hashes: [0xf0afd0e3]
+  #   max_peers: 100
+
+outputs:
+- name: basic
+  type: http
+  config:
+    address: http://localhost:8080
+    headers:
+      Authorization: Someb64Value
+    max_queue_size: 51200
+    batch_timeout: 5s
+    export_timeout: 30s
+    max_export_batch_size: 512

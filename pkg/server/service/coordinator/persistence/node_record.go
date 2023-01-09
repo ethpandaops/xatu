@@ -4,91 +4,29 @@ import (
 	"context"
 
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
+	"github.com/huandu/go-sqlbuilder"
 	"github.com/sirupsen/logrus"
 )
 
-const preparedStatement = `
-INSERT INTO node_record (
-	enr,
-	signature,
-	seq,
-	created_timestamp,
-	id,
-	secp256k1,
-	ip4,
-	ip6,
-	tcp4,
-	tcp6,
-	udp4,
-	udp6,
-	eth2,
-	attnets,
-	syncnets,
-	node_id,
-	peer_id
-) VALUES (
-	$1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
-) ON CONFLICT (enr) DO NOTHING;
-`
+var nodeRecordStruct = sqlbuilder.NewStruct(new(node.Record)).For(sqlbuilder.PostgreSQL)
 
 type NodeRecordExporter struct {
 	log    logrus.FieldLogger
 	client *Client
 }
 
-func (e *Client) upsertNodeRecords(ctx context.Context, records []*node.Record) error {
-	txn, err := e.db.Begin()
-	if err != nil {
-		return err
+func (e *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) error {
+	values := make([]interface{}, len(records))
+	for i, record := range records {
+		values[i] = record
 	}
 
-	defer func() {
-		rErr := txn.Rollback()
-		if rErr != nil {
-			err = rErr
-		}
-	}()
+	sb := nodeRecordStruct.InsertInto("node_record", values...)
+	sql, args := sb.Build()
+	sql += " ON CONFLICT (enr) DO NOTHING;"
+	_, err := e.db.Exec(sql, args...)
 
-	stmt, err := txn.Prepare(preparedStatement)
-	if err != nil {
-		return err
-	}
-
-	for _, record := range records {
-		_, err = stmt.Exec(
-			record.Enr,
-			record.Signature,
-			record.Seq,
-			record.ID,
-			record.Secp256k1,
-			record.IP4,
-			record.IP6,
-			record.TCP4,
-			record.TCP6,
-			record.UDP4,
-			record.UDP6,
-			record.ETH2,
-			record.Attnets,
-			record.Syncnets,
-			record.NodeID,
-			record.PeerID,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = stmt.Close()
-	if err != nil {
-		return err
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func NewNodeRecordExporter(client *Client, log logrus.FieldLogger) (*NodeRecordExporter, error) {
@@ -113,5 +51,71 @@ func (e NodeRecordExporter) Shutdown(ctx context.Context) error {
 }
 
 func (e *NodeRecordExporter) sendUpstream(ctx context.Context, items []*node.Record) error {
-	return e.client.upsertNodeRecords(ctx, items)
+	return e.client.InsertNodeRecords(ctx, items)
+}
+
+func (e *Client) UpdateNodeRecord(ctx context.Context, record *node.Record) error {
+	sb := nodeRecordStruct.Update("node_record", record)
+	sb.Where(sb.E("enr", record.Enr))
+
+	sql, args := sb.Build()
+
+	_, err := e.db.Exec(sql, args...)
+
+	return err
+}
+
+func (e *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit int) ([]*node.Record, error) {
+	sb := nodeRecordStruct.SelectFrom("node_record")
+
+	sb.Where("eth2 IS NULL")
+	sb.Where("consecutive_dial_attempts < 100")
+	sb.Where("(last_dial_time < now() - interval '30 minute' OR last_dial_time IS NULL)")
+	sb.Where("(last_connect_time < now() - interval '1 day' OR last_connect_time IS NULL)")
+
+	sb.OrderBy("last_dial_time DESC")
+	sb.Limit(limit)
+
+	sql, args := sb.Build()
+
+	rows, err := e.db.Query(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var records []*node.Record
+
+	var enrs []interface{}
+
+	for rows.Next() {
+		var record node.Record
+
+		err = rows.Scan(nodeRecordStruct.Addr(&record)...)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, &record)
+
+		enrs = append(enrs, record.Enr)
+	}
+
+	if len(records) == 0 {
+		return records, nil
+	}
+
+	// TODO: this should be a transaction, but not a huge deal for now
+	ub := nodeRecordStruct.Update("node_record", &node.Record{})
+	ub.Set(ub.Add("consecutive_dial_attempts", "1"), ub.Assign("last_dial_time", "now()"))
+	ub.Where(ub.In("enr", enrs...))
+	sql, args = ub.Build()
+
+	_, err = e.db.Exec(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }

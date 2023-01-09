@@ -16,8 +16,8 @@ type ItemExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 
-	client pb.CoordinatorClient
 	conn   *grpc.ClientConn
+	client pb.CoordinatorClient
 }
 
 func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
@@ -48,7 +48,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*string) error {
 }
 
 func (e ItemExporter) Shutdown(ctx context.Context) error {
-	return e.conn.Close()
+	return nil
 }
 
 func (e *ItemExporter) sendUpstream(ctx context.Context, items []*string) error {

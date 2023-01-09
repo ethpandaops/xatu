@@ -288,54 +288,6 @@ func (x *Slot) GetStartDateTime() *timestamppb.Timestamp {
 	return nil
 }
 
-type Propagation struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// SlotStartDiff is the difference between the slot start time and the attestation received time (in milliseconds).
-	SlotStartDiff uint64 `protobuf:"varint,3,opt,name=slot_start_diff,proto3" json:"slot_start_diff,omitempty"`
-}
-
-func (x *Propagation) Reset() {
-	*x = Propagation{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Propagation) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Propagation) ProtoMessage() {}
-
-func (x *Propagation) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Propagation.ProtoReflect.Descriptor instead.
-func (*Propagation) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *Propagation) GetSlotStartDiff() uint64 {
-	if x != nil {
-		return x.SlotStartDiff
-	}
-	return 0
-}
-
 type ForkID struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -348,7 +300,7 @@ type ForkID struct {
 func (x *ForkID) Reset() {
 	*x = ForkID{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[5]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -361,7 +313,7 @@ func (x *ForkID) String() string {
 func (*ForkID) ProtoMessage() {}
 
 func (x *ForkID) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[5]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +326,7 @@ func (x *ForkID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForkID.ProtoReflect.Descriptor instead.
 func (*ForkID) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{5}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ForkID) GetHash() string {
@@ -389,6 +341,55 @@ func (x *ForkID) GetNext() string {
 		return x.Next
 	}
 	return ""
+}
+
+type Propagation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// SlotStartDiff is the difference between the slot start time and the
+	// attestation received time (in milliseconds).
+	SlotStartDiff uint64 `protobuf:"varint,3,opt,name=slot_start_diff,proto3" json:"slot_start_diff,omitempty"`
+}
+
+func (x *Propagation) Reset() {
+	*x = Propagation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Propagation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Propagation) ProtoMessage() {}
+
+func (x *Propagation) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Propagation.ProtoReflect.Descriptor instead.
+func (*Propagation) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Propagation) GetSlotStartDiff() uint64 {
+	if x != nil {
+		return x.SlotStartDiff
+	}
+	return 0
 }
 
 type ClientMeta struct {
@@ -412,7 +413,8 @@ type ClientMeta struct {
 	Ethereum *ClientMeta_Ethereum `protobuf:"bytes,8,opt,name=ethereum,proto3" json:"ethereum,omitempty"`
 	// Labels contains additional labels as set by the client.
 	Labels map[string]string `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// AdditionalData contains additional, computed data as set by the client about the event.
+	// AdditionalData contains additional, computed data as set by the client
+	// about the event.
 	//
 	// Types that are assignable to AdditionalData:
 	//
@@ -603,7 +605,8 @@ type ClientMeta_VoluntaryExit struct {
 }
 
 type ClientMeta_FinalizedCheckpoint struct {
-	// FinalizedCheckpoint contains additional data about the finalized checkpoint event.
+	// FinalizedCheckpoint contains additional data about the finalized
+	// checkpoint event.
 	FinalizedCheckpoint *ClientMeta_AdditionalFinalizedCheckpointData `protobuf:"bytes,14,opt,name=finalized_checkpoint,json=additional_data,proto3,oneof"`
 }
 
@@ -613,7 +616,8 @@ type ClientMeta_ChainReorg struct {
 }
 
 type ClientMeta_ContributionAndProof struct {
-	// ContributionAndProof contains additional data about the chain reorg event.
+	// ContributionAndProof contains additional data about the chain reorg
+	// event.
 	ContributionAndProof *ClientMeta_AdditionalContributionAndProofData `protobuf:"bytes,16,opt,name=contribution_and_proof,json=additional_data,proto3,oneof"`
 }
 
@@ -818,7 +822,8 @@ func (x *Event) GetDateTime() *timestamppb.Timestamp {
 	return nil
 }
 
-// DecoratedEvent is an event that has been decorated with additional information.
+// DecoratedEvent is an event that has been decorated with additional
+// information.
 type DecoratedEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1169,13 +1174,15 @@ type ClientMeta_AdditionalAttestationData struct {
 
 	// Source contains information for the best currently justified checkpoint.
 	Source *ClientMeta_AdditionalAttestationSourceData `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
-	// Target contains information of the block at the start of the current epoch.
+	// Target contains information of the block at the start of the current
+	// epoch.
 	Target *ClientMeta_AdditionalAttestationTargetData `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
 	// Slot contains the slot information for the attestation.
 	Slot *Slot `protobuf:"bytes,3,opt,name=slot,proto3" json:"slot,omitempty"`
 	// Epoch contains the epoch information for the attestation.
 	Epoch *Epoch `protobuf:"bytes,4,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	// Propagation contains information about the propagation of the attestation.
+	// Propagation contains information about the propagation of the
+	// attestation.
 	Propagation *Propagation `protobuf:"bytes,5,opt,name=propagation,proto3" json:"propagation,omitempty"`
 }
 
@@ -1483,7 +1490,8 @@ type ClientMeta_AdditionalChainReorgData struct {
 	Epoch *Epoch `protobuf:"bytes,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// Slot contains the slot information for the chain reorg.
 	Slot *Slot `protobuf:"bytes,2,opt,name=slot,proto3" json:"slot,omitempty"`
-	// Propagation contains information about the propagation of the chain reorg.
+	// Propagation contains information about the propagation of the chain
+	// reorg.
 	Propagation *Propagation `protobuf:"bytes,3,opt,name=propagation,proto3" json:"propagation,omitempty"`
 }
 
@@ -1549,7 +1557,8 @@ type ClientMeta_AdditionalContributionAndProofContributionData struct {
 	Epoch *Epoch `protobuf:"bytes,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// Slot contains the slot information for the contribution and proof.
 	Slot *Slot `protobuf:"bytes,2,opt,name=slot,proto3" json:"slot,omitempty"`
-	// Propagation contains information about the propagation of the contribution and proof.
+	// Propagation contains information about the propagation of the
+	// contribution and proof.
 	Propagation *Propagation `protobuf:"bytes,3,opt,name=propagation,proto3" json:"propagation,omitempty"`
 }
 
@@ -2025,14 +2034,14 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
 	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
 	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f,
-	0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x22, 0x37, 0x0a, 0x0b, 0x50, 0x72, 0x6f,
-	0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x28, 0x0a, 0x0f, 0x73, 0x6c, 0x6f, 0x74,
-	0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x69, 0x66, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x0f, 0x73, 0x6c, 0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x69,
-	0x66, 0x66, 0x22, 0x30, 0x0a, 0x06, 0x46, 0x6f, 0x72, 0x6b, 0x49, 0x44, 0x12, 0x12, 0x0a, 0x04,
-	0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68,
-	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x65, 0x78, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
-	0x6e, 0x65, 0x78, 0x74, 0x22, 0xf9, 0x16, 0x0a, 0x0a, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d,
+	0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x22, 0x30, 0x0a, 0x06, 0x46, 0x6f, 0x72,
+	0x6b, 0x49, 0x44, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x65, 0x78, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x65, 0x78, 0x74, 0x22, 0x37, 0x0a, 0x0b, 0x50,
+	0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x28, 0x0a, 0x0f, 0x73, 0x6c,
+	0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x69, 0x66, 0x66, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x0f, 0x73, 0x6c, 0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f,
+	0x64, 0x69, 0x66, 0x66, 0x22, 0xf9, 0x16, 0x0a, 0x0a, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d,
 	0x65, 0x74, 0x61, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
@@ -2346,8 +2355,8 @@ var file_pkg_proto_xatu_event_ingester_proto_goTypes = []interface{}{
 	(*CreateEventsResponse)(nil), // 2: xatu.CreateEventsResponse
 	(*Epoch)(nil),                // 3: xatu.Epoch
 	(*Slot)(nil),                 // 4: xatu.Slot
-	(*Propagation)(nil),          // 5: xatu.Propagation
-	(*ForkID)(nil),               // 6: xatu.ForkID
+	(*ForkID)(nil),               // 5: xatu.ForkID
+	(*Propagation)(nil),          // 6: xatu.Propagation
 	(*ClientMeta)(nil),           // 7: xatu.ClientMeta
 	(*ServerMeta)(nil),           // 8: xatu.ServerMeta
 	(*Meta)(nil),                 // 9: xatu.Meta
@@ -2422,23 +2431,23 @@ var file_pkg_proto_xatu_event_ingester_proto_depIdxs = []int32{
 	15, // 36: xatu.ClientMeta.AdditionalAttestationData.target:type_name -> xatu.ClientMeta.AdditionalAttestationTargetData
 	4,  // 37: xatu.ClientMeta.AdditionalAttestationData.slot:type_name -> xatu.Slot
 	3,  // 38: xatu.ClientMeta.AdditionalAttestationData.epoch:type_name -> xatu.Epoch
-	5,  // 39: xatu.ClientMeta.AdditionalAttestationData.propagation:type_name -> xatu.Propagation
+	6,  // 39: xatu.ClientMeta.AdditionalAttestationData.propagation:type_name -> xatu.Propagation
 	3,  // 40: xatu.ClientMeta.AdditionalHeadData.epoch:type_name -> xatu.Epoch
 	4,  // 41: xatu.ClientMeta.AdditionalHeadData.slot:type_name -> xatu.Slot
-	5,  // 42: xatu.ClientMeta.AdditionalHeadData.propagation:type_name -> xatu.Propagation
+	6,  // 42: xatu.ClientMeta.AdditionalHeadData.propagation:type_name -> xatu.Propagation
 	3,  // 43: xatu.ClientMeta.AdditionalBlockData.epoch:type_name -> xatu.Epoch
 	4,  // 44: xatu.ClientMeta.AdditionalBlockData.slot:type_name -> xatu.Slot
-	5,  // 45: xatu.ClientMeta.AdditionalBlockData.propagation:type_name -> xatu.Propagation
+	6,  // 45: xatu.ClientMeta.AdditionalBlockData.propagation:type_name -> xatu.Propagation
 	3,  // 46: xatu.ClientMeta.AdditionalVoluntaryExitData.epoch:type_name -> xatu.Epoch
 	3,  // 47: xatu.ClientMeta.AdditionalFinalizedCheckpointData.epoch:type_name -> xatu.Epoch
 	3,  // 48: xatu.ClientMeta.AdditionalChainReorgData.epoch:type_name -> xatu.Epoch
 	4,  // 49: xatu.ClientMeta.AdditionalChainReorgData.slot:type_name -> xatu.Slot
-	5,  // 50: xatu.ClientMeta.AdditionalChainReorgData.propagation:type_name -> xatu.Propagation
+	6,  // 50: xatu.ClientMeta.AdditionalChainReorgData.propagation:type_name -> xatu.Propagation
 	3,  // 51: xatu.ClientMeta.AdditionalContributionAndProofContributionData.epoch:type_name -> xatu.Epoch
 	4,  // 52: xatu.ClientMeta.AdditionalContributionAndProofContributionData.slot:type_name -> xatu.Slot
-	5,  // 53: xatu.ClientMeta.AdditionalContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
+	6,  // 53: xatu.ClientMeta.AdditionalContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
 	22, // 54: xatu.ClientMeta.AdditionalContributionAndProofData.contribution:type_name -> xatu.ClientMeta.AdditionalContributionAndProofContributionData
-	6,  // 55: xatu.ClientMeta.Ethereum.Execution.fork_id:type_name -> xatu.ForkID
+	5,  // 55: xatu.ClientMeta.Ethereum.Execution.fork_id:type_name -> xatu.ForkID
 	31, // 56: xatu.ServerMeta.Event.received_date_time:type_name -> google.protobuf.Timestamp
 	1,  // 57: xatu.EventIngester.CreateEvents:input_type -> xatu.CreateEventsRequest
 	2,  // 58: xatu.EventIngester.CreateEvents:output_type -> xatu.CreateEventsResponse
@@ -2504,7 +2513,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Propagation); i {
+			switch v := v.(*ForkID); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2516,7 +2525,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ForkID); i {
+			switch v := v.(*Propagation); i {
 			case 0:
 				return &v.state
 			case 1:

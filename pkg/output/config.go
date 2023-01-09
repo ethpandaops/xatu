@@ -35,8 +35,10 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 	case SinkTypeHTTP:
 		conf := &http.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
+		if config != nil {
+			if err := config.Unmarshal(conf); err != nil {
+				return nil, err
+			}
 		}
 
 		if err := defaults.Set(conf); err != nil {
@@ -47,8 +49,10 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
+		if config != nil {
+			if err := config.Unmarshal(conf); err != nil {
+				return nil, err
+			}
 		}
 
 		if err := defaults.Set(conf); err != nil {
@@ -59,8 +63,10 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
+		if config != nil {
+			if err := config.Unmarshal(conf); err != nil {
+				return nil, err
+			}
 		}
 
 		if err := defaults.Set(conf); err != nil {

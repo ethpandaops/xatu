@@ -9,6 +9,7 @@ coordinator:
   batch_timeout: 5s
   export_timeout: 30s
   max_export_batch_size: 512
+  concurrent_execution_peers: 100
 
 p2p:
   boot_nodes:

@@ -57,7 +57,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 		id:         uuid.New(),
 	}
 
-	mimicry.coordinator, err = coordinator.NewCoordinator(config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
+	mimicry.coordinator, err = coordinator.NewCoordinator(config.Name, config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
 		CreateNewClientMeta: mimicry.createNewClientMeta,
 		DecoratedEvent:      mimicry.handleNewDecoratedEvent,
 	}, log)

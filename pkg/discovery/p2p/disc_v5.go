@@ -5,11 +5,16 @@ import (
 	"crypto/ecdsa"
 	"net"
 
+	"github.com/chuckpreslar/emission"
 	gcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	topicNodeRecord = "node_record"
 )
 
 type DiscV5 struct {
@@ -19,14 +24,14 @@ type DiscV5 struct {
 
 	listener *discover.UDPv5
 
-	handlerFunc func(context.Context, *enode.Node) error
+	broker *emission.Emitter
 }
 
-func NewDiscV5(ctx context.Context, config *Config, log logrus.FieldLogger, handlerFunc func(context.Context, *enode.Node) error) *DiscV5 {
+func NewDiscV5(ctx context.Context, config *Config, log logrus.FieldLogger) *DiscV5 {
 	return &DiscV5{
-		log:         log.WithField("module", "discovery/p2p/discV5"),
-		config:      config,
-		handlerFunc: handlerFunc,
+		log:    log.WithField("module", "discovery/p2p/discV5"),
+		config: config,
+		broker: emission.NewEmitter(),
 	}
 }
 
@@ -48,6 +53,11 @@ func (d *DiscV5) Start(ctx context.Context) error {
 	return nil
 }
 
+func (d *DiscV5) Stop(ctx context.Context) error {
+	d.listener.Close()
+	return nil
+}
+
 func (d *DiscV5) listenForNewNodes(ctx context.Context) {
 	iterator := d.listener.RandomNodes()
 	iterator = enode.Filter(iterator, d.filterPeer)
@@ -62,10 +72,7 @@ func (d *DiscV5) listenForNewNodes(ctx context.Context) {
 
 		node := iterator.Node()
 
-		err := d.handlerFunc(ctx, node)
-		if err != nil {
-			d.log.WithError(err).Error("Could not handle new node")
-		}
+		d.publishNodeRecord(ctx, node)
 	}
 }
 
@@ -186,4 +193,20 @@ func (d *DiscV5) filterPeer(node *enode.Node) bool {
 	}
 
 	return true
+}
+
+func (d *DiscV5) publishNodeRecord(ctx context.Context, record *enode.Node) {
+	d.broker.Emit(topicNodeRecord, record)
+}
+
+func (d *DiscV5) handleSubscriberError(err error, topic string) {
+	if err != nil {
+		d.log.WithError(err).WithField("topic", topic).Error("Subscriber error")
+	}
+}
+
+func (d *DiscV5) OnNodeRecord(ctx context.Context, handler func(ctx context.Context, reason *enode.Node) error) {
+	d.broker.On(topicNodeRecord, func(reason *enode.Node) {
+		d.handleSubscriberError(handler(ctx, reason), topicNodeRecord)
+	})
 }

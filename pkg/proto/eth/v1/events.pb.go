@@ -4,7 +4,8 @@
 // 	protoc        v3.21.12
 // source: pkg/proto/eth/v1/events.proto
 
-// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
 
 package v1
 
@@ -504,7 +505,6 @@ func (x *EventContributionAndProof) GetMessage() *ContributionAndProof {
 	return nil
 }
 
-// TODO: should this be in a diff proto package?
 type EventTransaction struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

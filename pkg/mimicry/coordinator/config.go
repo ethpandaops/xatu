@@ -25,7 +25,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCoordinator(coordinatorType Type, config *RawMessage, handlers *handler.Peer, log logrus.FieldLogger) (Coordinator, error) {
+func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, log logrus.FieldLogger) (Coordinator, error) {
 	if coordinatorType == TypeUnknown {
 		return nil, errors.New("coordinator type is required")
 	}
@@ -42,7 +42,7 @@ func NewCoordinator(coordinatorType Type, config *RawMessage, handlers *handler.
 			return nil, err
 		}
 
-		return manual.New(conf, handlers, log)
+		return manual.New(name, conf, handlers, log)
 	case TypeXatu:
 		conf := &xatu.Config{}
 
@@ -54,7 +54,7 @@ func NewCoordinator(coordinatorType Type, config *RawMessage, handlers *handler.
 			return nil, err
 		}
 
-		return xatu.New(conf, handlers, log)
+		return xatu.New(name, conf, handlers, log)
 	default:
 		return nil, fmt.Errorf("coordinator type %s is unknown", coordinatorType)
 	}

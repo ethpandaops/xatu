@@ -14,6 +14,7 @@ require (
 	github.com/go-co-op/gocron v1.18.0
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
+	github.com/huandu/go-sqlbuilder v1.18.0
 	github.com/lib/pq v1.10.7
 	github.com/libp2p/go-libp2p v0.23.4
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -51,6 +52,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect

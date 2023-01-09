@@ -51,7 +51,10 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		return nil, err
 	}
 
-	now := time.Now().Add(time.Duration(meta.ClockDrift) * time.Millisecond)
+	now := time.Now()
+	if meta != nil {
+		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
+	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{

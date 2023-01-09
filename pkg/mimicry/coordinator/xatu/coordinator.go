@@ -1,11 +1,11 @@
-package coordinator
+package xatu
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
-	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -14,18 +14,16 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const SinkType = "xatu"
-
-type Client struct {
+type Coordinator struct {
+	name   string
 	config *Config
 	log    logrus.FieldLogger
-	proc   *processor.BatchItemProcessor[string]
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Client, error) {
+func NewCoordinator(name string, config *Config, log logrus.FieldLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -44,68 +42,60 @@ func New(config *Config, log logrus.FieldLogger) (*Client, error) {
 
 	pbClient := xatu.NewCoordinatorClient(conn)
 
-	exporter, err := NewItemExporter(config, log)
-	if err != nil {
-		return nil, err
-	}
-
-	proc := processor.NewBatchItemProcessor[string](exporter,
-		log,
-		processor.WithMaxQueueSize(config.MaxQueueSize),
-		processor.WithBatchTimeout(config.BatchTimeout),
-		processor.WithExportTimeout(config.ExportTimeout),
-		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
-	)
-
-	return &Client{
+	return &Coordinator{
+		name:   name,
 		config: config,
 		log:    log,
-		proc:   proc,
 		conn:   conn,
 		pb:     pbClient,
 	}, nil
 }
 
-func (c *Client) Type() string {
-	return SinkType
-}
-
-func (c *Client) Start(ctx context.Context) error {
+func (c *Coordinator) Start(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) Stop(ctx context.Context) error {
+func (c *Coordinator) Stop(ctx context.Context) error {
 	if err := c.conn.Close(); err != nil {
 		return err
 	}
 
-	return c.proc.Shutdown(ctx)
-}
-
-func (c *Client) HandleNewNodeRecord(ctx context.Context, record *string) error {
-	c.proc.Write(record)
-
 	return nil
 }
 
-func (c *Client) ListStaleNodeRecords(ctx context.Context) ([]string, error) {
-	req := xatu.ListStalledExecutionNodeRecordsRequest{
-		PageSize: c.config.ConcurrentExecutionPeers,
+func (c *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, records []*xatu.CoordinatedNodeRecord) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
+	forkIDHashes := make([][]byte, len(c.config.ForkIDHashes))
+
+	for i, forkIDHash := range c.config.ForkIDHashes {
+		forkIDHashBytes, err := hex.DecodeString(forkIDHash[2:])
+		if err == nil {
+			forkIDHashes[i] = forkIDHashBytes
+		}
 	}
+
+	req := xatu.CoordinateExecutionNodeRecordsRequest{
+		NetworkIds:   c.config.NetworkIDs,
+		ForkIdHashes: forkIDHashes,
+		NodeRecords:  records,
+		Limit:        c.config.MaxPeers,
+		ClientId:     c.name,
+	}
+
+	c.log.WithField("records", c.config.ForkIDHashes).Info("asdasdasd")
 
 	md := metadata.New(c.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	records, err := c.pb.ListStalledExecutionNodeRecords(ctx, &req, grpc.UseCompressor(gzip.Name))
+	res, err := c.pb.CoordinateExecutionNodeRecords(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return records.NodeRecords, nil
+	return res, nil
 }
 
-func (c *Client) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
+func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
 	c.log.WithField("record", status.NodeRecord).Info("found execution node status, sending to coordinator")
 
 	req := xatu.CreateExecutionNodeRecordStatusRequest{

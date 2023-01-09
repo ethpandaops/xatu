@@ -12,6 +12,7 @@ import (
 
 	"github.com/chuckpreslar/emission"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/p2p"
@@ -94,7 +95,7 @@ func (c *Client) GetPooledTransactions(ctx context.Context, hashes []common.Hash
 }
 
 func (c *Client) Start(ctx context.Context) error {
-	c.log.Info("starting execution mimicry client")
+	c.log.Debug("starting execution mimicry client")
 	c.peer = p2p.NewPeer(c.nodeRecord.ID(), "xatu", []p2p.Cap{
 		{
 			Name:    "eth",
@@ -112,20 +113,32 @@ func (c *Client) Start(ctx context.Context) error {
 
 	var err error
 
-	c.conn, err = net.Dial("tcp", address)
-	if err != nil {
-		c.log.WithField("address", address).WithError(err).Error("error dialing")
+	// set a deadline for dialing
+	d := net.Dialer{Deadline: time.Now().Add(5 * time.Second)}
 
+	c.conn, err = d.Dial("tcp", address)
+	if err != nil {
 		return err
 	}
 
 	c.rlpxConn = rlpx.NewConn(c.conn, c.nodeRecord.Pubkey())
+
+	// update deadline for handshake
+	err = c.conn.SetDeadline(time.Now().Add(5 * time.Second))
+	if err != nil {
+		return err
+	}
+
 	c.privateKey, _ = crypto.GenerateKey()
 
 	peerPublicKey, err := c.rlpxConn.Handshake(c.privateKey)
 	if err != nil {
-		c.log.WithField("address", address).WithError(err).Error("error handshaking")
+		return err
+	}
 
+	// clear deadline
+	err = c.conn.SetDeadline(time.Time{})
+	if err != nil {
 		return err
 	}
 
@@ -142,9 +155,19 @@ func (c *Client) Start(ctx context.Context) error {
 }
 
 func (c *Client) Stop(ctx context.Context) error {
+	if c.ethPeer != nil {
+		c.ethPeer.Close()
+	}
+
 	if c.rlpxConn != nil {
 		if err := c.rlpxConn.Close(); err != nil {
 			c.log.WithError(err).Error("error closing rlpx connection")
+		}
+	}
+
+	if c.msgPipe != nil {
+		if err := c.msgPipe.Close(); err != nil {
+			c.log.WithError(err).Error("error closing msg pipe")
 		}
 	}
 
@@ -153,11 +176,13 @@ func (c *Client) Stop(ctx context.Context) error {
 
 func (c *Client) handleSessionError(ctx context.Context, err error) {
 	c.publishDisconnect(ctx, nil)
-	c.log.WithError(err).Error("error handling session")
+	c.log.WithError(err).Debug("error handling session")
 }
 
 func (c *Client) startSession(ctx context.Context) {
 	for {
+		// TODO: timeout between receiving messages?
+		// TODO: handle clients (besu?) not sending eth wire status message (by just disconnecting)
 		code, data, _, err := c.rlpxConn.Read()
 		if err != nil {
 			c.handleSessionError(ctx, fmt.Errorf("error reading rlpx connection: %w", err))
@@ -176,7 +201,7 @@ func (c *Client) startSession(ctx context.Context) {
 
 			c.publishHello(ctx, hello)
 
-			if err := c.sendHello(ctx, hello.MaxETHProtocolVersion()); err != nil {
+			if err := c.sendHello(ctx, hello.ETHProtocolVersion()); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
@@ -251,6 +276,23 @@ func (c *Client) startSession(ctx context.Context) {
 				c.handleSessionError(ctx, err)
 				return
 			}
+		case GetBlockBodiesCode:
+			c.log.WithField("code", code).Debug("received GetBlockBodies")
+
+			blockBodies, err := c.handleGetBlockBodies(ctx, data)
+			if err != nil {
+				c.handleSessionError(ctx, err)
+				return
+			}
+
+			err = c.sendBlockBodies(ctx, &BlockBodies{
+				RequestId:         blockBodies.RequestId,
+				BlockBodiesPacket: []*eth.BlockBody{},
+			})
+			if err != nil {
+				c.handleSessionError(ctx, err)
+				return
+			}
 		case NewPooledTransactionHashesCode:
 			c.log.WithField("code", code).Debug("received NewPooledTransactionHashes")
 
@@ -272,6 +314,23 @@ func (c *Client) startSession(ctx context.Context) {
 
 			if c.pooledTransactionsMap[txs.ReqID()] != nil {
 				c.pooledTransactionsMap[txs.ReqID()] <- txs
+			}
+		case GetReceiptsCode:
+			c.log.WithField("code", code).Debug("received GetReceipts")
+
+			blockBodies, err := c.handleGetReceipts(ctx, data)
+			if err != nil {
+				c.handleSessionError(ctx, err)
+				return
+			}
+
+			err = c.sendReceipts(ctx, &Receipts{
+				RequestId:      blockBodies.RequestId,
+				ReceiptsPacket: [][]*types.Receipt{},
+			})
+			if err != nil {
+				c.handleSessionError(ctx, err)
+				return
 			}
 		default:
 			c.log.WithField("code", code).Debug("received unhandled message code")

@@ -21,6 +21,9 @@ builds:
       - 7
     ignore:
       - goarch: 386
+      # broken with go-ethereum github.com/prometheus/tsdb module
+      - goos: windows
+        goarch: arm64
     ldflags:
       - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
     mod_timestamp: "{{ .CommitTimestamp }}"

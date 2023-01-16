@@ -3,10 +3,12 @@ package xatu
 import (
 	"context"
 	"fmt"
+	"net"
 
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
@@ -22,7 +24,17 @@ type ItemExporter struct {
 
 func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if config.TLS {
+		host, _, err := net.SplitHostPort(config.Address)
+		if err != nil {
+			return ItemExporter{}, fmt.Errorf("fail to get host from address: %v", err)
+		}
+
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, host)))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
 
 	conn, err := grpc.Dial(config.Address, opts...)
 	if err != nil {

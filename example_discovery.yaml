@@ -3,6 +3,7 @@ metricsAddr: ":9090"
 
 coordinator:
   address: localhost:8080
+  tls: false
   headers:
     Authorization: Someb64Value
   max_queue_size: 51200

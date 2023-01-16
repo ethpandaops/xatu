@@ -31,10 +31,21 @@ coordinator:
   #   max_peers: 100
 
 outputs:
-- name: basic
+- name: http-sink
   type: http
   config:
     address: http://localhost:8080
+    headers:
+      Authorization: Someb64Value
+    max_queue_size: 51200
+    batch_timeout: 5s
+    export_timeout: 30s
+    max_export_batch_size: 512
+- name: xatu-server
+  type: xatu
+  config:
+    address: localhost:8080
+    tls: false
     headers:
       Authorization: Someb64Value
     max_queue_size: 51200

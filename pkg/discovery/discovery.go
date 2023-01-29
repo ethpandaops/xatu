@@ -3,6 +3,7 @@ package discovery
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,6 +26,7 @@ type Discovery struct {
 
 	coordinator *coordinator.Client
 
+	discV4 *p2p.DiscV4
 	discV5 *p2p.DiscV5
 	status *p2p.Status
 
@@ -33,6 +35,8 @@ type Discovery struct {
 	duplicateCache *cache.DuplicateCache
 
 	id uuid.UUID
+
+	metrics *Metrics
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Discovery, error) {
@@ -50,7 +54,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Discover
 	}
 
 	duplicateCache := cache.NewDuplicateCache()
-	duplicateCache.Start()
+
+	err = duplicateCache.Start(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Discovery{
 		Config:         config,
@@ -58,6 +66,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Discover
 		log:            log,
 		duplicateCache: duplicateCache,
 		id:             uuid.New(),
+		metrics:        NewMetrics("xatu_discovery"),
 	}, nil
 }
 
@@ -75,25 +84,43 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return err
 	}
 
-	d.discV5 = p2p.NewDiscV5(ctx, &d.Config.P2P, d.log)
+	if d.Config.P2P.DiscV4 {
+		d.discV4 = p2p.NewDiscV4(ctx, &d.Config.P2P, d.log)
 
-	err := d.discV5.Start(ctx)
-	if err != nil {
-		return err
+		err := d.discV4.Start(ctx)
+		if err != nil {
+			return err
+		}
+
+		d.discV4.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+			d.metrics.AddDiscoveredNodeRecord(1, "discv4")
+			return d.handleNewNodeRecord(ctx, node.String())
+		})
 	}
 
-	d.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
-		return d.handleNewNodeRecord(ctx, node.String())
-	})
+	if d.Config.P2P.DiscV5 {
+		d.discV5 = p2p.NewDiscV5(ctx, &d.Config.P2P, d.log)
+
+		err := d.discV5.Start(ctx)
+		if err != nil {
+			return err
+		}
+
+		d.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+			d.metrics.AddDiscoveredNodeRecord(1, "discv5")
+			return d.handleNewNodeRecord(ctx, node.String())
+		})
+	}
 
 	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
 
-	err = d.status.Start(ctx)
+	err := d.status.Start(ctx)
 	if err != nil {
 		return err
 	}
 
-	d.status.OnStatus(ctx, func(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
+	d.status.OnExecutionStatus(ctx, func(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
+		d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
 		return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
 	})
 
@@ -107,8 +134,16 @@ func (d *Discovery) Start(ctx context.Context) error {
 	sig := <-cancel
 	d.log.Printf("Caught signal: %v", sig)
 
-	if err := d.discV5.Stop(ctx); err != nil {
-		return err
+	if d.Config.P2P.DiscV4 {
+		if err := d.discV4.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	if d.Config.P2P.DiscV5 {
+		if err := d.discV5.Stop(ctx); err != nil {
+			return err
+		}
 	}
 
 	if err := d.status.Stop(ctx); err != nil {
@@ -146,9 +181,9 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 
 	if _, err := c.Every("5s").Do(func() {
 		d.log.WithFields(logrus.Fields{
-			"records": d.status.Active(),
+			"records": d.status.ActiveExecution(),
 		}).Info("execution records currently trying to dial")
-		if d.status.Active() == 0 {
+		if d.status.ActiveExecution() == 0 {
 			d.log.Info("no active execution records to dial, requesting stale records from coordinator")
 			nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
 			if err != nil {
@@ -156,7 +191,7 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 				return
 			}
 			d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
-			d.status.AddNodeRecords(ctx, nodeRecords)
+			d.status.AddExecutionNodeRecords(ctx, nodeRecords)
 		}
 	}); err != nil {
 		return err

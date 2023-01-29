@@ -12,18 +12,12 @@ import (
 
 	"github.com/chuckpreslar/emission"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/rlpx"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	// TODO: handle eth68+ https://eips.ethereum.org/EIPS/eip-5793
-	ETHProtocolVersion = 67
 )
 
 type Client struct {
@@ -42,6 +36,8 @@ type Client struct {
 	rlpxConn *rlpx.Conn
 
 	pooledTransactionsMap map[uint64]chan *PooledTransactions
+
+	ethCapVersion uint
 }
 
 func parseNodeRecord(record string) (*enode.Node, error) {
@@ -96,17 +92,12 @@ func (c *Client) GetPooledTransactions(ctx context.Context, hashes []common.Hash
 
 func (c *Client) Start(ctx context.Context) error {
 	c.log.Debug("starting execution mimicry client")
-	c.peer = p2p.NewPeer(c.nodeRecord.ID(), "xatu", []p2p.Cap{
-		{
-			Name:    "eth",
-			Version: ETHProtocolVersion,
-		},
-	})
+	c.peer = p2p.NewPeer(c.nodeRecord.ID(), "xatu", SupportedEthCaps())
 
 	_, msgPipe := p2p.MsgPipe()
 	c.msgPipe = msgPipe
 
-	c.ethPeer = eth.NewPeer(67, c.peer, c.msgPipe, nil)
+	c.ethPeer = eth.NewPeer(maxETHProtocolVersion, c.peer, c.msgPipe, nil)
 
 	address := c.nodeRecord.IP().String() + ":" + strconv.Itoa(c.nodeRecord.TCP())
 	c.log.WithField("address", address).Debug("dialing peer")
@@ -155,6 +146,10 @@ func (c *Client) Start(ctx context.Context) error {
 }
 
 func (c *Client) Stop(ctx context.Context) error {
+	if c.peer != nil {
+		c.peer.Disconnect(p2p.DiscQuitting)
+	}
+
 	if c.ethPeer != nil {
 		c.ethPeer.Close()
 	}
@@ -175,14 +170,29 @@ func (c *Client) Stop(ctx context.Context) error {
 }
 
 func (c *Client) handleSessionError(ctx context.Context, err error) {
-	c.publishDisconnect(ctx, nil)
 	c.log.WithError(err).Debug("error handling session")
+	c.disconnect(ctx, nil)
+}
+
+func (c *Client) disconnect(ctx context.Context, reason *Disconnect) {
+	c.log.Debug("disconnecting from peer")
+	c.publishDisconnect(ctx, reason)
 }
 
 func (c *Client) startSession(ctx context.Context) {
+	if err := c.sendHello(ctx); err != nil {
+		c.handleSessionError(ctx, err)
+		return
+	}
+
 	for {
-		// TODO: timeout between receiving messages?
-		// TODO: handle clients (besu?) not sending eth wire status message (by just disconnecting)
+		// set read deadline
+		err := c.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		if err != nil {
+			c.handleSessionError(ctx, fmt.Errorf("error setting rlpx read deadline: %w", err))
+			return
+		}
+
 		code, data, _, err := c.rlpxConn.Read()
 		if err != nil {
 			c.handleSessionError(ctx, fmt.Errorf("error reading rlpx connection: %w", err))
@@ -191,144 +201,55 @@ func (c *Client) startSession(ctx context.Context) {
 
 		switch int(code) {
 		case HelloCode:
-			c.log.WithField("code", code).Debug("received Hello")
-
-			hello, err := c.handleHello(ctx, data)
-			if err != nil {
+			if err := c.handleHello(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
-
-			c.publishHello(ctx, hello)
-
-			if err := c.sendHello(ctx, hello.ETHProtocolVersion()); err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			// always enable snappy to avoid jank
-			c.rlpxConn.SetSnappy(true)
 		case DisconnectCode:
-			c.log.WithField("code", code).Debug("received Disconnect")
-
-			disconnect := c.handleDisconnect(ctx, data)
-
-			c.publishDisconnect(ctx, disconnect)
-
+			c.handleDisconnect(ctx, code, data)
 			return
 		case PingCode:
-			c.log.WithField("code", code).Debug("received Ping")
-
-			if err := c.sendPong(ctx); err != nil {
+			if err := c.handlePing(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
 		case StatusCode:
-			c.log.WithField("code", code).Debug("received Status")
-
-			status, err := c.handleStatus(ctx, data)
-			if err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			c.publishStatus(ctx, status)
-
-			if err := c.sendStatus(ctx, status); err != nil {
+			if err := c.handleStatus(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
 		case TransactionsCode:
-			c.log.WithField("code", code).Debug("received Transactions")
-
-			txs, err := c.handleTransactions(ctx, data)
-			if err != nil {
+			if err := c.handleTransactions(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
-
-			c.publishTransactions(ctx, txs)
 		case GetBlockHeadersCode:
-			c.log.WithField("code", code).Debug("received GetBlockHeaders")
-
-			blockHeaders, err := c.handleGetBlockHeaders(ctx, data)
-			if err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			err = c.sendGetBlockHeaders(ctx, blockHeaders)
-			if err != nil {
+			if err := c.handleGetBlockHeaders(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
 		case BlockHeadersCode:
-			c.log.WithField("code", code).Debug("received BlockHeaders")
-
-			blockHeaders, err := c.handleBlockHeaders(ctx, data)
-			if err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			err = c.sendBlockHeaders(ctx, blockHeaders)
-			if err != nil {
+			if err := c.handleBlockHeaders(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
 		case GetBlockBodiesCode:
-			c.log.WithField("code", code).Debug("received GetBlockBodies")
-
-			blockBodies, err := c.handleGetBlockBodies(ctx, data)
-			if err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			err = c.sendBlockBodies(ctx, &BlockBodies{
-				RequestId:         blockBodies.RequestId,
-				BlockBodiesPacket: []*eth.BlockBody{},
-			})
-			if err != nil {
+			if err := c.handleGetBlockBodies(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
 		case NewPooledTransactionHashesCode:
-			c.log.WithField("code", code).Debug("received NewPooledTransactionHashes")
-
-			hashes, err := c.handleNewPooledTransactionHashes(ctx, data)
-			if err != nil {
+			if err := c.handleNewPooledTransactionHashes(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}
-
-			c.publishNewPooledTransactionHashes(ctx, hashes)
 		case PooledTransactionsCode:
-			c.log.WithField("code", code).Debug("received PooledTransactions")
-
-			txs, err := c.handlePooledTransactions(ctx, data)
-			if err != nil {
+			if err := c.handlePooledTransactions(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
-			}
-
-			if c.pooledTransactionsMap[txs.ReqID()] != nil {
-				c.pooledTransactionsMap[txs.ReqID()] <- txs
 			}
 		case GetReceiptsCode:
-			c.log.WithField("code", code).Debug("received GetReceipts")
-
-			blockBodies, err := c.handleGetReceipts(ctx, data)
-			if err != nil {
-				c.handleSessionError(ctx, err)
-				return
-			}
-
-			err = c.sendReceipts(ctx, &Receipts{
-				RequestId:      blockBodies.RequestId,
-				ReceiptsPacket: [][]*types.Receipt{},
-			})
-			if err != nil {
+			if err := c.handleGetReceipts(ctx, code, data); err != nil {
 				c.handleSessionError(ctx, err)
 				return
 			}

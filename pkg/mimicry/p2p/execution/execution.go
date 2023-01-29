@@ -11,6 +11,7 @@ import (
 	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
@@ -89,10 +90,7 @@ func (p *Peer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error
 			Id:   p.network.ID,
 		},
 		Execution: &xatu.ClientMeta_Ethereum_Execution{
-			Implementation: p.implmentation,
-			Version:        p.version,
-			ForkId:         p.forkID,
-			NodeRecord:     p.nodeRecord,
+			ForkId: p.forkID,
 		},
 	}
 
@@ -116,8 +114,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		processor.WithExportTimeout(1*time.Second),
 		// TODO: technically this should actually be 256 and throttle requests to 1 per second(?)
 		// https://github.com/ethereum/devp2p/blob/master/caps/eth.md#getpooledtransactions-0x09
-		// I think you can get away with have it as 4096 though as thats the technical limit
-		// of the PooledTransactions response EVEN though most clients support way more.
+		// I think we can get away with much higher as long as it doesn't go above the
+		// max client message size.
 		processor.WithMaxExportBatchSize(50000),
 	)
 
@@ -126,7 +124,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	p.client.OnHello(ctx, func(ctx context.Context, hello *execution.Hello) error {
 		// setup client implementation and version info
 		split := strings.SplitN(hello.Name, "/", 2)
-		p.implmentation = split[0]
+		p.implmentation = strings.ToLower(split[0])
 		if len(split) > 1 {
 			p.version = split[1]
 		}
@@ -202,25 +200,22 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			for _, hash := range *hashes {
-				// check if transaction is already in the shared cache
-				tx := p.sharedCache.Transaction.Get(hash.String())
-				if tx != nil {
-					event, errT := p.handleTransaction(ctx, now, tx.Value())
-					if errT != nil {
-						p.log.WithError(errT).Error("failed handling transaction")
-					}
+				if errT := p.processTransaction(ctx, now, hash); errT != nil {
+					p.log.WithError(errT).Error("failed processing event")
+				}
+			}
+		}
 
-					if event != nil {
-						if errT := p.handlers.DecoratedEvent(ctx, event); errT != nil {
-							p.log.WithError(errT).Error("failed handling decorated event")
-						}
-					}
-				} else {
-					item := TransactionHashItem{
-						Hash: hash,
-						Seen: now,
-					}
-					p.txProc.Write(&item)
+		return nil
+	})
+
+	p.client.OnNewPooledTransactionHashes68(ctx, func(ctx context.Context, hashes *execution.NewPooledTransactionHashes68) error {
+		now := time.Now()
+		if p.handlers.DecoratedEvent != nil && hashes != nil {
+			// TODO: handle eth68+ transaction size/types as well
+			for _, hash := range hashes.Transactions {
+				if errT := p.processTransaction(ctx, now, hash); errT != nil {
+					p.log.WithError(errT).Error("failed processing event")
 				}
 			}
 		}
@@ -232,15 +227,19 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
-				p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
+				// only process transactions we haven't seen before across all peers
+				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
+				if exists == nil {
+					p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
 
-				event, errT := p.handleTransaction(ctx, now, tx)
-				if errT != nil {
-					p.log.WithError(errT).Error("failed handling transaction")
-				}
-				if event != nil {
-					if errT := p.handlers.DecoratedEvent(ctx, event); errT != nil {
-						p.log.WithError(errT).Error("failed handling decorated event")
+					event, errT := p.handleTransaction(ctx, now, tx)
+					if errT != nil {
+						p.log.WithError(errT).Error("failed handling transaction")
+					}
+					if event != nil {
+						if errT := p.handlers.DecoratedEvent(ctx, event); errT != nil {
+							p.log.WithError(errT).Error("failed handling decorated event")
+						}
 					}
 				}
 			}
@@ -274,8 +273,34 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	return response, nil
 }
 
+func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash common.Hash) error {
+	// check if transaction is already in the shared cache, no need to fetch it again
+	exists := p.sharedCache.Transaction.Get(hash.String())
+	if exists == nil {
+		item := TransactionHashItem{
+			Hash: hash,
+			Seen: now,
+		}
+		p.txProc.Write(&item)
+	}
+
+	return nil
+}
+
 func (p *Peer) Stop(ctx context.Context) error {
-	return p.client.Stop(ctx)
+	p.duplicateCache.Stop()
+
+	if err := p.txProc.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	if p.client != nil {
+		if err := p.client.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *Peer) Type() string {

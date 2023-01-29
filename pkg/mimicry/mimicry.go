@@ -3,6 +3,7 @@ package mimicry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,6 +34,8 @@ type Mimicry struct {
 	log logrus.FieldLogger
 
 	id uuid.UUID
+
+	metrics *Metrics
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry, error) {
@@ -55,6 +58,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 		clockDrift: time.Duration(0),
 		log:        log,
 		id:         uuid.New(),
+		metrics:    NewMetrics("xatu_mimicry"),
 	}
 
 	mimicry.coordinator, err = coordinator.NewCoordinator(config.Name, config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
@@ -174,6 +178,20 @@ func (m *Mimicry) syncClockDrift(ctx context.Context) error {
 }
 
 func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	network := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = "unknown"
+	}
+
+	eventType := event.GetEvent().GetName().String()
+	if eventType == "" {
+		eventType = "unknown"
+	}
+
+	m.metrics.AddDecoratedEvent(1, eventType, networkStr)
+
 	for _, sink := range m.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			m.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")

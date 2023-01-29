@@ -15,37 +15,33 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	topicNodeRecord = "node_record"
-)
-
-type DiscV5 struct {
+type DiscV4 struct {
 	config *Config
 
 	log logrus.FieldLogger
 
-	listener *ListenerV5
+	listener *ListenerV4
 
 	privKey *ecdsa.PrivateKey
 
 	broker *emission.Emitter
 }
 
-type ListenerV5 struct {
+type ListenerV4 struct {
 	conn      *net.UDPConn
 	localNode *enode.LocalNode
-	discovery *discover.UDPv5
+	discovery *discover.UDPv4
 }
 
-func NewDiscV5(ctx context.Context, config *Config, log logrus.FieldLogger) *DiscV5 {
-	return &DiscV5{
-		log:    log.WithField("module", "discovery/p2p/discV5"),
+func NewDiscV4(ctx context.Context, config *Config, log logrus.FieldLogger) *DiscV4 {
+	return &DiscV4{
+		log:    log.WithField("module", "discovery/p2p/discV4"),
 		config: config,
 		broker: emission.NewEmitter(),
 	}
 }
 
-func (d *DiscV5) Start(ctx context.Context) error {
+func (d *DiscV4) Start(ctx context.Context) error {
 	if err := d.startCrons(ctx); err != nil {
 		return err
 	}
@@ -53,7 +49,7 @@ func (d *DiscV5) Start(ctx context.Context) error {
 	return nil
 }
 
-func (d *DiscV5) startListener(ctx context.Context) error {
+func (d *DiscV4) startListener(ctx context.Context) error {
 	if d.listener != nil {
 		d.listener.Close()
 	}
@@ -77,7 +73,7 @@ func (d *DiscV5) startListener(ctx context.Context) error {
 	return nil
 }
 
-func (d *DiscV5) Stop(ctx context.Context) error {
+func (d *DiscV4) Stop(ctx context.Context) error {
 	if d.listener != nil {
 		d.listener.Close()
 	}
@@ -85,7 +81,7 @@ func (d *DiscV5) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (d *DiscV5) startCrons(ctx context.Context) error {
+func (d *DiscV4) startCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
 	if _, err := c.Every(d.config.Restart).Do(func() {
@@ -101,7 +97,7 @@ func (d *DiscV5) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (d *DiscV5) listenForNewNodes(ctx context.Context) {
+func (d *DiscV4) listenForNewNodes(ctx context.Context) {
 	iterator := d.listener.discovery.RandomNodes()
 	iterator = enode.Filter(iterator, d.filterPeer)
 
@@ -119,11 +115,11 @@ func (d *DiscV5) listenForNewNodes(ctx context.Context) {
 	}
 }
 
-func (d *DiscV5) createListener(
+func (d *DiscV4) createListener(
 	ctx context.Context,
 	privKey *ecdsa.PrivateKey,
-) (*ListenerV5, error) {
-	listener := &ListenerV5{}
+) (*ListenerV4, error) {
+	listener := &ListenerV4{}
 
 	var bindIP net.IP
 
@@ -155,11 +151,11 @@ func (d *DiscV5) createListener(
 
 	listener.localNode = localNode
 
-	dv5Cfg := discover.Config{
+	dv4Cfg := discover.Config{
 		PrivateKey: privKey,
 	}
 
-	dv5Cfg.Bootnodes = []*enode.Node{}
+	dv4Cfg.Bootnodes = []*enode.Node{}
 
 	discv4BootStrapAddr := d.config.BootNodes
 	for _, addr := range discv4BootStrapAddr {
@@ -168,10 +164,10 @@ func (d *DiscV5) createListener(
 			return nil, err
 		}
 
-		dv5Cfg.Bootnodes = append(dv5Cfg.Bootnodes, bootNode)
+		dv4Cfg.Bootnodes = append(dv4Cfg.Bootnodes, bootNode)
 	}
 
-	discovery, err := discover.ListenV5(conn, localNode, dv5Cfg)
+	discovery, err := discover.ListenV4(conn, localNode, dv4Cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +177,7 @@ func (d *DiscV5) createListener(
 	return listener, nil
 }
 
-func (d *DiscV5) createLocalNode(
+func (d *DiscV4) createLocalNode(
 	ctx context.Context,
 	privKey *ecdsa.PrivateKey,
 	ipAddr net.IP,
@@ -207,22 +203,22 @@ func (d *DiscV5) createLocalNode(
 	return localNode, nil
 }
 
-func (d *DiscV5) startDiscovery(
+func (d *DiscV4) startDiscovery(
 	ctx context.Context,
 	privKey *ecdsa.PrivateKey,
-) (*ListenerV5, error) {
+) (*ListenerV4, error) {
 	listener, err := d.createListener(ctx, privKey)
 	if err != nil {
 		return nil, err
 	}
 
 	record := listener.discovery.Self()
-	d.log.WithField("ENR", record.String()).Info("Started discovery v5")
+	d.log.WithField("ENR", record.String()).Info("Started discovery v4")
 
 	return listener, nil
 }
 
-func (d *DiscV5) filterPeer(node *enode.Node) bool {
+func (d *DiscV4) filterPeer(node *enode.Node) bool {
 	// Ignore nil node entries passed in.
 	if node == nil {
 		return false
@@ -245,23 +241,23 @@ func (d *DiscV5) filterPeer(node *enode.Node) bool {
 	return true
 }
 
-func (d *DiscV5) publishNodeRecord(ctx context.Context, record *enode.Node) {
+func (d *DiscV4) publishNodeRecord(ctx context.Context, record *enode.Node) {
 	d.broker.Emit(topicNodeRecord, record)
 }
 
-func (d *DiscV5) handleSubscriberError(err error, topic string) {
+func (d *DiscV4) handleSubscriberError(err error, topic string) {
 	if err != nil {
 		d.log.WithError(err).WithField("topic", topic).Error("Subscriber error")
 	}
 }
 
-func (d *DiscV5) OnNodeRecord(ctx context.Context, handler func(ctx context.Context, reason *enode.Node) error) {
+func (d *DiscV4) OnNodeRecord(ctx context.Context, handler func(ctx context.Context, reason *enode.Node) error) {
 	d.broker.On(topicNodeRecord, func(reason *enode.Node) {
 		d.handleSubscriberError(handler(ctx, reason), topicNodeRecord)
 	})
 }
 
-func (l *ListenerV5) Close() error {
+func (l *ListenerV4) Close() error {
 	if l.discovery != nil {
 		l.discovery.Close()
 	}

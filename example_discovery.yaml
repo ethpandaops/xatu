@@ -13,6 +13,13 @@ coordinator:
   concurrent_execution_peers: 100
 
 p2p:
+  # Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time
+  # enable Node Discovery Protocol v4
+  discV4: true
+  # enable Node Discovery Protocol v5
+  discV5: true
+  # time between initiating discovery scans, will generate a fresh private key each time
+  restart: 2m
   boot_nodes:
     #################################
     # Mainnet

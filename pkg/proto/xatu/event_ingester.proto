@@ -68,14 +68,8 @@ message ClientMeta {
     Network network = 1;
 
     message Execution {
-      // Implementation is the name of the execution client.
-      string implementation = 1;
-      // Version is the version of the execution client.
-      string version = 2;
       // ForkID is the fork ID of the execution client.
-      ForkID fork_id = 3 [ json_name = "fork_id" ];
-      // NodeRecord is the ENR/ENode of the execution client.
-      string node_record = 4 [ json_name = "node_record" ];
+      ForkID fork_id = 1 [ json_name = "fork_id" ];
     }
     message Consensus {
       // Implementation is the name of the consensus client.
@@ -260,7 +254,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT = 5;
     BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
     BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
-    EXECUTION_TRANSACTION = 8;
+    MEMPOOL_TRANSACTION = 8;
   }
   // Name is the name of the event.
   Name name = 1;

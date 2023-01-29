@@ -1,4 +1,4 @@
-package xatu
+package coordinator
 
 import (
 	"context"
@@ -21,6 +21,8 @@ type Coordinator struct {
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
+
+	metrics *Metrics
 }
 
 func NewCoordinator(name string, config *Config, log logrus.FieldLogger) (*Coordinator, error) {
@@ -43,11 +45,12 @@ func NewCoordinator(name string, config *Config, log logrus.FieldLogger) (*Coord
 	pbClient := xatu.NewCoordinatorClient(conn)
 
 	return &Coordinator{
-		name:   name,
-		config: config,
-		log:    log,
-		conn:   conn,
-		pb:     pbClient,
+		name:    name,
+		config:  config,
+		log:     log,
+		conn:    conn,
+		pb:      pbClient,
+		metrics: NewMetrics("xatu_mimicry_coordinator_xatu"),
 	}, nil
 }
 
@@ -81,8 +84,6 @@ func (c *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, record
 		ClientId:     c.name,
 	}
 
-	c.log.WithField("records", c.config.ForkIDHashes).Info("asdasdasd")
-
 	md := metadata.New(c.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
@@ -106,6 +107,10 @@ func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, statu
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	_, err := c.pb.CreateExecutionNodeRecordStatus(ctx, &req, grpc.UseCompressor(gzip.Name))
+
+	if err == nil {
+		c.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+	}
 
 	return err
 }

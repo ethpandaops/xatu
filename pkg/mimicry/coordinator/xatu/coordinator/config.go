@@ -1,4 +1,4 @@
-package xatu
+package coordinator
 
 import (
 	"errors"

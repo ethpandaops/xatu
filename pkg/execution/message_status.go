@@ -20,7 +20,7 @@ func (msg *Status) Code() int { return StatusCode }
 
 func (msg *Status) ReqID() uint64 { return 0 }
 
-func (c *Client) handleStatus(ctx context.Context, data []byte) (*Status, error) {
+func (c *Client) receiveStatus(ctx context.Context, data []byte) (*Status, error) {
 	s := new(Status)
 	if err := rlp.DecodeBytes(data, &s); err != nil {
 		return nil, fmt.Errorf("error decoding status: %w", err)
@@ -42,6 +42,23 @@ func (c *Client) sendStatus(ctx context.Context, status *Status) error {
 
 	if _, err := c.rlpxConn.Write(StatusCode, encodedData); err != nil {
 		return fmt.Errorf("error sending status: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) handleStatus(ctx context.Context, code uint64, data []byte) error {
+	c.log.WithField("code", code).Debug("received Status")
+
+	status, err := c.receiveStatus(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	c.publishStatus(ctx, status)
+
+	if err := c.sendStatus(ctx, status); err != nil {
+		return err
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package sentry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,6 +36,8 @@ type Sentry struct {
 	duplicateCache *cache.DuplicateCache
 
 	id uuid.UUID
+
+	metrics *Metrics
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -67,6 +70,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		log:            log,
 		duplicateCache: duplicateCache,
 		id:             uuid.New(),
+		metrics:        NewMetrics("xatu_sentry"),
 	}, nil
 }
 
@@ -152,7 +156,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 	var networkMeta *xatu.ClientMeta_Ethereum_Network
 
 	network := s.beacon.Metadata().Network
-	if network == nil {
+	if network != nil {
 		networkMeta = &xatu.ClientMeta_Ethereum_Network{
 			Name: string(network.Name),
 			Id:   network.ID,
@@ -167,11 +171,8 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(s.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{
-			Network: networkMeta,
-			Execution: &xatu.ClientMeta_Ethereum_Execution{
-				Implementation: "",
-				Version:        "",
-			},
+			Network:   networkMeta,
+			Execution: &xatu.ClientMeta_Ethereum_Execution{},
 			Consensus: &xatu.ClientMeta_Ethereum_Consensus{
 				Implementation: s.beacon.Metadata().Client(ctx),
 				Version:        s.beacon.Metadata().NodeVersion(ctx),
@@ -218,6 +219,20 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	if err := s.beacon.Synced(ctx); err != nil {
 		return err
 	}
+
+	network := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = "unknown"
+	}
+
+	eventType := event.GetEvent().GetName().String()
+	if eventType == "" {
+		eventType = "unknown"
+	}
+
+	s.metrics.AddDecoratedEvent(1, eventType, networkStr)
 
 	for _, sink := range s.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {

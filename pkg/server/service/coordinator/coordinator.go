@@ -163,10 +163,19 @@ func (e *Coordinator) CreateExecutionNodeRecordStatus(ctx context.Context, req *
 		status.Capabilities = strings.Join(capabilitiesStr, ",")
 	}
 
+	result := "error"
+
+	defer func() {
+		// TODO(sam.calder-mason): Derive client id/name from the request jwt
+		e.metrics.AddExecutionNodeRecordStatusReceived(1, "unknown", result, status.NetworkID, fmt.Sprintf("0x%x", status.ForkIDHash))
+	}()
+
 	err := e.persistence.InsertNodeRecordExecution(ctx, &status)
 	if err != nil {
 		return nil, err
 	}
+
+	result = "success"
 
 	nodeRecord := &node.Record{
 		Enr:                     req.Status.NodeRecord,

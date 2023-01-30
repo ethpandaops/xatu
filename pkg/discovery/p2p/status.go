@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	topicStatus = "status"
+	topicExecutionStatus = "execution_status"
 )
 
 type Status struct {
@@ -23,16 +23,19 @@ type Status struct {
 
 	broker *emission.Emitter
 
-	active int
+	activeExecution int
 
 	mu sync.Mutex
+
+	metrics *Metrics
 }
 
 func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) *Status {
 	return &Status{
-		log:    log.WithField("module", "discovery/p2p/discV5"),
-		config: config,
-		broker: emission.NewEmitter(),
+		log:     log.WithField("module", "discovery/p2p"),
+		config:  config,
+		broker:  emission.NewEmitter(),
+		metrics: NewMetrics("xatu_discovery"),
 	}
 }
 
@@ -44,29 +47,42 @@ func (s *Status) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (s *Status) Active() int {
+func (s *Status) ActiveExecution() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.active
+	return s.activeExecution
 }
 
-func (s *Status) AddNodeRecords(ctx context.Context, nodeRecords []string) {
+func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.active += len(nodeRecords)
+	s.activeExecution += len(nodeRecords)
+	s.metrics.SetActiveDialingNodeRecods(s.activeExecution, "execution")
 
 	for _, nodeRecord := range nodeRecords {
 		go func(record string) {
 			_ = retry.Do(
 				func() error {
-					peer, err := NewPeer(ctx, s.log, record, s.publishStatus)
+					peer, err := NewPeer(ctx, s.log, record, s.publishExecutionStatus)
 					if err != nil {
 						return err
 					}
 
+					var response error
+
+					connected := false
+
 					defer func() {
 						if peer != nil {
+							status := "failed"
+
+							if connected {
+								status = "success"
+							}
+
+							s.metrics.AddDialedNodeRecod(1, status)
+
 							if err = peer.Stop(ctx); err != nil {
 								s.log.WithError(err).Warn("failed to stop peer")
 							}
@@ -80,12 +96,14 @@ func (s *Status) AddNodeRecords(ctx context.Context, nodeRecords []string) {
 
 					timeout := time.After(15 * time.Second)
 
-					var response error
-
 					select {
 					case response = <-disconnect:
 					case <-timeout:
 						response = errors.New("timeout")
+					}
+
+					if response == nil {
+						connected = true
 					}
 
 					return response
@@ -100,13 +118,14 @@ func (s *Status) AddNodeRecords(ctx context.Context, nodeRecords []string) {
 			s.mu.Lock()
 			defer s.mu.Unlock()
 
-			s.active--
+			s.activeExecution--
+			s.metrics.SetActiveDialingNodeRecods(s.activeExecution, "execution")
 		}(nodeRecord)
 	}
 }
 
-func (s *Status) publishStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) {
-	s.broker.Emit(topicStatus, status)
+func (s *Status) publishExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) {
+	s.broker.Emit(topicExecutionStatus, status)
 }
 
 func (s *Status) handleSubscriberError(err error, topic string) {
@@ -115,8 +134,8 @@ func (s *Status) handleSubscriberError(err error, topic string) {
 	}
 }
 
-func (s *Status) OnStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error) {
-	s.broker.On(topicStatus, func(status *xatu.ExecutionNodeStatus) {
-		s.handleSubscriberError(handler(ctx, status), topicStatus)
+func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error) {
+	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
+		s.handleSubscriberError(handler(ctx, status), topicExecutionStatus)
 	})
 }

@@ -20,7 +20,7 @@ func (msg *BlockHeaders) Code() int { return BlockHeadersCode }
 
 func (msg *BlockHeaders) ReqID() uint64 { return msg.RequestId }
 
-func (c *Client) handleBlockHeaders(ctx context.Context, data []byte) (*BlockHeaders, error) {
+func (c *Client) receiveBlockHeaders(ctx context.Context, data []byte) (*BlockHeaders, error) {
 	s := new(BlockHeaders)
 	if err := rlp.DecodeBytes(data, &s); err != nil {
 		return nil, fmt.Errorf("error decoding block headers: %w", err)
@@ -43,6 +43,22 @@ func (c *Client) sendBlockHeaders(ctx context.Context, bh *BlockHeaders) error {
 
 	if _, err := c.rlpxConn.Write(BlockHeadersCode, encodedData); err != nil {
 		return fmt.Errorf("error sending block headers: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) handleBlockHeaders(ctx context.Context, code uint64, data []byte) error {
+	c.log.WithField("code", code).Debug("received BlockHeaders")
+
+	blockHeaders, err := c.receiveBlockHeaders(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	err = c.sendBlockHeaders(ctx, blockHeaders)
+	if err != nil {
+		return err
 	}
 
 	return nil

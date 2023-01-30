@@ -5,11 +5,12 @@ import (
 )
 
 const (
-	topicDisconnect                 = "disconnect"
-	topicHello                      = "hello"
-	topicStatus                     = "status"
-	topicTransactions               = "transactions"
-	topicNewPooledTransactionHashes = "new_pooled_transaction_hashes"
+	topicDisconnect                   = "disconnect"
+	topicHello                        = "hello"
+	topicStatus                       = "status"
+	topicTransactions                 = "transactions"
+	topicNewPooledTransactionHashes   = "new_pooled_transaction_hashes"
+	topicNewPooledTransactionHashes68 = "new_pooled_transaction_hashes_68"
 )
 
 func (c *Client) publishDisconnect(ctx context.Context, reason *Disconnect) {
@@ -30,6 +31,10 @@ func (c *Client) publishTransactions(ctx context.Context, transactions *Transact
 
 func (c *Client) publishNewPooledTransactionHashes(ctx context.Context, hashes *NewPooledTransactionHashes) {
 	c.broker.Emit(topicNewPooledTransactionHashes, hashes)
+}
+
+func (c *Client) publishNewPooledTransactionHashes68(ctx context.Context, hashes *NewPooledTransactionHashes68) {
+	c.broker.Emit(topicNewPooledTransactionHashes68, hashes)
 }
 
 func (c *Client) handleSubscriberError(err error, topic string) {
@@ -65,5 +70,11 @@ func (c *Client) OnTransactions(ctx context.Context, handler func(ctx context.Co
 func (c *Client) OnNewPooledTransactionHashes(ctx context.Context, handler func(ctx context.Context, hashes *NewPooledTransactionHashes) error) {
 	c.broker.On(topicNewPooledTransactionHashes, func(hashes *NewPooledTransactionHashes) {
 		c.handleSubscriberError(handler(ctx, hashes), topicNewPooledTransactionHashes)
+	})
+}
+
+func (c *Client) OnNewPooledTransactionHashes68(ctx context.Context, handler func(ctx context.Context, hashes *NewPooledTransactionHashes68) error) {
+	c.broker.On(topicNewPooledTransactionHashes68, func(hashes *NewPooledTransactionHashes68) {
+		c.handleSubscriberError(handler(ctx, hashes), topicNewPooledTransactionHashes68)
 	})
 }

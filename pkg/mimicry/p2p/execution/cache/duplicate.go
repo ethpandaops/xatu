@@ -21,3 +21,7 @@ func NewDuplicateCache() *DuplicateCache {
 func (d *DuplicateCache) Start() {
 	go d.Transaction.Start()
 }
+
+func (d *DuplicateCache) Stop() {
+	d.Transaction.Stop()
+}

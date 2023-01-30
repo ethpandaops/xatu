@@ -95,6 +95,9 @@ Output configuration to send mimicry events to a [Xatu server](./server.md).
 | outputs[].config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
 | outputs[].config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
 | outputs[].config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.network_ids | array<string> |  | List of network ids to connect to (decimal format, eg. '1' for mainnet) |
+| outputs[].config.fork_id_hashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to connect to (hex string) |
+| outputs[].config.max_peers | int | `100` | Max number of peers to attempt to connect to simultaneously |
 
 ### Output `http` configuration
 
@@ -118,6 +121,9 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    network_ids: [1]
+    fork_id_hashes: [0xf0afd0e3]
+    max_peers: 100
 
 outputs:
 - name: standard-out
@@ -150,6 +156,8 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    network_ids: [1]
+    fork_id_hashes: [0xf0afd0e3]
 
 outputs:
 - name: xatu-output
@@ -167,6 +175,8 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    network_ids: [1]
+    fork_id_hashes: [0xf0afd0e3]
 
 outputs:
 - name: http-basic-auth
@@ -194,6 +204,8 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    network_ids: [1]
+    fork_id_hashes: [0xf0afd0e3]
 
 outputs:
 - name: log
@@ -235,7 +247,7 @@ An example event payload of a Beacon API event stream for the block topic;
 ```json
 {
   "event": {
-    "name": "EXECUTION_TRANSACTION",
+    "name": "MEMPOOL_TRANSACTION",
     "date_time": "2022-01-01T10:12:10.050Z"
   },
   "meta": {
@@ -254,13 +266,10 @@ An example event payload of a Beacon API event stream for the block topic;
           "name": "mainnet"
         },
           "execution": {
-            "implementation": "Geth",
-            "version": "v1.1.1-stable-e5eb32ac",
             "fork_id": {
               "hash": "0xb96cbd13",
               "next": "0"
-            },
-            "node_record": "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"
+            }
           }
       },
       "additional_data": {
@@ -300,12 +309,9 @@ An example event payload of a Beacon API event stream for the block topic;
 | meta.client.clock_drift | int | `optional` | NTP calculated clock drift of the mimicry |
 | meta.client.labels | object |  | A key value map of labels |
 | meta.client.ethereum.network.name | string | `required` | Ethereum network name eg. `mainnet`, `sepolia` |
-| meta.client.ethereum.execution.implementation | string | `optional` | Ethereum consensus client name upstream from this mimicry |
-| meta.client.ethereum.execution.version | string | `optional` | Ethereum consensus client version upstream from this mimicry |
 | meta.client.ethereum.execution.fork_id | object | `optional` | ForkID [EIP-2124](https://eips.ethereum.org/EIPS/eip-2124) |
 | meta.client.ethereum.execution.fork_id.hash | string | `optional` | IEEE CRC32 checksum of the genesis hash and fork blocks numbers that already passed |
 | meta.client.ethereum.execution.fork_id.next | string | `optional` | Block number of the next upcoming fork, or 0 if no next fork is known |
-| meta.client.ethereum.execution.node_record | string | `optional` | [ENR](https://eips.ethereum.org/EIPS/eip-778) or `ENode` record of the peer |
 | meta.client.additional_data | object | `optional` | Computed additional data to compliment the events upstream raw data eg. calculating slot start date time |
 
 ### Execution layer
@@ -314,7 +320,7 @@ When the mimicry is connected to execution layer peer over the [Ethereum Wire Pr
 
 #### Transaction
 
-`meta.event.name` is `EXECUTION_TRANSACTION`
+`meta.event.name` is `MEMPOOL_TRANSACTION`
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |

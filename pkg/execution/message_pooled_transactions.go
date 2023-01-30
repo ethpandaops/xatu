@@ -20,7 +20,7 @@ func (msg *PooledTransactions) Code() int { return PooledTransactionsCode }
 
 func (msg *PooledTransactions) ReqID() uint64 { return msg.RequestId }
 
-func (c *Client) handlePooledTransactions(ctx context.Context, data []byte) (*PooledTransactions, error) {
+func (c *Client) receivePooledTransactions(ctx context.Context, data []byte) (*PooledTransactions, error) {
 	s := new(PooledTransactions)
 	if err := rlp.DecodeBytes(data, &s); err != nil {
 		return nil, fmt.Errorf("error decoding get block headers: %w", err)
@@ -43,6 +43,21 @@ func (c *Client) sendPooledTransactions(ctx context.Context, pt *PooledTransacti
 
 	if _, err := c.rlpxConn.Write(PooledTransactionsCode, encodedData); err != nil {
 		return fmt.Errorf("error sending get block headers: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) handlePooledTransactions(ctx context.Context, code uint64, data []byte) error {
+	c.log.WithField("code", code).Debug("received PooledTransactions")
+
+	txs, err := c.receivePooledTransactions(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	if c.pooledTransactionsMap[txs.ReqID()] != nil {
+		c.pooledTransactionsMap[txs.ReqID()] <- txs
 	}
 
 	return nil

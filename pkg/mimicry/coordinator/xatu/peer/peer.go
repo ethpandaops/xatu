@@ -39,7 +39,6 @@ func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.
 }
 
 func (p *Peer) Start(ctx context.Context) error {
-	// TODO: handle ExecutionStatus when connected
 	go func() {
 		p.Record.ConnectionAttempts++
 
@@ -70,16 +69,20 @@ func (p *Peer) Start(ctx context.Context) error {
 
 				return response
 			},
-			retry.RetryIf(func(err error) bool {
+			retry.Attempts(0),
+			// TODO: currently a bug when Attempts(0) is set, this will never be called
+			// https://github.com/avast/retry-go/issues/66
+			// also looks like this leaks goroutines
+			// retry.RetryIf(func(err error) bool {
+			// 	return !p.stopped
+			// }),
+			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				p.log.WithError(err).Debug("peer failed")
+
 				if !p.stopped {
 					p.Record.ConnectionAttempts++
 				}
 
-				return !p.stopped
-			}),
-			retry.Attempts(0),
-			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-				p.log.WithError(err).Debug("peer failed")
 				return p.retryDelay
 			}),
 		)

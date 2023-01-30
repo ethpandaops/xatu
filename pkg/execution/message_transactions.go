@@ -19,11 +19,24 @@ func (msg *Transactions) Code() int { return TransactionsCode }
 
 func (msg *Transactions) ReqID() uint64 { return 0 }
 
-func (c *Client) handleTransactions(ctx context.Context, data []byte) (*Transactions, error) {
+func (c *Client) receiveTransactions(ctx context.Context, data []byte) (*Transactions, error) {
 	s := new(Transactions)
 	if err := rlp.DecodeBytes(data, &s); err != nil {
 		return nil, fmt.Errorf("error decoding transactions: %w", err)
 	}
 
 	return s, nil
+}
+
+func (c *Client) handleTransactions(ctx context.Context, code uint64, data []byte) error {
+	c.log.WithField("code", code).Debug("received Transactions")
+
+	txs, err := c.receiveTransactions(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	c.publishTransactions(ctx, txs)
+
+	return err
 }

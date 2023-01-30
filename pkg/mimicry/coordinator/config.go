@@ -7,6 +7,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/manual"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu"
+	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/sirupsen/logrus"
 )
@@ -44,7 +45,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 
 		return manual.New(name, conf, handlers, log)
 	case TypeXatu:
-		conf := &xatu.Config{}
+		conf := &xatuCoordinator.Config{}
 
 		if err := config.Unmarshal(conf); err != nil {
 			return nil, err

@@ -2,12 +2,15 @@ package eventingester
 
 import (
 	"context"
+	"errors"
+	"net"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -65,7 +68,36 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 	// TODO(sam.calder-mason): Add clock drift
 	receivedAt := timestamppb.New(time.Now())
 
-	p, _ := peer.FromContext(ctx)
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("failed to get grpc peer")
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("failed to get metadata from context")
+	}
+
+	var ipAddress string
+
+	realIP := md.Get("x-real-ip")
+	if len(realIP) > 0 {
+		ipAddress = realIP[0]
+	}
+
+	forwardedFor := md.Get("x-forwarded-for")
+	if len(forwardedFor) > 0 {
+		ipAddress = forwardedFor[0]
+	}
+
+	if ipAddress == "" {
+		switch addr := p.Addr.(type) {
+		case *net.UDPAddr:
+			ipAddress = addr.IP.String()
+		case *net.TCPAddr:
+			ipAddress = addr.IP.String()
+		}
+	}
 
 	for _, event := range req.Events {
 		// TODO(sam.calder-mason): Validate event
@@ -77,7 +109,7 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 				ReceivedDateTime: receivedAt,
 			},
 			Client: &xatu.ServerMeta_Client{
-				IP: p.Addr.String(),
+				IP: ipAddress,
 			},
 		}
 	}

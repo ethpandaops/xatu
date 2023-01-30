@@ -58,7 +58,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_EXECUTION_TRANSACTION,
+			Name:     xatu.Event_MEMPOOL_TRANSACTION,
 			DateTime: timestamppb.New(now),
 		},
 		Meta: &xatu.Meta{
@@ -130,8 +130,11 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 		seenMap := map[common.Hash]time.Time{}
 
 		for i, item := range items {
-			hashes[i] = item.Hash
-			seenMap[item.Hash] = item.Seen
+			exists := p.sharedCache.Transaction.Get(item.Hash.String())
+			if exists == nil {
+				hashes[i] = item.Hash
+				seenMap[item.Hash] = item.Seen
+			}
 		}
 
 		txs, err := p.client.GetPooledTransactions(ctx, hashes)
@@ -142,22 +145,27 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 		if txs != nil {
 			for _, tx := range txs.PooledTransactionsPacket {
-				seen := seenMap[tx.Hash()]
-				if seen.IsZero() {
-					p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")
+				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
+				if exists == nil {
+					p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
 
-					seen = time.Now()
-				}
+					seen := seenMap[tx.Hash()]
+					if seen.IsZero() {
+						p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")
 
-				event, err := p.handleTransaction(ctx, seen, tx)
+						seen = time.Now()
+					}
 
-				if err != nil {
-					p.log.WithError(err).Error("Failed to handle transaction")
-				}
+					event, err := p.handleTransaction(ctx, seen, tx)
 
-				if event != nil {
-					if err := p.handlers.DecoratedEvent(ctx, event); err != nil {
+					if err != nil {
 						p.log.WithError(err).Error("Failed to handle transaction")
+					}
+
+					if event != nil {
+						if err := p.handlers.DecoratedEvent(ctx, event); err != nil {
+							p.log.WithError(err).Error("Failed to handle transaction")
+						}
 					}
 				}
 			}

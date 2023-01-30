@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -96,6 +97,17 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 			ipAddress = addr.IP.String()
 		case *net.TCPAddr:
 			ipAddress = addr.IP.String()
+		}
+	}
+
+	if ipAddress != "" {
+		// grab the first ip if there are multiple
+		ips := strings.Split(ipAddress, ",")
+		ipAddress = strings.TrimSpace(ips[0])
+
+		// validate
+		if net.ParseIP(ipAddress) == nil {
+			ipAddress = ""
 		}
 	}
 

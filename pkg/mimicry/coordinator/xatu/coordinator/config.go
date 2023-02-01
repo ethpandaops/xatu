@@ -7,6 +7,7 @@ import (
 type Config struct {
 	Address      string            `yaml:"address"`
 	Headers      map[string]string `yaml:"headers"`
+	TLS          bool              `yaml:"tls" default:"false"`
 	NetworkIDs   []uint64          `yaml:"network_ids"`
 	ForkIDHashes []string          `yaml:"fork_id_hashes"`
 	MaxPeers     uint32            `yaml:"max_peers" default:"100"`

@@ -24,6 +24,7 @@ coordinator:
   # type: xatu
   # config:
   #   address: localhost:8080
+  #   tls: false
   #   headers:
   #     Authorization: Someb64Value
   #   network_ids: [1]

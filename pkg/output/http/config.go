@@ -8,10 +8,10 @@ import (
 type Config struct {
 	Address            string              `yaml:"address"`
 	Headers            map[string]string   `yaml:"headers"`
-	MaxQueueSize       int                 `yaml:"max_queue_size" default:"51200"`
-	BatchTimeout       time.Duration       `yaml:"batch_timeout" default:"5s"`
-	ExportTimeout      time.Duration       `yaml:"export_timeout" default:"30s"`
-	MaxExportBatchSize int                 `yaml:"max_export_batch_size" default:"512"`
+	MaxQueueSize       int                 `yaml:"maxQueueSize" default:"51200"`
+	BatchTimeout       time.Duration       `yaml:"batchTimeout" default:"5s"`
+	ExportTimeout      time.Duration       `yaml:"exportTimeout" default:"30s"`
+	MaxExportBatchSize int                 `yaml:"maxExportBatchSize" default:"512"`
 	Compression        CompressionStrategy `yaml:"compression" default:"none"`
 }
 

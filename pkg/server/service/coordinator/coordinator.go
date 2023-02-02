@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -258,5 +259,23 @@ func (e *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, req *x
 	return &xatu.CoordinateExecutionNodeRecordsResponse{
 		NodeRecords: targetedNodes,
 		RetryDelay:  5,
+	}, nil
+}
+
+func (e *Coordinator) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
+	records, err := e.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(records) == 0 {
+		return nil, fmt.Errorf("no records found")
+	}
+
+	//nolint:gosec // not a security issue
+	randomRecord := records[rand.Intn(len(records))]
+
+	return &xatu.GetDiscoveryNodeRecordResponse{
+		NodeRecord: randomRecord.Enr,
 	}, nil
 }

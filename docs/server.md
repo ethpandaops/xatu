@@ -50,20 +50,20 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
-| ntp_server | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
 | services.coordinator.persistence | object |  | Persistence configuration |
-| services.coordinator.persistence.driver_name | string | `postgres` | Persistence driver name (`postgres`) |
-| services.coordinator.persistence.connection_string | string |  | Connection string for the persistence driver |
-| services.coordinator.persistence.max_queue_size | int | `51200` | The maximum queue size to buffer items for delayed processing. If the queue gets full it drops the items |
-| services.coordinator.persistence.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available items when timeout is reached |
-| services.coordinator.persistence.export_timeout | string | `30s` | The maximum duration for exporting items. If the timeout is reached, the export will be cancelled |
-| services.coordinator.persistence.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of items to process in a single batch. If there are more than one batch worth of items then it processes multiple batches of items one batch after the other without any delay |
-| services.event_ingester | object |  | [Event Ingester](#event-ingester) service |
-| services.event_ingester.enabled | bool | `false` | Enable the event ingester service |
-| services.event_ingester.outputs | array |  | List exampleone batch after the other without any delay |
+| services.coordinator.persistence.driverName | string | `postgres` | Persistence driver name (`postgres`) |
+| services.coordinator.persistence.connectionString | string |  | Connection string for the persistence driver |
+| services.coordinator.persistence.maxQueueSize | int | `51200` | The maximum queue size to buffer items for delayed processing. If the queue gets full it drops the items |
+| services.coordinator.persistence.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available items when timeout is reached |
+| services.coordinator.persistence.exportTimeout | string | `30s` | The maximum duration for exporting items. If the timeout is reached, the export will be cancelled |
+| services.coordinator.persistence.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of items to process in a single batch. If there are more than one batch worth of items then it processes multiple batches of items one batch after the other without any delay |
+| services.eventIngester | object |  | [Event Ingester](#event-ingester) service |
+| services.eventIngester.enabled | bool | `false` | Enable the event ingester service |
+| services.eventIngester.outputs | array |  | List exampleone batch after the other without any delay |
 
 ### Simple Example
 
@@ -74,9 +74,9 @@ services:
   coordinator:
     enabled: true
     persistence:
-      driver_name: postgres
-      connection_string: postgres://postgres:admin@localhost:5432/xatu?sslmode=disable
-  event_ingester:
+      driverName: postgres
+      connectionString: postgres://postgres:admin@localhost:5432/xatu?sslmode=disable
+  eventIngester:
     enabled: true
     outputs:
     - name: stdout
@@ -87,7 +87,7 @@ services:
 
 ```yaml
 services:
-  event_ingester:
+  eventIngester:
     enabled: true
     outputs:
     - name: http-sink
@@ -95,7 +95,7 @@ services:
       config:
         address: http://localhost:8081
         headers:
-          Authorization: "Basic Someb64Value"
+          authorization: "Basic Someb64Value"
 ```
 
 ### Complex example
@@ -108,19 +108,19 @@ metricsAddr: ":9090"
 labels:
   ethpandaops: rocks
 
-ntp_server: time.google.com
+ntpServer: time.google.com
 
 services:
   coordinator:
     enabled: true
     persistence:
-      driver_name: postgres
-      connection_string: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
-      max_queue_size: 51200
-      batch_timeout: 5s
-      export_timeout: 30s
-      max_export_batch_size: 512
-  event_ingester:
+      driverName: postgres
+      connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
+      maxQueueSize: 51200
+      batchTimeout: 5s
+      exportTimeout: 30s
+      maxExportBatchSize: 512
+  eventIngester:
     enabled: true
     outputs:
     - name: logs
@@ -130,7 +130,7 @@ services:
       config:
         address: http://localhost:8081
         headers:
-          Authorization: "Basic Someb64Value"
+          authorization: "Basic Someb64Value"
 ```
 
 ## Services

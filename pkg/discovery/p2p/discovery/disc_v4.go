@@ -1,9 +1,10 @@
-package p2p
+package discovery
 
 import (
 	"context"
 	"crypto/ecdsa"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/chuckpreslar/emission"
@@ -16,32 +17,50 @@ import (
 )
 
 type DiscV4 struct {
-	config *Config
-
-	log logrus.FieldLogger
+	log       logrus.FieldLogger
+	restart   time.Duration
+	bootNodes []*enode.Node
 
 	listener *ListenerV4
 
 	privKey *ecdsa.PrivateKey
 
 	broker *emission.Emitter
+
+	mu sync.Mutex
+
+	scheduler *gocron.Scheduler
+
+	started bool
 }
 
 type ListenerV4 struct {
 	conn      *net.UDPConn
 	localNode *enode.LocalNode
 	discovery *discover.UDPv4
+
+	mu sync.Mutex
 }
 
-func NewDiscV4(ctx context.Context, config *Config, log logrus.FieldLogger) *DiscV4 {
+func NewDiscV4(ctx context.Context, restart time.Duration, log logrus.FieldLogger) *DiscV4 {
 	return &DiscV4{
-		log:    log.WithField("module", "discovery/p2p/discV4"),
-		config: config,
-		broker: emission.NewEmitter(),
+		log:     log.WithField("module", "discovery/p2p/discV4"),
+		restart: restart,
+		broker:  emission.NewEmitter(),
+		started: false,
 	}
 }
 
 func (d *DiscV4) Start(ctx context.Context) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.started {
+		return nil
+	}
+
+	d.started = true
+
 	if err := d.startCrons(ctx); err != nil {
 		return err
 	}
@@ -78,13 +97,22 @@ func (d *DiscV4) Stop(ctx context.Context) error {
 		d.listener.Close()
 	}
 
+	if d.scheduler != nil {
+		d.scheduler.Stop()
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.started = false
+
 	return nil
 }
 
 func (d *DiscV4) startCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
-	if _, err := c.Every(d.config.Restart).Do(func() {
+	if _, err := c.Every(d.restart).Do(func() {
 		if err := d.startListener(ctx); err != nil {
 			d.log.WithError(err).Error("Failed to restart new node discovery")
 		}
@@ -93,6 +121,8 @@ func (d *DiscV4) startCrons(ctx context.Context) error {
 	}
 
 	c.StartAsync()
+
+	d.scheduler = c
 
 	return nil
 }
@@ -157,15 +187,10 @@ func (d *DiscV4) createListener(
 
 	dv4Cfg.Bootnodes = []*enode.Node{}
 
-	discv4BootStrapAddr := d.config.BootNodes
-	for _, addr := range discv4BootStrapAddr {
-		bootNode, parseErr := enode.Parse(enode.ValidSchemes, addr)
-		if parseErr != nil {
-			return nil, err
-		}
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-		dv4Cfg.Bootnodes = append(dv4Cfg.Bootnodes, bootNode)
-	}
+	dv4Cfg.Bootnodes = append(dv4Cfg.Bootnodes, d.bootNodes...)
 
 	discovery, err := discover.ListenV4(conn, localNode, dv4Cfg)
 	if err != nil {
@@ -251,6 +276,26 @@ func (d *DiscV4) handleSubscriberError(err error, topic string) {
 	}
 }
 
+func (d *DiscV4) UpdateBootNodes(bootNodes []string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	bn := []*enode.Node{}
+
+	for _, addr := range bootNodes {
+		bootNode, parseErr := enode.Parse(enode.ValidSchemes, addr)
+		if parseErr != nil {
+			return parseErr
+		}
+
+		bn = append(bn, bootNode)
+	}
+
+	d.bootNodes = bn
+
+	return nil
+}
+
 func (d *DiscV4) OnNodeRecord(ctx context.Context, handler func(ctx context.Context, reason *enode.Node) error) {
 	d.broker.On(topicNodeRecord, func(reason *enode.Node) {
 		d.handleSubscriberError(handler(ctx, reason), topicNodeRecord)
@@ -258,12 +303,16 @@ func (d *DiscV4) OnNodeRecord(ctx context.Context, handler func(ctx context.Cont
 }
 
 func (l *ListenerV4) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	if l.discovery != nil {
 		l.discovery.Close()
 	}
 
 	if l.localNode != nil && l.localNode.Database() != nil {
 		l.localNode.Database().Close()
+		l.localNode = nil
 	}
 
 	if l.conn != nil {

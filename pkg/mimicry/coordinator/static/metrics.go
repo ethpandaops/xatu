@@ -1,4 +1,4 @@
-package manual
+package static
 
 import "github.com/prometheus/client_golang/prometheus"
 

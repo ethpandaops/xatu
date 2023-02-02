@@ -53,9 +53,9 @@ Mimicry requires a single `yaml` config file. An example file can be found [here
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | name | string |  | Unique name of the mimicry |
 | labels | object |  | A key value map of labels to append to every mimicry event |
-| ntp_server | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| coordinator.type | string |  | Type of output (`xatu`, `manual`) |
-| coordinator.config | object |  | Output type configuration [`xatu`](#coordinator-xatu-configuration)/[`http`](#coordinator-manual-configuration) |
+| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| coordinator.type | string |  | Type of output (`xatu`, `static`) |
+| coordinator.config | object |  | Coordinator type configuration [`xatu`](#coordinator-xatu-configuration)/[`static`](#coordinator-static-configuration) |
 | outputs | array<object> |  | List of outputs for the mimicry to send data to |
 | outputs[].name | string |  | Name of the output |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `stdout`) |
@@ -68,20 +68,21 @@ Coordinator configuration to get peers to connect to from the [Xatu server coord
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | coordinator.config.address | string |  | The address of the server receiving events |
+| coordinator.config.tls | bool |  | Server requires TLS |
 | coordinator.config.headers | object |  | A key value map of headers to append to requests |
-| coordinator.config.max_queue_size | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
-| coordinator.config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
-| coordinator.config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
-| coordinator.config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| coordinator.config.maxQueueSize | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
+| coordinator.config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
+| coordinator.config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
+| coordinator.config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
 
-### Coordinator `manual` configuration
+### Coordinator `static` configuration
 
-Coordinator configuration to manually specify peers to connect to.
+Coordinator configuration to statically specify peers to connect to.
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
-| coordinator.config.retry_interval | string |  | Interval between trying to connect to a peer |
-| coordinator.config.node_records | array<string> |  | List of ENR/ENode peers to connect to |
+| coordinator.config.retryInterval | string |  | Interval between trying to connect to a peer |
+| coordinator.config.nodeRecords | array<string> |  | List of ENR/ENode peers to connect to |
 
 ### Output `xatu` configuration
 
@@ -90,14 +91,15 @@ Output configuration to send mimicry events to a [Xatu server](./server.md).
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | outputs[].config.address | string |  | The address of the server receiving events |
+| outputs[].config.tls | bool |  | Server requires TLS |
 | outputs[].config.headers | object |  | A key value map of headers to append to requests |
-| outputs[].config.max_queue_size | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
-| outputs[].config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
-| outputs[].config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
-| outputs[].config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
-| outputs[].config.network_ids | array<string> |  | List of network ids to connect to (decimal format, eg. '1' for mainnet) |
-| outputs[].config.fork_id_hashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to connect to (hex string) |
-| outputs[].config.max_peers | int | `100` | Max number of peers to attempt to connect to simultaneously |
+| outputs[].config.maxQueueSize | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
+| outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
+| outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
+| outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.networkIDs | array<string> |  | List of network ids to connect to (decimal format, eg. '1' for mainnet) |
+| outputs[].config.forkIDHashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to connect to (hex string) |
+| outputs[].config.maxPeers | int | `100` | Max number of peers to attempt to connect to simultaneously |
 
 ### Output `http` configuration
 
@@ -107,10 +109,10 @@ Output configuration to send mimicry events to a http server.
 | --- | --- | --- | --- |
 | outputs[].config.address | string |  | The address of the server receiving events |
 | outputs[].config.headers | object |  | A key value map of headers to append to requests |
-| outputs[].config.max_queue_size | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
-| outputs[].config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
-| outputs[].config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
-| outputs[].config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.maxQueueSize | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
+| outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
+| outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
+| outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
 
 ### Simple example
 
@@ -121,25 +123,25 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
-    network_ids: [1]
-    fork_id_hashes: [0xf0afd0e3]
-    max_peers: 100
+    networkIDs: [1]
+    forkIDHashes: [0xf0afd0e3]
+    maxPeers: 100
 
 outputs:
 - name: standard-out
   type: stdout
 ```
 
-### Simple example with manual coordinator
+### Simple example with static coordinator
 
 ```yaml
 name: example-instance-001
 
 coordinator:
-  type: manual
+  type: static
   config:
-    retry_interval: 60s
-    node_records:
+    retryInterval: 60s
+    nodeRecords:
       - enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8
 
 outputs:
@@ -156,8 +158,8 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
-    network_ids: [1]
-    fork_id_hashes: [0xf0afd0e3]
+    networkIDs: [1]
+    forkIDHashes: [0xf0afd0e3]
 
 outputs:
 - name: xatu-output
@@ -175,8 +177,8 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
-    network_ids: [1]
-    fork_id_hashes: [0xf0afd0e3]
+    networkIDs: [1]
+    forkIDHashes: [0xf0afd0e3]
 
 outputs:
 - name: http-basic-auth
@@ -184,7 +186,7 @@ outputs:
   config:
     address: http://localhost:8080
     headers:
-      Authorization: "Basic Someb64Value"
+      authorization: "Basic Someb64Value"
 ```
 
 ### Complex example with multiple outputs example
@@ -198,14 +200,14 @@ name: example-instance
 labels:
   ethpandaops: rocks
 
-ntp_server: time.google.com
+ntpServer: time.google.com
 
 coordinator:
   type: xatu
   config:
     address: localhost:8080
-    network_ids: [1]
-    fork_id_hashes: [0xf0afd0e3]
+    networkIDs: [1]
+    forkIDHashes: [0xf0afd0e3]
 
 outputs:
 - name: log
@@ -215,11 +217,11 @@ outputs:
   config:
     address: localhost:8080
     headers:
-      Authorization: Someb64Value
-    max_queue_size: 51200
-    batch_timeout: 5s
-    export_timeout: 30s
-    max_export_batch_size: 512
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512
 ```
 
 ## Running locally

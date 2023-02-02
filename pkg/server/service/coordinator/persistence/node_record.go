@@ -69,8 +69,8 @@ func (e *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 	sb := nodeRecordStruct.SelectFrom("node_record")
 
 	sb.Where("eth2 IS NULL")
-	sb.Where("consecutive_dial_attempts < 100")
-	sb.Where("(last_dial_time < now() - interval '30 minute' OR last_dial_time IS NULL)")
+	sb.Where("consecutive_dial_attempts < 1000")
+	sb.Where("(last_dial_time < now() - interval '1 minute' OR last_dial_time IS NULL)")
 	sb.Where("(last_connect_time < now() - interval '1 day' OR last_connect_time IS NULL)")
 
 	sb.OrderBy("last_dial_time DESC")

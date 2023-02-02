@@ -18,6 +18,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,8 +27,7 @@ type Discovery struct {
 
 	coordinator *coordinator.Client
 
-	discV4 *p2p.DiscV4
-	discV5 *p2p.DiscV5
+	p2p    p2p.P2P
 	status *p2p.Status
 
 	log logrus.FieldLogger
@@ -84,45 +84,24 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return err
 	}
 
-	if d.Config.P2P.DiscV4 {
-		d.discV4 = p2p.NewDiscV4(ctx, &d.Config.P2P, d.log)
-
-		err := d.discV4.Start(ctx)
-		if err != nil {
-			return err
-		}
-
-		d.discV4.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
-			d.metrics.AddDiscoveredNodeRecord(1, "discv4")
-			return d.handleNewNodeRecord(ctx, node.String())
-		})
-	}
-
-	if d.Config.P2P.DiscV5 {
-		d.discV5 = p2p.NewDiscV5(ctx, &d.Config.P2P, d.log)
-
-		err := d.discV5.Start(ctx)
-		if err != nil {
-			return err
-		}
-
-		d.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
-			d.metrics.AddDiscoveredNodeRecord(1, "discv5")
-			return d.handleNewNodeRecord(ctx, node.String())
-		})
-	}
-
-	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
-
-	err := d.status.Start(ctx)
+	p2pDisc, err := p2p.NewP2P(d.Config.P2P.Type, d.Config.P2P.Config, d.handleNewNodeRecord, d.log)
 	if err != nil {
 		return err
 	}
 
-	d.status.OnExecutionStatus(ctx, func(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-		d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
-		return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
-	})
+	d.p2p = p2pDisc
+
+	if errP := d.p2p.Start(ctx); errP != nil {
+		return errP
+	}
+
+	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
+
+	if errS := d.status.Start(ctx); errS != nil {
+		return errS
+	}
+
+	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
 
 	if err := d.startCrons(ctx); err != nil {
 		return err
@@ -134,14 +113,8 @@ func (d *Discovery) Start(ctx context.Context) error {
 	sig := <-cancel
 	d.log.Printf("Caught signal: %v", sig)
 
-	if d.Config.P2P.DiscV4 {
-		if err := d.discV4.Stop(ctx); err != nil {
-			return err
-		}
-	}
-
-	if d.Config.P2P.DiscV5 {
-		if err := d.discV5.Stop(ctx); err != nil {
+	if d.p2p != nil {
+		if err := d.p2p.Stop(ctx); err != nil {
 			return err
 		}
 	}
@@ -202,13 +175,36 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (d *Discovery) handleNewNodeRecord(ctx context.Context, record string) error {
-	d.log.WithField("node record", record).Debug("Received new node record")
+func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
+	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+	return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
+}
 
-	err := d.coordinator.HandleNewNodeRecord(ctx, &record)
+func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, source string) error {
+	d.log.Debug("Node received")
+
+	if node == nil {
+		return errors.New("node is nil")
+	}
+
+	enr := node.String()
+
+	item, retrieved := d.duplicateCache.Node.GetOrSet(enr, time.Now(), ttlcache.DefaultTTL)
+	if retrieved {
+		d.log.WithFields(logrus.Fields{
+			"enr":                   enr,
+			"time_since_first_item": time.Since(item.Value()),
+		}).Debug("Duplicate node received")
+
+		return nil
+	}
+
+	err := d.coordinator.HandleNewNodeRecord(ctx, &enr)
 	if err != nil {
 		return err
 	}
+
+	d.metrics.AddDiscoveredNodeRecord(1, source)
 
 	return nil
 }

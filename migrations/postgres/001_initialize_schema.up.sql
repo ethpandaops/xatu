@@ -25,7 +25,7 @@ CREATE TABLE node_record_execution (
   execution_id SERIAL PRIMARY KEY,
   enr VARCHAR(304) NOT NULL,
   create_time TIMESTAMPTZ NOT NULL DEFAULT now(),
-  name VARCHAR(128),
+  name VARCHAR(256),
   capabilities VARCHAR(256),
   protocol_version VARCHAR(256),
   network_id VARCHAR(256),

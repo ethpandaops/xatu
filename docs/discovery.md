@@ -1,6 +1,6 @@
 # Discovery
 
-Client that uses [go-ethereum's](https://github.com/ethereum/go-ethereum/p2p/discover) implementation of [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discover ethereum nodes around the network and send them to a [xatu server](./server.md).
+Client that uses [go-ethereum's](https://github.com/ethereum/go-ethereum/p2p/discover) implementation of [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discover ethereum nodes around the network and send them to a [xatu server](./server.md). If [`xatu` P2P configuration](#p2p-xatu-configuration) is used, the client will periodically update the discovery boot nodes from the [xatu server](./server.md).
 
 The client also requests a list of execution layer node records from the [xatu server](./server.md) and tries to connect. If the connection is successful it sends data back to the [xatu server](./server.md) with a summary of the [RLPx hello](https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00) and [Etherum Wire Protocol status](https://github.com/ethereum/devp2p/blob/master/caps/eth.md#status-0x00) responses from the peer.
 
@@ -39,17 +39,41 @@ Discovery requires a single `yaml` config file. An example file can be found [he
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | coordinator | object |  | [Coordinator](./server.md#coordinator) configuration |
 | coordinator.address | string |  | The address of the [xatu server](./server.md) |
-| coordinator.max_queue_size | int | `51200` | The maximum queue size to buffer node records for delayed processing. If the queue gets full it drops the node records |
-| coordinator.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available node records when timeout is reached |
-| coordinator.export_timeout | string | `30s` | The maximum duration for exporting node records. If the timeout is reached, the export will be cancelled |
-| coordinator.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of node records to process in a single batch. If there are more than one batch worth of node records then it processes multiple batches of node records one batch after the other without any delay |
-| p2p | object |  | peer to peer configuration |
-| p2p.discV4 | bool | `true` | enable Node Discovery Protocol v4 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
-| p2p.discV5 | bool | `true` | enable Node Discovery Protocol v5 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
-| p2p.restart | string | `2m` | Time between initiating discovery scans, will generate a fresh private key each time |
-| p2p.boot_nodes | array<string> |  | List of boot nodes to connect to |
+| coordinator.maxQueueSize | int | `51200` | The maximum queue size to buffer node records for delayed processing. If the queue gets full it drops the node records |
+| coordinator.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available node records when timeout is reached |
+| coordinator.exportTimeout | string | `30s` | The maximum duration for exporting node records. If the timeout is reached, the export will be cancelled |
+| coordinator.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of node records to process in a single batch. If there are more than one batch worth of node records then it processes multiple batches of node records one batch after the other without any delay |
+| coordinator.concurrentExecutionPeers | string | `100` | Max number of simultaneous executions that will be dialed |
+| p2p.type | string |  | Type of output (`xatu`, `static`) |
+| p2p.config | object |  | P2P type configuration [`xatu`](#p2p-xatu-configuration)/[`static`](#p2p-static-configuration) |
 
-### Simple Example
+### P2P `xatu` configuration
+
+P2P configuration to get node records to discover from the [Xatu server coordinator](./server.md#coordinator).
+
+| Name| Type | Default | Description |
+| --- | --- | --- | --- |
+| p2p.config.address | string |  | The address of the server receiving events |
+| p2p.config.tls | bool |  | Server requires TLS |
+| p2p.config.headers | object |  | A key value map of headers to append to requests |
+| p2p.config.discV4 | bool | `true` | enable Node Discovery Protocol v4 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
+| p2p.config.discV5 | bool | `true` | enable Node Discovery Protocol v5 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
+| p2p.config.restart | string | `2m` | Time between initiating discovery scans and fetching new node record, will generate a fresh private key each time |
+| p2p.config.networkIDs | array<string> |  | List of network ids to filter node records by (decimal format, eg. '1' for mainnet) |
+| p2p.config.forkIDHashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to filter node records by (hex string) |
+
+### P2P `static` configuration
+
+P2P configuration to statically set discovery node records (boot nodes).
+
+| Name| Type | Default | Description |
+| --- | --- | --- | --- |
+| p2p.config.discV4 | bool | `true` | enable Node Discovery Protocol v4 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
+| p2p.config.discV5 | bool | `true` | enable Node Discovery Protocol v5 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
+| p2p.config.restart | string | `2m` | Time between initiating discovery scans, will generate a fresh private key each time |
+| p2p.config.bootNodes | array<string> |  | List of boot nodes to connect to |
+
+### Simple Static Example
 
 ```yaml
 logging: info
@@ -57,13 +81,37 @@ metricsAddr: :9090
 
 coordinator:
   address: localhost:8080
+  concurrentExecutionPeers: 100
 
 p2p:
-  discV4: true
-  discV5: true
-  restart: 2m
-  boot_nodes:
-    - enr:-Jq4QItoFUuug_n_qbYbU0OY04-np2wT8rUCauOOXNi0H3BWbDj-zbfZb7otA7jZ6flbBpx1LNZK2TDebZ9dEKx84LYBhGV0aDKQtTA_KgEAAAD__________4JpZIJ2NIJpcISsaa0ZiXNlY3AyNTZrMaEDHAD2JKYevx89W0CcFJFiskdcEzkH_Wdv9iW42qLK79ODdWRwgiMo
+  type: static
+  config:
+    discV4: true
+    discV5: true
+    restart: 2m
+    bootNodes:
+      - enr:-Jq4QItoFUuug_n_qbYbU0OY04-np2wT8rUCauOOXNi0H3BWbDj-zbfZb7otA7jZ6flbBpx1LNZK2TDebZ9dEKx84LYBhGV0aDKQtTA_KgEAAAD__________4JpZIJ2NIJpcISsaa0ZiXNlY3AyNTZrMaEDHAD2JKYevx89W0CcFJFiskdcEzkH_Wdv9iW42qLK79ODdWRwgiMo
+```
+
+### Simple Xatu Example
+
+```yaml
+logging: info
+metricsAddr: :9090
+
+coordinator:
+  address: localhost:8080
+  concurrentExecutionPeers: 100
+
+p2p:
+  type: xatu
+  config:
+    address: localhost:8080
+    discV4: true
+    discV5: true
+    restart: 2m
+    networkIDs: [1]
+    forkIDHashes: [0xf0afd0e3]
 ```
 
 ## Running locally

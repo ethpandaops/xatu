@@ -1,4 +1,4 @@
-package manual
+package static
 
 import (
 	"context"
@@ -13,9 +13,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const Type = "manual"
+const Type = "static"
 
-type Manual struct {
+type Static struct {
 	config *Config
 
 	handlers *handler.Peer
@@ -28,7 +28,7 @@ type Manual struct {
 	metrics *Metrics
 }
 
-func New(name string, config *Config, handlers *handler.Peer, log logrus.FieldLogger) (*Manual, error) {
+func New(name string, config *Config, handlers *handler.Peer, log logrus.FieldLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -37,27 +37,27 @@ func New(name string, config *Config, handlers *handler.Peer, log logrus.FieldLo
 		return nil, err
 	}
 
-	return &Manual{
+	return &Static{
 		config:   config,
 		handlers: handlers,
 		log:      log,
 		cache:    cache.NewSharedCache(),
 		peers:    &map[string]bool{},
-		metrics:  NewMetrics("xatu_mimicry_coordinator_manual"),
+		metrics:  NewMetrics("xatu_mimicry_coordinator_static"),
 	}, nil
 }
 
-func (m *Manual) Type() string {
+func (s *Static) Type() string {
 	return Type
 }
 
-func (m *Manual) Start(ctx context.Context) error {
-	for _, nodeRecord := range m.config.NodeRecords {
-		(*m.peers)[nodeRecord] = false
+func (s *Static) Start(ctx context.Context) error {
+	for _, nodeRecord := range s.config.NodeRecords {
+		(*s.peers)[nodeRecord] = false
 		go func(record string, peers *map[string]bool) {
 			_ = retry.Do(
 				func() error {
-					peer, err := execution.New(ctx, m.log, record, m.handlers, m.cache)
+					peer, err := execution.New(ctx, s.log, record, s.handlers, s.cache)
 					if err != nil {
 						return err
 					}
@@ -66,7 +66,7 @@ func (m *Manual) Start(ctx context.Context) error {
 						(*peers)[record] = false
 						if peer != nil {
 							if err = peer.Stop(ctx); err != nil {
-								m.log.WithError(err).Warn("failed to stop peer")
+								s.log.WithError(err).Warn("failed to stop peer")
 							}
 						}
 					}()
@@ -84,36 +84,36 @@ func (m *Manual) Start(ctx context.Context) error {
 				},
 				retry.Attempts(0),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					m.log.WithError(err).Debug("peer failed")
-					return m.config.RetryInterval
+					s.log.WithError(err).Debug("peer failed")
+					return s.config.RetryInterval
 				}),
 			)
-		}(nodeRecord, m.peers)
+		}(nodeRecord, s.peers)
 	}
 
-	if err := m.startCrons(ctx); err != nil {
+	if err := s.startCrons(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Manual) Stop(ctx context.Context) error {
+func (s *Static) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manual) startCrons(ctx context.Context) error {
+func (s *Static) startCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
 	if _, err := c.Every("5s").Do(func() {
 		connectedPeers := 0
-		for _, connected := range *m.peers {
+		for _, connected := range *s.peers {
 			if connected {
 				connectedPeers++
 			}
 		}
-		m.metrics.SetPeers(connectedPeers, "connected")
-		m.metrics.SetPeers(len(*m.peers)-connectedPeers, "disconnected")
+		s.metrics.SetPeers(connectedPeers, "connected")
+		s.metrics.SetPeers(len(*s.peers)-connectedPeers, "disconnected")
 	}); err != nil {
 		return err
 	}

@@ -3,7 +3,7 @@ package coordinator
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/manual"
+	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/static"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu"
 )
 
@@ -11,7 +11,7 @@ type Type string
 
 const (
 	TypeUnknown Type = "unknown"
-	TypeManual  Type = manual.Type
+	TypeStatic  Type = static.Type
 	TypeXatu    Type = xatuCoordinator.Type
 )
 

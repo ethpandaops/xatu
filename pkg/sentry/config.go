@@ -26,7 +26,7 @@ type Config struct {
 	Labels map[string]string `yaml:"labels"`
 
 	// NTP Server to use for clock drift correction
-	NTPServer string `yaml:"ntp_server" default:"time.google.com"`
+	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
 }
 
 func (c *Config) Validate() error {

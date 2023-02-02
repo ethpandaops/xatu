@@ -26,6 +26,7 @@ type CoordinatorClient interface {
 	ListStalledExecutionNodeRecords(ctx context.Context, in *ListStalledExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledExecutionNodeRecordsResponse, error)
 	CreateExecutionNodeRecordStatus(ctx context.Context, in *CreateExecutionNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error)
+	GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error)
 }
 
 type coordinatorClient struct {
@@ -72,6 +73,15 @@ func (c *coordinatorClient) CoordinateExecutionNodeRecords(ctx context.Context, 
 	return out, nil
 }
 
+func (c *coordinatorClient) GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error) {
+	out := new(GetDiscoveryNodeRecordResponse)
+	err := c.cc.Invoke(ctx, "/xatu.Coordinator/GetDiscoveryNodeRecord", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServer is the server API for Coordinator service.
 // All implementations must embed UnimplementedCoordinatorServer
 // for forward compatibility
@@ -80,6 +90,7 @@ type CoordinatorServer interface {
 	ListStalledExecutionNodeRecords(context.Context, *ListStalledExecutionNodeRecordsRequest) (*ListStalledExecutionNodeRecordsResponse, error)
 	CreateExecutionNodeRecordStatus(context.Context, *CreateExecutionNodeRecordStatusRequest) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error)
+	GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
 }
 
@@ -98,6 +109,9 @@ func (UnimplementedCoordinatorServer) CreateExecutionNodeRecordStatus(context.Co
 }
 func (UnimplementedCoordinatorServer) CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CoordinateExecutionNodeRecords not implemented")
+}
+func (UnimplementedCoordinatorServer) GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDiscoveryNodeRecord not implemented")
 }
 func (UnimplementedCoordinatorServer) mustEmbedUnimplementedCoordinatorServer() {}
 
@@ -184,6 +198,24 @@ func _Coordinator_CoordinateExecutionNodeRecords_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_GetDiscoveryNodeRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDiscoveryNodeRecordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetDiscoveryNodeRecord(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xatu.Coordinator/GetDiscoveryNodeRecord",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetDiscoveryNodeRecord(ctx, req.(*GetDiscoveryNodeRecordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Coordinator_ServiceDesc is the grpc.ServiceDesc for Coordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -206,6 +238,10 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CoordinateExecutionNodeRecords",
 			Handler:    _Coordinator_CoordinateExecutionNodeRecords_Handler,
+		},
+		{
+			MethodName: "GetDiscoveryNodeRecord",
+			Handler:    _Coordinator_GetDiscoveryNodeRecord_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

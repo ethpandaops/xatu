@@ -56,8 +56,8 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | name | string |  | Unique name of the sentry |
 | labels | object |  | A key value map of labels to append to every sentry event |
-| ethereum.beacon_node_address | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
-| ntp_server | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
+| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
 | outputs | array<object> |  | List of outputs for the sentry to send data to |
 | outputs[].name | string |  | Name of the output |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `stdout`) |
@@ -70,11 +70,12 @@ Output configuration to send sentry events to a [Xatu server](./server.md).
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | outputs[].config.address | string |  | The address of the server receiving events |
+| outputs[].config.tls | bool |  | Server requires TLS |
 | outputs[].config.headers | object |  | A key value map of headers to append to requests |
-| outputs[].config.max_queue_size | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
-| outputs[].config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
-| outputs[].config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
-| outputs[].config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.maxQueueSize | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
+| outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
+| outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
+| outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
 
 ### Output `http` configuration
 
@@ -84,10 +85,10 @@ Output configuration to send sentry events to a http server.
 | --- | --- | --- | --- |
 | outputs[].config.address | string |  | The address of the server receiving events |
 | outputs[].config.headers | object |  | A key value map of headers to append to requests |
-| outputs[].config.max_queue_size | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
-| outputs[].config.batch_timeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
-| outputs[].config.export_timeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
-| outputs[].config.max_export_batch_size | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.maxQueueSize | int | `51200` | The maximum queue size to buffer events for delayed processing. If the queue gets full it drops the events |
+| outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
+| outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
+| outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
 
 ### Simple example
 
@@ -95,7 +96,7 @@ Output configuration to send sentry events to a http server.
 name: example-instance-001
 
 ethereum:
-  beacon_node_address: http://localhost:5052
+  beaconNodeAddress: http://localhost:5052
 
 outputs:
 - name: standard-out
@@ -108,7 +109,7 @@ outputs:
 name: example-instance-002
 
 ethereum:
-  beacon_node_address: http://localhost:5052
+  beaconNodeAddress: http://localhost:5052
 
 outputs:
 - name: xatu-output
@@ -123,7 +124,7 @@ outputs:
 name: example-instance-003
 
 ethereum:
-  beacon_node_address: http://localhost:5052
+  beaconNodeAddress: http://localhost:5052
 
 outputs:
 - name: http-basic-auth
@@ -131,7 +132,7 @@ outputs:
   config:
     address: http://localhost:8080
     headers:
-      Authorization: "Basic Someb64Value"
+      authorization: "Basic Someb64Value"
 ```
 
 ### Complex example with multiple outputs example
@@ -145,10 +146,10 @@ name: example-instance
 labels:
   ethpandaops: rocks
 
-ntp_server: time.google.com
+ntpServer: time.google.com
 
 ethereum:
-  beacon_node_address: http://localhost:5052
+  beaconNodeAddress: http://localhost:5052
 
 outputs:
 - name: log
@@ -158,11 +159,11 @@ outputs:
   config:
     address: localhost:8080
     headers:
-      Authorization: Someb64Value
-    max_queue_size: 51200
-    batch_timeout: 5s
-    export_timeout: 30s
-    max_export_batch_size: 512
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512
 ```
 
 ## Running locally

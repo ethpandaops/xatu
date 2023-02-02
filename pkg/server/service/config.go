@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	EventIngester eventingester.Config `yaml:"event_ingester"`
+	EventIngester eventingester.Config `yaml:"eventIngester"`
 	Coordinator   coordinator.Config   `yaml:"coordinator"`
 }
 

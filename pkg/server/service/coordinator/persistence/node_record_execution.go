@@ -40,3 +40,52 @@ func (e *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 
 	return err
 }
+
+func (e *Client) ListNodeRecordExecutions(ctx context.Context, networkIDs []uint64, forkIDHashes [][]byte, limit int) ([]*node.Execution, error) {
+	sb := nodeRecordExecutionStruct.SelectFrom("node_record_execution")
+
+	if len(networkIDs) > 0 {
+		nids := make([]interface{}, 0, len(networkIDs))
+		for _, nid := range networkIDs {
+			nids = append(nids, nid)
+		}
+
+		sb.Where(sb.In("network_id", nids...))
+	}
+
+	if len(forkIDHashes) > 0 {
+		fidhs := make([]interface{}, 0, len(forkIDHashes))
+		for _, fidh := range forkIDHashes {
+			fidhs = append(fidhs, fidh)
+		}
+
+		sb.Where(sb.In("fork_id_hash", fidhs...))
+	}
+
+	sb.OrderBy("create_time DESC")
+	sb.Limit(limit)
+
+	sql, args := sb.Build()
+
+	rows, err := e.db.Query(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var records []*node.Execution
+
+	for rows.Next() {
+		var record node.Execution
+
+		err = rows.Scan(nodeRecordExecutionStruct.Addr(&record)...)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, &record)
+	}
+
+	return records, nil
+}

@@ -135,7 +135,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		p.log.WithFields(logrus.Fields{
 			"implementation": p.implmentation,
 			"version":        p.version,
-		}).Info("connected to client")
+		}).Debug("connected to client")
 
 		return nil
 	})
@@ -191,7 +191,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"network":      p.network.Name,
 			"fork_id_hash": "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
 			"fork_id_next": fmt.Sprintf("%d", status.ForkID.Next),
-		}).Info("got client status")
+		}).Debug("got client status")
 
 		return nil
 	})
@@ -255,18 +255,18 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 		p.log.WithFields(logrus.Fields{
 			"reason": str,
-		}).Info("disconnected from client")
+		}).Debug("disconnected from client")
 
 		response <- errors.New("disconnected from peer (reason " + str + ")")
 
 		return nil
 	})
 
-	p.log.Info("attempting to connect to client")
+	p.log.Debug("attempting to connect to client")
 
 	err = p.client.Start(ctx)
 	if err != nil {
-		p.log.WithError(err).Info("failed to dial client")
+		p.log.WithError(err).Debug("failed to dial client")
 		return nil, err
 	}
 

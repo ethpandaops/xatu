@@ -12,6 +12,15 @@ labels:
 #   pool.ntp.org - https://www.pool.ntp.org/zone/@
 ntpServer: time.google.com
 
+store:
+  type: memory
+  # type: redis-cluster
+  # config:
+  #   address: redis://<user>:<password>@<host>:<port>/<db>?addr=<host2>:<port2>&addr=<host3>:<port3>
+  # type: redis-server
+  # config:
+  #   address: redis://<user>:<pass>@<ip>:<port>/<db>
+
 services:
   coordinator:
     enabled: true

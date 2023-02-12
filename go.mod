@@ -20,6 +20,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
+	github.com/redis/go-redis/v9 v9.0.2
 	github.com/samcm/beacon v0.9.0
 	github.com/savid/ttlcache/v3 v3.0.2
 	github.com/sirupsen/logrus v1.9.0
@@ -39,6 +40,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/ferranbt/fastssz v0.1.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

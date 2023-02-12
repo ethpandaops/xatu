@@ -7,6 +7,8 @@ A centralized server running configurable services collecting events from client
 - [Usage](#usage)
 - [Requirements](#requirements)
 - [Configuration](#configuration)
+  - [Store `redis-server` configuration](#store-redis-server-configuration)
+  - [Store `redis-cluster` configuration](#store-redis-cluster-configuration)
   - [Simple example](#simple-example)
   - [Only run the event exporter example](#only-run-the-event-exporter-example)
   - [Complex example](#complex-example)
@@ -39,6 +41,7 @@ Flags:
 ## Requirements
 
 - [PostgreSQL](https://www.postgresql.org/) database **only if** running the [Coordinator](./server.md#coordinator) service.
+- [Redis server/cluster](https://redis.io/) if using the [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) `store` type.
 
 ## Configuration
 
@@ -51,6 +54,8 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| store.type | string | `memory` | Type of output (`memory`, `redis-server`, `redis-cluster`) |
+| store.config | object |  | Store type configuration [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
@@ -64,6 +69,22 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | services.eventIngester | object |  | [Event Ingester](#event-ingester) service |
 | services.eventIngester.enabled | bool | `false` | Enable the event ingester service |
 | services.eventIngester.outputs | array |  | List exampleone batch after the other without any delay |
+
+### Store `redis-server` configuration
+
+Store configuration for Redis server.
+
+| Name| Type | Default | Description |
+| --- | --- | --- | --- |
+| store.config.address | string |  | The address of the redis server. [Details on the address format](https://github.com/redis/go-redis/blob/97b491aaceafb0078fa31ee23d26b439bdc78387/options.go#L222) |
+
+### Store `redis-cluster` configuration
+
+Store configuration for Redis cluster.
+
+| Name| Type | Default | Description |
+| --- | --- | --- | --- |
+| store.config.address | string |  | The address of the redis cluster. [Details on the address format](https://github.com/redis/go-redis/blob/97b491aaceafb0078fa31ee23d26b439bdc78387/cluster.go#L137) |
 
 ### Simple Example
 
@@ -109,6 +130,11 @@ labels:
   ethpandaops: rocks
 
 ntpServer: time.google.com
+
+store:
+  type: redis-server
+  config:
+    address: "redis://localhost:6379"
 
 services:
   coordinator:

@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/persistence"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -25,6 +26,7 @@ type Coordinator struct {
 
 	log    logrus.FieldLogger
 	config *Config
+	cache  store.Cache
 
 	persistence *persistence.Client
 
@@ -33,7 +35,7 @@ type Coordinator struct {
 	nodeRecordProc *processor.BatchItemProcessor[node.Record]
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Coordinator, error) {
+func New(ctx context.Context, log logrus.FieldLogger, conf *Config, c store.Cache) (*Coordinator, error) {
 	p, err := persistence.New(ctx, log, &conf.Persistence)
 	if err != nil {
 		return nil, err
@@ -42,6 +44,7 @@ func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Coordinato
 	e := &Coordinator{
 		log:         log.WithField("server/module", ServiceType),
 		config:      conf,
+		cache:       c,
 		persistence: p,
 		metrics:     NewMetrics("xatu_coordinator"),
 	}

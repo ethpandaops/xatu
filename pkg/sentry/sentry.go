@@ -161,6 +161,10 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 			Name: string(network.Name),
 			Id:   network.ID,
 		}
+
+		if s.Config.Ethereum.OverrideNetworkName != "" {
+			networkMeta.Name = s.Config.Ethereum.OverrideNetworkName
+		}
 	}
 
 	return &xatu.ClientMeta{

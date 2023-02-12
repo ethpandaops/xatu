@@ -112,6 +112,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 	}
 
+	if s.Config.Ethereum.OverrideNetworkName != "" {
+		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).Info("Overriding network name")
+	}
+
 	if err := s.beacon.Start(ctx); err != nil {
 		return err
 	}

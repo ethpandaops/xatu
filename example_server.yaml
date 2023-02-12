@@ -18,6 +18,8 @@ services:
     persistence:
       driverName: postgres
       connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
+      maxIdleConns: 2 # 0 = no idle connections are retained
+      maxOpenConns: 0 # 0 = unlimited
       maxQueueSize: 51200
       batchTimeout: 5s
       exportTimeout: 30s

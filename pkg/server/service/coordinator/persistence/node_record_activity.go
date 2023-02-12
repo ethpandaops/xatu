@@ -18,7 +18,7 @@ type AvailableExecutionNodeRecord struct {
 
 var availableExecutionNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableExecutionNodeRecord)).For(sqlbuilder.PostgreSQL)
 
-func (e *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
+func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
 	values := make([]interface{}, len(activities))
 
 	for i, activity := range activities {
@@ -37,12 +37,12 @@ func (e *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 	sqlQuery, args := ub.Build()
 	sqlQuery += " ON CONFLICT ON CONSTRAINT c_unique DO UPDATE SET update_time = EXCLUDED.update_time, connected = EXCLUDED.connected"
 
-	_, err := e.db.Exec(sqlQuery, args...)
+	_, err := c.db.Exec(sqlQuery, args...)
 
 	return err
 }
 
-func (e *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIDs []uint64, forkIDHashes [][]byte, limit int) ([]*string, error) {
+func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIDs []uint64, forkIDHashes [][]byte, limit int) ([]*string, error) {
 	inr := make([]interface{}, 0, len(ignoredNodeRecords))
 	for _, enr := range ignoredNodeRecords {
 		inr = append(inr, enr)
@@ -115,7 +115,7 @@ func (e *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 
 	args[0] = subArgs[0]
 
-	rows, err := e.db.Query(sqlQuery, args...)
+	rows, err := c.db.Query(sqlQuery, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,8 @@ import (
 type Config struct {
 	ConnectionString   string        `yaml:"connectionString"`
 	DriverName         DriverName    `yaml:"driverName"`
+	MaxIdleConns       int           `yaml:"maxIdleConns" default:"2"`
+	MaxOpenConns       int           `yaml:"maxOpenConns" default:"0"`
 	MaxQueueSize       int           `yaml:"maxQueueSize" default:"51200"`
 	BatchTimeout       time.Duration `yaml:"batchTimeout" default:"5s"`
 	ExportTimeout      time.Duration `yaml:"exportTimeout" default:"30s"`

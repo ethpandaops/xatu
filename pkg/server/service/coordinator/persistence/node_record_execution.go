@@ -10,7 +10,7 @@ import (
 
 var nodeRecordExecutionStruct = sqlbuilder.NewStruct(new(node.Execution)).For(sqlbuilder.PostgreSQL)
 
-func (e *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Execution) error {
+func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Execution) error {
 	ib := nodeRecordExecutionStruct.InsertInto("node_record_execution")
 
 	items := []interface{}{
@@ -32,16 +32,16 @@ func (e *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 
 	sql, args := ib.Build()
 
-	_, err := e.db.Exec(sql, args...)
+	_, err := c.db.Exec(sql, args...)
 
 	if err != nil {
-		e.log.WithError(err).Error("failed to insert node record execution")
+		c.log.WithError(err).Error("failed to insert node record execution")
 	}
 
 	return err
 }
 
-func (e *Client) ListNodeRecordExecutions(ctx context.Context, networkIDs []uint64, forkIDHashes [][]byte, limit int) ([]*node.Execution, error) {
+func (c *Client) ListNodeRecordExecutions(ctx context.Context, networkIDs []uint64, forkIDHashes [][]byte, limit int) ([]*node.Execution, error) {
 	sb := nodeRecordExecutionStruct.SelectFrom("node_record_execution")
 
 	if len(networkIDs) > 0 {
@@ -67,7 +67,7 @@ func (e *Client) ListNodeRecordExecutions(ctx context.Context, networkIDs []uint
 
 	sql, args := sb.Build()
 
-	rows, err := e.db.Query(sql, args...)
+	rows, err := c.db.Query(sql, args...)
 	if err != nil {
 		return nil, err
 	}

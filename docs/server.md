@@ -9,6 +9,7 @@ A centralized server running configurable services collecting events from client
 - [Configuration](#configuration)
   - [Store `redis-server` configuration](#store-redis-server-configuration)
   - [Store `redis-cluster` configuration](#store-redis-cluster-configuration)
+  - [GeoIP `maxmind` configuration](#geoip-maxmind-configuration)
   - [Simple example](#simple-example)
   - [Only run the event exporter example](#only-run-the-event-exporter-example)
   - [Complex example](#complex-example)
@@ -42,6 +43,7 @@ Flags:
 
 - [PostgreSQL](https://www.postgresql.org/) database **only if** running the [Coordinator](./server.md#coordinator) service.
 - [Redis server/cluster](https://redis.io/) if using the [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) `store` type.
+- [MaxMind GeoLite2 City/ASN database](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) if using the [`maxmind`](#geoip-maxmind-configuration) `geoip` type.
 
 ## Configuration
 
@@ -56,6 +58,9 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
 | store.type | string | `memory` | Type of store (`memory`, `redis-server`, `redis-cluster`) |
 | store.config | object |  | Store type configuration [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) |
+| geoip.enabled | bool | `false` | Enable the geoip provider |
+| geoip.type | string | `maxmind` | Type of store (`maxmind`) |
+| geoip.config | object |  | GeoIP Provider type configuration [`maxmind`](#geoip-maxmind-configuration) |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
@@ -87,6 +92,15 @@ Store configuration for Redis cluster.
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | store.config.address | string |  | The address of the redis cluster. [Details on the address format](https://github.com/redis/go-redis/blob/97b491aaceafb0078fa31ee23d26b439bdc78387/cluster.go#L137) |
+
+### GeoIP `maxmind` configuration
+
+GeoIP configuration for MaxMind.
+
+| Name| Type | Default | Description |
+| --- | --- | --- | --- |
+| geoip.config.database.city | string | | The path to the [MaxMind GeoLite2 City database](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) file |
+| geoip.config.database.asn | string |  | The path to the [MaxMind GeoLite2 ASN database](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) file |
 
 ### Simple Example
 
@@ -137,6 +151,14 @@ store:
   type: redis-server
   config:
     address: "redis://localhost:6379"
+
+geoip:
+  enabled: true
+  type: maxmind
+  config:
+    database:
+      city: ./GeoLite2-City.mmdb
+      asn: ./GeoLite2-ASN.mmdb
 
 services:
   coordinator:

@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -32,7 +33,8 @@ type Xatu struct {
 	grpcServer    *grpc.Server
 	metricsServer *http.Server
 
-	cache store.Cache
+	cache         store.Cache
+	geoipProvider geoip.Provider
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
@@ -45,17 +47,26 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		return nil, err
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, c)
+	var g geoip.Provider
+	if conf.GeoIP.Enabled {
+		g, err = geoip.NewProvider(conf.GeoIP.Type, conf.GeoIP.Config, log)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, c, g)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Xatu{
-		config:   conf,
-		log:      log.WithField("component", "server"),
-		ctx:      ctx,
-		cache:    c,
-		services: services,
+		config:        conf,
+		log:           log.WithField("component", "server"),
+		ctx:           ctx,
+		cache:         c,
+		geoipProvider: g,
+		services:      services,
 	}, nil
 }
 
@@ -63,9 +74,14 @@ func (x *Xatu) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	errC := x.cache.Start(ctx)
-	if errC != nil {
-		return errC
+	if err := x.cache.Start(ctx); err != nil {
+		return err
+	}
+
+	if x.config.GeoIP.Enabled {
+		if err := x.geoipProvider.Start(ctx); err != nil {
+			return err
+		}
 	}
 
 	g, gCtx := errgroup.WithContext(nctx)
@@ -114,6 +130,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	if x.cache != nil {
 		if err := x.cache.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	if x.config.GeoIP.Enabled {
+		if err := x.geoipProvider.Stop(ctx); err != nil {
 			return err
 		}
 	}

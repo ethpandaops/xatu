@@ -29,45 +29,45 @@ func New(config *Config, log logrus.FieldLogger) (*Memory, error) {
 	}, nil
 }
 
-func (s *Memory) Type() string {
+func (m *Memory) Type() string {
 	return Type
 }
 
-func (s *Memory) Start(ctx context.Context) error {
+func (m *Memory) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *Memory) Stop(ctx context.Context) error {
+func (m *Memory) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (s *Memory) Get(ctx context.Context, key string) (*string, error) {
-	item := s.client.Get(key)
+func (m *Memory) Get(ctx context.Context, key string) (*string, error) {
+	item := m.client.Get(key)
 	if item == nil {
-		s.metrics.AddGet(1, s.Type(), "miss")
+		m.metrics.AddGet(1, m.Type(), "miss")
 
 		return nil, nil
 	}
 
-	s.metrics.AddGet(1, s.Type(), "hit")
+	m.metrics.AddGet(1, m.Type(), "hit")
 
 	value := item.Value()
 
 	return &value, nil
 }
 
-func (s *Memory) Set(ctx context.Context, key, value string, ttl time.Duration) error {
-	s.client.Set(key, value, ttl)
+func (m *Memory) Set(ctx context.Context, key, value string, ttl time.Duration) error {
+	m.client.Set(key, value, ttl)
 
-	s.metrics.AddSet(1, s.Type(), "ok")
+	m.metrics.AddSet(1, m.Type(), "ok")
 
 	return nil
 }
 
-func (s *Memory) Delete(ctx context.Context, key string) error {
-	s.client.Delete(key)
+func (m *Memory) Delete(ctx context.Context, key string) error {
+	m.client.Delete(key)
 
-	s.metrics.AddDelete(1, s.Type(), "ok")
+	m.metrics.AddDelete(1, m.Type(), "ok")
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 )
@@ -16,6 +17,8 @@ type Config struct {
 	Services service.Config `yaml:"services"`
 	// Store is the cache configuration.
 	Store store.Config `yaml:"store"`
+	// GeoIP is the geoip provider configuration.
+	GeoIP geoip.Config `yaml:"geoip"`
 }
 
 func (c *Config) Validate() error {
@@ -24,6 +27,10 @@ func (c *Config) Validate() error {
 	}
 
 	if err := c.Store.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.GeoIP.Validate(); err != nil {
 		return err
 	}
 

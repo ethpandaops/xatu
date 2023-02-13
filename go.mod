@@ -18,6 +18,7 @@ require (
 	github.com/lib/pq v1.10.7
 	github.com/libp2p/go-libp2p v0.24.2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
+	github.com/oschwald/maxminddb-golang v1.10.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/redis/go-redis/v9 v9.0.2

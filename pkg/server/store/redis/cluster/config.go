@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Address string        `yaml:"addresses" default:"redis://localhost:6379/0"`
+	Address string        `yaml:"address" default:"redis://localhost:6379/0"`
 	Timeout time.Duration `yaml:"timeout" default:"15s"`
 }
 

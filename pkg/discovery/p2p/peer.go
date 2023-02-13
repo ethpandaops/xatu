@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/ethpandaops/xatu/pkg/execution"
+	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -15,9 +15,9 @@ type Peer struct {
 
 	nodeRecord string
 
-	client *execution.Client
+	client *mimicry.Client
 
-	hello *execution.Hello
+	hello *mimicry.Hello
 
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
 
@@ -25,7 +25,7 @@ type Peer struct {
 }
 
 func NewPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*Peer, error) {
-	client, err := execution.New(ctx, log, nodeRecord)
+	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
 	if err != nil {
 		return nil, err
 	}
@@ -41,12 +41,12 @@ func NewPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, han
 func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	response := make(chan error, 1)
 
-	p.client.OnHello(ctx, func(ctx context.Context, hello *execution.Hello) error {
+	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		p.hello = hello
 		return nil
 	})
 
-	p.client.OnStatus(ctx, func(ctx context.Context, status *execution.Status) error {
+	p.client.OnStatus(ctx, func(ctx context.Context, status *mimicry.Status) error {
 		s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
 
 		if p.hello != nil {
@@ -79,7 +79,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnDisconnect(ctx, func(ctx context.Context, reason *execution.Disconnect) error {
+	p.client.OnDisconnect(ctx, func(ctx context.Context, reason *mimicry.Disconnect) error {
 		str := "unknown"
 		if reason != nil {
 			str = reason.Reason.String()

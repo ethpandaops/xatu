@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethpandaops/xatu/pkg/execution"
+	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
@@ -32,7 +32,7 @@ type Peer struct {
 	nodeRecord string
 	handlers   *handler.Peer
 
-	client *execution.Client
+	client *mimicry.Client
 
 	// don't send duplicate events from the same client
 	duplicateCache *cache.DuplicateCache
@@ -54,7 +54,7 @@ type Peer struct {
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, sharedCache *coordCache.SharedCache) (*Peer, error) {
-	client, err := execution.New(ctx, log, nodeRecord)
+	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 	p.duplicateCache.Start()
 
-	p.client.OnHello(ctx, func(ctx context.Context, hello *execution.Hello) error {
+	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		// setup client implementation and version info
 		split := strings.SplitN(hello.Name, "/", 2)
 		p.implmentation = strings.ToLower(split[0])
@@ -140,7 +140,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnStatus(ctx, func(ctx context.Context, status *execution.Status) error {
+	p.client.OnStatus(ctx, func(ctx context.Context, status *mimicry.Status) error {
 		if p.handlers.ExecutionStatus != nil {
 			s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
 
@@ -196,7 +196,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *execution.NewPooledTransactionHashes) error {
+	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes) error {
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			for _, hash := range *hashes {
@@ -209,7 +209,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnNewPooledTransactionHashes68(ctx, func(ctx context.Context, hashes *execution.NewPooledTransactionHashes68) error {
+	p.client.OnNewPooledTransactionHashes68(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes68) error {
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			// TODO: handle eth68+ transaction size/types as well
@@ -223,7 +223,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnTransactions(ctx, func(ctx context.Context, txs *execution.Transactions) error {
+	p.client.OnTransactions(ctx, func(ctx context.Context, txs *mimicry.Transactions) error {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
@@ -247,7 +247,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnDisconnect(ctx, func(ctx context.Context, reason *execution.Disconnect) error {
+	p.client.OnDisconnect(ctx, func(ctx context.Context, reason *mimicry.Disconnect) error {
 		str := "unknown"
 		if reason != nil {
 			str = reason.Reason.String()

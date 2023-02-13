@@ -10,6 +10,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/ethpandaops/ethcore v0.0.0-20230212235804-5d4020edde84
 	github.com/ethpandaops/ethwallclock v0.2.0
 	github.com/go-co-op/gocron v1.18.0
 	github.com/google/uuid v1.3.0
@@ -97,10 +98,10 @@ require (
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/crypto v0.6.0 // indirect
+	golang.org/x/net v0.6.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto v0.0.0-20230127162408-596548ed4efa // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect

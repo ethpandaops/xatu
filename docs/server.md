@@ -54,7 +54,7 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| store.type | string | `memory` | Type of output (`memory`, `redis-server`, `redis-cluster`) |
+| store.type | string | `memory` | Type of store (`memory`, `redis-server`, `redis-cluster`) |
 | store.config | object |  | Store type configuration [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |

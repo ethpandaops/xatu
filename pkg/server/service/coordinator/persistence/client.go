@@ -25,21 +25,24 @@ func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Client, er
 	return c, nil
 }
 
-func (e *Client) Start(ctx context.Context) error {
-	db, err := sql.Open(string(e.config.DriverName), e.config.ConnectionString)
+func (c *Client) Start(ctx context.Context) error {
+	db, err := sql.Open(string(c.config.DriverName), c.config.ConnectionString)
 	if err != nil {
 		return err
 	}
 
-	e.db = db
+	db.SetMaxIdleConns(c.config.MaxIdleConns)
+	db.SetMaxOpenConns(c.config.MaxOpenConns)
+
+	c.db = db
 
 	return nil
 }
 
-func (e *Client) Stop(ctx context.Context) error {
-	if e.db == nil {
+func (c *Client) Stop(ctx context.Context) error {
+	if c.db == nil {
 		return nil
 	}
 
-	return e.db.Close()
+	return c.db.Close()
 }

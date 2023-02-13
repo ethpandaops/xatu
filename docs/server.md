@@ -57,6 +57,8 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | services.coordinator.persistence | object |  | Persistence configuration |
 | services.coordinator.persistence.driverName | string | `postgres` | Persistence driver name (`postgres`) |
 | services.coordinator.persistence.connectionString | string |  | Connection string for the persistence driver |
+| services.coordinator.persistence.maxIdleConns | int | `2` | The maximum number of connections in the idle connection pool. `0` means no idle connections are retained. |
+| services.coordinator.persistence.maxOpenConns | int | `0` | The maximum number of open connections to the database. `0` means unlimited connections. |
 | services.coordinator.persistence.maxQueueSize | int | `51200` | The maximum queue size to buffer items for delayed processing. If the queue gets full it drops the items |
 | services.coordinator.persistence.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available items when timeout is reached |
 | services.coordinator.persistence.exportTimeout | string | `30s` | The maximum duration for exporting items. If the timeout is reached, the export will be cancelled |

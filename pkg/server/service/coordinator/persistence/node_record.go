@@ -15,7 +15,7 @@ type NodeRecordExporter struct {
 	client *Client
 }
 
-func (e *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) error {
+func (c *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) error {
 	values := make([]interface{}, len(records))
 	for i, record := range records {
 		values[i] = record
@@ -24,7 +24,7 @@ func (e *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) 
 	sb := nodeRecordStruct.InsertInto("node_record", values...)
 	sql, args := sb.Build()
 	sql += " ON CONFLICT (enr) DO NOTHING;"
-	_, err := e.db.Exec(sql, args...)
+	_, err := c.db.Exec(sql, args...)
 
 	return err
 }
@@ -54,18 +54,18 @@ func (e *NodeRecordExporter) sendUpstream(ctx context.Context, items []*node.Rec
 	return e.client.InsertNodeRecords(ctx, items)
 }
 
-func (e *Client) UpdateNodeRecord(ctx context.Context, record *node.Record) error {
+func (c *Client) UpdateNodeRecord(ctx context.Context, record *node.Record) error {
 	sb := nodeRecordStruct.Update("node_record", record)
 	sb.Where(sb.E("enr", record.Enr))
 
 	sql, args := sb.Build()
 
-	_, err := e.db.Exec(sql, args...)
+	_, err := c.db.Exec(sql, args...)
 
 	return err
 }
 
-func (e *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit int) ([]*node.Record, error) {
+func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit int) ([]*node.Record, error) {
 	sb := nodeRecordStruct.SelectFrom("node_record")
 
 	sb.Where("eth2 IS NULL")
@@ -78,7 +78,7 @@ func (e *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 
 	sql, args := sb.Build()
 
-	rows, err := e.db.Query(sql, args...)
+	rows, err := c.db.Query(sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (e *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 	ub.Where(ub.In("enr", enrs...))
 	sql, args = ub.Build()
 
-	_, err = e.db.Exec(sql, args...)
+	_, err = c.db.Exec(sql, args...)
 	if err != nil {
 		return nil, err
 	}

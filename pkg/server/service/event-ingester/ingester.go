@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -25,17 +26,18 @@ type EventIngester struct {
 
 	log    logrus.FieldLogger
 	config *Config
+	cache  store.Cache
 
 	sinks []output.Sink
 
 	metrics *Metrics
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*EventIngester, error) {
+func New(ctx context.Context, log logrus.FieldLogger, conf *Config, c store.Cache) (*EventIngester, error) {
 	e := &EventIngester{
-		log:    log.WithField("server/module", ServiceType),
-		config: conf,
-
+		log:     log.WithField("server/module", ServiceType),
+		config:  conf,
+		cache:   c,
 		metrics: NewMetrics("xatu_event_ingester"),
 	}
 

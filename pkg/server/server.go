@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/server/service"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -30,6 +31,8 @@ type Xatu struct {
 
 	grpcServer    *grpc.Server
 	metricsServer *http.Server
+
+	cache store.Cache
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
@@ -37,7 +40,12 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		return nil, err
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services)
+	c, err := store.NewCache(conf.Store.Type, conf.Store.Config, log)
+	if err != nil {
+		return nil, err
+	}
+
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, c)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +54,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		config:   conf,
 		log:      log.WithField("component", "server"),
 		ctx:      ctx,
+		cache:    c,
 		services: services,
 	}, nil
 }
@@ -53,6 +62,11 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 func (x *Xatu) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	errC := x.cache.Start(ctx)
+	if errC != nil {
+		return errC
+	}
 
 	g, gCtx := errgroup.WithContext(nctx)
 
@@ -96,6 +110,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	if x.grpcServer != nil {
 		x.grpcServer.GracefulStop()
+	}
+
+	if x.cache != nil {
+		if err := x.cache.Stop(ctx); err != nil {
+			return err
+		}
 	}
 
 	if x.metricsServer != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -25,7 +26,7 @@ const (
 	ServiceTypeCoordinator   Type = coordinator.ServiceType
 )
 
-func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config) ([]GRPCService, error) {
+func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, c store.Cache) ([]GRPCService, error) {
 	services := []GRPCService{}
 
 	if cfg.EventIngester.Enabled {
@@ -33,7 +34,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := eventingester.New(ctx, log, &cfg.EventIngester)
+		service, err := eventingester.New(ctx, log, &cfg.EventIngester, c)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +47,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := coordinator.New(ctx, log, &cfg.Coordinator)
+		service, err := coordinator.New(ctx, log, &cfg.Coordinator, c)
 		if err != nil {
 			return nil, err
 		}

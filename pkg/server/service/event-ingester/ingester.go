@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -24,21 +25,23 @@ const (
 type EventIngester struct {
 	xatu.UnimplementedEventIngesterServer
 
-	log    logrus.FieldLogger
-	config *Config
-	cache  store.Cache
+	log           logrus.FieldLogger
+	config        *Config
+	cache         store.Cache
+	geoipProvider geoip.Provider
 
 	sinks []output.Sink
 
 	metrics *Metrics
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config, c store.Cache) (*EventIngester, error) {
+func New(ctx context.Context, log logrus.FieldLogger, conf *Config, cache store.Cache, geoipProvider geoip.Provider) (*EventIngester, error) {
 	e := &EventIngester{
-		log:     log.WithField("server/module", ServiceType),
-		config:  conf,
-		cache:   c,
-		metrics: NewMetrics("xatu_event_ingester"),
+		log:           log.WithField("server/module", ServiceType),
+		config:        conf,
+		cache:         cache,
+		geoipProvider: geoipProvider,
+		metrics:       NewMetrics("xatu_event_ingester"),
 	}
 
 	sinks, err := e.CreateSinks()
@@ -102,14 +105,36 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 		}
 	}
 
+	var sGeo *xatu.ServerMeta_Geo
+
 	if ipAddress != "" {
 		// grab the first ip if there are multiple
 		ips := strings.Split(ipAddress, ",")
 		ipAddress = strings.TrimSpace(ips[0])
 
+		ip := net.ParseIP(ipAddress)
 		// validate
-		if net.ParseIP(ipAddress) == nil {
+		if ip == nil {
 			ipAddress = ""
+		} else if e.geoipProvider != nil {
+			// get geoip locational data
+			geoipLookupResult, err := e.geoipProvider.LookupIP(ctx, ip)
+			if err != nil {
+				e.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+			}
+
+			if geoipLookupResult != nil {
+				sGeo = &xatu.ServerMeta_Geo{
+					Country:                      geoipLookupResult.CountryName,
+					CountryCode:                  geoipLookupResult.CountryCode,
+					City:                         geoipLookupResult.CityName,
+					Latitude:                     geoipLookupResult.Latitude,
+					Longitude:                    geoipLookupResult.Longitude,
+					ContinentCode:                geoipLookupResult.ContinentCode,
+					AutonomousSystemNumber:       geoipLookupResult.AutonomousSystemNumber,
+					AutonomousSystemOrganization: geoipLookupResult.AutonomousSystemOrganization,
+				}
+			}
 		}
 	}
 
@@ -125,6 +150,7 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 			Client: &xatu.ServerMeta_Client{
 				IP: ipAddress,
 			},
+			Geo: sGeo,
 		}
 	}
 

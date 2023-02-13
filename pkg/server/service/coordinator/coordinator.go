@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -24,9 +25,10 @@ const (
 type Coordinator struct {
 	xatu.UnimplementedCoordinatorServer
 
-	log    logrus.FieldLogger
-	config *Config
-	cache  store.Cache
+	log           logrus.FieldLogger
+	config        *Config
+	cache         store.Cache
+	geoipProvider geoip.Provider
 
 	persistence *persistence.Client
 
@@ -35,18 +37,19 @@ type Coordinator struct {
 	nodeRecordProc *processor.BatchItemProcessor[node.Record]
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config, c store.Cache) (*Coordinator, error) {
+func New(ctx context.Context, log logrus.FieldLogger, conf *Config, cache store.Cache, geoipProvider geoip.Provider) (*Coordinator, error) {
 	p, err := persistence.New(ctx, log, &conf.Persistence)
 	if err != nil {
 		return nil, err
 	}
 
 	e := &Coordinator{
-		log:         log.WithField("server/module", ServiceType),
-		config:      conf,
-		cache:       c,
-		persistence: p,
-		metrics:     NewMetrics("xatu_coordinator"),
+		log:           log.WithField("server/module", ServiceType),
+		config:        conf,
+		cache:         cache,
+		geoipProvider: geoipProvider,
+		persistence:   p,
+		metrics:       NewMetrics("xatu_coordinator"),
 	}
 
 	return e, nil

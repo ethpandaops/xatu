@@ -21,6 +21,14 @@ store:
   # config:
   #   address: redis://<user>:<pass>@<ip>:<port>/<db>
 
+geoip:
+  enabled: false
+  # type: maxmind
+  # config:
+  #   database:
+  #     city: ./GeoLite2-City.mmdb
+  #     asn: ./GeoLite2-ASN.mmdb
+
 services:
   coordinator:
     enabled: true

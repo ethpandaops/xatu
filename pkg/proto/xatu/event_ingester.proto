@@ -227,6 +227,31 @@ message ServerMeta {
     string IP = 1 [ json_name = "ip" ];
   }
 
+  message Geo {
+    // City is the city of the client as far as the server is concerned.
+    string City = 1 [ json_name = "city" ];
+    // Country is the country of the client as far as the server is concerned.
+    string Country = 2 [ json_name = "country" ];
+    // CountryCode is the country code of the client as far as the server is
+    // concerned.
+    string CountryCode = 3 [ json_name = "country_code" ];
+    // ContinentCode is the continent code of the client as far as the server is
+    // concerned.
+    string ContinentCode = 4 [ json_name = "continent_code" ];
+    // Latitude is the latitude of the client as far as the server is concerned.
+    double Latitude = 5 [ json_name = "latitude" ];
+    // Longitude is the longitude of the client as far as the server is
+    // concerned.
+    double Longitude = 6 [ json_name = "longitude" ];
+    // AutonomousSystemNumber is the autonomous system number of the client as
+    // far as the server is concerned.
+    uint32 AutonomousSystemNumber = 7 [ json_name = "autonomous_system_number" ];
+    // AutonomousSystemOrganization is the autonomous system organization of the
+    // client as far as the server is concerned.
+    string AutonomousSystemOrganization = 8
+        [ json_name = "autonomous_system_organization" ];
+  }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
@@ -235,6 +260,10 @@ message ServerMeta {
 
   // AdditionalData contains additional data as set by the server.
   map<string, string> additional_data = 3 [ json_name = "additional_data" ];
+
+  // Geo contains geo information about the client as far as the server is
+  // concerned.
+  Geo geo = 4;
 }
 
 message Meta {

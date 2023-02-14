@@ -105,7 +105,7 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 		}
 	}
 
-	var sGeo *xatu.ServerMeta_Geo
+	var sGeo *xatu.ServerMeta_Client_Geo
 
 	if ipAddress != "" {
 		// grab the first ip if there are multiple
@@ -124,7 +124,7 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 			}
 
 			if geoipLookupResult != nil {
-				sGeo = &xatu.ServerMeta_Geo{
+				sGeo = &xatu.ServerMeta_Client_Geo{
 					Country:                      geoipLookupResult.CountryName,
 					CountryCode:                  geoipLookupResult.CountryCode,
 					City:                         geoipLookupResult.CityName,
@@ -148,9 +148,9 @@ func (e *EventIngester) CreateEvents(ctx context.Context, req *xatu.CreateEvents
 				ReceivedDateTime: receivedAt,
 			},
 			Client: &xatu.ServerMeta_Client{
-				IP: ipAddress,
+				IP:  ipAddress,
+				Geo: sGeo,
 			},
-			Geo: sGeo,
 		}
 	}
 

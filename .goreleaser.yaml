@@ -70,7 +70,7 @@ dockers:
   - use: buildx
     goos: linux
     goarch: amd64
-    dockerfile: goreleaser-debian-amd64.Dockerfile
+    dockerfile: goreleaser-debian.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64"
       - "ethpandaops/{{ .ProjectName }}:debian-latest-amd64"
@@ -83,7 +83,7 @@ dockers:
   - use: buildx
     goos: linux
     goarch: arm64
-    dockerfile: goreleaser-debian-arm64.Dockerfile
+    dockerfile: goreleaser-debian.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8"
       - "ethpandaops/{{ .ProjectName }}:debian-latest-arm64v8"

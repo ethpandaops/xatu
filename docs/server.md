@@ -56,6 +56,11 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| persistence.enabled | bool | `false` | Enable persistence |
+| persistence.driverName | string | `postgres` | Persistence driver name (`postgres`) |
+| persistence.connectionString | string |  | Connection string for the persistence driver |
+| persistence.maxIdleConns | int | `2` | The maximum number of connections in the idle connection pool. `0` means no idle connections are retained. |
+| persistence.maxOpenConns | int | `0` | The maximum number of open connections to the database. `0` means unlimited connections. |
 | store.type | string | `memory` | Type of store (`memory`, `redis-server`, `redis-cluster`) |
 | store.config | object |  | Store type configuration [`redis-server`](#store-redis-server-configuration)/[`redis-cluster`](#store-redis-cluster-configuration) |
 | geoip.enabled | bool | `false` | Enable the geoip provider |
@@ -64,15 +69,10 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
-| services.coordinator.persistence | object |  | Persistence configuration |
-| services.coordinator.persistence.driverName | string | `postgres` | Persistence driver name (`postgres`) |
-| services.coordinator.persistence.connectionString | string |  | Connection string for the persistence driver |
-| services.coordinator.persistence.maxIdleConns | int | `2` | The maximum number of connections in the idle connection pool. `0` means no idle connections are retained. |
-| services.coordinator.persistence.maxOpenConns | int | `0` | The maximum number of open connections to the database. `0` means unlimited connections. |
-| services.coordinator.persistence.maxQueueSize | int | `51200` | The maximum queue size to buffer items for delayed processing. If the queue gets full it drops the items |
-| services.coordinator.persistence.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available items when timeout is reached |
-| services.coordinator.persistence.exportTimeout | string | `30s` | The maximum duration for exporting items. If the timeout is reached, the export will be cancelled |
-| services.coordinator.persistence.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of items to process in a single batch. If there are more than one batch worth of items then it processes multiple batches of items one batch after the other without any delay |
+| services.coordinator.nodeRecord.maxQueueSize | int | `51200` | The maximum queue size to buffer node records for delayed processing. If the queue gets full it drops the items |
+| services.coordinator.nodeRecord.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available node records when timeout is reached |
+| services.coordinator.nodeRecord.exportTimeout | string | `30s` | The maximum duration for exporting node records. If the timeout is reached, the export will be cancelled |
+| services.coordinator.nodeRecord.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of node records to process in a single batch. If there are more than one batch worth of items then it processes multiple batches of items one batch after the other without any delay |
 | services.eventIngester | object |  | [Event Ingester](#event-ingester) service |
 | services.eventIngester.enabled | bool | `false` | Enable the event ingester service |
 | services.eventIngester.outputs | array |  | List exampleone batch after the other without any delay |
@@ -147,6 +147,13 @@ labels:
 
 ntpServer: time.google.com
 
+persistence:
+  enabled: true
+  driverName: postgres
+  connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
+  maxIdleConns: 2 # 0 = no idle connections are retained
+  maxOpenConns: 0 # 0 = unlimited
+
 store:
   type: redis-server
   config:
@@ -163,9 +170,7 @@ geoip:
 services:
   coordinator:
     enabled: true
-    persistence:
-      driverName: postgres
-      connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
+    nodeRecord:
       maxQueueSize: 51200
       batchTimeout: 5s
       exportTimeout: 30s
@@ -191,7 +196,6 @@ Xatu server runs a number of services that can be configured to run or not. Each
 
 The coordinator service is responsible for;
 - adding/updating [ethereum node records](https://eips.ethereum.org/EIPS/eip-778) into persistence from [Xatu discovery](./discovery.md) clients.
-- TODO: mimicry client management
 
 [Persistence](#persistence) is **required** for the coordinator service.
 

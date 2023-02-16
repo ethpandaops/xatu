@@ -10,7 +10,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -27,7 +26,6 @@ type EventIngester struct {
 
 	log           logrus.FieldLogger
 	config        *Config
-	cache         store.Cache
 	geoipProvider geoip.Provider
 
 	sinks []output.Sink
@@ -35,11 +33,10 @@ type EventIngester struct {
 	metrics *Metrics
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config, cache store.Cache, geoipProvider geoip.Provider) (*EventIngester, error) {
+func New(ctx context.Context, log logrus.FieldLogger, conf *Config, geoipProvider geoip.Provider) (*EventIngester, error) {
 	e := &EventIngester{
 		log:           log.WithField("server/module", ServiceType),
 		config:        conf,
-		cache:         cache,
 		geoipProvider: geoipProvider,
 		metrics:       NewMetrics("xatu_event_ingester"),
 	}

@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
-	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/persistence"
-	"github.com/ethpandaops/xatu/pkg/server/store"
+	"github.com/ethpandaops/xatu/pkg/server/persistence"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
+	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -22,100 +20,82 @@ const (
 	ServiceType = "coordinator"
 )
 
-type Coordinator struct {
+type Client struct {
 	xatu.UnimplementedCoordinatorServer
 
-	log           logrus.FieldLogger
-	config        *Config
-	cache         store.Cache
-	geoipProvider geoip.Provider
-
+	log         logrus.FieldLogger
+	config      *Config
 	persistence *persistence.Client
 
 	metrics *Metrics
 
-	nodeRecordProc *processor.BatchItemProcessor[node.Record]
+	nodeRecord *n.Record
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config, cache store.Cache, geoipProvider geoip.Provider) (*Coordinator, error) {
-	p, err := persistence.New(ctx, log, &conf.Persistence)
+func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client) (*Client, error) {
+	if p == nil {
+		return nil, fmt.Errorf("%s: persistence is required", ServiceType)
+	}
+
+	logger := log.WithField("server/module", ServiceType)
+
+	nodeRecord, err := n.NewRecord(ctx, log, &conf.NodeRecord, p)
 	if err != nil {
 		return nil, err
 	}
 
-	e := &Coordinator{
-		log:           log.WithField("server/module", ServiceType),
-		config:        conf,
-		cache:         cache,
-		geoipProvider: geoipProvider,
-		persistence:   p,
-		metrics:       NewMetrics("xatu_coordinator"),
+	e := &Client{
+		log:         logger,
+		config:      conf,
+		persistence: p,
+		nodeRecord:  nodeRecord,
+		metrics:     NewMetrics("xatu_coordinator"),
 	}
 
 	return e, nil
 }
 
-func (e *Coordinator) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	e.log.Info("starting module")
+func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
+	c.log.Info("starting module")
 
-	xatu.RegisterCoordinatorServer(grpcServer, e)
+	xatu.RegisterCoordinatorServer(grpcServer, c)
 
-	err := e.persistence.Start(ctx)
-	if err != nil {
+	if err := c.nodeRecord.Start(ctx); err != nil {
 		return err
 	}
-
-	exporter, err := persistence.NewNodeRecordExporter(e.persistence, e.log)
-	if err != nil {
-		return err
-	}
-
-	e.nodeRecordProc = processor.NewBatchItemProcessor[node.Record](exporter,
-		e.log,
-		processor.WithMaxQueueSize(e.config.Persistence.MaxQueueSize),
-		processor.WithBatchTimeout(e.config.Persistence.BatchTimeout),
-		processor.WithExportTimeout(e.config.Persistence.ExportTimeout),
-		processor.WithMaxExportBatchSize(e.config.Persistence.MaxExportBatchSize),
-	)
 
 	return nil
 }
 
-func (e *Coordinator) Stop(ctx context.Context) error {
-	if e.nodeRecordProc != nil {
-		if err := e.nodeRecordProc.Shutdown(ctx); err != nil {
-			e.log.WithError(err).Error("failed to shutdown node record processor")
+func (c *Client) Stop(ctx context.Context) error {
+	if c.nodeRecord != nil {
+		if err := c.nodeRecord.Stop(ctx); err != nil {
+			c.log.WithError(err).Error("failed to shutdown node record processor")
 		}
 	}
 
-	if e.persistence != nil {
-		if err := e.persistence.Stop(ctx); err != nil {
-			return err
-		}
-	}
-
-	e.log.Info("module stopped")
+	c.log.Info("module stopped")
 
 	return nil
 }
 
-func (e *Coordinator) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeRecordsRequest) (*xatu.CreateNodeRecordsResponse, error) {
+func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeRecordsRequest) (*xatu.CreateNodeRecordsResponse, error) {
 	for _, record := range req.NodeRecords {
 		// TODO(sam.calder-mason): Derive client id/name from the request jwt
-		e.metrics.AddNodeRecordReceived(1, "unknown")
+		c.metrics.AddNodeRecordReceived(1, "unknown")
 
 		pRecord, err := node.Parse(record)
 		if err != nil {
 			return nil, err
 		}
 
-		e.nodeRecordProc.Write(pRecord)
+		c.nodeRecord.Write(pRecord)
 	}
 
 	return &xatu.CreateNodeRecordsResponse{}, nil
 }
 
-func (e *Coordinator) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.ListStalledExecutionNodeRecordsRequest) (*xatu.ListStalledExecutionNodeRecordsResponse, error) {
+func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.ListStalledExecutionNodeRecordsRequest) (*xatu.ListStalledExecutionNodeRecordsResponse, error) {
 	pageSize := int(req.PageSize)
 	if pageSize == 0 {
 		pageSize = 100
@@ -125,7 +105,7 @@ func (e *Coordinator) ListStalledExecutionNodeRecords(ctx context.Context, req *
 		pageSize = 1000
 	}
 
-	nodeRecords, err := e.persistence.CheckoutStalledExecutionNodeRecords(ctx, int(req.PageSize))
+	nodeRecords, err := c.persistence.CheckoutStalledExecutionNodeRecords(ctx, int(req.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +121,7 @@ func (e *Coordinator) ListStalledExecutionNodeRecords(ctx context.Context, req *
 	return response, nil
 }
 
-func (e *Coordinator) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.CreateExecutionNodeRecordStatusRequest) (*xatu.CreateExecutionNodeRecordStatusResponse, error) {
+func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.CreateExecutionNodeRecordStatusRequest) (*xatu.CreateExecutionNodeRecordStatusResponse, error) {
 	if req.Status == nil {
 		return nil, fmt.Errorf("status is required")
 	}
@@ -174,10 +154,10 @@ func (e *Coordinator) CreateExecutionNodeRecordStatus(ctx context.Context, req *
 
 	defer func() {
 		// TODO(sam.calder-mason): Derive client id/name from the request jwt
-		e.metrics.AddExecutionNodeRecordStatusReceived(1, "unknown", result, status.NetworkID, fmt.Sprintf("0x%x", status.ForkIDHash))
+		c.metrics.AddExecutionNodeRecordStatusReceived(1, "unknown", result, status.NetworkID, fmt.Sprintf("0x%x", status.ForkIDHash))
 	}()
 
-	err := e.persistence.InsertNodeRecordExecution(ctx, &status)
+	err := c.persistence.InsertNodeRecordExecution(ctx, &status)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +170,7 @@ func (e *Coordinator) CreateExecutionNodeRecordStatus(ctx context.Context, req *
 		ConsecutiveDialAttempts: 0,
 	}
 
-	err = e.persistence.UpdateNodeRecord(ctx, nodeRecord)
+	err = c.persistence.UpdateNodeRecord(ctx, nodeRecord)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +178,7 @@ func (e *Coordinator) CreateExecutionNodeRecordStatus(ctx context.Context, req *
 	return &xatu.CreateExecutionNodeRecordStatusResponse{}, nil
 }
 
-func (e *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
+func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
 	targetedNodes := []string{}
 	ignoredNodeRecords := []string{}
 	activities := []*node.Activity{}
@@ -237,7 +217,7 @@ func (e *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, req *x
 	limit -= uint32(len(targetedNodes))
 
 	if limit > 0 {
-		newNodeRecords, err := e.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, int(limit))
+		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, int(limit))
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +236,7 @@ func (e *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, req *x
 	}
 
 	if len(activities) != 0 {
-		err := e.persistence.UpsertNodeRecordActivities(ctx, activities)
+		err := c.persistence.UpsertNodeRecordActivities(ctx, activities)
 		if err != nil {
 			return nil, err
 		}
@@ -268,8 +248,8 @@ func (e *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, req *x
 	}, nil
 }
 
-func (e *Coordinator) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
-	records, err := e.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
+func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
+	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
 	if err != nil {
 		return nil, err
 	}

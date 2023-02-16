@@ -3,17 +3,11 @@ package persistence
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
-	"github.com/sirupsen/logrus"
 )
 
 var nodeRecordStruct = sqlbuilder.NewStruct(new(node.Record)).For(sqlbuilder.PostgreSQL)
-
-type NodeRecordExporter struct {
-	log    logrus.FieldLogger
-	client *Client
-}
 
 func (c *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) error {
 	values := make([]interface{}, len(records))
@@ -27,31 +21,6 @@ func (c *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) 
 	_, err := c.db.Exec(sql, args...)
 
 	return err
-}
-
-func NewNodeRecordExporter(client *Client, log logrus.FieldLogger) (*NodeRecordExporter, error) {
-	return &NodeRecordExporter{
-		client: client,
-		log:    log,
-	}, nil
-}
-
-func (e NodeRecordExporter) ExportItems(ctx context.Context, items []*node.Record) error {
-	e.log.WithField("items", len(items)).Info("Sending batch of node records to db")
-
-	if err := e.sendUpstream(ctx, items); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e NodeRecordExporter) Shutdown(ctx context.Context) error {
-	return nil
-}
-
-func (e *NodeRecordExporter) sendUpstream(ctx context.Context, items []*node.Record) error {
-	return e.client.InsertNodeRecords(ctx, items)
 }
 
 func (c *Client) UpdateNodeRecord(ctx context.Context, record *node.Record) error {

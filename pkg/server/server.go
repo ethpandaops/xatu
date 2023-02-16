@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -33,6 +34,7 @@ type Xatu struct {
 	grpcServer    *grpc.Server
 	metricsServer *http.Server
 
+	persistence   *persistence.Client
 	cache         store.Cache
 	geoipProvider geoip.Provider
 }
@@ -40,6 +42,17 @@ type Xatu struct {
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
+	}
+
+	var p *persistence.Client
+
+	if conf.Persistence.Enabled {
+		var err error
+
+		p, err = persistence.NewClient(ctx, log, &conf.Persistence)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c, err := store.NewCache(conf.Store.Type, conf.Store.Config, log)
@@ -55,7 +68,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		}
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, c, g)
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, p, c, g)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +77,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		config:        conf,
 		log:           log.WithField("component", "server"),
 		ctx:           ctx,
+		persistence:   p,
 		cache:         c,
 		geoipProvider: g,
 		services:      services,
@@ -73,6 +87,12 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 func (x *Xatu) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	if x.config.Persistence.Enabled {
+		if err := x.persistence.Start(ctx); err != nil {
+			return err
+		}
+	}
 
 	if err := x.cache.Start(ctx); err != nil {
 		return err
@@ -126,6 +146,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	if x.grpcServer != nil {
 		x.grpcServer.GracefulStop()
+	}
+
+	if x.config.Persistence.Enabled && x.persistence != nil {
+		if err := x.persistence.Stop(ctx); err != nil {
+			return err
+		}
 	}
 
 	if x.cache != nil {

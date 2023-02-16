@@ -10,6 +10,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/ethpandaops/beacon v0.20.0
 	github.com/ethpandaops/ethcore v0.0.0-20230212235804-5d4020edde84
 	github.com/ethpandaops/ethwallclock v0.2.0
 	github.com/go-co-op/gocron v1.18.0
@@ -23,7 +24,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/redis/go-redis/v9 v9.0.2
-	github.com/samcm/beacon v0.9.0
 	github.com/savid/ttlcache/v3 v3.0.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1

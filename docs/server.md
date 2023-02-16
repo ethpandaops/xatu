@@ -84,6 +84,7 @@ Store configuration for Redis server.
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | store.config.address | string |  | The address of the redis server. [Details on the address format](https://github.com/redis/go-redis/blob/97b491aaceafb0078fa31ee23d26b439bdc78387/options.go#L222) |
+| store.config.prefix | string | `xatu` | The redis key prefix to use |
 
 ### Store `redis-cluster` configuration
 
@@ -92,6 +93,7 @@ Store configuration for Redis cluster.
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | store.config.address | string |  | The address of the redis cluster. [Details on the address format](https://github.com/redis/go-redis/blob/97b491aaceafb0078fa31ee23d26b439bdc78387/cluster.go#L137) |
+| store.config.prefix | string | `xatu` | The redis key prefix to use |
 
 ### GeoIP `maxmind` configuration
 

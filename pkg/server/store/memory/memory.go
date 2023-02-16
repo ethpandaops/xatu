@@ -56,6 +56,39 @@ func (m *Memory) Get(ctx context.Context, key string) (*string, error) {
 	return &value, nil
 }
 
+func (m *Memory) GetOrSet(ctx context.Context, key, value string, ttl time.Duration) (storedValue *string, retrieved bool, err error) {
+	item, retrieved := m.client.GetOrSet(key, value, ttl)
+
+	if retrieved {
+		m.metrics.AddGet(1, m.Type(), "hit")
+	} else {
+		m.metrics.AddGet(1, m.Type(), "miss")
+		m.metrics.AddSet(1, m.Type(), "ok")
+	}
+
+	v := item.Value()
+	storedValue = &v
+
+	return
+}
+
+func (m *Memory) GetAndDelete(ctx context.Context, key string) (deletedValue *string, exists bool, err error) {
+	item, exists := m.client.GetAndDelete(key)
+
+	if !exists {
+		m.metrics.AddGet(1, m.Type(), "miss")
+		return
+	}
+
+	m.metrics.AddGet(1, m.Type(), "hit")
+	m.metrics.AddDelete(1, m.Type(), "ok")
+
+	value := item.Value()
+	deletedValue = &value
+
+	return
+}
+
 func (m *Memory) Set(ctx context.Context, key, value string, ttl time.Duration) error {
 	m.client.Set(key, value, ttl)
 

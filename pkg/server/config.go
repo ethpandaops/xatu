@@ -14,14 +14,19 @@ type Config struct {
 	MetricsAddr string `yaml:"metrics_addr" default:":9090"`
 	// LoggingLevel is the logging level to use.
 	LoggingLevel string `yaml:"logging_level" default:"info"`
-	// Services is the list of services to run.
-	Services service.Config `yaml:"services"`
+
+	// NTP Server to use for clock drift correction
+	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
+
 	// Store is the cache configuration.
 	Persistence persistence.Config `yaml:"persistence"`
 	// Store is the cache configuration.
 	Store store.Config `yaml:"store"`
 	// GeoIP is the geoip provider configuration.
 	GeoIP geoip.Config `yaml:"geoip"`
+
+	// Services is the list of services to run.
+	Services service.Config `yaml:"services"`
 }
 
 func (c *Config) Validate() error {

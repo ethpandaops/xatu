@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
+	"github.com/go-co-op/gocron"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -37,12 +39,16 @@ type Xatu struct {
 	persistence   *persistence.Client
 	cache         store.Cache
 	geoipProvider geoip.Provider
+
+	clockDrift *time.Duration
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
 	}
+
+	clockDrift := time.Duration(0)
 
 	var p *persistence.Client
 
@@ -68,7 +74,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		}
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, p, c, g)
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, &clockDrift, p, c, g)
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +87,17 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		cache:         c,
 		geoipProvider: g,
 		services:      services,
+		clockDrift:    &clockDrift,
 	}, nil
 }
 
 func (x *Xatu) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	if err := x.startCrons(ctx); err != nil {
+		x.log.WithError(err).Fatal("Failed to start crons")
+	}
 
 	if x.config.Persistence.Enabled {
 		if err := x.persistence.Start(ctx); err != nil {
@@ -214,4 +225,37 @@ func (x *Xatu) startMetrics(ctx context.Context) error {
 	}
 
 	return x.metricsServer.ListenAndServe()
+}
+
+func (x *Xatu) startCrons(ctx context.Context) error {
+	c := gocron.NewScheduler(time.Local)
+
+	if _, err := c.Every("5m").Do(func() {
+		if err := x.syncClockDrift(ctx); err != nil {
+			x.log.WithError(err).Error("Failed to sync clock drift")
+		}
+	}); err != nil {
+		return err
+	}
+
+	c.StartAsync()
+
+	return nil
+}
+
+func (x *Xatu) syncClockDrift(ctx context.Context) error {
+	response, err := ntp.Query(x.config.NTPServer)
+	if err != nil {
+		return err
+	}
+
+	err = response.Validate()
+	if err != nil {
+		return err
+	}
+
+	*x.clockDrift = response.ClockOffset
+	x.log.WithField("drift", *x.clockDrift).Info("Updated clock drift")
+
+	return err
 }

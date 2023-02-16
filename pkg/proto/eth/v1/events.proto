@@ -88,13 +88,3 @@ message EventContributionAndProof {
 
   ContributionAndProof message = 2;
 }
-
-message EventTransaction {
-  string hash = 1 [ json_name = "hash" ];
-  string from = 2 [ json_name = "from" ];
-  string to = 3 [ json_name = "to" ];
-  uint64 nonce = 4 [ json_name = "nonce" ];
-  string gas_price = 5 [ json_name = "gas_price" ];
-  uint64 gas = 6 [ json_name = "gas" ];
-  string value = 7 [ json_name = "value" ];
-}

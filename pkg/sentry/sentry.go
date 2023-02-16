@@ -11,11 +11,17 @@ import (
 	"syscall"
 	"time"
 
+	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
+	"github.com/attestantio/go-eth2-client/spec/altair"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/output"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/cache"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
+	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -87,17 +93,134 @@ func (s *Sentry) Start(ctx context.Context) error {
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
 
-		s.beacon.Node().OnAttestation(ctx, s.handleAttestation)
+		s.beacon.Node().OnAttestation(ctx, func(ctx context.Context, attestation *phase0.Attestation) error {
+			now := time.Now().Add(s.clockDrift)
 
-		s.beacon.Node().OnBlock(ctx, s.handleBlock)
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
 
-		s.beacon.Node().OnChainReOrg(ctx, s.handleChainReOrg)
+			event := v1.NewEventsAttestation(s.log, attestation, now, s.beacon, s.duplicateCache.BeaconETHV1EventsAttestation, meta)
 
-		s.beacon.Node().OnHead(ctx, s.handleHead)
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
 
-		s.beacon.Node().OnVoluntaryExit(ctx, s.handleVoluntaryExit)
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
 
-		s.beacon.Node().OnContributionAndProof(ctx, s.handleContributionAndProof)
+		s.beacon.Node().OnBlock(ctx, func(ctx context.Context, block *eth2v1.BlockEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsBlock(s.log, block, now, s.beacon, s.duplicateCache.BeaconETHV1EventsBlock, meta)
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			err = s.handleNewDecoratedEvent(ctx, decoratedEvent)
+			if err != nil {
+				return err
+			}
+
+			beaconBlock, err := s.beacon.Node().FetchBlock(ctx, xatuethv1.RootAsString(block.Block))
+			if err != nil {
+				s.log.WithError(err).Error("Failed to fetch block")
+			} else {
+				event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, meta)
+
+				decoratedEvent, err := event.Decorate(ctx)
+				if err != nil {
+					return err
+				}
+
+				if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		s.beacon.Node().OnChainReOrg(ctx, func(ctx context.Context, chainReorg *eth2v1.ChainReorgEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsChainReorg(s.log, chainReorg, now, s.beacon, s.duplicateCache.BeaconETHV1EventsChainReorg, meta)
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnHead(ctx, func(ctx context.Context, head *eth2v1.HeadEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsHead(s.log, head, now, s.beacon, s.duplicateCache.BeaconETHV1EventsHead, meta)
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnVoluntaryExit(ctx, func(ctx context.Context, voluntaryExit *phase0.VoluntaryExit) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnContributionAndProof(ctx, func(ctx context.Context, contributionAndProof *altair.SignedContributionAndProof) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsContributionAndProof(s.log, contributionAndProof, now, s.beacon, s.duplicateCache.BeaconETHV1EventsContributionAndProof, meta)
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
 
 		return nil
 	})

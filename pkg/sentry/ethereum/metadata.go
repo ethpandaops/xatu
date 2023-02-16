@@ -7,12 +7,12 @@ import (
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/ethpandaops/beacon/pkg/beacon"
+	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/go-co-op/gocron"
-	"github.com/samcm/beacon"
-	"github.com/samcm/beacon/state"
 	"github.com/sirupsen/logrus"
 )
 
@@ -118,7 +118,10 @@ func (m *MetadataService) DeriveNetwork(ctx context.Context) error {
 	network := networks.DeriveFromGenesisRoot(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
 
 	if network.Name != m.Network.Name {
-		m.log.WithField("network", network).Info("Detected ethereum network")
+		m.log.WithFields(logrus.Fields{
+			"name": network.Name,
+			"id":   network.ID,
+		}).Info("Detected ethereum network")
 	}
 
 	m.Network = network
@@ -127,7 +130,7 @@ func (m *MetadataService) DeriveNetwork(ctx context.Context) error {
 }
 
 func (m *MetadataService) fetchSpec(ctx context.Context) error {
-	spec, err := m.beacon.GetSpec(ctx)
+	spec, err := m.beacon.Spec()
 	if err != nil {
 		return err
 	}
@@ -138,7 +141,7 @@ func (m *MetadataService) fetchSpec(ctx context.Context) error {
 }
 
 func (m *MetadataService) fetchGenesis(ctx context.Context) error {
-	genesis, err := m.beacon.GetGenesis(ctx)
+	genesis, err := m.beacon.Genesis()
 	if err != nil {
 		return err
 	}
@@ -149,7 +152,7 @@ func (m *MetadataService) fetchGenesis(ctx context.Context) error {
 }
 
 func (m *MetadataService) NodeVersion(ctx context.Context) string {
-	version, _ := m.beacon.GetNodeVersion(ctx)
+	version, _ := m.beacon.NodeVersion()
 
 	return version
 }

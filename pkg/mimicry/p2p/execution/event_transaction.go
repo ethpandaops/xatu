@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/savid/ttlcache/v3"
@@ -40,17 +39,6 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		return nil, err
 	}
 
-	var to string
-	if event.To() != nil {
-		to = event.To().String()
-	}
-
-	from, err := p.signer.Sender(event)
-	if err != nil {
-		p.log.WithError(err).Error("failed to get sender")
-		return nil, err
-	}
-
 	now := time.Now()
 	if meta != nil {
 		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
@@ -64,16 +52,8 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1Transaction{
-			EthV1Transaction: &xatuethv1.EventTransaction{
-				Nonce:    event.Nonce(),
-				GasPrice: event.GasPrice().String(),
-				From:     from.String(),
-				To:       to,
-				Gas:      event.Gas(),
-				Value:    event.Value().String(),
-				Hash:     event.Hash().String(),
-			},
+		Data: &xatu.DecoratedEvent_MempoolTransaction{
+			MempoolTransaction: string(event.Data()),
 		},
 	}
 
@@ -81,16 +61,34 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 	if err != nil {
 		p.log.WithError(err).Error("Failed to get extra transaction data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_Transaction{
-			Transaction: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_MempoolTransaction{
+			MempoolTransaction: additionalData,
 		}
 	}
 
 	return decoratedEvent, nil
 }
 
-func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalTransactionData, error) {
-	extra := &xatu.ClientMeta_AdditionalTransactionData{
+func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalMempoolTransactionData, error) {
+	var to string
+	if event.To() != nil {
+		to = event.To().String()
+	}
+
+	from, err := p.signer.Sender(event)
+	if err != nil {
+		p.log.WithError(err).Error("failed to get sender")
+		return nil, err
+	}
+
+	extra := &xatu.ClientMeta_AdditionalMempoolTransactionData{
+		Nonce:        event.Nonce(),
+		GasPrice:     event.GasPrice().String(),
+		From:         from.String(),
+		To:           to,
+		Gas:          event.Gas(),
+		Value:        event.Value().String(),
+		Hash:         event.Hash().String(),
 		Size:         strconv.FormatFloat(float64(event.Size()), 'f', 0, 64),
 		CallDataSize: fmt.Sprintf("%d", len(event.Data())),
 	}

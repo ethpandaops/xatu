@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 )
@@ -16,6 +17,8 @@ type Config struct {
 	// Services is the list of services to run.
 	Services service.Config `yaml:"services"`
 	// Store is the cache configuration.
+	Persistence persistence.Config `yaml:"persistence"`
+	// Store is the cache configuration.
 	Store store.Config `yaml:"store"`
 	// GeoIP is the geoip provider configuration.
 	GeoIP geoip.Config `yaml:"geoip"`
@@ -23,6 +26,10 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if err := c.Services.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Persistence.Validate(); err != nil {
 		return err
 	}
 

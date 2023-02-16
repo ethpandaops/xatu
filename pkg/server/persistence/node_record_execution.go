@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
 )
 

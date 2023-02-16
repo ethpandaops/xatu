@@ -12,6 +12,13 @@ labels:
 #   pool.ntp.org - https://www.pool.ntp.org/zone/@
 ntpServer: time.google.com
 
+persistence:
+  enabled: false
+  # driverName: postgres
+  # connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
+  # maxIdleConns: 2 # 0 = no idle connections are retained
+  # maxOpenConns: 0 # 0 = unlimited
+
 store:
   type: memory
   # type: redis-cluster
@@ -31,16 +38,12 @@ geoip:
 
 services:
   coordinator:
-    enabled: true
-    persistence:
-      driverName: postgres
-      connectionString: postgres://postgres:password@localhost:5432/xatu?sslmode=disable
-      maxIdleConns: 2 # 0 = no idle connections are retained
-      maxOpenConns: 0 # 0 = unlimited
-      maxQueueSize: 51200
-      batchTimeout: 5s
-      exportTimeout: 30s
-      maxExportBatchSize: 512
+    enabled: false # requires persistence to be enabled
+    # nodeRecord:
+    #   maxQueueSize: 51200
+    #   batchTimeout: 5s
+    #   exportTimeout: 30s
+    #   maxExportBatchSize: 512
   eventIngester:
     enabled: true
     outputs:

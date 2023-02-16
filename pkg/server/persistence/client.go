@@ -16,7 +16,7 @@ type Client struct {
 	db *sql.DB
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Client, error) {
 	c := &Client{
 		log:    log,
 		config: conf,

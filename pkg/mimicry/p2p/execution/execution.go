@@ -230,7 +230,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 				// only process transactions we haven't seen before across all peers
 				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
 				if exists == nil {
-					p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
+					p.sharedCache.Transaction.Set(tx.Hash().String(), true, ttlcache.DefaultTTL)
 
 					event, errT := p.handleTransaction(ctx, now, tx)
 					if errT != nil {

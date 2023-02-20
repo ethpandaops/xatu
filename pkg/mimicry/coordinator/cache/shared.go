@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/go-co-op/gocron"
 	"github.com/savid/ttlcache/v3"
 )
 
 type SharedCache struct {
-	Transaction *ttlcache.Cache[string, *types.Transaction]
+	Transaction *ttlcache.Cache[string, bool]
 
 	metrics *Metrics
 }
@@ -18,7 +17,7 @@ type SharedCache struct {
 func NewSharedCache() *SharedCache {
 	return &SharedCache{
 		Transaction: ttlcache.New(
-			ttlcache.WithTTL[string, *types.Transaction](24 * time.Hour),
+			ttlcache.WithTTL[string, bool](24 * time.Hour),
 		),
 		metrics: NewMetrics("xatu_mimicry_coordinator_cache"),
 	}

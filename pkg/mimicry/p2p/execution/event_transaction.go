@@ -145,7 +145,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 			for _, tx := range txs.PooledTransactionsPacket {
 				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
 				if exists == nil {
-					p.sharedCache.Transaction.Set(tx.Hash().String(), tx, ttlcache.DefaultTTL)
+					p.sharedCache.Transaction.Set(tx.Hash().String(), true, ttlcache.DefaultTTL)
 
 					seen := seenMap[tx.Hash()]
 					if seen.IsZero() {

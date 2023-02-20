@@ -92,6 +92,10 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 }
 
 func (e *BeaconBlock) shouldIgnore(ctx context.Context) (bool, error) {
+	if e.event == nil {
+		return true, nil
+	}
+
 	if err := e.beacon.Synced(ctx); err != nil {
 		return true, nil
 	}

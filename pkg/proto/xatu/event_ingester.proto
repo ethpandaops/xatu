@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
+import "pkg/proto/eth/v2/events.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -89,23 +90,23 @@ message ClientMeta {
   // Labels contains additional labels as set by the client.
   map<string, string> labels = 9;
 
-  message AdditionalAttestationSourceData {
+  message AdditionalEthV1AttestationSourceData {
     // Epoch contains the epoch information for the source.
     Epoch epoch = 1;
   }
 
-  message AdditionalAttestationTargetData {
+  message AdditionalEthV1AttestationTargetData {
     // Epoch contains the epoch information for the source.
     Epoch epoch = 1;
   }
 
-  message AdditionalAttestationData {
+  message AdditionalEthV1EventsAttestationData {
     // Source contains information for the best currently justified checkpoint.
-    AdditionalAttestationSourceData source = 1;
+    AdditionalEthV1AttestationSourceData source = 1;
 
     // Target contains information of the block at the start of the current
     // epoch.
-    AdditionalAttestationTargetData target = 2;
+    AdditionalEthV1AttestationTargetData target = 2;
 
     // Slot contains the slot information for the attestation.
     Slot slot = 3;
@@ -118,7 +119,7 @@ message ClientMeta {
     Propagation propagation = 5;
   }
 
-  message AdditionalHeadData {
+  message AdditionalEthV1EventsHeadData {
     // Epoch contains the epoch information for the head.
     Epoch epoch = 1;
 
@@ -129,7 +130,7 @@ message ClientMeta {
     Propagation propagation = 3;
   }
 
-  message AdditionalBlockData {
+  message AdditionalEthV1EventsBlockData {
     // Epoch contains the epoch information for the block.
     Epoch epoch = 1;
 
@@ -140,17 +141,17 @@ message ClientMeta {
     Propagation propagation = 3;
   }
 
-  message AdditionalVoluntaryExitData {
+  message AdditionalEthV1EventsVoluntaryExitData {
     // Epoch contains the epoch information for the voluntary exit.
     Epoch epoch = 1;
   }
 
-  message AdditionalFinalizedCheckpointData {
+  message AdditionalEthV1EventsFinalizedCheckpointData {
     // Epoch contains the epoch information for the finalized checkpoint.
     Epoch epoch = 1;
   }
 
-  message AdditionalChainReorgData {
+  message AdditionalEthV1EventsChainReorgData {
     // Epoch contains the epoch information for the chain reorg.
     Epoch epoch = 1;
 
@@ -162,7 +163,7 @@ message ClientMeta {
     Propagation propagation = 3;
   }
 
-  message AdditionalContributionAndProofContributionData {
+  message AdditionalEthV1EventsContributionAndProofContributionData {
     // Epoch contains the epoch information for the contribution and proof.
     Epoch epoch = 1;
 
@@ -174,43 +175,87 @@ message ClientMeta {
     Propagation propagation = 3;
   }
 
-  message AdditionalContributionAndProofData {
-    AdditionalContributionAndProofContributionData contribution = 1;
+  message AdditionalEthV1EventsContributionAndProofData {
+    AdditionalEthV1EventsContributionAndProofContributionData contribution = 1;
   }
 
-  message AdditionalTransactionData {
+  message AdditionalMempoolTransactionData {
+    // Hash is the transaction hash.
+    string hash = 1 [ json_name = "hash" ];
+
+    // From is the transaction sender hash.
+    string from = 2 [ json_name = "from" ];
+
+    // To is the transaction receiver hash.
+    string to = 3 [ json_name = "to" ];
+
+    // Nonce is the transaction nonce.
+    uint64 nonce = 4 [ json_name = "nonce" ];
+
+    // GasPrice is the transaction gas price.
+    string gas_price = 5 [ json_name = "gas_price" ];
+
+    // Gas is the transaction gas.
+    uint64 gas = 6 [ json_name = "gas" ];
+
+    // Value is the transaction value.
+    string value = 7 [ json_name = "value" ];
+
     // Size is the transaction size in bytes.
-    string size = 1;
+    string size = 8;
 
     // CallDataSize is the call data size in bytes.
-    string call_data_size = 2 [ json_name = "call_data_size" ];
+    string call_data_size = 9 [ json_name = "call_data_size" ];
+  }
+
+  message AdditionalEthV2BeaconBlockData {
+    // Epoch contains the epoch information for the block.
+    Epoch epoch = 1;
+
+    // Slot contains the slot information for the block.
+    Slot slot = 2;
+
+    // Version contains information about the version of the block.
+    string version = 3;
   }
 
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
-    // Attestation contains additional data about an attestation event.
-    AdditionalAttestationData attestation = 10
+    // AdditionalEthV1EventsAttestationData contains additional data about an eth v1
+    // attestation event.
+    AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10
         [ json_name = "additional_data" ];
-    // Head contains additional data about the head event.
-    AdditionalHeadData head = 11 [ json_name = "additional_data" ];
-    // Block contains additional data about the head event.
-    AdditionalBlockData block = 12 [ json_name = "additional_data" ];
-    // VoluntaryExit contains additional data about the voluntary exit event.
-    AdditionalVoluntaryExitData voluntary_exit = 13
-        [ json_name = "additional_data" ];
-    // FinalizedCheckpoint contains additional data about the finalized
-    // checkpoint event.
-    AdditionalFinalizedCheckpointData finalized_checkpoint = 14
-        [ json_name = "additional_data" ];
-    // ChainReorg contains additional data about the chain reorg event.
-    AdditionalChainReorgData chain_reorg = 15 [ json_name = "additional_data" ];
-    // ContributionAndProof contains additional data about the chain reorg
+    // AdditionalEthV1EventsHeadData contains additional data about the eth v1 head
     // event.
-    AdditionalContributionAndProofData contribution_and_proof = 16
+    AdditionalEthV1EventsHeadData eth_v1_events_head = 11 [ json_name = "additional_data" ];
+    // AdditionalEthV1EventsBlockData contains additional data about the eth v1 block
+    // event.
+    AdditionalEthV1EventsBlockData eth_v1_events_block = 12
         [ json_name = "additional_data" ];
-    // Transaction contains additional data about the transaction event.
-    AdditionalTransactionData transaction = 17
+    // AdditionalEthV1EventsVoluntaryExitData contains additional data about the eth
+    // v1 voluntary exit event.
+    AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13
+        [ json_name = "additional_data" ];
+    // AdditionalEthV1EventsFinalizedCheckpointData contains additional data about the
+    // eth v1 finalized checkpoint event.
+    AdditionalEthV1EventsFinalizedCheckpointData eth_v1_events_finalized_checkpoint = 14
+        [ json_name = "additional_data" ];
+    // AdditionalEthV1EventsChainReorgData contains additional data about the eth v1
+    // chain reorg event.
+    AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15
+        [ json_name = "additional_data" ];
+    // AdditionalEthV1EventsContributionAndProofData contains additional data about
+    // the eth v1 contribution and proof.
+    AdditionalEthV1EventsContributionAndProofData eth_v1_events_contribution_and_proof = 16
+        [ json_name = "additional_data" ];
+    // AdditionalMempoolTransactionData contains additional data about the
+    // mempool transaction event.
+    AdditionalMempoolTransactionData mempool_transaction = 17
+        [ json_name = "additional_data" ];
+    // AdditionalEthV2BeaconBlockData contains additional data about the eth v2
+    // beacon block event.
+    AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18
         [ json_name = "additional_data" ];
   }
 }
@@ -231,23 +276,25 @@ message ServerMeta {
       // CountryCode is the country code of the client as far as the server is
       // concerned.
       string CountryCode = 3 [ json_name = "country_code" ];
-      // ContinentCode is the continent code of the client as far as the server is
-      // concerned.
+      // ContinentCode is the continent code of the client as far as the server
+      // is concerned.
       string ContinentCode = 4 [ json_name = "continent_code" ];
-      // Latitude is the latitude of the client as far as the server is concerned.
+      // Latitude is the latitude of the client as far as the server is
+      // concerned.
       double Latitude = 5 [ json_name = "latitude" ];
       // Longitude is the longitude of the client as far as the server is
       // concerned.
       double Longitude = 6 [ json_name = "longitude" ];
       // AutonomousSystemNumber is the autonomous system number of the client as
       // far as the server is concerned.
-      uint32 AutonomousSystemNumber = 7 [ json_name = "autonomous_system_number" ];
-      // AutonomousSystemOrganization is the autonomous system organization of the
-      // client as far as the server is concerned.
+      uint32 AutonomousSystemNumber = 7
+          [ json_name = "autonomous_system_number" ];
+      // AutonomousSystemOrganization is the autonomous system organization of
+      // the client as far as the server is concerned.
       string AutonomousSystemOrganization = 8
           [ json_name = "autonomous_system_organization" ];
     }
-  
+
     // IP is the ip of the client as far as the server is concerned.
     string IP = 1 [ json_name = "ip" ];
 
@@ -284,6 +331,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_ATTESTATION = 6;
     BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
     MEMPOOL_TRANSACTION = 8;
+    BEACON_API_ETH_V2_BEACON_BLOCK = 9;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -297,16 +345,17 @@ message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_attestation = 3 [ json_name = "data" ];
-    xatu.eth.v1.EventBlock eth_v1_block = 4 [ json_name = "data" ];
-    xatu.eth.v1.EventChainReorg eth_v1_chain_reorg = 5 [ json_name = "data" ];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_finalized_checkpoint = 6
+    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "data" ];
+    xatu.eth.v1.EventBlock eth_v1_events_block = 4 [ json_name = "data" ];
+    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5 [ json_name = "data" ];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6
         [ json_name = "data" ];
-    xatu.eth.v1.EventHead eth_v1_head = 7 [ json_name = "data" ];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_voluntary_exit = 8
+    xatu.eth.v1.EventHead eth_v1_events_head = 7 [ json_name = "data" ];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8
         [ json_name = "data" ];
-    xatu.eth.v1.EventContributionAndProof eth_v1_contribution_and_proof = 9
+    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9
         [ json_name = "data" ];
-    xatu.eth.v1.EventTransaction eth_v1_transaction = 10 [ json_name = "data" ];
+    string mempool_transaction = 10 [ json_name = "data" ];
+    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "data" ];
   };
 }

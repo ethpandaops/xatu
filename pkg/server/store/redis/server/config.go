@@ -2,12 +2,11 @@ package server
 
 import (
 	"errors"
-	"time"
 )
 
 type Config struct {
-	Address string        `yaml:"address" default:"redis://localhost:6379/0"`
-	Timeout time.Duration `yaml:"timeout" default:"15s"`
+	Address string `yaml:"address" default:"redis://localhost:6379/0"`
+	Prefix  string `yaml:"prefix" default:"xatu"`
 }
 
 func (c *Config) Validate() error {

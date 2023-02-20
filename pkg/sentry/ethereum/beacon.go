@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/go-co-op/gocron"
 	"github.com/pkg/errors"
-	"github.com/samcm/beacon"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +24,6 @@ type BeaconNode struct {
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
-		DisableFetchingProposerDuties().
 		EnableDefaultBeaconSubscription()
 
 	opts.HealthCheck.Interval.Duration = time.Second * 3
@@ -79,7 +78,7 @@ func (b *BeaconNode) OnReady(ctx context.Context, callback func(ctx context.Cont
 }
 
 func (b *BeaconNode) Synced(ctx context.Context) error {
-	status := b.beacon.GetStatus(ctx)
+	status := b.beacon.Status()
 	if status == nil {
 		return errors.New("missing beacon status")
 	}
@@ -120,7 +119,7 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 		return errors.Wrap(err, "metadata service is not ready")
 	}
 
-	status := b.beacon.GetStatus(ctx)
+	status := b.beacon.Status()
 	if status == nil {
 		return errors.New("failed to get beacon node status")
 	}

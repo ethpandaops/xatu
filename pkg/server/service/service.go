@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
@@ -28,7 +29,7 @@ const (
 	ServiceTypeCoordinator   Type = coordinator.ServiceType
 )
 
-func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, p *persistence.Client, c store.Cache, g geoip.Provider) ([]GRPCService, error) {
+func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider) ([]GRPCService, error) {
 	services := []GRPCService{}
 
 	if cfg.EventIngester.Enabled {
@@ -36,7 +37,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := eventingester.New(ctx, log, &cfg.EventIngester, g)
+		service, err := eventingester.NewIngester(ctx, log, &cfg.EventIngester, clockDrift, g, c)
 		if err != nil {
 			return nil, err
 		}

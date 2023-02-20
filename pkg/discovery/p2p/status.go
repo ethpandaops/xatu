@@ -111,6 +111,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 				retry.Attempts(5),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
 					s.log.WithError(err).Debug("peer failed")
+
 					return 5 * time.Second
 				}),
 			)

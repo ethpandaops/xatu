@@ -46,6 +46,7 @@ func (m *Memory) Get(ctx context.Context, key string) (*string, error) {
 	if item == nil {
 		m.metrics.AddGet(1, m.Type(), "miss")
 
+		//nolint:nilnil // expected behavior
 		return nil, nil
 	}
 
@@ -77,6 +78,7 @@ func (m *Memory) GetAndDelete(ctx context.Context, key string) (deletedValue *st
 
 	if !exists {
 		m.metrics.AddGet(1, m.Type(), "miss")
+
 		return
 	}
 

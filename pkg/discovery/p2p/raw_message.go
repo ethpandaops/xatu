@@ -6,6 +6,7 @@ type RawMessage struct {
 
 func (r *RawMessage) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	r.unmarshal = unmarshal
+
 	return nil
 }
 

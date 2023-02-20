@@ -67,6 +67,7 @@ func (c *Cluster) Get(ctx context.Context, key string) (*string, error) {
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
 			c.metrics.AddGet(1, c.Type(), "miss")
+			//nolint:nilnil // expected behavior
 			return nil, nil
 		}
 
@@ -92,6 +93,7 @@ func (c *Cluster) GetOrSet(ctx context.Context, key, value string, ttl time.Dura
 
 	if storedValue != nil {
 		retrieved = true
+
 		return
 	}
 
@@ -129,6 +131,7 @@ func (c *Cluster) Set(ctx context.Context, key, value string, ttl time.Duration)
 
 	if cmd.Err() != nil {
 		c.metrics.AddSet(1, c.Type(), "error")
+
 		return cmd.Err()
 	}
 
@@ -143,6 +146,7 @@ func (c *Cluster) Delete(ctx context.Context, key string) error {
 
 	if cmd.Err() != nil {
 		c.metrics.AddDelete(1, c.Type(), "error")
+
 		return cmd.Err()
 	}
 

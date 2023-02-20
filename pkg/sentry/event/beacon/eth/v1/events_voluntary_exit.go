@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -44,7 +45,7 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 	}
 
 	if ignore {
-		return nil, nil
+		return nil, err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
@@ -77,7 +78,7 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 
 func (e *EventsVoluntaryExit) shouldIgnore(ctx context.Context) (bool, error) {
 	if err := e.beacon.Synced(ctx); err != nil {
-		return true, nil
+		return true, errors.New("duplicate event")
 	}
 
 	hash, err := hashstructure.Hash(e.event, hashstructure.FormatV2, nil)

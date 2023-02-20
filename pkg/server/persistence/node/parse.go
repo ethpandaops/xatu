@@ -55,11 +55,13 @@ func Parse(record string) (*Record, error) {
 
 func parseSignature(node *enode.Node) *[]byte {
 	signature := node.Record().Signature()
+
 	return &signature
 }
 
 func parseSeq(node *enode.Node) *uint64 {
 	seq := node.Seq()
+
 	return &seq
 }
 

@@ -13,13 +13,13 @@ type Record struct {
 	// Seq is the sequence number, a 64-bit unsigned integer. Nodes should increase the number whenever the record changes and republish the record
 	Seq *uint64 `json:"seq" db:"seq" fieldopt:"omitempty"`
 	// CreateTime is the timestamp of when the node record was created.
-	CreateTime time.Time `json:"create_time" db:"create_time" fieldopt:"omitempty"`
+	CreateTime time.Time `json:"createTime" db:"create_time" fieldopt:"omitempty"`
 	// LastDialTime is the timestamp of when the node record was last dialed.
-	LastDialTime sql.NullTime `json:"last_dial_time" db:"last_dial_time" fieldopt:"omitempty"`
+	LastDialTime sql.NullTime `json:"lastDialTime" db:"last_dial_time" fieldopt:"omitempty"`
 	// ConsecutiveDialAttempts is the number of consecutive dial attempts.
-	ConsecutiveDialAttempts int `json:"consecutive_dial_attempts" db:"consecutive_dial_attempts"`
+	ConsecutiveDialAttempts int `json:"consecutiveDialAttempts" db:"consecutive_dial_attempts"`
 	// LastConnectTime is the timestamp of when the node record was last connected.
-	LastConnectTime sql.NullTime `json:"last_connect_time" db:"last_connect_time" fieldopt:"omitempty"`
+	LastConnectTime sql.NullTime `json:"lastConnectTime" db:"last_connect_time" fieldopt:"omitempty"`
 	// ID is the name of identity scheme, e.g. “v4”
 	ID *string `json:"id" db:"id" fieldopt:"omitempty"`
 	// Secp256k1 is the secp256k1 public key of the node record.
@@ -43,7 +43,7 @@ type Record struct {
 	// Syncnets is the sync subnet bitfield of the node record.
 	Syncnets *[]byte `json:"syncnets" db:"syncnets" fieldopt:"omitempty"`
 	// NodeID is the node ID of the node record.
-	NodeID *string `json:"node_id" db:"node_id" fieldopt:"omitempty"`
+	NodeID *string `json:"nodeId" db:"node_id" fieldopt:"omitempty"`
 	// PeerID is the peer ID of the node record.
-	PeerID *string `json:"peer_id" db:"peer_id" fieldopt:"omitempty"`
+	PeerID *string `json:"peerId" db:"peer_id" fieldopt:"omitempty"`
 }

@@ -11,9 +11,9 @@ type Config struct {
 	// The address to listen on.
 	Addr string `yaml:"addr" default:":8080"`
 	// MetricsAddr is the address to listen on for metrics.
-	MetricsAddr string `yaml:"metrics_addr" default:":9090"`
+	MetricsAddr string `yaml:"metricsAddr" default:":9090"`
 	// LoggingLevel is the logging level to use.
-	LoggingLevel string `yaml:"logging_level" default:"info"`
+	LoggingLevel string `yaml:"logging" default:"info"`
 
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`

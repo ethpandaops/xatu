@@ -67,7 +67,7 @@ func (s *Server) Get(ctx context.Context, key string) (*string, error) {
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
 			s.metrics.AddGet(1, s.Type(), "miss")
-
+			//nolint:nilnil // expected behavior
 			return nil, nil
 		}
 
@@ -93,6 +93,7 @@ func (s *Server) GetOrSet(ctx context.Context, key, value string, ttl time.Durat
 
 	if storedValue != nil {
 		retrieved = true
+
 		return
 	}
 
@@ -130,6 +131,7 @@ func (s *Server) Set(ctx context.Context, key, value string, ttl time.Duration) 
 
 	if cmd.Err() != nil {
 		s.metrics.AddSet(1, s.Type(), "error")
+
 		return cmd.Err()
 	}
 
@@ -144,6 +146,7 @@ func (s *Server) Delete(ctx context.Context, key string) error {
 
 	if cmd.Err() != nil {
 		s.metrics.AddDelete(1, s.Type(), "error")
+
 		return cmd.Err()
 	}
 

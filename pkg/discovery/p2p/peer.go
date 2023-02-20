@@ -20,8 +20,6 @@ type Peer struct {
 	hello *mimicry.Hello
 
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
-
-	response chan error
 }
 
 func NewPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*Peer, error) {
@@ -43,6 +41,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		p.hello = hello
+
 		return nil
 	})
 

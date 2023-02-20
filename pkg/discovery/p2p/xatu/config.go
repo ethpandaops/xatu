@@ -12,7 +12,7 @@ type Config struct {
 	DiscV5       bool              `yaml:"discV5" default:"true"`
 	Restart      time.Duration     `yaml:"restart" default:"2m"`
 	NetworkIDs   []uint64          `yaml:"networkIDs"`
-	ForkIDHashes []string          `yaml:"forkIDHashes"`
+	ForkIDHashes []string          `yaml:"forkIdHashes"`
 }
 
 func (c *Config) Validate() error {

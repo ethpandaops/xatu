@@ -26,10 +26,8 @@ import (
 )
 
 type Xatu struct {
-	ctx     context.Context
-	log     logrus.FieldLogger
-	config  *Config
-	metrics *Metrics
+	log    logrus.FieldLogger
+	config *Config
 
 	services []service.GRPCService
 
@@ -82,7 +80,6 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 	return &Xatu{
 		config:        conf,
 		log:           log.WithField("component", "server"),
-		ctx:           ctx,
 		persistence:   p,
 		cache:         c,
 		geoipProvider: g,
@@ -123,12 +120,14 @@ func (x *Xatu) Start(ctx context.Context) error {
 				return err
 			}
 		}
+
 		return nil
 	})
 	g.Go(func() error {
 		if err := x.startGrpcServer(ctx); err != nil {
 			return err
 		}
+
 		return nil
 	})
 	g.Go(func() error {
@@ -136,6 +135,7 @@ func (x *Xatu) Start(ctx context.Context) error {
 		if err := x.stop(ctx); err != nil {
 			return err
 		}
+
 		return nil
 	})
 

@@ -77,6 +77,7 @@ func (m *Maxmind) LookupIP(ctx context.Context, ip net.IP) (*lookup.Result, erro
 		city, err := m.city.Lookup(ip)
 		if err != nil {
 			m.metrics.AddLookupIP(1, m.Type(), "error")
+
 			return nil, err
 		}
 
@@ -94,6 +95,7 @@ func (m *Maxmind) LookupIP(ctx context.Context, ip net.IP) (*lookup.Result, erro
 		asn, err := m.asn.Lookup(ip)
 		if err != nil {
 			m.metrics.AddLookupIP(1, m.Type(), "error")
+
 			return nil, err
 		}
 

@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -31,7 +32,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 			"transaction_hash":      event.Hash().String(),
 		}).Debug("Duplicate transaction event received")
 		// TODO(savid): add metrics
-		return nil, nil
+		return nil, errors.New("duplicate transaction event received")
 	}
 
 	meta, err := p.createNewClientMeta(ctx)
@@ -78,6 +79,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 	from, err := p.signer.Sender(event)
 	if err != nil {
 		p.log.WithError(err).Error("failed to get sender")
+
 		return nil, err
 	}
 
@@ -138,6 +140,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 		txs, err := p.client.GetPooledTransactions(ctx, hashes)
 		if err != nil {
 			p.log.WithError(err).Error("Failed to get pooled transactions")
+
 			return
 		}
 

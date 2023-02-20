@@ -60,7 +60,7 @@ P2P configuration to get node records to discover from the [Xatu server coordina
 | p2p.config.discV5 | bool | `true` | enable Node Discovery Protocol v5 *Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time* |
 | p2p.config.restart | string | `2m` | Time between initiating discovery scans and fetching new node record, will generate a fresh private key each time |
 | p2p.config.networkIDs | array<string> |  | List of network ids to filter node records by (decimal format, eg. '1' for mainnet) |
-| p2p.config.forkIDHashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to filter node records by (hex string) |
+| p2p.config.forkIdHashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to filter node records by (hex string) |
 
 ### P2P `static` configuration
 
@@ -111,7 +111,7 @@ p2p:
     discV5: true
     restart: 2m
     networkIDs: [1]
-    forkIDHashes: [0xf0afd0e3]
+    forkIdHashes: [0xf0afd0e3]
 ```
 
 ## Running locally

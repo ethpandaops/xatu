@@ -18,7 +18,6 @@ const Type = "xatu"
 
 type Xatu struct {
 	handlers *handler.Peer
-	name     string
 	log      logrus.FieldLogger
 
 	cache       *cache.SharedCache
@@ -106,11 +105,13 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 		res, err := x.coordinator.CoordinateExecutionNodeRecords(ctx, records)
 		if err != nil {
 			x.log.WithError(err).Error("failed to coordinate execution node records")
+
 			return
 		}
 
 		if res == nil {
 			x.log.Error("failed to coordinate execution node records: nil response")
+
 			return
 		}
 
@@ -122,6 +123,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 				if record == i {
 					found = true
 					peer.RetryDelay(retryDelay)
+
 					break
 				}
 			}

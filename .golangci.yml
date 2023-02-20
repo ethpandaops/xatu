@@ -20,33 +20,48 @@ linters-settings:
 linters:
   disable-all: true
   enable:
+    - asasalint
+    - bidichk
     - bodyclose
-    - deadcode
+    - containedctx
+    - decorder
     - depguard
     - dogsled
+    - durationcheck
     - errcheck
+    - errname
     - exportloopref
     - goconst
     - gocritic
-    - gofmt
-    - goimports
     - gocyclo
+    - gofmt
+    - goheader
+    - goimports
     - gosec
     - gosimple
     - govet
+    - ineffassign
     - misspell
-    - nolintlint
     - nakedret
+    - nilerr
+    - nilerr
+    - nilnil
+    - nlreturn
+    - nolintlint
+    - nosprintfhostport
     - prealloc
+    - predeclared
+    - promlinter
+    - reassign
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
+    - tagliatelle
     - thelper
     - tparallel
     - typecheck
     - unconvert
-    - varcheck
+    - unused
     - whitespace
     - wsl
 

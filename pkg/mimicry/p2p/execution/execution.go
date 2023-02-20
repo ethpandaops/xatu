@@ -76,7 +76,7 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 
 func (p *Peer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
 	if p.handlers.CreateNewClientMeta == nil {
-		return nil, nil
+		return nil, errors.New("no CreateNewClientMeta handler")
 	}
 
 	meta, err := p.handlers.CreateNewClientMeta(ctx)
@@ -244,6 +244,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 				}
 			}
 		}
+
 		return nil
 	})
 
@@ -267,6 +268,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	err = p.client.Start(ctx)
 	if err != nil {
 		p.log.WithError(err).Debug("failed to dial client")
+
 		return nil, err
 	}
 

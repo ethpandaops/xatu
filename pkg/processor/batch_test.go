@@ -51,6 +51,7 @@ func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) erro
 	select {
 	case <-ctx.Done():
 		t.err = ctx.Err()
+
 		return ctx.Err()
 	default:
 	}
@@ -64,6 +65,7 @@ func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) erro
 
 func (t *testBatchExporter[T]) Shutdown(context.Context) error {
 	t.shutdownCount++
+
 	return nil
 }
 
@@ -379,6 +381,7 @@ type indefiniteExporter[T TestItem] struct{}
 func (indefiniteExporter[T]) Shutdown(context.Context) error { return nil }
 func (indefiniteExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 	<-ctx.Done()
+
 	return ctx.Err()
 }
 

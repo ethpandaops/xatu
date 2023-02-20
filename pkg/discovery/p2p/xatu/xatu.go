@@ -142,26 +142,31 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 
 		if err != nil {
 			c.log.WithError(err).Error("Failed to get a discovery node record")
+
 			return
 		}
 
 		if err = c.discV4.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
 			c.log.WithError(err).Error("Failed to update discV4 boot nodes")
+
 			return
 		}
 
 		if errS := c.discV4.Start(ctx); errS != nil {
 			c.log.WithError(errS).Error("Failed to start discV4")
+
 			return
 		}
 
 		if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
 			c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+
 			return
 		}
 
 		if err := c.discV5.Start(ctx); err != nil {
 			c.log.WithError(err).Error("Failed to start discV5")
+
 			return
 		}
 	}); err != nil {

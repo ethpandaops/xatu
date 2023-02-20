@@ -134,16 +134,19 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 		e, err := eventHandler.New(eventHandler.Type(eventName), h.log, event, h.cache)
 		if err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
+
 			continue
 		}
 
 		if err := e.Validate(ctx); err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to validate event")
+
 			continue
 		}
 
 		if shouldFilter := e.Filter(ctx); shouldFilter {
 			h.log.WithField("event", eventName).Debug("event filtered")
+
 			continue
 		}
 

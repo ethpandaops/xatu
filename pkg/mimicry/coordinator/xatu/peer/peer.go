@@ -93,6 +93,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 func (p *Peer) Stop() error {
 	p.stopped = true
+
 	return nil
 }
 

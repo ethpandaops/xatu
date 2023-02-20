@@ -85,6 +85,7 @@ func (s *Static) Start(ctx context.Context) error {
 				retry.Attempts(0),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
 					s.log.WithError(err).Debug("peer failed")
+
 					return s.config.RetryInterval
 				}),
 			)

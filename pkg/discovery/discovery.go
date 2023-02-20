@@ -161,6 +161,7 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 			nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
 			if err != nil {
 				d.log.WithError(err).Error("Failed to list stale node records")
+
 				return
 			}
 			d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
@@ -177,6 +178,7 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 
 func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
 	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+
 	return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
 }
 

@@ -105,7 +105,7 @@ func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.
 		pageSize = 1000
 	}
 
-	nodeRecords, err := c.persistence.CheckoutStalledExecutionNodeRecords(ctx, int(req.PageSize))
+	nodeRecords, err := c.persistence.CheckoutStalledExecutionNodeRecords(ctx, pageSize)
 	if err != nil {
 		return nil, err
 	}

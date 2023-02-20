@@ -8,8 +8,8 @@ type Config struct {
 	Address      string            `yaml:"address"`
 	Headers      map[string]string `yaml:"headers"`
 	TLS          bool              `yaml:"tls" default:"false"`
-	NetworkIDs   []uint64          `yaml:"networkIDs"`
-	ForkIDHashes []string          `yaml:"forkIDHashes"`
+	NetworkIDs   []uint64          `yaml:"networkIds"`
+	ForkIDHashes []string          `yaml:"forkIdHashes"`
 	MaxPeers     uint32            `yaml:"maxPeers" default:"100"`
 }
 

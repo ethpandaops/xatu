@@ -135,7 +135,12 @@ func (s *Sentry) Start(ctx context.Context) error {
 			if err != nil {
 				s.log.WithError(err).Error("Failed to fetch block")
 			} else {
-				event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, meta)
+				beaconBlockMeta, err := s.createNewClientMeta(ctx)
+				if err != nil {
+					return err
+				}
+
+				event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, beaconBlockMeta)
 
 				decoratedEvent, err := event.Decorate(ctx)
 				if err != nil {

@@ -45,8 +45,12 @@ github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156 h1:eMwmnE/GDgah
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156/go.mod h1:Cb/ax3seSYIx7SuZdm2G2xzfwmv3TPSk2ucNfQESPXM=
 github.com/attestantio/go-eth2-client v0.15.2 h1:4EYeA5IBSBypkUMhkkFALzMddaFDdb5PvCl7ORXEl6w=
 github.com/attestantio/go-eth2-client v0.15.2/go.mod h1:/Oh6YTuHmHhgLN/ZnQRKHGc7HdIzGlDkI2vjNZvOsvA=
+github.com/attestantio/go-eth2-client v0.15.5 h1:DqeLMEQWy7qDAkwgb/FU1IqzC5qLb9nEKmyQk9ig9bk=
+github.com/attestantio/go-eth2-client v0.15.5/go.mod h1:/Oh6YTuHmHhgLN/ZnQRKHGc7HdIzGlDkI2vjNZvOsvA=
 github.com/avast/retry-go/v4 v4.3.2 h1:x4sTEu3jSwr7zNjya8NTdIN+U88u/jtO/q3OupBoDtM=
 github.com/avast/retry-go/v4 v4.3.2/go.mod h1:rg6XFaiuFYII0Xu3RDbZQkxCofFwruZKW8oEF1jpWiU=
+github.com/avast/retry-go/v4 v4.3.3 h1:G56Bp6mU0b5HE1SkaoVjscZjlQb0oy4mezwY/cGH19w=
+github.com/avast/retry-go/v4 v4.3.3/go.mod h1:rg6XFaiuFYII0Xu3RDbZQkxCofFwruZKW8oEF1jpWiU=
 github.com/beevik/ntp v0.3.0 h1:xzVrPrE4ziasFXgBVBZJDP0Wg/KpMwk2KHJ4Ba8GrDw=
 github.com/beevik/ntp v0.3.0/go.mod h1:hIHWr+l3+/clUnF44zdK+CWW7fO8dR5cIylAQ76NRpg=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

@@ -3,8 +3,8 @@ module github.com/ethpandaops/xatu
 go 1.18
 
 require (
-	github.com/attestantio/go-eth2-client v0.15.2
-	github.com/avast/retry-go/v4 v4.3.2
+	github.com/attestantio/go-eth2-client v0.15.5
+	github.com/avast/retry-go/v4 v4.3.3
 	github.com/beevik/ntp v0.3.0
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9

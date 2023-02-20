@@ -121,6 +121,14 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 	filteredEvents := make([]*xatu.DecoratedEvent, 0, len(events))
 
 	for _, event := range events {
+		if event == nil || event.Event == nil {
+			continue
+		}
+
+		if event.Meta == nil {
+			event.Meta = &xatu.Meta{}
+		}
+
 		eventName := event.Event.Name.String()
 
 		e, err := eventHandler.New(eventHandler.Type(eventName), h.log, event, h.cache)

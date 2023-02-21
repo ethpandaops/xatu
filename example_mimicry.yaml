@@ -27,7 +27,7 @@ coordinator:
   #   tls: false
   #   headers:
   #     authorization: Someb64Value
-  #   networkIDs: [1]
+  #   networkIds: [1]
   #   forkIdHashes: [0xf0afd0e3]
   #   maxPeers: 100
 

@@ -11,7 +11,7 @@ type Config struct {
 	DiscV4       bool              `yaml:"discV4" default:"true"`
 	DiscV5       bool              `yaml:"discV5" default:"true"`
 	Restart      time.Duration     `yaml:"restart" default:"2m"`
-	NetworkIDs   []uint64          `yaml:"networkIDs"`
+	NetworkIds   []uint64          `yaml:"networkIds"`
 	ForkIDHashes []string          `yaml:"forkIdHashes"`
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/savid/ttlcache/v3"
@@ -51,6 +52,9 @@ type Peer struct {
 	version         string
 	forkID          *xatu.ForkID
 	capabilities    *[]p2p.Cap
+
+	mu           *sync.Mutex
+	ignoreBefore *time.Time
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, sharedCache *coordCache.SharedCache) (*Peer, error) {
@@ -71,6 +75,7 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 		network: &networks.Network{
 			Name: networks.NetworkNameNone,
 		},
+		mu: &sync.Mutex{},
 	}, nil
 }
 
@@ -193,10 +198,18 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"fork_id_next": fmt.Sprintf("%d", status.ForkID.Next),
 		}).Debug("got client status")
 
+		// set the ignore before time to 15 seconds in the future
+		ignoreBefore := time.Now().Add(15 * time.Second)
+		p.ignoreBefore = &ignoreBefore
+
 		return nil
 	})
 
 	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes) error {
+		if !p.shouldGetTransactions() {
+			return nil
+		}
+
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			for _, hash := range *hashes {
@@ -210,6 +223,10 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	})
 
 	p.client.OnNewPooledTransactionHashes68(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes68) error {
+		if !p.shouldGetTransactions() {
+			return nil
+		}
+
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			// TODO: handle eth68+ transaction size/types as well
@@ -224,6 +241,10 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	})
 
 	p.client.OnTransactions(ctx, func(ctx context.Context, txs *mimicry.Transactions) error {
+		if !p.shouldGetTransactions() {
+			return nil
+		}
+
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
@@ -273,6 +294,28 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	}
 
 	return response, nil
+}
+
+// typically when first connecting to a peer, a dump of their transaction pool is sent.
+// not looking to get stale/old transactions, so we can just ignore the first batch.
+func (p *Peer) shouldGetTransactions() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.ignoreBefore == nil {
+		// no ignore before time set, so we should get transactions
+		return true
+	}
+
+	if time.Now().Before(*p.ignoreBefore) {
+		// ignore time set and is still in the future, so we should not get transactions
+		return false
+	}
+
+	// set ignore time to nil, so we should get transactions
+	p.ignoreBefore = nil
+
+	return true
 }
 
 func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash common.Hash) error {

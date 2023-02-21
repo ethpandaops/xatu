@@ -45,6 +45,11 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
 	}
 
+	tx, err := event.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_MEMPOOL_TRANSACTION,
@@ -54,7 +59,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 			Client: meta,
 		},
 		Data: &xatu.DecoratedEvent_MempoolTransaction{
-			MempoolTransaction: string(event.Data()),
+			MempoolTransaction: fmt.Sprintf("0x%x", tx),
 		},
 	}
 

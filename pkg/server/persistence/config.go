@@ -13,6 +13,10 @@ type Config struct {
 }
 
 func (e *Config) Validate() error {
+	if !e.Enabled {
+		return nil
+	}
+
 	if e.ConnectionString == "" {
 		return errors.New("connectionString is required")
 	}

@@ -8,7 +8,7 @@ type Config struct {
 	Address      string            `yaml:"address"`
 	Headers      map[string]string `yaml:"headers"`
 	TLS          bool              `yaml:"tls" default:"false"`
-	NetworkIDs   []uint64          `yaml:"networkIds"`
+	NetworkIds   []uint64          `yaml:"networkIds"`
 	ForkIDHashes []string          `yaml:"forkIdHashes"`
 	MaxPeers     uint32            `yaml:"maxPeers" default:"100"`
 }
@@ -18,8 +18,8 @@ func (c *Config) Validate() error {
 		return errors.New("address is required")
 	}
 
-	if len(c.NetworkIDs) == 0 {
-		return errors.New("networkIDs is required")
+	if len(c.NetworkIds) == 0 {
+		return errors.New("networkIds is required")
 	}
 
 	return nil

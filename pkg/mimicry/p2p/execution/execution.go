@@ -205,7 +205,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes) error {
+	p.client.OnNewPooledTransactionHashes66(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes66) error {
 		if !p.shouldGetTransactions() {
 			return nil
 		}
@@ -230,7 +230,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			// TODO: handle eth68+ transaction size/types as well
-			for _, hash := range hashes.Transactions {
+			for _, hash := range hashes.Hashes {
 				if errT := p.processTransaction(ctx, now, hash); errT != nil {
 					p.log.WithError(errT).Error("failed processing event")
 				}

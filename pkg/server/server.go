@@ -23,6 +23,7 @@ import (
 
 	//nolint:blank-imports // Required for grpc.WithCompression
 	_ "google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/keepalive"
 )
 
 type Xatu struct {
@@ -195,6 +196,13 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 	opts := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
 		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     5 * time.Minute,
+			MaxConnectionAge:      10 * time.Minute,
+			MaxConnectionAgeGrace: 2 * time.Minute,
+			Time:                  1 * time.Minute,
+			Timeout:               15 * time.Second,
+		}),
 	}
 	x.grpcServer = grpc.NewServer(opts...)
 

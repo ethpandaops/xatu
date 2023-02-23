@@ -12,7 +12,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "decorated_event_total",
 			Help:      "Total number of decorated events received",
-		}, []string{"type", "network"}),
+		}, []string{"type", "network_id"}),
 	}
 
 	prometheus.MustRegister(m.decoratedEventTotal)
@@ -20,6 +20,6 @@ func NewMetrics(namespace string) *Metrics {
 	return m
 }
 
-func (m *Metrics) AddDecoratedEvent(count int, eventType, network string) {
-	m.decoratedEventTotal.WithLabelValues(eventType, network).Add(float64(count))
+func (m *Metrics) AddDecoratedEvent(count int, eventType, networkID string) {
+	m.decoratedEventTotal.WithLabelValues(eventType, networkID).Add(float64(count))
 }

@@ -37,7 +37,7 @@ func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 	sqlQuery, args := ub.Build()
 	sqlQuery += " ON CONFLICT ON CONSTRAINT c_unique DO UPDATE SET update_time = EXCLUDED.update_time, connected = EXCLUDED.connected"
 
-	_, err := c.db.Exec(sqlQuery, args...)
+	_, err := c.db.ExecContext(ctx, sqlQuery, args...)
 
 	return err
 }
@@ -115,7 +115,7 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 
 	args[0] = subArgs[0]
 
-	rows, err := c.db.Query(sqlQuery, args...)
+	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
 		return nil, err
 	}

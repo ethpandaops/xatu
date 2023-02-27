@@ -32,7 +32,7 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 
 	sql, args := ib.Build()
 
-	_, err := c.db.Exec(sql, args...)
+	_, err := c.db.ExecContext(ctx, sql, args...)
 
 	if err != nil {
 		c.log.WithError(err).Error("failed to insert node record execution")
@@ -67,7 +67,7 @@ func (c *Client) ListNodeRecordExecutions(ctx context.Context, networkIds []uint
 
 	sql, args := sb.Build()
 
-	rows, err := c.db.Query(sql, args...)
+	rows, err := c.db.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}

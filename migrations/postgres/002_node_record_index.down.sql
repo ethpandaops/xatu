@@ -1,0 +1,1 @@
+DROP INDEX node_record_last_dial_time_idx

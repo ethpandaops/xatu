@@ -18,7 +18,7 @@ func (c *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) 
 	sb := nodeRecordStruct.InsertInto("node_record", values...)
 	sql, args := sb.Build()
 	sql += " ON CONFLICT (enr) DO NOTHING;"
-	_, err := c.db.Exec(sql, args...)
+	_, err := c.db.ExecContext(ctx, sql, args...)
 
 	return err
 }
@@ -29,7 +29,7 @@ func (c *Client) UpdateNodeRecord(ctx context.Context, record *node.Record) erro
 
 	sql, args := sb.Build()
 
-	_, err := c.db.Exec(sql, args...)
+	_, err := c.db.ExecContext(ctx, sql, args...)
 
 	return err
 }
@@ -47,7 +47,7 @@ func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 
 	sql, args := sb.Build()
 
-	rows, err := c.db.Query(sql, args...)
+	rows, err := c.db.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 	ub.Where(ub.In("enr", enrs...))
 	sql, args = ub.Build()
 
-	_, err = c.db.Exec(sql, args...)
+	_, err = c.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}

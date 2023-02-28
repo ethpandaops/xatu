@@ -3,22 +3,22 @@ module github.com/ethpandaops/xatu
 go 1.19
 
 require (
-	github.com/attestantio/go-eth2-client v0.15.6
+	github.com/attestantio/go-eth2-client v0.15.7
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/beevik/ntp v0.3.0
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.6.0
-	github.com/ethereum/go-ethereum v1.11.1
+	github.com/ethereum/go-ethereum v1.11.2
 	github.com/ethpandaops/beacon v0.20.0
-	github.com/ethpandaops/ethcore v0.0.0-20230222015707-84bac66b9964
+	github.com/ethpandaops/ethcore v0.0.0-20230228005634-2b09bcb1588c
 	github.com/ethpandaops/ethwallclock v0.2.0
 	github.com/go-co-op/gocron v1.18.0
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/huandu/go-sqlbuilder v1.19.0
+	github.com/huandu/go-sqlbuilder v1.20.0
 	github.com/lib/pq v1.10.7
-	github.com/libp2p/go-libp2p v0.25.1
+	github.com/libp2p/go-libp2p v0.26.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oschwald/maxminddb-golang v1.10.0
 	github.com/pkg/errors v0.9.1
@@ -42,7 +42,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
-	github.com/cockroachdb/pebble v0.0.0-20230221181337-efd802f16697 // indirect
+	github.com/cockroachdb/pebble v0.0.0-20230227185959-8285e8dd5c08 // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
@@ -67,7 +67,7 @@ require (
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.15 // indirect
+	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -109,12 +109,12 @@ require (
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb // indirect
+	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/genproto v0.0.0-20230221151758-ace64dc21148 // indirect
+	google.golang.org/genproto v0.0.0-20230227214838-9b19f0bdc514 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

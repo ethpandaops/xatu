@@ -32,7 +32,7 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 		clockDrift:    clockDrift,
 		geoipProvider: geoipProvider,
 		cache:         cache,
-		metrics:       NewMetrics("xatu_event_ingester"),
+		metrics:       NewMetrics("xatu_server_event_ingester"),
 	}
 }
 

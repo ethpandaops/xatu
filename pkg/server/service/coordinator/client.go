@@ -49,7 +49,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *per
 		config:      conf,
 		persistence: p,
 		nodeRecord:  nodeRecord,
-		metrics:     NewMetrics("xatu_coordinator"),
+		metrics:     NewMetrics("xatu_server_coordinator"),
 	}
 
 	return e, nil

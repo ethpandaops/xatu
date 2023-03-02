@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
@@ -26,6 +27,8 @@ type MetadataService struct {
 	Spec    *state.Spec
 
 	wallclock *ethwallclock.EthereumBeaconChain
+
+	mu sync.Mutex
 }
 
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
@@ -33,6 +36,7 @@ func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataSer
 		beacon:  sbeacon,
 		log:     log.WithField("module", "sentry/ethereum/metadata"),
 		Network: &networks.Network{Name: networks.NetworkNameNone},
+		mu:      sync.Mutex{},
 	}
 }
 
@@ -96,7 +100,16 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	}
 
 	if m.Genesis != nil && m.Spec != nil {
+		m.mu.Lock()
+
+		if m.wallclock != nil {
+			m.wallclock.Stop()
+			m.wallclock = nil
+		}
+
 		m.wallclock = ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
+
+		m.mu.Unlock()
 	}
 
 	if err := m.DeriveNetwork(ctx); err != nil {

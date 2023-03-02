@@ -141,12 +141,14 @@ func (d *Discovery) Start(ctx context.Context) error {
 
 func (d *Discovery) ServeMetrics(ctx context.Context) error {
 	go func() {
+		sm := http.NewServeMux()
+		sm.Handle("/metrics", promhttp.Handler())
+
 		server := &http.Server{
 			Addr:              d.Config.MetricsAddr,
 			ReadHeaderTimeout: 15 * time.Second,
+			Handler:           sm,
 		}
-
-		server.Handler = promhttp.Handler()
 
 		d.log.Infof("Serving metrics at %s", d.Config.MetricsAddr)
 

@@ -124,12 +124,14 @@ func (m *Mimicry) Start(ctx context.Context) error {
 
 func (m *Mimicry) ServeMetrics(ctx context.Context) error {
 	go func() {
+		sm := http.NewServeMux()
+		sm.Handle("/metrics", promhttp.Handler())
+
 		server := &http.Server{
 			Addr:              m.Config.MetricsAddr,
 			ReadHeaderTimeout: 15 * time.Second,
+			Handler:           sm,
 		}
-
-		server.Handler = promhttp.Handler()
 
 		m.log.Infof("Serving metrics at %s", m.Config.MetricsAddr)
 

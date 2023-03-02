@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	LoggingLevel string `yaml:"logging" default:"info"`
-	MetricsAddr  string `yaml:"metricsAddr" default:":9090"`
+	LoggingLevel string  `yaml:"logging" default:"info"`
+	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
+	PProfAddr    *string `yaml:"pprofAddr"`
 
 	// P2P configuration
 	P2P p2p.Config `yaml:"p2p"`

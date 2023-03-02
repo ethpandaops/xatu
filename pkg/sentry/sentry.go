@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
+
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/altair"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -83,6 +86,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 func (s *Sentry) Start(ctx context.Context) error {
 	if err := s.ServeMetrics(ctx); err != nil {
 		return err
+	}
+
+	if s.Config.PProfAddr != nil {
+		if err := s.ServePProf(ctx); err != nil {
+			return err
+		}
 	}
 
 	s.log.
@@ -277,6 +286,23 @@ func (s *Sentry) ServeMetrics(ctx context.Context) error {
 		s.log.Infof("Serving metrics at %s", s.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
+			s.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (s *Sentry) ServePProf(ctx context.Context) error {
+	pprofServer := &http.Server{
+		Addr:              *s.Config.PProfAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+	}
+
+	go func() {
+		s.log.Infof("Serving pprof at %s", *s.Config.PProfAddr)
+
+		if err := pprofServer.ListenAndServe(); err != nil {
 			s.log.Fatal(err)
 		}
 	}()

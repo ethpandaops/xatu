@@ -12,6 +12,8 @@ type Config struct {
 	Addr string `yaml:"addr" default:":8080"`
 	// MetricsAddr is the address to listen on for metrics.
 	MetricsAddr string `yaml:"metricsAddr" default:":9090"`
+	// PProfAddr is the address to listen on for pprof.
+	PProfAddr *string `yaml:"pprofAddr"`
 	// LoggingLevel is the logging level to use.
 	LoggingLevel string `yaml:"logging" default:"info"`
 

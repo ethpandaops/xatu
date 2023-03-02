@@ -37,6 +37,7 @@ Discovery requires a single `yaml` config file. An example file can be found [he
 | --- | --- | --- | --- |
 | logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
+| pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
 | coordinator | object |  | [Coordinator](./server.md#coordinator) configuration |
 | coordinator.address | string |  | The address of the [xatu server](./server.md) |
 | coordinator.maxQueueSize | int | `51200` | The maximum queue size to buffer node records for delayed processing. If the queue gets full it drops the node records |
@@ -78,6 +79,7 @@ P2P configuration to statically set discovery node records (boot nodes).
 ```yaml
 logging: info
 metricsAddr: :9090
+pprofAddr: :6060
 
 coordinator:
   address: localhost:8080
@@ -98,6 +100,7 @@ p2p:
 ```yaml
 logging: info
 metricsAddr: :9090
+pprofAddr: :6060
 
 coordinator:
   address: localhost:8080

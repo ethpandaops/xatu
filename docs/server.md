@@ -53,6 +53,7 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | --- | --- | --- | --- |
 | logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
+| pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
@@ -143,6 +144,7 @@ services:
 logging: "info"
 addr: ":8080"
 metricsAddr: ":9090"
+pprofAddr: ":6060"
 
 labels:
   ethpandaops: rocks

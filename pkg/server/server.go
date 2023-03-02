@@ -128,15 +128,19 @@ func (x *Xatu) Start(ctx context.Context) error {
 
 		return nil
 	})
-	g.Go(func() error {
-		if err := x.startPProf(ctx); err != nil {
-			if err != http.ErrServerClosed {
-				return err
-			}
-		}
 
-		return nil
-	})
+	if x.config.PProfAddr != nil {
+		g.Go(func() error {
+			if err := x.startPProf(ctx); err != nil {
+				if err != http.ErrServerClosed {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
 	g.Go(func() error {
 		if err := x.startGrpcServer(ctx); err != nil {
 			return err

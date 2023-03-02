@@ -21,7 +21,7 @@ func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, erro
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
-	e.log.WithField("events", len(items)).Info("Sending batch of events to stdout sink")
+	e.log.WithField("events", len(items)).Debug("Sending batch of events to stdout sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		return err

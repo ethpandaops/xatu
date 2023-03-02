@@ -21,7 +21,7 @@ func NewRecordExporter(log logrus.FieldLogger, p *persistence.Client) (*RecordEx
 }
 
 func (r RecordExporter) ExportItems(ctx context.Context, items []*node.Record) error {
-	r.log.WithField("items", len(items)).Info("Sending batch of node records to db")
+	r.log.WithField("items", len(items)).Debug("Sending batch of node records to db")
 
 	if err := r.sendUpstream(ctx, items); err != nil {
 		return err

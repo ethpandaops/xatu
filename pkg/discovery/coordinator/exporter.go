@@ -50,7 +50,7 @@ func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, erro
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*string) error {
-	e.log.WithField("records", len(items)).Info("Sending batch of records to coordinator")
+	e.log.WithField("records", len(items)).Debug("Sending batch of records to coordinator")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		return err

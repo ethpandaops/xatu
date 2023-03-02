@@ -9,6 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
+
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
@@ -34,6 +37,7 @@ type Xatu struct {
 
 	grpcServer    *grpc.Server
 	metricsServer *http.Server
+	pprofServer   *http.Server
 
 	persistence   *persistence.Client
 	cache         store.Cache
@@ -125,6 +129,15 @@ func (x *Xatu) Start(ctx context.Context) error {
 		return nil
 	})
 	g.Go(func() error {
+		if err := x.startPProf(ctx); err != nil {
+			if err != http.ErrServerClosed {
+				return err
+			}
+		}
+
+		return nil
+	})
+	g.Go(func() error {
 		if err := x.startGrpcServer(ctx); err != nil {
 			return err
 		}
@@ -174,6 +187,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	if x.config.GeoIP.Enabled {
 		if err := x.geoipProvider.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	if x.pprofServer != nil {
+		if err := x.pprofServer.Shutdown(ctx); err != nil {
 			return err
 		}
 	}
@@ -233,6 +252,17 @@ func (x *Xatu) startMetrics(ctx context.Context) error {
 	}
 
 	return x.metricsServer.ListenAndServe()
+}
+
+func (x *Xatu) startPProf(ctx context.Context) error {
+	x.log.WithField("addr", x.config.PProfAddr).Info("Starting pprof server")
+
+	x.pprofServer = &http.Server{
+		Addr:              *x.config.PProfAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+	}
+
+	return x.pprofServer.ListenAndServe()
 }
 
 func (x *Xatu) startCrons(ctx context.Context) error {

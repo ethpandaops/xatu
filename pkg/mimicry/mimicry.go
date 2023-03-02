@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
+
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
@@ -77,6 +80,12 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		return err
 	}
 
+	if m.Config.PProfAddr != nil {
+		if err := m.ServePProf(ctx); err != nil {
+			return err
+		}
+	}
+
 	m.log.
 		WithField("version", xatu.Full()).
 		WithField("id", m.id.String()).
@@ -125,6 +134,23 @@ func (m *Mimicry) ServeMetrics(ctx context.Context) error {
 		m.log.Infof("Serving metrics at %s", m.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
+			m.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (m *Mimicry) ServePProf(ctx context.Context) error {
+	pprofServer := &http.Server{
+		Addr:              *m.Config.PProfAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+	}
+
+	go func() {
+		m.log.Infof("Serving pprof at %s", *m.Config.PProfAddr)
+
+		if err := pprofServer.ListenAndServe(); err != nil {
 			m.log.Fatal(err)
 		}
 	}()

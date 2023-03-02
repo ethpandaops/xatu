@@ -54,6 +54,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | --- | --- | --- | --- |
 | logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
+| pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
 | name | string |  | Unique name of the sentry |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
@@ -140,6 +141,7 @@ outputs:
 ```yaml
 logging: "debug"
 metricsAddr: ":9090"
+pprofAddr: ":6060"
 
 name: example-instance
 

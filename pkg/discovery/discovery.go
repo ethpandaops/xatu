@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
+
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
@@ -73,6 +76,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Discover
 func (d *Discovery) Start(ctx context.Context) error {
 	if err := d.ServeMetrics(ctx); err != nil {
 		return err
+	}
+
+	if d.Config.PProfAddr != nil {
+		if err := d.ServePProf(ctx); err != nil {
+			return err
+		}
 	}
 
 	d.log.
@@ -142,6 +151,23 @@ func (d *Discovery) ServeMetrics(ctx context.Context) error {
 		d.log.Infof("Serving metrics at %s", d.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
+			d.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (d *Discovery) ServePProf(ctx context.Context) error {
+	pprofServer := &http.Server{
+		Addr:              *d.Config.PProfAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+	}
+
+	go func() {
+		d.log.Infof("Serving pprof at %s", *d.Config.PProfAddr)
+
+		if err := pprofServer.ListenAndServe(); err != nil {
 			d.log.Fatal(err)
 		}
 	}()

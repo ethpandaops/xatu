@@ -243,13 +243,15 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 }
 
 func (x *Xatu) startMetrics(ctx context.Context) error {
-	http.Handle("/metrics", promhttp.Handler())
+	sm := http.NewServeMux()
+	sm.Handle("/metrics", promhttp.Handler())
 
 	x.log.WithField("addr", x.config.MetricsAddr).Info("Starting metrics server")
 
 	x.metricsServer = &http.Server{
 		Addr:              x.config.MetricsAddr,
 		ReadHeaderTimeout: 15 * time.Second,
+		Handler:           sm,
 		BaseContext: func(l net.Listener) context.Context {
 			return ctx
 		},

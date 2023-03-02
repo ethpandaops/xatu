@@ -276,12 +276,14 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 func (s *Sentry) ServeMetrics(ctx context.Context) error {
 	go func() {
+		sm := http.NewServeMux()
+		sm.Handle("/metrics", promhttp.Handler())
+
 		server := &http.Server{
 			Addr:              s.Config.MetricsAddr,
 			ReadHeaderTimeout: 15 * time.Second,
+			Handler:           sm,
 		}
-
-		server.Handler = promhttp.Handler()
 
 		s.log.Infof("Serving metrics at %s", s.Config.MetricsAddr)
 

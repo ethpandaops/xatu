@@ -118,7 +118,7 @@ func (c *Client) ListStaleNodeRecords(ctx context.Context) ([]string, error) {
 }
 
 func (c *Client) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	c.log.WithField("record", status.NodeRecord).Info("found execution node status, sending to coordinator")
+	c.log.WithField("record", status.NodeRecord).Debug("found execution node status, sending to coordinator")
 
 	req := xatu.CreateExecutionNodeRecordStatusRequest{
 		Status: status,

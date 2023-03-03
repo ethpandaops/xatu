@@ -82,7 +82,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*string) error 
 		return err
 	}
 
-	e.log.WithField("response", rsp).Info("Received response from Xatu sink")
+	e.log.WithField("response", rsp).Debug("Received response from Xatu sink")
 
 	return nil
 }

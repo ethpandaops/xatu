@@ -54,7 +54,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	// TODO(sam.calder-mason): Make this entirely event driven.
 	if _, err := s.Every("2s").Do(func() {
 		if err := b.checkForReadyPublish(ctx); err != nil {
-			b.log.WithError(err).Error("failed to check for ready publish")
+			b.log.WithError(err).Warn("failed to check for ready publish")
 		}
 	}); err != nil {
 		return err
@@ -135,7 +135,7 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 
 	for _, callback := range b.onReadyCallbacks {
 		if err := callback(ctx); err != nil {
-			b.log.WithError(err).Error("failed to run on ready callback")
+			b.log.WithError(err).Warn("failed to run on ready callback")
 		}
 	}
 

@@ -2,6 +2,8 @@ package xatu
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -19,6 +21,7 @@ type Peer struct {
 	retryDelay time.Duration
 
 	stopped bool
+	mu      sync.Mutex
 
 	Record *xatu.CoordinatedNodeRecord
 }
@@ -44,6 +47,18 @@ func (p *Peer) Start(ctx context.Context) error {
 
 		_ = retry.Do(
 			func() error {
+				p.mu.Lock()
+
+				// return unrecoverable error if peer has been stopped
+				if p.stopped {
+					p.log.Debug("peer stopped")
+					p.mu.Unlock()
+
+					return retry.Unrecoverable(errors.New("peer stopped"))
+				}
+
+				p.mu.Unlock()
+
 				peer, err := execution.New(ctx, p.log, p.Record.NodeRecord, p.handlers, p.cache)
 				if err != nil {
 					return err
@@ -70,17 +85,16 @@ func (p *Peer) Start(ctx context.Context) error {
 				return response
 			},
 			retry.Attempts(0),
-			// TODO: currently a bug when Attempts(0) is set, this will never be called
-			// https://github.com/avast/retry-go/issues/66
-			// also looks like this leaks goroutines
-			// retry.RetryIf(func(err error) bool {
-			// 	return !p.stopped
-			// }),
 			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				p.mu.Lock()
+				defer p.mu.Unlock()
+
 				p.log.WithError(err).Debug("peer failed")
 
 				if !p.stopped {
 					p.Record.ConnectionAttempts++
+				} else {
+					return 0
 				}
 
 				return p.retryDelay
@@ -92,11 +106,17 @@ func (p *Peer) Start(ctx context.Context) error {
 }
 
 func (p *Peer) Stop() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	p.stopped = true
 
 	return nil
 }
 
 func (p *Peer) RetryDelay(delay time.Duration) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	p.retryDelay = delay
 }

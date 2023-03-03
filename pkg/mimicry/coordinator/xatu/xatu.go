@@ -3,6 +3,7 @@ package xatu
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
@@ -22,7 +23,9 @@ type Xatu struct {
 
 	cache       *cache.SharedCache
 	coordinator *xatuCoordinator.Coordinator
-	peers       map[string]*xatuPeer.Peer
+
+	mu    sync.Mutex
+	peers map[string]*xatuPeer.Peer
 
 	metrics *Metrics
 }
@@ -48,6 +51,7 @@ func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, lo
 		log:         log,
 		cache:       cache.NewSharedCache(),
 		coordinator: coordinator,
+		mu:          sync.Mutex{},
 		peers:       make(map[string]*xatuPeer.Peer),
 		metrics:     NewMetrics("xatu_mimicry_coordinator_xatu"),
 	}, nil
@@ -81,6 +85,9 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
 	if _, err := c.Every("5s").Do(func() {
+		x.mu.Lock()
+		defer x.mu.Unlock()
+
 		connectedPeers := 0
 		connectionAttempts := 0
 		for _, peer := range x.peers {
@@ -96,7 +103,10 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	if _, err := c.Every("15s").Do(func() {
+	if _, err := c.Every("5m").Do(func() {
+		x.mu.Lock()
+		defer x.mu.Unlock()
+
 		var records []*xatupb.CoordinatedNodeRecord
 		for _, peer := range x.peers {
 			records = append(records, peer.Record)

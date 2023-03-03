@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -49,7 +48,8 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 	}
 
 	if ignore {
-		return nil, errors.New("duplicate event")
+		//nolint:nilnil // Returning nil is intentional.
+		return nil, nil
 	}
 
 	var data *xatuethv2.EventBlock

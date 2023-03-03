@@ -144,7 +144,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 		txs, err := p.client.GetPooledTransactions(ctx, hashes)
 		if err != nil {
-			p.log.WithError(err).Error("Failed to get pooled transactions")
+			p.log.WithError(err).Warn("Failed to get pooled transactions")
 
 			return
 		}

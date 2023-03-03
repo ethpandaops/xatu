@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -45,7 +44,8 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 	}
 
 	if ignore {
-		return nil, errors.New("duplicate event")
+		//nolint:nilnil // Returning nil is intentional.
+		return nil, nil
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{

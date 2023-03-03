@@ -49,7 +49,7 @@ func (m *MetadataService) Start(ctx context.Context) error {
 		}
 
 		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
-			m.log.WithError(err).Error("Failed to refresh metadata")
+			m.log.WithError(err).Warn("Failed to refresh metadata")
 
 			return err
 		}
@@ -92,11 +92,11 @@ func (m *MetadataService) Ready() error {
 
 func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	if err := m.fetchSpec(ctx); err != nil {
-		m.log.WithError(err).Error("Failed to fetch spec for refresh")
+		m.log.WithError(err).Warn("Failed to fetch spec for refresh")
 	}
 
 	if err := m.fetchGenesis(ctx); err != nil {
-		m.log.WithError(err).Error("Failed to fetch genesis for refresh")
+		m.log.WithError(err).Warn("Failed to fetch genesis for refresh")
 	}
 
 	if m.Genesis != nil && m.Spec != nil {
@@ -113,7 +113,7 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	}
 
 	if err := m.DeriveNetwork(ctx); err != nil {
-		m.log.WithError(err).Error("Failed to derive network name for refresh")
+		m.log.WithError(err).Warn("Failed to derive network name for refresh")
 	}
 
 	return nil

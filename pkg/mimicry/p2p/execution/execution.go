@@ -198,8 +198,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"fork_id_next": fmt.Sprintf("%d", status.ForkID.Next),
 		}).Debug("got client status")
 
-		// set the ignore before time to 15 seconds in the future
-		ignoreBefore := time.Now().Add(15 * time.Second)
+		// set the ignore before time to 1 minute in the future
+		ignoreBefore := time.Now().Add(1 * time.Minute)
 		p.ignoreBefore = &ignoreBefore
 
 		return nil

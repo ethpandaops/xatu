@@ -327,6 +327,7 @@ The following is a sample event output is from a [Xatu sentry block](./sentry.md
 
 Depending on the origin of the event the data field will contain different data;
 - [Xatu sentry](./sentry.md#events) events
+- [Xatu mimicry](./mimicry.md#events) events
 
 ## Persistence
 

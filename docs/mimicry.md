@@ -328,11 +328,12 @@ When the mimicry is connected to execution layer peer over the [Ethereum Wire Pr
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
+| data| string | `required` | Raw transaction data |
 | meta.additional_data.size | string | `required` | Size of the transaction in bytes |
 | meta.additional_data.call_data_size | string | `required` | Size of the transaction call data in bytes |
-| data.hash | string | `required` | Transaction hash |
-| data.from | string | `required` | Transaction sender address |
-| data.nonce | string | `required` | Transaction nonce |
-| data.gas_price | string | `required` | Transaction gas price |
-| data.gas | string | `required` | Transaction gas limit |
-| data.value | string | `required` | Transaction value |
+| meta.additional_data.hash | string | `required` | Transaction hash |
+| meta.additional_data.from | string | `required` | Transaction sender address |
+| meta.additional_data.nonce | string | `required` | Transaction nonce |
+| meta.additional_data.gas_price | string | `required` | Transaction gas price |
+| meta.additional_data.gas | string | `required` | Transaction gas limit |
+| meta.additional_data.value | string | `required` | Transaction value |

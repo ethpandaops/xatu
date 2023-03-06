@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
@@ -100,7 +101,7 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 	currentSlot := wallclock.Slots().Current()
 
 	if currentSlot.Number()-uint64(syncState.HeadSlot) > 3 {
-		return errors.New("beacon node is too far behind head")
+		return fmt.Errorf("beacon node is too far behind head, head slot is %d, current slot is %d", syncState.HeadSlot, currentSlot.Number())
 	}
 
 	if !b.readyPublished {

@@ -271,25 +271,24 @@ An example event payload of a Beacon API event stream for the block topic;
         },
           "execution": {
             "fork_id": {
-              "hash": "0xb96cbd13",
+              "hash": "0xf0afd0e3",
               "next": "0"
             }
           }
       },
       "additional_data": {
-        "size": "15658",
-        "call_data_size": "15567"
+        "call_data_size":"0",
+        "from":"0x1d9e028b88A1638Dfd60D0d8d1476433D9307d8E",
+        "gas":"116900",
+        "gas_price":"35062538307",
+        "hash":"0x26d92491babaf51d5604347fb0dfdad323218bd11f762e34223dddd18db9adcd",
+        "size":"111",
+        "to":"0x1d9e028b44A1638Dfd60D0a8a1476433D9307e8E",
+        "value":"0"
       }
     }
   },
-  "data": {
-    "hash": "0xbcd265d4623d211ad203456e18e3af8f67c5efefd0d97911a3f7f93790d53f2b",
-    "from": "0x9beaCC6511ca46b1fe78309b237dCa259Ba5BC1d",
-    "nonce": "1020",
-    "gas_price": "2500000007",
-    "gas": "3215885",
-    "value": "0"
-  }
+  "data": "0x02f86d01808420d85580850829e3e0438301d8a4941d9e028b88a1638dfd60d0d8d1476433d9307d8e8080d001a0d8ff2f83dd91fa1d0535a8a0d113ede5301065d9b0aa7b77f9b479412deda893a0700a3f95b0456e6ff2e0794e242a058daad1a5774fef9d078dfae3fb61ffa955"
 }
 ```
 

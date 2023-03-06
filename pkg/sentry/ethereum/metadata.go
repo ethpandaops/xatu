@@ -100,16 +100,19 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	}
 
 	if m.Genesis != nil && m.Spec != nil {
-		m.mu.Lock()
+		if newWallclock := ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch)); newWallclock != nil {
+			m.mu.Lock()
+			if m.wallclock != nil {
+				// delay stopping the old wallclock to allow for any in-flight requests to complete
+				go func(oldWallclock *ethwallclock.EthereumBeaconChain) {
+					time.Sleep(1 * time.Minute)
+					oldWallclock.Stop()
+				}(m.wallclock)
+			}
 
-		if m.wallclock != nil {
-			m.wallclock.Stop()
-			m.wallclock = nil
+			m.wallclock = newWallclock
+			m.mu.Unlock()
 		}
-
-		m.wallclock = ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch))
-
-		m.mu.Unlock()
 	}
 
 	if err := m.DeriveNetwork(ctx); err != nil {

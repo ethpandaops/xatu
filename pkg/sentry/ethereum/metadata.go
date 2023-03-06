@@ -120,6 +120,9 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 }
 
 func (m *MetadataService) Wallclock() *ethwallclock.EthereumBeaconChain {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	return m.wallclock
 }
 

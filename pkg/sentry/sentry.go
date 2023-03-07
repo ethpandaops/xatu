@@ -140,26 +140,36 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			beaconBlock, err := s.beacon.Node().FetchBlock(ctx, xatuethv1.RootAsString(block.Block))
-			if err != nil {
-				s.log.WithError(err).Error("Failed to fetch block")
-			} else {
-				beaconBlockMeta, err := s.createNewClientMeta(ctx)
+			go func() {
+				// some clients require a small delay before being able to fetch the block
+				time.Sleep(1 * time.Second)
+				beaconBlock, err := s.beacon.Node().FetchBlock(ctx, xatuethv1.RootAsString(block.Block))
 				if err != nil {
-					return err
-				}
+					s.log.WithError(err).Error("Failed to fetch block")
+				} else {
+					beaconBlockMeta, err := s.createNewClientMeta(ctx)
+					if err != nil {
+						s.log.WithError(err).Error("Failed to create client meta")
 
-				event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, beaconBlockMeta)
+						return
+					}
 
-				decoratedEvent, err := event.Decorate(ctx)
-				if err != nil {
-					return err
-				}
+					event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, beaconBlockMeta)
 
-				if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
-					return err
+					decoratedEvent, err := event.Decorate(ctx)
+					if err != nil {
+						s.log.WithError(err).Error("Failed to decorate event")
+
+						return
+					}
+
+					if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
+						s.log.WithError(err).Error("Failed to handle new decorated event")
+
+						return
+					}
 				}
-			}
+			}()
 
 			return nil
 		})

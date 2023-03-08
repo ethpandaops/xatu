@@ -83,8 +83,8 @@ func (m *Maxmind) LookupIP(ctx context.Context, ip net.IP) (*lookup.Result, erro
 
 		if city != nil {
 			result.CityName = city.City.Names.EN
-			result.CountryName = city.RegisteredCountry.Names.EN
-			result.CountryCode = city.RegisteredCountry.ISOCode
+			result.CountryName = city.Country.Names.EN
+			result.CountryCode = city.Country.ISOCode
 			result.ContinentCode = city.Continent.Code
 			result.Latitude = city.Location.Latitude
 			result.Longitude = city.Location.Longitude

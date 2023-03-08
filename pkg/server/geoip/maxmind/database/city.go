@@ -16,12 +16,12 @@ type City struct {
 }
 
 type LookupCity struct {
-	RegisteredCountry struct {
+	Country struct {
 		ISOCode string `maxminddb:"iso_code"`
 		Names   struct {
 			EN string `maxminddb:"en"`
 		} `maxminddb:"names"`
-	} `maxminddb:"registered_country"`
+	} `maxminddb:"country"`
 	Continent struct {
 		Code string `maxminddb:"code"`
 	} `maxminddb:"continent"`

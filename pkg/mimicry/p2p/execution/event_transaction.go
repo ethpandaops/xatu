@@ -2,7 +2,6 @@ package execution
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -18,22 +16,6 @@ import (
 
 func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event *types.Transaction) (*xatu.DecoratedEvent, error) {
 	p.log.Debug("Transaction received")
-
-	hash, err := hashstructure.Hash(event.Hash().String(), hashstructure.FormatV2, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	item, retrieved := p.duplicateCache.Transaction.GetOrSet(fmt.Sprint(hash), time.Now(), ttlcache.DefaultTTL)
-	if retrieved {
-		p.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"transaction_hash":      event.Hash().String(),
-		}).Debug("Duplicate transaction event received")
-		// TODO(savid): add metrics
-		return nil, errors.New("duplicate transaction event received")
-	}
 
 	meta, err := p.createNewClientMeta(ctx)
 	if err != nil {
@@ -151,10 +133,9 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 		if txs != nil {
 			for _, tx := range txs.PooledTransactionsPacket {
-				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
-				if exists == nil {
-					p.sharedCache.Transaction.Set(tx.Hash().String(), true, ttlcache.DefaultTTL)
-
+				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.DefaultTTL)
+				// transaction was just set in shared cache, so we need to handle it
+				if !retrieved {
 					seen := seenMap[tx.Hash()]
 					if seen.IsZero() {
 						p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")

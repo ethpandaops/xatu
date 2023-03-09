@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
-	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -35,8 +34,6 @@ type Peer struct {
 
 	client *mimicry.Client
 
-	// don't send duplicate events from the same client
-	duplicateCache *cache.DuplicateCache
 	// shared cache between clients
 	sharedCache *coordCache.SharedCache
 
@@ -63,15 +60,12 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 		return nil, err
 	}
 
-	duplicateCache := cache.NewDuplicateCache()
-
 	return &Peer{
-		log:            log.WithField("node_record", nodeRecord),
-		nodeRecord:     nodeRecord,
-		handlers:       handlers,
-		client:         client,
-		duplicateCache: duplicateCache,
-		sharedCache:    sharedCache,
+		log:         log.WithField("node_record", nodeRecord),
+		nodeRecord:  nodeRecord,
+		handlers:    handlers,
+		client:      client,
+		sharedCache: sharedCache,
 		network: &networks.Network{
 			Name: networks.NetworkNameNone,
 		},
@@ -123,8 +117,6 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		// max client message size.
 		processor.WithMaxExportBatchSize(50000),
 	)
-
-	p.duplicateCache.Start()
 
 	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		// setup client implementation and version info
@@ -333,8 +325,6 @@ func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash commo
 }
 
 func (p *Peer) Stop(ctx context.Context) error {
-	p.duplicateCache.Stop()
-
 	if err := p.txProc.Shutdown(ctx); err != nil {
 		return err
 	}

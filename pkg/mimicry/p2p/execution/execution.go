@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -240,11 +239,9 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
-				// only process transactions we haven't seen before across all peers
-				exists := p.sharedCache.Transaction.Get(tx.Hash().String())
-				if exists == nil {
-					p.sharedCache.Transaction.Set(tx.Hash().String(), true, ttlcache.DefaultTTL)
-
+				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, 1*time.Hour)
+				// transaction was just set in shared cache, so we need to handle it
+				if !retrieved {
 					event, errT := p.handleTransaction(ctx, now, tx)
 					if errT != nil {
 						p.log.WithError(errT).Error("failed handling transaction")

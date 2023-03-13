@@ -17,31 +17,36 @@ type DuplicateCache struct {
 	BeaconETHV2BeaconBlock                *ttlcache.Cache[string, time.Time]
 }
 
+const (
+	// best to keep this > 1 epoch as some clients may send the same attestation on new epoch
+	TTL = 7 * time.Minute
+)
+
 func NewDuplicateCache() *DuplicateCache {
 	return &DuplicateCache{
 		BeaconETHV1EventsAttestation: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsBlock: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsChainReorg: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsFinalizedCheckpoint: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsHead: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsVoluntaryExit: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV1EventsContributionAndProof: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 		BeaconETHV2BeaconBlock: ttlcache.New(
-			ttlcache.WithTTL[string, time.Time](10 * time.Minute),
+			ttlcache.WithTTL[string, time.Time](TTL),
 		),
 	}
 }

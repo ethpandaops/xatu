@@ -183,11 +183,11 @@ message ClientMeta {
   message ForkChoiceSnapshot {
     xatu.eth.v1.ForkChoice data = 1;
 
-    // Epoch contains the wall clock epoch for the fork choice snapshot.
-    Epoch epoch = 2;
+    // RequestEpoch contains the wall clock epoch for when the fork choice was requested.
+    Epoch request_epoch = 2;
 
-    // Slot contains the wall clock slot for the fork choice snapshot.
-    Slot slot = 3;
+    // RequestSlot contains the wall clock slot for when the fork choice was requested.
+    Slot request_slot = 3;
 
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).

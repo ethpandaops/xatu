@@ -45,6 +45,11 @@ message Propagation {
   uint64 slot_start_diff = 3 [ json_name = "slot_start_diff" ];
 }
 
+message DebugForkChoiceReorg {
+  xatu.eth.v1.ForkChoice before = 1;
+  xatu.eth.v1.ForkChoice after = 2;
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -181,30 +186,28 @@ message ClientMeta {
   }
 
   message ForkChoiceSnapshot {
-    xatu.eth.v1.ForkChoice data = 1;
-
     // RequestEpoch contains the wall clock epoch for when the fork choice was requested.
-    Epoch request_epoch = 2;
+    Epoch request_epoch = 1;
 
     // RequestSlot contains the wall clock slot for when the fork choice was requested.
-    Slot request_slot = 3;
+    Slot request_slot = 2;
 
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).
-    uint64 requested_at_slot_start_diff_ms = 4 [ json_name = "requested_at_slot_start_diff_ms" ];
+    uint64 requested_at_slot_start_diff_ms = 3 [ json_name = "requested_at_slot_start_diff_ms" ];
 
     // RequestDurationMs is the duration of the fork choice snapshot request
     // (in milliseconds).
-    uint64 request_duration_ms = 5 [ json_name = "request_duration_ms" ];
+    uint64 request_duration_ms = 4 [ json_name = "request_duration_ms" ];
   }
 
   message AdditionalEthV1DebugForkChoiceData {
-    ForkChoiceSnapshot fork_choice = 1;
+    ForkChoiceSnapshot Snapshot = 1 [ json_name = "snapshot" ];
   }
 
   message AdditionalEthV1DebugForkChoiceReOrgData {
-    ForkChoiceSnapshot before = 1;
-    ForkChoiceSnapshot after = 2;
+    ForkChoiceSnapshot before = 1 [ json_name = "before" ];
+    ForkChoiceSnapshot after = 2 [ json_name = "after" ];
   }
 
   message AdditionalMempoolTransactionData {
@@ -285,6 +288,14 @@ message ClientMeta {
     // beacon block event.
     AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18
         [ json_name = "additional_data" ];
+    // AdditionalEthV1DebugForkChoice contains additional data about the eth v1
+    // debug fork choice event.
+    AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19
+    [ json_name = "additional_data" ];
+    // AdditionalEthV1DebugForkChoiceReorg contains additional data about the eth v1
+    // debug fork choice reorg event.
+    AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20
+    [ json_name = "additional_data" ];
   }
 }
 
@@ -387,5 +398,7 @@ message DecoratedEvent {
         [ json_name = "data" ];
     string mempool_transaction = 10 [ json_name = "data" ];
     xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "data" ];
+    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "data" ];
+    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "data" ];
   };
 }

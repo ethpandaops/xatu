@@ -17,6 +17,21 @@ ntpServer: time.google.com
 ethereum:
   beaconNodeAddress: http://localhost:5052
 
+forkChoice:
+  enabled: false
+
+  onReOrgEvent:
+    enabled: false
+
+  interval:
+    enabled: false
+    every: 30s
+
+  at:
+    enabled: false
+    slotTimes:
+    - 4s
+
 outputs:
 - name: http-sink
   type: http

@@ -129,7 +129,7 @@ func (m *MetadataService) Wallclock() *ethwallclock.EthereumBeaconChain {
 	return m.wallclock
 }
 
-func (m *MetadataService) DeriveNetwork(ctx context.Context) error {
+func (m *MetadataService) DeriveNetwork(_ context.Context) error {
 	if m.Genesis == nil {
 		return errors.New("genesis is not available")
 	}
@@ -148,7 +148,7 @@ func (m *MetadataService) DeriveNetwork(ctx context.Context) error {
 	return nil
 }
 
-func (m *MetadataService) fetchSpec(ctx context.Context) error {
+func (m *MetadataService) fetchSpec(_ context.Context) error {
 	spec, err := m.beacon.Spec()
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func (m *MetadataService) fetchSpec(ctx context.Context) error {
 	return nil
 }
 
-func (m *MetadataService) fetchGenesis(ctx context.Context) error {
+func (m *MetadataService) fetchGenesis(_ context.Context) error {
 	genesis, err := m.beacon.Genesis()
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func (m *MetadataService) fetchGenesis(ctx context.Context) error {
 	return nil
 }
 
-func (m *MetadataService) NodeVersion(ctx context.Context) string {
+func (m *MetadataService) NodeVersion(_ context.Context) string {
 	version, _ := m.beacon.NodeVersion()
 
 	return version

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+
+message Checkpoint {
+  uint64 epoch = 1;
+
+  string root = 2;
+}

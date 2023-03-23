@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+
+message SyncCommitteeContribution {
+  uint64 slot = 1;
+
+  uint64 subcommittee_index = 2 [ json_name = "subcommittee_index" ];
+
+  string aggregation_bits = 3 [ json_name = "aggregation_bits" ];
+
+  string signature = 4;
+
+  string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
+}

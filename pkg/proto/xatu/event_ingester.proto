@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
 import "pkg/proto/eth/v2/events.proto";
+import "pkg/proto/eth/v1/fork_choice.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -179,6 +180,33 @@ message ClientMeta {
     AdditionalEthV1EventsContributionAndProofContributionData contribution = 1;
   }
 
+  message ForkChoiceSnapshot {
+    xatu.eth.v1.ForkChoice data = 1;
+
+    // RequestEpoch contains the wall clock epoch for when the fork choice was requested.
+    Epoch request_epoch = 2;
+
+    // RequestSlot contains the wall clock slot for when the fork choice was requested.
+    Slot request_slot = 3;
+
+    // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
+    // sentry was when it requested the fork choice snapshot (in milliseconds).
+    uint64 requested_at_slot_start_diff_ms = 4 [ json_name = "requested_at_slot_start_diff_ms" ];
+
+    // RequestDurationMs is the duration of the fork choice snapshot request
+    // (in milliseconds).
+    uint64 request_duration_ms = 5 [ json_name = "request_duration_ms" ];
+  }
+
+  message AdditionalEthV1DebugForkChoiceData {
+    ForkChoiceSnapshot fork_choice = 1;
+  }
+
+  message AdditionalEthV1DebugForkChoiceReOrgData {
+    ForkChoiceSnapshot before = 1;
+    ForkChoiceSnapshot after = 2;
+  }
+
   message AdditionalMempoolTransactionData {
     // Hash is the transaction hash.
     string hash = 1 [ json_name = "hash" ];
@@ -332,6 +360,8 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF = 7;
     MEMPOOL_TRANSACTION = 8;
     BEACON_API_ETH_V2_BEACON_BLOCK = 9;
+    BEACON_API_ETH_V1_DEBUG_FORK_CHOICE = 10;
+    BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG = 11;
   }
   // Name is the name of the event.
   Name name = 1;

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "pkg/proto/eth/v1/checkpoint.proto";
+
+message ForkChoice {
+  Checkpoint justified_checkpoint = 1 [ json_name = "justified_checkpoint" ];
+
+  Checkpoint finalized_checkpoint = 2 [ json_name = "finalized_checkpoint" ];
+
+  repeated ForkChoiceNode fork_choice_nodes = 3
+      [ json_name = "fork_choice_nodes" ];
+}
+
+message ForkChoiceNode {
+  uint64 slot = 1 [ json_name = "slot" ];
+
+  string block_root = 2 [ json_name = "block_root" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  uint64 justified_epoch = 4 [ json_name = "justified_epoch" ];
+
+  uint64 finalized_epoch = 5 [ json_name = "finalized_epoch" ];
+
+  uint64 weight = 6 [ json_name = "weight" ];
+
+  string validity = 7 [ json_name = "validity" ];
+
+  string ExecutionBlockHash = 8 [ json_name = "ExecutionBlockHash" ];
+
+  bytes ExtraData = 9 [ json_name = "ExtraData" ];
+}
+

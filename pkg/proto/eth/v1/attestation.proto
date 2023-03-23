@@ -7,12 +7,7 @@ package xatu.eth.v1;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 import "google/protobuf/descriptor.proto";
-
-message Checkpoint {
-  uint64 epoch = 1;
-
-  string root = 2;
-}
+import "pkg/proto/eth/v1/checkpoint.proto";
 
 message Attestation {
   string aggregation_bits = 1 [json_name="aggregation_bits"];

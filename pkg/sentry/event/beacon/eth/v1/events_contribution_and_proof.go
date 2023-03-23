@@ -62,7 +62,7 @@ func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.Decora
 				Message: &xatuethv1.ContributionAndProof{
 					AggregatorIndex: uint64(e.event.Message.AggregatorIndex),
 					SelectionProof:  xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.SelectionProof)),
-					Contribution: &xatuethv1.ContributionAndProof_SyncCommitteeContribution{
+					Contribution: &xatuethv1.SyncCommitteeContribution{
 						Slot:              uint64(e.event.Message.Contribution.Slot),
 						SubcommitteeIndex: e.event.Message.Contribution.SubcommitteeIndex,
 						AggregationBits:   xatuethv1.BytesToString(e.event.Message.Contribution.AggregationBits.Bytes()),

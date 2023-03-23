@@ -101,33 +101,3 @@ func (f *ForkChoiceReOrg) shouldIgnore(ctx context.Context) (bool, error) {
 
 	return false, nil
 }
-
-func (f *ForkChoiceReOrg) getBeforeSnapshot(ctx context.Context) (*xatu.ClientMeta_ForkChoiceSnapshot, error) {
-	snapshot := &xatu.ClientMeta_ForkChoiceSnapshot{}
-
-	if f.snapshot.Before != nil {
-		before := f.snapshot.Before.GetAdditionalData(ctx)
-
-		snapshot.RequestDurationMs = before.Snapshot.RequestDurationMs
-		snapshot.RequestedAtSlotStartDiffMs = before.Snapshot.RequestedAtSlotStartDiffMs
-		snapshot.RequestSlot = before.Snapshot.RequestSlot
-		snapshot.RequestEpoch = before.Snapshot.RequestEpoch
-	}
-
-	return snapshot, nil
-}
-
-func (f *ForkChoiceReOrg) getAfterSnapshot(ctx context.Context) (*xatu.ClientMeta_ForkChoiceSnapshot, error) {
-	snapshot := &xatu.ClientMeta_ForkChoiceSnapshot{}
-
-	if f.snapshot.After != nil {
-		after := f.snapshot.After.GetAdditionalData(ctx)
-
-		snapshot.RequestDurationMs = after.Snapshot.RequestDurationMs
-		snapshot.RequestedAtSlotStartDiffMs = after.Snapshot.RequestedAtSlotStartDiffMs
-		snapshot.RequestSlot = after.Snapshot.RequestSlot
-		snapshot.RequestEpoch = after.Snapshot.RequestEpoch
-	}
-
-	return snapshot, nil
-}

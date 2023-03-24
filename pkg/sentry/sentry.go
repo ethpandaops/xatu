@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
@@ -47,6 +48,11 @@ type Sentry struct {
 	id uuid.UUID
 
 	metrics *Metrics
+
+	scheduler *gocron.Scheduler
+
+	latestForkChoice   *v1.ForkChoice
+	latestForkChoiceMu sync.RWMutex
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -72,14 +78,17 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 	duplicateCache.Start()
 
 	return &Sentry{
-		Config:         config,
-		sinks:          sinks,
-		beacon:         beacon,
-		clockDrift:     time.Duration(0),
-		log:            log,
-		duplicateCache: duplicateCache,
-		id:             uuid.New(),
-		metrics:        NewMetrics("xatu_sentry"),
+		Config:             config,
+		sinks:              sinks,
+		beacon:             beacon,
+		clockDrift:         time.Duration(0),
+		log:                log,
+		duplicateCache:     duplicateCache,
+		id:                 uuid.New(),
+		metrics:            NewMetrics("xatu_sentry"),
+		scheduler:          gocron.NewScheduler(time.Local),
+		latestForkChoice:   nil,
+		latestForkChoiceMu: sync.RWMutex{},
 	}, nil
 }
 
@@ -246,6 +255,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		if err := s.startForkChoiceSchedule(ctx); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -357,9 +370,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 }
 
 func (s *Sentry) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5m").Do(func() {
+	if _, err := s.scheduler.Every("5m").Do(func() {
 		if err := s.syncClockDrift(ctx); err != nil {
 			s.log.WithError(err).Error("Failed to sync clock drift")
 		}
@@ -367,7 +378,7 @@ func (s *Sentry) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	c.StartAsync()
+	s.scheduler.StartAsync()
 
 	return nil
 }

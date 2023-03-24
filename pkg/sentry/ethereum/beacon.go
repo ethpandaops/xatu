@@ -74,11 +74,11 @@ func (b *BeaconNode) Metadata() *MetadataService {
 	return b.metadata
 }
 
-func (b *BeaconNode) OnReady(ctx context.Context, callback func(ctx context.Context) error) {
+func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {
 	b.onReadyCallbacks = append(b.onReadyCallbacks, callback)
 }
 
-func (b *BeaconNode) Synced(ctx context.Context) error {
+func (b *BeaconNode) Synced(_ context.Context) error {
 	status := b.beacon.Status()
 	if status == nil {
 		return errors.New("missing beacon status")

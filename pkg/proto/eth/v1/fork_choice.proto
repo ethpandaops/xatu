@@ -34,8 +34,8 @@ message ForkChoiceNode {
 
   string validity = 7 [ json_name = "validity" ];
 
-  string ExecutionBlockHash = 8 [ json_name = "ExecutionBlockHash" ];
+  string ExecutionBlockHash = 8 [ json_name = "execution_block_hash" ];
 
-  bytes ExtraData = 9 [ json_name = "ExtraData" ];
+  string ExtraData = 9 [ json_name = "extra_data" ];
 }
 

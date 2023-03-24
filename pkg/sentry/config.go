@@ -3,7 +3,9 @@ package sentry
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/sirupsen/logrus"
@@ -28,6 +30,9 @@ type Config struct {
 
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
+
+	// ForkChoice configuration
+	ForkChoice *ForkChoiceConfig `yaml:"forkChoice" default:"{'enabled': false}"`
 }
 
 func (c *Config) Validate() error {
@@ -43,6 +48,10 @@ func (c *Config) Validate() error {
 		if err := output.Validate(); err != nil {
 			return fmt.Errorf("output %s: %w", output.Name, err)
 		}
+	}
+
+	if err := c.ForkChoice.Validate(); err != nil {
+		return fmt.Errorf("invalid forkChoice config: %w", err)
 	}
 
 	return nil
@@ -61,4 +70,38 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	}
 
 	return sinks, nil
+}
+
+type ForkChoiceConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	OnReOrgEvent struct {
+		Enabled bool `yaml:"enabled" default:"false"`
+	} `yaml:"onReOrgEvent"`
+
+	Interval struct {
+		Enabled bool           `yaml:"enabled" default:"false"`
+		Every   human.Duration `yaml:"every" default:"12s"`
+	} `yaml:"interval"`
+
+	At struct {
+		Enabled   bool             `yaml:"enabled" default:"false"`
+		SlotTimes []human.Duration `yaml:"slotTimes"`
+	} `yaml:"at"`
+}
+
+func (f *ForkChoiceConfig) Validate() error {
+	if f.At.Enabled {
+		if len(f.At.SlotTimes) == 0 {
+			return errors.New("at.slotTimes must be provided when at.enabled is true")
+		}
+
+		for _, slotTime := range f.At.SlotTimes {
+			if slotTime.Duration > 12*time.Second {
+				return errors.New("at.slotTimes must be less than 12s")
+			}
+		}
+	}
+
+	return nil
 }

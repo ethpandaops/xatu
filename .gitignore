@@ -5,3 +5,4 @@ mimicry.yaml
 dist
 GeoLite2-ASN.mmdb
 GeoLite2-City.mmdb
+__debug_bin

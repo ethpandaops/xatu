@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/stdout"
 	"github.com/ethpandaops/xatu/pkg/output/xatu"
+	pxatu "github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,6 +17,8 @@ type Config struct {
 	SinkType SinkType `yaml:"type"`
 
 	Config *RawMessage `yaml:"config"`
+
+	FilterConfig pxatu.EventFilterConfig `yaml:"filter"`
 }
 
 func (c *Config) Validate() error {
@@ -26,7 +29,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sink, error) {
+func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}
@@ -45,7 +48,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 			return nil, err
 		}
 
-		return http.New(conf, log)
+		return http.New(conf, log, &filterConfig)
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
@@ -59,7 +62,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 			return nil, err
 		}
 
-		return stdout.New(conf, log)
+		return stdout.New(conf, log, &filterConfig)
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
@@ -73,7 +76,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger) (Sin
 			return nil, err
 		}
 
-		return xatu.New(conf, log)
+		return xatu.New(conf, log, &filterConfig)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

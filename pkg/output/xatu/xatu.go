@@ -15,9 +15,10 @@ type Xatu struct {
 	config *Config
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
+	filter xatu.EventFilter
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Xatu, error) {
+func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -27,6 +28,11 @@ func New(config *Config, log logrus.FieldLogger) (*Xatu, error) {
 	}
 
 	exporter, err := NewItemExporter(config, log)
+	if err != nil {
+		return nil, err
+	}
+
+	filter, err := xatu.NewEventFilter(filterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +49,7 @@ func New(config *Config, log logrus.FieldLogger) (*Xatu, error) {
 		config: config,
 		log:    log,
 		proc:   proc,
+		filter: filter,
 	}, nil
 }
 
@@ -59,6 +66,15 @@ func (h *Xatu) Stop(ctx context.Context) error {
 }
 
 func (h *Xatu) HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	shouldBeDropped, err := h.filter.ShouldBeDropped(event)
+	if err != nil {
+		return err
+	}
+
+	if shouldBeDropped {
+		return nil
+	}
+
 	h.proc.Write(event)
 
 	return nil

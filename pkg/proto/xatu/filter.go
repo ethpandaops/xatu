@@ -75,7 +75,19 @@ func (f *eventFilter) Apply(events []*DecoratedEvent) ([]*DecoratedEvent, error)
 }
 
 func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
+	if len(f.eventNames) == 0 {
+		return false, nil
+	}
+
+	return f.applyEventNamesFilter(event), nil
+}
+
+func (f *eventFilter) applyEventNamesFilter(event *DecoratedEvent) bool {
+	if len(f.eventNames) == 0 {
+		return false
+	}
+
 	_, ok := f.eventNames[event.Event.Name.String()]
 
-	return !ok, nil
+	return !ok
 }

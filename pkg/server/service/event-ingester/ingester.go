@@ -83,7 +83,7 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
-		sink, err := output.NewSink(out.SinkType, out.Config, e.log)
+		sink, err := output.NewSink(out.SinkType, out.Config, e.log, out.FilterConfig)
 		if err != nil {
 			return nil, err
 		}

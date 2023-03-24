@@ -20,6 +20,9 @@ ethereum:
 outputs:
 - name: http-sink
   type: http
+  # filter:
+  #   eventNames:
+  #   - BEACON_API_ETH_V1_EVENTS_BLOCK
   config:
     address: http://localhost:8080
     headers:
@@ -30,6 +33,9 @@ outputs:
     maxExportBatchSize: 512
 - name: xatu-server
   type: xatu
+  # filter:
+  #   eventNames:
+  #   - BEACON_API_ETH_V1_EVENTS_BLOCK
   config:
     address: localhost:8080
     tls: false

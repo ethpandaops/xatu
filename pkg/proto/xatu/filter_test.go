@@ -77,3 +77,25 @@ func TestEventFilter_ShouldBeDropped(t *testing.T) {
 
 	assert.True(t, shouldBeDropped)
 }
+
+func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
+	events := []*DecoratedEvent{}
+
+	for _, eventName := range Event_Name_value {
+		events = append(events, &DecoratedEvent{
+			Event: &Event{
+				Name: Event_Name(eventName),
+			},
+		})
+	}
+
+	emptyConfig := &EventFilterConfig{}
+	filter, _ := NewEventFilter(emptyConfig)
+
+	filteredEvents, err := filter.Apply(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, events, filteredEvents)
+}

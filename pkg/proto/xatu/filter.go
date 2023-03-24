@@ -10,9 +10,6 @@ type EventFilter interface {
 	// EventNames returns the list of event names to filter on.
 	EventNames() []string
 
-	// Apply returns filtered events.
-	Apply(events []*DecoratedEvent) ([]*DecoratedEvent, error)
-
 	// ShouldBeDropped returns true if the event should be dropped.
 	ShouldBeDropped(event *DecoratedEvent) (bool, error)
 }
@@ -57,24 +54,19 @@ func (f *eventFilter) EventNames() []string {
 	return f.config.EventNames
 }
 
-func (f *eventFilter) Apply(events []*DecoratedEvent) ([]*DecoratedEvent, error) {
-	filteredEvents := make([]*DecoratedEvent, 0, len(events))
-
-	for _, event := range events {
-		shouldBeDropped, err := f.ShouldBeDropped(event)
-		if err != nil {
-			return nil, err
-		}
-
-		if !shouldBeDropped {
-			filteredEvents = append(filteredEvents, event)
-		}
+func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
+	if event == nil {
+		return true, errors.New("event is nil")
 	}
 
-	return filteredEvents, nil
-}
+	if event.Event == nil {
+		return true, errors.New("event.event is nil")
+	}
 
-func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
+	if event.Event.Name == 0 {
+		return true, errors.New("event.event.name is invalid")
+	}
+
 	if len(f.eventNames) == 0 {
 		return false, nil
 	}

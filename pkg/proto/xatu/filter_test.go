@@ -47,11 +47,23 @@ func TestEventFilter_Apply(t *testing.T) {
 	testConfig := &EventFilterConfig{
 		EventNames: []string{Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE.String()},
 	}
-	filter, _ := NewEventFilter(testConfig)
 
-	filteredEvents, err := filter.Apply(testEvents)
+	filter, err := NewEventFilter(testConfig)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	filteredEvents := []*DecoratedEvent{}
+
+	for _, event := range testEvents {
+		shouldBeDropped, err := filter.ShouldBeDropped(event)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !shouldBeDropped {
+			filteredEvents = append(filteredEvents, event)
+		}
 	}
 
 	assert.Len(t, filteredEvents, 1)
@@ -92,9 +104,17 @@ func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
 	emptyConfig := &EventFilterConfig{}
 	filter, _ := NewEventFilter(emptyConfig)
 
-	filteredEvents, err := filter.Apply(events)
-	if err != nil {
-		t.Fatal(err)
+	filteredEvents := []*DecoratedEvent{}
+
+	for _, event := range events {
+		shouldBeDropped, err := filter.ShouldBeDropped(event)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !shouldBeDropped {
+			filteredEvents = append(filteredEvents, event)
+		}
 	}
 
 	assert.Equal(t, events, filteredEvents)

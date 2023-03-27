@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
@@ -82,33 +81,7 @@ func (f *ForkChoice) shouldIgnore(ctx context.Context) (bool, error) {
 }
 
 func (f *ForkChoice) GetData() *xatuethv1.ForkChoice {
-	nodes := []*xatuethv1.ForkChoiceNode{}
-
-	for _, node := range f.snapshot.Event.ForkChoiceNodes {
-		nodes = append(nodes, &xatuethv1.ForkChoiceNode{
-			Slot:               uint64(node.Slot),
-			BlockRoot:          xatuethv1.RootAsString(node.BlockRoot),
-			ParentRoot:         xatuethv1.RootAsString(node.ParentRoot),
-			JustifiedEpoch:     uint64(node.JustifiedEpoch),
-			FinalizedEpoch:     uint64(node.FinalizedEpoch),
-			Weight:             node.Weight,
-			Validity:           string(node.Validity),
-			ExecutionBlockHash: xatuethv1.RootAsString(node.ExecutionBlockHash),
-			ExtraData:          fmt.Sprintf("%v", node.ExtraData),
-		})
-	}
-
-	return &xatuethv1.ForkChoice{
-		FinalizedCheckpoint: &xatuethv1.Checkpoint{
-			Epoch: uint64(f.snapshot.Event.FinalizedCheckpoint.Epoch),
-			Root:  xatuethv1.RootAsString(f.snapshot.Event.FinalizedCheckpoint.Root),
-		},
-		JustifiedCheckpoint: &xatuethv1.Checkpoint{
-			Epoch: uint64(f.snapshot.Event.JustifiedCheckpoint.Epoch),
-			Root:  xatuethv1.RootAsString(f.snapshot.Event.JustifiedCheckpoint.Root),
-		},
-		ForkChoiceNodes: nodes,
-	}
+	return xatuethv1.NewForkChoiceFromGoEth2ClientV1(f.snapshot.Event)
 }
 
 func (f *ForkChoice) GetAdditionalData(ctx context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {

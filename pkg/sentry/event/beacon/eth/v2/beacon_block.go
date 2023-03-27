@@ -350,6 +350,7 @@ func getWithdrawals(data []*capella.Withdrawal) []*xatuethv1.Withdrawal {
 
 func (e *BeaconBlock) getPhase0Data() *xatuethv2.EventBlock {
 	return &xatuethv2.EventBlock{
+		Version: xatuethv2.BlockVersion_PHASE0,
 		Message: &xatuethv2.EventBlock_Phase0Block{
 			Phase0Block: &xatuethv1.BeaconBlock{
 				Slot:          uint64(e.event.Phase0.Message.Slot),
@@ -378,6 +379,7 @@ func (e *BeaconBlock) getPhase0Data() *xatuethv2.EventBlock {
 
 func (e *BeaconBlock) getAltairData() *xatuethv2.EventBlock {
 	return &xatuethv2.EventBlock{
+		Version: xatuethv2.BlockVersion_ALTAIR,
 		Message: &xatuethv2.EventBlock_AltairBlock{
 			AltairBlock: &xatuethv2.BeaconBlockAltair{
 				Slot:          uint64(e.event.Altair.Message.Slot),
@@ -410,6 +412,7 @@ func (e *BeaconBlock) getAltairData() *xatuethv2.EventBlock {
 
 func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlock {
 	return &xatuethv2.EventBlock{
+		Version: xatuethv2.BlockVersion_BELLATRIX,
 		Message: &xatuethv2.EventBlock_BellatrixBlock{
 			BellatrixBlock: &xatuethv2.BeaconBlockBellatrix{
 				Slot:          uint64(e.event.Bellatrix.Message.Slot),
@@ -458,6 +461,7 @@ func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlock {
 
 func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlock {
 	return &xatuethv2.EventBlock{
+		Version: xatuethv2.BlockVersion_CAPELLA,
 		Message: &xatuethv2.EventBlock_CapellaBlock{
 			CapellaBlock: &xatuethv2.BeaconBlockCapella{
 				Slot:          uint64(e.event.Capella.Message.Slot),

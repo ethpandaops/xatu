@@ -46,8 +46,8 @@ message Propagation {
 }
 
 message DebugForkChoiceReorg {
-  xatu.eth.v1.ForkChoice before = 1;
-  xatu.eth.v1.ForkChoice after = 2;
+  xatu.eth.v1.ForkChoice before = 1 [ json_name = "before" ];
+  xatu.eth.v1.ForkChoice after = 2 [ json_name = "after" ];
 }
 
 message ClientMeta {
@@ -187,10 +187,10 @@ message ClientMeta {
 
   message ForkChoiceSnapshot {
     // RequestEpoch contains the wall clock epoch for when the fork choice was requested.
-    Epoch request_epoch = 1;
+    Epoch request_epoch = 1 [ json_name = "request_epoch" ];
 
     // RequestSlot contains the wall clock slot for when the fork choice was requested.
-    Slot request_slot = 2;
+    Slot request_slot = 2 [ json_name = "request_slot" ];
 
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).

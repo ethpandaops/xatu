@@ -10,9 +10,6 @@ type EventFilter interface {
 	// EventNames returns the list of event names to filter on.
 	EventNames() []string
 
-	// Apply returns filtered events.
-	Apply(events []*DecoratedEvent) ([]*DecoratedEvent, error)
-
 	// ShouldBeDropped returns true if the event should be dropped.
 	ShouldBeDropped(event *DecoratedEvent) (bool, error)
 }

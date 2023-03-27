@@ -102,7 +102,11 @@ func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
 	}
 
 	emptyConfig := &EventFilterConfig{}
-	filter, _ := NewEventFilter(emptyConfig)
+
+	filter, err := NewEventFilter(emptyConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	filteredEvents := []*DecoratedEvent{}
 

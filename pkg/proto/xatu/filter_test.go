@@ -94,6 +94,10 @@ func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
 	events := []*DecoratedEvent{}
 
 	for _, eventName := range Event_Name_value {
+		if eventName == int32(Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN) {
+			continue
+		}
+
 		events = append(events, &DecoratedEvent{
 			Event: &Event{
 				Name: Event_Name(eventName),

@@ -63,23 +63,23 @@ func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
 		return true, errors.New("event.event is nil")
 	}
 
-	if event.Event.Name == 0 {
-		return true, errors.New("event.event.name is invalid")
-	}
-
 	if len(f.eventNames) == 0 {
 		return false, nil
 	}
 
-	return f.applyEventNamesFilter(event), nil
+	return f.applyEventNamesFilter(event)
 }
 
-func (f *eventFilter) applyEventNamesFilter(event *DecoratedEvent) bool {
+func (f *eventFilter) applyEventNamesFilter(event *DecoratedEvent) (bool, error) {
 	if len(f.eventNames) == 0 {
-		return false
+		return false, nil
+	}
+
+	if event.Event.Name == 0 {
+		return true, errors.New("event.event.name is invalid")
 	}
 
 	_, ok := f.eventNames[event.Event.Name.String()]
 
-	return !ok
+	return !ok, nil
 }

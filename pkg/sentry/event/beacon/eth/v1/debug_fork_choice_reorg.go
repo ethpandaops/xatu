@@ -62,11 +62,11 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 	}
 
 	if f.snapshot.After != nil {
-		data.After = f.snapshot.Before.GetData()
+		data.After = f.snapshot.After.GetData()
 
-		afterAdditional := f.snapshot.Before.GetAdditionalData(ctx)
+		afterAdditional := f.snapshot.After.GetAdditionalData(ctx)
 
-		additional.Before = &xatu.ClientMeta_ForkChoiceSnapshot{
+		additional.After = &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestEpoch:               afterAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
 			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,

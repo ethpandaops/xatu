@@ -97,12 +97,57 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 				DateTime: timestamppb.New(time.Now()),
 			}
 
+			decoratedEvent.Meta = &Meta{
+				Client: &ClientMeta{
+					Name:           "example-instance",
+					Version:        "dev-dev",
+					Id:             "e8973fb1-d81e-4d5f-a924-db02cacab700",
+					Implementation: "xatu",
+					Os:             "darwin",
+					ClockDrift:     263,
+					Ethereum: &ClientMeta_Ethereum{
+						Network: &ClientMeta_Ethereum_Network{
+							Name: "sepolia",
+							Id:   11155111,
+						},
+						Execution: &ClientMeta_Ethereum_Execution{},
+						Consensus: &ClientMeta_Ethereum_Consensus{
+							Implementation: "teku",
+							Version:        "teku/vUNKNOWN+g20fcf48/linux-x86_64/-eclipseadoptium-openjdk64bitservervm-java-17",
+						},
+					},
+					Labels: map[string]string{
+						"ethpandaops": "rocks",
+					},
+				},
+			}
+
 			switch eventName {
 			case Event_BEACON_API_ETH_V1_EVENTS_BLOCK:
 				decoratedEvent.Data = &DecoratedEvent_EthV1EventsBlock{
 					EthV1EventsBlock: &v1.EventBlock{
 						Slot:  2012560,
 						Block: "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca87",
+					},
+				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsBlock{
+					EthV1EventsBlock: &ClientMeta_AdditionalEthV1EventsBlockData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Slot: &Slot{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Propagation: &Propagation{
+							SlotStartDiff: 400,
+						},
 					},
 				}
 			case Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION:
@@ -114,16 +159,69 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						},
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsAttestation{
+					EthV1EventsAttestation: &ClientMeta_AdditionalEthV1EventsAttestationData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Slot: &Slot{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Propagation: &Propagation{
+							SlotStartDiff: 400,
+						},
+					},
+				}
+
 			case Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG:
 				decoratedEvent.Data = &DecoratedEvent_EthV1EventsChainReorg{
 					EthV1EventsChainReorg: &v1.EventChainReorg{
 						Depth: 4,
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsChainReorg{
+					EthV1EventsChainReorg: &ClientMeta_AdditionalEthV1EventsChainReorgData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Slot: &Slot{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Propagation: &Propagation{
+							SlotStartDiff: 400,
+						},
+					},
+				}
+
 			case Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT:
 				decoratedEvent.Data = &DecoratedEvent_EthV1EventsFinalizedCheckpoint{
 					EthV1EventsFinalizedCheckpoint: &v1.EventFinalizedCheckpoint{
 						Epoch: 2012560,
+					},
+				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsFinalizedCheckpoint{
+					EthV1EventsFinalizedCheckpoint: &ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
 					},
 				}
 			case Event_BEACON_API_ETH_V1_EVENTS_HEAD:
@@ -132,10 +230,52 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						Slot: 2012560,
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsHead{
+					EthV1EventsHead: &ClientMeta_AdditionalEthV1EventsHeadData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Slot: &Slot{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Propagation: &Propagation{
+							SlotStartDiff: 400,
+						},
+					},
+				}
 			case Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF:
 				decoratedEvent.Data = &DecoratedEvent_EthV1EventsContributionAndProof{
 					EthV1EventsContributionAndProof: &v1.EventContributionAndProof{
 						Signature: "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca87",
+					},
+				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsContributionAndProof{
+					EthV1EventsContributionAndProof: &ClientMeta_AdditionalEthV1EventsContributionAndProofData{
+						Contribution: &ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{
+							Epoch: &Epoch{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+							Slot: &Slot{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+							Propagation: &Propagation{
+								SlotStartDiff: 400,
+							},
+						},
 					},
 				}
 			case Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:
@@ -145,10 +285,28 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						Epoch:          5,
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1EventsVoluntaryExit{
+					EthV1EventsVoluntaryExit: &ClientMeta_AdditionalEthV1EventsVoluntaryExitData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+					},
+				}
 			case Event_MEMPOOL_TRANSACTION:
 				decoratedEvent.Data = &DecoratedEvent_MempoolTransaction{
 					MempoolTransaction: "{}",
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_MempoolTransaction{
+					MempoolTransaction: &ClientMeta_AdditionalMempoolTransactionData{
+						Hash: "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca87",
+					},
+				}
+
 			case Event_BEACON_API_ETH_V2_BEACON_BLOCK:
 				decoratedEvent.Data = &DecoratedEvent_EthV2BeaconBlock{
 					EthV2BeaconBlock: &v2.EventBlock{
@@ -197,6 +355,25 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						},
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV2BeaconBlock{
+					EthV2BeaconBlock: &ClientMeta_AdditionalEthV2BeaconBlockData{
+						Epoch: &Epoch{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Slot: &Slot{
+							Number: 2012560,
+							StartDateTime: &timestamppb.Timestamp{
+								Seconds: 1630000000,
+							},
+						},
+						Version: "BELLATRIX",
+					},
+				}
+
 			case Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:
 				decoratedEvent.Data = &DecoratedEvent_EthV1ForkChoice{
 					EthV1ForkChoice: &v1.ForkChoice{
@@ -208,6 +385,28 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						},
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1DebugForkChoice{
+					EthV1DebugForkChoice: &ClientMeta_AdditionalEthV1DebugForkChoiceData{
+						Snapshot: &ClientMeta_ForkChoiceSnapshot{
+							RequestedAtSlotStartDiffMs: 1,
+							RequestDurationMs:          500,
+							RequestEpoch: &Epoch{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+							RequestSlot: &Slot{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+						},
+					},
+				}
+
 			case Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:
 				decoratedEvent.Data = &DecoratedEvent_EthV1ForkChoiceReorg{
 					EthV1ForkChoiceReorg: &DebugForkChoiceReorg{
@@ -229,6 +428,27 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						},
 					},
 				}
+
+				decoratedEvent.Meta.Client.AdditionalData = &ClientMeta_EthV1DebugForkChoiceReorg{
+					EthV1DebugForkChoiceReorg: &ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{
+						After: &ClientMeta_ForkChoiceSnapshot{
+							RequestedAtSlotStartDiffMs: 1,
+							RequestDurationMs:          500,
+							RequestEpoch: &Epoch{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+							RequestSlot: &Slot{
+								Number: 2012560,
+								StartDateTime: &timestamppb.Timestamp{
+									Seconds: 1630000000,
+								},
+							},
+						},
+					},
+				}
 			}
 
 			// Marshal the decorated event to JSON.
@@ -244,6 +464,10 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)
 			}
+
+			assert.EqualValues(t, decoratedEvent.GetMeta().Client.Name, m.GetMeta().Client.Name)
+			assert.EqualValues(t, decoratedEvent.GetMeta().Client.Version, m.GetMeta().Client.Version)
+			// assert.EqualValues(t, decoratedEvent.GetMeta().Client.AdditionalData, m.GetMeta().Client.AdditionalData)
 
 			if eventName != Event_BEACON_API_ETH_V2_BEACON_BLOCK {
 				if !reflect.DeepEqual(decoratedEvent.GetData(), m.GetData()) {

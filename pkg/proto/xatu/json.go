@@ -2,6 +2,7 @@ package xatu
 
 import (
 	"encoding/json"
+	"strconv"
 
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
@@ -9,6 +10,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+//nolint:gocyclo // Unfortunately required until we can refactor additional_data.
 func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		Event json.RawMessage `json:"event"`
@@ -23,25 +25,31 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	//nolint:goconst // No thanks
 	validData := len(tmp.Data) != 0 && string(tmp.Data) != "null"
 
 	// Also unmarshal the client meta field into a temporary struct to get the
 	// additional_data field; which type depends on the event name.
 	var clientMeta struct {
+		//nolint:tagliatelle // Outside of our control
 		AdditionalData json.RawMessage `json:"additional_data"`
 	}
 
 	validClientMeta := len(tmp.Meta.Client) != 0 && string(tmp.Meta.Client) != "null"
 
+	event := new(Event)
+
+	meta := new(ClientMeta)
+
 	if validClientMeta {
 		if err := json.Unmarshal(tmp.Meta.Client, &clientMeta); err != nil {
 			return err
 		}
+
+		if err := json.Unmarshal(tmp.Meta.Client, meta); err != nil {
+			return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta")
+		}
 	}
-
-	event := new(Event)
-
-	meta := new(ClientMeta)
 
 	if err := protojson.Unmarshal(tmp.Event, event); err != nil {
 		return errors.Wrap(err, "failed to unmarshal DecoratedEvent.Event")
@@ -299,6 +307,64 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		Client: meta,
 		Server: serverMeta,
 	}
+
+	return nil
+}
+
+func (c *ClientMeta) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		Name           string `json:"name,omitempty"`
+		Version        string `json:"version,omitempty"`
+		ID             string ` json:"id,omitempty"`
+		Implementation string `json:"implementation,omitempty"`
+		Os             string `json:"os,omitempty"`
+		//nolint:tagliatelle // Outside of our control
+		ClockDrift string               `json:"clock_drift,omitempty"`
+		Ethereum   *ClientMeta_Ethereum `json:"ethereum,omitempty"`
+		Labels     map[string]string    `json:"labels,omitempty"`
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return errors.Wrap(err, "failed to unmarshal ClientMeta")
+	}
+
+	c.Name = tmp.Name
+	c.Version = tmp.Version
+	c.Id = tmp.ID
+	c.Implementation = tmp.Implementation
+	c.Os = tmp.Os
+
+	// Parse clock drift as milliseconds
+
+	clockDrift, err := strconv.ParseUint(tmp.ClockDrift, 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse ClientMeta.ClockDrift")
+	}
+
+	c.ClockDrift = clockDrift
+	c.Ethereum = tmp.Ethereum
+
+	return nil
+}
+
+func (c *ClientMeta_Ethereum_Network) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		Name string `json:"name,omitempty"`
+		ID   string `json:"id,omitempty"`
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return errors.Wrap(err, "failed to unmarshal ClientMeta_Ethereum_Network")
+	}
+
+	c.Name = tmp.Name
+
+	id, err := strconv.ParseUint(tmp.ID, 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse ClientMeta_Ethereum_Network.Id")
+	}
+
+	c.Id = id
 
 	return nil
 }

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"fmt"
+	"encoding/json"
 
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -60,6 +60,13 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		return nil, errors.Wrap(err, "failed to convert execution_block_hash")
 	}
 
+	extraData := make(map[string]interface{})
+
+	err = json.Unmarshal([]byte(f.ExtraData), &extraData)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal extra_data")
+	}
+
 	return &eth2v1.ForkChoiceNode{
 		Slot:               phase0.Slot(f.Slot),
 		BlockRoot:          blockRoot,
@@ -69,7 +76,7 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		Weight:             f.Weight,
 		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
 		ExecutionBlockHash: executionBlockHash,
-		ExtraData:          f.ExtraData,
+		ExtraData:          extraData,
 	}, nil
 }
 
@@ -94,6 +101,11 @@ func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) *ForkChoice {
 }
 
 func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) *ForkChoiceNode {
+	extraData, err := json.Marshal(node.ExtraData)
+	if err != nil {
+		panic(err)
+	}
+
 	return &ForkChoiceNode{
 		Slot:               uint64(node.Slot),
 		BlockRoot:          RootAsString(node.BlockRoot),
@@ -103,6 +115,6 @@ func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) *ForkChoic
 		Weight:             node.Weight,
 		Validity:           string(node.Validity),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
-		ExtraData:          fmt.Sprintf("%v", node.ExtraData),
+		ExtraData:          string(extraData),
 	}
 }

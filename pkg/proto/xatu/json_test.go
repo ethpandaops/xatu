@@ -467,7 +467,6 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 
 			assert.EqualValues(t, decoratedEvent.GetMeta().Client.Name, m.GetMeta().Client.Name)
 			assert.EqualValues(t, decoratedEvent.GetMeta().Client.Version, m.GetMeta().Client.Version)
-			// assert.EqualValues(t, decoratedEvent.GetMeta().Client.AdditionalData, m.GetMeta().Client.AdditionalData)
 
 			if eventName != Event_BEACON_API_ETH_V2_BEACON_BLOCK {
 				if !reflect.DeepEqual(decoratedEvent.GetData(), m.GetData()) {

@@ -2,6 +2,7 @@ package xatu
 
 import (
 	"encoding/json"
+	reflect "reflect"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 			t.Fatal("Expected an error")
 		}
 
-		assert.EqualError(t, err, "failed to unmarshal DecoratedEvent.Event: proto:\u00a0(line 2:16): invalid value for enum type: \"INVALID_EVENT_NAME\"")
+		assert.ErrorContains(t, err, "invalid value for enum type: \"INVALID_EVENT_NAME\"")
 	})
 
 	// Note: If this test is failing it means that a new event has been added to the Event enum.
@@ -155,7 +156,43 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 						Signature: "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca87",
 						Message: &v2.EventBlock_BellatrixBlock{
 							BellatrixBlock: &v2.BeaconBlockBellatrix{
-								Slot: 2012560,
+								ParentRoot:    "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca87",
+								ProposerIndex: 1,
+								StateRoot:     "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca86",
+								Slot:          2012560,
+								Body: &v2.BeaconBlockBodyBellatrix{
+									Eth1Data: &v1.Eth1Data{
+										DepositRoot:  "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca85",
+										DepositCount: 1,
+										BlockHash:    "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca84",
+									},
+									RandaoReveal:      "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca83",
+									Graffiti:          "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca82",
+									ProposerSlashings: nil,
+									AttesterSlashings: nil,
+									Deposits:          nil,
+									VoluntaryExits:    nil,
+									SyncAggregate: &v1.SyncAggregate{
+										SyncCommitteeBits:      "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca81",
+										SyncCommitteeSignature: "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca80",
+									},
+									ExecutionPayload: &v1.ExecutionPayload{
+										StateRoot:     "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7f",
+										BlockNumber:   1,
+										BlockHash:     "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7e",
+										ParentHash:    "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7d",
+										FeeRecipient:  "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7c",
+										ReceiptsRoot:  "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7b",
+										LogsBloom:     "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca7a",
+										PrevRandao:    "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca79",
+										GasLimit:      1,
+										GasUsed:       1,
+										Timestamp:     1,
+										ExtraData:     "0x2506f42e292de118ace069902e27daa21f2b69ae003afc3ab937254a4f1aca78",
+										BaseFeePerGas: "2",
+										Transactions:  []string{"123", "321"},
+									},
+								},
 							},
 						},
 					},
@@ -208,7 +245,17 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			assert.Equal(t, decoratedEvent.GetData(), m.GetData())
+			if eventName != Event_BEACON_API_ETH_V2_BEACON_BLOCK {
+				if !reflect.DeepEqual(decoratedEvent.GetData(), m.GetData()) {
+					t.Fatalf("Unexpected result, expected %v, got %v", decoratedEvent.GetData(), m.GetData())
+				}
+			} else {
+				// Special case for beacon block, as the data is a lot more complex.
+				// We'll just manually check the fields we care about.
+				assert.EqualValues(t, decoratedEvent.GetEthV2BeaconBlock().Message, m.GetEthV2BeaconBlock().Message)
+				assert.EqualValues(t, decoratedEvent.GetEthV2BeaconBlock().Signature, m.GetEthV2BeaconBlock().Signature)
+				assert.EqualValues(t, decoratedEvent.GetEthV2BeaconBlock().Version, m.GetEthV2BeaconBlock().Version)
+			}
 		}
 	})
 }

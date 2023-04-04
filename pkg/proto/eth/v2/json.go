@@ -65,3 +65,21 @@ func (b *EventBlock) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func (v *BlockVersion) UnmarshalJSON(data []byte) error {
+	val := ""
+
+	if err := json.Unmarshal(data, &val); err != nil {
+		return err
+	}
+
+	for _, name := range BlockVersion_name {
+		if val == name {
+			*v = BlockVersion(BlockVersion_value[name])
+
+			return nil
+		}
+	}
+
+	return errors.Errorf("unknown block version: %s", val)
+}

@@ -80,11 +80,16 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 	}, nil
 }
 
-func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) *ForkChoice {
+func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) (*ForkChoice, error) {
 	nodes := []*ForkChoiceNode{}
 
 	for _, node := range f.ForkChoiceNodes {
-		nodes = append(nodes, NewForkChoiceNodeFromGoEth2ClientV1(node))
+		n, err := NewForkChoiceNodeFromGoEth2ClientV1(node)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert node")
+		}
+
+		nodes = append(nodes, n)
 	}
 
 	return &ForkChoice{
@@ -97,13 +102,13 @@ func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) *ForkChoice {
 			Root:  RootAsString(f.JustifiedCheckpoint.Root),
 		},
 		ForkChoiceNodes: nodes,
-	}
+	}, nil
 }
 
-func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) *ForkChoiceNode {
+func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkChoiceNode, error) {
 	extraData, err := json.Marshal(node.ExtraData)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &ForkChoiceNode{
@@ -116,5 +121,5 @@ func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) *ForkChoic
 		Validity:           string(node.Validity),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),
-	}
+	}, nil
 }

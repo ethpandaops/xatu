@@ -49,7 +49,10 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 	additional := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{}
 
 	if f.snapshot.Before != nil {
-		data.Before = f.snapshot.Before.GetData()
+		before, err := f.snapshot.Before.GetData()
+		if err == nil {
+			data.Before = before
+		}
 
 		beforeAdditional := f.snapshot.Before.GetAdditionalData(ctx)
 
@@ -62,7 +65,10 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 	}
 
 	if f.snapshot.After != nil {
-		data.After = f.snapshot.After.GetData()
+		after, err := f.snapshot.After.GetData()
+		if err == nil {
+			data.After = after
+		}
 
 		afterAdditional := f.snapshot.After.GetAdditionalData(ctx)
 

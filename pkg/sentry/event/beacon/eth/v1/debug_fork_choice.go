@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
@@ -51,6 +50,11 @@ func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 		return nil, nil
 	}
 
+	data, err := f.GetData()
+	if err != nil {
+		return nil, err
+	}
+
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
@@ -60,7 +64,7 @@ func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 			Client: f.clientMeta,
 		},
 		Data: &xatu.DecoratedEvent_EthV1ForkChoice{
-			EthV1ForkChoice: f.GetData(),
+			EthV1ForkChoice: data,
 		},
 	}
 
@@ -81,34 +85,8 @@ func (f *ForkChoice) shouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (f *ForkChoice) GetData() *xatuethv1.ForkChoice {
-	nodes := []*xatuethv1.ForkChoiceNode{}
-
-	for _, node := range f.snapshot.Event.ForkChoiceNodes {
-		nodes = append(nodes, &xatuethv1.ForkChoiceNode{
-			Slot:               uint64(node.Slot),
-			BlockRoot:          xatuethv1.RootAsString(node.BlockRoot),
-			ParentRoot:         xatuethv1.RootAsString(node.ParentRoot),
-			JustifiedEpoch:     uint64(node.JustifiedEpoch),
-			FinalizedEpoch:     uint64(node.FinalizedEpoch),
-			Weight:             node.Weight,
-			Validity:           string(node.Validity),
-			ExecutionBlockHash: xatuethv1.RootAsString(node.ExecutionBlockHash),
-			ExtraData:          fmt.Sprintf("%v", node.ExtraData),
-		})
-	}
-
-	return &xatuethv1.ForkChoice{
-		FinalizedCheckpoint: &xatuethv1.Checkpoint{
-			Epoch: uint64(f.snapshot.Event.FinalizedCheckpoint.Epoch),
-			Root:  xatuethv1.RootAsString(f.snapshot.Event.FinalizedCheckpoint.Root),
-		},
-		JustifiedCheckpoint: &xatuethv1.Checkpoint{
-			Epoch: uint64(f.snapshot.Event.JustifiedCheckpoint.Epoch),
-			Root:  xatuethv1.RootAsString(f.snapshot.Event.JustifiedCheckpoint.Root),
-		},
-		ForkChoiceNodes: nodes,
-	}
+func (f *ForkChoice) GetData() (*xatuethv1.ForkChoice, error) {
+	return xatuethv1.NewForkChoiceFromGoEth2ClientV1(f.snapshot.Event)
 }
 
 func (f *ForkChoice) GetAdditionalData(ctx context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {

@@ -8,6 +8,18 @@ import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v2/beacon_block.proto";
 
+enum BlockVersion {
+  UNKNOWN = 0;
+
+  PHASE0 = 1;
+
+  ALTAIR = 2;
+
+  BELLATRIX = 3;
+
+  CAPELLA = 4;
+}
+
 message EventBlock {
   oneof message {
     v1.BeaconBlock phase0_block = 1 [ json_name = "message" ];
@@ -20,4 +32,6 @@ message EventBlock {
   }
 
   string signature = 5;
+
+  BlockVersion version = 6;
 }

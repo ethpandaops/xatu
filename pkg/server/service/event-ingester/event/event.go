@@ -26,6 +26,8 @@ const (
 	TypeBeaconETHV1EventsContributionAndProof Type = v1.EventsContributionAndProofType
 	TypeMempoolTransaction                    Type = mempool.TransactionType
 	TypeBeaconETHV2BeaconBlock                Type = v2.BeaconBlockType
+	TypeDebugForkChoice                       Type = v1.DebugForkChoiceType
+	TypeDebugForkChoiceReorg                  Type = v1.DebugForkChoiceReorgType
 )
 
 type Event interface {
@@ -58,6 +60,10 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return mempool.NewTransaction(log, event), nil
 	case TypeBeaconETHV2BeaconBlock:
 		return v2.NewBeaconBlock(log, event, cache), nil
+	case TypeDebugForkChoice:
+		return v1.NewDebugForkChoice(log, event), nil
+	case TypeDebugForkChoiceReorg:
+		return v1.NewDebugForkChoiceReorg(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

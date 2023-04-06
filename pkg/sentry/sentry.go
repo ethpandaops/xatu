@@ -421,7 +421,11 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 
 	for _, sink := range s.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			s.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")
+			s.log.
+				WithError(err).
+				WithField("sink", sink.Type()).
+				WithField("event_type", event.GetEvent().GetName()).
+				Error("Failed to send event to sink")
 		}
 	}
 

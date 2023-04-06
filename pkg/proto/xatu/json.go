@@ -337,11 +337,10 @@ func (c *ClientMeta) UnmarshalJSON(data []byte) error {
 	// Parse clock drift as milliseconds
 
 	clockDrift, err := strconv.ParseUint(tmp.ClockDrift, 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse ClientMeta.ClockDrift")
+	if err == nil {
+		c.ClockDrift = clockDrift
 	}
 
-	c.ClockDrift = clockDrift
 	c.Ethereum = tmp.Ethereum
 
 	return nil

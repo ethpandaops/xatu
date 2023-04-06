@@ -91,7 +91,7 @@ func (f *ForkChoice) GetData() (*xatuethv1.ForkChoice, error) {
 
 func (f *ForkChoice) GetAdditionalData(ctx context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {
 	slot := f.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(f.snapshot.RequestSlot))
-	epoch := f.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(f.snapshot.RequestEpoch))
+	epoch := f.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(f.snapshot.RequestEpoch))
 
 	extra := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData{
 		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshot{

@@ -496,8 +496,8 @@ github.com/rs/zerolog v1.29.0/go.mod h1:NILgTygv/Uej1ra5XxGf82ZFSLk58MFGAUS2o6us
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
-github.com/samcm/go-eth2-client v0.15.11 h1:Fi6vDxcnTO1tTxSzpi+QoWtImL2x/bjGhT2alzKrRf0=
-github.com/samcm/go-eth2-client v0.15.11/go.mod h1:PLRKnILnr63V3yl2VagBqnhVRFBWc0V+JhQSsXQaSwQ=
+github.com/samcm/go-eth2-client v0.15.12 h1:BB8dGvQAQFL7ol4584AQch41RQrlmw+7u2dR+VOFM2k=
+github.com/samcm/go-eth2-client v0.15.12/go.mod h1:PLRKnILnr63V3yl2VagBqnhVRFBWc0V+JhQSsXQaSwQ=
 github.com/savid/ttlcache/v3 v3.0.2 h1:P7LAHoFNfCjKKJyYcSTFYsNmO+xHaRXTTrLrjb2UJJY=
 github.com/savid/ttlcache/v3 v3.0.2/go.mod h1:9OBR4zMFiOT3Vk2aghO8vOhmsdfTFT4orFnQ4cl+VyM=
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=

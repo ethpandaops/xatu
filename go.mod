@@ -2,7 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.19
 
-replace github.com/attestantio/go-eth2-client v0.15.7 => github.com/samcm/go-eth2-client v0.15.11
+replace github.com/attestantio/go-eth2-client v0.15.7 => github.com/samcm/go-eth2-client v0.15.12
 
 require (
 	github.com/attestantio/go-eth2-client v0.15.7

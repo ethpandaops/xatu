@@ -28,6 +28,17 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 				return err
 			}
 
+			// Store the latest fork choice so that we can use it in the re-org event.
+			// We need to store it since fetchDebugForkChoice() will update the latest fork choice
+			// after it fetches the new one.
+			var latestForkChoice v1.ForkChoice
+			validLatestForkChoice := false
+
+			if s.latestForkChoice != nil {
+				latestForkChoice = *s.latestForkChoice
+				validLatestForkChoice = true
+			}
+
 			after, err := s.fetchDebugForkChoice(ctx)
 			if err != nil {
 				logCtx.WithError(err).Error("Failed to fetch fork choice after re-org event")
@@ -41,9 +52,13 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 			defer s.latestForkChoiceMu.Unlock()
 
 			snapshot := &v1.ForkChoiceReOrgSnapshot{
-				Before:       s.latestForkChoice, // May be nil
+				Before:       nil, // May be nil
 				After:        after,
 				ReOrgEventAt: now,
+			}
+
+			if validLatestForkChoice {
+				snapshot.Before = &latestForkChoice
 			}
 
 			debugForkChoiceReOrgEvent := v1.NewForkChoiceReOrg(s.log, snapshot, s.beacon, meta)

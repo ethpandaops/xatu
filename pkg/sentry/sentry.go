@@ -121,6 +121,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			event := v1.NewEventsAttestation(s.log, attestation, now, s.beacon, s.duplicateCache.BeaconETHV1EventsAttestation, meta)
 
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {
 				return err
@@ -138,6 +147,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 			}
 
 			event := v1.NewEventsBlock(s.log, block, now, s.beacon, s.duplicateCache.BeaconETHV1EventsBlock, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
 
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {
@@ -164,6 +182,20 @@ func (s *Sentry) Start(ctx context.Context) error {
 					}
 
 					event := v2.NewBeaconBlock(s.log, beaconBlock, now, s.beacon, s.duplicateCache.BeaconETHV2BeaconBlock, beaconBlockMeta)
+
+					ignore, err := event.ShouldIgnore(ctx)
+					if err != nil {
+						s.log.
+							WithError(err).
+							WithField("event", xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK).
+							Error("Failed to check if event should be ignored")
+
+						return
+					}
+
+					if ignore {
+						return
+					}
 
 					decoratedEvent, err := event.Decorate(ctx)
 					if err != nil {
@@ -193,6 +225,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			event := v1.NewEventsChainReorg(s.log, chainReorg, now, s.beacon, s.duplicateCache.BeaconETHV1EventsChainReorg, meta)
 
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {
 				return err
@@ -210,6 +251,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 			}
 
 			event := v1.NewEventsHead(s.log, head, now, s.beacon, s.duplicateCache.BeaconETHV1EventsHead, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
 
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {
@@ -229,6 +279,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
 
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {
 				return err
@@ -246,6 +305,15 @@ func (s *Sentry) Start(ctx context.Context) error {
 			}
 
 			event := v1.NewEventsContributionAndProof(s.log, contributionAndProof, now, s.beacon, s.duplicateCache.BeaconETHV1EventsContributionAndProof, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
 
 			decoratedEvent, err := event.Decorate(ctx)
 			if err != nil {

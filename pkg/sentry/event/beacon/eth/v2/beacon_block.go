@@ -42,16 +42,6 @@ func NewBeaconBlock(log logrus.FieldLogger, event *spec.VersionedSignedBeaconBlo
 }
 
 func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	ignore, err := e.shouldIgnore(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ignore {
-		//nolint:nilnil // Returning nil is intentional.
-		return nil, nil
-	}
-
 	var data *xatuethv2.EventBlock
 
 	switch e.event.Version {
@@ -92,7 +82,7 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 	return decoratedEvent, nil
 }
 
-func (e *BeaconBlock) shouldIgnore(ctx context.Context) (bool, error) {
+func (e *BeaconBlock) ShouldIgnore(ctx context.Context) (bool, error) {
 	if e.event == nil {
 		return true, nil
 	}

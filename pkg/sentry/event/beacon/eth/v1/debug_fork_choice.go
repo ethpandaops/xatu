@@ -40,16 +40,6 @@ func NewForkChoice(log logrus.FieldLogger, snapshot *ForkChoiceSnapshot, beacon 
 }
 
 func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	ignore, err := f.shouldIgnore(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ignore {
-		//nolint:nilnil // Returning nil is intentional.
-		return nil, nil
-	}
-
 	data, err := f.GetData()
 	if err != nil {
 		return nil, err
@@ -77,7 +67,7 @@ func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 	return decoratedEvent, nil
 }
 
-func (f *ForkChoice) shouldIgnore(ctx context.Context) (bool, error) {
+func (f *ForkChoice) ShouldIgnore(ctx context.Context) (bool, error) {
 	if err := f.beacon.Synced(ctx); err != nil {
 		return true, err
 	}

@@ -38,15 +38,6 @@ func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.VoluntaryExit,
 }
 
 func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	ignore, err := e.shouldIgnore(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ignore {
-		return nil, err
-	}
-
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT,
@@ -75,7 +66,7 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 	return decoratedEvent, nil
 }
 
-func (e *EventsVoluntaryExit) shouldIgnore(ctx context.Context) (bool, error) {
+func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 	if err := e.beacon.Synced(ctx); err != nil {
 		//nolint:nilerr // Returning nil is intentional.
 		return true, nil

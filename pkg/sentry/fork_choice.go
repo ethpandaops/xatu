@@ -63,6 +63,15 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 
 			debugForkChoiceReOrgEvent := v1.NewForkChoiceReOrg(s.log, snapshot, s.beacon, meta)
 
+			ignore, err := debugForkChoiceReOrgEvent.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
 			decoratedEvent, err := debugForkChoiceReOrgEvent.Decorate(ctx)
 			if err != nil {
 				logCtx.WithError(err).Error("Failed to decorate fork choice re-org event")
@@ -158,6 +167,15 @@ func (s *Sentry) fetchDecoratedDebugForkChoice(ctx context.Context) error {
 	fc, err := s.fetchDebugForkChoice(ctx)
 	if err != nil {
 		return err
+	}
+
+	ignore, err := fc.ShouldIgnore(ctx)
+	if err != nil {
+		return err
+	}
+
+	if ignore {
+		return nil
 	}
 
 	decoratedEvent, err := fc.Decorate(ctx)

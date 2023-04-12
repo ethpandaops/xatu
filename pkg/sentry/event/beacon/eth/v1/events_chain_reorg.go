@@ -38,16 +38,6 @@ func NewEventsChainReorg(log logrus.FieldLogger, event *eth2v1.ChainReorgEvent, 
 }
 
 func (e *EventsChainReorg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	ignore, err := e.shouldIgnore(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ignore {
-		//nolint:nilnil // Returning nil is intentional.
-		return nil, nil
-	}
-
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG,
@@ -81,7 +71,7 @@ func (e *EventsChainReorg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, 
 	return decoratedEvent, nil
 }
 
-func (e *EventsChainReorg) shouldIgnore(ctx context.Context) (bool, error) {
+func (e *EventsChainReorg) ShouldIgnore(ctx context.Context) (bool, error) {
 	if err := e.beacon.Synced(ctx); err != nil {
 		return true, err
 	}

@@ -38,16 +38,6 @@ func NewEventsAttestation(log logrus.FieldLogger, event *phase0.Attestation, now
 }
 
 func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	ignore, err := e.shouldIgnore(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if ignore {
-		//nolint:nilnil // Returning nil is intentional.
-		return nil, nil
-	}
-
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
@@ -89,7 +79,7 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 	return decoratedEvent, nil
 }
 
-func (e *EventsAttestation) shouldIgnore(ctx context.Context) (bool, error) {
+func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 	if err := e.beacon.Synced(ctx); err != nil {
 		return true, err
 	}

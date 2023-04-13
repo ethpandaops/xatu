@@ -277,7 +277,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit.Message, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
+			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {

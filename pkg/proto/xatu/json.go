@@ -51,7 +51,9 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	if err := protojson.Unmarshal(tmp.Event, event); err != nil {
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
+
+	if err := unmarshaler.Unmarshal(tmp.Event, event); err != nil {
 		return errors.Wrap(err, "failed to unmarshal DecoratedEvent.Event")
 	}
 
@@ -62,7 +64,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			a := new(v1.Attestation)
 
-			if err := protojson.Unmarshal(tmp.Data, a); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, a); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsAttestation")
 			}
 
@@ -72,7 +74,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsAttestationData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsAttestationData")
 			}
 
@@ -83,7 +85,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			b := new(v1.EventBlock)
 
-			if err := protojson.Unmarshal(tmp.Data, b); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, b); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsBlock")
 			}
 
@@ -93,7 +95,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsBlockData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsBlockData")
 			}
 
@@ -104,7 +106,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			cr := new(v1.EventChainReorg)
 
-			if err := protojson.Unmarshal(tmp.Data, cr); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, cr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsChainReorg")
 			}
 
@@ -114,7 +116,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsChainReorgData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsChainReorgData")
 			}
 
@@ -125,7 +127,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			fc := new(v1.EventFinalizedCheckpoint)
 
-			if err := protojson.Unmarshal(tmp.Data, fc); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, fc); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsFinalizedCheckpoint")
 			}
 
@@ -135,7 +137,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData")
 			}
 
@@ -146,7 +148,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			h := new(v1.EventHead)
 
-			if err := protojson.Unmarshal(tmp.Data, h); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, h); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsHead")
 			}
 
@@ -156,7 +158,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsHeadData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsHeadData")
 			}
 
@@ -167,7 +169,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			ve := new(v1.EventVoluntaryExit)
 
-			if err := protojson.Unmarshal(tmp.Data, ve); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, ve); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsVoluntaryExit")
 			}
 
@@ -177,7 +179,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsVoluntaryExitData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsVoluntaryExitData")
 			}
 
@@ -188,7 +190,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			cp := new(v1.EventContributionAndProof)
 
-			if err := protojson.Unmarshal(tmp.Data, cp); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, cp); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1EventsContributionAndProof")
 			}
 
@@ -198,7 +200,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1EventsContributionAndProofData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1EventsContributionAndProofData")
 			}
 
@@ -219,7 +221,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalMempoolTransactionData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalMempoolTransactionData")
 			}
 
@@ -240,7 +242,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV2BeaconBlockData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV2BeaconBlockData")
 			}
 
@@ -251,7 +253,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			fc := new(v1.ForkChoice)
 
-			if err := protojson.Unmarshal(tmp.Data, fc); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, fc); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1DebugForkChoice")
 			}
 
@@ -261,7 +263,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1DebugForkChoiceData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1DebugForkChoiceData")
 			}
 
@@ -272,7 +274,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validData {
 			fcr := new(DebugForkChoiceReorg)
 
-			if err := protojson.Unmarshal(tmp.Data, fcr); err != nil {
+			if err := unmarshaler.Unmarshal(tmp.Data, fcr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.EthV1DebugForkChoiceReorg")
 			}
 
@@ -282,7 +284,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 		if validClientMeta {
 			adr := new(ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData)
 
-			if err := protojson.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
+			if err := unmarshaler.Unmarshal(clientMeta.AdditionalData, adr); err != nil {
 				return errors.Wrap(err, "failed to unmarshal DecoratedEvent.ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData")
 			}
 
@@ -298,7 +300,7 @@ func (m *DecoratedEvent) UnmarshalJSON(data []byte) error {
 	validServerMeta := len(tmp.Meta.Server) != 0 && string(tmp.Meta.Server) != "null"
 
 	if validServerMeta {
-		if err := protojson.Unmarshal(tmp.Meta.Server, serverMeta); err != nil {
+		if err := unmarshaler.Unmarshal(tmp.Meta.Server, serverMeta); err != nil {
 			return errors.Wrap(err, "failed to unmarshal DecoratedEvent.Meta.Server")
 		}
 	}

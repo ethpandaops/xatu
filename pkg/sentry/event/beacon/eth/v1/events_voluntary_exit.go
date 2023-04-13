@@ -20,13 +20,13 @@ type EventsVoluntaryExit struct {
 
 	now time.Time
 
-	event          *phase0.VoluntaryExit
+	event          *phase0.SignedVoluntaryExit
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
 }
 
-func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.VoluntaryExit, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsVoluntaryExit {
+func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.SignedVoluntaryExit, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsVoluntaryExit {
 	return &EventsVoluntaryExit{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT"),
 		now:            now,
@@ -48,8 +48,15 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsVoluntaryExit{
 			EthV1EventsVoluntaryExit: &xatuethv1.EventVoluntaryExit{
-				Epoch:          uint64(e.event.Epoch),
-				ValidatorIndex: uint64(e.event.ValidatorIndex),
+				Epoch:          uint64(e.event.Message.Epoch),          // Deprecated: Use message.epoch instead.
+				ValidatorIndex: uint64(e.event.Message.ValidatorIndex), // Deprecated: Use message.validator_index instead.
+
+				Signature: e.event.Signature.String(),
+
+				Message: &xatuethv1.EventVoluntaryExitMessage{
+					Epoch:          uint64(e.event.Message.Epoch),
+					ValidatorIndex: uint64(e.event.Message.ValidatorIndex),
+				},
 			},
 		},
 	}
@@ -82,7 +89,7 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 		e.log.WithFields(logrus.Fields{
 			"hash":                  hash,
 			"time_since_first_item": time.Since(item.Value()),
-			"epoch":                 e.event.Epoch,
+			"epoch":                 e.event.Message.Epoch,
 		}).Debug("Duplicate voluntary exit event received")
 
 		return true, nil
@@ -94,7 +101,7 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 func (e *EventsVoluntaryExit) getAdditionalData(ctx context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitData{}
 
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Epoch))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Message.Epoch))
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),

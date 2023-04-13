@@ -58,10 +58,20 @@ message EventFinalizedCheckpoint {
   uint64 epoch = 3;
 }
 
-message EventVoluntaryExit {
+message EventVoluntaryExitMessage {
   uint64 epoch = 1;
 
   uint64 validator_index = 2 [ json_name = "validator_index" ];
+}
+
+message EventVoluntaryExit {
+  uint64 epoch = 1 [deprecated=true];
+
+  uint64 validator_index = 2 [ json_name = "validator_index", deprecated=true ];
+
+  EventVoluntaryExitMessage message = 3 [ json_name = "message" ];
+
+  string signature = 4;
 }
 
 message ContributionAndProof {

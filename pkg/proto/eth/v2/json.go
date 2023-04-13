@@ -19,11 +19,13 @@ func (b *EventBlock) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
+
 	switch tmp.Version {
 	case BlockVersion_PHASE0:
 		pb := new(v1.BeaconBlock)
 
-		if err := protojson.Unmarshal(tmp.Message, pb); err != nil {
+		if err := unmarshaler.Unmarshal(tmp.Message, pb); err != nil {
 			return errors.Wrap(err, "failed to unmarshal EventBlock.Phase0Block")
 		}
 
@@ -32,7 +34,7 @@ func (b *EventBlock) UnmarshalJSON(data []byte) error {
 	case BlockVersion_ALTAIR:
 		pb := new(BeaconBlockAltair)
 
-		if err := protojson.Unmarshal(tmp.Message, pb); err != nil {
+		if err := unmarshaler.Unmarshal(tmp.Message, pb); err != nil {
 			return errors.Wrap(err, "failed to unmarshal EventBlock.AltairBlock")
 		}
 
@@ -41,7 +43,7 @@ func (b *EventBlock) UnmarshalJSON(data []byte) error {
 	case BlockVersion_BELLATRIX:
 		pb := new(BeaconBlockBellatrix)
 
-		if err := protojson.Unmarshal(tmp.Message, pb); err != nil {
+		if err := unmarshaler.Unmarshal(tmp.Message, pb); err != nil {
 			return errors.Wrap(err, "failed to unmarshal EventBlock.BellatrixBlock")
 		}
 
@@ -50,7 +52,7 @@ func (b *EventBlock) UnmarshalJSON(data []byte) error {
 	case BlockVersion_CAPELLA:
 		pb := new(BeaconBlockCapella)
 
-		if err := protojson.Unmarshal(tmp.Message, pb); err != nil {
+		if err := unmarshaler.Unmarshal(tmp.Message, pb); err != nil {
 			return errors.Wrap(err, "failed to unmarshal EventBlock.CapellaBlock")
 		}
 

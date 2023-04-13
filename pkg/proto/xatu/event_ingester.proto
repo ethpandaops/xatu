@@ -199,6 +199,10 @@ message ClientMeta {
     // RequestDurationMs is the duration of the fork choice snapshot request
     // (in milliseconds).
     uint64 request_duration_ms = 4 [ json_name = "request_duration_ms" ];
+
+    // Timestamp is the timestamp of the fork choice snapshot.
+    google.protobuf.Timestamp timestamp = 5
+    [ json_name = "timestamp" ];
   }
 
   message AdditionalEthV1DebugForkChoiceData {
@@ -378,6 +382,8 @@ message Event {
   Name name = 1;
   // DateTime is the date and time of the event as seen by the client.
   google.protobuf.Timestamp date_time = 2 [ json_name = "date_time" ];
+  // ID is the id of the event.
+  string id = 3 [ json_name = "id" ];
 }
 
 // DecoratedEvent is an event that has been decorated with additional

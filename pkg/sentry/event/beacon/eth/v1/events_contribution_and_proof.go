@@ -9,6 +9,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ type EventsContributionAndProof struct {
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
+	id             uuid.UUID
 }
 
 func NewEventsContributionAndProof(log logrus.FieldLogger, event *altair.SignedContributionAndProof, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsContributionAndProof {
@@ -34,6 +36,7 @@ func NewEventsContributionAndProof(log logrus.FieldLogger, event *altair.SignedC
 		beacon:         beacon,
 		duplicateCache: duplicateCache,
 		clientMeta:     clientMeta,
+		id:             uuid.New(),
 	}
 }
 
@@ -42,6 +45,7 @@ func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.Decora
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF,
 			DateTime: timestamppb.New(e.now),
+			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
@@ -99,7 +103,7 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 	return false, nil
 }
 
-func (e *EventsContributionAndProof) getAdditionalData(ctx context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofData, error) {
+func (e *EventsContributionAndProof) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofData, error) {
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Message.Contribution.Slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Message.Contribution.Slot))
 

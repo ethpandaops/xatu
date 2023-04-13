@@ -9,6 +9,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -20,6 +21,7 @@ type ForkChoice struct {
 
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
+	id         uuid.UUID
 }
 
 type ForkChoiceSnapshot struct {
@@ -36,6 +38,7 @@ func NewForkChoice(log logrus.FieldLogger, snapshot *ForkChoiceSnapshot, beacon 
 		snapshot:   snapshot,
 		beacon:     beacon,
 		clientMeta: clientMeta,
+		id:         uuid.New(),
 	}
 }
 
@@ -49,6 +52,7 @@ func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
 			DateTime: timestamppb.New(f.snapshot.RequestAt),
+			Id:       f.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: f.clientMeta,
@@ -79,7 +83,7 @@ func (f *ForkChoice) GetData() (*xatuethv1.ForkChoice, error) {
 	return xatuethv1.NewForkChoiceFromGoEth2ClientV1(f.snapshot.Event)
 }
 
-func (f *ForkChoice) GetAdditionalData(ctx context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {
+func (f *ForkChoice) GetAdditionalData(_ context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {
 	slot := f.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(f.snapshot.RequestSlot))
 	epoch := f.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(f.snapshot.RequestEpoch))
 
@@ -87,6 +91,7 @@ func (f *ForkChoice) GetAdditionalData(ctx context.Context) *xatu.ClientMeta_Add
 		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestedAtSlotStartDiffMs: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
 			RequestDurationMs:          uint64(f.snapshot.RequestDuration.Milliseconds()),
+			Timestamp:                  timestamppb.New(f.snapshot.RequestAt),
 		},
 	}
 

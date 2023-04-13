@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -17,6 +18,7 @@ type ForkChoiceReOrg struct {
 
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
+	id         uuid.UUID
 }
 
 type ForkChoiceReOrgSnapshot struct {
@@ -31,6 +33,7 @@ func NewForkChoiceReOrg(log logrus.FieldLogger, snapshot *ForkChoiceReOrgSnapsho
 		snapshot:   snapshot,
 		beacon:     beacon,
 		clientMeta: clientMeta,
+		id:         uuid.New(),
 	}
 }
 
@@ -84,6 +87,7 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG,
 			DateTime: timestamppb.New(f.snapshot.ReOrgEventAt),
+			Id:       f.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: f.clientMeta,

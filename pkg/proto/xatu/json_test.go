@@ -45,6 +45,24 @@ func TestDecoratedEvent_UnmarshalJSON(t *testing.T) {
 		assert.ErrorContains(t, err, "invalid value for enum type: \"INVALID_EVENT_NAME\"")
 	})
 
+	t.Run("UnknownKey", func(t *testing.T) {
+		d := []byte(`{
+					"event": {
+							"name": "BEACON_API_ETH_V1_EVENTS_BLOCK"
+					},
+					"will_never_be_a_json_key": {},
+					"meta": {}
+			}`)
+
+		m := new(DecoratedEvent)
+
+		err := m.UnmarshalJSON(d)
+
+		if err != nil {
+			t.Fatal("Did not expect an error")
+		}
+	})
+
 	// Note: If this test is failing it means that a new event has been added to the Event enum.
 	// 		 In this case, the new event will need to be added to the switch statement in the
 	// 		 DecoratedEvent.UnmarshalJSON() method.

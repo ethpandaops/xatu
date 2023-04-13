@@ -269,7 +269,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
-		s.beacon.Node().OnVoluntaryExit(ctx, func(ctx context.Context, voluntaryExit *phase0.VoluntaryExit) error {
+		s.beacon.Node().OnVoluntaryExit(ctx, func(ctx context.Context, voluntaryExit *phase0.SignedVoluntaryExit) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)
@@ -277,7 +277,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
+			event := v1.NewEventsVoluntaryExit(s.log, voluntaryExit.Message, now, s.beacon, s.duplicateCache.BeaconETHV1EventsVoluntaryExit, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {

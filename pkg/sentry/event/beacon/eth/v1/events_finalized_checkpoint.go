@@ -9,6 +9,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ type EventsFinalizedCheckpoint struct {
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
+	id             uuid.UUID
 }
 
 func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *eth2v1.FinalizedCheckpointEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsFinalizedCheckpoint {
@@ -34,6 +36,7 @@ func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *eth2v1.Finalize
 		beacon:         beacon,
 		duplicateCache: duplicateCache,
 		clientMeta:     clientMeta,
+		id:             uuid.New(),
 	}
 }
 
@@ -42,6 +45,7 @@ func (e *EventsFinalizedCheckpoint) Decorate(ctx context.Context) (*xatu.Decorat
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
 			DateTime: timestamppb.New(e.now),
+			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
@@ -91,7 +95,7 @@ func (e *EventsFinalizedCheckpoint) ShouldIgnore(ctx context.Context) (bool, err
 	return false, nil
 }
 
-func (e *EventsFinalizedCheckpoint) getAdditionalData(ctx context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData, error) {
+func (e *EventsFinalizedCheckpoint) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{}
 
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Epoch))

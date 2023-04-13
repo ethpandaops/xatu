@@ -9,6 +9,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ type EventsChainReorg struct {
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
+	id             uuid.UUID
 }
 
 func NewEventsChainReorg(log logrus.FieldLogger, event *eth2v1.ChainReorgEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsChainReorg {
@@ -34,6 +36,7 @@ func NewEventsChainReorg(log logrus.FieldLogger, event *eth2v1.ChainReorgEvent, 
 		beacon:         beacon,
 		duplicateCache: duplicateCache,
 		clientMeta:     clientMeta,
+		id:             uuid.New(),
 	}
 }
 
@@ -42,6 +45,7 @@ func (e *EventsChainReorg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, 
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG,
 			DateTime: timestamppb.New(e.now),
+			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
@@ -95,7 +99,7 @@ func (e *EventsChainReorg) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *EventsChainReorg) getAdditionalData(ctx context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsChainReorgData, error) {
+func (e *EventsChainReorg) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsChainReorgData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsChainReorgData{}
 
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))

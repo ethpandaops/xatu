@@ -9,6 +9,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/google/uuid"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ type EventsAttestation struct {
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
+	id             uuid.UUID
 }
 
 func NewEventsAttestation(log logrus.FieldLogger, event *phase0.Attestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsAttestation {
@@ -34,6 +36,7 @@ func NewEventsAttestation(log logrus.FieldLogger, event *phase0.Attestation, now
 		beacon:         beacon,
 		duplicateCache: duplicateCache,
 		clientMeta:     clientMeta,
+		id:             uuid.New(),
 	}
 }
 
@@ -42,6 +45,7 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
 			DateTime: timestamppb.New(e.now),
+			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
@@ -103,7 +107,7 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *EventsAttestation) getAdditionalData(ctx context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationData, error) {
+func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsAttestationData{}
 
 	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Data.Slot))

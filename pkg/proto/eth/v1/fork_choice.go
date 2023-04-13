@@ -64,7 +64,7 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 
 	err = json.Unmarshal([]byte(f.ExtraData), &extraData)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal extra_data")
+		return nil, errors.Wrap(err, "failed to marshal extra_data.")
 	}
 
 	return &eth2v1.ForkChoiceNode{

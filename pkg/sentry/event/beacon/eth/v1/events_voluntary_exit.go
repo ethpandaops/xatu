@@ -48,9 +48,15 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsVoluntaryExit{
 			EthV1EventsVoluntaryExit: &xatuethv1.EventVoluntaryExit{
-				Epoch:          uint64(e.event.Message.Epoch),
-				ValidatorIndex: uint64(e.event.Message.ValidatorIndex),
-				Signature:      e.event.Signature.String(),
+				Epoch:          uint64(e.event.Message.Epoch),          // Deprecated: Use message.epoch instead.
+				ValidatorIndex: uint64(e.event.Message.ValidatorIndex), // Deprecated: Use message.validator_index instead.
+
+				Signature: e.event.Signature.String(),
+
+				Message: &xatuethv1.EventVoluntaryExitMessage{
+					Epoch:          uint64(e.event.Message.Epoch),
+					ValidatorIndex: uint64(e.event.Message.ValidatorIndex),
+				},
 			},
 		},
 	}

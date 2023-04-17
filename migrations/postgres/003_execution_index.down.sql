@@ -1,0 +1,10 @@
+DROP INDEX node_record_eth2_idx;
+DROP INDEX node_record_consecutive_dial_attempts_idx;
+DROP INDEX node_record_last_connect_time_idx;
+DROP INDEX node_record_eth2_null_last_dial_time_idx;
+
+DROP INDEX node_record_execution_network_id_create_time_idx;
+DROP INDEX node_record_execution_network_id_fork_id_hash_create_time_idx;
+DROP INDEX node_record_execution_create_time_network_id_fork_id_hash_idx;
+
+DROP INDEX node_record_activity_update_time_client_id_idx;

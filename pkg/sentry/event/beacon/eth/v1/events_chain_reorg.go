@@ -51,15 +51,7 @@ func (e *EventsChainReorg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, 
 			Client: e.clientMeta,
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsChainReorg{
-			EthV1EventsChainReorg: &xatuethv1.EventChainReorg{
-				Slot:         uint64(e.event.Slot),
-				Epoch:        uint64(e.event.Epoch),
-				OldHeadBlock: xatuethv1.RootAsString(e.event.OldHeadBlock),
-				OldHeadState: xatuethv1.RootAsString(e.event.OldHeadState),
-				NewHeadBlock: xatuethv1.RootAsString(e.event.NewHeadBlock),
-				NewHeadState: xatuethv1.RootAsString(e.event.NewHeadState),
-				Depth:        e.event.Depth,
-			},
+			EthV1EventsChainReorg: xatuethv1.NewReorgEventFromGoEth2ClientEvent(e.event),
 		},
 	}
 

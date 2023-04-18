@@ -48,6 +48,7 @@ message Propagation {
 message DebugForkChoiceReorg {
   xatu.eth.v1.ForkChoice before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoice after = 2 [ json_name = "after" ];
+  xatu.eth.v1.EventChainReorg event = 3;
 }
 
 message ClientMeta {

@@ -69,6 +69,7 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 			RequestSlot:                beforeAdditional.Snapshot.RequestSlot,
 			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
 			RequestDurationMs:          beforeAdditional.Snapshot.RequestDurationMs,
+			Timestamp:                  beforeAdditional.Snapshot.Timestamp,
 		}
 	}
 
@@ -85,6 +86,7 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
 			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
 			RequestDurationMs:          afterAdditional.Snapshot.RequestDurationMs,
+			Timestamp:                  afterAdditional.Snapshot.Timestamp,
 		}
 	}
 

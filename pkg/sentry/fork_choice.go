@@ -7,6 +7,7 @@ import (
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/ethwallclock"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 )
 
@@ -55,6 +56,7 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 				Before:       nil, // May be nil
 				After:        after,
 				ReOrgEventAt: now,
+				Event:        xatuethv1.NewReorgEventFromGoEth2ClientEvent(chainReorg),
 			}
 
 			if validLatestForkChoice {

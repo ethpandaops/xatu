@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ type ForkChoiceReOrgSnapshot struct {
 	ReOrgEventAt time.Time
 	Before       *ForkChoice
 	After        *ForkChoice
+	Event        *xatuethv1.EventChainReorg
 }
 
 func NewForkChoiceReOrg(log logrus.FieldLogger, snapshot *ForkChoiceReOrgSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoiceReOrg {

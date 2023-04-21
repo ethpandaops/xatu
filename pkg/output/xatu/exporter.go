@@ -43,16 +43,21 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 
 	return ItemExporter{
 		config: config,
-		log:    log.WithField("output_name", name),
+		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
 		conn:   conn,
 		client: pb.NewEventIngesterClient(conn),
 	}, nil
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEvent) error {
-	e.log.WithField("events", len(items)).Debug("Sending batch of events to Xatu sink")
+	e.log.WithField("events", len(items)).Debug("Sending batch of events to xatu sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
+		e.log.
+			WithError(err).
+			WithField("num_events", len(items)).
+			Error("Failed to send events upstream")
+
 		return err
 	}
 

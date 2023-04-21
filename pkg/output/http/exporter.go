@@ -20,10 +20,10 @@ type ItemExporter struct {
 	client *http.Client
 }
 
-func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	return ItemExporter{
 		config: config,
-		log:    log,
+		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
 
 		client: &http.Client{
 			Timeout: config.ExportTimeout,
@@ -35,6 +35,11 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	e.log.WithField("events", len(items)).Debug("Sending batch of events to HTTP sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
+		e.log.
+			WithError(err).
+			WithField("num_events", len(items)).
+			Error("Failed to send events upstream")
+
 		return err
 	}
 

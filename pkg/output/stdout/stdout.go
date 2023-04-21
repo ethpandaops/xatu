@@ -28,7 +28,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		return nil, err
 	}
 
-	exporter, err := NewItemExporter(config, log)
+	exporter, err := NewItemExporter(name, config, log)
 	if err != nil {
 		return nil, err
 	}

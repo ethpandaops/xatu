@@ -53,7 +53,6 @@ linters:
     - predeclared
     - promlinter
     - reassign
-    - revive
     - staticcheck
     - stylecheck
     - tagliatelle

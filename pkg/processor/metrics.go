@@ -35,11 +35,19 @@ func NewMetrics(namespace, name string) (*Metrics, error) {
 		}, []string{"processor"}),
 	}
 
-	if err := prometheus.Register(m.itemsQueued); err != nil && err.Error() != "duplicate metrics collector registration attempted" {
+	dupMetricsCollectorError := "duplicate metrics collector registration attempted"
+
+	if err := prometheus.Register(m.itemsQueued); err != nil && err.Error() != dupMetricsCollectorError {
 		return nil, err
 	}
-	prometheus.Register(m.itemsDropped)
-	prometheus.Register(m.itemsExported)
+
+	if err := prometheus.Register(m.itemsDropped); err != nil && err.Error() != dupMetricsCollectorError {
+		return nil, err
+	}
+
+	if err := prometheus.Register(m.itemsExported); err != nil && err.Error() != dupMetricsCollectorError {
+		return nil, err
+	}
 
 	m.name = name
 

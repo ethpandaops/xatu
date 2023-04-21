@@ -284,6 +284,7 @@ func TestBatchItemProcessorForceFlushSucceeds(t *testing.T) {
 		wantNumItems:   2053,
 		wantBatchCount: 1,
 	}
+
 	ssp, err := createAndRegisterBatchSP(option.o, &te)
 	if err != nil {
 		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
@@ -328,6 +329,7 @@ func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
 		wantNumItems:   1000,
 		wantBatchCount: 1,
 	}
+
 	ssp, err := createAndRegisterBatchSP(option.o, &te)
 	if err != nil {
 		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)

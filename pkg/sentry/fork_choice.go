@@ -116,6 +116,8 @@ func (s *Sentry) scheduleForkChoiceFetchingAtSlotTime(ctx context.Context, at ti
 		WithField("proccer", "at_slot_time").
 		WithField("slot_time", offset.String())
 
+	logCtx.Debug("Scheduling debug fork choice fetching at slot time")
+
 	s.beacon.Metadata().Wallclock().OnSlotChanged(func(slot ethwallclock.Slot) {
 		time.Sleep(offset)
 

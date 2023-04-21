@@ -99,18 +99,12 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 		m.log.WithError(err).Warn("Failed to fetch genesis for refresh")
 	}
 
-	if m.Genesis != nil && m.Spec != nil {
+	if m.Genesis != nil && m.Spec != nil && m.wallclock == nil {
 		if newWallclock := ethwallclock.NewEthereumBeaconChain(m.Genesis.GenesisTime, m.Spec.SecondsPerSlot.AsDuration(), uint64(m.Spec.SlotsPerEpoch)); newWallclock != nil {
 			m.mu.Lock()
-			if m.wallclock != nil {
-				// delay stopping the old wallclock to allow for any in-flight requests to complete
-				go func(oldWallclock *ethwallclock.EthereumBeaconChain) {
-					time.Sleep(1 * time.Minute)
-					oldWallclock.Stop()
-				}(m.wallclock)
-			}
 
 			m.wallclock = newWallclock
+
 			m.mu.Unlock()
 		}
 	}

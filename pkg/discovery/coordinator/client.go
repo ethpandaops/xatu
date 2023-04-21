@@ -61,13 +61,17 @@ func New(config *Config, log logrus.FieldLogger) (*Client, error) {
 		return nil, err
 	}
 
-	proc := processor.NewBatchItemProcessor[string](exporter,
+	proc, err := processor.NewBatchItemProcessor[string](exporter,
+		xatu.ImplementationLower()+"_discovery_coordinator",
 		log,
 		processor.WithMaxQueueSize(config.MaxQueueSize),
 		processor.WithBatchTimeout(config.BatchTimeout),
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Client{
 		config: config,

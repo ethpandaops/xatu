@@ -84,6 +84,9 @@ type BatchItemProcessor[T any] struct {
 
 	queue   chan *T
 	dropped uint32
+	name    string
+
+	metrics *Metrics
 
 	batch      []*T
 	batchMutex sync.Mutex
@@ -97,7 +100,7 @@ type BatchItemProcessor[T any] struct {
 // item batches to the exporter with the supplied options.
 //
 // If the exporter is nil, the item processor will preform no action.
-func NewBatchItemProcessor[T any](exporter ItemExporter[T], log logrus.FieldLogger, options ...BatchItemProcessorOption) *BatchItemProcessor[T] {
+func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log logrus.FieldLogger, options ...BatchItemProcessorOption) (*BatchItemProcessor[T], error) {
 	maxQueueSize := DefaultMaxQueueSize
 	maxExportBatchSize := DefaultMaxExportBatchSize
 
@@ -119,14 +122,21 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], log logrus.FieldLogg
 		opt(&o)
 	}
 
+	metrics, err := NewMetrics("xatu", name)
+	if err != nil {
+		return nil, err
+	}
+
 	bvp := BatchItemProcessor[T]{
-		e:      exporter,
-		o:      o,
-		log:    log,
-		batch:  make([]*T, 0, o.MaxExportBatchSize),
-		timer:  time.NewTimer(o.BatchTimeout),
-		queue:  make(chan *T, o.MaxQueueSize),
-		stopCh: make(chan struct{}),
+		e:       exporter,
+		o:       o,
+		log:     log,
+		name:    name,
+		metrics: metrics,
+		batch:   make([]*T, 0, o.MaxExportBatchSize),
+		timer:   time.NewTimer(o.BatchTimeout),
+		queue:   make(chan *T, o.MaxQueueSize),
+		stopCh:  make(chan struct{}),
 	}
 
 	bvp.stopWait.Add(1)
@@ -137,7 +147,7 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], log logrus.FieldLogg
 		bvp.drainQueue()
 	}()
 
-	return &bvp
+	return &bvp, nil
 }
 
 // OnEnd method enqueues a item for later processing.
@@ -237,6 +247,8 @@ func WithExportTimeout(timeout time.Duration) BatchItemProcessorOption {
 
 // exportItems is a subroutine of processing and draining the queue.
 func (bvp *BatchItemProcessor[T]) exportItems(ctx context.Context) error {
+	bvp.metrics.SetItemsQueued(float64(len(bvp.queue)))
+
 	bvp.timer.Reset(bvp.o.BatchTimeout)
 
 	bvp.batchMutex.Lock()
@@ -250,12 +262,20 @@ func (bvp *BatchItemProcessor[T]) exportItems(ctx context.Context) error {
 	}
 
 	if l := len(bvp.batch); l > 0 {
+		countItemsToExport := len(bvp.batch)
+
 		bvp.log.WithFields(logrus.Fields{
-			"count":         len(bvp.batch),
+			"count":         countItemsToExport,
 			"total_dropped": atomic.LoadUint32(&bvp.dropped),
 		}).Debug("exporting items")
 
+		defer func() {
+			bvp.metrics.SetItemsDropped(float64(atomic.LoadUint32(&bvp.dropped)))
+		}()
+
 		err := bvp.e.ExportItems(ctx, bvp.batch)
+
+		bvp.metrics.IncItemsExportedBy(float64(countItemsToExport))
 
 		// A new batch is always created after exporting, even if the batch failed to be exported.
 		//

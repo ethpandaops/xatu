@@ -29,7 +29,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig) (Sink, error) {
+func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}
@@ -48,7 +48,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filt
 			return nil, err
 		}
 
-		return http.New(conf, log, &filterConfig)
+		return http.New(name, conf, log, &filterConfig)
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
@@ -62,7 +62,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filt
 			return nil, err
 		}
 
-		return stdout.New(conf, log, &filterConfig)
+		return stdout.New(name, conf, log, &filterConfig)
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
@@ -76,7 +76,7 @@ func NewSink(sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filt
 			return nil, err
 		}
 
-		return xatu.New(conf, log, &filterConfig)
+		return xatu.New(name, conf, log, &filterConfig)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

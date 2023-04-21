@@ -3,6 +3,7 @@ package xatu
 import (
 	"fmt"
 	"runtime"
+	"strings"
 )
 
 var (
@@ -21,4 +22,8 @@ func Short() string {
 
 func FullVWithGOOS() string {
 	return fmt.Sprintf("%s/%s", Full(), runtime.GOOS)
+}
+
+func ImplementationLower() string {
+	return strings.ToLower(Implementation)
 }

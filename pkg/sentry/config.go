@@ -61,7 +61,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
-		sink, err := output.NewSink(out.SinkType, out.Config, log, out.FilterConfig)
+		sink, err := output.NewSink(out.Name, out.SinkType, out.Config, log, out.FilterConfig)
 		if err != nil {
 			return nil, err
 		}

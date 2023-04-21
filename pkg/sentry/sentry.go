@@ -92,6 +92,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 	}, nil
 }
 
+//nolint:gocyclo // Needs refactoring
 func (s *Sentry) Start(ctx context.Context) error {
 	if err := s.ServeMetrics(ctx); err != nil {
 		return err

@@ -105,7 +105,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil, err
 	}
 
-	p.txProc = processor.NewBatchItemProcessor[TransactionHashItem](exporter,
+	p.txProc, err = processor.NewBatchItemProcessor[TransactionHashItem](exporter,
+		xatu.ImplementationLower()+"mimicry_execution",
 		p.log,
 		processor.WithMaxQueueSize(100000),
 		processor.WithBatchTimeout(1*time.Second),
@@ -116,6 +117,9 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		// max client message size.
 		processor.WithMaxExportBatchSize(50000),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		// setup client implementation and version info

@@ -84,7 +84,8 @@ func (t *testBatchExporter[T]) getBatchCount() int {
 }
 
 func TestNewBatchItemProcessorWithNilExporter(t *testing.T) {
-	bsp := NewBatchItemProcessor[TestItem](nil, nullLogger())
+	bsp, err := NewBatchItemProcessor[TestItem](nil, "processor", nullLogger())
+	require.NoError(t, err)
 
 	bsp.Write(&TestItem{
 		name: "test",
@@ -156,7 +157,10 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 	for _, option := range options {
 		t.Run(option.name, func(t *testing.T) {
 			te := testBatchExporter[TestItem]{}
-			ssp := createAndRegisterBatchSP(option.o, &te)
+			ssp, err := createAndRegisterBatchSP(option.o, &te)
+			if err != nil {
+				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
+			}
 			if ssp == nil {
 				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
 			}
@@ -202,13 +206,15 @@ func (e *stuckExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 
 func TestBatchItemProcessorExportTimeout(t *testing.T) {
 	exp := new(stuckExporter[TestItem])
-	bvp := NewBatchItemProcessor[TestItem](
+	bvp, err := NewBatchItemProcessor[TestItem](
 		exp,
+		"processor",
 		nullLogger(),
 		// Set a non-zero export timeout so a deadline is set.
 		WithExportTimeout(1*time.Microsecond),
 		WithBatchTimeout(1*time.Microsecond),
 	)
+	require.NoError(t, err)
 
 	bvp.Write(&TestItem{
 		name: "test",
@@ -221,15 +227,16 @@ func TestBatchItemProcessorExportTimeout(t *testing.T) {
 	}
 }
 
-func createAndRegisterBatchSP[T TestItem](options []BatchItemProcessorOption, te *testBatchExporter[T]) *BatchItemProcessor[T] {
-	return NewBatchItemProcessor[T](te, nullLogger(), options...)
+func createAndRegisterBatchSP[T TestItem](options []BatchItemProcessorOption, te *testBatchExporter[T]) (*BatchItemProcessor[T], error) {
+	return NewBatchItemProcessor[T](te, "processor", nullLogger(), options...)
 }
 
 func TestBatchItemProcessorShutdown(t *testing.T) {
 	var bp testBatchExporter[TestItem]
-	bvp := NewBatchItemProcessor[TestItem](&bp, nullLogger())
+	bvp, err := NewBatchItemProcessor[TestItem](&bp, "processor", nullLogger())
+	require.NoError(t, err)
 
-	err := bvp.Shutdown(context.Background())
+	err = bvp.Shutdown(context.Background())
 	if err != nil {
 		t.Error("Error shutting the BatchItemProcessor down\n")
 	}
@@ -247,7 +254,8 @@ func TestBatchItemProcessorShutdown(t *testing.T) {
 
 func TestBatchItemProcessorPostShutdown(t *testing.T) {
 	be := testBatchExporter[TestItem]{}
-	bsp := NewBatchItemProcessor[TestItem](&be, nullLogger(), WithMaxExportBatchSize(50))
+	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(50))
+	require.NoError(t, err)
 
 	for i := 0; i < 60; i++ {
 		bsp.Write(&TestItem{
@@ -276,7 +284,10 @@ func TestBatchItemProcessorForceFlushSucceeds(t *testing.T) {
 		wantNumItems:   2053,
 		wantBatchCount: 1,
 	}
-	ssp := createAndRegisterBatchSP(option.o, &te)
+	ssp, err := createAndRegisterBatchSP(option.o, &te)
+	if err != nil {
+		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
+	}
 
 	if ssp == nil {
 		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
@@ -290,7 +301,7 @@ func TestBatchItemProcessorForceFlushSucceeds(t *testing.T) {
 	}
 
 	// Force flush any held item batches
-	err := ssp.ForceFlush(context.Background())
+	err = ssp.ForceFlush(context.Background())
 
 	assertMaxItemDiff(t, te.len(), option.wantNumItems, 10)
 
@@ -317,7 +328,10 @@ func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
 		wantNumItems:   1000,
 		wantBatchCount: 1,
 	}
-	ssp := createAndRegisterBatchSP(option.o, &te)
+	ssp, err := createAndRegisterBatchSP(option.o, &te)
+	if err != nil {
+		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
+	}
 
 	if ssp == nil {
 		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
@@ -331,7 +345,7 @@ func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
 	}
 
 	// Force flush any held item batches
-	err := ssp.ForceFlush(context.Background())
+	err = ssp.ForceFlush(context.Background())
 	assert.Error(t, err)
 	assert.EqualError(t, err, "fail to export")
 
@@ -391,7 +405,11 @@ func TestBatchItemProcessorForceFlushTimeout(t *testing.T) {
 	defer cancel()
 	<-ctx.Done()
 
-	bsp := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, nullLogger())
+	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger())
+	if err != nil {
+		t.Fatalf("failed to create batch processor: %v", err)
+	}
+
 	if got, want := bsp.ForceFlush(ctx), context.DeadlineExceeded; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
 	}
@@ -402,7 +420,11 @@ func TestBatchItemProcessorForceFlushCancellation(t *testing.T) {
 	// Cancel the context
 	cancel()
 
-	bsp := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, nullLogger())
+	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger())
+	if err != nil {
+		t.Fatalf("failed to create batch processor: %v", err)
+	}
+
 	if got, want := bsp.ForceFlush(ctx), context.Canceled; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
 	}

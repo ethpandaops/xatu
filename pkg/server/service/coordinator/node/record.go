@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ethpandaops/xatu/pkg/processor"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/sirupsen/logrus"
@@ -31,13 +32,17 @@ func (r *Record) Start(ctx context.Context) error {
 		return err
 	}
 
-	r.proc = processor.NewBatchItemProcessor[node.Record](exporter,
+	r.proc, err = processor.NewBatchItemProcessor[node.Record](exporter,
+		xatu.ImplementationLower()+"_coordinator_node_record",
 		r.log,
 		processor.WithMaxQueueSize(r.config.MaxQueueSize),
 		processor.WithBatchTimeout(r.config.BatchTimeout),
 		processor.WithExportTimeout(r.config.ExportTimeout),
 		processor.WithMaxExportBatchSize(r.config.MaxExportBatchSize),
 	)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

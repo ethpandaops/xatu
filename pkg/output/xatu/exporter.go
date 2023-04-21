@@ -22,7 +22,7 @@ type ItemExporter struct {
 	conn   *grpc.ClientConn
 }
 
-func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	var opts []grpc.DialOption
 
 	if config.TLS {
@@ -43,7 +43,7 @@ func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, erro
 
 	return ItemExporter{
 		config: config,
-		log:    log,
+		log:    log.WithField("output_name", name),
 		conn:   conn,
 		client: pb.NewEventIngesterClient(conn),
 	}, nil

@@ -12,13 +12,14 @@ import (
 const SinkType = "xatu"
 
 type Xatu struct {
+	name   string
 	config *Config
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 	filter xatu.EventFilter
 }
 
-func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*Xatu, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -27,7 +28,7 @@ func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterC
 		return nil, err
 	}
 
-	exporter, err := NewItemExporter(config, log)
+	exporter, err := NewItemExporter(name, config, log)
 	if err != nil {
 		return nil, err
 	}
@@ -37,15 +38,20 @@ func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterC
 		return nil, err
 	}
 
-	proc := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter,
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter,
+		xatu.ImplementationLower()+"_output_"+SinkType+"_"+name,
 		log,
 		processor.WithMaxQueueSize(config.MaxQueueSize),
 		processor.WithBatchTimeout(config.BatchTimeout),
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Xatu{
+		name:   name,
 		config: config,
 		log:    log,
 		proc:   proc,

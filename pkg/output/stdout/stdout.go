@@ -12,13 +12,14 @@ import (
 const SinkType = "stdout"
 
 type StdOut struct {
+	name   string
 	config *Config
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 	filter xatu.EventFilter
 }
 
-func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*StdOut, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*StdOut, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -37,9 +38,13 @@ func New(config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterC
 		return nil, err
 	}
 
-	proc := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter, log)
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter, xatu.ImplementationLower()+"_output_"+SinkType+"_"+name, log)
+	if err != nil {
+		return nil, err
+	}
 
 	return &StdOut{
+		name:   name,
 		config: config,
 		log:    log,
 		proc:   proc,

@@ -25,6 +25,7 @@ type BeaconBlock struct {
 
 	now time.Time
 
+	blockRoot      string
 	event          *spec.VersionedSignedBeaconBlock
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
@@ -32,10 +33,11 @@ type BeaconBlock struct {
 	id             uuid.UUID
 }
 
-func NewBeaconBlock(log logrus.FieldLogger, event *spec.VersionedSignedBeaconBlock, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlock {
+func NewBeaconBlock(log logrus.FieldLogger, blockRoot string, event *spec.VersionedSignedBeaconBlock, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlock {
 	return &BeaconBlock{
 		log:            log.WithField("event", "BEACON_API_ETH_V2_BEACON_BLOCK"),
 		now:            now,
+		blockRoot:      blockRoot,
 		event:          event,
 		beacon:         beacon,
 		duplicateCache: duplicateCache,
@@ -526,6 +528,8 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	}
 
 	extra.Version = e.event.Version.String()
+
+	extra.BlockRoot = e.blockRoot
 
 	return extra, nil
 }

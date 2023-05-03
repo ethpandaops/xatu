@@ -187,23 +187,25 @@ message ClientMeta {
   }
 
   message ForkChoiceSnapshot {
-    // RequestEpoch contains the wall clock epoch for when the fork choice was requested.
+    // RequestEpoch contains the wall clock epoch for when the fork choice was
+    // requested.
     Epoch request_epoch = 1 [ json_name = "request_epoch" ];
 
-    // RequestSlot contains the wall clock slot for when the fork choice was requested.
+    // RequestSlot contains the wall clock slot for when the fork choice was
+    // requested.
     Slot request_slot = 2 [ json_name = "request_slot" ];
 
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).
-    uint64 requested_at_slot_start_diff_ms = 3 [ json_name = "requested_at_slot_start_diff_ms" ];
+    uint64 requested_at_slot_start_diff_ms = 3
+        [ json_name = "requested_at_slot_start_diff_ms" ];
 
     // RequestDurationMs is the duration of the fork choice snapshot request
     // (in milliseconds).
     uint64 request_duration_ms = 4 [ json_name = "request_duration_ms" ];
 
     // Timestamp is the timestamp of the fork choice snapshot.
-    google.protobuf.Timestamp timestamp = 5
-    [ json_name = "timestamp" ];
+    google.protobuf.Timestamp timestamp = 5 [ json_name = "timestamp" ];
   }
 
   message AdditionalEthV1DebugForkChoiceData {
@@ -253,37 +255,43 @@ message ClientMeta {
 
     // Version contains information about the version of the block.
     string version = 3;
+
+    // BlockRoot contains the block root of the beacon block.
+    string block_root = 4 [ json_name = "block_root" ];
   }
 
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
-    // AdditionalEthV1EventsAttestationData contains additional data about an eth v1
-    // attestation event.
+    // AdditionalEthV1EventsAttestationData contains additional data about an
+    // eth v1 attestation event.
     AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10
         [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsHeadData contains additional data about the eth v1 head
-    // event.
-    AdditionalEthV1EventsHeadData eth_v1_events_head = 11 [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsBlockData contains additional data about the eth v1 block
-    // event.
+    // AdditionalEthV1EventsHeadData contains additional data about the eth v1
+    // head event.
+    AdditionalEthV1EventsHeadData eth_v1_events_head = 11
+        [ json_name = "additional_data" ];
+    // AdditionalEthV1EventsBlockData contains additional data about the eth v1
+    // block event.
     AdditionalEthV1EventsBlockData eth_v1_events_block = 12
         [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsVoluntaryExitData contains additional data about the eth
-    // v1 voluntary exit event.
+    // AdditionalEthV1EventsVoluntaryExitData contains additional data about the
+    // eth v1 voluntary exit event.
     AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13
         [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsFinalizedCheckpointData contains additional data about the
-    // eth v1 finalized checkpoint event.
-    AdditionalEthV1EventsFinalizedCheckpointData eth_v1_events_finalized_checkpoint = 14
+    // AdditionalEthV1EventsFinalizedCheckpointData contains additional data
+    // about the eth v1 finalized checkpoint event.
+    AdditionalEthV1EventsFinalizedCheckpointData
+        eth_v1_events_finalized_checkpoint = 14
         [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsChainReorgData contains additional data about the eth v1
-    // chain reorg event.
+    // AdditionalEthV1EventsChainReorgData contains additional data about the
+    // eth v1 chain reorg event.
     AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15
         [ json_name = "additional_data" ];
-    // AdditionalEthV1EventsContributionAndProofData contains additional data about
-    // the eth v1 contribution and proof.
-    AdditionalEthV1EventsContributionAndProofData eth_v1_events_contribution_and_proof = 16
+    // AdditionalEthV1EventsContributionAndProofData contains additional data
+    // about the eth v1 contribution and proof.
+    AdditionalEthV1EventsContributionAndProofData
+        eth_v1_events_contribution_and_proof = 16
         [ json_name = "additional_data" ];
     // AdditionalMempoolTransactionData contains additional data about the
     // mempool transaction event.
@@ -296,11 +304,11 @@ message ClientMeta {
     // AdditionalEthV1DebugForkChoice contains additional data about the eth v1
     // debug fork choice event.
     AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19
-    [ json_name = "additional_data" ];
-    // AdditionalEthV1DebugForkChoiceReorg contains additional data about the eth v1
-    // debug fork choice reorg event.
+        [ json_name = "additional_data" ];
+    // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
+    // eth v1 debug fork choice reorg event.
     AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20
-    [ json_name = "additional_data" ];
+        [ json_name = "additional_data" ];
   }
 }
 
@@ -393,16 +401,18 @@ message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "data" ];
+    xatu.eth.v1.Attestation eth_v1_events_attestation = 3
+        [ json_name = "data" ];
     xatu.eth.v1.EventBlock eth_v1_events_block = 4 [ json_name = "data" ];
-    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5 [ json_name = "data" ];
+    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5
+        [ json_name = "data" ];
     xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6
         [ json_name = "data" ];
     xatu.eth.v1.EventHead eth_v1_events_head = 7 [ json_name = "data" ];
     xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8
         [ json_name = "data" ];
-    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9
-        [ json_name = "data" ];
+    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof =
+        9 [ json_name = "data" ];
     string mempool_transaction = 10 [ json_name = "data" ];
     xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "data" ];
     xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "data" ];

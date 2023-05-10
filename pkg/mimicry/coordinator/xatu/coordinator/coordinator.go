@@ -89,7 +89,6 @@ func (c *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, record
 	}
 
 	req := xatu.CoordinateExecutionNodeRecordsRequest{
-		NetworkIds:   c.config.NetworkIds,
 		ForkIdHashes: forkIDHashes,
 		NodeRecords:  records,
 		Limit:        c.config.MaxPeers,

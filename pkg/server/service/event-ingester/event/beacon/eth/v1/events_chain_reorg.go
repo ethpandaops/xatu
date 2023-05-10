@@ -13,14 +13,16 @@ const (
 )
 
 type EventsChainReorg struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log       logrus.FieldLogger
+	event     *xatu.DecoratedEvent
+	networkID uint64
 }
 
-func NewEventsChainReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsChainReorg {
+func NewEventsChainReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsChainReorg {
 	return &EventsChainReorg{
-		log:   log.WithField("event", EventsChainReorgType),
-		event: event,
+		log:       log.WithField("event", EventsChainReorgType),
+		event:     event,
+		networkID: networkID,
 	}
 }
 
@@ -29,7 +31,7 @@ func (b *EventsChainReorg) Type() string {
 }
 
 func (b *EventsChainReorg) Validate(ctx context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV1EventsChainReorg)
+	_, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV1EventsChainReorg)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}
@@ -38,5 +40,7 @@ func (b *EventsChainReorg) Validate(ctx context.Context) error {
 }
 
 func (b *EventsChainReorg) Filter(ctx context.Context) bool {
-	return false
+	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+
+	return networkID != b.networkID
 }

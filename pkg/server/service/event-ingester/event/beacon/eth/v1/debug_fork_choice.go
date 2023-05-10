@@ -13,14 +13,16 @@ const (
 )
 
 type DebugForkChoice struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log       logrus.FieldLogger
+	event     *xatu.DecoratedEvent
+	networkID uint64
 }
 
-func NewDebugForkChoice(log logrus.FieldLogger, event *xatu.DecoratedEvent) *DebugForkChoice {
+func NewDebugForkChoice(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *DebugForkChoice {
 	return &DebugForkChoice{
-		log:   log.WithField("event", DebugForkChoiceType),
-		event: event,
+		log:       log.WithField("event", DebugForkChoiceType),
+		event:     event,
+		networkID: networkID,
 	}
 }
 
@@ -29,7 +31,7 @@ func (b *DebugForkChoice) Type() string {
 }
 
 func (b *DebugForkChoice) Validate(_ context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV1ForkChoice)
+	_, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV1ForkChoice)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}
@@ -38,5 +40,7 @@ func (b *DebugForkChoice) Validate(_ context.Context) error {
 }
 
 func (b *DebugForkChoice) Filter(_ context.Context) bool {
-	return false
+	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+
+	return networkID != b.networkID
 }

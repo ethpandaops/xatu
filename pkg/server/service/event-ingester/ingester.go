@@ -26,11 +26,11 @@ type Ingester struct {
 	sinks []output.Sink
 }
 
-func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) (*Ingester, error) {
+func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, networkID uint64) (*Ingester, error) {
 	e := &Ingester{
 		log:     log.WithField("server/module", ServiceType),
 		config:  conf,
-		handler: NewHandler(log, clockDrift, geoipProvider, cache),
+		handler: NewHandler(log, clockDrift, geoipProvider, cache, networkID),
 	}
 
 	sinks, err := e.CreateSinks()

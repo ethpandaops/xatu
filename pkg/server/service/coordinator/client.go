@@ -26,13 +26,14 @@ type Client struct {
 	log         logrus.FieldLogger
 	config      *Config
 	persistence *persistence.Client
+	networkID   uint64
 
 	metrics *Metrics
 
 	nodeRecord *n.Record
 }
 
-func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client) (*Client, error) {
+func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client, networkID uint64) (*Client, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%s: persistence is required", ServiceType)
 	}
@@ -48,6 +49,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *per
 		log:         logger,
 		config:      conf,
 		persistence: p,
+		networkID:   networkID,
 		nodeRecord:  nodeRecord,
 		metrics:     NewMetrics("xatu_server_coordinator"),
 	}
@@ -126,11 +128,14 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 		return nil, fmt.Errorf("status is required")
 	}
 
+	if req.Status.NetworkId != c.networkID {
+		return nil, fmt.Errorf("invalid network id. expected %d, got %d", c.networkID, req.Status.NetworkId)
+	}
+
 	status := node.Execution{
 		Enr:             req.Status.NodeRecord,
 		Name:            req.Status.Name,
 		ProtocolVersion: fmt.Sprintf("%v", req.Status.ProtocolVersion),
-		NetworkID:       fmt.Sprintf("%v", req.Status.NetworkId),
 		TotalDifficulty: req.Status.TotalDifficulty,
 		Head:            req.Status.Head,
 		Genesis:         req.Status.Genesis,
@@ -154,7 +159,7 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 
 	defer func() {
 		// TODO(sam.calder-mason): Derive client id/name from the request jwt
-		c.metrics.AddExecutionNodeRecordStatusReceived(1, "unknown", result, status.NetworkID, fmt.Sprintf("0x%x", status.ForkIDHash))
+		c.metrics.AddExecutionNodeRecordStatusReceived(1, "unknown", result, fmt.Sprintf("0x%x", status.ForkIDHash))
 	}()
 
 	err := c.persistence.InsertNodeRecordExecution(ctx, &status)
@@ -217,7 +222,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	limit -= uint32(len(targetedNodes))
 
 	if limit > 0 {
-		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, int(limit))
+		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.ForkIdHashes, int(limit))
 		if err != nil {
 			return nil, err
 		}
@@ -249,7 +254,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 }
 
 func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
-	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
+	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.ForkIdHashes, 100)
 	if err != nil {
 		return nil, err
 	}

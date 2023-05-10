@@ -20,7 +20,6 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 		record.Name,
 		record.Capabilities,
 		record.ProtocolVersion,
-		record.NetworkID,
 		record.TotalDifficulty,
 		record.Head,
 		record.Genesis,
@@ -41,17 +40,8 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 	return err
 }
 
-func (c *Client) ListNodeRecordExecutions(ctx context.Context, networkIds []uint64, forkIDHashes [][]byte, limit int) ([]*node.Execution, error) {
+func (c *Client) ListNodeRecordExecutions(ctx context.Context, forkIDHashes [][]byte, limit int) ([]*node.Execution, error) {
 	sb := nodeRecordExecutionStruct.SelectFrom("node_record_execution")
-
-	if len(networkIds) > 0 {
-		nids := make([]interface{}, 0, len(networkIds))
-		for _, nid := range networkIds {
-			nids = append(nids, nid)
-		}
-
-		sb.Where(sb.In("network_id", nids...))
-	}
 
 	if len(forkIDHashes) > 0 {
 		fidhs := make([]interface{}, 0, len(forkIDHashes))

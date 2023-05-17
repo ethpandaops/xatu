@@ -18,7 +18,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "execution_node_record_statuses_received_total",
 			Help:      "Total number of execution node record statuses received",
-		}, []string{"sentry_id", "result", "network_id", "fork_id_hash"}),
+		}, []string{"sentry_id", "result", "fork_id_hash"}),
 	}
 
 	prometheus.MustRegister(m.nodeRecordsTotal)
@@ -31,6 +31,6 @@ func (m *Metrics) AddNodeRecordReceived(count int, sentryID string) {
 	m.nodeRecordsTotal.WithLabelValues(sentryID).Add(float64(count))
 }
 
-func (m *Metrics) AddExecutionNodeRecordStatusReceived(count int, sentryID, result, networkID, forkIDHash string) {
-	m.executionNodeRecordStatusesTotal.WithLabelValues(sentryID, result, networkID, forkIDHash).Add(float64(count))
+func (m *Metrics) AddExecutionNodeRecordStatusReceived(count int, sentryID, result, forkIDHash string) {
+	m.executionNodeRecordStatusesTotal.WithLabelValues(sentryID, result, forkIDHash).Add(float64(count))
 }

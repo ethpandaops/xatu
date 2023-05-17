@@ -131,7 +131,6 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 		}
 
 		req := xatu.GetDiscoveryNodeRecordRequest{
-			NetworkIds:   c.config.NetworkIds,
 			ForkIdHashes: forkIDHashes,
 		}
 

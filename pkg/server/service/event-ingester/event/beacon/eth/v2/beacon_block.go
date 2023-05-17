@@ -17,17 +17,19 @@ const (
 )
 
 type BeaconBlock struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log       logrus.FieldLogger
+	event     *xatu.DecoratedEvent
+	networkID uint64
 
 	cache store.Cache
 }
 
-func NewBeaconBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlock {
+func NewBeaconBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64, cache store.Cache) *BeaconBlock {
 	return &BeaconBlock{
-		log:   log.WithField("event", BeaconBlockType),
-		event: event,
-		cache: cache,
+		log:       log.WithField("event", BeaconBlockType),
+		event:     event,
+		networkID: networkID,
+		cache:     cache,
 	}
 }
 
@@ -36,7 +38,7 @@ func (b *BeaconBlock) Type() string {
 }
 
 func (b *BeaconBlock) Validate(ctx context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV2BeaconBlock)
+	_, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV2BeaconBlock)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}
@@ -45,14 +47,19 @@ func (b *BeaconBlock) Validate(ctx context.Context) error {
 }
 
 func (b *BeaconBlock) Filter(ctx context.Context) bool {
-	data, ok := b.event.Data.(*xatu.DecoratedEvent_EthV2BeaconBlock)
+	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+	if networkID != b.networkID {
+		return true
+	}
+
+	data, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV2BeaconBlock)
 	if !ok {
 		b.log.Error("failed to cast event data")
 
 		return true
 	}
 
-	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_EthV2BeaconBlock)
+	additionalData, ok := b.event.GetMeta().GetClient().GetAdditionalData().(*xatu.ClientMeta_EthV2BeaconBlock)
 	if !ok {
 		b.log.Error("failed to cast client additional data")
 

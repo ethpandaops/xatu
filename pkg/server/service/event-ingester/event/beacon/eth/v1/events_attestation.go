@@ -13,14 +13,16 @@ const (
 )
 
 type EventsAttestation struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log       logrus.FieldLogger
+	event     *xatu.DecoratedEvent
+	networkID uint64
 }
 
-func NewEventsAttestation(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsAttestation {
+func NewEventsAttestation(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsAttestation {
 	return &EventsAttestation{
-		log:   log.WithField("event", EventsAttestationType),
-		event: event,
+		log:       log.WithField("event", EventsAttestationType),
+		event:     event,
+		networkID: networkID,
 	}
 }
 
@@ -29,7 +31,7 @@ func (b *EventsAttestation) Type() string {
 }
 
 func (b *EventsAttestation) Validate(ctx context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV1EventsAttestation)
+	_, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV1EventsAttestation)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}
@@ -38,5 +40,7 @@ func (b *EventsAttestation) Validate(ctx context.Context) error {
 }
 
 func (b *EventsAttestation) Filter(ctx context.Context) bool {
-	return false
+	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+
+	return networkID != b.networkID
 }

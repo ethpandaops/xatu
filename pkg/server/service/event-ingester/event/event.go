@@ -36,34 +36,34 @@ type Event interface {
 	Filter(ctx context.Context) bool
 }
 
-func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) (Event, error) {
+func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache, networkID uint64) (Event, error) {
 	if eventType == TypeUnknown {
 		return nil, errors.New("event type is required")
 	}
 
 	switch eventType {
 	case TypeBeaconETHV1EventsBlock:
-		return v1.NewEventsBlock(log, event), nil
+		return v1.NewEventsBlock(log, event, networkID), nil
 	case TypeBeaconETHV1EventsChainReorg:
-		return v1.NewEventsChainReorg(log, event), nil
+		return v1.NewEventsChainReorg(log, event, networkID), nil
 	case TypeBeaconETHV1EventsFinalizedCheckpoint:
-		return v1.NewEventsFinalizedCheckpoint(log, event), nil
+		return v1.NewEventsFinalizedCheckpoint(log, event, networkID), nil
 	case TypeBeaconETHV1EventsHead:
-		return v1.NewEventsHead(log, event), nil
+		return v1.NewEventsHead(log, event, networkID), nil
 	case TypeBeaconETHV1EventsVoluntaryExit:
-		return v1.NewEventsVoluntaryExit(log, event), nil
+		return v1.NewEventsVoluntaryExit(log, event, networkID), nil
 	case TypeBeaconETHV1EventsAttestation:
-		return v1.NewEventsAttestation(log, event), nil
+		return v1.NewEventsAttestation(log, event, networkID), nil
 	case TypeBeaconETHV1EventsContributionAndProof:
-		return v1.NewEventsContributionAndProof(log, event), nil
+		return v1.NewEventsContributionAndProof(log, event, networkID), nil
 	case TypeMempoolTransaction:
-		return mempool.NewTransaction(log, event), nil
+		return mempool.NewTransaction(log, event, networkID), nil
 	case TypeBeaconETHV2BeaconBlock:
-		return v2.NewBeaconBlock(log, event, cache), nil
+		return v2.NewBeaconBlock(log, event, networkID, cache), nil
 	case TypeDebugForkChoice:
-		return v1.NewDebugForkChoice(log, event), nil
+		return v1.NewDebugForkChoice(log, event, networkID), nil
 	case TypeDebugForkChoiceReorg:
-		return v1.NewDebugForkChoiceReorg(log, event), nil
+		return v1.NewDebugForkChoiceReorg(log, event, networkID), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

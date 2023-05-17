@@ -13,14 +13,16 @@ const (
 )
 
 type DebugForkChoiceReorg struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log       logrus.FieldLogger
+	event     *xatu.DecoratedEvent
+	networkID uint64
 }
 
-func NewDebugForkChoiceReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent) *DebugForkChoiceReorg {
+func NewDebugForkChoiceReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *DebugForkChoiceReorg {
 	return &DebugForkChoiceReorg{
-		log:   log.WithField("event", DebugForkChoiceReorgType),
-		event: event,
+		log:       log.WithField("event", DebugForkChoiceReorgType),
+		event:     event,
+		networkID: networkID,
 	}
 }
 
@@ -29,7 +31,7 @@ func (b *DebugForkChoiceReorg) Type() string {
 }
 
 func (b *DebugForkChoiceReorg) Validate(_ context.Context) error {
-	event, ok := b.event.Data.(*xatu.DecoratedEvent_EthV1ForkChoiceReorg)
+	event, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV1ForkChoiceReorg)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}
@@ -42,5 +44,7 @@ func (b *DebugForkChoiceReorg) Validate(_ context.Context) error {
 }
 
 func (b *DebugForkChoiceReorg) Filter(_ context.Context) bool {
-	return false
+	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+
+	return networkID != b.networkID
 }

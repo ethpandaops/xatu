@@ -21,11 +21,11 @@ message CreateNodeRecordsRequest { repeated string node_records = 1; }
 
 message CreateNodeRecordsResponse {}
 
-message ListStalledExecutionNodeRecordsRequest {
-  int32 page_size = 1;
-}
+message ListStalledExecutionNodeRecordsRequest { int32 page_size = 1; }
 
-message ListStalledExecutionNodeRecordsResponse { repeated string node_records = 1; }
+message ListStalledExecutionNodeRecordsResponse {
+  repeated string node_records = 1;
+}
 
 message ExecutionNodeStatus {
   message Capability {
@@ -64,7 +64,6 @@ message CoordinatedNodeRecord {
 message CoordinateExecutionNodeRecordsRequest {
   repeated CoordinatedNodeRecord node_records = 1;
   uint32 limit = 2;
-  repeated uint64 network_ids = 3;
   repeated bytes fork_id_hashes = 4;
   string client_id = 5;
 }
@@ -74,11 +73,6 @@ message CoordinateExecutionNodeRecordsResponse {
   uint32 retry_delay = 2;
 }
 
-message GetDiscoveryNodeRecordRequest {
-  repeated uint64 network_ids = 1;
-  repeated bytes fork_id_hashes = 2;
-}
+message GetDiscoveryNodeRecordRequest { repeated bytes fork_id_hashes = 2; }
 
-message GetDiscoveryNodeRecordResponse {
-  string node_record = 1;
-}
+message GetDiscoveryNodeRecordResponse { string node_record = 1; }

@@ -13,16 +13,14 @@ const (
 )
 
 type EventsFinalizedCheckpoint struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsFinalizedCheckpoint {
+func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsFinalizedCheckpoint {
 	return &EventsFinalizedCheckpoint{
-		log:       log.WithField("event", EventsFinalizedCheckpointType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsFinalizedCheckpointType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsFinalizedCheckpoint) Validate(ctx context.Context) error {
 }
 
 func (b *EventsFinalizedCheckpoint) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

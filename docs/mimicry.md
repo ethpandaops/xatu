@@ -98,6 +98,7 @@ Output configuration to send mimicry events to a [Xatu server](./server.md).
 | outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
 | outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
 | outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+| outputs[].config.networkIds | array<string> |  | List of network ids to connect to (decimal format, eg. '1' for mainnet) |
 | outputs[].config.forkIdHashes | array<string> |  | List of [Fork ID hash](https://eips.ethereum.org/EIPS/eip-2124) to connect to (hex string) |
 | outputs[].config.maxPeers | int | `100` | Max number of peers to attempt to connect to simultaneously |
 
@@ -123,6 +124,7 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    networkIds: [1]
     forkIdHashes: [0xf0afd0e3]
     maxPeers: 100
 
@@ -157,6 +159,7 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    networkIds: [1]
     forkIdHashes: [0xf0afd0e3]
 
 outputs:
@@ -175,6 +178,7 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    networkIds: [1]
     forkIdHashes: [0xf0afd0e3]
 
 outputs:
@@ -204,6 +208,7 @@ coordinator:
   type: xatu
   config:
     address: localhost:8080
+    networkIds: [1]
     forkIdHashes: [0xf0afd0e3]
 
 outputs:

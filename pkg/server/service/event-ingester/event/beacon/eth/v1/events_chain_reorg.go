@@ -13,16 +13,14 @@ const (
 )
 
 type EventsChainReorg struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsChainReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsChainReorg {
+func NewEventsChainReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsChainReorg {
 	return &EventsChainReorg{
-		log:       log.WithField("event", EventsChainReorgType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsChainReorgType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsChainReorg) Validate(ctx context.Context) error {
 }
 
 func (b *EventsChainReorg) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

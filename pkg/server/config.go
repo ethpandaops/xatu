@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/ethpandaops/xatu/pkg/server/ethereum"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
@@ -30,9 +29,6 @@ type Config struct {
 
 	// Services is the list of services to run.
 	Services service.Config `yaml:"services"`
-
-	// Ethereum is the ethereum configuration.
-	Ethereum ethereum.Config `yaml:"ethereum"`
 }
 
 func (c *Config) Validate() error {
@@ -49,10 +45,6 @@ func (c *Config) Validate() error {
 	}
 
 	if err := c.GeoIP.Validate(); err != nil {
-		return err
-	}
-
-	if err := c.Ethereum.Validate(); err != nil {
 		return err
 	}
 

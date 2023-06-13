@@ -13,16 +13,14 @@ const (
 )
 
 type EventsBlock struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsBlock {
+func NewEventsBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsBlock {
 	return &EventsBlock{
-		log:       log.WithField("event", EventsBlockType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsBlockType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsBlock) Validate(ctx context.Context) error {
 }
 
 func (b *EventsBlock) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

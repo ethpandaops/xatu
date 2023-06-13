@@ -75,4 +75,5 @@ p2p:
   #   discV4: true
   #   discV5: true
   #   restart: 2m
+  #   networkIds: [1]
   #   forkIdHashes: [0xf0afd0e3]

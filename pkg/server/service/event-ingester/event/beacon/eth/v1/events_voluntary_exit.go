@@ -13,16 +13,14 @@ const (
 )
 
 type EventsVoluntaryExit struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsVoluntaryExit(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsVoluntaryExit {
+func NewEventsVoluntaryExit(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsVoluntaryExit {
 	return &EventsVoluntaryExit{
-		log:       log.WithField("event", EventsVoluntaryExitType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsVoluntaryExitType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsVoluntaryExit) Validate(ctx context.Context) error {
 }
 
 func (b *EventsVoluntaryExit) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

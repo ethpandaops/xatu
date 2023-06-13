@@ -77,7 +77,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		}
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, &conf.Ethereum, &clockDrift, p, c, g)
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, &clockDrift, p, c, g)
 	if err != nil {
 		return nil, err
 	}

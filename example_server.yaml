@@ -13,29 +13,6 @@ labels:
 #   pool.ntp.org - https://www.pool.ntp.org/zone/@
 ntpServer: time.google.com
 
-ethereum:
-  network:
-    name: "mainnet"
-    id: 1
-    spec:
-      secondsPerSlot: 12
-      slotsPerEpoch: 32
-      genesisTime: 1606824023
-
-    # name: "goerli"
-    # id: 5
-    # spec:
-    #   secondsPerSlot: 12
-    #   slotsPerEpoch: 32
-    #   genesisTime: 1616508000   
-
-    # name: "sepolia"
-    # id: 11155111
-    # spec:
-    #   secondsPerSlot: 12
-    #   slotsPerEpoch: 32
-    #   genesis_time: 1655733600
-
 persistence:
   enabled: false
   # driverName: postgres

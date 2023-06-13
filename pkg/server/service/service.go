@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/server/ethereum"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
@@ -30,7 +29,7 @@ const (
 	ServiceTypeCoordinator   Type = coordinator.ServiceType
 )
 
-func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, eth *ethereum.Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider) ([]GRPCService, error) {
+func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider) ([]GRPCService, error) {
 	services := []GRPCService{}
 
 	if cfg.EventIngester.Enabled {
@@ -38,7 +37,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := eventingester.NewIngester(ctx, log, &cfg.EventIngester, clockDrift, g, c, eth.Network.ID)
+		service, err := eventingester.NewIngester(ctx, log, &cfg.EventIngester, clockDrift, g, c)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +50,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p, eth.Network.ID)
+		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p)
 		if err != nil {
 			return nil, err
 		}

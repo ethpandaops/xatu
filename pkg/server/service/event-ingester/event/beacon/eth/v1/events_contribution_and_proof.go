@@ -13,16 +13,14 @@ const (
 )
 
 type EventsContributionAndProof struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsContributionAndProof(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsContributionAndProof {
+func NewEventsContributionAndProof(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsContributionAndProof {
 	return &EventsContributionAndProof{
-		log:       log.WithField("event", EventsContributionAndProofType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsContributionAndProofType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsContributionAndProof) Validate(ctx context.Context) error {
 }
 
 func (b *EventsContributionAndProof) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

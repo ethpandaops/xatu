@@ -57,11 +57,6 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | addr | string | `:8080` | The grpc address for [services](#services) |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| ethereum.network.name | string | | Ethereum network name |
-| ethereum.network.id | int | | Ethereum network chain ID |
-| ethereum.network.spec.secondsPerSlot | int | | Seconds per slot |
-| ethereum.network.spec.slotsPerEpoch | int | | Slots per epoch |
-| ethereum.network.spec.genesisTime | int | | Genesis time |
 | persistence.enabled | bool | `false` | Enable persistence |
 | persistence.driverName | string | `postgres` | Persistence driver name (`postgres`) |
 | persistence.connectionString | string |  | Connection string for the persistence driver |
@@ -115,15 +110,6 @@ GeoIP configuration for MaxMind.
 Simple example that runs on default ports and enables the [Coordinator](./server.md#coordinator) and [Event Ingester](./server.md#event-ingester) services.
 
 ```yaml
-ethereum:
-  network:
-    name: "mainnet"
-    id: 1
-    spec:
-      secondsPerSlot: 12
-      slotsPerEpoch: 32
-      genesisTime: 1606824023
-
 services:
   coordinator:
     enabled: true
@@ -140,15 +126,6 @@ services:
 ### Only run the event exporter example
 
 ```yaml
-ethereum:
-  network:
-    name: "mainnet"
-    id: 1
-    spec:
-      secondsPerSlot: 12
-      slotsPerEpoch: 32
-      genesisTime: 1606824023
-
 services:
   eventIngester:
     enabled: true
@@ -173,15 +150,6 @@ labels:
   ethpandaops: rocks
 
 ntpServer: time.google.com
-
-ethereum:
-  network:
-    name: "mainnet"
-    id: 1
-    spec:
-      secondsPerSlot: 12
-      slotsPerEpoch: 32
-      genesisTime: 1606824023
 
 persistence:
   enabled: true

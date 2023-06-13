@@ -42,10 +42,15 @@ func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 	return err
 }
 
-func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, forkIDHashes [][]byte, limit int) ([]*string, error) {
+func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkIDHashes [][]byte, limit int) ([]*string, error) {
 	inr := make([]interface{}, 0, len(ignoredNodeRecords))
 	for _, enr := range ignoredNodeRecords {
 		inr = append(inr, enr)
+	}
+
+	nids := make([]interface{}, 0, len(networkIds))
+	for _, nid := range networkIds {
+		nids = append(nids, nid)
 	}
 
 	fidhs := make([]interface{}, 0, len(forkIDHashes))
@@ -91,6 +96,10 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 
 	if len(inr) > 0 {
 		where = append(where, sb.NotIn("nre.enr", inr...))
+	}
+
+	if len(nids) > 0 {
+		where = append(where, sb.In("nre.network_id", nids...))
 	}
 
 	if len(fidhs) > 0 {

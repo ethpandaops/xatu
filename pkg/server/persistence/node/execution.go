@@ -15,6 +15,8 @@ type Execution struct {
 	Capabilities string `json:"capabilities" db:"capabilities" fieldopt:"omitempty"`
 	// ProtocolVersion is the protocol version of the node.
 	ProtocolVersion string `json:"protocolVersion" db:"protocol_version" fieldopt:"omitempty"`
+	// NetworkId is the network id of the node.
+	NetworkID string `json:"networkId" db:"network_id" fieldopt:"omitempty"`
 	// TD is the total difficulty of the node.
 	TotalDifficulty string `json:"totalDifficulty" db:"total_difficulty" fieldopt:"omitempty"`
 	// Head is the head of the node.

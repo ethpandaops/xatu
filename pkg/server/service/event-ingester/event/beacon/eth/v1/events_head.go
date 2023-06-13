@@ -13,16 +13,14 @@ const (
 )
 
 type EventsHead struct {
-	log       logrus.FieldLogger
-	event     *xatu.DecoratedEvent
-	networkID uint64
+	log   logrus.FieldLogger
+	event *xatu.DecoratedEvent
 }
 
-func NewEventsHead(log logrus.FieldLogger, event *xatu.DecoratedEvent, networkID uint64) *EventsHead {
+func NewEventsHead(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsHead {
 	return &EventsHead{
-		log:       log.WithField("event", EventsHeadType),
-		event:     event,
-		networkID: networkID,
+		log:   log.WithField("event", EventsHeadType),
+		event: event,
 	}
 }
 
@@ -40,7 +38,5 @@ func (b *EventsHead) Validate(ctx context.Context) error {
 }
 
 func (b *EventsHead) Filter(ctx context.Context) bool {
-	networkID := b.event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-
-	return networkID != b.networkID
+	return false
 }

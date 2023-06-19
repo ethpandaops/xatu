@@ -20,7 +20,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/huandu/go-sqlbuilder v1.21.0
 	github.com/lib/pq v1.10.9
-	github.com/libp2p/go-libp2p v0.27.3
+	github.com/libp2p/go-libp2p v6.0.23+incompatible
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oschwald/maxminddb-golang v1.10.0
 	github.com/pkg/errors v0.9.1

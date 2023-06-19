@@ -5,7 +5,7 @@ go 1.19
 replace github.com/attestantio/go-eth2-client v0.16.3 => github.com/samcm/go-eth2-client v0.15.12
 
 require (
-	github.com/attestantio/go-eth2-client v0.16.3
+	github.com/attestantio/go-eth2-client v1.15.2
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/beevik/ntp v1.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1

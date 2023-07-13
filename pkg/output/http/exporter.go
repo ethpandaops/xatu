@@ -21,12 +21,18 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	if !config.KeepAlive {
+		t.DisableKeepAlives = true
+	}
+
 	return ItemExporter{
 		config: config,
 		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
 
 		client: &http.Client{
-			Timeout: config.ExportTimeout,
+			Transport: t,
+			Timeout:   config.ExportTimeout,
 		},
 	}, nil
 }

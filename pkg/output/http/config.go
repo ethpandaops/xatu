@@ -13,6 +13,7 @@ type Config struct {
 	ExportTimeout      time.Duration       `yaml:"exportTimeout" default:"30s"`
 	MaxExportBatchSize int                 `yaml:"maxExportBatchSize" default:"512"`
 	Compression        CompressionStrategy `yaml:"compression" default:"none"`
+	KeepAlive          bool                `yaml:"keepAlive" default:"true"`
 }
 
 func (c *Config) Validate() error {

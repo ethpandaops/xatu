@@ -155,22 +155,21 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 			e.event.Data.Index,
 			position,
 		)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			extra.AttestingValidator = &xatu.AttestingValidator{
+				CommiteeIndex: position,
+				Index:         uint64(validatorIndex),
+			}
+
+			e.log.
+				WithField("position", position).
+				WithField("validator_index", validatorIndex).
+				WithField("slot", e.event.Data.Slot).
+				WithField("committee_index", e.event.Data.Index).
+				WithField("epoch", epoch.Number()).
+				Debug("Got unaagregated attestation")
 		}
 
-		extra.AttestingValidator = &xatu.AttestingValidator{
-			CommiteeIndex: position,
-			Index:         uint64(validatorIndex),
-		}
-
-		e.log.
-			WithField("position", position).
-			WithField("validator_index", validatorIndex).
-			WithField("slot", e.event.Data.Slot).
-			WithField("committee_index", e.event.Data.Index).
-			WithField("epoch", epoch.Number()).
-			Debug("Got unaagregated attestation")
 	}
 
 	return extra, nil

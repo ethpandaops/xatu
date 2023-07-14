@@ -4,8 +4,6 @@ go 1.19
 
 replace github.com/attestantio/go-eth2-client v0.16.3 => github.com/samcm/go-eth2-client v0.15.12
 
-replace github.com/ethpandaops/beacon => ../beacon
-
 require (
 	github.com/attestantio/go-eth2-client v0.16.3
 	github.com/avast/retry-go/v4 v4.3.4
@@ -14,7 +12,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/ethpandaops/beacon v0.23.0
+	github.com/ethpandaops/beacon v0.26.0
 	github.com/ethpandaops/ethcore v0.0.0-20230619033127-81a2acd3124c
 	github.com/ethpandaops/ethwallclock v0.3.0
 	github.com/go-co-op/gocron v1.27.1

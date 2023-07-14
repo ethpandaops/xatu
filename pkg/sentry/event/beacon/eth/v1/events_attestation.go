@@ -169,7 +169,6 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 				WithField("epoch", epoch.Number()).
 				Debug("Got unaagregated attestation")
 		}
-
 	}
 
 	return extra, nil

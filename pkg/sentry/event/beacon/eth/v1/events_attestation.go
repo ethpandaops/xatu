@@ -157,8 +157,8 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		)
 		if err == nil {
 			extra.AttestingValidator = &xatu.AttestingValidator{
-				CommiteeIndex: position,
-				Index:         uint64(validatorIndex),
+				CommitteeIndex: position,
+				Index:          uint64(validatorIndex),
 			}
 
 			e.log.

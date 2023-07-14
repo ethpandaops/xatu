@@ -147,8 +147,30 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 	// If the attestation is unaggreated, we can append the validator position within the committee
 	if e.event.AggregationBits.Count() == 1 {
-		e.log.WithField("position", e.event.AggregationBits.BitIndices()[0]).Info("Got unaagregated attestation")
-		extra.ValidatorPosition = uint64(e.event.AggregationBits.BitIndices()[0])
+		position := uint64(e.event.AggregationBits.BitIndices()[0])
+
+		validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
+			phase0.Epoch(epoch.Number()),
+			e.event.Data.Slot,
+			e.event.Data.Index,
+			position,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		extra.AttestingValidator = &xatu.AttestingValidator{
+			CommiteeIndex: position,
+			Index:         uint64(validatorIndex),
+		}
+
+		e.log.
+			WithField("position", position).
+			WithField("validator_index", validatorIndex).
+			WithField("slot", e.event.Data.Slot).
+			WithField("committee_index", e.event.Data.Index).
+			WithField("epoch", epoch.Number()).
+			Debug("Got unaagregated attestation")
 	}
 
 	return extra, nil

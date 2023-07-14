@@ -45,6 +45,13 @@ message Propagation {
   uint64 slot_start_diff = 3 [ json_name = "slot_start_diff" ];
 }
 
+message AttestingValidator {
+  // CommiteeIndex is the position of the validator within the committee.
+  uint64 commitee_index = 1 [ json_name = "commitee_index" ];
+  // Index is the index of the validator in the beacon chain.
+  uint64 index = 2; 
+}
+
 message DebugForkChoiceReorg {
   xatu.eth.v1.ForkChoice before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoice after = 2 [ json_name = "after" ];
@@ -125,9 +132,9 @@ message ClientMeta {
     // attestation.
     Propagation propagation = 5;
 
-    // ValidatorPosition is the position of the validator in the committee.
+    // AttestingValidator contains data about the validator that created the attestation.
     // Note: only available for unaggregated attestations.
-    uint64 validator_position = 6 [ json_name = "validator_position" ];
+    AttestingValidator attesting_validator = 6 [ json_name = "attesting_validator" ];
   }
 
   message AdditionalEthV1EventsHeadData {

@@ -4,6 +4,8 @@ go 1.19
 
 replace github.com/attestantio/go-eth2-client v0.16.3 => github.com/samcm/go-eth2-client v0.15.12
 
+replace github.com/ethpandaops/beacon => ../beacon
+
 require (
 	github.com/attestantio/go-eth2-client v0.16.3
 	github.com/avast/retry-go/v4 v4.3.4

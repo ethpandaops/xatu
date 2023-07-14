@@ -17,6 +17,7 @@ type BeaconNode struct {
 
 	beacon   beacon.Node
 	metadata *MetadataService
+	duties   *DutiesService
 
 	onReadyCallbacks []func(ctx context.Context) error
 	readyPublished   bool
@@ -41,11 +42,18 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		return nil, errors.Wrap(err, "failed to start metadata service")
 	}
 
+	duties := NewDutiesService(log, node, &metadata)
+
+	if err := duties.Start(ctx); err != nil {
+		return nil, errors.Wrap(err, "failed to start duties service")
+	}
+
 	return &BeaconNode{
 		config:   config,
 		log:      log.WithField("module", "sentry/ethereum/beacon"),
 		beacon:   node,
 		metadata: &metadata,
+		duties:   &duties,
 	}, nil
 }
 
@@ -72,6 +80,10 @@ func (b *BeaconNode) Node() beacon.Node {
 
 func (b *BeaconNode) Metadata() *MetadataService {
 	return b.metadata
+}
+
+func (b *BeaconNode) Duties() *DutiesService {
+	return b.duties
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {
@@ -118,6 +130,10 @@ func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
 
 	if err := b.metadata.Ready(); err != nil {
 		return errors.Wrap(err, "metadata service is not ready")
+	}
+
+	if err := b.duties.Ready(); err != nil {
+		return errors.Wrap(err, "duties service is not ready")
 	}
 
 	status := b.beacon.Status()

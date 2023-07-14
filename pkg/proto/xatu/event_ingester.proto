@@ -124,6 +124,10 @@ message ClientMeta {
     // Propagation contains information about the propagation of the
     // attestation.
     Propagation propagation = 5;
+
+    // ValidatorPosition is the position of the validator in the committee.
+    // Note: only available for unaggregated attestations.
+    uint64 validator_position = 6 [ json_name = "validator_position" ];
   }
 
   message AdditionalEthV1EventsHeadData {

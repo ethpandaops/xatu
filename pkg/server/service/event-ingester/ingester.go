@@ -54,6 +54,12 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 func (e *Ingester) Stop(ctx context.Context) error {
 	e.log.Info("stopping module")
 
+	for _, sink := range e.sinks {
+		if err := sink.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

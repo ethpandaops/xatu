@@ -61,7 +61,7 @@ func (h *StdOut) Start(ctx context.Context) error {
 }
 
 func (h *StdOut) Stop(ctx context.Context) error {
-	return nil
+	return h.proc.Shutdown(ctx)
 }
 
 func (h *StdOut) HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {

@@ -71,6 +71,8 @@ func (m *DutiesService) Start(ctx context.Context) error {
 
 	s.StartAsync()
 
+	m.attestationDuties.Start()
+
 	return nil
 }
 

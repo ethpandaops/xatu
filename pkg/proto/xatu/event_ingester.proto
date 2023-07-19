@@ -276,37 +276,37 @@ message ClientMeta {
   oneof AdditionalData {
     // AdditionalEthV1EventsAttestationData contains additional data about an
     // eth v1 attestation event.
-    AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10 [ json_name = "eth_v1_events_attestation" ];
+    AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION" ];
     // AdditionalEthV1EventsHeadData contains additional data about the eth v1
     // head event.
-    AdditionalEthV1EventsHeadData eth_v1_events_head = 11 [ json_name = "eth_v1_events_head" ];
+    AdditionalEthV1EventsHeadData eth_v1_events_head = 11 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD" ];
     // AdditionalEthV1EventsBlockData contains additional data about the eth v1
     // block event.
-    AdditionalEthV1EventsBlockData eth_v1_events_block = 12 [ json_name = "eth_v1_events_block" ];
+    AdditionalEthV1EventsBlockData eth_v1_events_block = 12 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK" ];
     // AdditionalEthV1EventsVoluntaryExitData contains additional data about the
     // eth v1 voluntary exit event.
-    AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13 [ json_name = "eth_v1_events_voluntary_exit" ];
+    AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13 [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT" ];
     // AdditionalEthV1EventsFinalizedCheckpointData contains additional data
     // about the eth v1 finalized checkpoint event.
-    AdditionalEthV1EventsFinalizedCheckpointData eth_v1_events_finalized_checkpoint = 14 [ json_name = "eth_v1_events_finalized_checkpoint" ];
+    AdditionalEthV1EventsFinalizedCheckpointData eth_v1_events_finalized_checkpoint = 14 [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT" ];
     // AdditionalEthV1EventsChainReorgData contains additional data about the
     // eth v1 chain reorg event.
-    AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15 [ json_name = "eth_v1_events_chain_reorg" ];
+    AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15 [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG" ];
     // AdditionalEthV1EventsContributionAndProofData contains additional data
     // about the eth v1 contribution and proof.
-    AdditionalEthV1EventsContributionAndProofData eth_v1_events_contribution_and_proof = 16 [ json_name = "eth_v1_events_contribution_and_proof" ];
+    AdditionalEthV1EventsContributionAndProofData eth_v1_events_contribution_and_proof = 16 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF" ];
     // AdditionalMempoolTransactionData contains additional data about the
     // mempool transaction event.
-    AdditionalMempoolTransactionData mempool_transaction = 17 [ json_name = "mempool_transaction" ];
+    AdditionalMempoolTransactionData mempool_transaction = 17 [ json_name = "MEMPOOL_TRANSACTION" ];
     // AdditionalEthV2BeaconBlockData contains additional data about the eth v2
     // beacon block event.
-    AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18 [ json_name = "eth_v2_beacon_block" ];
+    AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
     // AdditionalEthV1DebugForkChoice contains additional data about the eth v1
     // debug fork choice event.
-    AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19 [ json_name = "eth_v1_debug_fork_choice" ];
+    AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
-    AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "eth_v1_debug_fork_choice_reorg" ];
+    AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
   }
 }
 
@@ -399,16 +399,16 @@ message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "eth_v1_events_attestation" ];
-    xatu.eth.v1.EventBlock eth_v1_events_block = 4  [ json_name = "eth_v1_events_block" ];
-    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5  [ json_name = "eth_v1_events_chain_reorg" ];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6  [ json_name = "eth_v1_events_finalized_checkpoint" ];
-    xatu.eth.v1.EventHead eth_v1_events_head = 7  [ json_name = "eth_v1_events_head" ];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8  [ json_name = "eth_v1_events_voluntary_exit" ];
-    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9 [ json_name = "eth_v1_events_contribution_and_proof" ];
-    string mempool_transaction = 10 [ json_name = "mempool_transaction" ];
-    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "eth_v2_beacon_block" ];
-    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "eth_v1_fork_choice" ];
-    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "eth_v1_fork_choice_reorg" ];
+    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION" ];
+    xatu.eth.v1.EventBlock eth_v1_events_block = 4  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK" ];
+    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5  [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG" ];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6  [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT" ];
+    xatu.eth.v1.EventHead eth_v1_events_head = 7  [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD" ];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8  [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT" ];
+    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF" ];
+    string mempool_transaction = 10 [ json_name = "MEMPOOL_TRANSACTION" ];
+    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
+    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
+    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
   };
 }

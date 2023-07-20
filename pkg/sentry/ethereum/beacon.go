@@ -3,9 +3,11 @@ package ethereum
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
 	"github.com/go-co-op/gocron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -15,12 +17,12 @@ type BeaconNode struct {
 	config *Config
 	log    logrus.FieldLogger
 
-	beacon   beacon.Node
-	metadata *MetadataService
-	duties   *DutiesService
+	beacon beacon.Node
+
+	services []services.Service
 
 	onReadyCallbacks []func(ctx context.Context) error
-	readyPublished   bool
+	dutiesStarted    bool
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -36,61 +38,114 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		Addr: config.BeaconNodeAddress,
 	}, "xatu_sentry", opts)
 
-	metadata := NewMetadataService(log, node)
+	metadata := services.NewMetadataService(log, node)
+	duties := services.NewDutiesService(log, node, &metadata)
 
-	if err := metadata.Start(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to start metadata service")
-	}
-
-	duties := NewDutiesService(log, node, &metadata)
-
-	if err := duties.Start(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to start duties service")
+	svcs := []services.Service{
+		&metadata,
+		&duties,
 	}
 
 	return &BeaconNode{
-		config:   config,
-		log:      log.WithField("module", "sentry/ethereum/beacon"),
-		beacon:   node,
-		metadata: &metadata,
-		duties:   &duties,
+		config:        config,
+		log:           log.WithField("module", "sentry/ethereum/beacon"),
+		beacon:        node,
+		services:      svcs,
+		dutiesStarted: false,
 	}, nil
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
 	s := gocron.NewScheduler(time.Local)
 
-	// TODO(sam.calder-mason): Make this entirely event driven.
-	if _, err := s.Every("2s").Do(func() {
-		if err := b.checkForReadyPublish(ctx); err != nil {
-			b.log.WithError(err).Warn("failed to check for ready publish")
+	errs := make(chan error, 1)
+
+	go func() {
+		wg := sync.WaitGroup{}
+
+		for _, service := range b.services {
+			wg.Add(1)
+
+			service.OnReady(ctx, func(ctx context.Context) error {
+				b.log.WithField("service", service.Name()).Info("service is ready")
+
+				wg.Done()
+
+				return nil
+			})
+
+			b.log.WithField("service", service.Name()).Info("starting service")
+
+			if err := service.Start(ctx); err != nil {
+				errs <- fmt.Errorf("failed to start service: %w", err)
+			}
+
+			wg.Wait()
 		}
-	}); err != nil {
-		return err
-	}
+
+		b.log.Info("all services are ready")
+
+		for _, callback := range b.onReadyCallbacks {
+			if err := callback(ctx); err != nil {
+				errs <- fmt.Errorf("failed to run on ready callback: %w", err)
+			}
+		}
+	}()
 
 	s.StartAsync()
 
-	return b.beacon.Start(ctx)
+	if err := b.beacon.Start(ctx); err != nil {
+		return err
+	}
+
+	select {
+	case err := <-errs:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
 }
 
 func (b *BeaconNode) Node() beacon.Node {
 	return b.beacon
 }
 
-func (b *BeaconNode) Metadata() *MetadataService {
-	return b.metadata
+func (b *BeaconNode) getServiceByName(name services.Name) (services.Service, error) {
+	for _, service := range b.services {
+		if service.Name() == name {
+			return service, nil
+		}
+	}
+
+	return nil, errors.New("service not found")
 }
 
-func (b *BeaconNode) Duties() *DutiesService {
-	return b.duties
+func (b *BeaconNode) Metadata() *services.MetadataService {
+	service, err := b.getServiceByName("metadata")
+	if err != nil {
+		// This should never happen. If it does, good luck.
+		return nil
+	}
+
+	return service.(*services.MetadataService)
+}
+
+func (b *BeaconNode) Duties() *services.DutiesService {
+	service, err := b.getServiceByName("duties")
+	if err != nil {
+		// This should never happen. If it does, good luck.
+		return nil
+	}
+
+	return service.(*services.DutiesService)
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {
 	b.onReadyCallbacks = append(b.onReadyCallbacks, callback)
 }
 
-func (b *BeaconNode) Synced(_ context.Context) error {
+func (b *BeaconNode) Synced(ctx context.Context) error {
 	status := b.beacon.Status()
 	if status == nil {
 		return errors.New("missing beacon status")
@@ -105,7 +160,7 @@ func (b *BeaconNode) Synced(_ context.Context) error {
 		return errors.New("beacon node is not synced")
 	}
 
-	wallclock := b.metadata.Wallclock()
+	wallclock := b.Metadata().Wallclock()
 	if wallclock == nil {
 		return errors.New("missing wallclock")
 	}
@@ -116,47 +171,11 @@ func (b *BeaconNode) Synced(_ context.Context) error {
 		return fmt.Errorf("beacon node is too far behind head, head slot is %d, current slot is %d", syncState.HeadSlot, currentSlot.Number())
 	}
 
-	if !b.readyPublished {
-		return errors.New("internal beacon node is not ready")
-	}
-
-	return nil
-}
-
-func (b *BeaconNode) checkForReadyPublish(ctx context.Context) error {
-	if b.readyPublished {
-		return nil
-	}
-
-	if err := b.metadata.Ready(); err != nil {
-		return errors.Wrap(err, "metadata service is not ready")
-	}
-
-	if err := b.duties.Ready(); err != nil {
-		return errors.Wrap(err, "duties service is not ready")
-	}
-
-	status := b.beacon.Status()
-	if status == nil {
-		return errors.New("failed to get beacon node status")
-	}
-
-	syncState := status.SyncState()
-	if syncState == nil {
-		return errors.New("missing beacon node status sync state")
-	}
-
-	if syncState.SyncDistance > 3 {
-		return errors.New("beacon node is not synced")
-	}
-
-	for _, callback := range b.onReadyCallbacks {
-		if err := callback(ctx); err != nil {
-			b.log.WithError(err).Warn("failed to run on ready callback")
+	for _, service := range b.services {
+		if err := service.Ready(ctx); err != nil {
+			return errors.Wrapf(err, "service %s is not ready", service.Name())
 		}
 	}
-
-	b.readyPublished = true
 
 	return nil
 }

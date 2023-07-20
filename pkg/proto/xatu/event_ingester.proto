@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
+import "pkg/proto/eth/v1/committee.proto";
 import "pkg/proto/eth/v2/events.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
 
@@ -228,6 +229,10 @@ message ClientMeta {
     ForkChoiceSnapshot after = 2 [ json_name = "after" ];
   }
 
+  message AdditionalEthV1BeaconCommitteeData {
+    uint64 epoch = 1;
+  }
+
   message AdditionalMempoolTransactionData {
     // Hash is the transaction hash.
     string hash = 1 [ json_name = "hash" ];
@@ -307,6 +312,8 @@ message ClientMeta {
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
     AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
+    // AdditionalEthV1BeaconCommitteeData contains additional data about the beacon commitee
+    AdditionalEthV1BeaconCommitteeData eth_v1_beacon_commitee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
   }
 }
 
@@ -384,6 +391,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK = 9;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE = 10;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG = 11;
+    BEACON_API_ETH_V1_BEACON_COMMITTEE = 12;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -410,5 +418,6 @@ message DecoratedEvent {
     xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
     xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
     DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
-  };
+    xatu.eth.v1.Committee eth_v1_beacon_committee = 14 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+  }; 
 }

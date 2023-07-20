@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+// Committee is a set of validators that are assigned to a commitee for a given slot.
+message Committee {
+  uint64 index = 1;
+  uint64 slot = 2;
+  repeated uint64 validators = 3;
+}

@@ -1,4 +1,4 @@
-package ethereum
+package services
 
 import (
 	"context"
@@ -28,34 +28,45 @@ type MetadataService struct {
 
 	wallclock *ethwallclock.EthereumBeaconChain
 
+	onReadyCallbacks []func(context.Context) error
+
 	mu sync.Mutex
 }
 
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
 	return MetadataService{
-		beacon:  sbeacon,
-		log:     log.WithField("module", "sentry/ethereum/metadata"),
-		Network: &networks.Network{Name: networks.NetworkNameNone},
-		mu:      sync.Mutex{},
+		beacon:           sbeacon,
+		log:              log.WithField("module", "sentry/ethereum/metadata"),
+		Network:          &networks.Network{Name: networks.NetworkNameNone},
+		onReadyCallbacks: []func(context.Context) error{},
+		mu:               sync.Mutex{},
 	}
 }
 
 func (m *MetadataService) Start(ctx context.Context) error {
-	m.beacon.OnReady(ctx, func(ctx context.Context, event *beacon.ReadyEvent) error {
-		m.log.Info("Beacon node is ready")
-
+	go func() {
 		operation := func() error {
-			return m.RefreshAll(ctx)
+			if err := m.RefreshAll(ctx); err != nil {
+				return err
+			}
+
+			if err := m.Ready(ctx); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
 			m.log.WithError(err).Warn("Failed to refresh metadata")
-
-			return err
 		}
 
-		return nil
-	})
+		for _, cb := range m.onReadyCallbacks {
+			if err := cb(ctx); err != nil {
+				m.log.WithError(err).Warn("Failed to execute onReady callback")
+			}
+		}
+	}()
 
 	s := gocron.NewScheduler(time.Local)
 
@@ -70,7 +81,19 @@ func (m *MetadataService) Start(ctx context.Context) error {
 	return nil
 }
 
-func (m *MetadataService) Ready() error {
+func (m *MetadataService) Name() Name {
+	return "metadata"
+}
+
+func (m *MetadataService) Stop(ctx context.Context) error {
+	return nil
+}
+
+func (m *MetadataService) OnReady(ctx context.Context, cb func(context.Context) error) {
+	m.onReadyCallbacks = append(m.onReadyCallbacks, cb)
+}
+
+func (m *MetadataService) Ready(ctx context.Context) error {
 	if m.Genesis == nil {
 		return errors.New("genesis is not available")
 	}

@@ -33,6 +33,9 @@ type Config struct {
 
 	// ForkChoice configuration
 	ForkChoice *ForkChoiceConfig `yaml:"forkChoice" default:"{'enabled': false}"`
+
+	// BeaconCommittees configuration
+	BeaconCommittees *BeaconCommitteesConfig `yaml:"beaconCommittees" default:"{'enabled': false}"`
 }
 
 func (c *Config) Validate() error {
@@ -104,4 +107,8 @@ func (f *ForkChoiceConfig) Validate() error {
 	}
 
 	return nil
+}
+
+type BeaconCommitteesConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
 }

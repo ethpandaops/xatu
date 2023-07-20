@@ -1,4 +1,4 @@
-package ethereum
+package services
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/beacon/pkg/beacon"
-	"github.com/go-co-op/gocron"
+	"github.com/ethpandaops/ethwallclock"
 	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -19,23 +19,30 @@ type DutiesService struct {
 	beacon beacon.Node
 	log    logrus.FieldLogger
 
-	attestationDuties *ttlcache.Cache[phase0.Epoch, []*v1.BeaconCommittee]
+	beaconCommittees *ttlcache.Cache[phase0.Epoch, []*v1.BeaconCommittee]
+
+	onBeaconCommitteeSubscriptions []func(phase0.Epoch, []*v1.BeaconCommittee) error
 
 	mu sync.Mutex
 
 	metadata *MetadataService
 
 	bootstrapped bool
+
+	onReadyCallbacks []func(context.Context) error
 }
 
 func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *MetadataService) DutiesService {
 	return DutiesService{
 		beacon: sbeacon,
 		log:    log.WithField("module", "sentry/ethereum/duties"),
-		attestationDuties: ttlcache.New(
+		beaconCommittees: ttlcache.New(
 			ttlcache.WithTTL[phase0.Epoch, []*v1.BeaconCommittee](60 * time.Minute),
 		),
 		mu: sync.Mutex{},
+
+		onBeaconCommitteeSubscriptions: []func(phase0.Epoch, []*v1.BeaconCommittee) error{},
+		onReadyCallbacks:               []func(context.Context) error{},
 
 		metadata: metadata,
 
@@ -44,36 +51,57 @@ func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *Met
 }
 
 func (m *DutiesService) Start(ctx context.Context) error {
-	m.beacon.OnReady(ctx, func(ctx context.Context, event *beacon.ReadyEvent) error {
-		m.bootstrapped = true
-		m.log.Info("Beacon node is ready")
-
+	go func() {
 		operation := func() error {
-			return m.backFillEpochDuties(ctx)
+			if err := m.backFillEpochDuties(ctx); err != nil {
+				return err
+			}
+
+			if err := m.Ready(ctx); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch epoch duties")
-
-			return err
 		}
 
-		return nil
+		for _, fn := range m.onReadyCallbacks {
+			if err := fn(ctx); err != nil {
+				m.log.WithError(err).Error("Failed to fire on ready callback")
+			}
+		}
+	}()
+
+	m.beacon.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
+		if err := m.backFillEpochDuties(ctx); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch epoch duties")
+		}
 	})
 
-	s := gocron.NewScheduler(time.Local)
-
-	if _, err := s.Every("1m").Do(func() {
-		_ = m.backFillEpochDuties(ctx)
-	}); err != nil {
-		return err
-	}
-
-	s.StartAsync()
-
-	go m.attestationDuties.Start()
+	go m.beaconCommittees.Start()
 
 	return nil
+}
+
+func (m *DutiesService) Stop(ctx context.Context) error {
+	m.beaconCommittees.Stop()
+
+	return nil
+}
+
+func (m *DutiesService) OnBeaconCommittee(fn func(phase0.Epoch, []*v1.BeaconCommittee) error) {
+	m.onBeaconCommitteeSubscriptions = append(m.onBeaconCommitteeSubscriptions, fn)
+}
+
+func (m *DutiesService) OnReady(ctx context.Context, fn func(context.Context) error) {
+	m.onReadyCallbacks = append(m.onReadyCallbacks, fn)
+}
+
+func (m *DutiesService) Name() Name {
+	return "duties"
 }
 
 func (m *DutiesService) RequiredEpochDuties() []phase0.Epoch {
@@ -104,17 +132,9 @@ func (m *DutiesService) RequiredEpochDuties() []phase0.Epoch {
 	return epochs
 }
 
-func (m *DutiesService) Ready() error {
-	if !m.bootstrapped {
-		return fmt.Errorf("beacon node is not ready")
-	}
-
-	if err := m.metadata.Ready(); err != nil {
-		return fmt.Errorf("metadata service is not ready")
-	}
-
+func (m *DutiesService) Ready(ctx context.Context) error {
 	for _, epoch := range m.RequiredEpochDuties() {
-		if duties := m.attestationDuties.Get(epoch); duties == nil {
+		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			return fmt.Errorf("duties for epoch %d are not ready", epoch)
 		}
 	}
@@ -128,7 +148,7 @@ func (m *DutiesService) backFillEpochDuties(ctx context.Context) error {
 	}
 
 	for _, epoch := range m.RequiredEpochDuties() {
-		if duties := m.attestationDuties.Get(epoch); duties == nil {
+		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
 				return err
 			}
@@ -138,8 +158,16 @@ func (m *DutiesService) backFillEpochDuties(ctx context.Context) error {
 	return nil
 }
 
+func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, committees []*v1.BeaconCommittee) {
+	for _, fn := range m.onBeaconCommitteeSubscriptions {
+		if err := fn(epoch, committees); err != nil {
+			m.log.WithError(err).Error("Failed to fire on beacon committee subscription")
+		}
+	}
+}
+
 func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch) error {
-	if duties := m.attestationDuties.Get(epoch); duties != nil {
+	if duties := m.beaconCommittees.Get(epoch); duties != nil {
 		return nil
 	}
 
@@ -153,13 +181,15 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 		return err
 	}
 
-	m.attestationDuties.Set(epoch, committees, time.Minute*60)
+	m.beaconCommittees.Set(epoch, committees, time.Minute*60)
+
+	m.fireOnBeaconCommitteeSubscriptions(epoch, committees)
 
 	return nil
 }
 
 func (m *DutiesService) GetAttestationDuties(epoch phase0.Epoch) ([]*v1.BeaconCommittee, error) {
-	duties := m.attestationDuties.Get(epoch)
+	duties := m.beaconCommittees.Get(epoch)
 	if duties == nil {
 		return nil, fmt.Errorf("duties for epoch %d are not known", epoch)
 	}
@@ -168,7 +198,7 @@ func (m *DutiesService) GetAttestationDuties(epoch phase0.Epoch) ([]*v1.BeaconCo
 }
 
 func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
-	duties := m.attestationDuties.Get(epoch)
+	duties := m.beaconCommittees.Get(epoch)
 	if duties == nil {
 		return 0, fmt.Errorf("duties for epoch %d are not known", epoch)
 	}

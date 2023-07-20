@@ -119,18 +119,6 @@ func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch 
 		phase0.Epoch(epochNumber),
 	}
 
-	final := map[phase0.Epoch]struct{}{}
-
-	// Deduplicate in case the current epoch is below epoch 3.
-	for _, epoch := range epochs {
-		final[epoch] = struct{}{}
-	}
-
-	epochs = make([]phase0.Epoch, 0, len(final))
-	for epoch := range final {
-		epochs = append(epochs, epoch)
-	}
-
 	return epochs
 }
 

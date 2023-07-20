@@ -101,8 +101,19 @@ func (e *BeaconCommittee) ShouldIgnore(ctx context.Context) (bool, error) {
 }
 
 func (e *BeaconCommittee) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1BeaconCommitteeData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1BeaconCommitteeData{
-		Epoch: uint64(e.epoch),
+	extra := &xatu.ClientMeta_AdditionalEthV1BeaconCommitteeData{}
+
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.epoch))
+	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))
+
+	extra.Slot = &xatu.Slot{
+		Number:        slot.Number(),
+		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+	}
+
+	extra.Epoch = &xatu.Epoch{
+		Number:        epoch.Number(),
+		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
 	return extra, nil

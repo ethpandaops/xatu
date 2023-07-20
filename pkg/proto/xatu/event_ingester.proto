@@ -230,7 +230,11 @@ message ClientMeta {
   }
 
   message AdditionalEthV1BeaconCommitteeData {
-    uint64 epoch = 1;
+    // Epoch contains the epoch information for the beacon committee.
+    Epoch epoch = 1;
+
+    // Slot contains the slot information for the beacon commitee.
+    Slot slot = 2;
   }
 
   message AdditionalMempoolTransactionData {

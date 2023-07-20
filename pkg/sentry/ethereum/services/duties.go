@@ -75,7 +75,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		}
 	}()
 
-	m.beacon.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
+	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
 		if err := m.backFillEpochDuties(ctx); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch epoch duties")
 		}
@@ -105,7 +105,7 @@ func (m *DutiesService) Name() Name {
 }
 
 func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch {
-	now := m.beacon.Wallclock().Epochs().Current()
+	now := m.metadata.Wallclock().Epochs().Current()
 
 	epochNumber := now.Number()
 

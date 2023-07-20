@@ -22,7 +22,6 @@ type BeaconNode struct {
 	services []services.Service
 
 	onReadyCallbacks []func(ctx context.Context) error
-	dutiesStarted    bool
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -47,11 +46,10 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	}
 
 	return &BeaconNode{
-		config:        config,
-		log:           log.WithField("module", "sentry/ethereum/beacon"),
-		beacon:        node,
-		services:      svcs,
-		dutiesStarted: false,
+		config:   config,
+		log:      log.WithField("module", "sentry/ethereum/beacon"),
+		beacon:   node,
+		services: svcs,
 	}, nil
 }
 
@@ -104,7 +102,6 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-
 }
 
 func (b *BeaconNode) Node() beacon.Node {

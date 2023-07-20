@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type BeaconCommittee struct {
@@ -44,9 +45,9 @@ func NewBeaconCommittee(log logrus.FieldLogger, event *v1.BeaconCommittee, epoch
 }
 
 func (e *BeaconCommittee) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	validators := make([]uint64, len(e.event.Validators))
+	validators := make([]*wrapperspb.UInt64Value, len(e.event.Validators))
 	for i := range e.event.Validators {
-		validators[i] = uint64(e.event.Validators[i])
+		validators[i] = &wrapperspb.UInt64Value{Value: uint64(e.event.Validators[i])}
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
@@ -60,8 +61,8 @@ func (e *BeaconCommittee) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		},
 		Data: &xatu.DecoratedEvent_EthV1BeaconCommittee{
 			EthV1BeaconCommittee: &xatuethv1.Committee{
-				Slot:       uint64(e.event.Slot),
-				Index:      uint64(e.event.Index),
+				Slot:       &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+				Index:      &wrapperspb.UInt64Value{Value: uint64(e.event.Index)},
 				Validators: validators,
 			},
 		},

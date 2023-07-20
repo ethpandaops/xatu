@@ -4,11 +4,13 @@ syntax = "proto3";
 
 package xatu.eth.v1;
 
+import "google/protobuf/wrappers.proto";
+
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 // Committee is a set of validators that are assigned to a commitee for a given slot.
 message Committee {
-  uint64 index = 1;
-  uint64 slot = 2;
-  repeated uint64 validators = 3;
+  google.protobuf.UInt64Value index = 1;
+  google.protobuf.UInt64Value slot = 2;
+  repeated google.protobuf.UInt64Value validators = 3;
 }

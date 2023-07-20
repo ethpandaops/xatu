@@ -53,9 +53,12 @@ func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *Met
 func (m *DutiesService) Start(ctx context.Context) error {
 	go func() {
 		operation := func() error {
-			if err := m.backFillEpochDuties(ctx); err != nil {
+			if err := m.fetchRequiredEpochDuties(ctx); err != nil {
 				return err
 			}
+
+			//nolint:errcheck // We don't care about the error here
+			m.fetchNiceToHaveEpochDuties(ctx)
 
 			if err := m.Ready(ctx); err != nil {
 				return err
@@ -76,9 +79,12 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	}()
 
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
-		if err := m.backFillEpochDuties(ctx); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch epoch duties")
+		if err := m.fetchRequiredEpochDuties(ctx); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
 		}
+
+		//nolint:errcheck // We don't care about the error here
+		m.fetchNiceToHaveEpochDuties(ctx)
 	})
 
 	go m.beaconCommittees.Start()
@@ -111,16 +117,22 @@ func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch 
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber),
-		phase0.Epoch(epochNumber + 1),
 	}
 
-	// Lodestar does not support fetching beacon committees for older epochs.
-	if m.metadata.Client(ctx) != string(ClientLodestar) {
-		epochs = append(epochs,
-			phase0.Epoch(epochNumber-1),
-			phase0.Epoch(epochNumber-2),
-			phase0.Epoch(epochNumber-3),
-		)
+	return epochs
+}
+
+func (m *DutiesService) NiceToHaveEpochDuties(ctx context.Context) []phase0.Epoch {
+	now := m.metadata.Wallclock().Epochs().Current()
+
+	epochNumber := now.Number()
+
+	epochs := []phase0.Epoch{
+		phase0.Epoch(epochNumber - 1),
+		phase0.Epoch(epochNumber - 2),
+		phase0.Epoch(epochNumber - 3),
+
+		phase0.Epoch(epochNumber + 1),
 	}
 
 	final := map[phase0.Epoch]struct{}{}
@@ -148,7 +160,7 @@ func (m *DutiesService) Ready(ctx context.Context) error {
 	return nil
 }
 
-func (m *DutiesService) backFillEpochDuties(ctx context.Context) error {
+func (m *DutiesService) fetchRequiredEpochDuties(ctx context.Context) error {
 	if m.metadata.Wallclock() == nil {
 		return fmt.Errorf("metadata service is not ready")
 	}
@@ -157,6 +169,22 @@ func (m *DutiesService) backFillEpochDuties(ctx context.Context) error {
 		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
 				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *DutiesService) fetchNiceToHaveEpochDuties(ctx context.Context) error {
+	if m.metadata.Wallclock() == nil {
+		return fmt.Errorf("metadata service is not ready")
+	}
+
+	for _, epoch := range m.NiceToHaveEpochDuties(ctx) {
+		if duties := m.beaconCommittees.Get(epoch); duties == nil {
+			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
+				m.log.WithError(err).Debugf("Failed to fetch beacon committee for epoch %d", epoch)
 			}
 		}
 	}

@@ -32,6 +32,9 @@ forkChoice:
     slotTimes:
     - 4s
 
+beaconCommittees:
+  enabled: true
+
 outputs:
 - name: http-sink
   type: http

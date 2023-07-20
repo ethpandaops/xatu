@@ -65,14 +65,14 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			wg.Add(1)
 
 			service.OnReady(ctx, func(ctx context.Context) error {
-				b.log.WithField("service", service.Name()).Info("service is ready")
+				b.log.WithField("service", service.Name()).Info("Service is ready")
 
 				wg.Done()
 
 				return nil
 			})
 
-			b.log.WithField("service", service.Name()).Info("starting service")
+			b.log.WithField("service", service.Name()).Info("Starting service")
 
 			if err := service.Start(ctx); err != nil {
 				errs <- fmt.Errorf("failed to start service: %w", err)
@@ -81,7 +81,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			wg.Wait()
 		}
 
-		b.log.Info("all services are ready")
+		b.log.Info("All services are ready")
 
 		for _, callback := range b.onReadyCallbacks {
 			if err := callback(ctx); err != nil {

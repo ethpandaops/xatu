@@ -104,17 +104,23 @@ func (m *DutiesService) Name() Name {
 	return "duties"
 }
 
-func (m *DutiesService) RequiredEpochDuties() []phase0.Epoch {
+func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch {
 	now := m.beacon.Wallclock().Epochs().Current()
 
 	epochNumber := now.Number()
 
 	epochs := []phase0.Epoch{
-		phase0.Epoch(epochNumber - 3),
-		phase0.Epoch(epochNumber - 2),
-		phase0.Epoch(epochNumber - 1),
 		phase0.Epoch(epochNumber),
 		phase0.Epoch(epochNumber + 1),
+	}
+
+	// Lodestar does not support fetching beacon committees for older epochs.
+	if m.metadata.Client(ctx) != string(ClientLodestar) {
+		epochs = append(epochs,
+			phase0.Epoch(epochNumber-1),
+			phase0.Epoch(epochNumber-2),
+			phase0.Epoch(epochNumber-3),
+		)
 	}
 
 	final := map[phase0.Epoch]struct{}{}
@@ -133,7 +139,7 @@ func (m *DutiesService) RequiredEpochDuties() []phase0.Epoch {
 }
 
 func (m *DutiesService) Ready(ctx context.Context) error {
-	for _, epoch := range m.RequiredEpochDuties() {
+	for _, epoch := range m.RequiredEpochDuties(ctx) {
 		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			return fmt.Errorf("duties for epoch %d are not ready", epoch)
 		}
@@ -147,7 +153,7 @@ func (m *DutiesService) backFillEpochDuties(ctx context.Context) error {
 		return fmt.Errorf("metadata service is not ready")
 	}
 
-	for _, epoch := range m.RequiredEpochDuties() {
+	for _, epoch := range m.RequiredEpochDuties(ctx) {
 		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
 				return err

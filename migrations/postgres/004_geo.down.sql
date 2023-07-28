@@ -1,0 +1,9 @@
+ALTER TABLE node_record
+DROP COLUMN geo_city,
+DROP COLUMN geo_country,
+DROP COLUMN geo_country_code,
+DROP COLUMN geo_continent_code,
+DROP COLUMN geo_longitude,
+DROP COLUMN geo_latitude,
+DROP COLUMN geo_autonomous_system_number,
+DROP COLUMN geo_autonomous_system_organization;

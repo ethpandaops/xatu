@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"net"
 	"strings"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
@@ -23,16 +25,17 @@ const (
 type Client struct {
 	xatu.UnimplementedCoordinatorServer
 
-	log         logrus.FieldLogger
-	config      *Config
-	persistence *persistence.Client
+	log           logrus.FieldLogger
+	config        *Config
+	persistence   *persistence.Client
+	geoipProvider geoip.Provider
 
 	metrics *Metrics
 
 	nodeRecord *n.Record
 }
 
-func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client) (*Client, error) {
+func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client, geoipProvider geoip.Provider) (*Client, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%s: persistence is required", ServiceType)
 	}
@@ -45,11 +48,12 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *per
 	}
 
 	e := &Client{
-		log:         logger,
-		config:      conf,
-		persistence: p,
-		nodeRecord:  nodeRecord,
-		metrics:     NewMetrics("xatu_server_coordinator"),
+		log:           logger,
+		config:        conf,
+		persistence:   p,
+		geoipProvider: geoipProvider,
+		nodeRecord:    nodeRecord,
+		metrics:       NewMetrics("xatu_server_coordinator"),
 	}
 
 	return e, nil
@@ -87,6 +91,34 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 		pRecord, err := node.Parse(record)
 		if err != nil {
 			return nil, err
+		}
+
+		if c.geoipProvider != nil {
+			ipAddress := pRecord.IP4
+			if ipAddress == nil {
+				ipAddress = pRecord.IP6
+			}
+
+			if ipAddress != nil {
+				ip := net.ParseIP(*ipAddress)
+				if ip != nil {
+					geoipLookupResult, err := c.geoipProvider.LookupIP(ctx, ip)
+					if err != nil {
+						c.log.WithField("ip", *ipAddress).WithError(err).Warn("failed to lookup geoip data")
+					}
+
+					if geoipLookupResult != nil {
+						pRecord.GeoCity = &geoipLookupResult.CityName
+						pRecord.GeoCountry = &geoipLookupResult.CountryName
+						pRecord.GeoCountryCode = &geoipLookupResult.CountryCode
+						pRecord.GeoContinentCode = &geoipLookupResult.ContinentCode
+						pRecord.GeoLongitude = &geoipLookupResult.Longitude
+						pRecord.GeoLatitude = &geoipLookupResult.Latitude
+						pRecord.GeoAutonomousSystemNumber = &geoipLookupResult.AutonomousSystemNumber
+						pRecord.GeoAutonomousSystemOrganization = &geoipLookupResult.AutonomousSystemOrganization
+					}
+				}
+			}
 		}
 
 		c.nodeRecord.Write(pRecord)

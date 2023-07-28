@@ -28,6 +28,22 @@ type Record struct {
 	IP4 *string `json:"ip4" db:"ip4" fieldopt:"omitempty"`
 	// IP6 is the IPv6 address of the node record.
 	IP6 *string `json:"ip6" db:"ip6" fieldopt:"omitempty"`
+	// GeoCity is the city of the node record.
+	GeoCity *string `json:"geoCity" db:"geo_city" fieldopt:"omitempty"`
+	// GeoCountry is the country of the node record.
+	GeoCountry *string `json:"geoCountry" db:"geo_country" fieldopt:"omitempty"`
+	// GeoCountryCode is the country code of the node record.
+	GeoCountryCode *string `json:"geoCountryCode" db:"geo_country_code" fieldopt:"omitempty"`
+	// GeoContinentCode is the continent code of the node record.
+	GeoContinentCode *string `json:"geoContinentCode" db:"geo_continent_code" fieldopt:"omitempty"`
+	// GeoLongitude is the longitude of the node record.
+	GeoLongitude *float64 `json:"geoLongitude" db:"geo_longitude" fieldopt:"omitempty"`
+	// GeoLatitude is the latitude of the node record.
+	GeoLatitude *float64 `json:"geoLatitude" db:"geo_latitude" fieldopt:"omitempty"`
+	// GeoAutonomousSystemNumber is the autonomous system number of the node record.
+	GeoAutonomousSystemNumber *uint32 `json:"geoAutonomousSystemNumber" db:"geo_autonomous_system_number" fieldopt:"omitempty"`
+	// GeoAutonomousSystemOrganization is the autonomous system organization of the node record.
+	GeoAutonomousSystemOrganization *string `json:"geoAutonomousSystemOrganization" db:"geo_autonomous_system_organization" fieldopt:"omitempty"`
 	// TCP4 is the TCP port of the node record.
 	TCP4 *uint32 `json:"tcp4" db:"tcp4" fieldopt:"omitempty"`
 	// TCP6 is the TCP port of the node record.

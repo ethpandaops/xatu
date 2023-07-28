@@ -107,7 +107,8 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 						c.log.WithField("ip", *ipAddress).WithError(err).Warn("failed to lookup geoip data")
 					}
 
-					if geoipLookupResult != nil && geoipLookupResult.Longitude != 0 && geoipLookupResult.Latitude != 0 {
+					if geoipLookupResult != nil && !(geoipLookupResult.Longitude == 0 && geoipLookupResult.Latitude == 0) {
+						c.log.WithField("ip", *ipAddress).WithField("geoip", geoipLookupResult).Warn("geoip lookup result")
 						pRecord.GeoCity = &geoipLookupResult.CityName
 						pRecord.GeoCountry = &geoipLookupResult.CountryName
 						pRecord.GeoCountryCode = &geoipLookupResult.CountryCode

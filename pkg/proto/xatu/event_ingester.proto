@@ -278,6 +278,12 @@ message ClientMeta {
 
     // BlockRoot contains the block root of the beacon block.
     string block_root = 4 [ json_name = "block_root" ];
+    
+    // TransactionsCount contains the number of transactions in the block
+    uint64 transactions_count = 5 [ json_name = "transactions_count" ];
+
+    // TransactionsTotalBytes contains the total bytes size of transactions
+    uint64 transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
   }
 
   // AdditionalData contains additional, computed data as set by the client

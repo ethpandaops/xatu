@@ -22,13 +22,13 @@ enum BlockVersion {
 
 message EventBlock {
   oneof message {
-    v1.BeaconBlock phase0_block = 1 [ json_name = "message" ];
+    v1.BeaconBlock phase0_block = 1 [ json_name = "PHASE0" ];
 
-    v2.BeaconBlockAltair altair_block = 2 [ json_name = "message" ];
+    v2.BeaconBlockAltair altair_block = 2 [ json_name = "ALTAIR" ];
 
-    v2.BeaconBlockBellatrix bellatrix_block = 3 [ json_name = "message" ];
+    v2.BeaconBlockBellatrix bellatrix_block = 3 [ json_name = "BELLATRIX" ];
 
-    v2.BeaconBlockCapella capella_block = 4 [ json_name = "message" ];
+    v2.BeaconBlockCapella capella_block = 4 [ json_name = "CAPELLA" ];
   }
 
   string signature = 5;

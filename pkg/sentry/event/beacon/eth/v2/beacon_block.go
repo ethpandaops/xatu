@@ -531,5 +531,27 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 
 	extra.BlockRoot = e.blockRoot
 
+	var txCount int
+
+	var txSize int
+
+	switch e.event.Version {
+	case spec.DataVersionBellatrix:
+		txCount = len(e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions)
+
+		for _, tx := range e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions {
+			txSize += len(tx)
+		}
+	case spec.DataVersionCapella:
+		txCount = len(e.event.Capella.Message.Body.ExecutionPayload.Transactions)
+
+		for _, tx := range e.event.Capella.Message.Body.ExecutionPayload.Transactions {
+			txSize += len(tx)
+		}
+	}
+
+	extra.TransactionsCount = uint64(txCount)
+	extra.TransactionsTotalBytes = uint64(txSize)
+
 	return extra, nil
 }

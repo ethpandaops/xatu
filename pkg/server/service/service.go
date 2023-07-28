@@ -50,7 +50,7 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 			return nil, err
 		}
 
-		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p)
+		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p, g)
 		if err != nil {
 			return nil, err
 		}

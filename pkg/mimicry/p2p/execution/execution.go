@@ -194,7 +194,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		}).Debug("got client status")
 
 		// set the ignore before time to 3 minute in the future
-		ignoreBefore := time.Now().Add(3 * time.Second)
+		ignoreBefore := time.Now().Add(3 * time.Minute)
 		p.ignoreBefore = &ignoreBefore
 
 		return nil

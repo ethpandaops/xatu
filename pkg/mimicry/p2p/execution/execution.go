@@ -178,7 +178,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		chainID := new(big.Int).SetUint64(networkID)
 		p.chainConfig.ChainID = chainID
 		p.chainConfig.EIP155Block = big.NewInt(0)
-		p.signer = types.MakeSigner(p.chainConfig, big.NewInt(0))
+		p.signer = types.MakeSigner(p.chainConfig, big.NewInt(0), 0)
 
 		// setup peer network/fork info
 		p.network = networks.DeriveFromID(status.NetworkID)
@@ -194,7 +194,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		}).Debug("got client status")
 
 		// set the ignore before time to 3 minute in the future
-		ignoreBefore := time.Now().Add(3 * time.Minute)
+		ignoreBefore := time.Now().Add(3 * time.Second)
 		p.ignoreBefore = &ignoreBefore
 
 		return nil

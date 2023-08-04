@@ -3,6 +3,7 @@ package static
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -22,8 +23,9 @@ type Static struct {
 
 	log logrus.FieldLogger
 
-	cache *cache.SharedCache
-	peers *map[string]bool
+	cache    *cache.SharedCache
+	peersMux sync.Mutex
+	peers    *map[string]bool
 
 	metrics *Metrics
 }
@@ -63,7 +65,9 @@ func (s *Static) Start(ctx context.Context) error {
 					}
 
 					defer func() {
+						s.peersMux.Lock()
 						(*peers)[record] = false
+						s.peersMux.Unlock()
 						if peer != nil {
 							if err = peer.Stop(ctx); err != nil {
 								s.log.WithError(err).Warn("failed to stop peer")
@@ -76,7 +80,9 @@ func (s *Static) Start(ctx context.Context) error {
 						return err
 					}
 
+					s.peersMux.Lock()
 					(*peers)[record] = true
+					s.peersMux.Unlock()
 
 					response := <-disconnect
 
@@ -107,6 +113,7 @@ func (s *Static) startCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
 	if _, err := c.Every("5s").Do(func() {
+		s.peersMux.Lock()
 		connectedPeers := 0
 		for _, connected := range *s.peers {
 			if connected {
@@ -115,6 +122,7 @@ func (s *Static) startCrons(ctx context.Context) error {
 		}
 		s.metrics.SetPeers(connectedPeers, "connected")
 		s.metrics.SetPeers(len(*s.peers)-connectedPeers, "disconnected")
+		s.peersMux.Unlock()
 	}); err != nil {
 		return err
 	}

@@ -22,7 +22,7 @@ type ItemExporter struct {
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	t := http.DefaultTransport.(*http.Transport).Clone()
-	if !config.KeepAlive {
+	if config.KeepAlive != nil && !*config.KeepAlive {
 		t.DisableKeepAlives = true
 	}
 

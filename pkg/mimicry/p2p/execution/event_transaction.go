@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event *types.Transaction) (*xatu.DecoratedEvent, error) {
@@ -71,10 +72,12 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 
 	extra := &xatu.ClientMeta_AdditionalMempoolTransactionData{
 		Nonce:        event.Nonce(),
+		NonceV2:      wrapperspb.UInt64(event.Nonce()),
 		GasPrice:     event.GasPrice().String(),
 		From:         from.String(),
 		To:           to,
 		Gas:          event.Gas(),
+		GasV2:        wrapperspb.UInt64(event.Gas()),
 		Value:        event.Value().String(),
 		Hash:         event.Hash().String(),
 		Size:         strconv.FormatFloat(float64(event.Size()), 'f', 0, 64),

@@ -7,6 +7,7 @@ package xatu.eth.v2;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v2";
 
+import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
@@ -44,63 +45,83 @@ message SignedBeaconBlockAltair {
 }
 
 message BeaconBlockBellatrix {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyBellatrix body = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
 }
 
 message BlindedBeaconBlockBellatrix {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BlindedBeaconBlockBodyBellatrix body = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
 }
 
 message BeaconBlockCapella {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyCapella body = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
 }
 
 message BlindedBeaconBlockCapella {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BlindedBeaconBlockBodyCapella body = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
 }
 
 message BeaconBlockAltair {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyAltair body = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
 }
 
 message BeaconBlockBodyBellatrix {

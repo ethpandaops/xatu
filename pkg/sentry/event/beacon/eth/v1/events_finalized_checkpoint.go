@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsFinalizedCheckpoint struct {
@@ -52,9 +53,10 @@ func (e *EventsFinalizedCheckpoint) Decorate(ctx context.Context) (*xatu.Decorat
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsFinalizedCheckpoint{
 			EthV1EventsFinalizedCheckpoint: &xatuethv1.EventFinalizedCheckpoint{
-				Epoch: uint64(e.event.Epoch),
-				State: xatuethv1.RootAsString(e.event.State),
-				Block: xatuethv1.RootAsString(e.event.Block),
+				Epoch:   uint64(e.event.Epoch),
+				EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Epoch)},
+				State:   xatuethv1.RootAsString(e.event.State),
+				Block:   xatuethv1.RootAsString(e.event.Block),
 			},
 		},
 	}
@@ -102,6 +104,7 @@ func (e *EventsFinalizedCheckpoint) getAdditionalData(_ context.Context) (*xatu.
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

@@ -7,11 +7,12 @@ package xatu.eth.v1;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
+import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/sync_committee.proto";
 
 message EventHead {
-  uint64 slot = 1;
+  uint64 slot = 1 [deprecated=true];
 
   string block = 2;
 
@@ -24,20 +25,24 @@ message EventHead {
 
   string current_duty_dependent_root = 6
       [ json_name = "current_duty_dependent_root" ];
+
+  google.protobuf.UInt64Value slot_v2 = 7  [ json_name = "slot_v2" ];
 }
 
 message EventBlock {
-  uint64 slot = 1;
+  uint64 slot = 1 [deprecated=true];
 
   string block = 2;
 
   bool execution_optimistic = 3 [ json_name = "execution_optimistic" ];
+
+  google.protobuf.UInt64Value slot_v2 = 4  [ json_name = "slot_v2" ];
 }
 
 message EventChainReorg {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated=true ];
 
-  uint64 depth = 2;
+  uint64 depth = 2 [ deprecated=true ];
 
   string old_head_block = 3 [ json_name = "old_head_block" ];
 
@@ -47,7 +52,13 @@ message EventChainReorg {
 
   string new_head_state = 6 [ json_name = "new_head_state" ];
 
-  uint64 epoch = 7;
+  uint64 epoch = 7 [ deprecated=true ];
+
+  google.protobuf.UInt64Value slot_v2 = 8 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value depth_v2 = 9  [ json_name = "depth_v2" ];
+
+  google.protobuf.UInt64Value epoch_v2 = 10 [ json_name = "epoch_v2" ];
 }
 
 message EventFinalizedCheckpoint {
@@ -55,13 +66,19 @@ message EventFinalizedCheckpoint {
 
   string state = 2;
 
-  uint64 epoch = 3;
+  uint64 epoch = 3 [ deprecated=true ];
+
+  google.protobuf.UInt64Value epoch_v2 = 4 [ json_name = "epoch_v2" ];
 }
 
 message EventVoluntaryExitMessage {
-  uint64 epoch = 1;
+  uint64 epoch = 1 [ deprecated=true ];
 
-  uint64 validator_index = 2 [ json_name = "validator_index" ];
+  uint64 validator_index = 2 [ json_name = "validator_index", deprecated=true ];
+
+  google.protobuf.UInt64Value epoch_v2 = 3 [ json_name = "epoch_v2" ];
+
+  google.protobuf.UInt64Value validator_index_v2 = 4 [ json_name = "validator_index_v2" ];
 }
 
 message EventVoluntaryExit {
@@ -75,11 +92,13 @@ message EventVoluntaryExit {
 }
 
 message ContributionAndProof {
-  uint64 aggregator_index = 1 [ json_name = "aggregator_index" ];
+  uint64 aggregator_index = 1 [ json_name = "aggregator_index", deprecated=true ];
 
   SyncCommitteeContribution contribution = 2;
 
   string selection_proof = 3 [ json_name = "selection_proof" ];
+
+  google.protobuf.UInt64Value aggregator_index_v2 = 4 [ json_name = "aggregator_index_v2" ];
 }
 
 message EventContributionAndProof {

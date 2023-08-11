@@ -7,6 +7,7 @@ package xatu.eth.v1;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
 
 message SyncCommitteeContribution {
   uint64 slot = 1;
@@ -18,4 +19,6 @@ message SyncCommitteeContribution {
   string signature = 4;
 
   string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
+
+  google.protobuf.UInt64Value slot_v2 = 6;
 }

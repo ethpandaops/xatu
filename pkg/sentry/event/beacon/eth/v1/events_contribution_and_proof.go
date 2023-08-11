@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsContributionAndProof struct {
@@ -54,10 +55,12 @@ func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.Decora
 			EthV1EventsContributionAndProof: &xatuethv1.EventContributionAndProof{
 				Signature: xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Signature)),
 				Message: &xatuethv1.ContributionAndProof{
-					AggregatorIndex: uint64(e.event.Message.AggregatorIndex),
-					SelectionProof:  xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.SelectionProof)),
+					AggregatorIndex:   uint64(e.event.Message.AggregatorIndex),
+					AggregatorIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.AggregatorIndex)},
+					SelectionProof:    xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.SelectionProof)),
 					Contribution: &xatuethv1.SyncCommitteeContribution{
 						Slot:              uint64(e.event.Message.Contribution.Slot),
+						SlotV2:            &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Contribution.Slot)},
 						SubcommitteeIndex: e.event.Message.Contribution.SubcommitteeIndex,
 						AggregationBits:   xatuethv1.BytesToString(e.event.Message.Contribution.AggregationBits.Bytes()),
 						Signature:         xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.Contribution.Signature)),
@@ -111,14 +114,19 @@ func (e *EventsContributionAndProof) getAdditionalData(_ context.Context) (*xatu
 		Contribution: &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{
 			Slot: &xatu.Slot{
 				Number:        slot.Number(),
+				NumberV2:      &wrapperspb.UInt64Value{Value: slot.Number()},
 				StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 			},
 			Epoch: &xatu.Epoch{
 				Number:        epoch.Number(),
+				NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 				StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 			},
 			Propagation: &xatu.Propagation{
 				SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+				SlotStartDiffV2: &wrapperspb.UInt64Value{
+					Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+				},
 			},
 		},
 	}

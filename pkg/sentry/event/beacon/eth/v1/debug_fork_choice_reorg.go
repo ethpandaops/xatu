@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ForkChoiceReOrg struct {
@@ -68,8 +69,14 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 			RequestEpoch:               beforeAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                beforeAdditional.Snapshot.RequestSlot,
 			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
-			RequestDurationMs:          beforeAdditional.Snapshot.RequestDurationMs,
-			Timestamp:                  beforeAdditional.Snapshot.Timestamp,
+			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+			},
+			RequestDurationMs: beforeAdditional.Snapshot.RequestDurationMs,
+			RequestDurationMsV2: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestDurationMs,
+			},
+			Timestamp: beforeAdditional.Snapshot.Timestamp,
 		}
 	}
 
@@ -85,8 +92,14 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 			RequestEpoch:               afterAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
 			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
-			RequestDurationMs:          afterAdditional.Snapshot.RequestDurationMs,
-			Timestamp:                  afterAdditional.Snapshot.Timestamp,
+			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+			},
+			RequestDurationMs: afterAdditional.Snapshot.RequestDurationMs,
+			RequestDurationMsV2: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestDurationMs,
+			},
+			Timestamp: afterAdditional.Snapshot.Timestamp,
 		}
 	}
 

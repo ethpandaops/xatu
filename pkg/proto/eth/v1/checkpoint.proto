@@ -7,9 +7,12 @@ package xatu.eth.v1;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
 
 message Checkpoint {
   uint64 epoch = 1;
 
   string root = 2;
+
+  google.protobuf.UInt64Value epoch_v2 = 3 [ json_name = "epoch_v2" ];
 }

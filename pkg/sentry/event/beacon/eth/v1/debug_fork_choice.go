@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ForkChoice struct {
@@ -90,18 +91,26 @@ func (f *ForkChoice) GetAdditionalData(_ context.Context) *xatu.ClientMeta_Addit
 	extra := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData{
 		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestedAtSlotStartDiffMs: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
-			RequestDurationMs:          uint64(f.snapshot.RequestDuration.Milliseconds()),
-			Timestamp:                  timestamppb.New(f.snapshot.RequestAt),
+			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+				Value: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
+			},
+			RequestDurationMs: uint64(f.snapshot.RequestDuration.Milliseconds()),
+			RequestDurationMsV2: &wrapperspb.UInt64Value{
+				Value: uint64(f.snapshot.RequestDuration.Milliseconds()),
+			},
+			Timestamp: timestamppb.New(f.snapshot.RequestAt),
 		},
 	}
 
 	extra.Snapshot.RequestSlot = &xatu.Slot{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 		Number:        slot.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: slot.Number()},
 	}
 
 	extra.Snapshot.RequestEpoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

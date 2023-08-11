@@ -30,6 +30,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Sentry struct {
@@ -431,6 +432,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(s.clockDrift.Milliseconds()),
+		ClockDriftV2:   &wrapperspb.UInt64Value{Value: uint64(s.clockDrift.Milliseconds())},
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network:   networkMeta,
 			Execution: &xatu.ClientMeta_Ethereum_Execution{},

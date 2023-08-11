@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsVoluntaryExit struct {
@@ -60,6 +61,9 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 				Message: &xatuethv1.EventVoluntaryExitMessage{
 					Epoch:          uint64(e.event.Message.Epoch),
 					ValidatorIndex: uint64(e.event.Message.ValidatorIndex),
+
+					EpochV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Epoch)},
+					ValidatorIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.ValidatorIndex)},
 				},
 			},
 		},
@@ -109,6 +113,7 @@ func (e *EventsVoluntaryExit) getAdditionalData(_ context.Context) (*xatu.Client
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

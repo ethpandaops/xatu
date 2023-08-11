@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsHead struct {
@@ -53,6 +54,7 @@ func (e *EventsHead) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 		Data: &xatu.DecoratedEvent_EthV1EventsHead{
 			EthV1EventsHead: &xatuethv1.EventHead{
 				Slot:                      uint64(e.event.Slot),
+				SlotV2:                    &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 				Block:                     xatuethv1.RootAsString(e.event.Block),
 				State:                     xatuethv1.RootAsString(e.event.State),
 				EpochTransition:           e.event.EpochTransition,
@@ -110,10 +112,14 @@ func (e *EventsHead) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Addi
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
 	extra.Propagation = &xatu.Propagation{
+		SlotStartDiffV2: &wrapperspb.UInt64Value{
+			Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		},
 		SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 

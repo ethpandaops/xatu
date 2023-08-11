@@ -10,7 +10,7 @@ import "google/protobuf/descriptor.proto";
 import "google/protobuf/wrappers.proto";
 
 message Checkpoint {
-  uint64 epoch = 1;
+  uint64 epoch = 1 [ deprecated=true ];
 
   string root = 2;
 

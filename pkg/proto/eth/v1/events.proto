@@ -12,7 +12,7 @@ import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/sync_committee.proto";
 
 message EventHead {
-  uint64 slot = 1 [deprecated=true];
+  uint64 slot = 1 [ deprecated=true ];
 
   string block = 2;
 
@@ -30,7 +30,7 @@ message EventHead {
 }
 
 message EventBlock {
-  uint64 slot = 1 [deprecated=true];
+  uint64 slot = 1 [ deprecated=true ];
 
   string block = 2;
 

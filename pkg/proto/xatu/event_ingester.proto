@@ -286,6 +286,38 @@ message ClientMeta {
     uint64 transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
   }
 
+  message AttestationDataSnapshot {
+    // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
+    // sentry was when it requested the attestation data snapshot (in milliseconds).
+    uint64 requested_at_slot_start_diff_ms = 1
+        [ json_name = "requested_at_slot_start_diff_ms" ];
+
+    // RequestDurationMs is the duration of the attestation data snapshot request
+    // (in milliseconds).
+    uint64 request_duration_ms = 2 [ json_name = "request_duration_ms" ];
+
+    // Timestamp is the timestamp of the attestation data snapshot.
+    google.protobuf.Timestamp timestamp = 3 [ json_name = "timestamp" ];
+  }
+
+  message AdditionalEthV1ValidatorAttestationDataData {
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalEthV1AttestationSourceData source = 1;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalEthV1AttestationTargetData target = 2;
+  
+    // Epoch contains the epoch information for the beacon committee.
+    Epoch epoch = 3;
+
+    // Slot contains the slot information for the beacon commitee.
+    Slot slot = 4;
+
+    // AttestationDataSnapshot is the snapshot of the attestation data
+    AttestationDataSnapshot Snapshot = 5 [ json_name = "snapshot" ];
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -324,6 +356,8 @@ message ClientMeta {
     AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
     // AdditionalEthV1BeaconCommitteeData contains additional data about the beacon commitee
     AdditionalEthV1BeaconCommitteeData eth_v1_beacon_commitee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+    // AdditionalEthV1ValidatorAttestationDataData contains additional data about the eth v1 validator attestation data
+    AdditionalEthV1ValidatorAttestationDataData eth_v1_validator_attestation_data = 22 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
   }
 }
 
@@ -402,6 +436,7 @@ message Event {
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE = 10;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG = 11;
     BEACON_API_ETH_V1_BEACON_COMMITTEE = 12;
+    BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA = 13;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -429,5 +464,6 @@ message DecoratedEvent {
     xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
     DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
     xatu.eth.v1.Committee eth_v1_beacon_committee = 14 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+    xatu.eth.v1.AttestationData eth_v1_validator_attestation_data = 15 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
   }; 
 }

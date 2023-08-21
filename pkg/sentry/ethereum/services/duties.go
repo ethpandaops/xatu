@@ -247,3 +247,33 @@ func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, 
 
 	return 0, fmt.Errorf("validator index not found")
 }
+
+func (m *DutiesService) GetLastCommitteeIndex(ctx context.Context, slot phase0.Slot) (*phase0.CommitteeIndex, error) {
+	epoch := m.metadata.Wallclock().Epochs().FromSlot(uint64(slot))
+
+	err := m.fetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()))
+	if err != nil {
+		return nil, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch.Number(), err)
+	}
+
+	committees := m.beaconCommittees.Get(phase0.Epoch(epoch.Number()))
+	if committees == nil {
+		return nil, fmt.Errorf("error getting beacon committees from cache for epoch %d: %w", epoch.Number(), err)
+	}
+
+	maxIndex := phase0.CommitteeIndex(0)
+	found := false
+
+	for _, committee := range committees.Value() {
+		if committee.Slot == slot && committee.Index > maxIndex {
+			maxIndex = committee.Index
+			found = true
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("no committees found for slot %d", slot)
+	}
+
+	return &maxIndex, nil
+}

@@ -333,6 +333,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 
+		if err := s.startAttestationDataSchedule(ctx); err != nil {
+			return err
+		}
+
 		return nil
 	})
 

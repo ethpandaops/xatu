@@ -3,7 +3,9 @@ syntax = "proto3";
 package xatu;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
@@ -21,18 +23,23 @@ message CreateEventsResponse {}
 
 message Epoch {
   // Number is the epoch number.
-  uint64 number = 1;
+  uint64 number = 1 [ deprecated = true ];
   // StartDateTime is the epoch start time.
   google.protobuf.Timestamp start_date_time = 2
       [ json_name = "start_date_time" ];
+
+  // Number is the epoch number.
+  google.protobuf.UInt64Value number_v2 = 3 [ json_name = "number_v2" ];  
 }
 
 message Slot {
   // Number is the slot number.
-  uint64 number = 1;
+  uint64 number = 1 [ deprecated = true ];
   // StartDateTime is the slot start time.
   google.protobuf.Timestamp start_date_time = 2
       [ json_name = "start_date_time" ];
+  // Number is the slot number.
+  google.protobuf.UInt64Value number_v2 = 3 [ json_name = "number_v2" ];  
 }
 
 message ForkID {
@@ -43,14 +50,22 @@ message ForkID {
 message Propagation {
   // SlotStartDiff is the difference between the slot start time and the
   // attestation received time (in milliseconds).
-  uint64 slot_start_diff = 3 [ json_name = "slot_start_diff" ];
+  uint64 slot_start_diff = 3 [ json_name = "slot_start_diff", deprecated = true ];
+
+  // SlotStartDiff is the difference between the slot start time and the
+  // attestation received time (in milliseconds).
+  google.protobuf.UInt64Value slot_start_diff_v2 = 4 [ json_name = "slot_start_diff_v2" ];  
 }
 
 message AttestingValidator {
   // CommitteeIndex is the position of the validator within the committee.
-  uint64 committee_index = 1 [ json_name = "committee_index" ];
+  uint64 committee_index = 1 [ json_name = "committee_index", deprecated = true ];
   // Index is the index of the validator in the beacon chain.
-  uint64 index = 2; 
+  uint64 index = 2 [ deprecated = true ]; 
+  // CommitteeIndex is the position of the validator within the committee.
+  google.protobuf.UInt64Value committee_index_v2 = 3 [ json_name = "committee_index_v2" ];
+  // Index is the index of the validator in the beacon chain.
+  google.protobuf.UInt64Value index_v2 = 4 [ json_name = "index_v2" ]; 
 }
 
 message DebugForkChoiceReorg {
@@ -71,7 +86,9 @@ message ClientMeta {
   // OS is the operating system of the client.
   string os = 5;
   // ClockDrift is the NTP calculated clock drift of the client.
-  uint64 clock_drift = 6 [ json_name = "clock_drift" ];
+  uint64 clock_drift = 6 [ json_name = "clock_drift", deprecated = true ];
+  // ClockDrift is the NTP calculated clock drift of the client.
+  google.protobuf.UInt64Value clock_drift_v2 = 23 [ json_name = "clock_drift_v2" ];
 
   message Ethereum {
     message Network {
@@ -210,14 +227,22 @@ message ClientMeta {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).
     uint64 requested_at_slot_start_diff_ms = 3
-        [ json_name = "requested_at_slot_start_diff_ms" ];
+        [ json_name = "requested_at_slot_start_diff_ms", deprecated=true ];
 
     // RequestDurationMs is the duration of the fork choice snapshot request
     // (in milliseconds).
-    uint64 request_duration_ms = 4 [ json_name = "request_duration_ms" ];
+    uint64 request_duration_ms = 4 [ json_name = "request_duration_ms", deprecated=true ];
 
     // Timestamp is the timestamp of the fork choice snapshot.
     google.protobuf.Timestamp timestamp = 5 [ json_name = "timestamp" ];
+    
+    // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
+    // sentry was when it requested the fork choice snapshot (in milliseconds).
+    google.protobuf.UInt64Value requested_at_slot_start_diff_ms_v2 = 7 [ json_name = "requested_at_slot_start_diff_ms_v2" ];
+
+    // RequestDurationMs is the duration of the fork choice snapshot request
+    // (in milliseconds).
+    google.protobuf.UInt64Value request_duration_ms_v2 = 8 [ json_name = "request_duration_ms_v2" ];
   }
 
   message AdditionalEthV1DebugForkChoiceData {
@@ -248,13 +273,13 @@ message ClientMeta {
     string to = 3 [ json_name = "to" ];
 
     // Nonce is the transaction nonce.
-    uint64 nonce = 4 [ json_name = "nonce" ];
+    uint64 nonce = 4 [ json_name = "nonce", deprecated=true ];
 
     // GasPrice is the transaction gas price.
     string gas_price = 5 [ json_name = "gas_price" ];
 
     // Gas is the transaction gas.
-    uint64 gas = 6 [ json_name = "gas" ];
+    uint64 gas = 6 [ json_name = "gas", deprecated=true ];
 
     // Value is the transaction value.
     string value = 7 [ json_name = "value" ];
@@ -264,6 +289,12 @@ message ClientMeta {
 
     // CallDataSize is the call data size in bytes.
     string call_data_size = 9 [ json_name = "call_data_size" ];
+
+    // Nonce is the transaction nonce.
+    google.protobuf.UInt64Value nonce_v2 = 10 [ json_name = "nonce_v2" ];
+
+    // Gas is the transaction gas.
+    google.protobuf.UInt64Value gas_v2 = 11 [ json_name = "gas_v2" ];
   }
 
   message AdditionalEthV2BeaconBlockData {

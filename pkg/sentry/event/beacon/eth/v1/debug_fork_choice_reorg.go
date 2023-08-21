@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ForkChoiceReOrg struct {
@@ -67,9 +68,15 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		additional.Before = &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestEpoch:               beforeAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                beforeAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
-			RequestDurationMs:          beforeAdditional.Snapshot.RequestDurationMs,
-			Timestamp:                  beforeAdditional.Snapshot.Timestamp,
+			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+			},
+			RequestDurationMs: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
+			RequestDurationMsV2: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
+			},
+			Timestamp: beforeAdditional.Snapshot.Timestamp,
 		}
 	}
 
@@ -84,9 +91,15 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		additional.After = &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestEpoch:               afterAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
-			RequestDurationMs:          afterAdditional.Snapshot.RequestDurationMs,
-			Timestamp:                  afterAdditional.Snapshot.Timestamp,
+			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+			},
+			RequestDurationMs: afterAdditional.Snapshot.RequestDurationMsV2.Value,
+			RequestDurationMsV2: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestDurationMsV2.Value,
+			},
+			Timestamp: afterAdditional.Snapshot.Timestamp,
 		}
 	}
 

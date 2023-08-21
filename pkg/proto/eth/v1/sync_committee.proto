@@ -7,15 +7,20 @@ package xatu.eth.v1;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
 
 message SyncCommitteeContribution {
-  uint64 slot = 1;
+  uint64 slot = 1 [deprecated=true];
 
-  uint64 subcommittee_index = 2 [ json_name = "subcommittee_index" ];
+  uint64 subcommittee_index = 2 [ json_name = "subcommittee_index", deprecated=true ];
 
   string aggregation_bits = 3 [ json_name = "aggregation_bits" ];
 
   string signature = 4;
 
   string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
+
+  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+
+  google.protobuf.UInt64Value subcommittee_index_v2 = 7 [ json_name = "subcommittee_index_v2" ];
 }

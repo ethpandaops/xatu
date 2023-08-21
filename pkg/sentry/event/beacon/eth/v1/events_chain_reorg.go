@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsChainReorg struct {
@@ -103,11 +104,15 @@ func (e *EventsChainReorg) getAdditionalData(_ context.Context) (*xatu.ClientMet
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
 	extra.Propagation = &xatu.Propagation{
 		SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiffV2: &wrapperspb.UInt64Value{
+			Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		},
 	}
 
 	return extra, nil

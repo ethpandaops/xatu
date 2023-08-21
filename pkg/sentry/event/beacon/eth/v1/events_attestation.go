@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsAttestation struct {
@@ -55,7 +56,9 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 				AggregationBits: xatuethv1.BytesToString(e.event.AggregationBits),
 				Data: &xatuethv1.AttestationData{
 					Slot:            uint64(e.event.Data.Slot),
+					SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Slot)},
 					Index:           uint64(e.event.Data.Index),
+					IndexV2:         &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Index)},
 					BeaconBlockRoot: xatuethv1.RootAsString(e.event.Data.BeaconBlockRoot),
 					Source: &xatuethv1.Checkpoint{
 						Epoch: uint64(e.event.Data.Source.Epoch),
@@ -115,16 +118,21 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 	extra.Slot = &xatu.Slot{
 		Number:        attestionSlot.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: attestionSlot.Number()},
 		StartDateTime: timestamppb.New(attestionSlot.TimeWindow().Start()),
 	}
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
 	extra.Propagation = &xatu.Propagation{
 		SlotStartDiff: uint64(e.now.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiffV2: &wrapperspb.UInt64Value{
+			Value: uint64(e.now.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
+		},
 	}
 
 	// Build out the target section
@@ -132,6 +140,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetData{
 		Epoch: &xatu.Epoch{
 			Number:        targetEpoch.Number(),
+			NumberV2:      &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
 			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
 		},
 	}
@@ -141,6 +150,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceData{
 		Epoch: &xatu.Epoch{
 			Number:        sourceEpoch.Number(),
+			NumberV2:      &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
 			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
 		},
 	}
@@ -157,8 +167,10 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		)
 		if err == nil {
 			extra.AttestingValidator = &xatu.AttestingValidator{
-				CommitteeIndex: position,
-				Index:          uint64(validatorIndex),
+				CommitteeIndex:   position,
+				CommitteeIndexV2: &wrapperspb.UInt64Value{Value: position},
+				Index:            uint64(validatorIndex),
+				IndexV2:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
 			}
 		}
 	}

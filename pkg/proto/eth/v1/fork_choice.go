@@ -6,6 +6,7 @@ import (
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // AsGoEth2ClientV1ForkChoice returns the fork choice in a go-eth2-client v1 fork choice format.
@@ -96,10 +97,16 @@ func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) (*ForkChoice, error) 
 		FinalizedCheckpoint: &Checkpoint{
 			Epoch: uint64(f.FinalizedCheckpoint.Epoch),
 			Root:  RootAsString(f.FinalizedCheckpoint.Root),
+			EpochV2: &wrapperspb.UInt64Value{
+				Value: uint64(f.FinalizedCheckpoint.Epoch),
+			},
 		},
 		JustifiedCheckpoint: &Checkpoint{
 			Epoch: uint64(f.JustifiedCheckpoint.Epoch),
 			Root:  RootAsString(f.JustifiedCheckpoint.Root),
+			EpochV2: &wrapperspb.UInt64Value{
+				Value: uint64(f.JustifiedCheckpoint.Epoch),
+			},
 		},
 		ForkChoiceNodes: nodes,
 	}, nil
@@ -113,11 +120,15 @@ func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkChoi
 
 	return &ForkChoiceNode{
 		Slot:               uint64(node.Slot),
+		SlotV2:             &wrapperspb.UInt64Value{Value: uint64(node.Slot)},
 		BlockRoot:          RootAsString(node.BlockRoot),
 		ParentRoot:         RootAsString(node.ParentRoot),
 		JustifiedEpoch:     uint64(node.JustifiedEpoch),
+		JustifiedEpochV2:   &wrapperspb.UInt64Value{Value: uint64(node.JustifiedEpoch)},
 		FinalizedEpoch:     uint64(node.FinalizedEpoch),
+		FinalizedEpochV2:   &wrapperspb.UInt64Value{Value: uint64(node.FinalizedEpoch)},
 		Weight:             node.Weight,
+		WeightV2:           &wrapperspb.UInt64Value{Value: node.Weight},
 		Validity:           string(node.Validity),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),

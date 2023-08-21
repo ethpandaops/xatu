@@ -14,6 +14,7 @@ import (
 	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type EventsBlock struct {
@@ -53,6 +54,7 @@ func (e *EventsBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 		Data: &xatu.DecoratedEvent_EthV1EventsBlock{
 			EthV1EventsBlock: &xatuethv1.EventBlock{
 				Slot:                uint64(e.event.Slot),
+				SlotV2:              &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 				Block:               xatuethv1.RootAsString(e.event.Block),
 				ExecutionOptimistic: e.event.ExecutionOptimistic,
 			},
@@ -104,15 +106,20 @@ func (e *EventsBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	extra.Slot = &xatu.Slot{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 		Number:        uint64(e.event.Slot),
+		NumberV2:      &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 	}
 
 	extra.Epoch = &xatu.Epoch{
 		Number:        epoch.Number(),
+		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
 	extra.Propagation = &xatu.Propagation{
 		SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		SlotStartDiffV2: &wrapperspb.UInt64Value{
+			Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
+		},
 	}
 
 	return extra, nil

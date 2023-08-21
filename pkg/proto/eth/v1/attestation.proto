@@ -6,6 +6,7 @@ package xatu.eth.v1;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
+import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/checkpoint.proto";
 
@@ -18,23 +19,29 @@ message Attestation {
 }
 
 message AttestationData {
-  uint64 slot = 1;
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 index = 2;
+  uint64 index = 2 [ deprecated = true ];
 
   string beacon_block_root = 3 [json_name="beacon_block_root"];
 
   Checkpoint source = 4;
 
   Checkpoint target = 5;
+
+  google.protobuf.UInt64Value slot_v2 = 6 [json_name="slot_v2"];
+
+  google.protobuf.UInt64Value index_v2 = 7 [json_name="index_v2"];
 }
 
 message AggregateAttestationAndProof {
-  uint64 aggregator_index = 1 [json_name="aggregator_index"];
+  uint64 aggregator_index = 1 [json_name="aggregator_index", deprecated=true];
 
   Attestation aggregate = 3;
 
   string selection_proof = 2 [json_name="selection_proof"];
+
+  google.protobuf.UInt64Value aggregator_index_v2 = 4 [json_name="aggregator_index_v2"];  
 }
 
 message SignedAggregateAttestationAndProof {

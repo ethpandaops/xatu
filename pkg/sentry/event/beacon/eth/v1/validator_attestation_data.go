@@ -18,6 +18,7 @@ type ValidatorAttestationData struct {
 	log logrus.FieldLogger
 
 	snapshot *ValidatorAttestationDataSnapshot
+	event    *phase0.AttestationData
 
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
@@ -25,15 +26,15 @@ type ValidatorAttestationData struct {
 }
 
 type ValidatorAttestationDataSnapshot struct {
-	Event           *phase0.AttestationData
 	RequestAt       time.Time
 	RequestDuration time.Duration
 }
 
-func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAttestationDataSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
+func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAttestationDataSnapshot, event *phase0.AttestationData, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
 	return &ValidatorAttestationData{
 		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA"),
 		snapshot:   snapshot,
+		event:      event,
 		beacon:     beacon,
 		clientMeta: clientMeta,
 		id:         uuid.New(),
@@ -41,7 +42,7 @@ func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAtte
 }
 
 func (e *ValidatorAttestationData) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	if e.snapshot.Event == nil {
+	if e.event == nil {
 		return nil, errors.New("snapshot event is nil")
 	}
 
@@ -56,16 +57,16 @@ func (e *ValidatorAttestationData) Decorate(ctx context.Context) (*xatu.Decorate
 		},
 		Data: &xatu.DecoratedEvent_EthV1ValidatorAttestationData{
 			EthV1ValidatorAttestationData: &v1.AttestationData{
-				Slot:            uint64(e.snapshot.Event.Slot),
-				Index:           uint64(e.snapshot.Event.Index),
-				BeaconBlockRoot: v1.RootAsString(e.snapshot.Event.BeaconBlockRoot),
+				Slot:            uint64(e.event.Slot),
+				Index:           uint64(e.event.Index),
+				BeaconBlockRoot: v1.RootAsString(e.event.BeaconBlockRoot),
 				Source: &v1.Checkpoint{
-					Epoch: uint64(e.snapshot.Event.Source.Epoch),
-					Root:  v1.RootAsString(e.snapshot.Event.Source.Root),
+					Epoch: uint64(e.event.Source.Epoch),
+					Root:  v1.RootAsString(e.event.Source.Root),
 				},
 				Target: &v1.Checkpoint{
-					Epoch: uint64(e.snapshot.Event.Target.Epoch),
-					Root:  v1.RootAsString(e.snapshot.Event.Target.Root),
+					Epoch: uint64(e.event.Target.Epoch),
+					Root:  v1.RootAsString(e.event.Target.Root),
 				},
 			},
 		},
@@ -94,8 +95,8 @@ func (e *ValidatorAttestationData) ShouldIgnore(ctx context.Context) (bool, erro
 func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1ValidatorAttestationDataData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1ValidatorAttestationDataData{}
 
-	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.snapshot.Event.Slot))
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.snapshot.Event.Slot))
+	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Slot))
 
 	extra.Slot = &xatu.Slot{
 		Number:        attestionSlot.Number(),
@@ -114,7 +115,7 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 	}
 
 	// Build out the target section
-	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.snapshot.Event.Target.Epoch))
+	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Target.Epoch))
 	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetData{
 		Epoch: &xatu.Epoch{
 			Number:        targetEpoch.Number(),
@@ -123,7 +124,7 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 	}
 
 	// Build out the source section
-	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.snapshot.Event.Source.Epoch))
+	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Source.Epoch))
 	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceData{
 		Epoch: &xatu.Epoch{
 			Number:        sourceEpoch.Number(),

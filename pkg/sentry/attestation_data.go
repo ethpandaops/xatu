@@ -99,8 +99,7 @@ func (s *Sentry) fetchValidatorAttestationData(ctx context.Context) ([]*v1.Valid
 			}
 
 			snapshot.RequestDuration = time.Since(startedAt)
-			snapshot.Event = data
-			vad := v1.NewValidatorAttestationData(s.log, snapshot, s.beacon, meta)
+			vad := v1.NewValidatorAttestationData(s.log, snapshot, data, s.beacon, meta)
 			dataChan <- vad
 		}(phase0.CommitteeIndex(i))
 	}

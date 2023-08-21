@@ -264,10 +264,8 @@ func (m *DutiesService) GetLastCommitteeIndex(ctx context.Context, slot phase0.S
 	var maxIndex *phase0.CommitteeIndex
 
 	for _, committee := range committees.Value() {
-		if committee.Slot == slot {
-			if maxIndex == nil || committee.Index > *maxIndex {
-				maxIndex = &committee.Index
-			}
+		if committee.Slot == slot && (maxIndex == nil || committee.Index > *maxIndex) {
+			maxIndex = &committee.Index
 		}
 	}
 

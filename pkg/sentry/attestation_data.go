@@ -75,14 +75,14 @@ func (s *Sentry) fetchValidatorAttestationData(ctx context.Context) ([]*v1.Valid
 
 	targetCommitteeSize := uint64(*lastCommitteeIndex)
 
-	attestationDataList := make([]*v1.ValidatorAttestationData, targetCommitteeSize)
-	errChan := make(chan error, targetCommitteeSize)
-	dataChan := make(chan *v1.ValidatorAttestationData, targetCommitteeSize)
+	attestationDataList := make([]*v1.ValidatorAttestationData, targetCommitteeSize+1)
+	errChan := make(chan error, targetCommitteeSize+1)
+	dataChan := make(chan *v1.ValidatorAttestationData, targetCommitteeSize+1)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	for i := uint64(0); i < targetCommitteeSize; i++ {
+	for i := uint64(0); i <= targetCommitteeSize; i++ {
 		go func(index phase0.CommitteeIndex) {
 			data, err := s.beacon.Node().FetchAttestationData(ctx, phase0.Slot(slot.Number()), index)
 			if err != nil {
@@ -107,7 +107,7 @@ func (s *Sentry) fetchValidatorAttestationData(ctx context.Context) ([]*v1.Valid
 
 	var errCount int
 
-	for i := uint64(0); i < targetCommitteeSize; i++ {
+	for i := uint64(0); i <= targetCommitteeSize; i++ {
 		select {
 		case err := <-errChan:
 			errCount++

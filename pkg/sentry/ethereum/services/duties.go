@@ -261,19 +261,19 @@ func (m *DutiesService) GetLastCommitteeIndex(ctx context.Context, slot phase0.S
 		return nil, fmt.Errorf("error getting beacon committees from cache for epoch %d: %w", epoch.Number(), err)
 	}
 
-	maxIndex := phase0.CommitteeIndex(0)
-	found := false
+	var maxIndex *phase0.CommitteeIndex
 
 	for _, committee := range committees.Value() {
-		if committee.Slot == slot && committee.Index > maxIndex {
-			maxIndex = committee.Index
-			found = true
+		if committee.Slot == slot {
+			if maxIndex == nil || committee.Index > *maxIndex {
+				maxIndex = &committee.Index
+			}
 		}
 	}
 
-	if !found {
+	if maxIndex == nil {
 		return nil, fmt.Errorf("no committees found for slot %d", slot)
 	}
 
-	return &maxIndex, nil
+	return maxIndex, nil
 }

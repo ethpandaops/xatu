@@ -32,6 +32,18 @@ forkChoice:
     slotTimes:
     - 4s
 
+attestationData:
+  enabled: false
+
+  interval:
+    enabled: false
+    every: 30s
+
+  at:
+    enabled: false
+    slotTimes:
+    - 4s
+
 beaconCommittees:
   enabled: true
 

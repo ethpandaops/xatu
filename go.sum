@@ -104,8 +104,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/ethereum/go-ethereum v1.12.0 h1:bdnhLPtqETd4m3mS8BGMNvBTf36bO5bx/hxE2zljOa0=
 github.com/ethereum/go-ethereum v1.12.0/go.mod h1:/oo2X/dZLJjf2mJ6YT9wcWxa4nNJDBKDBU6sFIpx1Gs=
-github.com/ethpandaops/beacon v0.26.0 h1:faGD1E2u6LKHDTl/T0ofuxj1lN05nmkkLxz6+lwdqsg=
-github.com/ethpandaops/beacon v0.26.0/go.mod h1:p+PMyAYXro2hgNEMNbCtzLOvzHund9Q9BTPATvf8/SA=
+github.com/ethpandaops/beacon v0.27.0 h1:ex+fiN19DVcqnNB2qYUV+QJZaXhFCzpgbjrWnvMhkw4=
+github.com/ethpandaops/beacon v0.27.0/go.mod h1:p+PMyAYXro2hgNEMNbCtzLOvzHund9Q9BTPATvf8/SA=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30 h1:xziHHIPT9iHoocM91UXwxICQoF121cdfontVAFwtapM=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30/go.mod h1:5UfUQ+9IBe1iZsk3KBoF/jtnRv7WVnMjebik4EW6ULE=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=

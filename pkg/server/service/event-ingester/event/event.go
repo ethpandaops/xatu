@@ -29,6 +29,7 @@ const (
 	TypeDebugForkChoice                       Type = v1.DebugForkChoiceType
 	TypeDebugForkChoiceReorg                  Type = v1.DebugForkChoiceReorgType
 	TypeBeaconEthV1BeaconCommittee            Type = v1.BeaconCommitteeType
+	TypeBeaconEthV1ValidatorAttestationData   Type = v1.ValidatorAttestationDataType
 )
 
 type Event interface {
@@ -67,6 +68,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewDebugForkChoiceReorg(log, event), nil
 	case TypeBeaconEthV1BeaconCommittee:
 		return v1.NewBeaconCommittee(log, event), nil
+	case TypeBeaconEthV1ValidatorAttestationData:
+		return v1.NewValidatorAttestationData(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

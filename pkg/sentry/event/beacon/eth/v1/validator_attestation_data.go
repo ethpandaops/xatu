@@ -113,5 +113,23 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 		Timestamp:                  timestamppb.New(e.snapshot.RequestAt),
 	}
 
+	// Build out the target section
+	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.snapshot.Event.Target.Epoch))
+	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetData{
+		Epoch: &xatu.Epoch{
+			Number:        targetEpoch.Number(),
+			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
+		},
+	}
+
+	// Build out the source section
+	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.snapshot.Event.Source.Epoch))
+	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceData{
+		Epoch: &xatu.Epoch{
+			Number:        sourceEpoch.Number(),
+			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
+		},
+	}
+
 	return extra, nil
 }

@@ -301,14 +301,21 @@ message ClientMeta {
   }
 
   message AdditionalEthV1ValidatorAttestationDataData {
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalEthV1AttestationSourceData source = 1;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalEthV1AttestationTargetData target = 2;
+  
     // Epoch contains the epoch information for the beacon committee.
-    Epoch epoch = 1;
+    Epoch epoch = 3;
 
     // Slot contains the slot information for the beacon commitee.
-    Slot slot = 2;
+    Slot slot = 4;
 
     // AttestationDataSnapshot is the snapshot of the attestation data
-    AttestationDataSnapshot Snapshot = 3 [ json_name = "snapshot" ];
+    AttestationDataSnapshot Snapshot = 5 [ json_name = "snapshot" ];
   }
 
   // AdditionalData contains additional, computed data as set by the client

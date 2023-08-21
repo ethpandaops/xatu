@@ -24,7 +24,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 
 	now := time.Now()
 	if meta != nil {
-		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
+		now = now.Add(time.Duration(meta.ClockDriftV2.Value) * time.Millisecond)
 	}
 
 	tx, err := event.MarshalBinary()

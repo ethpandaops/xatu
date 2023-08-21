@@ -68,13 +68,13 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		additional.Before = &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestEpoch:               beforeAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                beforeAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
 			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
-				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
 			},
-			RequestDurationMs: beforeAdditional.Snapshot.RequestDurationMs,
+			RequestDurationMs: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
 			RequestDurationMsV2: &wrapperspb.UInt64Value{
-				Value: beforeAdditional.Snapshot.RequestDurationMs,
+				Value: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
 			},
 			Timestamp: beforeAdditional.Snapshot.Timestamp,
 		}
@@ -91,13 +91,13 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		additional.After = &xatu.ClientMeta_ForkChoiceSnapshot{
 			RequestEpoch:               afterAdditional.Snapshot.RequestEpoch,
 			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
 			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
-				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs,
+				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
 			},
-			RequestDurationMs: afterAdditional.Snapshot.RequestDurationMs,
+			RequestDurationMs: afterAdditional.Snapshot.RequestDurationMsV2.Value,
 			RequestDurationMsV2: &wrapperspb.UInt64Value{
-				Value: afterAdditional.Snapshot.RequestDurationMs,
+				Value: afterAdditional.Snapshot.RequestDurationMsV2.Value,
 			},
 			Timestamp: afterAdditional.Snapshot.Timestamp,
 		}

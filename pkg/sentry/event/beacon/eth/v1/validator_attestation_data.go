@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ValidatorAttestationData struct {
@@ -59,14 +60,18 @@ func (e *ValidatorAttestationData) Decorate(ctx context.Context) (*xatu.Decorate
 			EthV1ValidatorAttestationData: &v1.AttestationData{
 				Slot:            uint64(e.event.Slot),
 				Index:           uint64(e.event.Index),
+				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+				IndexV2:         &wrapperspb.UInt64Value{Value: uint64(e.event.Index)},
 				BeaconBlockRoot: v1.RootAsString(e.event.BeaconBlockRoot),
 				Source: &v1.Checkpoint{
-					Epoch: uint64(e.event.Source.Epoch),
-					Root:  v1.RootAsString(e.event.Source.Root),
+					EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Source.Epoch)},
+					Epoch:   uint64(e.event.Source.Epoch),
+					Root:    v1.RootAsString(e.event.Source.Root),
 				},
 				Target: &v1.Checkpoint{
-					Epoch: uint64(e.event.Target.Epoch),
-					Root:  v1.RootAsString(e.event.Target.Root),
+					EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Target.Epoch)},
+					Epoch:   uint64(e.event.Target.Epoch),
+					Root:    v1.RootAsString(e.event.Target.Root),
 				},
 			},
 		},
@@ -109,8 +114,8 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 	}
 
 	extra.Snapshot = &xatu.ClientMeta_AttestationDataSnapshot{
-		RequestedAtSlotStartDiffMs: uint64(e.snapshot.RequestAt.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
-		RequestDurationMs:          uint64(e.snapshot.RequestDuration.Milliseconds()),
+		RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{Value: uint64(e.snapshot.RequestAt.Sub(attestionSlot.TimeWindow().Start()).Milliseconds())},
+		RequestDurationMs:          &wrapperspb.UInt64Value{Value: uint64(e.snapshot.RequestDuration.Milliseconds())},
 		Timestamp:                  timestamppb.New(e.snapshot.RequestAt),
 	}
 

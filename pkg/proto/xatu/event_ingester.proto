@@ -311,21 +311,27 @@ message ClientMeta {
     string block_root = 4 [ json_name = "block_root" ];
     
     // TransactionsCount contains the number of transactions in the block
-    uint64 transactions_count = 5 [ json_name = "transactions_count" ];
+    uint64 transactions_count = 5 [ json_name = "transactions_count", deprecated=true ];
 
     // TransactionsTotalBytes contains the total bytes size of transactions
-    uint64 transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
+    uint64 transactions_total_bytes = 6 [ json_name = "transactions_total_bytes", deprecated=true ];
+
+    // TransactionsCount contains the number of transactions in the block
+    google.protobuf.UInt64Value transactions_count_v2 = 7 [ json_name = "transactions_count_v2" ];
+
+    // TransactionsTotalBytes contains the total bytes size of transactions
+    google.protobuf.UInt64Value transactions_total_bytes_v2 = 8 [ json_name = "transactions_total_bytes_v2" ];
   }
 
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the attestation data snapshot (in milliseconds).
-    uint64 requested_at_slot_start_diff_ms = 1
+    google.protobuf.UInt64Value requested_at_slot_start_diff_ms = 1
         [ json_name = "requested_at_slot_start_diff_ms" ];
 
     // RequestDurationMs is the duration of the attestation data snapshot request
     // (in milliseconds).
-    uint64 request_duration_ms = 2 [ json_name = "request_duration_ms" ];
+    google.protobuf.UInt64Value request_duration_ms = 2 [ json_name = "request_duration_ms" ];
 
     // Timestamp is the timestamp of the attestation data snapshot.
     google.protobuf.Timestamp timestamp = 3 [ json_name = "timestamp" ];

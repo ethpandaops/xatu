@@ -573,7 +573,10 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	}
 
 	extra.TransactionsCount = uint64(txCount)
+	extra.TransactionsCountV2 = wrapperspb.UInt64(uint64(txCount))
+
 	extra.TransactionsTotalBytes = uint64(txSize)
+	extra.TransactionsTotalBytesV2 = wrapperspb.UInt64(uint64(txSize))
 
 	return extra, nil
 }

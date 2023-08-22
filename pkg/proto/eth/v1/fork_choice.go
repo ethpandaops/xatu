@@ -34,11 +34,11 @@ func (f *ForkChoice) AsGoEth2ClientV1ForkChoice() (*eth2v1.ForkChoice, error) {
 
 	return &eth2v1.ForkChoice{
 		JustifiedCheckpoint: phase0.Checkpoint{
-			Epoch: phase0.Epoch(f.JustifiedCheckpoint.Epoch),
+			Epoch: phase0.Epoch(f.JustifiedCheckpoint.EpochV2.Value),
 			Root:  justifiedRoot,
 		},
 		FinalizedCheckpoint: phase0.Checkpoint{
-			Epoch: phase0.Epoch(f.FinalizedCheckpoint.Epoch),
+			Epoch: phase0.Epoch(f.FinalizedCheckpoint.EpochV2.Value),
 			Root:  finalizedRoot,
 		},
 		ForkChoiceNodes: nodes,
@@ -69,12 +69,12 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 	}
 
 	return &eth2v1.ForkChoiceNode{
-		Slot:               phase0.Slot(f.Slot),
+		Slot:               phase0.Slot(f.SlotV2.Value),
 		BlockRoot:          blockRoot,
 		ParentRoot:         parentRoot,
-		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpoch),
-		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpoch),
-		Weight:             f.Weight,
+		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpochV2.Value),
+		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpochV2.Value),
+		Weight:             f.WeightV2.Value,
 		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
 		ExecutionBlockHash: executionBlockHash,
 		ExtraData:          extraData,

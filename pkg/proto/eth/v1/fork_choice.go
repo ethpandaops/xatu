@@ -45,6 +45,42 @@ func (f *ForkChoice) AsGoEth2ClientV1ForkChoice() (*eth2v1.ForkChoice, error) {
 	}, nil
 }
 
+// AsGoEth2ClientV1ForkChoice returns the fork choice in a go-eth2-client v1 fork choice format.
+func (f *ForkChoiceV2) AsGoEth2ClientV1ForkChoice() (*eth2v1.ForkChoice, error) {
+	justifiedRoot, err := StringToRoot(f.JustifiedCheckpoint.Root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert justified_checkpoint.root")
+	}
+
+	finalizedRoot, err := StringToRoot(f.FinalizedCheckpoint.Root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert finalized_checkpoint.root")
+	}
+
+	nodes := []*eth2v1.ForkChoiceNode{}
+
+	for _, node := range f.ForkChoiceNodes {
+		node, err := node.AsGoEth2ClientV1ForkChoiceNode()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert node")
+		}
+
+		nodes = append(nodes, node)
+	}
+
+	return &eth2v1.ForkChoice{
+		JustifiedCheckpoint: phase0.Checkpoint{
+			Epoch: phase0.Epoch(f.JustifiedCheckpoint.Epoch.GetValue()),
+			Root:  justifiedRoot,
+		},
+		FinalizedCheckpoint: phase0.Checkpoint{
+			Epoch: phase0.Epoch(f.FinalizedCheckpoint.Epoch.GetValue()),
+			Root:  finalizedRoot,
+		},
+		ForkChoiceNodes: nodes,
+	}, nil
+}
+
 func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNode, error) {
 	blockRoot, err := StringToRoot(f.BlockRoot)
 	if err != nil {
@@ -75,6 +111,42 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpoch),
 		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpoch),
 		Weight:             f.Weight,
+		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
+		ExecutionBlockHash: executionBlockHash,
+		ExtraData:          extraData,
+	}, nil
+}
+
+func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNode, error) {
+	blockRoot, err := StringToRoot(f.BlockRoot)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert block_root")
+	}
+
+	parentRoot, err := StringToRoot(f.ParentRoot)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert parent_root")
+	}
+
+	executionBlockHash, err := StringToRoot(f.ExecutionBlockHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert execution_block_hash")
+	}
+
+	extraData := make(map[string]interface{})
+
+	err = json.Unmarshal([]byte(f.ExtraData), &extraData)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal extra_data")
+	}
+
+	return &eth2v1.ForkChoiceNode{
+		Slot:               phase0.Slot(f.Slot.GetValue()),
+		BlockRoot:          blockRoot,
+		ParentRoot:         parentRoot,
+		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpoch.GetValue()),
+		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpoch.GetValue()),
+		Weight:             f.Weight.GetValue(),
 		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
 		ExecutionBlockHash: executionBlockHash,
 		ExtraData:          extraData,

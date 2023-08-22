@@ -713,17 +713,17 @@ message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION" ];
-    xatu.eth.v1.EventBlock eth_v1_events_block = 4  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK" ];
-    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5  [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG" ];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6  [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT" ];
-    xatu.eth.v1.EventHead eth_v1_events_head = 7  [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD" ];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8  [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT" ];
-    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF" ];
-    string mempool_transaction = 10 [ json_name = "MEMPOOL_TRANSACTION" ];
-    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
-    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
-    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
+    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION", deprecated = true ];
+    xatu.eth.v1.EventBlock eth_v1_events_block = 4  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK", deprecated = true ];
+    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5  [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG", deprecated = true ];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6  [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT", deprecated = true ];
+    xatu.eth.v1.EventHead eth_v1_events_head = 7  [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD", deprecated = true ];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8  [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT", deprecated = true ];
+    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF", deprecated = true ];
+    string mempool_transaction = 10 [ json_name = "MEMPOOL_TRANSACTION", deprecated = true ];
+    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK", deprecated = true ];
+    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE", deprecated = true ];
+    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG", deprecated = true ];
     xatu.eth.v1.Committee eth_v1_beacon_committee = 14 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
     xatu.eth.v1.AttestationDataV2 eth_v1_validator_attestation_data = 15 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
     xatu.eth.v1.AttestationV2 eth_v1_events_attestation_v2 = 16 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2" ];

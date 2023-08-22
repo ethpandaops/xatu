@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
 
 package xatu.eth.v1;
 
@@ -11,37 +12,51 @@ import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/checkpoint.proto";
 
 message Attestation {
-  string aggregation_bits = 1 [json_name="aggregation_bits"];
+  string aggregation_bits = 1 [ json_name = "aggregation_bits" ];
 
   string signature = 2;
 
   AttestationData data = 3;
 }
 
+message AttestationV2 {
+  string aggregation_bits = 1 [ json_name = "aggregation_bits" ];
+
+  string signature = 2;
+
+  AttestationDataV2 data = 3;
+}
+
 message AttestationData {
-  uint64 slot = 1 [ deprecated = true ];
+  uint64 slot = 1;
 
-  uint64 index = 2 [ deprecated = true ];
+  uint64 index = 2;
 
-  string beacon_block_root = 3 [json_name="beacon_block_root"];
+  string beacon_block_root = 3 [ json_name = "beacon_block_root" ];
 
   Checkpoint source = 4;
 
   Checkpoint target = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [json_name="slot_v2"];
+message AttestationDataV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value index_v2 = 7 [json_name="index_v2"];
+  google.protobuf.UInt64Value index = 2 [ json_name = "index" ];
+
+  string beacon_block_root = 3 [ json_name = "beacon_block_root" ];
+
+  CheckpointV2 source = 4;
+
+  CheckpointV2 target = 5;
 }
 
 message AggregateAttestationAndProof {
-  uint64 aggregator_index = 1 [json_name="aggregator_index", deprecated=true];
+  uint64 aggregator_index = 1 [ json_name = "aggregator_index" ];
 
   Attestation aggregate = 3;
 
-  string selection_proof = 2 [json_name="selection_proof"];
-
-  google.protobuf.UInt64Value aggregator_index_v2 = 4 [json_name="aggregator_index_v2"];  
+  string selection_proof = 2 [ json_name = "selection_proof" ];
 }
 
 message SignedAggregateAttestationAndProof {
@@ -49,4 +64,3 @@ message SignedAggregateAttestationAndProof {
 
   string signature = 2;
 }
-

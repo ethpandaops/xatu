@@ -35,3 +35,19 @@ message EventBlock {
 
   BlockVersion version = 6;
 }
+
+message EventBlockV2 {
+  oneof message {
+    v1.BeaconBlockV2 phase0_block = 1 [ json_name = "PHASE0" ];
+
+    v2.BeaconBlockAltairV2 altair_block = 2 [ json_name = "ALTAIR" ];
+
+    v2.BeaconBlockBellatrixV2 bellatrix_block = 3 [ json_name = "BELLATRIX" ];
+
+    v2.BeaconBlockCapellaV2 capella_block = 4 [ json_name = "CAPELLA" ];
+  }
+
+  string signature = 5;
+
+  BlockVersion version = 6;
+}

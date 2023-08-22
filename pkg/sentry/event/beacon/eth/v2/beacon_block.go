@@ -36,7 +36,7 @@ type BeaconBlock struct {
 
 func NewBeaconBlock(log logrus.FieldLogger, blockRoot string, event *spec.VersionedSignedBeaconBlock, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlock {
 	return &BeaconBlock{
-		log:            log.WithField("event", "BEACON_API_ETH_V2_BEACON_BLOCK"),
+		log:            log.WithField("event", "BEACON_API_ETH_V2_BEACON_BLOCK_V2"),
 		now:            now,
 		blockRoot:      blockRoot,
 		event:          event,
@@ -48,7 +48,7 @@ func NewBeaconBlock(log logrus.FieldLogger, blockRoot string, event *spec.Versio
 }
 
 func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	var data *xatuethv2.EventBlock
+	var data *xatuethv2.EventBlockV2
 
 	switch e.event.Version {
 	case spec.DataVersionPhase0:
@@ -65,15 +65,15 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK,
+			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV2BeaconBlock{
-			EthV2BeaconBlock: data,
+		Data: &xatu.DecoratedEvent_EthV2BeaconBlockV2{
+			EthV2BeaconBlockV2: data,
 		},
 	}
 
@@ -81,8 +81,8 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon block data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlock{
-			EthV2BeaconBlock: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlockV2{
+			EthV2BeaconBlockV2: additionalData,
 		}
 	}
 
@@ -326,39 +326,34 @@ func getBlsToExecutionChanges(data []*capella.SignedBLSToExecutionChange) []*xat
 	return changes
 }
 
-func getWithdrawals(data []*capella.Withdrawal) []*xatuethv1.Withdrawal {
-	withdrawals := []*xatuethv1.Withdrawal{}
+func getWithdrawals(data []*capella.Withdrawal) []*xatuethv1.WithdrawalV2 {
+	withdrawals := []*xatuethv1.WithdrawalV2{}
 
 	if data == nil {
 		return withdrawals
 	}
 
 	for _, withdrawal := range data {
-		withdrawals = append(withdrawals, &xatuethv1.Withdrawal{
-			Index:            uint64(withdrawal.Index),
-			ValidatorIndex:   uint64(withdrawal.ValidatorIndex),
-			Address:          withdrawal.Address.String(),
-			Amount:           uint64(withdrawal.Amount),
-			IndexV2:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Index)},
-			ValidatorIndexV2: &wrapperspb.UInt64Value{Value: uint64(withdrawal.ValidatorIndex)},
-			AmountV2:         &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
+		withdrawals = append(withdrawals, &xatuethv1.WithdrawalV2{
+			Index:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Index)},
+			ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(withdrawal.ValidatorIndex)},
+			Address:        withdrawal.Address.String(),
+			Amount:         &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
 		})
 	}
 
 	return withdrawals
 }
 
-func (e *BeaconBlock) getPhase0Data() *xatuethv2.EventBlock {
-	return &xatuethv2.EventBlock{
+func (e *BeaconBlock) getPhase0Data() *xatuethv2.EventBlockV2 {
+	return &xatuethv2.EventBlockV2{
 		Version: xatuethv2.BlockVersion_PHASE0,
-		Message: &xatuethv2.EventBlock_Phase0Block{
-			Phase0Block: &xatuethv1.BeaconBlock{
-				Slot:            uint64(e.event.Phase0.Message.Slot),
-				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Phase0.Message.Slot)},
-				ProposerIndex:   uint64(e.event.Phase0.Message.ProposerIndex),
-				ProposerIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Phase0.Message.ProposerIndex)},
-				ParentRoot:      e.event.Phase0.Message.ParentRoot.String(),
-				StateRoot:       e.event.Phase0.Message.StateRoot.String(),
+		Message: &xatuethv2.EventBlockV2_Phase0Block{
+			Phase0Block: &xatuethv1.BeaconBlockV2{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(e.event.Phase0.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Phase0.Message.ProposerIndex)},
+				ParentRoot:    e.event.Phase0.Message.ParentRoot.String(),
+				StateRoot:     e.event.Phase0.Message.StateRoot.String(),
 				Body: &xatuethv1.BeaconBlockBody{
 					RandaoReveal: e.event.Phase0.Message.Body.RANDAOReveal.String(),
 					Eth1Data: &xatuethv1.Eth1Data{
@@ -379,18 +374,16 @@ func (e *BeaconBlock) getPhase0Data() *xatuethv2.EventBlock {
 	}
 }
 
-func (e *BeaconBlock) getAltairData() *xatuethv2.EventBlock {
-	return &xatuethv2.EventBlock{
+func (e *BeaconBlock) getAltairData() *xatuethv2.EventBlockV2 {
+	return &xatuethv2.EventBlockV2{
 		Version: xatuethv2.BlockVersion_ALTAIR,
-		Message: &xatuethv2.EventBlock_AltairBlock{
-			AltairBlock: &xatuethv2.BeaconBlockAltair{
-				Slot:            uint64(e.event.Altair.Message.Slot),
-				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Altair.Message.Slot)},
-				ProposerIndex:   uint64(e.event.Altair.Message.ProposerIndex),
-				ProposerIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Altair.Message.ProposerIndex)},
-				ParentRoot:      e.event.Altair.Message.ParentRoot.String(),
-				StateRoot:       e.event.Altair.Message.StateRoot.String(),
-				Body: &xatuethv2.BeaconBlockBodyAltair{
+		Message: &xatuethv2.EventBlockV2_AltairBlock{
+			AltairBlock: &xatuethv2.BeaconBlockAltairV2{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(e.event.Altair.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Altair.Message.ProposerIndex)},
+				ParentRoot:    e.event.Altair.Message.ParentRoot.String(),
+				StateRoot:     e.event.Altair.Message.StateRoot.String(),
+				Body: &xatuethv2.BeaconBlockBodyAltairV2{
 					RandaoReveal: e.event.Altair.Message.Body.RANDAOReveal.String(),
 					Eth1Data: &xatuethv1.Eth1Data{
 						DepositRoot:  e.event.Altair.Message.Body.ETH1Data.DepositRoot.String(),
@@ -414,18 +407,16 @@ func (e *BeaconBlock) getAltairData() *xatuethv2.EventBlock {
 	}
 }
 
-func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlock {
-	return &xatuethv2.EventBlock{
+func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlockV2 {
+	return &xatuethv2.EventBlockV2{
 		Version: xatuethv2.BlockVersion_BELLATRIX,
-		Message: &xatuethv2.EventBlock_BellatrixBlock{
-			BellatrixBlock: &xatuethv2.BeaconBlockBellatrix{
-				Slot:            uint64(e.event.Bellatrix.Message.Slot),
-				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Bellatrix.Message.Slot)},
-				ProposerIndex:   uint64(e.event.Bellatrix.Message.ProposerIndex),
-				ProposerIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Bellatrix.Message.ProposerIndex)},
-				ParentRoot:      e.event.Bellatrix.Message.ParentRoot.String(),
-				StateRoot:       e.event.Bellatrix.Message.StateRoot.String(),
-				Body: &xatuethv2.BeaconBlockBodyBellatrix{
+		Message: &xatuethv2.EventBlockV2_BellatrixBlock{
+			BellatrixBlock: &xatuethv2.BeaconBlockBellatrixV2{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(e.event.Bellatrix.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Bellatrix.Message.ProposerIndex)},
+				ParentRoot:    e.event.Bellatrix.Message.ParentRoot.String(),
+				StateRoot:     e.event.Bellatrix.Message.StateRoot.String(),
+				Body: &xatuethv2.BeaconBlockBodyBellatrixV2{
 					RandaoReveal: e.event.Bellatrix.Message.Body.RANDAOReveal.String(),
 					Eth1Data: &xatuethv1.Eth1Data{
 						DepositRoot:  e.event.Bellatrix.Message.Body.ETH1Data.DepositRoot.String(),
@@ -442,21 +433,17 @@ func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlock {
 						SyncCommitteeBits:      fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.SyncAggregate.SyncCommitteeBits),
 						SyncCommitteeSignature: e.event.Bellatrix.Message.Body.SyncAggregate.SyncCommitteeSignature.String(),
 					},
-					ExecutionPayload: &xatuethv1.ExecutionPayload{
+					ExecutionPayload: &xatuethv1.ExecutionPayloadV2{
 						ParentHash:    e.event.Bellatrix.Message.Body.ExecutionPayload.ParentHash.String(),
 						FeeRecipient:  e.event.Bellatrix.Message.Body.ExecutionPayload.FeeRecipient.String(),
 						StateRoot:     fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.StateRoot[:]),
 						ReceiptsRoot:  fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.ReceiptsRoot[:]),
 						LogsBloom:     fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.LogsBloom[:]),
 						PrevRandao:    fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.PrevRandao[:]),
-						BlockNumber:   e.event.Bellatrix.Message.Body.ExecutionPayload.BlockNumber,
-						BlockNumberV2: &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.BlockNumber},
-						GasLimit:      e.event.Bellatrix.Message.Body.ExecutionPayload.GasLimit,
-						GasLimitV2:    &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.GasLimit},
-						GasUsed:       e.event.Bellatrix.Message.Body.ExecutionPayload.GasUsed,
-						GasUsedV2:     &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.GasUsed},
-						Timestamp:     e.event.Bellatrix.Message.Body.ExecutionPayload.Timestamp,
-						TimestampV2:   &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.Timestamp},
+						BlockNumber:   &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.BlockNumber},
+						GasLimit:      &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.GasLimit},
+						GasUsed:       &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.GasUsed},
+						Timestamp:     &wrapperspb.UInt64Value{Value: e.event.Bellatrix.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.ExtraData),
 						BaseFeePerGas: fmt.Sprintf("0x%x", e.event.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
 						BlockHash:     e.event.Bellatrix.Message.Body.ExecutionPayload.BlockHash.String(),
@@ -469,18 +456,16 @@ func (e *BeaconBlock) getBellatrixData() *xatuethv2.EventBlock {
 	}
 }
 
-func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlock {
-	return &xatuethv2.EventBlock{
+func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlockV2 {
+	return &xatuethv2.EventBlockV2{
 		Version: xatuethv2.BlockVersion_CAPELLA,
-		Message: &xatuethv2.EventBlock_CapellaBlock{
-			CapellaBlock: &xatuethv2.BeaconBlockCapella{
-				Slot:            uint64(e.event.Capella.Message.Slot),
-				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Capella.Message.Slot)},
-				ProposerIndex:   uint64(e.event.Capella.Message.ProposerIndex),
-				ProposerIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Capella.Message.ProposerIndex)},
-				ParentRoot:      e.event.Capella.Message.ParentRoot.String(),
-				StateRoot:       e.event.Capella.Message.StateRoot.String(),
-				Body: &xatuethv2.BeaconBlockBodyCapella{
+		Message: &xatuethv2.EventBlockV2_CapellaBlock{
+			CapellaBlock: &xatuethv2.BeaconBlockCapellaV2{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(e.event.Capella.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Capella.Message.ProposerIndex)},
+				ParentRoot:    e.event.Capella.Message.ParentRoot.String(),
+				StateRoot:     e.event.Capella.Message.StateRoot.String(),
+				Body: &xatuethv2.BeaconBlockBodyCapellaV2{
 					RandaoReveal: e.event.Capella.Message.Body.RANDAOReveal.String(),
 					Eth1Data: &xatuethv1.Eth1Data{
 						DepositRoot:  e.event.Capella.Message.Body.ETH1Data.DepositRoot.String(),
@@ -497,21 +482,17 @@ func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlock {
 						SyncCommitteeBits:      fmt.Sprintf("0x%x", e.event.Capella.Message.Body.SyncAggregate.SyncCommitteeBits),
 						SyncCommitteeSignature: e.event.Capella.Message.Body.SyncAggregate.SyncCommitteeSignature.String(),
 					},
-					ExecutionPayload: &xatuethv1.ExecutionPayloadCapella{
+					ExecutionPayload: &xatuethv1.ExecutionPayloadCapellaV2{
 						ParentHash:    e.event.Capella.Message.Body.ExecutionPayload.ParentHash.String(),
 						FeeRecipient:  e.event.Capella.Message.Body.ExecutionPayload.FeeRecipient.String(),
 						StateRoot:     fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.StateRoot[:]),
 						ReceiptsRoot:  fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.ReceiptsRoot[:]),
 						LogsBloom:     fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.LogsBloom[:]),
 						PrevRandao:    fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.PrevRandao[:]),
-						BlockNumber:   e.event.Capella.Message.Body.ExecutionPayload.BlockNumber,
-						BlockNumberV2: &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.BlockNumber},
-						GasLimit:      e.event.Capella.Message.Body.ExecutionPayload.GasLimit,
-						GasLimitV2:    &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.GasLimit},
-						GasUsed:       e.event.Capella.Message.Body.ExecutionPayload.GasUsed,
-						GasUsedV2:     &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.GasUsed},
-						Timestamp:     e.event.Capella.Message.Body.ExecutionPayload.Timestamp,
-						TimestampV2:   &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.Timestamp},
+						BlockNumber:   &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.BlockNumber},
+						GasLimit:      &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.GasLimit},
+						GasUsed:       &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.GasUsed},
+						Timestamp:     &wrapperspb.UInt64Value{Value: e.event.Capella.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.ExtraData),
 						BaseFeePerGas: fmt.Sprintf("0x%x", e.event.Capella.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
 						BlockHash:     e.event.Capella.Message.Body.ExecutionPayload.BlockHash.String(),
@@ -526,8 +507,8 @@ func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlock {
 	}
 }
 
-func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockData{}
+func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
+	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 
 	slotI, err := e.event.Slot()
 	if err != nil {
@@ -537,15 +518,13 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(slotI))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(slotI))
 
-	extra.Slot = &xatu.Slot{
+	extra.Slot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
-		Number:        uint64(slotI),
-		NumberV2:      &wrapperspb.UInt64Value{Value: uint64(slotI)},
+		Number:        &wrapperspb.UInt64Value{Value: uint64(slotI)},
 	}
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
@@ -572,11 +551,9 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 		}
 	}
 
-	extra.TransactionsCount = uint64(txCount)
-	extra.TransactionsCountV2 = wrapperspb.UInt64(uint64(txCount))
+	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
 
-	extra.TransactionsTotalBytes = uint64(txSize)
-	extra.TransactionsTotalBytesV2 = wrapperspb.UInt64(uint64(txSize))
+	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
 
 	return extra, nil
 }

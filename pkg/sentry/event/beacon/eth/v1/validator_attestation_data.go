@@ -33,7 +33,7 @@ type ValidatorAttestationDataSnapshot struct {
 
 func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAttestationDataSnapshot, event *phase0.AttestationData, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
 	return &ValidatorAttestationData{
-		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA"),
+		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA_V2"),
 		snapshot:   snapshot,
 		event:      event,
 		beacon:     beacon,
@@ -57,21 +57,17 @@ func (e *ValidatorAttestationData) Decorate(ctx context.Context) (*xatu.Decorate
 			Client: e.clientMeta,
 		},
 		Data: &xatu.DecoratedEvent_EthV1ValidatorAttestationData{
-			EthV1ValidatorAttestationData: &v1.AttestationData{
-				Slot:            uint64(e.event.Slot),
-				Index:           uint64(e.event.Index),
-				SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
-				IndexV2:         &wrapperspb.UInt64Value{Value: uint64(e.event.Index)},
+			EthV1ValidatorAttestationData: &v1.AttestationDataV2{
+				Slot:            &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+				Index:           &wrapperspb.UInt64Value{Value: uint64(e.event.Index)},
 				BeaconBlockRoot: v1.RootAsString(e.event.BeaconBlockRoot),
-				Source: &v1.Checkpoint{
-					EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Source.Epoch)},
-					Epoch:   uint64(e.event.Source.Epoch),
-					Root:    v1.RootAsString(e.event.Source.Root),
+				Source: &v1.CheckpointV2{
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(e.event.Source.Epoch)},
+					Root:  v1.RootAsString(e.event.Source.Root),
 				},
-				Target: &v1.Checkpoint{
-					EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Target.Epoch)},
-					Epoch:   uint64(e.event.Target.Epoch),
-					Root:    v1.RootAsString(e.event.Target.Root),
+				Target: &v1.CheckpointV2{
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(e.event.Target.Epoch)},
+					Root:  v1.RootAsString(e.event.Target.Root),
 				},
 			},
 		},
@@ -103,13 +99,13 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Slot))
 
-	extra.Slot = &xatu.Slot{
-		Number:        attestionSlot.Number(),
+	extra.Slot = &xatu.SlotV2{
+		Number:        &wrapperspb.UInt64Value{Value: attestionSlot.Number()},
 		StartDateTime: timestamppb.New(attestionSlot.TimeWindow().Start()),
 	}
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
@@ -121,18 +117,18 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 
 	// Build out the target section
 	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Target.Epoch))
-	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetData{
-		Epoch: &xatu.Epoch{
-			Number:        targetEpoch.Number(),
+	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetV2Data{
+		Epoch: &xatu.EpochV2{
+			Number:        &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
 			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
 		},
 	}
 
 	// Build out the source section
 	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Source.Epoch))
-	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceData{
-		Epoch: &xatu.Epoch{
-			Number:        sourceEpoch.Number(),
+	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceV2Data{
+		Epoch: &xatu.EpochV2{
+			Number:        &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
 			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
 		},
 	}

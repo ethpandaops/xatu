@@ -16,21 +16,31 @@ import (
 type Type string
 
 const (
-	TypeUnknown                               Type = "unknown"
-	TypeBeaconETHV1EventsBlock                Type = v1.EventsBlockType
-	TypeBeaconETHV1EventsBlockV2              Type = v1.EventsBlockV2Type
-	TypeBeaconETHV1EventsChainReorg           Type = v1.EventsChainReorgType
-	TypeBeaconETHV1EventsFinalizedCheckpoint  Type = v1.EventsFinalizedCheckpointType
-	TypeBeaconETHV1EventsHead                 Type = v1.EventsHeadType
-	TypeBeaconETHV1EventsVoluntaryExit        Type = v1.EventsVoluntaryExitType
-	TypeBeaconETHV1EventsAttestation          Type = v1.EventsAttestationType
-	TypeBeaconETHV1EventsContributionAndProof Type = v1.EventsContributionAndProofType
-	TypeMempoolTransaction                    Type = mempool.TransactionType
-	TypeBeaconETHV2BeaconBlock                Type = v2.BeaconBlockType
-	TypeDebugForkChoice                       Type = v1.DebugForkChoiceType
-	TypeDebugForkChoiceReorg                  Type = v1.DebugForkChoiceReorgType
-	TypeBeaconEthV1BeaconCommittee            Type = v1.BeaconCommitteeType
-	TypeBeaconEthV1ValidatorAttestationData   Type = v1.ValidatorAttestationDataType
+	TypeUnknown                                 Type = "unknown"
+	TypeBeaconETHV1EventsBlock                  Type = v1.EventsBlockType
+	TypeBeaconETHV1EventsBlockV2                Type = v1.EventsBlockV2Type
+	TypeBeaconETHV1EventsChainReorg             Type = v1.EventsChainReorgType
+	TypeBeaconETHV1EventsChainReorgV2           Type = v1.EventsChainReorgV2Type
+	TypeBeaconETHV1EventsFinalizedCheckpoint    Type = v1.EventsFinalizedCheckpointType
+	TypeBeaconETHV1EventsFinalizedCheckpointV2  Type = v1.EventsFinalizedCheckpointV2Type
+	TypeBeaconETHV1EventsHead                   Type = v1.EventsHeadType
+	TypeBeaconETHV1EventsHeadV2                 Type = v1.EventsHeadV2Type
+	TypeBeaconETHV1EventsVoluntaryExit          Type = v1.EventsVoluntaryExitType
+	TypeBeaconETHV1EventsVoluntaryExitV2        Type = v1.EventsVoluntaryExitV2Type
+	TypeBeaconETHV1EventsAttestation            Type = v1.EventsAttestationType
+	TypeBeaconETHV1EventsAttestationV2          Type = v1.EventsAttestationV2Type
+	TypeBeaconETHV1EventsContributionAndProof   Type = v1.EventsContributionAndProofType
+	TypeBeaconETHV1EventsContributionAndProofV2 Type = v1.EventsContributionAndProofV2Type
+	TypeMempoolTransaction                      Type = mempool.TransactionType
+	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
+	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
+	TypeBeaconETHV2BeaconBlockV2                Type = v2.BeaconBlockV2Type
+	TypeDebugForkChoice                         Type = v1.DebugForkChoiceType
+	TypeDebugForkChoiceV2                       Type = v1.DebugForkChoiceV2Type
+	TypeDebugForkChoiceReorg                    Type = v1.DebugForkChoiceReorgType
+	TypeDebugForkChoiceReorgV2                  Type = v1.DebugForkChoiceReorgV2Type
+	TypeBeaconEthV1BeaconCommittee              Type = v1.BeaconCommitteeType
+	TypeBeaconEthV1ValidatorAttestationData     Type = v1.ValidatorAttestationDataType
 )
 
 type Event interface {
@@ -51,24 +61,44 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewEventsBlockV2(log, event), nil
 	case TypeBeaconETHV1EventsChainReorg:
 		return v1.NewEventsChainReorg(log, event), nil
+	case TypeBeaconETHV1EventsChainReorgV2:
+		return v1.NewEventsChainReorgV2(log, event), nil
 	case TypeBeaconETHV1EventsFinalizedCheckpoint:
 		return v1.NewEventsFinalizedCheckpoint(log, event), nil
+	case TypeBeaconETHV1EventsFinalizedCheckpointV2:
+		return v1.NewEventsFinalizedCheckpointV2(log, event), nil
 	case TypeBeaconETHV1EventsHead:
 		return v1.NewEventsHead(log, event), nil
+	case TypeBeaconETHV1EventsHeadV2:
+		return v1.NewEventsHeadV2(log, event), nil
 	case TypeBeaconETHV1EventsVoluntaryExit:
 		return v1.NewEventsVoluntaryExit(log, event), nil
+	case TypeBeaconETHV1EventsVoluntaryExitV2:
+		return v1.NewEventsVoluntaryExitV2(log, event), nil
 	case TypeBeaconETHV1EventsAttestation:
 		return v1.NewEventsAttestation(log, event), nil
+	case TypeBeaconETHV1EventsAttestationV2:
+		return v1.NewEventsAttestationV2(log, event), nil
 	case TypeBeaconETHV1EventsContributionAndProof:
 		return v1.NewEventsContributionAndProof(log, event), nil
+	case TypeBeaconETHV1EventsContributionAndProofV2:
+		return v1.NewEventsContributionAndProofV2(log, event), nil
 	case TypeMempoolTransaction:
 		return mempool.NewTransaction(log, event), nil
+	case TypeMempoolTransactionV2:
+		return mempool.NewTransactionV2(log, event), nil
 	case TypeBeaconETHV2BeaconBlock:
 		return v2.NewBeaconBlock(log, event, cache), nil
+	case TypeBeaconETHV2BeaconBlockV2:
+		return v2.NewBeaconBlockV2(log, event, cache), nil
 	case TypeDebugForkChoice:
 		return v1.NewDebugForkChoice(log, event), nil
+	case TypeDebugForkChoiceV2:
+		return v1.NewDebugForkChoiceV2(log, event), nil
 	case TypeDebugForkChoiceReorg:
 		return v1.NewDebugForkChoiceReorg(log, event), nil
+	case TypeDebugForkChoiceReorgV2:
+		return v1.NewDebugForkChoiceReorgV2(log, event), nil
 	case TypeBeaconEthV1BeaconCommittee:
 		return v1.NewBeaconCommittee(log, event), nil
 	case TypeBeaconEthV1ValidatorAttestationData:

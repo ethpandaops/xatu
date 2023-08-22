@@ -31,7 +31,7 @@ type EventsVoluntaryExit struct {
 
 func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.SignedVoluntaryExit, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsVoluntaryExit {
 	return &EventsVoluntaryExit{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT"),
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2"),
 		now:            now,
 		event:          event,
 		beacon:         beacon,
@@ -44,26 +44,19 @@ func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.SignedVoluntar
 func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT,
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1EventsVoluntaryExit{
-			EthV1EventsVoluntaryExit: &xatuethv1.EventVoluntaryExit{
-				Epoch:          uint64(e.event.Message.Epoch),          // Deprecated: Use message.epoch instead.
-				ValidatorIndex: uint64(e.event.Message.ValidatorIndex), // Deprecated: Use message.validator_index instead.
-
+		Data: &xatu.DecoratedEvent_EthV1EventsVoluntaryExitV2{
+			EthV1EventsVoluntaryExitV2: &xatuethv1.EventVoluntaryExitV2{
 				Signature: e.event.Signature.String(),
-
-				Message: &xatuethv1.EventVoluntaryExitMessage{
-					Epoch:          uint64(e.event.Message.Epoch),
-					ValidatorIndex: uint64(e.event.Message.ValidatorIndex),
-
-					EpochV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Epoch)},
-					ValidatorIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.ValidatorIndex)},
+				Message: &xatuethv1.EventVoluntaryExitMessageV2{
+					Epoch:          &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Epoch)},
+					ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.ValidatorIndex)},
 				},
 			},
 		},
@@ -73,8 +66,8 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra voluntary exit data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsVoluntaryExit{
-			EthV1EventsVoluntaryExit: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsVoluntaryExitV2{
+			EthV1EventsVoluntaryExitV2: additionalData,
 		}
 	}
 
@@ -106,14 +99,13 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *EventsVoluntaryExit) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitData{}
+func (e *EventsVoluntaryExit) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data, error) {
+	extra := &xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
 
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Message.Epoch))
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

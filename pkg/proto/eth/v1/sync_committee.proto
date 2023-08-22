@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
 
 package xatu.eth.v1;
 
@@ -10,9 +11,10 @@ import "google/protobuf/descriptor.proto";
 import "google/protobuf/wrappers.proto";
 
 message SyncCommitteeContribution {
-  uint64 slot = 1 [deprecated=true];
+  uint64 slot = 1 [ deprecated = true ];
 
-  uint64 subcommittee_index = 2 [ json_name = "subcommittee_index", deprecated=true ];
+  uint64 subcommittee_index = 2
+      [ json_name = "subcommittee_index", deprecated = true ];
 
   string aggregation_bits = 3 [ json_name = "aggregation_bits" ];
 
@@ -22,5 +24,19 @@ message SyncCommitteeContribution {
 
   google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
 
-  google.protobuf.UInt64Value subcommittee_index_v2 = 7 [ json_name = "subcommittee_index_v2" ];
+  google.protobuf.UInt64Value subcommittee_index_v2 = 7
+      [ json_name = "subcommittee_index_v2" ];
+}
+
+message SyncCommitteeContributionV2 {
+  google.protobuf.UInt64Value slot = 1;
+
+  google.protobuf.UInt64Value subcommittee_index = 2
+      [ json_name = "subcommittee_index" ];
+
+  string aggregation_bits = 3 [ json_name = "aggregation_bits" ];
+
+  string signature = 4;
+
+  string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
 }

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-// Note: largely inspired by https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
+// Note: largely inspired by
+// https://github.com/prysmaticlabs/prysm/tree/develop/proto/eth/v1
 
 package xatu.eth.v1;
 
@@ -10,9 +11,13 @@ import "google/protobuf/descriptor.proto";
 import "google/protobuf/wrappers.proto";
 
 message Checkpoint {
-  uint64 epoch = 1 [ deprecated=true ];
+  uint64 epoch = 1;
 
   string root = 2;
+}
 
-  google.protobuf.UInt64Value epoch_v2 = 3 [ json_name = "epoch_v2" ];
+message CheckpointV2 {
+  google.protobuf.UInt64Value epoch = 1;
+
+  string root = 2;
 }

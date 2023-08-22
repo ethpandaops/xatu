@@ -97,14 +97,37 @@ func NewForkChoiceFromGoEth2ClientV1(f *eth2v1.ForkChoice) (*ForkChoice, error) 
 		FinalizedCheckpoint: &Checkpoint{
 			Epoch: uint64(f.FinalizedCheckpoint.Epoch),
 			Root:  RootAsString(f.FinalizedCheckpoint.Root),
-			EpochV2: &wrapperspb.UInt64Value{
-				Value: uint64(f.FinalizedCheckpoint.Epoch),
-			},
 		},
 		JustifiedCheckpoint: &Checkpoint{
 			Epoch: uint64(f.JustifiedCheckpoint.Epoch),
 			Root:  RootAsString(f.JustifiedCheckpoint.Root),
-			EpochV2: &wrapperspb.UInt64Value{
+		},
+		ForkChoiceNodes: nodes,
+	}, nil
+}
+
+func NewForkChoiceV2FromGoEth2ClientV1(f *eth2v1.ForkChoice) (*ForkChoiceV2, error) {
+	nodes := []*ForkChoiceNodeV2{}
+
+	for _, node := range f.ForkChoiceNodes {
+		n, err := NewForkChoiceNodeV2FromGoEth2ClientV1(node)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert node")
+		}
+
+		nodes = append(nodes, n)
+	}
+
+	return &ForkChoiceV2{
+		FinalizedCheckpoint: &CheckpointV2{
+			Root: RootAsString(f.FinalizedCheckpoint.Root),
+			Epoch: &wrapperspb.UInt64Value{
+				Value: uint64(f.FinalizedCheckpoint.Epoch),
+			},
+		},
+		JustifiedCheckpoint: &CheckpointV2{
+			Root: RootAsString(f.JustifiedCheckpoint.Root),
+			Epoch: &wrapperspb.UInt64Value{
 				Value: uint64(f.JustifiedCheckpoint.Epoch),
 			},
 		},
@@ -120,15 +143,30 @@ func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkChoi
 
 	return &ForkChoiceNode{
 		Slot:               uint64(node.Slot),
-		SlotV2:             &wrapperspb.UInt64Value{Value: uint64(node.Slot)},
 		BlockRoot:          RootAsString(node.BlockRoot),
 		ParentRoot:         RootAsString(node.ParentRoot),
 		JustifiedEpoch:     uint64(node.JustifiedEpoch),
-		JustifiedEpochV2:   &wrapperspb.UInt64Value{Value: uint64(node.JustifiedEpoch)},
 		FinalizedEpoch:     uint64(node.FinalizedEpoch),
-		FinalizedEpochV2:   &wrapperspb.UInt64Value{Value: uint64(node.FinalizedEpoch)},
 		Weight:             node.Weight,
-		WeightV2:           &wrapperspb.UInt64Value{Value: node.Weight},
+		Validity:           string(node.Validity),
+		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
+		ExtraData:          string(extraData),
+	}, nil
+}
+
+func NewForkChoiceNodeV2FromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkChoiceNodeV2, error) {
+	extraData, err := json.Marshal(node.ExtraData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ForkChoiceNodeV2{
+		Slot:               &wrapperspb.UInt64Value{Value: uint64(node.Slot)},
+		BlockRoot:          RootAsString(node.BlockRoot),
+		ParentRoot:         RootAsString(node.ParentRoot),
+		JustifiedEpoch:     &wrapperspb.UInt64Value{Value: uint64(node.JustifiedEpoch)},
+		FinalizedEpoch:     &wrapperspb.UInt64Value{Value: uint64(node.FinalizedEpoch)},
+		Weight:             &wrapperspb.UInt64Value{Value: node.Weight},
 		Validity:           string(node.Validity),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),

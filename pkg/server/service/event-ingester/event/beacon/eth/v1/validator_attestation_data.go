@@ -25,7 +25,7 @@ func NewValidatorAttestationData(log logrus.FieldLogger, event *xatu.DecoratedEv
 }
 
 func (b *ValidatorAttestationData) Type() string {
-	return EventsHeadType
+	return ValidatorAttestationDataType
 }
 
 func (b *ValidatorAttestationData) Validate(_ context.Context) error {

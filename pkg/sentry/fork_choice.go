@@ -56,7 +56,7 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 				Before:       nil, // May be nil
 				After:        after,
 				ReOrgEventAt: now,
-				Event:        xatuethv1.NewReorgEventFromGoEth2ClientEvent(chainReorg),
+				Event:        xatuethv1.NewReorgEventV2FromGoEth2ClientEvent(chainReorg),
 			}
 
 			if validLatestForkChoice {

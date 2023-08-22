@@ -31,7 +31,7 @@ type EventsContributionAndProof struct {
 
 func NewEventsContributionAndProof(log logrus.FieldLogger, event *altair.SignedContributionAndProof, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsContributionAndProof {
 	return &EventsContributionAndProof{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF"),
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2"),
 		now:            now,
 		event:          event,
 		beacon:         beacon,
@@ -44,28 +44,25 @@ func NewEventsContributionAndProof(log logrus.FieldLogger, event *altair.SignedC
 func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF,
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1EventsContributionAndProof{
-			EthV1EventsContributionAndProof: &xatuethv1.EventContributionAndProof{
+		Data: &xatu.DecoratedEvent_EthV1EventsContributionAndProofV2{
+			EthV1EventsContributionAndProofV2: &xatuethv1.EventContributionAndProofV2{
 				Signature: xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Signature)),
-				Message: &xatuethv1.ContributionAndProof{
-					AggregatorIndex:   uint64(e.event.Message.AggregatorIndex),
-					AggregatorIndexV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.AggregatorIndex)},
-					SelectionProof:    xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.SelectionProof)),
-					Contribution: &xatuethv1.SyncCommitteeContribution{
-						Slot:                uint64(e.event.Message.Contribution.Slot),
-						SlotV2:              &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Contribution.Slot)},
-						SubcommitteeIndex:   e.event.Message.Contribution.SubcommitteeIndex,
-						SubcommitteeIndexV2: &wrapperspb.UInt64Value{Value: e.event.Message.Contribution.SubcommitteeIndex},
-						AggregationBits:     xatuethv1.BytesToString(e.event.Message.Contribution.AggregationBits.Bytes()),
-						Signature:           xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.Contribution.Signature)),
-						BeaconBlockRoot:     xatuethv1.RootAsString(e.event.Message.Contribution.BeaconBlockRoot),
+				Message: &xatuethv1.ContributionAndProofV2{
+					AggregatorIndex: &wrapperspb.UInt64Value{Value: uint64(e.event.Message.AggregatorIndex)},
+					SelectionProof:  xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.SelectionProof)),
+					Contribution: &xatuethv1.SyncCommitteeContributionV2{
+						Slot:              &wrapperspb.UInt64Value{Value: uint64(e.event.Message.Contribution.Slot)},
+						SubcommitteeIndex: &wrapperspb.UInt64Value{Value: e.event.Message.Contribution.SubcommitteeIndex},
+						AggregationBits:   xatuethv1.BytesToString(e.event.Message.Contribution.AggregationBits.Bytes()),
+						Signature:         xatuethv1.TrimmedString(xatuethv1.BLSSignatureToString(&e.event.Message.Contribution.Signature)),
+						BeaconBlockRoot:   xatuethv1.RootAsString(e.event.Message.Contribution.BeaconBlockRoot),
 					},
 				},
 			},
@@ -76,8 +73,8 @@ func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.Decora
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra contribution and proof data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsContributionAndProof{
-			EthV1EventsContributionAndProof: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsContributionAndProofV2{
+			EthV1EventsContributionAndProofV2: additionalData,
 		}
 	}
 
@@ -107,25 +104,22 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 	return false, nil
 }
 
-func (e *EventsContributionAndProof) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofData, error) {
+func (e *EventsContributionAndProof) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data, error) {
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Message.Contribution.Slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Message.Contribution.Slot))
 
-	extra := &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofData{
-		Contribution: &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{
-			Slot: &xatu.Slot{
-				Number:        slot.Number(),
-				NumberV2:      &wrapperspb.UInt64Value{Value: slot.Number()},
+	extra := &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data{
+		Contribution: &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data{
+			Slot: &xatu.SlotV2{
+				Number:        &wrapperspb.UInt64Value{Value: slot.Number()},
 				StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 			},
-			Epoch: &xatu.Epoch{
-				Number:        epoch.Number(),
-				NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+			Epoch: &xatu.EpochV2{
+				Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 				StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 			},
-			Propagation: &xatu.Propagation{
-				SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
-				SlotStartDiffV2: &wrapperspb.UInt64Value{
+			Propagation: &xatu.PropagationV2{
+				SlotStartDiff: &wrapperspb.UInt64Value{
 					Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
 				},
 			},

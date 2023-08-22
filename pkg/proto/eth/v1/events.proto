@@ -12,7 +12,7 @@ import "google/protobuf/descriptor.proto";
 import "pkg/proto/eth/v1/sync_committee.proto";
 
 message EventHead {
-  uint64 slot = 1 [ deprecated=true ];
+  uint64 slot = 1;
 
   string block = 2;
 
@@ -25,18 +25,30 @@ message EventHead {
 
   string current_duty_dependent_root = 6
       [ json_name = "current_duty_dependent_root" ];
+}
 
-  google.protobuf.UInt64Value slot_v2 = 7  [ json_name = "slot_v2" ];
+message EventHeadV2 {
+  google.protobuf.UInt64Value slot = 1  [ json_name = "slot" ];
+
+  string block = 2;
+
+  string state = 3;
+
+  bool epoch_transition = 4 [ json_name = "epoch_transition" ];
+
+  string previous_duty_dependent_root = 5
+      [ json_name = "previous_duty_dependent_root" ];
+
+  string current_duty_dependent_root = 6
+      [ json_name = "current_duty_dependent_root" ];
 }
 
 message EventBlock {
-  uint64 slot = 1 [ deprecated=true ];
+  uint64 slot = 1;
 
   string block = 2;
 
   bool execution_optimistic = 3 [ json_name = "execution_optimistic" ];
-
-  google.protobuf.UInt64Value slot_v2 = 4  [ json_name = "slot_v2" ];
 }
 
 message EventBlockV2 {
@@ -48,9 +60,9 @@ message EventBlockV2 {
 }
 
 message EventChainReorg {
-  uint64 slot = 1 [ deprecated=true ];
+  uint64 slot = 1;
 
-  uint64 depth = 2 [ deprecated=true ];
+  uint64 depth = 2;
 
   string old_head_block = 3 [ json_name = "old_head_block" ];
 
@@ -60,13 +72,23 @@ message EventChainReorg {
 
   string new_head_state = 6 [ json_name = "new_head_state" ];
 
-  uint64 epoch = 7 [ deprecated=true ];
+  uint64 epoch = 7;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 8 [ json_name = "slot_v2" ];
+message EventChainReorgV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value depth_v2 = 9  [ json_name = "depth_v2" ];
+  google.protobuf.UInt64Value depth = 2  [ json_name = "depth" ];
 
-  google.protobuf.UInt64Value epoch_v2 = 10 [ json_name = "epoch_v2" ];
+  string old_head_block = 3 [ json_name = "old_head_block" ];
+
+  string new_head_block = 4 [ json_name = "new_head_block" ];
+
+  string old_head_state = 5 [ json_name = "old_head_state" ];
+
+  string new_head_state = 6 [ json_name = "new_head_state" ];
+
+  google.protobuf.UInt64Value epoch = 7 [ json_name = "epoch" ];
 }
 
 message EventFinalizedCheckpoint {
@@ -74,19 +96,27 @@ message EventFinalizedCheckpoint {
 
   string state = 2;
 
-  uint64 epoch = 3 [ deprecated=true ];
+  uint64 epoch = 3;
+}
 
-  google.protobuf.UInt64Value epoch_v2 = 4 [ json_name = "epoch_v2" ];
+message EventFinalizedCheckpointV2 {
+  string block = 1;
+
+  string state = 2;
+
+  google.protobuf.UInt64Value epoch = 3 [ json_name = "epoch" ];
 }
 
 message EventVoluntaryExitMessage {
-  uint64 epoch = 1 [ deprecated=true ];
+  uint64 epoch = 1;
 
-  uint64 validator_index = 2 [ json_name = "validator_index", deprecated=true ];
+  uint64 validator_index = 2 [ json_name = "validator_index" ];
+}
 
-  google.protobuf.UInt64Value epoch_v2 = 3 [ json_name = "epoch_v2" ];
+message EventVoluntaryExitMessageV2 {
+  google.protobuf.UInt64Value epoch = 1 [ json_name = "epoch" ];
 
-  google.protobuf.UInt64Value validator_index_v2 = 4 [ json_name = "validator_index_v2" ];
+  google.protobuf.UInt64Value validator_index = 2 [ json_name = "validator_index" ];
 }
 
 message EventVoluntaryExit {
@@ -99,18 +129,36 @@ message EventVoluntaryExit {
   string signature = 4;
 }
 
+message EventVoluntaryExitV2 {
+  EventVoluntaryExitMessageV2 message = 3 [ json_name = "message" ];
+
+  string signature = 4;
+}
+
 message ContributionAndProof {
-  uint64 aggregator_index = 1 [ json_name = "aggregator_index", deprecated=true ];
+  uint64 aggregator_index = 1 [ json_name = "aggregator_index" ];
 
   SyncCommitteeContribution contribution = 2;
 
   string selection_proof = 3 [ json_name = "selection_proof" ];
+}
 
-  google.protobuf.UInt64Value aggregator_index_v2 = 4 [ json_name = "aggregator_index_v2" ];
+message ContributionAndProofV2 {
+  google.protobuf.UInt64Value aggregator_index = 1 [ json_name = "aggregator_index" ];
+
+  SyncCommitteeContributionV2 contribution = 2;
+
+  string selection_proof = 3 [ json_name = "selection_proof" ];
 }
 
 message EventContributionAndProof {
   string signature = 1;
 
   ContributionAndProof message = 2;
+}
+
+message EventContributionAndProofV2 {
+  string signature = 1;
+
+  ContributionAndProofV2 message = 2;
 }

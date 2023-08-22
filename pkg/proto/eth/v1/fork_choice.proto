@@ -20,33 +20,53 @@ message ForkChoice {
       [ json_name = "fork_choice_nodes" ];
 }
 
+message ForkChoiceV2 {
+  CheckpointV2 justified_checkpoint = 1 [ json_name = "justified_checkpoint" ];
+
+  CheckpointV2 finalized_checkpoint = 2 [ json_name = "finalized_checkpoint" ];
+
+  repeated ForkChoiceNodeV2 fork_choice_nodes = 3
+      [ json_name = "fork_choice_nodes" ];
+}
+
 message ForkChoiceNode {
-  uint64 slot = 1 [ json_name = "slot", deprecated=true ];
+  uint64 slot = 1 [ json_name = "slot" ];
 
   string block_root = 2 [ json_name = "block_root" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
-  uint64 justified_epoch = 4 [ json_name = "justified_epoch", deprecated=true ];
+  uint64 justified_epoch = 4 [ json_name = "justified_epoch" ];
 
-  uint64 finalized_epoch = 5 [ json_name = "finalized_epoch", deprecated=true ];
+  uint64 finalized_epoch = 5 [ json_name = "finalized_epoch" ];
 
-  uint64 weight = 6 [ json_name = "weight", deprecated=true ];
+  uint64 weight = 6 [ json_name = "weight" ];
 
   string validity = 7 [ json_name = "validity" ];
 
   string ExecutionBlockHash = 8 [ json_name = "execution_block_hash" ];
 
   string ExtraData = 9 [ json_name = "extra_data" ];
-
-  google.protobuf.UInt64Value slot_v2 = 10 [ json_name = "slot_v2" ];
-
-  google.protobuf.UInt64Value justified_epoch_v2 = 11
-      [ json_name = "justified_epoch_v2" ];
-
-  google.protobuf.UInt64Value finalized_epoch_v2 = 12
-      [ json_name = "finalized_epoch_v2" ];
-
-  google.protobuf.UInt64Value weight_v2 = 13 [ json_name = "weight_v2" ];
 }
 
+message ForkChoiceNodeV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  string block_root = 2 [ json_name = "block_root" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  google.protobuf.UInt64Value justified_epoch = 4
+      [ json_name = "justified_epoch" ];
+
+  google.protobuf.UInt64Value finalized_epoch = 5
+      [ json_name = "finalized_epoch" ];
+
+  google.protobuf.UInt64Value weight = 6 [ json_name = "weight" ];
+
+  string validity = 7 [ json_name = "validity" ];
+
+  string ExecutionBlockHash = 8 [ json_name = "execution_block_hash" ];
+
+  string ExtraData = 9 [ json_name = "extra_data" ];
+}

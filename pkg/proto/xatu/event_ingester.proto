@@ -32,6 +32,14 @@ message Epoch {
   google.protobuf.UInt64Value number_v2 = 3 [ json_name = "number_v2" ];  
 }
 
+message EpochV2 {
+  // Number is the epoch number.
+  google.protobuf.UInt64Value number = 1 [ json_name = "number" ];  
+  // StartDateTime is the epoch start time.
+  google.protobuf.Timestamp start_date_time = 2
+      [ json_name = "start_date_time" ];
+}
+
 message Slot {
   // Number is the slot number.
   uint64 number = 1 [ deprecated = true ];
@@ -40,6 +48,14 @@ message Slot {
       [ json_name = "start_date_time" ];
   // Number is the slot number.
   google.protobuf.UInt64Value number_v2 = 3 [ json_name = "number_v2" ];  
+}
+
+message SlotV2 {
+  // Number is the slot number.
+  google.protobuf.UInt64Value number = 1 [ json_name = "number" ]; 
+  // StartDateTime is the slot start time.
+  google.protobuf.Timestamp start_date_time = 2
+      [ json_name = "start_date_time" ];
 }
 
 message ForkID {
@@ -55,6 +71,12 @@ message Propagation {
   // SlotStartDiff is the difference between the slot start time and the
   // attestation received time (in milliseconds).
   google.protobuf.UInt64Value slot_start_diff_v2 = 4 [ json_name = "slot_start_diff_v2" ];  
+}
+
+message PropagationV2 {
+  // SlotStartDiff is the difference between the slot start time and the
+  // attestation received time (in milliseconds).
+  google.protobuf.UInt64Value slot_start_diff = 1 [ json_name = "slot_start_diff" ];  
 }
 
 message AttestingValidator {
@@ -175,6 +197,17 @@ message ClientMeta {
 
     // Propagation contains information about the propagation of the block.
     Propagation propagation = 3;
+  }
+
+  message AdditionalEthV1EventsBlockV2Data {
+    // Epoch contains the epoch information for the block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the block.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the block.
+    PropagationV2 propagation = 3;
   }
 
   message AdditionalEthV1EventsVoluntaryExitData {
@@ -395,6 +428,9 @@ message ClientMeta {
     AdditionalEthV1BeaconCommitteeData eth_v1_beacon_commitee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
     // AdditionalEthV1ValidatorAttestationDataData contains additional data about the eth v1 validator attestation data
     AdditionalEthV1ValidatorAttestationDataData eth_v1_validator_attestation_data = 22 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
+    // AdditionalEthV1EventsBlockV2Data contains additional data about the eth v1
+    // block event.
+    AdditionalEthV1EventsBlockV2Data eth_v1_events_block_v2 = 24 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
   }
 }
 
@@ -474,6 +510,7 @@ message Event {
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG = 11;
     BEACON_API_ETH_V1_BEACON_COMMITTEE = 12;
     BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA = 13;
+    BEACON_API_ETH_V1_EVENTS_BLOCK_V2 = 14;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -502,5 +539,6 @@ message DecoratedEvent {
     DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
     xatu.eth.v1.Committee eth_v1_beacon_committee = 14 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
     xatu.eth.v1.AttestationData eth_v1_validator_attestation_data = 15 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
+    xatu.eth.v1.EventBlockV2 eth_v1_events_block_v2 = 16  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
   }; 
 }

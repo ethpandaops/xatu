@@ -39,6 +39,14 @@ message EventBlock {
   google.protobuf.UInt64Value slot_v2 = 4  [ json_name = "slot_v2" ];
 }
 
+message EventBlockV2 {
+  google.protobuf.UInt64Value slot = 1  [ json_name = "slot" ];
+
+  string block = 2;
+
+  bool execution_optimistic = 3 [ json_name = "execution_optimistic" ];
+}
+
 message EventChainReorg {
   uint64 slot = 1 [ deprecated=true ];
 

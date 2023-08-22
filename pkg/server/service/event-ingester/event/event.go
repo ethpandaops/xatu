@@ -18,6 +18,7 @@ type Type string
 const (
 	TypeUnknown                               Type = "unknown"
 	TypeBeaconETHV1EventsBlock                Type = v1.EventsBlockType
+	TypeBeaconETHV1EventsBlockV2              Type = v1.EventsBlockV2Type
 	TypeBeaconETHV1EventsChainReorg           Type = v1.EventsChainReorgType
 	TypeBeaconETHV1EventsFinalizedCheckpoint  Type = v1.EventsFinalizedCheckpointType
 	TypeBeaconETHV1EventsHead                 Type = v1.EventsHeadType
@@ -46,6 +47,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 	switch eventType {
 	case TypeBeaconETHV1EventsBlock:
 		return v1.NewEventsBlock(log, event), nil
+	case TypeBeaconETHV1EventsBlockV2:
+		return v1.NewEventsBlockV2(log, event), nil
 	case TypeBeaconETHV1EventsChainReorg:
 		return v1.NewEventsChainReorg(log, event), nil
 	case TypeBeaconETHV1EventsFinalizedCheckpoint:

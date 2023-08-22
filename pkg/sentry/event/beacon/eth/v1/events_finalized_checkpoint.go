@@ -31,7 +31,7 @@ type EventsFinalizedCheckpoint struct {
 
 func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *eth2v1.FinalizedCheckpointEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsFinalizedCheckpoint {
 	return &EventsFinalizedCheckpoint{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT"),
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2"),
 		now:            now,
 		event:          event,
 		beacon:         beacon,
@@ -44,19 +44,18 @@ func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *eth2v1.Finalize
 func (e *EventsFinalizedCheckpoint) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1EventsFinalizedCheckpoint{
-			EthV1EventsFinalizedCheckpoint: &xatuethv1.EventFinalizedCheckpoint{
-				Epoch:   uint64(e.event.Epoch),
-				EpochV2: &wrapperspb.UInt64Value{Value: uint64(e.event.Epoch)},
-				State:   xatuethv1.RootAsString(e.event.State),
-				Block:   xatuethv1.RootAsString(e.event.Block),
+		Data: &xatu.DecoratedEvent_EthV1EventsFinalizedCheckpointV2{
+			EthV1EventsFinalizedCheckpointV2: &xatuethv1.EventFinalizedCheckpointV2{
+				Epoch: &wrapperspb.UInt64Value{Value: uint64(e.event.Epoch)},
+				State: xatuethv1.RootAsString(e.event.State),
+				Block: xatuethv1.RootAsString(e.event.Block),
 			},
 		},
 	}
@@ -65,8 +64,8 @@ func (e *EventsFinalizedCheckpoint) Decorate(ctx context.Context) (*xatu.Decorat
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra finalized checkpoint data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsFinalizedCheckpoint{
-			EthV1EventsFinalizedCheckpoint: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsFinalizedCheckpointV2{
+			EthV1EventsFinalizedCheckpointV2: additionalData,
 		}
 	}
 
@@ -97,14 +96,13 @@ func (e *EventsFinalizedCheckpoint) ShouldIgnore(ctx context.Context) (bool, err
 	return false, nil
 }
 
-func (e *EventsFinalizedCheckpoint) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{}
+func (e *EventsFinalizedCheckpoint) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data, error) {
+	extra := &xatu.ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data{}
 
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Epoch))
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

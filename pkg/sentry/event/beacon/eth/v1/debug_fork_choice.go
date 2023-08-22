@@ -35,7 +35,7 @@ type ForkChoiceSnapshot struct {
 
 func NewForkChoice(log logrus.FieldLogger, snapshot *ForkChoiceSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoice {
 	return &ForkChoice{
-		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE"),
+		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2"),
 		snapshot:   snapshot,
 		beacon:     beacon,
 		clientMeta: clientMeta,
@@ -51,22 +51,22 @@ func (f *ForkChoice) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
+			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2,
 			DateTime: timestamppb.New(f.snapshot.RequestAt),
 			Id:       f.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: f.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1ForkChoice{
-			EthV1ForkChoice: data,
+		Data: &xatu.DecoratedEvent_EthV1ForkChoiceV2{
+			EthV1ForkChoiceV2: data,
 		},
 	}
 
 	additionalData := f.GetAdditionalData(ctx)
 
-	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1DebugForkChoice{
-		EthV1DebugForkChoice: additionalData,
+	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1DebugForkChoiceV2{
+		EthV1DebugForkChoiceV2: additionalData,
 	}
 
 	return decoratedEvent, nil
@@ -80,37 +80,33 @@ func (f *ForkChoice) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (f *ForkChoice) GetData() (*xatuethv1.ForkChoice, error) {
-	return xatuethv1.NewForkChoiceFromGoEth2ClientV1(f.snapshot.Event)
+func (f *ForkChoice) GetData() (*xatuethv1.ForkChoiceV2, error) {
+	return xatuethv1.NewForkChoiceV2FromGoEth2ClientV1(f.snapshot.Event)
 }
 
-func (f *ForkChoice) GetAdditionalData(_ context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData {
+func (f *ForkChoice) GetAdditionalData(_ context.Context) *xatu.ClientMeta_AdditionalEthV1DebugForkChoiceV2Data {
 	slot := f.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(f.snapshot.RequestSlot))
 	epoch := f.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(f.snapshot.RequestEpoch))
 
-	extra := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceData{
-		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshot{
-			RequestedAtSlotStartDiffMs: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
-			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
+	extra := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceV2Data{
+		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshotV2{
+			RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{
 				Value: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
 			},
-			RequestDurationMs: uint64(f.snapshot.RequestDuration.Milliseconds()),
-			RequestDurationMsV2: &wrapperspb.UInt64Value{
+			RequestDurationMs: &wrapperspb.UInt64Value{
 				Value: uint64(f.snapshot.RequestDuration.Milliseconds()),
 			},
 			Timestamp: timestamppb.New(f.snapshot.RequestAt),
 		},
 	}
 
-	extra.Snapshot.RequestSlot = &xatu.Slot{
+	extra.Snapshot.RequestSlot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
-		Number:        slot.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: slot.Number()},
+		Number:        &wrapperspb.UInt64Value{Value: slot.Number()},
 	}
 
-	extra.Snapshot.RequestEpoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Snapshot.RequestEpoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

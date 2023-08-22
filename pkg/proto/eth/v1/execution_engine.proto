@@ -17,18 +17,31 @@ message ExecutionPayload {
   string receipts_root = 4 [ json_name = "receipts_root" ];
   string logs_bloom = 5 [ json_name = "logs_bloom" ];
   string prev_randao = 6 [ json_name = "prev_randao" ];
-  uint64 block_number = 7 [ json_name = "block_number", deprecated=true ];
-  uint64 gas_limit = 8 [ json_name = "gas_limit", deprecated=true ];
-  uint64 gas_used = 9 [ json_name = "gas_used", deprecated=true ];
-  uint64 timestamp = 10 [deprecated=true];
+  uint64 block_number = 7 [ json_name = "block_number" ];
+  uint64 gas_limit = 8 [ json_name = "gas_limit" ];
+  uint64 gas_used = 9 [ json_name = "gas_used" ];
+  uint64 timestamp = 10;
   string extra_data = 11 [ json_name = "extra_data" ];
   string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
   string block_hash = 13 [ json_name = "block_hash" ];
   repeated string transactions = 14;
-  google.protobuf.UInt64Value block_number_v2 = 15  [ json_name = "block_number_v2" ];
-  google.protobuf.UInt64Value gas_limit_v2 = 16  [ json_name = "gas_limit_v2" ];
-  google.protobuf.UInt64Value gas_used_v2 = 17  [ json_name = "gas_used_v2" ];
-  google.protobuf.UInt64Value timestamp_v2 = 18  [ json_name = "timestamp_v2" ];
+}
+
+message ExecutionPayloadV2 {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  repeated string transactions = 14;
 }
 
 message ExecutionPayloadHeader {
@@ -38,18 +51,31 @@ message ExecutionPayloadHeader {
   string receipts_root = 4 [ json_name = "receipts_root" ];
   string logs_bloom = 5 [ json_name = "logs_bloom" ];
   string prev_randao = 6 [ json_name = "prev_randao" ];
-  uint64 block_number = 7 [ json_name = "block_number", deprecated=true ];
-  uint64 gas_limit = 8 [ json_name = "gas_limit", deprecated=true ];
-  uint64 gas_used = 9 [ json_name = "gas_used", deprecated=true ];
-  uint64 timestamp = 10 [deprecated=true];
+  uint64 block_number = 7 [ json_name = "block_number" ];
+  uint64 gas_limit = 8 [ json_name = "gas_limit" ];
+  uint64 gas_used = 9 [ json_name = "gas_used" ];
+  uint64 timestamp = 10;
   string extra_data = 11 [ json_name = "extra_data" ];
   string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
   string block_hash = 13 [ json_name = "block_hash" ];
   string transactions_root = 14 [ json_name = "transactions_root" ];
-  google.protobuf.UInt64Value block_number_v2 = 15  [ json_name = "block_number_v2" ];
-  google.protobuf.UInt64Value gas_limit_v2 = 16  [ json_name = "gas_limit_v2" ];
-  google.protobuf.UInt64Value gas_used_v2 = 17  [ json_name = "gas_used_v2" ];
-  google.protobuf.UInt64Value timestamp_v2 = 18  [ json_name = "timestamp_v2" ];
+}
+
+message ExecutionPayloadHeaderV2 {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  string transactions_root = 14 [ json_name = "transactions_root" ];
 }
 
 message ExecutionPayloadCapella {
@@ -59,35 +85,54 @@ message ExecutionPayloadCapella {
   string receipts_root = 4 [ json_name = "receipts_root" ];
   string logs_bloom = 5 [ json_name = "logs_bloom" ];
   string prev_randao = 6 [ json_name = "prev_randao" ];
-  uint64 block_number = 7 [ json_name = "block_number", deprecated=true ];
-  uint64 gas_limit = 8 [ json_name = "gas_limit", deprecated=true ];
-  uint64 gas_used = 9 [ json_name = "gas_used", deprecated=true ];
-  uint64 timestamp = 10 [deprecated=true];
+  uint64 block_number = 7 [ json_name = "block_number" ];
+  uint64 gas_limit = 8 [ json_name = "gas_limit" ];
+  uint64 gas_used = 9 [ json_name = "gas_used" ];
+  uint64 timestamp = 10;
   string extra_data = 11 [ json_name = "extra_data" ];
   string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
   string block_hash = 13 [ json_name = "block_hash" ];
   repeated string transactions = 14;
   repeated Withdrawal withdrawals = 15;
-  google.protobuf.UInt64Value block_number_v2 = 16  [ json_name = "block_number_v2" ];
-  google.protobuf.UInt64Value gas_limit_v2 = 17  [ json_name = "gas_limit_v2" ];
-  google.protobuf.UInt64Value gas_used_v2 = 18  [ json_name = "gas_used_v2" ];
-  google.protobuf.UInt64Value timestamp_v2 = 19  [ json_name = "timestamp_v2" ];
+}
+
+message ExecutionPayloadCapellaV2 {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  repeated string transactions = 14;
+  repeated WithdrawalV2 withdrawals = 15;
 }
 
 message Withdrawal {
-  uint64 index = 1 [ deprecated=true ];
+  uint64 index = 1;
 
-  uint64 validator_index = 2 [ json_name = "validator_index", deprecated=true ];
+  uint64 validator_index = 2 [ json_name = "validator_index" ];
 
   string address = 3;
 
-  uint64 amount = 4 [ deprecated=true ];
+  uint64 amount = 4;
+}
 
-  google.protobuf.UInt64Value index_v2 = 5 [ json_name = "index_v2" ];
+message WithdrawalV2 {
+  google.protobuf.UInt64Value index = 1;
 
-  google.protobuf.UInt64Value validator_index_v2 = 6 [ json_name = "validator_index_v2" ];
+  google.protobuf.UInt64Value validator_index = 2
+      [ json_name = "validator_index" ];
 
-  google.protobuf.UInt64Value amount_v2 = 7 [ json_name = "amount_v2" ];
+  string address = 3;
+
+  google.protobuf.UInt64Value amount = 4;
 }
 
 message ExecutionPayloadHeaderCapella {
@@ -97,17 +142,31 @@ message ExecutionPayloadHeaderCapella {
   string receipts_root = 4 [ json_name = "receipts_root" ];
   string logs_bloom = 5 [ json_name = "logs_bloom" ];
   string prev_randao = 6 [ json_name = "prev_randao" ];
-  uint64 block_number = 7 [ json_name = "block_number", deprecated=true ];
-  uint64 gas_limit = 8 [ json_name = "gas_limit", deprecated=true ];
-  uint64 gas_used = 9 [ json_name = "gas_used", deprecated=true ];
-  uint64 timestamp = 10 [deprecated=true];
+  uint64 block_number = 7 [ json_name = "block_number" ];
+  uint64 gas_limit = 8 [ json_name = "gas_limit" ];
+  uint64 gas_used = 9 [ json_name = "gas_used" ];
+  uint64 timestamp = 10;
   string extra_data = 11 [ json_name = "extra_data" ];
   string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
   string block_hash = 13 [ json_name = "block_hash" ];
   string transactions_root = 14 [ json_name = "transactions_root" ];
   string withdrawals_root = 15 [ json_name = "withdrawals_root" ];
-  google.protobuf.UInt64Value block_number_v2 = 16  [ json_name = "block_number_v2" ];
-  google.protobuf.UInt64Value gas_limit_v2 = 17  [ json_name = "gas_limit_v2" ];
-  google.protobuf.UInt64Value gas_used_v2 = 18  [ json_name = "gas_used_v2" ];
-  google.protobuf.UInt64Value timestamp_v2 = 19  [ json_name = "timestamp_v2" ];
+}
+
+message ExecutionPayloadHeaderCapellaV2 {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  string transactions_root = 14 [ json_name = "transactions_root" ];
+  string withdrawals_root = 15 [ json_name = "withdrawals_root" ];
 }

@@ -23,7 +23,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Mimicry struct {
@@ -169,7 +168,6 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(m.clockDrift.Milliseconds()),
-		ClockDriftV2:   wrapperspb.UInt64(uint64(m.clockDrift.Milliseconds())),
 		Labels:         m.Config.Labels,
 	}, nil
 }

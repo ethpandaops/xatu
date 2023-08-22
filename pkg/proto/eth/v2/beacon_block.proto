@@ -20,8 +20,20 @@ message SignedBeaconBlockBellatrix {
   string signature = 2;
 }
 
+message SignedBeaconBlockBellatrixV2 {
+  BeaconBlockBellatrixV2 message = 1;
+
+  string signature = 2;
+}
+
 message SignedBeaconBlockCapella {
   BeaconBlockCapella message = 1;
+
+  string signature = 2;
+}
+
+message SignedBeaconBlockCapellaV2 {
+  BeaconBlockCapellaV2 message = 1;
 
   string signature = 2;
 }
@@ -32,8 +44,20 @@ message SignedBlindedBeaconBlockBellatrix {
   string signature = 2;
 }
 
+message SignedBlindedBeaconBlockBellatrixV2 {
+  BlindedBeaconBlockBellatrixV2 message = 1;
+
+  string signature = 2;
+}
+
 message SignedBlindedBeaconBlockCapella {
   BlindedBeaconBlockCapella message = 1;
+
+  string signature = 2;
+}
+
+message SignedBlindedBeaconBlockCapellaV2 {
+  BlindedBeaconBlockCapellaV2 message = 1;
 
   string signature = 2;
 }
@@ -44,84 +68,135 @@ message SignedBeaconBlockAltair {
   string signature = 2;
 }
 
-message BeaconBlockBellatrix {
-  uint64 slot = 1 [ deprecated = true ];
+message SignedBeaconBlockAltairV2 {
+  BeaconBlockAltairV2 message = 1;
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
+  string signature = 2;
+}
+
+message BeaconBlockBellatrix {
+  uint64 slot = 1;
+
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyBellatrix body = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+message BeaconBlockBellatrixV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BeaconBlockBodyBellatrixV2 body = 5;
 }
 
 message BlindedBeaconBlockBellatrix {
-  uint64 slot = 1 [ deprecated = true ];
+  uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BlindedBeaconBlockBodyBellatrix body = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+message BlindedBeaconBlockBellatrixV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BlindedBeaconBlockBodyBellatrixV2 body = 5;
 }
 
 message BeaconBlockCapella {
-  uint64 slot = 1 [ deprecated = true ];
+  uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyCapella body = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+message BeaconBlockCapellaV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BeaconBlockBodyCapellaV2 body = 5;
 }
 
 message BlindedBeaconBlockCapella {
-  uint64 slot = 1 [ deprecated = true ];
+  uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BlindedBeaconBlockBodyCapella body = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+message BlindedBeaconBlockCapellaV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BlindedBeaconBlockBodyCapellaV2 body = 5;
 }
 
 message BeaconBlockAltair {
-  uint64 slot = 1 [ deprecated = true ];
+  uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "proposer_index", deprecated = true ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyAltair body = 5;
+}
 
-  google.protobuf.UInt64Value slot_v2 = 6 [ json_name = "slot_v2" ];
+message BeaconBlockAltairV2 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
-  google.protobuf.UInt64Value proposer_index_v2 = 7 [ json_name = "proposer_index_v2" ];
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BeaconBlockBodyAltairV2 body = 5;
 }
 
 message BeaconBlockBodyBellatrix {
@@ -147,6 +222,32 @@ message BeaconBlockBodyBellatrix {
   v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
 
   v1.ExecutionPayload execution_payload = 10
+      [ json_name = "execution_payload" ];
+}
+
+message BeaconBlockBodyBellatrixV2 {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+
+  v1.ExecutionPayloadV2 execution_payload = 10
       [ json_name = "execution_payload" ];
 }
 
@@ -176,6 +277,32 @@ message BlindedBeaconBlockBodyBellatrix {
       [ json_name = "execution_payload_header" ];
 }
 
+message BlindedBeaconBlockBodyBellatrixV2 {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+
+  v1.ExecutionPayloadHeaderV2 execution_payload_header = 10
+      [ json_name = "execution_payload_header" ];
+}
+
 message BeaconBlockBodyCapella {
   string randao_reveal = 1 [ json_name = "randao_reveal" ];
 
@@ -199,6 +326,35 @@ message BeaconBlockBodyCapella {
   v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
 
   v1.ExecutionPayloadCapella execution_payload = 10
+      [ json_name = "execution_payload" ];
+
+  repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
+      [ json_name = "bls_to_execution_changes" ];
+}
+
+message BeaconBlockBodyCapellaV2 {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+
+  v1.ExecutionPayloadCapellaV2 execution_payload = 10
       [ json_name = "execution_payload" ];
 
   repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
@@ -234,7 +390,60 @@ message BlindedBeaconBlockBodyCapella {
       [ json_name = "bls_to_execution_changes" ];
 }
 
+message BlindedBeaconBlockBodyCapellaV2 {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+
+  v1.ExecutionPayloadHeaderCapellaV2 execution_payload_header = 10
+      [ json_name = "execution_payload_header" ];
+
+  repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
+      [ json_name = "bls_to_execution_changes" ];
+}
+
 message BeaconBlockBodyAltair {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  // At most MAX_ATTESTER_SLASHINGS.
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+}
+
+message BeaconBlockBodyAltairV2 {
   string randao_reveal = 1 [ json_name = "randao_reveal" ];
 
   v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];

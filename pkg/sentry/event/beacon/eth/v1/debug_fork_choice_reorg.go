@@ -27,12 +27,12 @@ type ForkChoiceReOrgSnapshot struct {
 	ReOrgEventAt time.Time
 	Before       *ForkChoice
 	After        *ForkChoice
-	Event        *xatuethv1.EventChainReorg
+	Event        *xatuethv1.EventChainReorgV2
 }
 
 func NewForkChoiceReOrg(log logrus.FieldLogger, snapshot *ForkChoiceReOrgSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoiceReOrg {
 	return &ForkChoiceReOrg{
-		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG"),
+		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2"),
 		snapshot:   snapshot,
 		beacon:     beacon,
 		clientMeta: clientMeta,
@@ -51,11 +51,11 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 		return nil, nil
 	}
 
-	data := &xatu.DebugForkChoiceReorg{
+	data := &xatu.DebugForkChoiceReorgV2{
 		Event: f.snapshot.Event,
 	}
 
-	additional := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{}
+	additional := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data{}
 
 	if f.snapshot.Before != nil {
 		before, err := f.snapshot.Before.GetData()
@@ -65,16 +65,14 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 
 		beforeAdditional := f.snapshot.Before.GetAdditionalData(ctx)
 
-		additional.Before = &xatu.ClientMeta_ForkChoiceSnapshot{
-			RequestEpoch:               beforeAdditional.Snapshot.RequestEpoch,
-			RequestSlot:                beforeAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
-			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
-				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+		additional.Before = &xatu.ClientMeta_ForkChoiceSnapshotV2{
+			RequestEpoch: beforeAdditional.Snapshot.RequestEpoch,
+			RequestSlot:  beforeAdditional.Snapshot.RequestSlot,
+			RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestedAtSlotStartDiffMs.Value,
 			},
-			RequestDurationMs: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
-			RequestDurationMsV2: &wrapperspb.UInt64Value{
-				Value: beforeAdditional.Snapshot.RequestDurationMsV2.Value,
+			RequestDurationMs: &wrapperspb.UInt64Value{
+				Value: beforeAdditional.Snapshot.RequestDurationMs.Value,
 			},
 			Timestamp: beforeAdditional.Snapshot.Timestamp,
 		}
@@ -88,16 +86,14 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 
 		afterAdditional := f.snapshot.After.GetAdditionalData(ctx)
 
-		additional.After = &xatu.ClientMeta_ForkChoiceSnapshot{
-			RequestEpoch:               afterAdditional.Snapshot.RequestEpoch,
-			RequestSlot:                afterAdditional.Snapshot.RequestSlot,
-			RequestedAtSlotStartDiffMs: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
-			RequestedAtSlotStartDiffMsV2: &wrapperspb.UInt64Value{
-				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMsV2.Value,
+		additional.After = &xatu.ClientMeta_ForkChoiceSnapshotV2{
+			RequestEpoch: afterAdditional.Snapshot.RequestEpoch,
+			RequestSlot:  afterAdditional.Snapshot.RequestSlot,
+			RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestedAtSlotStartDiffMs.Value,
 			},
-			RequestDurationMs: afterAdditional.Snapshot.RequestDurationMsV2.Value,
-			RequestDurationMsV2: &wrapperspb.UInt64Value{
-				Value: afterAdditional.Snapshot.RequestDurationMsV2.Value,
+			RequestDurationMs: &wrapperspb.UInt64Value{
+				Value: afterAdditional.Snapshot.RequestDurationMs.Value,
 			},
 			Timestamp: afterAdditional.Snapshot.Timestamp,
 		}
@@ -105,20 +101,20 @@ func (f *ForkChoiceReOrg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG,
+			Name:     xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2,
 			DateTime: timestamppb.New(f.snapshot.ReOrgEventAt),
 			Id:       f.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: f.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1ForkChoiceReorg{
-			EthV1ForkChoiceReorg: data,
+		Data: &xatu.DecoratedEvent_EthV1ForkChoiceReorgV2{
+			EthV1ForkChoiceReorgV2: data,
 		},
 	}
 
-	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1DebugForkChoiceReorg{
-		EthV1DebugForkChoiceReorg: additional,
+	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1DebugForkChoiceReorgV2{
+		EthV1DebugForkChoiceReorgV2: additional,
 	}
 
 	return decoratedEvent, nil

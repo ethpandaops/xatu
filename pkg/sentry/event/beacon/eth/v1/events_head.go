@@ -31,7 +31,7 @@ type EventsHead struct {
 
 func NewEventsHead(log logrus.FieldLogger, event *eth2v1.HeadEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsHead {
 	return &EventsHead{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_HEAD"),
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_HEAD_V2"),
 		now:            now,
 		event:          event,
 		beacon:         beacon,
@@ -44,17 +44,16 @@ func NewEventsHead(log logrus.FieldLogger, event *eth2v1.HeadEvent, now time.Tim
 func (e *EventsHead) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1EventsHead{
-			EthV1EventsHead: &xatuethv1.EventHead{
-				Slot:                      uint64(e.event.Slot),
-				SlotV2:                    &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+		Data: &xatu.DecoratedEvent_EthV1EventsHeadV2{
+			EthV1EventsHeadV2: &xatuethv1.EventHeadV2{
+				Slot:                      &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 				Block:                     xatuethv1.RootAsString(e.event.Block),
 				State:                     xatuethv1.RootAsString(e.event.State),
 				EpochTransition:           e.event.EpochTransition,
@@ -68,8 +67,8 @@ func (e *EventsHead) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra head data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsHead{
-			EthV1EventsHead: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsHeadV2{
+			EthV1EventsHeadV2: additionalData,
 		}
 	}
 
@@ -100,27 +99,25 @@ func (e *EventsHead) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *EventsHead) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsHeadData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1EventsHeadData{}
+func (e *EventsHead) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsHeadV2Data, error) {
+	extra := &xatu.ClientMeta_AdditionalEthV1EventsHeadV2Data{}
 
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Slot))
 
-	extra.Slot = &xatu.Slot{
+	extra.Slot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 	}
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
-	extra.Propagation = &xatu.Propagation{
-		SlotStartDiffV2: &wrapperspb.UInt64Value{
+	extra.Propagation = &xatu.PropagationV2{
+		SlotStartDiff: &wrapperspb.UInt64Value{
 			Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
 		},
-		SlotStartDiff: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
 	}
 
 	return extra, nil

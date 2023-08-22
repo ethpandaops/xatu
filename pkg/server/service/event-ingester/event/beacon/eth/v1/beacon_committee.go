@@ -25,7 +25,7 @@ func NewBeaconCommittee(log logrus.FieldLogger, event *xatu.DecoratedEvent) *Bea
 }
 
 func (b *BeaconCommittee) Type() string {
-	return EventsHeadType
+	return BeaconCommitteeType
 }
 
 func (b *BeaconCommittee) Validate(_ context.Context) error {

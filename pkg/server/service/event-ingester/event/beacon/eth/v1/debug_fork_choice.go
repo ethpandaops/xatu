@@ -25,7 +25,7 @@ func NewDebugForkChoice(log logrus.FieldLogger, event *xatu.DecoratedEvent) *Deb
 }
 
 func (b *DebugForkChoice) Type() string {
-	return EventsHeadType
+	return DebugForkChoiceType
 }
 
 func (b *DebugForkChoice) Validate(_ context.Context) error {

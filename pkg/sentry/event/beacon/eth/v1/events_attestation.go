@@ -31,7 +31,7 @@ type EventsAttestation struct {
 
 func NewEventsAttestation(log logrus.FieldLogger, event *phase0.Attestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsAttestation {
 	return &EventsAttestation{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION"),
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"),
 		now:            now,
 		event:          event,
 		beacon:         beacon,
@@ -44,28 +44,26 @@ func NewEventsAttestation(log logrus.FieldLogger, event *phase0.Attestation, now
 func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV1EventsAttestation{
-			EthV1EventsAttestation: &xatuethv1.Attestation{
+		Data: &xatu.DecoratedEvent_EthV1EventsAttestationV2{
+			EthV1EventsAttestationV2: &xatuethv1.AttestationV2{
 				AggregationBits: xatuethv1.BytesToString(e.event.AggregationBits),
-				Data: &xatuethv1.AttestationData{
-					Slot:            uint64(e.event.Data.Slot),
-					SlotV2:          &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Slot)},
-					Index:           uint64(e.event.Data.Index),
-					IndexV2:         &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Index)},
+				Data: &xatuethv1.AttestationDataV2{
+					Slot:            &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Slot)},
+					Index:           &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Index)},
 					BeaconBlockRoot: xatuethv1.RootAsString(e.event.Data.BeaconBlockRoot),
-					Source: &xatuethv1.Checkpoint{
-						Epoch: uint64(e.event.Data.Source.Epoch),
+					Source: &xatuethv1.CheckpointV2{
+						Epoch: &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Source.Epoch)},
 						Root:  xatuethv1.RootAsString(e.event.Data.Source.Root),
 					},
-					Target: &xatuethv1.Checkpoint{
-						Epoch: uint64(e.event.Data.Target.Epoch),
+					Target: &xatuethv1.CheckpointV2{
+						Epoch: &wrapperspb.UInt64Value{Value: uint64(e.event.Data.Target.Epoch)},
 						Root:  xatuethv1.RootAsString(e.event.Data.Target.Root),
 					},
 				},
@@ -78,8 +76,8 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra attestation data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsAttestation{
-			EthV1EventsAttestation: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsAttestationV2{
+			EthV1EventsAttestationV2: additionalData,
 		}
 	}
 
@@ -110,47 +108,42 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1EventsAttestationData{}
+func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data, error) {
+	extra := &xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data{}
 
 	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Data.Slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Data.Slot))
 
-	extra.Slot = &xatu.Slot{
-		Number:        attestionSlot.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: attestionSlot.Number()},
+	extra.Slot = &xatu.SlotV2{
+		Number:        &wrapperspb.UInt64Value{Value: attestionSlot.Number()},
 		StartDateTime: timestamppb.New(attestionSlot.TimeWindow().Start()),
 	}
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
-		NumberV2:      &wrapperspb.UInt64Value{Value: epoch.Number()},
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 
-	extra.Propagation = &xatu.Propagation{
-		SlotStartDiff: uint64(e.now.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
-		SlotStartDiffV2: &wrapperspb.UInt64Value{
+	extra.Propagation = &xatu.PropagationV2{
+		SlotStartDiff: &wrapperspb.UInt64Value{
 			Value: uint64(e.now.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
 		},
 	}
 
 	// Build out the target section
 	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Data.Target.Epoch))
-	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetData{
-		Epoch: &xatu.Epoch{
-			Number:        targetEpoch.Number(),
-			NumberV2:      &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
+	extra.Target = &xatu.ClientMeta_AdditionalEthV1AttestationTargetV2Data{
+		Epoch: &xatu.EpochV2{
+			Number:        &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
 			StartDateTime: timestamppb.New(targetEpoch.TimeWindow().Start()),
 		},
 	}
 
 	// Build out the source section
 	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Data.Source.Epoch))
-	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceData{
-		Epoch: &xatu.Epoch{
-			Number:        sourceEpoch.Number(),
-			NumberV2:      &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
+	extra.Source = &xatu.ClientMeta_AdditionalEthV1AttestationSourceV2Data{
+		Epoch: &xatu.EpochV2{
+			Number:        &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
 			StartDateTime: timestamppb.New(sourceEpoch.TimeWindow().Start()),
 		},
 	}
@@ -166,11 +159,9 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 			position,
 		)
 		if err == nil {
-			extra.AttestingValidator = &xatu.AttestingValidator{
-				CommitteeIndex:   position,
-				CommitteeIndexV2: &wrapperspb.UInt64Value{Value: position},
-				Index:            uint64(validatorIndex),
-				IndexV2:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
+			extra.AttestingValidator = &xatu.AttestingValidatorV2{
+				CommitteeIndex: &wrapperspb.UInt64Value{Value: position},
+				Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
 			}
 		}
 	}

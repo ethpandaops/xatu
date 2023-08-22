@@ -24,7 +24,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 
 	now := time.Now()
 	if meta != nil {
-		now = now.Add(time.Duration(meta.ClockDriftV2.Value) * time.Millisecond)
+		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
 	}
 
 	tx, err := event.MarshalBinary()
@@ -34,14 +34,14 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_MEMPOOL_TRANSACTION,
+			Name:     xatu.Event_MEMPOOL_TRANSACTION_V2,
 			DateTime: timestamppb.New(now),
 		},
 		Meta: &xatu.Meta{
 			Client: meta,
 		},
-		Data: &xatu.DecoratedEvent_MempoolTransaction{
-			MempoolTransaction: fmt.Sprintf("0x%x", tx),
+		Data: &xatu.DecoratedEvent_MempoolTransactionV2{
+			MempoolTransactionV2: fmt.Sprintf("0x%x", tx),
 		},
 	}
 
@@ -49,15 +49,15 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 	if err != nil {
 		p.log.WithError(err).Error("Failed to get extra transaction data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_MempoolTransaction{
-			MempoolTransaction: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_MempoolTransactionV2{
+			MempoolTransactionV2: additionalData,
 		}
 	}
 
 	return decoratedEvent, nil
 }
 
-func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalMempoolTransactionData, error) {
+func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction, meta *xatu.ClientMeta, eventTime time.Time) (*xatu.ClientMeta_AdditionalMempoolTransactionV2Data, error) {
 	var to string
 	if event.To() != nil {
 		to = event.To().String()
@@ -70,14 +70,12 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		return nil, err
 	}
 
-	extra := &xatu.ClientMeta_AdditionalMempoolTransactionData{
-		Nonce:        event.Nonce(),
-		NonceV2:      wrapperspb.UInt64(event.Nonce()),
+	extra := &xatu.ClientMeta_AdditionalMempoolTransactionV2Data{
+		Nonce:        wrapperspb.UInt64(event.Nonce()),
 		GasPrice:     event.GasPrice().String(),
 		From:         from.String(),
 		To:           to,
-		Gas:          event.Gas(),
-		GasV2:        wrapperspb.UInt64(event.Gas()),
+		Gas:          wrapperspb.UInt64(event.Gas()),
 		Value:        event.Value().String(),
 		Hash:         event.Hash().String(),
 		Size:         strconv.FormatFloat(float64(event.Size()), 'f', 0, 64),

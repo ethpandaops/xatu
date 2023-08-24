@@ -329,6 +329,33 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		s.beacon.Node().OnFinalizedCheckpoint(ctx, func(ctx context.Context, finalizedCheckpoint *eth2v1.FinalizedCheckpointEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsFinalizedCheckpoint(s.log, finalizedCheckpoint, now, s.beacon, s.duplicateCache.BeaconETHV1EventsFinalizedCheckpoint, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
 		if err := s.startForkChoiceSchedule(ctx); err != nil {
 			return err
 		}

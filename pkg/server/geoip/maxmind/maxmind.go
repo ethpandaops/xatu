@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/database"
-	"github.com/savid/ttlcache/v3"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
 

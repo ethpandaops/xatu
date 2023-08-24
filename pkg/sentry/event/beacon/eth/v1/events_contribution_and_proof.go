@@ -10,8 +10,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
+	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
-	ttlcache "github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -91,7 +91,7 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 		return true, err
 	}
 
-	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.DefaultTTL)
+	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
 			"hash":                  hash,

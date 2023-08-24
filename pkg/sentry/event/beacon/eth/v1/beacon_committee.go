@@ -11,7 +11,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
-	ttlcache "github.com/savid/ttlcache/v3"
+	ttlcache "github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -87,7 +87,7 @@ func (e *BeaconCommittee) ShouldIgnore(ctx context.Context) (bool, error) {
 
 	key := fmt.Sprintf("%d-%d-%d", e.epoch, e.event.Index, e.event.Slot)
 
-	item, retrieved := e.duplicateCache.GetOrSet(key, e.now, ttlcache.DefaultTTL)
+	item, retrieved := e.duplicateCache.GetOrSet(key, e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
 			"epoch":                 e.epoch,

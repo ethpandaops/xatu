@@ -19,6 +19,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/huandu/go-sqlbuilder v1.21.0
+	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-libp2p v0.27.3
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -26,7 +27,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/redis/go-redis/v9 v9.0.4
-	github.com/savid/ttlcache/v3 v3.0.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2

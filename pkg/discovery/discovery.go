@@ -20,8 +20,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/savid/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -219,7 +219,7 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 
 	enr := node.String()
 
-	item, retrieved := d.duplicateCache.Node.GetOrSet(enr, time.Now(), ttlcache.DefaultTTL)
+	item, retrieved := d.duplicateCache.Node.GetOrSet(enr, time.Now(), ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		d.log.WithFields(logrus.Fields{
 			"enr":                   enr,

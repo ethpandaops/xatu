@@ -11,7 +11,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
-	"github.com/savid/ttlcache/v3"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
 

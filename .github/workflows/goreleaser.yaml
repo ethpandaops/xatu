@@ -9,7 +9,7 @@ jobs:
   goreleaser:
     runs-on:
       - environment=production
-      - size=xxxxlarge
+      - size=xxlarge
       - provider=ethpandaops
       - realm=platform
     steps:

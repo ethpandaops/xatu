@@ -6,7 +6,7 @@ on:
       - 'release/*'
 
 jobs:
-  create-tag:
+  tag-release:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -14,6 +14,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
+          token: ${{ secrets.EPOBOT_TOKEN }}
       - name: Get latest release version for this release branch
         if: startsWith(github.ref, 'refs/heads/release/')
         id: latest_version
@@ -40,8 +41,8 @@ jobs:
 
           echo "Releasing version: $VERSION"
 
-          git config --global user.email "ethpandaops@ethereum.org"
-          git config --global user.name "ethpandaops"
+          git config --global user.email "ethpandaopsbot@ethereum.org"
+          git config --global user.name "ethpandaopsbot"
 
           # Log the short commit SHA
           SHORT_COMMIT=$(git rev-parse --short HEAD)
@@ -53,6 +54,6 @@ jobs:
           echo "RELEASE_SUFFIX=$RELEASE_SUFFIX" >> $GITHUB_ENV
 
           # Push the tag
-          git push origin "$VERSION"
+          git push origin "$VERSION" 
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.EPOBOT_TOKEN }}

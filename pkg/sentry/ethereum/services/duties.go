@@ -242,7 +242,11 @@ func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, 
 			continue
 		}
 
-		return committee.Validators[position], nil
+		if position < uint64(len(committee.Validators)) {
+			return committee.Validators[position], nil
+		} else {
+			return 0, fmt.Errorf("position %d is out of range for slot %d in epoch %d in committee %d", position, slot, epoch, committeeIndex)
+		}
 	}
 
 	return 0, fmt.Errorf("validator index not found")

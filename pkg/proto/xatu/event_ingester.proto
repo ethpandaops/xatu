@@ -12,6 +12,7 @@ import "pkg/proto/eth/v1/events.proto";
 import "pkg/proto/eth/v1/committee.proto";
 import "pkg/proto/eth/v2/events.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
+import "pkg/proto/eth/v1/beacon_block.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -94,6 +95,20 @@ message DebugForkChoiceReorgV2 {
   xatu.eth.v1.ForkChoiceV2 before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoiceV2 after = 2 [ json_name = "after" ];
   xatu.eth.v1.EventChainReorgV2 event = 3;
+}
+
+message BlockIdentifier {
+  // Epoch contains the epoch information for the block.
+  EpochV2 epoch = 1;
+
+  // Slot contains the slot information for the block.
+  SlotV2 slot = 2;
+
+  // Version contains information about the version of the block.
+  string version = 3;
+
+  // Root contains the root of the beacon block.
+  string root = 4 [ json_name = "root" ];
 }
 
 message ClientMeta {
@@ -503,6 +518,11 @@ message ClientMeta {
     google.protobuf.UInt64Value transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
   }
 
+  message AdditionalEthV2BeaconBlockAttesterSlashingData {
+    // Block contains the information about the block that we are deriving the attester slashing from.
+    BlockIdentifier block = 1;
+  }
+
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the attestation data snapshot (in milliseconds).
@@ -608,6 +628,8 @@ message ClientMeta {
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
     AdditionalEthV1DebugForkChoiceReOrgV2Data eth_v1_debug_fork_choice_reorg_v2 = 34 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    // AdditionalEthV2BeaconBlockAttesterSlashingData contains additional data on attester slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockAttesterSlashingData eth_v2_beacon_block_attester_slashing = 35 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
   }
 }
 
@@ -698,6 +720,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_V2 = 22;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2 = 23;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2 = 24;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING = 25;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -737,5 +760,6 @@ message DecoratedEvent {
     xatu.eth.v2.EventBlockV2 eth_v2_beacon_block_v2 = 24 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
     xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
     DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
   }; 
 }

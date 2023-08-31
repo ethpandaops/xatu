@@ -2,6 +2,7 @@ sentry.yaml
 server.yaml
 discovery.yaml
 mimicry.yaml
+cannon.yaml
 dist
 GeoLite2-ASN.mmdb
 GeoLite2-City.mmdb

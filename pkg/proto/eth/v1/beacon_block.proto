@@ -81,6 +81,13 @@ message AttesterSlashing {
   IndexedAttestation attestation_2 = 2 [ json_name = "attestation_2" ];
 }
 
+message AttesterSlashingV2 {
+  IndexedAttestationV2 attestation_1 = 1 [ json_name = "attestation_1" ];
+
+  IndexedAttestationV2 attestation_2 = 2 [ json_name = "attestation_2" ];
+}
+
+
 message Deposit {
   message Data {
     string pubkey = 1;
@@ -139,6 +146,14 @@ message IndexedAttestation {
   repeated uint64 attesting_indices = 1 [ json_name = "attesting_indices" ];
 
   AttestationData data = 2;
+
+  string signature = 3;
+}
+
+message IndexedAttestationV2 {
+  repeated google.protobuf.UInt64Value attesting_indices = 1 [ json_name = "attesting_indices" ];
+
+  AttestationDataV2 data = 2;
 
   string signature = 3;
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/savid/ttlcache/v3"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,7 +58,7 @@ func (m *Memory) Get(ctx context.Context, key string) (*string, error) {
 }
 
 func (m *Memory) GetOrSet(ctx context.Context, key, value string, ttl time.Duration) (storedValue *string, retrieved bool, err error) {
-	item, retrieved := m.client.GetOrSet(key, value, ttl)
+	item, retrieved := m.client.GetOrSet(key, value, ttlcache.WithTTL[string, string](ttl))
 
 	if retrieved {
 		m.metrics.AddGet(1, m.Type(), "hit")

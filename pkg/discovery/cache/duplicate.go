@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
-	"github.com/savid/ttlcache/v3"
+	"github.com/jellydator/ttlcache/v3"
 )
 
 type DuplicateCache struct {

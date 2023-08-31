@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	"github.com/savid/ttlcache/v3"
+	"github.com/jellydator/ttlcache/v3"
 )
 
 type DuplicateCache struct {

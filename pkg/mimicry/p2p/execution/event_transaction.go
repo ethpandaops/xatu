@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -133,7 +134,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 		if txs != nil {
 			for _, tx := range txs.PooledTransactionsPacket {
-				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, 1*time.Hour)
+				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
 				if !retrieved {
 					seen := seenMap[tx.Hash()]

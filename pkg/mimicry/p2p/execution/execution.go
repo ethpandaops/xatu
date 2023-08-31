@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -243,7 +244,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 			for _, tx := range *txs {
-				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, 1*time.Hour)
+				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
 				if !retrieved {
 					event, errT := p.handleTransaction(ctx, now, tx)

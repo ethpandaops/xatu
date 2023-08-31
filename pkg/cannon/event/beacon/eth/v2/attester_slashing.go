@@ -85,7 +85,7 @@ func convertIndexedAttestation(attestation *phase0.IndexedAttestation) *xatuethv
 	indicies := []*wrapperspb.UInt64Value{}
 
 	for _, index := range attestation.AttestingIndices {
-		indicies = append(indicies, &wrapperspb.UInt64Value{Value: uint64(index)})
+		indicies = append(indicies, &wrapperspb.UInt64Value{Value: index})
 	}
 
 	return &xatuethv1.IndexedAttestationV2{

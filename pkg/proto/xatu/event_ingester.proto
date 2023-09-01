@@ -501,6 +501,15 @@ message ClientMeta {
 
     // TransactionsTotalBytes contains the total bytes size of transactions
     google.protobuf.UInt64Value transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
+
+    // CompressedTotalBytesCompressed contains the total bytes size of transactions with snappy compression
+    google.protobuf.UInt64Value transactions_total_bytes_compressed = 7 [ json_name = "transactions_total_bytes_compressed" ];
+
+    // TotalBytes contains the total bytes size of block
+    google.protobuf.UInt64Value total_bytes = 8 [ json_name = "total_bytes" ];
+
+    // TotalBytesCompressed contains the total bytes size of block with snappy compression
+    google.protobuf.UInt64Value total_bytes_compressed = 9 [ json_name = "total_bytes_compressed" ];
   }
 
   message AttestationDataSnapshot {

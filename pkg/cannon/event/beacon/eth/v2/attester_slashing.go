@@ -51,35 +51,16 @@ func (a *AttesterSlashingDeriver) Name() string {
 func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) []*xatuethv1.AttesterSlashingV2 {
 	slashings := []*xatuethv1.AttesterSlashingV2{}
 
-	switch block.Version {
-	case spec.DataVersionPhase0:
-		for _, slashing := range block.Phase0.Message.Body.AttesterSlashings {
-			slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
-				Attestation_1: convertIndexedAttestation(slashing.Attestation1),
-				Attestation_2: convertIndexedAttestation(slashing.Attestation2),
-			})
-		}
-	case spec.DataVersionAltair:
-		for _, slashing := range block.Altair.Message.Body.AttesterSlashings {
-			slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
-				Attestation_1: convertIndexedAttestation(slashing.Attestation1),
-				Attestation_2: convertIndexedAttestation(slashing.Attestation2),
-			})
-		}
-	case spec.DataVersionBellatrix:
-		for _, slashing := range block.Bellatrix.Message.Body.AttesterSlashings {
-			slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
-				Attestation_1: convertIndexedAttestation(slashing.Attestation1),
-				Attestation_2: convertIndexedAttestation(slashing.Attestation2),
-			})
-		}
-	case spec.DataVersionCapella:
-		for _, slashing := range block.Capella.Message.Body.AttesterSlashings {
-			slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
-				Attestation_1: convertIndexedAttestation(slashing.Attestation1),
-				Attestation_2: convertIndexedAttestation(slashing.Attestation2),
-			})
-		}
+	attesterSlashings, err := block.AttesterSlashings()
+	if err != nil {
+		a.log.WithError(err).Error("Failed to obtain attester slashings")
+	}
+
+	for _, slashing := range attesterSlashings {
+		slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
+			Attestation_1: convertIndexedAttestation(slashing.Attestation1),
+			Attestation_2: convertIndexedAttestation(slashing.Attestation2),
+		})
 	}
 
 	return slashings

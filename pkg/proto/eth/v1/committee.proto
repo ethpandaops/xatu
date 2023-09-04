@@ -8,7 +8,7 @@ import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
-// Committee is a set of validators that are assigned to a commitee for a given slot.
+// Committee is a set of validators that are assigned to a committee for a given slot.
 message Committee {
   google.protobuf.UInt64Value index = 1;
   google.protobuf.UInt64Value slot = 2;

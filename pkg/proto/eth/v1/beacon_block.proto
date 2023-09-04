@@ -110,6 +110,22 @@ message Deposit {
   Data data = 2;
 }
 
+message DepositV2 {
+  message Data {
+    string pubkey = 1;
+
+    string withdrawal_credentials = 2 [ json_name = "withdrawal_credentials" ];
+
+    google.protobuf.UInt64Value amount = 3;
+
+    string signature = 4;
+  }
+
+  repeated string proof = 1;
+
+  Data data = 2;
+}
+
 message VoluntaryExit {
   uint64 epoch = 1;
 

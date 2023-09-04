@@ -116,8 +116,20 @@ message VoluntaryExit {
   uint64 validator_index = 2 [ json_name = "validator_index" ];
 }
 
+message VoluntaryExitV2 {
+  google.protobuf.UInt64Value epoch = 1;
+
+  google.protobuf.UInt64Value validator_index = 2 [ json_name = "validator_index" ];
+}
+
 message SignedVoluntaryExit {
   VoluntaryExit message = 1;
+
+  string signature = 2;
+}
+
+message SignedVoluntaryExitV2 {
+  VoluntaryExitV2 message = 1;
 
   string signature = 2;
 }

@@ -7,6 +7,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -47,7 +48,7 @@ func (b *ProposerSlashingDeriver) Process(ctx context.Context, metadata *BeaconB
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")
 
-			continue
+			return nil, errors.Wrapf(err, "failed to create event for proposer slashing %s", slashing.String())
 		}
 
 		events = append(events, event)

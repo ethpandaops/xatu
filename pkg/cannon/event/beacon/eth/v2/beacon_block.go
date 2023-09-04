@@ -108,6 +108,8 @@ func (e *BeaconBlockMetadata) Process(ctx context.Context) ([]*xatu.DecoratedEve
 		e.log.WithFields(logrus.Fields{
 			"processor": processor.Name(),
 			"events":    len(evs),
+			"slot":      slot,
+			"root":      v1.RootAsString(root),
 		}).Info("Processor finished processing block")
 
 		events = append(events, evs...)

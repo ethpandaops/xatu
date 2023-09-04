@@ -523,6 +523,11 @@ message ClientMeta {
     BlockIdentifier block = 1;
   }
 
+  message AdditionalEthV2BeaconBlockProposerSlashingData {
+    // Block contains the information about the block that we are deriving the proposer slashing from.
+    BlockIdentifier block = 1;
+  }
+
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the attestation data snapshot (in milliseconds).
@@ -630,6 +635,8 @@ message ClientMeta {
     AdditionalEthV1DebugForkChoiceReOrgV2Data eth_v1_debug_fork_choice_reorg_v2 = 34 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
     // AdditionalEthV2BeaconBlockAttesterSlashingData contains additional data on attester slashings derived from beacon blocks.
     AdditionalEthV2BeaconBlockAttesterSlashingData eth_v2_beacon_block_attester_slashing = 35 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    // AdditionalEthV2BeaconBlockProposerSlashingData contains additional data on proposer slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockProposerSlashingData eth_v2_beacon_block_proposer_slashing = 36 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
   }
 }
 
@@ -721,6 +728,7 @@ message Event {
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2 = 23;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2 = 24;
     BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING = 25;
+    BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING = 26;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -761,5 +769,6 @@ message DecoratedEvent {
     xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
     DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
     xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    xatu.eth.v1.ProposerSlashing eth_v2_beacon_block_proposer_slashing = 28 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
   }; 
 }

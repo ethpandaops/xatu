@@ -127,7 +127,7 @@ message Eth1Data {
 message BeaconBlockHeader {
   uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "block_hash" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
@@ -135,6 +135,19 @@ message BeaconBlockHeader {
 
   string body_root = 5 [ json_name = "body_root" ];
 }
+
+message BeaconBlockHeaderV2 {
+  google.protobuf.UInt64Value slot = 1;
+
+  google.protobuf.UInt64Value proposer_index = 2 [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  string body_root = 5 [ json_name = "body_root" ];
+}
+
 
 message SignedBeaconBlockHeader {
   BeaconBlockHeader message = 1;

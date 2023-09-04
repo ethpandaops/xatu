@@ -769,6 +769,6 @@ message DecoratedEvent {
     xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
     DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
     xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
-    xatu.eth.v1.ProposerSlashing eth_v2_beacon_block_proposer_slashing = 28 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    xatu.eth.v1.ProposerSlashingV2 eth_v2_beacon_block_proposer_slashing = 28 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
   }; 
 }

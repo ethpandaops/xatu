@@ -75,6 +75,12 @@ message ProposerSlashing {
   SignedBeaconBlockHeader signed_header_2 = 2 [ json_name = "signed_header_2" ];
 }
 
+message ProposerSlashingV2 {
+  SignedBeaconBlockHeaderV2 signed_header_1 = 1 [ json_name = "signed_header_1" ];
+
+  SignedBeaconBlockHeaderV2 signed_header_2 = 2 [ json_name = "signed_header_2" ];
+}
+
 message AttesterSlashing {
   IndexedAttestation attestation_1 = 1 [ json_name = "attestation_1" ];
 
@@ -151,6 +157,12 @@ message BeaconBlockHeaderV2 {
 
 message SignedBeaconBlockHeader {
   BeaconBlockHeader message = 1;
+
+  string signature = 2;
+}
+
+message SignedBeaconBlockHeaderV2 {
+  BeaconBlockHeaderV2 message = 1;
 
   string signature = 2;
 }

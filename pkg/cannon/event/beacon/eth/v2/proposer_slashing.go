@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -67,8 +68,8 @@ func (b *BeaconBlockProposerSlashing) Process(ctx context.Context, metadata *Bea
 	return events, nil
 }
 
-func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ProposerSlashing, error) {
-	slashings := []*xatuethv1.ProposerSlashing{}
+func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ProposerSlashingV2, error) {
+	slashings := []*xatuethv1.ProposerSlashingV2{}
 
 	blockSlashings, err := block.ProposerSlashings()
 	if err != nil {
@@ -76,21 +77,21 @@ func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, 
 	}
 
 	for _, slashing := range blockSlashings {
-		slashings = append(slashings, &xatuethv1.ProposerSlashing{
-			SignedHeader_1: &xatuethv1.SignedBeaconBlockHeader{
-				Message: &xatuethv1.BeaconBlockHeader{
-					Slot:          uint64(slashing.SignedHeader1.Message.Slot),
-					ProposerIndex: uint64(slashing.SignedHeader1.Message.ProposerIndex),
+		slashings = append(slashings, &xatuethv1.ProposerSlashingV2{
+			SignedHeader_1: &xatuethv1.SignedBeaconBlockHeaderV2{
+				Message: &xatuethv1.BeaconBlockHeaderV2{
+					Slot:          wrapperspb.UInt64(uint64(slashing.SignedHeader1.Message.Slot)),
+					ProposerIndex: wrapperspb.UInt64(uint64(slashing.SignedHeader1.Message.ProposerIndex)),
 					ParentRoot:    slashing.SignedHeader1.Message.ParentRoot.String(),
 					StateRoot:     slashing.SignedHeader1.Message.StateRoot.String(),
 					BodyRoot:      slashing.SignedHeader1.Message.BodyRoot.String(),
 				},
 				Signature: slashing.SignedHeader1.Signature.String(),
 			},
-			SignedHeader_2: &xatuethv1.SignedBeaconBlockHeader{
-				Message: &xatuethv1.BeaconBlockHeader{
-					Slot:          uint64(slashing.SignedHeader2.Message.Slot),
-					ProposerIndex: uint64(slashing.SignedHeader2.Message.ProposerIndex),
+			SignedHeader_2: &xatuethv1.SignedBeaconBlockHeaderV2{
+				Message: &xatuethv1.BeaconBlockHeaderV2{
+					Slot:          wrapperspb.UInt64(uint64(slashing.SignedHeader2.Message.Slot)),
+					ProposerIndex: wrapperspb.UInt64(uint64(slashing.SignedHeader2.Message.ProposerIndex)),
 					ParentRoot:    slashing.SignedHeader2.Message.ParentRoot.String(),
 					StateRoot:     slashing.SignedHeader2.Message.StateRoot.String(),
 					BodyRoot:      slashing.SignedHeader2.Message.BodyRoot.String(),
@@ -103,7 +104,7 @@ func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, 
 	return slashings, nil
 }
 
-func (b *BeaconBlockProposerSlashing) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, slashing *xatuethv1.ProposerSlashing) (*xatu.DecoratedEvent, error) {
+func (b *BeaconBlockProposerSlashing) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, slashing *xatuethv1.ProposerSlashingV2) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,

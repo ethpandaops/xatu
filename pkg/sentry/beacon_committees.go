@@ -59,15 +59,15 @@ func (s *Sentry) startBeaconCommitteesWatcher(ctx context.Context) error {
 func (s *Sentry) createNewBeaconCommitteeEvent(ctx context.Context, epoch phase0.Epoch, committees []*eth2v1.BeaconCommittee) error {
 	now := time.Now()
 
-	meta, err := s.createNewClientMeta(ctx)
-	if err != nil {
-		s.log.WithError(err).Error("Failed to create client meta when handling beacon committee event")
-
-		return err
-	}
-
 	// Create an event for every committee.
 	for _, committee := range committees {
+		meta, err := s.createNewClientMeta(ctx)
+		if err != nil {
+			s.log.WithError(err).Error("Failed to create client meta when handling beacon committee event")
+
+			continue
+		}
+
 		event := v1.NewBeaconCommittee(s.log, committee, epoch, now, s.beacon, meta, s.duplicateCache.BeaconEthV1BeaconCommittee)
 
 		decoratedEvent, err := event.Decorate(ctx)

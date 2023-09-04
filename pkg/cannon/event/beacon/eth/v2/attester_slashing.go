@@ -13,6 +13,10 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+const (
+	AttesterSlashingDeriverName = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
+)
+
 type AttesterSlashingDeriver struct {
 	log logrus.FieldLogger
 }
@@ -41,7 +45,7 @@ func (a *AttesterSlashingDeriver) Process(ctx context.Context, metadata *BeaconB
 }
 
 func (a *AttesterSlashingDeriver) Name() string {
-	return "AttesterSlashing"
+	return AttesterSlashingDeriverName
 }
 
 func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) []*xatuethv1.AttesterSlashingV2 {

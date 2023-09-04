@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"errors"
 
 	"github.com/attestantio/go-eth2-client/spec"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -14,39 +13,28 @@ import (
 )
 
 const (
-	BeaconBlockProposerSlashingType = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
+	ProposerSlashingDeriverName = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
 )
 
-type BeaconBlockProposerSlashing struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+type ProposerSlashingDeriver struct {
+	log logrus.FieldLogger
 }
 
-func NewBeaconBlockProposerSlashing(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlockProposerSlashing {
-	return &BeaconBlockProposerSlashing{
-		log:   log.WithField("event", BeaconBlockProposerSlashingType),
-		event: event,
+func NewProposerSlashingDeriver(log logrus.FieldLogger) *ProposerSlashingDeriver {
+	return &ProposerSlashingDeriver{
+		log: log.WithField("module", "cannon/event/beacon/eth/v2/proposer_slashing"),
 	}
 }
 
-func (b *BeaconBlockProposerSlashing) Type() string {
-	return BeaconBlockProposerSlashingType
+func (b *ProposerSlashingDeriver) Name() string {
+	return ProposerSlashingDeriverName
 }
 
-func (b *BeaconBlockProposerSlashing) Validate(ctx context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV2BeaconBlockProposerSlashing)
-	if !ok {
-		return errors.New("failed to cast event data")
-	}
-
-	return nil
-}
-
-func (b *BeaconBlockProposerSlashing) Filter(ctx context.Context) bool {
+func (b *ProposerSlashingDeriver) Filter(ctx context.Context) bool {
 	return false
 }
 
-func (b *BeaconBlockProposerSlashing) Process(ctx context.Context, metadata *BeaconBlockMetadata, block *spec.VersionedSignedBeaconBlock) ([]*xatu.DecoratedEvent, error) {
+func (b *ProposerSlashingDeriver) Process(ctx context.Context, metadata *BeaconBlockMetadata, block *spec.VersionedSignedBeaconBlock) ([]*xatu.DecoratedEvent, error) {
 	events := []*xatu.DecoratedEvent{}
 
 	slashings, err := b.getProposerSlashings(ctx, block)
@@ -68,7 +56,7 @@ func (b *BeaconBlockProposerSlashing) Process(ctx context.Context, metadata *Bea
 	return events, nil
 }
 
-func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ProposerSlashingV2, error) {
+func (b *ProposerSlashingDeriver) getProposerSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ProposerSlashingV2, error) {
 	slashings := []*xatuethv1.ProposerSlashingV2{}
 
 	blockSlashings, err := block.ProposerSlashings()
@@ -104,7 +92,7 @@ func (b *BeaconBlockProposerSlashing) getProposerSlashings(ctx context.Context, 
 	return slashings, nil
 }
 
-func (b *BeaconBlockProposerSlashing) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, slashing *xatuethv1.ProposerSlashingV2) (*xatu.DecoratedEvent, error) {
+func (b *ProposerSlashingDeriver) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, slashing *xatuethv1.ProposerSlashingV2) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,

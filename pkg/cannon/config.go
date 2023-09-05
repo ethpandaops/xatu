@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/sirupsen/logrus"
@@ -28,6 +29,9 @@ type Config struct {
 
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
+
+	// Derivers configures the cannon with event derivers
+	Derivers deriver.Config `yaml:"derivers"`
 }
 
 func (c *Config) Validate() error {

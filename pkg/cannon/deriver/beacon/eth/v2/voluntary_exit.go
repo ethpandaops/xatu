@@ -16,25 +16,32 @@ import (
 )
 
 const (
-	VoluntaryExitDeriverName = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
+	VoluntaryExitDeriverName = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
 )
 
 type VoluntaryExitDeriver struct {
 	log logrus.FieldLogger
+	cfg *VoluntaryExitDeriverConfig
 }
 
-func NewVoluntaryExitDeriver(log logrus.FieldLogger) *VoluntaryExitDeriver {
+type VoluntaryExitDeriverConfig struct {
+	Enabled     *bool   `yaml:"enabled" default:"true"`
+	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
+}
+
+func NewVoluntaryExitDeriver(log logrus.FieldLogger, config *VoluntaryExitDeriverConfig) *VoluntaryExitDeriver {
 	return &VoluntaryExitDeriver{
 		log: log.WithField("module", "cannon/event/beacon/eth/v2/voluntary_exit"),
+		cfg: config,
 	}
 }
 
-func (b *VoluntaryExitDeriver) Name() string {
+func (b *VoluntaryExitDeriver) CannonType() xatu.CannonType {
 	return VoluntaryExitDeriverName
 }
 
-func (b *VoluntaryExitDeriver) Filter(ctx context.Context) bool {
-	return false
+func (b *VoluntaryExitDeriver) Name() string {
+	return VoluntaryExitDeriverName.String()
 }
 
 func (b *VoluntaryExitDeriver) Process(ctx context.Context, metadata *BeaconBlockMetadata, block *spec.VersionedSignedBeaconBlock) ([]*xatu.DecoratedEvent, error) {

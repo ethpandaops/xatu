@@ -3,7 +3,6 @@ package cannon
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -249,19 +248,12 @@ func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 		return err
 	}
 
-	network := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
-	networkStr := fmt.Sprintf("%d", network)
-
-	if networkStr == "" || networkStr == "0" {
-		networkStr = "unknown"
-	}
-
 	eventType := event.GetEvent().GetName().String()
 	if eventType == "" {
 		eventType = "unknown"
 	}
 
-	c.metrics.AddDecoratedEvent(1, eventType, networkStr)
+	c.metrics.AddDecoratedEvent(1, eventType)
 
 	for _, sink := range c.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
@@ -278,59 +270,21 @@ func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 
 func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 	c.beacon.OnReady(ctx, func(ctx context.Context) error {
-		c.log.Info("Internal beacon node is ready, firing up beacon block processor")
+		c.log.Info("Internal beacon node is ready, firing up event derivers")
 
-		// TODO: Fetch our starting point from xatu-server
-		start := uint64(5193791)
+		for _, deriver := range c.beaconBlockDerivers {
+			c.log.
+				WithField("deriver", deriver.Name()).
+				WithField("type", deriver.CannonType()).
+				Info("Starting cannon event deriver")
 
-		for {
-			select {
-			case <-ctx.Done():
-				return nil
-			default:
-				time.Sleep(1 * time.Second)
-
-				c.log.WithField("slot", start).Info("Processing beacon block")
-
-				if err := c.processBeaconBlock(ctx, start); err != nil {
-					c.log.WithError(err).Error("Failed to process beacon block")
-
-					// TODO: Make sure we don't tell xatu-server we've processed this block
-					// If we can't process it, we should stop here and wait for
-					// human intervention.
-				}
-
-				start++
+			if err := deriver.Start(ctx); err != nil {
+				return err
 			}
 		}
+
+		return nil
 	})
-
-	return nil
-}
-
-func (c *Cannon) processBeaconBlock(ctx context.Context, slot uint64) error {
-	block, err := c.beacon.Node().FetchBlock(ctx, fmt.Sprintf("%d", slot))
-	if err != nil {
-		return err
-	}
-
-	meta, err := c.createNewClientMeta(ctx)
-	if err != nil {
-		return err
-	}
-
-	event := v2.NewBeaconBlockMetadata(c.log, block, time.Now(), c.beacon, meta, c.beaconBlockDerivers)
-
-	events, err := event.Process(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, event := range events {
-		if err := c.handleNewDecoratedEvent(ctx, event); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

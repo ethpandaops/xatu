@@ -14,25 +14,32 @@ import (
 )
 
 const (
-	ProposerSlashingDeriverName = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
+	ProposerSlashingDeriverName = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
 )
 
 type ProposerSlashingDeriver struct {
 	log logrus.FieldLogger
+	cfg *ProposerSlashingDeriverConfig
 }
 
-func NewProposerSlashingDeriver(log logrus.FieldLogger) *ProposerSlashingDeriver {
+type ProposerSlashingDeriverConfig struct {
+	Enabled     *bool   `yaml:"enabled" default:"true"`
+	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
+}
+
+func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
 		log: log.WithField("module", "cannon/event/beacon/eth/v2/proposer_slashing"),
+		cfg: config,
 	}
 }
 
-func (b *ProposerSlashingDeriver) Name() string {
+func (b *ProposerSlashingDeriver) CannonType() xatu.CannonType {
 	return ProposerSlashingDeriverName
 }
 
-func (b *ProposerSlashingDeriver) Filter(ctx context.Context) bool {
-	return false
+func (b *ProposerSlashingDeriver) Name() string {
+	return ProposerSlashingDeriverName.String()
 }
 
 func (b *ProposerSlashingDeriver) Process(ctx context.Context, metadata *BeaconBlockMetadata, block *spec.VersionedSignedBeaconBlock) ([]*xatu.DecoratedEvent, error) {

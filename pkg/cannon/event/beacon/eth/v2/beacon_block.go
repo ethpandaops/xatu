@@ -100,7 +100,9 @@ func (e *BeaconBlockMetadata) Process(ctx context.Context) ([]*xatu.DecoratedEve
 		if err != nil {
 			e.log.WithError(err).Error("Failed to process block")
 
-			continue
+			// Intentionally returning early here as we don't want to continue processing
+			// if one processor fails.
+			return nil, err
 		}
 
 		e.log.WithFields(logrus.Fields{

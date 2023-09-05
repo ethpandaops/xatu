@@ -66,6 +66,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 
 	beaconBlockDerivers := []v2.BeaconBlockEventDeriver{
 		v2.NewAttesterSlashingDeriver(log),
+		v2.NewProposerSlashingDeriver(log),
 	}
 
 	return &Cannon{

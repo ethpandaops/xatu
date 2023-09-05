@@ -68,6 +68,9 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 		v2.NewAttesterSlashingDeriver(log),
 		v2.NewProposerSlashingDeriver(log),
 		v2.NewVoluntaryExitDeriver(log),
+		v2.NewDepositDeriver(log),
+		v2.NewBLSToExecutionChangeDeriver(log),
+		v2.NewExecutionTransactionDeriver(log),
 	}
 
 	return &Cannon{
@@ -278,7 +281,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		c.log.Info("Internal beacon node is ready, firing up beacon block processor")
 
 		// TODO: Fetch our starting point from xatu-server
-		start := uint64(5328053)
+		start := uint64(5193791)
 
 		for {
 			select {

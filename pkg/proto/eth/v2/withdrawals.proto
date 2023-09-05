@@ -8,6 +8,7 @@ package xatu.eth.v2;
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v2";
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
 
 message BLSToExecutionChange {
   uint64 validator_index = 1 [ json_name = "validator_index" ];
@@ -17,8 +18,22 @@ message BLSToExecutionChange {
   string to_execution_address = 3 [ json_name = "to_execution_address" ];
 }
 
+message BLSToExecutionChangeV2 {
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+
+  string from_bls_pubkey = 2 [ json_name = "from_bls_pubkey" ];
+
+  string to_execution_address = 3 [ json_name = "to_execution_address" ];
+}
+
 message SignedBLSToExecutionChange {
   BLSToExecutionChange message = 1;
+
+  string signature = 2;
+}
+
+message SignedBLSToExecutionChangeV2 {
+  BLSToExecutionChangeV2 message = 1;
 
   string signature = 2;
 }

@@ -123,3 +123,7 @@ func (e *BeaconBlockMetadata) Process(ctx context.Context) ([]*xatu.DecoratedEve
 
 	return events, nil
 }
+
+func (e *BeaconBlockMetadata) Block() *spec.VersionedSignedBeaconBlock {
+	return e.block
+}

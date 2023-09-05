@@ -70,6 +70,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 		v2.NewVoluntaryExitDeriver(log),
 		v2.NewDepositDeriver(log),
 		v2.NewBLSToExecutionChangeDeriver(log),
+		v2.NewExecutionTransactionDeriver(log),
 	}
 
 	return &Cannon{

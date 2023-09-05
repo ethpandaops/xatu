@@ -102,7 +102,6 @@ func (b *ExecutionTransactionDeriver) Process(ctx context.Context, metadata *Bea
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock, metadata *BeaconBlockMetadata) ([]*types.Transaction, error) {
 	transactions := []*types.Transaction{}
 
-	// TODO: Extract transactions from the block
 	switch block.Version {
 	case spec.DataVersionPhase0:
 		return transactions, nil
@@ -110,7 +109,6 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 		return transactions, nil
 	case spec.DataVersionBellatrix:
 		for _, transaction := range block.Bellatrix.Message.Body.ExecutionPayload.Transactions {
-			// Cast the transaction to the correct type using go-ethereum
 			ethTransaction := new(types.Transaction)
 			if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
@@ -120,7 +118,6 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 		}
 	case spec.DataVersionCapella:
 		for _, transaction := range block.Capella.Message.Body.ExecutionPayload.Transactions {
-			// Cast the transaction to the correct type using go-ethereum
 			ethTransaction := new(types.Transaction)
 			if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)

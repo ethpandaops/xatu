@@ -170,3 +170,16 @@ message ExecutionPayloadHeaderCapellaV2 {
   string transactions_root = 14 [ json_name = "transactions_root" ];
   string withdrawals_root = 15 [ json_name = "withdrawals_root" ];
 }
+
+message Transaction {
+  string chain_id = 1 [ json_name = "chain_id" ];
+  string input = 2;
+  google.protobuf.UInt64Value gas = 3;
+  string gas_price = 4 [ json_name = "gas_price" ];
+  string hash = 5;
+  string from = 6;
+  string to = 7;
+  google.protobuf.UInt64Value nonce = 8;
+  string value = 9;
+  google.protobuf.UInt32Value type = 10;
+}

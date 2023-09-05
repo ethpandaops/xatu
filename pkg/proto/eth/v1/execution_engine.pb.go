@@ -1407,6 +1407,125 @@ func (x *ExecutionPayloadHeaderCapellaV2) GetWithdrawalsRoot() string {
 	return ""
 }
 
+type Transaction struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChainId  string                  `protobuf:"bytes,1,opt,name=chain_id,proto3" json:"chain_id,omitempty"`
+	Input    string                  `protobuf:"bytes,2,opt,name=input,proto3" json:"input,omitempty"`
+	Gas      *wrapperspb.UInt64Value `protobuf:"bytes,3,opt,name=gas,proto3" json:"gas,omitempty"`
+	GasPrice string                  `protobuf:"bytes,4,opt,name=gas_price,proto3" json:"gas_price,omitempty"`
+	Hash     string                  `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
+	From     string                  `protobuf:"bytes,6,opt,name=from,proto3" json:"from,omitempty"`
+	To       string                  `protobuf:"bytes,7,opt,name=to,proto3" json:"to,omitempty"`
+	Nonce    *wrapperspb.UInt64Value `protobuf:"bytes,8,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Value    string                  `protobuf:"bytes,9,opt,name=value,proto3" json:"value,omitempty"`
+	Type     *wrapperspb.UInt32Value `protobuf:"bytes,10,opt,name=type,proto3" json:"type,omitempty"`
+}
+
+func (x *Transaction) Reset() {
+	*x = Transaction{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Transaction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Transaction) ProtoMessage() {}
+
+func (x *Transaction) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
+func (*Transaction) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_execution_engine_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Transaction) GetChainId() string {
+	if x != nil {
+		return x.ChainId
+	}
+	return ""
+}
+
+func (x *Transaction) GetInput() string {
+	if x != nil {
+		return x.Input
+	}
+	return ""
+}
+
+func (x *Transaction) GetGas() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Gas
+	}
+	return nil
+}
+
+func (x *Transaction) GetGasPrice() string {
+	if x != nil {
+		return x.GasPrice
+	}
+	return ""
+}
+
+func (x *Transaction) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *Transaction) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+func (x *Transaction) GetTo() string {
+	if x != nil {
+		return x.To
+	}
+	return ""
+}
+
+func (x *Transaction) GetNonce() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Nonce
+	}
+	return nil
+}
+
+func (x *Transaction) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Transaction) GetType() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
 var File_pkg_proto_eth_v1_execution_engine_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_eth_v1_execution_engine_proto_rawDesc = []byte{
@@ -1737,10 +1856,30 @@ var file_pkg_proto_eth_v1_execution_engine_proto_rawDesc = []byte{
 	0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x12, 0x2a, 0x0a, 0x10, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61,
 	0x77, 0x61, 0x6c, 0x73, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x10, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x5f, 0x72, 0x6f, 0x6f,
-	0x74, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75,
-	0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76,
-	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x22, 0xc1, 0x02, 0x0a, 0x0b, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x12, 0x14, 0x0a,
+	0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e,
+	0x70, 0x75, 0x74, 0x12, 0x2e, 0x0a, 0x03, 0x67, 0x61, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x03,
+	0x67, 0x61, 0x73, 0x12, 0x1c, 0x0a, 0x09, 0x67, 0x61, 0x73, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x67, 0x61, 0x73, 0x5f, 0x70, 0x72, 0x69, 0x63,
+	0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x18, 0x06, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x74, 0x6f, 0x18,
+	0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x74, 0x6f, 0x12, 0x32, 0x0a, 0x05, 0x6e, 0x6f, 0x6e,
+	0x63, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36,
+	0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61,
+	0x6c, 0x75, 0x65, 0x12, 0x30, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52,
+	0x04, 0x74, 0x79, 0x70, 0x65, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
+	0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f,
+	0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65,
+	0x74, 0x68, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1755,7 +1894,7 @@ func file_pkg_proto_eth_v1_execution_engine_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v1_execution_engine_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v1_execution_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_pkg_proto_eth_v1_execution_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_pkg_proto_eth_v1_execution_engine_proto_goTypes = []interface{}{
 	(*ExecutionPayload)(nil),                // 0: xatu.eth.v1.ExecutionPayload
 	(*ExecutionPayloadV2)(nil),              // 1: xatu.eth.v1.ExecutionPayloadV2
@@ -1767,35 +1906,40 @@ var file_pkg_proto_eth_v1_execution_engine_proto_goTypes = []interface{}{
 	(*WithdrawalV2)(nil),                    // 7: xatu.eth.v1.WithdrawalV2
 	(*ExecutionPayloadHeaderCapella)(nil),   // 8: xatu.eth.v1.ExecutionPayloadHeaderCapella
 	(*ExecutionPayloadHeaderCapellaV2)(nil), // 9: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
-	(*wrapperspb.UInt64Value)(nil),          // 10: google.protobuf.UInt64Value
+	(*Transaction)(nil),                     // 10: xatu.eth.v1.Transaction
+	(*wrapperspb.UInt64Value)(nil),          // 11: google.protobuf.UInt64Value
+	(*wrapperspb.UInt32Value)(nil),          // 12: google.protobuf.UInt32Value
 }
 var file_pkg_proto_eth_v1_execution_engine_proto_depIdxs = []int32{
-	10, // 0: xatu.eth.v1.ExecutionPayloadV2.block_number:type_name -> google.protobuf.UInt64Value
-	10, // 1: xatu.eth.v1.ExecutionPayloadV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	10, // 2: xatu.eth.v1.ExecutionPayloadV2.gas_used:type_name -> google.protobuf.UInt64Value
-	10, // 3: xatu.eth.v1.ExecutionPayloadV2.timestamp:type_name -> google.protobuf.UInt64Value
-	10, // 4: xatu.eth.v1.ExecutionPayloadHeaderV2.block_number:type_name -> google.protobuf.UInt64Value
-	10, // 5: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	10, // 6: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_used:type_name -> google.protobuf.UInt64Value
-	10, // 7: xatu.eth.v1.ExecutionPayloadHeaderV2.timestamp:type_name -> google.protobuf.UInt64Value
+	11, // 0: xatu.eth.v1.ExecutionPayloadV2.block_number:type_name -> google.protobuf.UInt64Value
+	11, // 1: xatu.eth.v1.ExecutionPayloadV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	11, // 2: xatu.eth.v1.ExecutionPayloadV2.gas_used:type_name -> google.protobuf.UInt64Value
+	11, // 3: xatu.eth.v1.ExecutionPayloadV2.timestamp:type_name -> google.protobuf.UInt64Value
+	11, // 4: xatu.eth.v1.ExecutionPayloadHeaderV2.block_number:type_name -> google.protobuf.UInt64Value
+	11, // 5: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	11, // 6: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_used:type_name -> google.protobuf.UInt64Value
+	11, // 7: xatu.eth.v1.ExecutionPayloadHeaderV2.timestamp:type_name -> google.protobuf.UInt64Value
 	6,  // 8: xatu.eth.v1.ExecutionPayloadCapella.withdrawals:type_name -> xatu.eth.v1.Withdrawal
-	10, // 9: xatu.eth.v1.ExecutionPayloadCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
-	10, // 10: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	10, // 11: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
-	10, // 12: xatu.eth.v1.ExecutionPayloadCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
+	11, // 9: xatu.eth.v1.ExecutionPayloadCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
+	11, // 10: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	11, // 11: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
+	11, // 12: xatu.eth.v1.ExecutionPayloadCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
 	7,  // 13: xatu.eth.v1.ExecutionPayloadCapellaV2.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	10, // 14: xatu.eth.v1.WithdrawalV2.index:type_name -> google.protobuf.UInt64Value
-	10, // 15: xatu.eth.v1.WithdrawalV2.validator_index:type_name -> google.protobuf.UInt64Value
-	10, // 16: xatu.eth.v1.WithdrawalV2.amount:type_name -> google.protobuf.UInt64Value
-	10, // 17: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
-	10, // 18: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	10, // 19: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
-	10, // 20: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	11, // 14: xatu.eth.v1.WithdrawalV2.index:type_name -> google.protobuf.UInt64Value
+	11, // 15: xatu.eth.v1.WithdrawalV2.validator_index:type_name -> google.protobuf.UInt64Value
+	11, // 16: xatu.eth.v1.WithdrawalV2.amount:type_name -> google.protobuf.UInt64Value
+	11, // 17: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
+	11, // 18: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	11, // 19: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
+	11, // 20: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
+	11, // 21: xatu.eth.v1.Transaction.gas:type_name -> google.protobuf.UInt64Value
+	11, // 22: xatu.eth.v1.Transaction.nonce:type_name -> google.protobuf.UInt64Value
+	12, // 23: xatu.eth.v1.Transaction.type:type_name -> google.protobuf.UInt32Value
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v1_execution_engine_proto_init() }
@@ -1924,6 +2068,18 @@ func file_pkg_proto_eth_v1_execution_engine_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Transaction); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1931,7 +2087,7 @@ func file_pkg_proto_eth_v1_execution_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v1_execution_engine_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

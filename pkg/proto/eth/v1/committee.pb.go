@@ -23,7 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Committee is a set of validators that are assigned to a commitee for a given slot.
+// Committee is a set of validators that are assigned to a committee for a given slot.
 type Committee struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -408,17 +408,9 @@ message ClientMeta {
 
   message AdditionalEthV1BeaconCommitteeData {
     // Epoch contains the epoch information for the beacon committee.
-    Epoch epoch = 1;
-
-    // Slot contains the slot information for the beacon commitee.
-    Slot slot = 2;
-  }
-
-  message AdditionalEthV1BeaconCommitteeV2Data {
-    // Epoch contains the epoch information for the beacon committee.
     EpochV2 epoch = 1;
 
-    // Slot contains the slot information for the beacon commitee.
+    // Slot contains the slot information for the beacon committee.
     SlotV2 slot = 2;
   }
 
@@ -518,6 +510,15 @@ message ClientMeta {
 
     // TransactionsTotalBytes contains the total bytes size of transactions
     google.protobuf.UInt64Value transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
+
+    // CompressedTotalBytesCompressed contains the total bytes size of transactions with snappy compression
+    google.protobuf.UInt64Value transactions_total_bytes_compressed = 7 [ json_name = "transactions_total_bytes_compressed" ];
+
+    // TotalBytes contains the total bytes size of block
+    google.protobuf.UInt64Value total_bytes = 8 [ json_name = "total_bytes" ];
+
+    // TotalBytesCompressed contains the total bytes size of block with snappy compression
+    google.protobuf.UInt64Value total_bytes_compressed = 9 [ json_name = "total_bytes_compressed" ];
   }
 
   message AdditionalEthV2BeaconBlockAttesterSlashingData {
@@ -577,7 +578,7 @@ message ClientMeta {
     // Epoch contains the epoch information for the beacon committee.
     EpochV2 epoch = 3;
 
-    // Slot contains the slot information for the beacon commitee.
+    // Slot contains the slot information for the beacon committee.
     SlotV2 slot = 4;
 
     // AttestationDataSnapshot is the snapshot of the attestation data
@@ -620,8 +621,8 @@ message ClientMeta {
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
     AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
-    // AdditionalEthV1BeaconCommitteeData contains additional data about the beacon commitee
-    AdditionalEthV1BeaconCommitteeData eth_v1_beacon_commitee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+    // AdditionalEthV1BeaconCommitteeData contains additional data about the beacon committee
+    AdditionalEthV1BeaconCommitteeData eth_v1_beacon_committee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
     // AdditionalEthV1ValidatorAttestationDataData contains additional data about the eth v1 validator attestation data
     AdditionalEthV1ValidatorAttestationDataData eth_v1_validator_attestation_data = 22 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
     // AdditionalEthV1EventsAttestationV2Data contains additional data about an

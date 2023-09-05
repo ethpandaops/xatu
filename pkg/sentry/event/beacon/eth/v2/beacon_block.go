@@ -13,10 +13,12 @@ import (
 	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/golang/snappy"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -77,7 +79,7 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 		},
 	}
 
-	additionalData, err := e.getAdditionalData(ctx)
+	additionalData, err := e.getAdditionalData(ctx, data)
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon block data")
 	} else {
@@ -507,7 +509,7 @@ func (e *BeaconBlock) getCapellaData() *xatuethv2.EventBlockV2 {
 	}
 }
 
-func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
+func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.EventBlockV2) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 
 	slotI, err := e.event.Slot()
@@ -529,31 +531,57 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	}
 
 	extra.Version = e.event.Version.String()
-
 	extra.BlockRoot = e.blockRoot
 
 	var txCount int
 
 	var txSize int
 
-	switch e.event.Version {
-	case spec.DataVersionBellatrix:
-		txCount = len(e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions)
+	var transactionsBytes []byte
 
-		for _, tx := range e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions {
-			txSize += len(tx)
-		}
-	case spec.DataVersionCapella:
-		txCount = len(e.event.Capella.Message.Body.ExecutionPayload.Transactions)
+	addTxData := func(txs [][]byte) {
+		txCount = len(txs)
 
-		for _, tx := range e.event.Capella.Message.Body.ExecutionPayload.Transactions {
+		for _, tx := range txs {
 			txSize += len(tx)
+			transactionsBytes = append(transactionsBytes, tx...)
 		}
 	}
 
-	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
+	dataAsJSON, err := protojson.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
 
+	dataSize := len(dataAsJSON)
+	compressedData := snappy.Encode(nil, dataAsJSON)
+	compressedDataSize := len(compressedData)
+
+	switch e.event.Version {
+	case spec.DataVersionBellatrix:
+		bellatrixTxs := make([][]byte, len(e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions {
+			bellatrixTxs[i] = tx
+		}
+
+		addTxData(bellatrixTxs)
+	case spec.DataVersionCapella:
+		capellaTxs := make([][]byte, len(e.event.Capella.Message.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Capella.Message.Body.ExecutionPayload.Transactions {
+			capellaTxs[i] = tx
+		}
+
+		addTxData(capellaTxs)
+	}
+
+	compressedTransactions := snappy.Encode(nil, transactionsBytes)
+	compressedTxSize := len(compressedTransactions)
+
+	extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
+	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
+	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
+	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(compressedTxSize))
 
 	return extra, nil
 }

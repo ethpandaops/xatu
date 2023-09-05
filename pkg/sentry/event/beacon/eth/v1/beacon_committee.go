@@ -72,8 +72,8 @@ func (e *BeaconCommittee) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon committee data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1BeaconCommitee{
-			EthV1BeaconCommitee: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1BeaconCommittee{
+			EthV1BeaconCommittee: additionalData,
 		}
 	}
 
@@ -106,13 +106,13 @@ func (e *BeaconCommittee) getAdditionalData(_ context.Context) (*xatu.ClientMeta
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.epoch))
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Slot))
 
-	extra.Slot = &xatu.Slot{
-		Number:        slot.Number(),
+	extra.Slot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+		Number:        &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 	}
 
-	extra.Epoch = &xatu.Epoch{
-		Number:        epoch.Number(),
+	extra.Epoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 	}
 

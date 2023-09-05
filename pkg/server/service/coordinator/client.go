@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/cannon"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
 	"github.com/sirupsen/logrus"
@@ -296,4 +297,42 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 	return &xatu.GetDiscoveryNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
 	}, nil
+}
+
+func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocationRequest) (*xatu.GetCannonLocationResponse, error) {
+	location, err := c.persistence.GetCannonLocationByNetworkIDAndType(ctx, req.NetworkId, req.Type.Enum().String())
+	if err != nil && err != persistence.ErrCannonLocationNotFound {
+		return nil, err
+	}
+
+	rsp := &xatu.GetCannonLocationResponse{}
+
+	if location == nil {
+		return rsp, nil
+	}
+
+	protoLoc, err := location.Unmarshal()
+	if err != nil {
+		return nil, err
+	}
+
+	return &xatu.GetCannonLocationResponse{
+		Location: protoLoc,
+	}, nil
+}
+
+func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCannonLocationRequest) (*xatu.UpsertCannonLocationResponse, error) {
+	newLocation := &cannon.Location{}
+
+	err := newLocation.Marshal(req.Location)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.persistence.UpsertCannonLocation(ctx, newLocation)
+	if err != nil {
+		return nil, err
+	}
+
+	return &xatu.UpsertCannonLocationResponse{}, nil
 }

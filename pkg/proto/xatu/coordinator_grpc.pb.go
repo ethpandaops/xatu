@@ -24,6 +24,8 @@ const (
 	Coordinator_CreateExecutionNodeRecordStatus_FullMethodName = "/xatu.Coordinator/CreateExecutionNodeRecordStatus"
 	Coordinator_CoordinateExecutionNodeRecords_FullMethodName  = "/xatu.Coordinator/CoordinateExecutionNodeRecords"
 	Coordinator_GetDiscoveryNodeRecord_FullMethodName          = "/xatu.Coordinator/GetDiscoveryNodeRecord"
+	Coordinator_GetCannonLocation_FullMethodName               = "/xatu.Coordinator/GetCannonLocation"
+	Coordinator_UpsertCannonLocation_FullMethodName            = "/xatu.Coordinator/UpsertCannonLocation"
 )
 
 // CoordinatorClient is the client API for Coordinator service.
@@ -35,6 +37,8 @@ type CoordinatorClient interface {
 	CreateExecutionNodeRecordStatus(ctx context.Context, in *CreateExecutionNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error)
+	GetCannonLocation(ctx context.Context, in *GetCannonLocationRequest, opts ...grpc.CallOption) (*GetCannonLocationResponse, error)
+	UpsertCannonLocation(ctx context.Context, in *UpsertCannonLocationRequest, opts ...grpc.CallOption) (*UpsertCannonLocationResponse, error)
 }
 
 type coordinatorClient struct {
@@ -90,6 +94,24 @@ func (c *coordinatorClient) GetDiscoveryNodeRecord(ctx context.Context, in *GetD
 	return out, nil
 }
 
+func (c *coordinatorClient) GetCannonLocation(ctx context.Context, in *GetCannonLocationRequest, opts ...grpc.CallOption) (*GetCannonLocationResponse, error) {
+	out := new(GetCannonLocationResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetCannonLocation_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) UpsertCannonLocation(ctx context.Context, in *UpsertCannonLocationRequest, opts ...grpc.CallOption) (*UpsertCannonLocationResponse, error) {
+	out := new(UpsertCannonLocationResponse)
+	err := c.cc.Invoke(ctx, Coordinator_UpsertCannonLocation_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServer is the server API for Coordinator service.
 // All implementations must embed UnimplementedCoordinatorServer
 // for forward compatibility
@@ -99,6 +121,8 @@ type CoordinatorServer interface {
 	CreateExecutionNodeRecordStatus(context.Context, *CreateExecutionNodeRecordStatusRequest) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error)
+	GetCannonLocation(context.Context, *GetCannonLocationRequest) (*GetCannonLocationResponse, error)
+	UpsertCannonLocation(context.Context, *UpsertCannonLocationRequest) (*UpsertCannonLocationResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
 }
 
@@ -120,6 +144,12 @@ func (UnimplementedCoordinatorServer) CoordinateExecutionNodeRecords(context.Con
 }
 func (UnimplementedCoordinatorServer) GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDiscoveryNodeRecord not implemented")
+}
+func (UnimplementedCoordinatorServer) GetCannonLocation(context.Context, *GetCannonLocationRequest) (*GetCannonLocationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCannonLocation not implemented")
+}
+func (UnimplementedCoordinatorServer) UpsertCannonLocation(context.Context, *UpsertCannonLocationRequest) (*UpsertCannonLocationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertCannonLocation not implemented")
 }
 func (UnimplementedCoordinatorServer) mustEmbedUnimplementedCoordinatorServer() {}
 
@@ -224,6 +254,42 @@ func _Coordinator_GetDiscoveryNodeRecord_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_GetCannonLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCannonLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetCannonLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetCannonLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetCannonLocation(ctx, req.(*GetCannonLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_UpsertCannonLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertCannonLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).UpsertCannonLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_UpsertCannonLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).UpsertCannonLocation(ctx, req.(*UpsertCannonLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Coordinator_ServiceDesc is the grpc.ServiceDesc for Coordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -250,6 +316,14 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDiscoveryNodeRecord",
 			Handler:    _Coordinator_GetDiscoveryNodeRecord_Handler,
+		},
+		{
+			MethodName: "GetCannonLocation",
+			Handler:    _Coordinator_GetCannonLocation_Handler,
+		},
+		{
+			MethodName: "UpsertCannonLocation",
+			Handler:    _Coordinator_UpsertCannonLocation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

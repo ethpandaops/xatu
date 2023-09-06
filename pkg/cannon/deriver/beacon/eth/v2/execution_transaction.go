@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
@@ -17,22 +18,23 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ExecutionTransactionDeriver struct {
-	log              logrus.FieldLogger
-	cfg              *ExecutionTransactionDeriverConfig
-	iterator         *iterator.SlotIterator
-	onEventCallbacks []func(ctx context.Context, event *xatu.DecoratedEvent) error
-	beacon           *ethereum.BeaconNode
-	clientMeta       *xatu.ClientMeta
-	loc              uint64
+	log                 logrus.FieldLogger
+	cfg                 *ExecutionTransactionDeriverConfig
+	iterator            *iterator.SlotIterator
+	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
+	onLocationCallbacks []func(ctx context.Context, location uint64) error
+	beacon              *ethereum.BeaconNode
+	clientMeta          *xatu.ClientMeta
 }
 
 type ExecutionTransactionDeriverConfig struct {
-	Enabled     *bool   `yaml:"enabled" default:"true"`
+	Enabled     bool    `yaml:"enabled" default:"true"`
 	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
 }
 
@@ -47,7 +49,6 @@ func NewExecutionTransactionDeriver(log logrus.FieldLogger, config *ExecutionTra
 		iterator:   iter,
 		beacon:     beacon,
 		clientMeta: clientMeta,
-		loc:        0,
 	}
 }
 
@@ -63,8 +64,12 @@ func (b *ExecutionTransactionDeriver) OnEventDerived(ctx context.Context, fn fun
 	b.onEventCallbacks = append(b.onEventCallbacks, fn)
 }
 
+func (b *ExecutionTransactionDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
+	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
+}
+
 func (b *ExecutionTransactionDeriver) Start(ctx context.Context) error {
-	if b.cfg.Enabled == nil || !*b.cfg.Enabled {
+	if !b.cfg.Enabled {
 		b.log.Info("Execution transaction deriver disabled")
 
 		return nil
@@ -83,19 +88,26 @@ func (b *ExecutionTransactionDeriver) Stop(ctx context.Context) error {
 }
 
 func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
+	bo := backoff.NewExponentialBackOff()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-
 			operation := func() error {
-				time.Sleep(1 * time.Second)
+				time.Sleep(100 * time.Millisecond)
 
 				// Get the next slot
 				location, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
+				}
+
+				for _, fn := range b.onLocationCallbacks {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockExecutionTransaction().GetSlot()); errr != nil {
+						b.log.WithError(errr).Error("Failed to send location")
+					}
 				}
 
 				// Process the slot
@@ -115,12 +127,19 @@ func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
 					}
 				}
 
-				b.loc = location.GetEthV2BeaconBlockExecutionTransaction().GetSlot()
+				// Update our location
+				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+					return err
+				}
+
+				bo.Reset()
 
 				return nil
 			}
 
-			if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
@@ -132,6 +151,10 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	block, err := b.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
+	}
+
+	if block == nil {
+		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
@@ -186,7 +209,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			Type:     wrapperspb.UInt32(uint32(transaction.Type())),
 		}
 
-		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier)
+		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction)
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")
 
@@ -232,9 +255,12 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 	return transactions, nil
 }
 
-func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {
+func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
-	metadata := b.clientMeta
+	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, errors.New("failed to clone client metadata")
+	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -254,6 +280,8 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 		EthV2BeaconBlockExecutionTransaction: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{
 			Block:           blockIdentifier,
 			PositionInBlock: wrapperspb.UInt64(positionInBlock),
+			Size:            strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
+			CallDataSize:    fmt.Sprintf("%d", len(rlpTransaction.Data())),
 		},
 	}
 

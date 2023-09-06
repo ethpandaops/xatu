@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -26,19 +27,18 @@ const (
 )
 
 type BLSToExecutionChangeDeriverConfig struct {
-	Enabled     *bool   `yaml:"enabled" default:"true"`
+	Enabled     bool    `yaml:"enabled" default:"true"`
 	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
 }
 
 type BLSToExecutionChangeDeriver struct {
-	log              logrus.FieldLogger
-	cfg              *BLSToExecutionChangeDeriverConfig
-	iterator         *iterator.SlotIterator
-	onEventCallbacks []func(ctx context.Context, event *xatu.DecoratedEvent) error
-	beacon           *ethereum.BeaconNode
-	clientMeta       *xatu.ClientMeta
-
-	loc uint64
+	log                 logrus.FieldLogger
+	cfg                 *BLSToExecutionChangeDeriverConfig
+	iterator            *iterator.SlotIterator
+	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
+	onLocationCallbacks []func(ctx context.Context, loc uint64) error
+	beacon              *ethereum.BeaconNode
+	clientMeta          *xatu.ClientMeta
 }
 
 func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.SlotIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
@@ -48,7 +48,6 @@ func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecuti
 		iterator:   iter,
 		beacon:     beacon,
 		clientMeta: clientMeta,
-		loc:        0,
 	}
 }
 
@@ -64,8 +63,12 @@ func (b *BLSToExecutionChangeDeriver) OnEventDerived(ctx context.Context, fn fun
 	b.onEventCallbacks = append(b.onEventCallbacks, fn)
 }
 
+func (b *BLSToExecutionChangeDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
+	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
+}
+
 func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
-	if b.cfg.Enabled == nil || !*b.cfg.Enabled {
+	if !b.cfg.Enabled {
 		b.log.Info("BLS to execution change deriver disabled")
 
 		return nil
@@ -84,19 +87,26 @@ func (b *BLSToExecutionChangeDeriver) Stop(ctx context.Context) error {
 }
 
 func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
+	bo := backoff.NewExponentialBackOff()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-
 			operation := func() error {
-				time.Sleep(1 * time.Second)
+				time.Sleep(100 * time.Millisecond)
 
 				// Get the next slot
 				location, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
+				}
+
+				for _, fn := range b.onLocationCallbacks {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockBlsToExecutionChange().GetSlot()); errr != nil {
+						b.log.WithError(errr).Error("Failed to send location")
+					}
 				}
 
 				// Process the slot
@@ -116,12 +126,19 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 					}
 				}
 
-				b.loc = location.GetEthV2BeaconBlockBlsToExecutionChange().GetSlot()
+				// Update our location
+				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+					return err
+				}
+
+				bo.Reset()
 
 				return nil
 			}
 
-			if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
@@ -133,6 +150,10 @@ func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phas
 	block, err := b.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
+	}
+
+	if block == nil {
+		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
@@ -191,7 +212,10 @@ func (b *BLSToExecutionChangeDeriver) getBLSToExecutionChanges(ctx context.Conte
 
 func (b *BLSToExecutionChangeDeriver) createEvent(ctx context.Context, change *xatuethv2.SignedBLSToExecutionChangeV2, identifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
-	metadata := b.clientMeta
+	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, errors.New("failed to clone client metadata")
+	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{

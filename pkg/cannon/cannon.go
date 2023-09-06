@@ -3,6 +3,7 @@ package cannon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,8 +15,11 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
+	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	v2 "github.com/ethpandaops/xatu/pkg/cannon/event/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
@@ -41,7 +45,9 @@ type Cannon struct {
 
 	scheduler *gocron.Scheduler
 
-	beaconBlockDerivers []v2.BeaconBlockEventDeriver
+	eventDerivers []deriver.EventDeriver
+
+	coordinatorClient *coordinator.Client
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, error) {
@@ -63,25 +69,22 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 		return nil, err
 	}
 
-	beaconBlockDerivers := []v2.BeaconBlockEventDeriver{
-		v2.NewAttesterSlashingDeriver(log),
-		v2.NewProposerSlashingDeriver(log),
-		v2.NewVoluntaryExitDeriver(log),
-		v2.NewDepositDeriver(log),
-		v2.NewBLSToExecutionChangeDeriver(log),
-		v2.NewExecutionTransactionDeriver(log),
+	coordinatorClient, err := coordinator.New(&config.Coordinator, log)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Cannon{
-		Config:              config,
-		sinks:               sinks,
-		beacon:              beacon,
-		clockDrift:          time.Duration(0),
-		log:                 log,
-		id:                  uuid.New(),
-		metrics:             NewMetrics("xatu_cannon"),
-		scheduler:           gocron.NewScheduler(time.Local),
-		beaconBlockDerivers: beaconBlockDerivers,
+		Config:            config,
+		sinks:             sinks,
+		beacon:            beacon,
+		clockDrift:        time.Duration(0),
+		log:               log,
+		id:                uuid.New(),
+		metrics:           NewMetrics("xatu_cannon"),
+		scheduler:         gocron.NewScheduler(time.Local),
+		eventDerivers:     nil, // Derivers are created once the beacon node is ready
+		coordinatorClient: coordinatorClient,
 	}, nil
 }
 
@@ -248,13 +251,6 @@ func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 		return err
 	}
 
-	eventType := event.GetEvent().GetName().String()
-	if eventType == "" {
-		eventType = "unknown"
-	}
-
-	c.metrics.AddDecoratedEvent(1, eventType)
-
 	for _, sink := range c.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			c.log.
@@ -272,7 +268,110 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 	c.beacon.OnReady(ctx, func(ctx context.Context) error {
 		c.log.Info("Internal beacon node is ready, firing up event derivers")
 
-		for _, deriver := range c.beaconBlockDerivers {
+		networkID := fmt.Sprintf("%d", c.beacon.Metadata().Network.ID)
+		wallclock := c.beacon.Metadata().Wallclock()
+
+		clientMeta, err := c.createNewClientMeta(ctx)
+		if err != nil {
+			return err
+		}
+
+		eventDerivers := []deriver.EventDeriver{
+			v2.NewAttesterSlashingDeriver(
+				c.log,
+				&c.Config.Derivers.AttesterSlashingConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v2.NewProposerSlashingDeriver(
+				c.log,
+				&c.Config.Derivers.ProposerSlashingConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v2.NewVoluntaryExitDeriver(
+				c.log,
+				&c.Config.Derivers.VoluntaryExitConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v2.NewDepositDeriver(
+				c.log,
+				&c.Config.Derivers.DepositConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v2.NewBLSToExecutionChangeDeriver(
+				c.log,
+				&c.Config.Derivers.BLSToExecutionConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v2.NewExecutionTransactionDeriver(
+				c.log,
+				&c.Config.Derivers.ExecutionTransactionConfig,
+				iterator.NewSlotIterator(
+					c.log,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
+					c.coordinatorClient,
+					wallclock,
+				),
+				c.beacon,
+				clientMeta,
+			),
+		}
+
+		c.eventDerivers = eventDerivers
+
+		for _, deriver := range c.eventDerivers {
+			d := deriver
+
+			d.OnEventDerived(ctx, func(ctx context.Context, event *xatu.DecoratedEvent) error {
+				return c.handleNewDecoratedEvent(ctx, event)
+			})
+
+			d.OnLocationUpdated(ctx, func(ctx context.Context, location uint64) error {
+				c.metrics.SetDeriverLocation(location, d.CannonType())
+
+				return nil
+			})
+
 			c.log.
 				WithField("deriver", deriver.Name()).
 				WithField("type", deriver.CannonType()).

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -32,6 +33,9 @@ type Config struct {
 
 	// Derivers configures the cannon with event derivers
 	Derivers deriver.Config `yaml:"derivers"`
+
+	// Coordinator configuration
+	Coordinator coordinator.Config `yaml:"coordinator"`
 }
 
 func (c *Config) Validate() error {
@@ -45,8 +49,16 @@ func (c *Config) Validate() error {
 
 	for _, output := range c.Outputs {
 		if err := output.Validate(); err != nil {
-			return fmt.Errorf("output %s: %w", output.Name, err)
+			return fmt.Errorf("invalid output config %s: %w", output.Name, err)
 		}
+	}
+
+	if err := c.Derivers.Validate(); err != nil {
+		return fmt.Errorf("invalid derivers config: %w", err)
+	}
+
+	if err := c.Coordinator.Validate(); err != nil {
+		return fmt.Errorf("invalid coordinator config: %w", err)
 	}
 
 	return nil

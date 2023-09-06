@@ -33,7 +33,8 @@ type BeaconNode struct {
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
-		EnableDefaultBeaconSubscription()
+		EnableDefaultBeaconSubscription().
+		DisablePrometheusMetrics()
 
 	opts.HealthCheck.Interval.Duration = time.Second * 3
 	opts.HealthCheck.SuccessfulResponses = 1
@@ -55,9 +56,10 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		beacon:   node,
 		services: svcs,
 		blockCache: ttlcache.New(
-			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](time.Hour),
-			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](1000),
+			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheTTL.Duration),
+			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
 		),
+		sfGroup: &singleflight.Group{},
 	}, nil
 }
 

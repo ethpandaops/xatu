@@ -12,10 +12,15 @@ type EventDeriver interface {
 	Stop(ctx context.Context) error
 	Name() string
 	CannonType() xatu.CannonType
-	Location() uint64
 	// Callbacks
 	OnEventDerived(ctx context.Context, fn func(ctx context.Context, event *xatu.DecoratedEvent) error)
+	OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, loc uint64) error)
 }
 
 // Ensure that derivers implements the EventDeriver interface
 var _ EventDeriver = &v2.AttesterSlashingDeriver{}
+var _ EventDeriver = &v2.ProposerSlashingDeriver{}
+var _ EventDeriver = &v2.DepositDeriver{}
+var _ EventDeriver = &v2.VoluntaryExitDeriver{}
+var _ EventDeriver = &v2.ExecutionTransactionDeriver{}
+var _ EventDeriver = &v2.BLSToExecutionChangeDeriver{}

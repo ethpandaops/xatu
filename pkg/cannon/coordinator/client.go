@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -16,12 +15,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const SinkType = "xatu"
-
 type Client struct {
 	config *Config
 	log    logrus.FieldLogger
-	proc   *processor.BatchItemProcessor[string]
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
@@ -56,34 +52,12 @@ func New(config *Config, log logrus.FieldLogger) (*Client, error) {
 
 	pbClient := xatu.NewCoordinatorClient(conn)
 
-	exporter, err := NewItemExporter(config, log)
-	if err != nil {
-		return nil, err
-	}
-
-	proc, err := processor.NewBatchItemProcessor[string](exporter,
-		xatu.ImplementationLower()+"_discovery_coordinator",
-		log,
-		processor.WithMaxQueueSize(config.MaxQueueSize),
-		processor.WithBatchTimeout(config.BatchTimeout),
-		processor.WithExportTimeout(config.ExportTimeout),
-		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Client{
 		config: config,
 		log:    log,
-		proc:   proc,
 		conn:   conn,
 		pb:     pbClient,
 	}, nil
-}
-
-func (c *Client) Type() string {
-	return SinkType
 }
 
 func (c *Client) Start(ctx context.Context) error {
@@ -94,12 +68,6 @@ func (c *Client) Stop(ctx context.Context) error {
 	if err := c.conn.Close(); err != nil {
 		return err
 	}
-
-	return c.proc.Shutdown(ctx)
-}
-
-func (c *Client) HandleNewNodeRecord(ctx context.Context, record *string) error {
-	c.proc.Write(record)
 
 	return nil
 }

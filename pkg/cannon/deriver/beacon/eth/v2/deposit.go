@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -24,19 +25,18 @@ const (
 )
 
 type DepositDeriverConfig struct {
-	Enabled     *bool   `yaml:"enabled" default:"true"`
+	Enabled     bool    `yaml:"enabled" default:"true"`
 	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
 }
 
 type DepositDeriver struct {
-	log              logrus.FieldLogger
-	cfg              *DepositDeriverConfig
-	iterator         *iterator.SlotIterator
-	onEventCallbacks []func(ctx context.Context, event *xatu.DecoratedEvent) error
-	beacon           *ethereum.BeaconNode
-	clientMeta       *xatu.ClientMeta
-
-	loc uint64
+	log                 logrus.FieldLogger
+	cfg                 *DepositDeriverConfig
+	iterator            *iterator.SlotIterator
+	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
+	onLocationCallbacks []func(ctx context.Context, location uint64) error
+	beacon              *ethereum.BeaconNode
+	clientMeta          *xatu.ClientMeta
 }
 
 func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, iter *iterator.SlotIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
@@ -46,7 +46,6 @@ func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, ite
 		iterator:   iter,
 		beacon:     beacon,
 		clientMeta: clientMeta,
-		loc:        0,
 	}
 }
 
@@ -62,8 +61,12 @@ func (b *DepositDeriver) OnEventDerived(ctx context.Context, fn func(ctx context
 	b.onEventCallbacks = append(b.onEventCallbacks, fn)
 }
 
+func (b *DepositDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
+	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
+}
+
 func (b *DepositDeriver) Start(ctx context.Context) error {
-	if b.cfg.Enabled == nil || !*b.cfg.Enabled {
+	if !b.cfg.Enabled {
 		b.log.Info("Deposit deriver disabled")
 
 		return nil
@@ -82,19 +85,26 @@ func (b *DepositDeriver) Stop(ctx context.Context) error {
 }
 
 func (b *DepositDeriver) run(ctx context.Context) {
+	bo := backoff.NewExponentialBackOff()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-
 			operation := func() error {
-				time.Sleep(1 * time.Second)
+				time.Sleep(100 * time.Millisecond)
 
 				// Get the next slot
 				location, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
+				}
+
+				for _, fn := range b.onLocationCallbacks {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockDeposit().GetSlot()); errr != nil {
+						b.log.WithError(errr).Error("Failed to send location")
+					}
 				}
 
 				// Process the slot
@@ -114,12 +124,19 @@ func (b *DepositDeriver) run(ctx context.Context) {
 					}
 				}
 
-				b.loc = location.GetEthV2BeaconBlockDeposit().GetSlot()
+				// Update our location
+				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+					return err
+				}
+
+				bo.Reset()
 
 				return nil
 			}
 
-			if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
@@ -133,6 +150,10 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
 	}
 
+	if block == nil {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
@@ -141,6 +162,9 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 	events := []*xatu.DecoratedEvent{}
 
 	deposits, err := b.getDeposits(ctx, block)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get deposits for block %s", blockIdentifier.String())
+	}
 
 	for _, deposit := range deposits {
 		event, err := b.createEvent(ctx, deposit, blockIdentifier)
@@ -196,7 +220,10 @@ func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedS
 
 func (b *DepositDeriver) createEvent(ctx context.Context, deposit *xatuethv1.DepositV2, identifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
-	metadata := b.clientMeta
+	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, errors.New("failed to clone client metadata")
+	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{

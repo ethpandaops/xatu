@@ -34,7 +34,7 @@ message Epoch {
 
 message EpochV2 {
   // Number is the epoch number.
-  google.protobuf.UInt64Value number = 1 [ json_name = "number" ];  
+  google.protobuf.UInt64Value number = 1 [ json_name = "number" ];
   // StartDateTime is the epoch start time.
   google.protobuf.Timestamp start_date_time = 2
       [ json_name = "start_date_time" ];
@@ -50,7 +50,7 @@ message Slot {
 
 message SlotV2 {
   // Number is the slot number.
-  google.protobuf.UInt64Value number = 1 [ json_name = "number" ]; 
+  google.protobuf.UInt64Value number = 1 [ json_name = "number" ];
   // StartDateTime is the slot start time.
   google.protobuf.Timestamp start_date_time = 2
       [ json_name = "start_date_time" ];
@@ -70,7 +70,8 @@ message Propagation {
 message PropagationV2 {
   // SlotStartDiff is the difference between the slot start time and the
   // attestation received time (in milliseconds).
-  google.protobuf.UInt64Value slot_start_diff = 1 [ json_name = "slot_start_diff" ];  
+  google.protobuf.UInt64Value slot_start_diff = 1
+      [ json_name = "slot_start_diff" ];
 }
 
 message AttestingValidator {
@@ -82,9 +83,10 @@ message AttestingValidator {
 
 message AttestingValidatorV2 {
   // CommitteeIndex is the position of the validator within the committee.
-  google.protobuf.UInt64Value committee_index = 1 [ json_name = "committee_index" ];
+  google.protobuf.UInt64Value committee_index = 1
+      [ json_name = "committee_index" ];
   // Index is the index of the validator in the beacon chain.
-  google.protobuf.UInt64Value index = 2 [ json_name = "index" ]; 
+  google.protobuf.UInt64Value index = 2 [ json_name = "index" ];
 }
 
 message DebugForkChoiceReorg {
@@ -197,9 +199,10 @@ message ClientMeta {
     // attestation.
     Propagation propagation = 5;
 
-    // AttestingValidator contains data about the validator that created the attestation.
-    // Note: only available for unaggregated attestations.
-    AttestingValidator attesting_validator = 6 [ json_name = "attesting_validator" ];
+    // AttestingValidator contains data about the validator that created the
+    // attestation. Note: only available for unaggregated attestations.
+    AttestingValidator attesting_validator = 6
+        [ json_name = "attesting_validator" ];
   }
 
   message AdditionalEthV1EventsAttestationV2Data {
@@ -220,9 +223,10 @@ message ClientMeta {
     // attestation.
     PropagationV2 propagation = 5;
 
-    // AttestingValidator contains data about the validator that created the attestation.
-    // Note: only available for unaggregated attestations.
-    AttestingValidatorV2 attesting_validator = 6 [ json_name = "attesting_validator" ];
+    // AttestingValidator contains data about the validator that created the
+    // attestation. Note: only available for unaggregated attestations.
+    AttestingValidatorV2 attesting_validator = 6
+        [ json_name = "attesting_validator" ];
   }
 
   message AdditionalEthV1EventsHeadData {
@@ -342,7 +346,8 @@ message ClientMeta {
   }
 
   message AdditionalEthV1EventsContributionAndProofV2Data {
-    AdditionalEthV1EventsContributionAndProofContributionV2Data contribution = 1;
+    AdditionalEthV1EventsContributionAndProofContributionV2Data contribution =
+        1;
   }
 
   message ForkChoiceSnapshot {
@@ -378,11 +383,13 @@ message ClientMeta {
 
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the fork choice snapshot (in milliseconds).
-    google.protobuf.UInt64Value requested_at_slot_start_diff_ms = 3 [ json_name = "requested_at_slot_start_diff_ms" ];
+    google.protobuf.UInt64Value requested_at_slot_start_diff_ms = 3
+        [ json_name = "requested_at_slot_start_diff_ms" ];
 
     // RequestDurationMs is the duration of the fork choice snapshot request
     // (in milliseconds).
-    google.protobuf.UInt64Value request_duration_ms = 4 [ json_name = "request_duration_ms" ];
+    google.protobuf.UInt64Value request_duration_ms = 4
+        [ json_name = "request_duration_ms" ];
 
     // Timestamp is the timestamp of the fork choice snapshot.
     google.protobuf.Timestamp timestamp = 5 [ json_name = "timestamp" ];
@@ -484,12 +491,13 @@ message ClientMeta {
 
     // BlockRoot contains the block root of the beacon block.
     string block_root = 4 [ json_name = "block_root" ];
-    
+
     // TransactionsCount contains the number of transactions in the block
     uint64 transactions_count = 5 [ json_name = "transactions_count" ];
 
     // TransactionsTotalBytes contains the total bytes size of transactions
-    uint64 transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
+    uint64 transactions_total_bytes = 6
+        [ json_name = "transactions_total_bytes" ];
   }
 
   message AdditionalEthV2BeaconBlockV2Data {
@@ -504,64 +512,83 @@ message ClientMeta {
 
     // BlockRoot contains the block root of the beacon block.
     string block_root = 4 [ json_name = "block_root" ];
-    
+
     // TransactionsCount contains the number of transactions in the block
-    google.protobuf.UInt64Value transactions_count = 5 [ json_name = "transactions_count" ];
+    google.protobuf.UInt64Value transactions_count = 5
+        [ json_name = "transactions_count" ];
 
     // TransactionsTotalBytes contains the total bytes size of transactions
-    google.protobuf.UInt64Value transactions_total_bytes = 6 [ json_name = "transactions_total_bytes" ];
+    google.protobuf.UInt64Value transactions_total_bytes = 6
+        [ json_name = "transactions_total_bytes" ];
 
-    // CompressedTotalBytesCompressed contains the total bytes size of transactions with snappy compression
-    google.protobuf.UInt64Value transactions_total_bytes_compressed = 7 [ json_name = "transactions_total_bytes_compressed" ];
+    // CompressedTotalBytesCompressed contains the total bytes size of
+    // transactions with snappy compression
+    google.protobuf.UInt64Value transactions_total_bytes_compressed = 7
+        [ json_name = "transactions_total_bytes_compressed" ];
 
     // TotalBytes contains the total bytes size of block
     google.protobuf.UInt64Value total_bytes = 8 [ json_name = "total_bytes" ];
 
-    // TotalBytesCompressed contains the total bytes size of block with snappy compression
-    google.protobuf.UInt64Value total_bytes_compressed = 9 [ json_name = "total_bytes_compressed" ];
+    // TotalBytesCompressed contains the total bytes size of block with snappy
+    // compression
+    google.protobuf.UInt64Value total_bytes_compressed = 9
+        [ json_name = "total_bytes_compressed" ];
   }
 
   message AdditionalEthV2BeaconBlockAttesterSlashingData {
-    // Block contains the information about the block that we are deriving the attester slashing from.
+    // Block contains the information about the block that we are deriving the
+    // attester slashing from.
     BlockIdentifier block = 1;
   }
 
   message AdditionalEthV2BeaconBlockProposerSlashingData {
-    // Block contains the information about the block that we are deriving the proposer slashing from.
+    // Block contains the information about the block that we are deriving the
+    // proposer slashing from.
     BlockIdentifier block = 1;
   }
 
   message AdditionalEthV2BeaconBlockVoluntaryExitData {
-    // Block contains the information about the block that we are deriving the voluntary exit from.
+    // Block contains the information about the block that we are deriving the
+    // voluntary exit from.
     BlockIdentifier block = 1;
   }
 
   message AdditionalEthV2BeaconBlockDepositData {
-    // Block contains the information about the block that we are deriving the deposit from.
+    // Block contains the information about the block that we are deriving the
+    // deposit from.
     BlockIdentifier block = 1;
   }
 
   message AdditionalEthV2BeaconBlockBLSToExecutionChangeData {
-    // Block contains the information about the block that we are deriving the bls to execution change from.
+    // Block contains the information about the block that we are deriving the
+    // bls to execution change from.
     BlockIdentifier block = 1;
   }
 
   message AdditionalEthV2BeaconBlockExecutionTransactionData {
-    // Block contains the information about the block that we are deriving the execution transaction from.
+    // Block contains the information about the block that we are deriving the
+    // execution transaction from.
     BlockIdentifier block = 1;
     // PositionInBlock is the position of the transaction in the block.
-    google.protobuf.UInt64Value position_in_block = 2 [ json_name = "position_in_block" ];
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+    // Size is the transaction size in bytes.
+    string size = 3;
+    // CallDataSize is the call data size in bytes.
+    string call_data_size = 4 [ json_name = "call_data_size" ];
   }
 
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
-    // sentry was when it requested the attestation data snapshot (in milliseconds).
+    // sentry was when it requested the attestation data snapshot (in
+    // milliseconds).
     google.protobuf.UInt64Value requested_at_slot_start_diff_ms = 1
         [ json_name = "requested_at_slot_start_diff_ms" ];
 
-    // RequestDurationMs is the duration of the attestation data snapshot request
-    // (in milliseconds).
-    google.protobuf.UInt64Value request_duration_ms = 2 [ json_name = "request_duration_ms" ];
+    // RequestDurationMs is the duration of the attestation data snapshot
+    // request (in milliseconds).
+    google.protobuf.UInt64Value request_duration_ms = 2
+        [ json_name = "request_duration_ms" ];
 
     // Timestamp is the timestamp of the attestation data snapshot.
     google.protobuf.Timestamp timestamp = 3 [ json_name = "timestamp" ];
@@ -574,7 +601,7 @@ message ClientMeta {
     // Target contains information of the block at the start of the current
     // epoch.
     AdditionalEthV1AttestationTargetV2Data target = 2;
-  
+
     // Epoch contains the epoch information for the beacon committee.
     EpochV2 epoch = 3;
 
@@ -590,86 +617,136 @@ message ClientMeta {
   oneof AdditionalData {
     // AdditionalEthV1EventsAttestationData contains additional data about an
     // eth v1 attestation event.
-    AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION" ];
+    AdditionalEthV1EventsAttestationData eth_v1_events_attestation = 10
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION" ];
     // AdditionalEthV1EventsHeadData contains additional data about the eth v1
     // head event.
-    AdditionalEthV1EventsHeadData eth_v1_events_head = 11 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD" ];
+    AdditionalEthV1EventsHeadData eth_v1_events_head = 11
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD" ];
     // AdditionalEthV1EventsBlockData contains additional data about the eth v1
     // block event.
-    AdditionalEthV1EventsBlockData eth_v1_events_block = 12 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK" ];
+    AdditionalEthV1EventsBlockData eth_v1_events_block = 12
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK" ];
     // AdditionalEthV1EventsVoluntaryExitData contains additional data about the
     // eth v1 voluntary exit event.
-    AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13 [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT" ];
+    AdditionalEthV1EventsVoluntaryExitData eth_v1_events_voluntary_exit = 13
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT" ];
     // AdditionalEthV1EventsFinalizedCheckpointData contains additional data
     // about the eth v1 finalized checkpoint event.
-    AdditionalEthV1EventsFinalizedCheckpointData eth_v1_events_finalized_checkpoint = 14 [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT" ];
+    AdditionalEthV1EventsFinalizedCheckpointData
+        eth_v1_events_finalized_checkpoint = 14
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT" ];
     // AdditionalEthV1EventsChainReorgData contains additional data about the
     // eth v1 chain reorg event.
-    AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15 [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG" ];
+    AdditionalEthV1EventsChainReorgData eth_v1_events_chain_reorg = 15
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG" ];
     // AdditionalEthV1EventsContributionAndProofData contains additional data
     // about the eth v1 contribution and proof.
-    AdditionalEthV1EventsContributionAndProofData eth_v1_events_contribution_and_proof = 16 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF" ];
+    AdditionalEthV1EventsContributionAndProofData
+        eth_v1_events_contribution_and_proof = 16
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF" ];
     // AdditionalMempoolTransactionData contains additional data about the
     // mempool transaction event.
-    AdditionalMempoolTransactionData mempool_transaction = 17 [ json_name = "MEMPOOL_TRANSACTION" ];
+    AdditionalMempoolTransactionData mempool_transaction = 17
+        [ json_name = "MEMPOOL_TRANSACTION" ];
     // AdditionalEthV2BeaconBlockData contains additional data about the eth v2
     // beacon block event.
-    AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
+    AdditionalEthV2BeaconBlockData eth_v2_beacon_block = 18
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
     // AdditionalEthV1DebugForkChoice contains additional data about the eth v1
     // debug fork choice event.
-    AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
+    AdditionalEthV1DebugForkChoiceData eth_v1_debug_fork_choice = 19
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE" ];
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
-    AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
-    // AdditionalEthV1BeaconCommitteeData contains additional data about the beacon committee
-    AdditionalEthV1BeaconCommitteeData eth_v1_beacon_committee = 21 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
-    // AdditionalEthV1ValidatorAttestationDataData contains additional data about the eth v1 validator attestation data
-    AdditionalEthV1ValidatorAttestationDataData eth_v1_validator_attestation_data = 22 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
+    AdditionalEthV1DebugForkChoiceReOrgData eth_v1_debug_fork_choice_reorg = 20
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG" ];
+    // AdditionalEthV1BeaconCommitteeData contains additional data about the
+    // beacon committee
+    AdditionalEthV1BeaconCommitteeData eth_v1_beacon_committee = 21
+        [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+    // AdditionalEthV1ValidatorAttestationDataData contains additional data
+    // about the eth v1 validator attestation data
+    AdditionalEthV1ValidatorAttestationDataData
+        eth_v1_validator_attestation_data = 22
+        [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
     // AdditionalEthV1EventsAttestationV2Data contains additional data about an
     // eth v1 attestation event.
-    AdditionalEthV1EventsAttestationV2Data eth_v1_events_attestation_v2 = 24 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2" ];
+    AdditionalEthV1EventsAttestationV2Data eth_v1_events_attestation_v2 = 24
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2" ];
     // AdditionalEthV1EventsHeadV2Data contains additional data about the eth v1
     // head event.
-    AdditionalEthV1EventsHeadV2Data eth_v1_events_head_v2 = 25 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V2" ];
-    // AdditionalEthV1EventsBlockV2Data contains additional data about the eth v1
-    // block event.
-    AdditionalEthV1EventsBlockV2Data eth_v1_events_block_v2 = 26 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
-    // AdditionalEthV1EventsVoluntaryExitV2Data contains additional data about the
-    // eth v1 voluntary exit event.
-    AdditionalEthV1EventsVoluntaryExitV2Data eth_v1_events_voluntary_exit_v2 = 27 [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2" ];
+    AdditionalEthV1EventsHeadV2Data eth_v1_events_head_v2 = 25
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V2" ];
+    // AdditionalEthV1EventsBlockV2Data contains additional data about the eth
+    // v1 block event.
+    AdditionalEthV1EventsBlockV2Data eth_v1_events_block_v2 = 26
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
+    // AdditionalEthV1EventsVoluntaryExitV2Data contains additional data about
+    // the eth v1 voluntary exit event.
+    AdditionalEthV1EventsVoluntaryExitV2Data eth_v1_events_voluntary_exit_v2 =
+        27 [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2" ];
     // AdditionalEthV1EventsFinalizedCheckpointV2Data contains additional data
     // about the eth v1 finalized checkpoint event.
-    AdditionalEthV1EventsFinalizedCheckpointV2Data eth_v1_events_finalized_checkpoint_v2 = 28 [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2" ];
+    AdditionalEthV1EventsFinalizedCheckpointV2Data
+        eth_v1_events_finalized_checkpoint_v2 = 28
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2" ];
     // AdditionalEthV1EventsChainReorgV2Data contains additional data about the
     // eth v1 chain reorg event.
-    AdditionalEthV1EventsChainReorgV2Data eth_v1_events_chain_reorg_v2 = 29 [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2" ];
+    AdditionalEthV1EventsChainReorgV2Data eth_v1_events_chain_reorg_v2 = 29
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2" ];
     // AdditionalEthV1EventsContributionAndProofV2Data contains additional data
     // about the eth v1 contribution and proof.
-    AdditionalEthV1EventsContributionAndProofV2Data eth_v1_events_contribution_and_proof_v2 = 30 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2" ];
+    AdditionalEthV1EventsContributionAndProofV2Data
+        eth_v1_events_contribution_and_proof_v2 = 30
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2" ];
     // AdditionalMempoolTransactionV2Data contains additional data about the
     // mempool transaction event.
-    AdditionalMempoolTransactionV2Data mempool_transaction_v2 = 31 [ json_name = "MEMPOOL_TRANSACTION_V2" ];
-    // AdditionalEthV2BeaconBlockV2Data contains additional data about the eth v2
-    // beacon block event.
-    AdditionalEthV2BeaconBlockV2Data eth_v2_beacon_block_v2 = 32 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
+    AdditionalMempoolTransactionV2Data mempool_transaction_v2 = 31
+        [ json_name = "MEMPOOL_TRANSACTION_V2" ];
+    // AdditionalEthV2BeaconBlockV2Data contains additional data about the eth
+    // v2 beacon block event.
+    AdditionalEthV2BeaconBlockV2Data eth_v2_beacon_block_v2 = 32
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
     // AdditionalEthV1DebugForkChoice contains additional data about the eth v1
     // debug fork choice event.
-    AdditionalEthV1DebugForkChoiceV2Data eth_v1_debug_fork_choice_v2 = 33 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
+    AdditionalEthV1DebugForkChoiceV2Data eth_v1_debug_fork_choice_v2 = 33
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
-    AdditionalEthV1DebugForkChoiceReOrgV2Data eth_v1_debug_fork_choice_reorg_v2 = 34 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
-    // AdditionalEthV2BeaconBlockAttesterSlashingData contains additional data on attester slashings derived from beacon blocks.
-    AdditionalEthV2BeaconBlockAttesterSlashingData eth_v2_beacon_block_attester_slashing = 35 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
-    // AdditionalEthV2BeaconBlockProposerSlashingData contains additional data on proposer slashings derived from beacon blocks.
-    AdditionalEthV2BeaconBlockProposerSlashingData eth_v2_beacon_block_proposer_slashing = 36 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
-    // AdditionalEthV2BeaconBlockVoluntaryExitData contains additional data on voluntary exits derived from beacon blocks.
-    AdditionalEthV2BeaconBlockVoluntaryExitData eth_v2_beacon_block_voluntary_exit = 37 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
-    // AdditionalEthV2BeaconBlockDepositData contains additional data on deposits derived from beacon blocks.
-    AdditionalEthV2BeaconBlockDepositData eth_v2_beacon_block_deposit = 38 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
-    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional data on bls to execution changes derived from beacon blocks.
-    AdditionalEthV2BeaconBlockBLSToExecutionChangeData eth_v2_beacon_block_bls_to_execution_change = 39 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
-    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional data on execution transactions derived from beacon blocks.
-    AdditionalEthV2BeaconBlockExecutionTransactionData eth_v2_beacon_block_execution_transaction = 40 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
+    AdditionalEthV1DebugForkChoiceReOrgV2Data
+        eth_v1_debug_fork_choice_reorg_v2 = 34
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    // AdditionalEthV2BeaconBlockAttesterSlashingData contains additional data
+    // on attester slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockAttesterSlashingData
+        eth_v2_beacon_block_attester_slashing = 35
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    // AdditionalEthV2BeaconBlockProposerSlashingData contains additional data
+    // on proposer slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockProposerSlashingData
+        eth_v2_beacon_block_proposer_slashing = 36
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    // AdditionalEthV2BeaconBlockVoluntaryExitData contains additional data on
+    // voluntary exits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockVoluntaryExitData
+        eth_v2_beacon_block_voluntary_exit = 37
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
+    // AdditionalEthV2BeaconBlockDepositData contains additional data on
+    // deposits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockDepositData eth_v2_beacon_block_deposit = 38
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
+    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional
+    // data on bls to execution changes derived from beacon blocks.
+    AdditionalEthV2BeaconBlockBLSToExecutionChangeData
+        eth_v2_beacon_block_bls_to_execution_change = 39
+        [ json_name =
+              "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
+    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional
+    // data on execution transactions derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionTransactionData
+        eth_v2_beacon_block_execution_transaction = 40
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
   }
 }
 
@@ -781,35 +858,84 @@ message DecoratedEvent {
   Event event = 1;
   Meta meta = 2;
   oneof data {
-    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION", deprecated = true ];
-    xatu.eth.v1.EventBlock eth_v1_events_block = 4  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK", deprecated = true ];
-    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5  [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG", deprecated = true ];
-    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6  [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT", deprecated = true ];
-    xatu.eth.v1.EventHead eth_v1_events_head = 7  [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD", deprecated = true ];
-    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8  [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT", deprecated = true ];
-    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof = 9 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF", deprecated = true ];
-    string mempool_transaction = 10 [ json_name = "MEMPOOL_TRANSACTION", deprecated = true ];
-    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK", deprecated = true ];
-    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE", deprecated = true ];
-    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG", deprecated = true ];
-    xatu.eth.v1.Committee eth_v1_beacon_committee = 14 [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
-    xatu.eth.v1.AttestationDataV2 eth_v1_validator_attestation_data = 15 [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
-    xatu.eth.v1.AttestationV2 eth_v1_events_attestation_v2 = 16 [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2" ];
-    xatu.eth.v1.EventBlockV2 eth_v1_events_block_v2 = 17 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
-    xatu.eth.v1.EventChainReorgV2 eth_v1_events_chain_reorg_v2 = 18  [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2" ];
-    xatu.eth.v1.EventFinalizedCheckpointV2 eth_v1_events_finalized_checkpoint_v2 = 19  [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2" ];
-    xatu.eth.v1.EventHeadV2 eth_v1_events_head_v2 = 20  [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V2" ];
-    xatu.eth.v1.EventVoluntaryExitV2 eth_v1_events_voluntary_exit_v2 = 21  [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2" ];
-    xatu.eth.v1.EventContributionAndProofV2 eth_v1_events_contribution_and_proof_v2 = 22 [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2" ];
+    xatu.eth.v1.Attestation eth_v1_events_attestation = 3 [
+      json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION",
+      deprecated = true
+    ];
+    xatu.eth.v1.EventBlock eth_v1_events_block = 4
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK", deprecated = true ];
+    xatu.eth.v1.EventChainReorg eth_v1_events_chain_reorg = 5 [
+      json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG",
+      deprecated = true
+    ];
+    xatu.eth.v1.EventFinalizedCheckpoint eth_v1_events_finalized_checkpoint = 6
+        [
+          json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT",
+          deprecated = true
+        ];
+    xatu.eth.v1.EventHead eth_v1_events_head = 7
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD", deprecated = true ];
+    xatu.eth.v1.EventVoluntaryExit eth_v1_events_voluntary_exit = 8 [
+      json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT",
+      deprecated = true
+    ];
+    xatu.eth.v1.EventContributionAndProof eth_v1_events_contribution_and_proof =
+        9 [
+          json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF",
+          deprecated = true
+        ];
+    string mempool_transaction = 10
+        [ json_name = "MEMPOOL_TRANSACTION", deprecated = true ];
+    xatu.eth.v2.EventBlock eth_v2_beacon_block = 11
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK", deprecated = true ];
+    xatu.eth.v1.ForkChoice eth_v1_fork_choice = 12 [
+      json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE",
+      deprecated = true
+    ];
+    DebugForkChoiceReorg eth_v1_fork_choice_reorg = 13 [
+      json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG",
+      deprecated = true
+    ];
+    xatu.eth.v1.Committee eth_v1_beacon_committee = 14
+        [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
+    xatu.eth.v1.AttestationDataV2 eth_v1_validator_attestation_data = 15
+        [ json_name = "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA" ];
+    xatu.eth.v1.AttestationV2 eth_v1_events_attestation_v2 = 16
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2" ];
+    xatu.eth.v1.EventBlockV2 eth_v1_events_block_v2 = 17
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_V2" ];
+    xatu.eth.v1.EventChainReorgV2 eth_v1_events_chain_reorg_v2 = 18
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2" ];
+    xatu.eth.v1.EventFinalizedCheckpointV2
+        eth_v1_events_finalized_checkpoint_v2 = 19
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2" ];
+    xatu.eth.v1.EventHeadV2 eth_v1_events_head_v2 = 20
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V2" ];
+    xatu.eth.v1.EventVoluntaryExitV2 eth_v1_events_voluntary_exit_v2 = 21
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2" ];
+    xatu.eth.v1.EventContributionAndProofV2
+        eth_v1_events_contribution_and_proof_v2 = 22
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2" ];
     string mempool_transaction_v2 = 23 [ json_name = "MEMPOOL_TRANSACTION_V2" ];
-    xatu.eth.v2.EventBlockV2 eth_v2_beacon_block_v2 = 24 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
-    xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
-    DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
-    xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
-    xatu.eth.v1.ProposerSlashingV2 eth_v2_beacon_block_proposer_slashing = 28 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
-    xatu.eth.v1.SignedVoluntaryExitV2 eth_v2_beacon_block_voluntary_exit = 29 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
-    xatu.eth.v1.DepositV2 eth_v2_beacon_block_deposit = 30 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
-    xatu.eth.v2.SignedBLSToExecutionChangeV2 eth_v2_beacon_block_bls_to_execution_change = 31 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
-    xatu.eth.v1.Transaction eth_v2_beacon_block_execution_transaction = 32 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
-  }; 
+    xatu.eth.v2.EventBlockV2 eth_v2_beacon_block_v2 = 24
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
+    xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
+    DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26
+        [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    xatu.eth.v1.ProposerSlashingV2 eth_v2_beacon_block_proposer_slashing = 28
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    xatu.eth.v1.SignedVoluntaryExitV2 eth_v2_beacon_block_voluntary_exit = 29
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
+    xatu.eth.v1.DepositV2 eth_v2_beacon_block_deposit = 30
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
+    xatu.eth.v2.SignedBLSToExecutionChangeV2
+        eth_v2_beacon_block_bls_to_execution_change = 31
+        [ json_name =
+              "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
+    xatu.eth.v1.Transaction eth_v2_beacon_block_execution_transaction = 32
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
+  };
 }

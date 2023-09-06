@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -86,7 +87,7 @@ func (b *ExecutionTransactionDeriver) Process(ctx context.Context, metadata *Bea
 			Type:     wrapperspb.UInt32(uint32(transaction.Type())),
 		}
 
-		event, err := b.createEvent(ctx, metadata, tx, uint64(index))
+		event, err := b.createEvent(ctx, metadata, tx, transaction, uint64(index))
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")
 
@@ -132,7 +133,7 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 	return transactions, nil
 }
 
-func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, transaction *xatuethv1.Transaction, positionInBlock uint64) (*xatu.DecoratedEvent, error) {
+func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, metadata *BeaconBlockMetadata, transaction *xatuethv1.Transaction, rlpTransaction *types.Transaction, positionInBlock uint64) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
@@ -156,6 +157,8 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, metadata 
 		EthV2BeaconBlockExecutionTransaction: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{
 			Block:           blockIdentifier,
 			PositionInBlock: wrapperspb.UInt64(positionInBlock),
+			Size:            strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
+			CallDataSize:    fmt.Sprintf("%d", len(rlpTransaction.Data())),
 		},
 	}
 

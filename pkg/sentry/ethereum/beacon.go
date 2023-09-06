@@ -33,8 +33,9 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	opts.HealthCheck.SuccessfulResponses = 1
 
 	node := beacon.NewNode(log, &beacon.Config{
-		Name: name,
-		Addr: config.BeaconNodeAddress,
+		Name:    name,
+		Addr:    config.BeaconNodeAddress,
+		Headers: config.BeaconNodeHeaders,
 	}, "xatu_sentry", opts)
 
 	metadata := services.NewMetadataService(log, node)

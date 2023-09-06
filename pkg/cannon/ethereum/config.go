@@ -16,6 +16,8 @@ type Config struct {
 	BlockCacheSize uint64 `yaml:"blockCacheSize" default:"1000"`
 	// BlockCacheTTL is the time to live for blocks in the cache.
 	BlockCacheTTL human.Duration `yaml:"blockCacheTtl" default:"1h"`
+	// BeaconNodeHeaders is a map of headers to send to the beacon node.
+	BeaconNodeHeaders map[string]string `yaml:"beaconNodeHeaders"`
 }
 
 func (c *Config) Validate() error {

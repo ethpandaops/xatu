@@ -247,10 +247,6 @@ func (c *Cannon) syncClockDrift(ctx context.Context) error {
 }
 
 func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
-	if err := c.beacon.Synced(ctx); err != nil {
-		return err
-	}
-
 	for _, sink := range c.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			c.log.

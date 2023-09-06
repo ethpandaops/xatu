@@ -95,6 +95,10 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 			operation := func() error {
 				time.Sleep(100 * time.Millisecond)
 
+				if err := a.beacon.Synced(ctx); err != nil {
+					return err
+				}
+
 				// Get the next slot
 				location, err := a.iterator.Next(ctx)
 				if err != nil {

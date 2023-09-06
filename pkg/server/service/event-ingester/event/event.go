@@ -42,6 +42,11 @@ const (
 	TypeBeaconEthV1BeaconCommittee              Type = v1.BeaconCommitteeType
 	TypeBeaconEthV1ValidatorAttestationData     Type = v1.ValidatorAttestationDataType
 	TypeBeaconEthV2BeaconBlockAttesterSlashing  Type = v2.BeaconBlockAttesterSlashingType
+	TypeBeaconEthV2BeaconBlockProposerSlashing  Type = v2.BeaconBlockProposerSlashingType
+	TypeBeaconEthV2BeaconBlockVoluntaryExit     Type = v2.BeaconBlockVoluntaryExitType
+	TypeBeaconEthV2BeaconBlockDeposit           Type = v2.BeaconBlockDepositType
+	TypeBeaconEthV2BeaconExecutionTransaction   Type = v2.BeaconBlockExecutionTransactionType
+	TypeBeaconEthV2BeaconBLSToExecutionChange   Type = v2.BeaconBlockBLSToExecutionChangeType
 )
 
 type Event interface {
@@ -50,6 +55,7 @@ type Event interface {
 	Filter(ctx context.Context) bool
 }
 
+//nolint:gocyclo //not that complex
 func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) (Event, error) {
 	if eventType == TypeUnknown {
 		return nil, errors.New("event type is required")
@@ -106,6 +112,17 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewValidatorAttestationData(log, event), nil
 	case TypeBeaconEthV2BeaconBlockAttesterSlashing:
 		return v2.NewBeaconBlockAttesterSlashing(log, event), nil
+	case TypeBeaconEthV2BeaconBlockProposerSlashing:
+		return v2.NewBeaconBlockProposerSlashing(log, event), nil
+	case TypeBeaconEthV2BeaconBlockVoluntaryExit:
+		return v2.NewBeaconBlockVoluntaryExit(log, event), nil
+	case TypeBeaconEthV2BeaconBlockDeposit:
+		return v2.NewBeaconBlockDeposit(log, event), nil
+	case TypeBeaconEthV2BeaconExecutionTransaction:
+		return v2.NewBeaconBlockExecutionTransaction(log, event), nil
+	case TypeBeaconEthV2BeaconBLSToExecutionChange:
+		return v2.NewBeaconBlockBLSToExecutionChange(log, event), nil
+
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

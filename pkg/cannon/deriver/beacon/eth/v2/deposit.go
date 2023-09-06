@@ -86,6 +86,7 @@ func (b *DepositDeriver) Stop(ctx context.Context) error {
 
 func (b *DepositDeriver) run(ctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
+	bo.MaxInterval = 1 * time.Minute
 
 	for {
 		select {

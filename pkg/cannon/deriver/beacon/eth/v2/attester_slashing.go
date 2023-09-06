@@ -85,6 +85,7 @@ func (a *AttesterSlashingDeriver) Stop(ctx context.Context) error {
 
 func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
+	bo.MaxInterval = 1 * time.Minute
 
 	for {
 		select {

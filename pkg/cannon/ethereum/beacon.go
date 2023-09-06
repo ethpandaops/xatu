@@ -42,8 +42,9 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	opts.BeaconSubscription.Enabled = false
 
 	node := beacon.NewNode(log, &beacon.Config{
-		Name: name,
-		Addr: config.BeaconNodeAddress,
+		Name:    name,
+		Addr:    config.BeaconNodeAddress,
+		Headers: config.Headers,
 	}, "xatu_cannon", opts)
 
 	metadata := services.NewMetadataService(log, node)

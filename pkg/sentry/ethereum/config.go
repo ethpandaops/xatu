@@ -8,6 +8,8 @@ type Config struct {
 	// OverrideNetworkName is the name of the network to use for the sentry.
 	// If not set, the network name will be retrieved from the beacon node.
 	OverrideNetworkName string `yaml:"overrideNetworkName"  default:""`
+	// Headers is a map of headers to send to the beacon node.
+	Headers map[string]string `yaml:"headers"`
 }
 
 func (c *Config) Validate() error {

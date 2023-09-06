@@ -119,6 +119,11 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 					return err
 				}
 
+				// Update our location
+				if err := a.iterator.UpdateLocation(ctx, location); err != nil {
+					return err
+				}
+
 				// Send the events
 				for _, event := range events {
 					for _, fn := range a.onEventCallbacks {
@@ -126,11 +131,6 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 							a.log.WithError(err).Error("Failed to send event")
 						}
 					}
-				}
-
-				// Update our location
-				if err := a.iterator.UpdateLocation(ctx, location); err != nil {
-					return err
 				}
 
 				bo.Reset()

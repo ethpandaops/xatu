@@ -123,6 +123,11 @@ func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
 					return err
 				}
 
+				// Update our location
+				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+					return err
+				}
+
 				// Send the events
 				for _, event := range events {
 					for _, fn := range b.onEventCallbacks {
@@ -130,11 +135,6 @@ func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
 							b.log.WithError(err).Error("Failed to send event")
 						}
 					}
-				}
-
-				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
-					return err
 				}
 
 				bo.Reset()

@@ -61,6 +61,41 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
+
+		data := msg.GetEthV2BeaconBlockAttesterSlashing()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		l.Value = string(b)
+
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
+
+		data := msg.GetEthV2BeaconBlockExecutionTransaction()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		l.Value = string(b)
+
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE"
+
+		data := msg.GetEthV2BeaconBlockBlsToExecutionChange()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		l.Value = string(b)
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -112,6 +147,47 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockDeposit{
 			EthV2BeaconBlockDeposit: data,
+		}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
+
+		data := &xatu.CannonLocationEthV2BeaconBlockAttesterSlashing{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockAttesterSlashing{
+			EthV2BeaconBlockAttesterSlashing: data,
+		}
+
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionTransaction{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionTransaction{
+			EthV2BeaconBlockExecutionTransaction: data,
+		}
+
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
+
+		data := &xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockBlsToExecutionChange{
+			EthV2BeaconBlockBlsToExecutionChange: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

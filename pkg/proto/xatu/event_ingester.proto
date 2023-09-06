@@ -551,6 +551,10 @@ message ClientMeta {
     BlockIdentifier block = 1;
     // PositionInBlock is the position of the transaction in the block.
     google.protobuf.UInt64Value position_in_block = 2 [ json_name = "position_in_block" ];
+    // Size is the transaction size in bytes.
+    string size = 3;
+    // CallDataSize is the call data size in bytes.
+    string call_data_size = 4 [ json_name = "call_data_size" ];
   }
 
   message AttestationDataSnapshot {

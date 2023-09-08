@@ -11,7 +11,10 @@ import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/events.proto";
 import "pkg/proto/eth/v1/committee.proto";
 import "pkg/proto/eth/v2/events.proto";
+import "pkg/proto/eth/v2/withdrawals.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
+import "pkg/proto/eth/v1/beacon_block.proto";
+import "pkg/proto/eth/v1/execution_engine.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -94,6 +97,20 @@ message DebugForkChoiceReorgV2 {
   xatu.eth.v1.ForkChoiceV2 before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoiceV2 after = 2 [ json_name = "after" ];
   xatu.eth.v1.EventChainReorgV2 event = 3;
+}
+
+message BlockIdentifier {
+  // Epoch contains the epoch information for the block.
+  EpochV2 epoch = 1;
+
+  // Slot contains the slot information for the block.
+  SlotV2 slot = 2;
+
+  // Version contains information about the version of the block.
+  string version = 3;
+
+  // Root contains the root of the beacon block.
+  string root = 4 [ json_name = "root" ];
 }
 
 message ClientMeta {
@@ -504,6 +521,42 @@ message ClientMeta {
     google.protobuf.UInt64Value total_bytes_compressed = 9 [ json_name = "total_bytes_compressed" ];
   }
 
+  message AdditionalEthV2BeaconBlockAttesterSlashingData {
+    // Block contains the information about the block that we are deriving the attester slashing from.
+    BlockIdentifier block = 1;
+  }
+
+  message AdditionalEthV2BeaconBlockProposerSlashingData {
+    // Block contains the information about the block that we are deriving the proposer slashing from.
+    BlockIdentifier block = 1;
+  }
+
+  message AdditionalEthV2BeaconBlockVoluntaryExitData {
+    // Block contains the information about the block that we are deriving the voluntary exit from.
+    BlockIdentifier block = 1;
+  }
+
+  message AdditionalEthV2BeaconBlockDepositData {
+    // Block contains the information about the block that we are deriving the deposit from.
+    BlockIdentifier block = 1;
+  }
+
+  message AdditionalEthV2BeaconBlockBLSToExecutionChangeData {
+    // Block contains the information about the block that we are deriving the bls to execution change from.
+    BlockIdentifier block = 1;
+  }
+
+  message AdditionalEthV2BeaconBlockExecutionTransactionData {
+    // Block contains the information about the block that we are deriving the execution transaction from.
+    BlockIdentifier block = 1;
+    // PositionInBlock is the position of the transaction in the block.
+    google.protobuf.UInt64Value position_in_block = 2 [ json_name = "position_in_block" ];
+    // Size is the transaction size in bytes.
+    string size = 3;
+    // CallDataSize is the call data size in bytes.
+    string call_data_size = 4 [ json_name = "call_data_size" ];
+  }
+
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the attestation data snapshot (in milliseconds).
@@ -609,6 +662,18 @@ message ClientMeta {
     // AdditionalEthV1DebugForkChoiceReorg contains additional data about the
     // eth v1 debug fork choice reorg event.
     AdditionalEthV1DebugForkChoiceReOrgV2Data eth_v1_debug_fork_choice_reorg_v2 = 34 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    // AdditionalEthV2BeaconBlockAttesterSlashingData contains additional data on attester slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockAttesterSlashingData eth_v2_beacon_block_attester_slashing = 35 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    // AdditionalEthV2BeaconBlockProposerSlashingData contains additional data on proposer slashings derived from beacon blocks.
+    AdditionalEthV2BeaconBlockProposerSlashingData eth_v2_beacon_block_proposer_slashing = 36 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    // AdditionalEthV2BeaconBlockVoluntaryExitData contains additional data on voluntary exits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockVoluntaryExitData eth_v2_beacon_block_voluntary_exit = 37 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
+    // AdditionalEthV2BeaconBlockDepositData contains additional data on deposits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockDepositData eth_v2_beacon_block_deposit = 38 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
+    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional data on bls to execution changes derived from beacon blocks.
+    AdditionalEthV2BeaconBlockBLSToExecutionChangeData eth_v2_beacon_block_bls_to_execution_change = 39 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
+    // AdditionalEthV2BeaconBlockBLSToExecutionChangeData contains additional data on execution transactions derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionTransactionData eth_v2_beacon_block_execution_transaction = 40 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
   }
 }
 
@@ -699,6 +764,12 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_V2 = 22;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2 = 23;
     BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2 = 24;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING = 25;
+    BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING = 26;
+    BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT = 27;
+    BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT = 28;
+    BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE = 29;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 30;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -738,5 +809,11 @@ message DecoratedEvent {
     xatu.eth.v2.EventBlockV2 eth_v2_beacon_block_v2 = 24 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_V2" ];
     xatu.eth.v1.ForkChoiceV2 eth_v1_fork_choice_v2 = 25 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2" ];
     DebugForkChoiceReorgV2 eth_v1_fork_choice_reorg_v2 = 26 [ json_name = "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2" ];
+    xatu.eth.v1.AttesterSlashingV2 eth_v2_beacon_block_attester_slashing = 27 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    xatu.eth.v1.ProposerSlashingV2 eth_v2_beacon_block_proposer_slashing = 28 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    xatu.eth.v1.SignedVoluntaryExitV2 eth_v2_beacon_block_voluntary_exit = 29 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
+    xatu.eth.v1.DepositV2 eth_v2_beacon_block_deposit = 30 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
+    xatu.eth.v2.SignedBLSToExecutionChangeV2 eth_v2_beacon_block_bls_to_execution_change = 31 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
+    xatu.eth.v1.Transaction eth_v2_beacon_block_execution_transaction = 32 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
   }; 
 }

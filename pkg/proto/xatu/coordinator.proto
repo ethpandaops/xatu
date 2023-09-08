@@ -15,6 +15,11 @@ service Coordinator {
       returns (CoordinateExecutionNodeRecordsResponse) {}
   rpc GetDiscoveryNodeRecord(GetDiscoveryNodeRecordRequest)
       returns (GetDiscoveryNodeRecordResponse) {}
+
+  rpc GetCannonLocation(GetCannonLocationRequest)
+      returns (GetCannonLocationResponse) {}
+  rpc UpsertCannonLocation(UpsertCannonLocationRequest)
+      returns (UpsertCannonLocationResponse) {}
 }
 
 message CreateNodeRecordsRequest { repeated string node_records = 1; }
@@ -82,3 +87,64 @@ message GetDiscoveryNodeRecordRequest {
 message GetDiscoveryNodeRecordResponse {
   string node_record = 1;
 }
+
+enum CannonType {
+  BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT = 0;
+  BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING = 1;
+  BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT = 2;
+  BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING = 3;
+  BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE = 4;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 5;
+}
+
+message CannonLocationEthV2BeaconBlockVoluntaryExit {
+  uint64 slot = 1;
+}
+
+message CannonLocationEthV2BeaconBlockProposerSlashing {
+  uint64 slot = 1;
+}
+
+message CannonLocationEthV2BeaconBlockDeposit {
+  uint64 slot = 1;
+}
+
+message CannonLocationEthV2BeaconBlockAttesterSlashing {
+  uint64 slot = 1;
+}
+
+message CannonLocationEthV2BeaconBlockBlsToExecutionChange {
+  uint64 slot = 1;
+}
+
+message CannonLocationEthV2BeaconBlockExecutionTransaction {
+  uint64 slot = 1;
+}
+
+message CannonLocation {
+  string network_id = 1;
+  CannonType type = 2;
+  oneof Data {
+    CannonLocationEthV2BeaconBlockVoluntaryExit eth_v2_beacon_block_voluntary_exit = 3 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT" ];
+    CannonLocationEthV2BeaconBlockProposerSlashing eth_v2_beacon_block_proposer_slashing = 4 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING" ];
+    CannonLocationEthV2BeaconBlockDeposit eth_v2_beacon_block_deposit = 5 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT" ];
+    CannonLocationEthV2BeaconBlockAttesterSlashing eth_v2_beacon_block_attester_slashing = 6 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING" ];
+    CannonLocationEthV2BeaconBlockBlsToExecutionChange eth_v2_beacon_block_bls_to_execution_change = 7 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
+    CannonLocationEthV2BeaconBlockExecutionTransaction eth_v2_beacon_block_execution_transaction = 8 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
+  }
+}
+
+message GetCannonLocationRequest {
+  string network_id = 1;
+  CannonType type = 2;
+}
+
+message GetCannonLocationResponse {
+  CannonLocation location = 1;
+}
+
+message UpsertCannonLocationRequest {
+  CannonLocation location = 1;
+}
+
+message UpsertCannonLocationResponse {}

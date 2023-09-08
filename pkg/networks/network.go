@@ -13,6 +13,7 @@ var (
 	NetworkNameMainnet NetworkName = "mainnet"
 	NetworkNameGoerli  NetworkName = "goerli"
 	NetworkNameSepolia NetworkName = "sepolia"
+	NetworkNameHolesky NetworkName = "holesky"
 )
 
 var NetworkGenesisRoots = map[string]uint64{
@@ -25,6 +26,7 @@ var NetworkIds = map[uint64]NetworkName{
 	1:        NetworkNameMainnet,
 	5:        NetworkNameGoerli,
 	11155111: NetworkNameSepolia,
+	17000:    NetworkNameHolesky,
 }
 
 func DeriveFromGenesisRoot(genesisRoot string) *Network {

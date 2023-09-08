@@ -6,11 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethpandaops/beacon/pkg/beacon"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/go-co-op/gocron"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 )
 
 type BeaconNode struct {
@@ -22,35 +25,44 @@ type BeaconNode struct {
 	services []services.Service
 
 	onReadyCallbacks []func(ctx context.Context) error
+
+	sfGroup    *singleflight.Group
+	blockCache *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
-		EnableDefaultBeaconSubscription()
+		DisableEmptySlotDetection().
+		DisablePrometheusMetrics()
 
 	opts.HealthCheck.Interval.Duration = time.Second * 3
 	opts.HealthCheck.SuccessfulResponses = 1
+
+	opts.BeaconSubscription.Enabled = false
 
 	node := beacon.NewNode(log, &beacon.Config{
 		Name:    name,
 		Addr:    config.BeaconNodeAddress,
 		Headers: config.BeaconNodeHeaders,
-	}, "xatu_sentry", opts)
+	}, "xatu_cannon", opts)
 
 	metadata := services.NewMetadataService(log, node)
-	duties := services.NewDutiesService(log, node, &metadata)
 
 	svcs := []services.Service{
 		&metadata,
-		&duties,
 	}
 
 	return &BeaconNode{
 		config:   config,
-		log:      log.WithField("module", "sentry/ethereum/beacon"),
+		log:      log.WithField("module", "cannon/ethereum/beacon"),
 		beacon:   node,
 		services: svcs,
+		blockCache: ttlcache.New(
+			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheTTL.Duration),
+			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
+		),
+		sfGroup: &singleflight.Group{},
 	}, nil
 }
 
@@ -97,6 +109,8 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 		return err
 	}
 
+	go b.blockCache.Start()
+
 	select {
 	case err := <-errs:
 		return err
@@ -127,16 +141,6 @@ func (b *BeaconNode) Metadata() *services.MetadataService {
 	}
 
 	return service.(*services.MetadataService)
-}
-
-func (b *BeaconNode) Duties() *services.DutiesService {
-	service, err := b.getServiceByName("duties")
-	if err != nil {
-		// This should never happen. If it does, good luck.
-		return nil
-	}
-
-	return service.(*services.DutiesService)
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {
@@ -176,4 +180,31 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
+func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string) (*spec.VersionedSignedBeaconBlock, error) {
+	// Use singleflight to ensure we only make one request for a block at a time.
+	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
+		// Check the cache first.
+		if item := b.blockCache.Get(identifier); item != nil {
+			return item.Value(), nil
+		}
+
+		// Not in the cache, so fetch it.
+		block, err := b.beacon.FetchBlock(ctx, identifier)
+		if err != nil {
+			return nil, err
+		}
+
+		// Add it to the cache.
+		b.blockCache.Set(identifier, block, time.Hour)
+
+		return block, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return x.(*spec.VersionedSignedBeaconBlock), nil
 }

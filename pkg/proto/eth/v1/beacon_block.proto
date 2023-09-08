@@ -75,11 +75,24 @@ message ProposerSlashing {
   SignedBeaconBlockHeader signed_header_2 = 2 [ json_name = "signed_header_2" ];
 }
 
+message ProposerSlashingV2 {
+  SignedBeaconBlockHeaderV2 signed_header_1 = 1 [ json_name = "signed_header_1" ];
+
+  SignedBeaconBlockHeaderV2 signed_header_2 = 2 [ json_name = "signed_header_2" ];
+}
+
 message AttesterSlashing {
   IndexedAttestation attestation_1 = 1 [ json_name = "attestation_1" ];
 
   IndexedAttestation attestation_2 = 2 [ json_name = "attestation_2" ];
 }
+
+message AttesterSlashingV2 {
+  IndexedAttestationV2 attestation_1 = 1 [ json_name = "attestation_1" ];
+
+  IndexedAttestationV2 attestation_2 = 2 [ json_name = "attestation_2" ];
+}
+
 
 message Deposit {
   message Data {
@@ -97,14 +110,42 @@ message Deposit {
   Data data = 2;
 }
 
+message DepositV2 {
+  message Data {
+    string pubkey = 1;
+
+    string withdrawal_credentials = 2 [ json_name = "withdrawal_credentials" ];
+
+    google.protobuf.UInt64Value amount = 3;
+
+    string signature = 4;
+  }
+
+  repeated string proof = 1;
+
+  Data data = 2;
+}
+
 message VoluntaryExit {
   uint64 epoch = 1;
 
   uint64 validator_index = 2 [ json_name = "validator_index" ];
 }
 
+message VoluntaryExitV2 {
+  google.protobuf.UInt64Value epoch = 1;
+
+  google.protobuf.UInt64Value validator_index = 2 [ json_name = "validator_index" ];
+}
+
 message SignedVoluntaryExit {
   VoluntaryExit message = 1;
+
+  string signature = 2;
+}
+
+message SignedVoluntaryExitV2 {
+  VoluntaryExitV2 message = 1;
 
   string signature = 2;
 }
@@ -120,7 +161,7 @@ message Eth1Data {
 message BeaconBlockHeader {
   uint64 slot = 1;
 
-  uint64 proposer_index = 2 [ json_name = "block_hash" ];
+  uint64 proposer_index = 2 [ json_name = "proposer_index" ];
 
   string parent_root = 3 [ json_name = "parent_root" ];
 
@@ -129,8 +170,27 @@ message BeaconBlockHeader {
   string body_root = 5 [ json_name = "body_root" ];
 }
 
+message BeaconBlockHeaderV2 {
+  google.protobuf.UInt64Value slot = 1;
+
+  google.protobuf.UInt64Value proposer_index = 2 [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  string body_root = 5 [ json_name = "body_root" ];
+}
+
+
 message SignedBeaconBlockHeader {
   BeaconBlockHeader message = 1;
+
+  string signature = 2;
+}
+
+message SignedBeaconBlockHeaderV2 {
+  BeaconBlockHeaderV2 message = 1;
 
   string signature = 2;
 }
@@ -139,6 +199,14 @@ message IndexedAttestation {
   repeated uint64 attesting_indices = 1 [ json_name = "attesting_indices" ];
 
   AttestationData data = 2;
+
+  string signature = 3;
+}
+
+message IndexedAttestationV2 {
+  repeated google.protobuf.UInt64Value attesting_indices = 1 [ json_name = "attesting_indices" ];
+
+  AttestationDataV2 data = 2;
 
   string signature = 3;
 }

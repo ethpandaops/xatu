@@ -257,6 +257,8 @@ func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 		}
 	}
 
+	c.metrics.AddDecoratedEvent(1, event, string(c.beacon.Metadata().Network.Name))
+
 	return nil
 }
 
@@ -363,7 +365,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			})
 
 			d.OnLocationUpdated(ctx, func(ctx context.Context, location uint64) error {
-				c.metrics.SetDeriverLocation(location, d.CannonType())
+				c.metrics.SetDeriverLocation(location, d.CannonType(), string(c.beacon.Metadata().Network.Name))
 
 				return nil
 			})

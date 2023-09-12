@@ -16,12 +16,12 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "decorated_event_total",
 			Help:      "Total number of decorated events created by the cannon",
-		}, []string{"type"}),
+		}, []string{"type", "network"}),
 		deriverLocation: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "deriver_location",
 			Help:      "Location of the cannon event deriver",
-		}, []string{"type"}),
+		}, []string{"type", "network"}),
 	}
 
 	prometheus.MustRegister(m.decoratedEventTotal)
@@ -30,10 +30,10 @@ func NewMetrics(namespace string) *Metrics {
 	return m
 }
 
-func (m *Metrics) AddDecoratedEvent(count int, eventType xatu.CannonType) {
-	m.decoratedEventTotal.WithLabelValues(eventType.String()).Add(float64(count))
+func (m *Metrics) AddDecoratedEvent(count int, eventType *xatu.DecoratedEvent, network string) {
+	m.decoratedEventTotal.WithLabelValues(eventType.Event.Name.String(), network).Add(float64(count))
 }
 
-func (m *Metrics) SetDeriverLocation(location uint64, eventType xatu.CannonType) {
-	m.deriverLocation.WithLabelValues(eventType.String()).Set(float64(location))
+func (m *Metrics) SetDeriverLocation(location uint64, eventType xatu.CannonType, network string) {
+	m.deriverLocation.WithLabelValues(eventType.String(), network).Set(float64(location))
 }

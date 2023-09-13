@@ -58,6 +58,8 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 				return
 			}
 
+			s.metrics.SetCurrentSlot(s.cannonType.String(), s.networkName, float64(slot))
+
 			s.metrics.SetTrailingSlots(s.cannonType.String(), s.networkName, float64(headSlot.Number()-uint64(slot)))
 		}
 	}()
@@ -71,12 +73,12 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 	// If location is empty we haven't started yet, start at the network default for the type. If the network default
 	// is empty, we'll start at slot 0.
 	if location == nil {
-		locaction, errr := s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkID, s.cannonType))
-		if errr != nil {
+		location, err = s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkID, s.cannonType))
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to create location from slot number 0")
 		}
 
-		return locaction, nil
+		return location, nil
 	}
 
 	locationSlot, err := s.getSlotNumberFromLocation(location)
@@ -86,12 +88,12 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 
 	// If the current wallclock slot is greater than the last slot we processed, return the next slot
 	if phase0.Slot(headSlot.Number()) > locationSlot {
-		loc, errr := s.createLocationFromSlotNumber(locationSlot + 1)
-		if errr != nil {
-			return nil, errors.Wrap(errr, fmt.Errorf("failed to create location from slot number: %d", locationSlot+1).Error())
+		location, err = s.createLocationFromSlotNumber(locationSlot + 1)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Errorf("failed to create location from slot number: %d", locationSlot+1).Error())
 		}
 
-		return loc, nil
+		return location, nil
 	}
 
 	// Sleep until the next slot

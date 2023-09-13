@@ -276,110 +276,96 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			return err
 		}
 
-		slotIteratorMetrics, err := iterator.NewSlotMetrics("xatu_cannon")
-		if err != nil {
-			return err
-		}
-
-		attesterSlashingIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
-
-		proposerSlashingIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
-
-		voluntaryExitIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
-
-		depositIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
-
-		blsToExecutionChangeIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
-		executionTransactionIterator := iterator.NewSlotIterator(
-			c.log,
-			networkName,
-			networkID,
-			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
-			c.coordinatorClient,
-			wallclock,
-			&slotIteratorMetrics,
-		)
+		slotIteratorMetrics := iterator.NewSlotMetrics("xatu_cannon")
 
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.AttesterSlashingConfig,
-				attesterSlashingIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewProposerSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.ProposerSlashingConfig,
-				proposerSlashingIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewVoluntaryExitDeriver(
 				c.log,
 				&c.Config.Derivers.VoluntaryExitConfig,
-				voluntaryExitIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewDepositDeriver(
 				c.log,
 				&c.Config.Derivers.DepositConfig,
-				depositIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewBLSToExecutionChangeDeriver(
 				c.log,
 				&c.Config.Derivers.BLSToExecutionConfig,
-				blsToExecutionChangeIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewExecutionTransactionDeriver(
 				c.log,
 				&c.Config.Derivers.ExecutionTransactionConfig,
-				executionTransactionIterator,
+				iterator.NewSlotIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
+					c.coordinatorClient,
+					wallclock,
+					&slotIteratorMetrics,
+				),
 				c.beacon,
 				clientMeta,
 			),

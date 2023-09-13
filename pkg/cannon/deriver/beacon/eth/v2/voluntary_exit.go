@@ -26,7 +26,7 @@ const (
 
 type VoluntaryExitDeriverConfig struct {
 	Enabled     bool    `yaml:"enabled" default:"true"`
-	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"1"`
+	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"5"`
 }
 
 type VoluntaryExitDeriver struct {

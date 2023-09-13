@@ -66,7 +66,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (*xatu.CannonLocation, er
 		// If location is empty we haven't started yet, start at the network default for the type. If the network default
 		// is empty, we'll start at epoch 0.
 		if location == nil {
-			location, err = c.createLocationFromEpochNumber(phase0.Epoch(GetDefaultSlotLocationForNetworkAndType(c.networkName, c.cannonType) * 32))
+			location, err = c.createLocationFromEpochNumber(phase0.Epoch(GetDefaultSlotLocationForNetworkAndType(c.networkName, c.cannonType) / 32))
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create location from slot number 0")
 			}
@@ -86,7 +86,15 @@ func (c *CheckpointIterator) Next(ctx context.Context) (*xatu.CannonLocation, er
 			// Sleep until the next epoch
 			epoch := c.wallclock.Epochs().Current()
 
-			time.Sleep(time.Until(epoch.TimeWindow().End()))
+			sleepFor := time.Until(epoch.TimeWindow().End())
+
+			c.log.WithFields(logrus.Fields{
+				"current_epoch":    epoch.Number(),
+				"sleep_for":        sleepFor.String(),
+				"checkpoint_epoch": checkpoint.Epoch,
+			}).Trace("Sleeping until next epoch")
+
+			time.Sleep(sleepFor)
 
 			// Sleep for an additional 5 seconds to give the beacon node time to do epoch processing.
 			time.Sleep(5 * time.Second)
@@ -108,7 +116,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (*xatu.CannonLocation, er
 }
 
 func (c *CheckpointIterator) fetchLatestEpoch(ctx context.Context) (*phase0.Checkpoint, error) {
-	finality, err := c.beaconNode.Node().FetchFinality(ctx, "head")
+	finality, err := c.beaconNode.Node().Finality()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch finality")
 	}

@@ -34,14 +34,14 @@ type BLSToExecutionChangeDeriverConfig struct {
 type BLSToExecutionChangeDeriver struct {
 	log                 logrus.FieldLogger
 	cfg                 *BLSToExecutionChangeDeriverConfig
-	iterator            *iterator.SlotIterator
+	iterator            *iterator.CheckpointIterator
 	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
 	onLocationCallbacks []func(ctx context.Context, loc uint64) error
 	beacon              *ethereum.BeaconNode
 	clientMeta          *xatu.ClientMeta
 }
 
-func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.SlotIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
+func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
 	return &BLSToExecutionChangeDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/bls_to_execution_change"),
 		cfg:        config,
@@ -109,15 +109,15 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 				}
 
 				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockBlsToExecutionChange().GetSlot()); errr != nil {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch()); errr != nil {
 						b.log.WithError(errr).Error("Failed to send location")
 					}
 				}
 
-				// Process the slot
-				events, err := b.processSlot(ctx, phase0.Slot(location.GetEthV2BeaconBlockBlsToExecutionChange().GetSlot()))
+				// Process the epoch
+				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch()))
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process slot")
+					b.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
@@ -148,6 +148,28 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (b *BLSToExecutionChangeDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	allEvents := []*xatu.DecoratedEvent{}
+
+	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+		slot := phase0.Slot(i + uint64(epoch))
+
+		events, err := b.processSlot(ctx, slot)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process slot %d", slot)
+		}
+
+		allEvents = append(allEvents, events...)
+	}
+
+	return allEvents, nil
 }
 
 func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {

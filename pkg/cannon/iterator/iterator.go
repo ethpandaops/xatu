@@ -19,15 +19,15 @@ var (
 	SlotZero = phase0.Slot(0)
 )
 
-func GetDefaultSlotLocationForNetworkAndType(networkID string, cannonType xatu.CannonType) phase0.Slot {
-	switch networkID {
-	case "5":
+func GetDefaultSlotLocationForNetworkAndType(network string, cannonType xatu.CannonType) phase0.Slot {
+	switch network {
+	case "goerli", "prater":
 		return getSlotFromNetworkAndType(cannonType, GoerliDefaultSlotStartingPosition)
-	case "1":
+	case "mainnet":
 		return getSlotFromNetworkAndType(cannonType, MainnetDefaultSlotStartingPosition)
-	case "11155111":
+	case "sepolia":
 		return getSlotFromNetworkAndType(cannonType, SepoliaDefaultSlotStartingPosition)
-	case "17000":
+	case "holesky":
 		return getSlotFromNetworkAndType(cannonType, HoleskyDefaultSlotStartingPosition)
 	default:
 		return SlotZero

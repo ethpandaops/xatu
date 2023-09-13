@@ -266,7 +266,9 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 	c.beacon.OnReady(ctx, func(ctx context.Context) error {
 		c.log.Info("Internal beacon node is ready, firing up event derivers")
 
+		networkName := string(c.beacon.Metadata().Network.Name)
 		networkID := fmt.Sprintf("%d", c.beacon.Metadata().Network.ID)
+
 		wallclock := c.beacon.Metadata().Wallclock()
 
 		clientMeta, err := c.createNewClientMeta(ctx)
@@ -274,16 +276,20 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			return err
 		}
 
+		slotIteratorMetrics := iterator.NewSlotMetrics("xatu_cannon")
+
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.AttesterSlashingConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,
@@ -293,10 +299,12 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				&c.Config.Derivers.ProposerSlashingConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,
@@ -306,10 +314,12 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				&c.Config.Derivers.VoluntaryExitConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,
@@ -319,10 +329,12 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				&c.Config.Derivers.DepositConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,
@@ -332,10 +344,12 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				&c.Config.Derivers.BLSToExecutionConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,
@@ -345,10 +359,12 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				&c.Config.Derivers.ExecutionTransactionConfig,
 				iterator.NewSlotIterator(
 					c.log,
+					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
 					c.coordinatorClient,
 					wallclock,
+					&slotIteratorMetrics,
 				),
 				c.beacon,
 				clientMeta,

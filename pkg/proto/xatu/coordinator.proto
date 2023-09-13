@@ -98,27 +98,27 @@ enum CannonType {
 }
 
 message CannonLocationEthV2BeaconBlockVoluntaryExit {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocationEthV2BeaconBlockProposerSlashing {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocationEthV2BeaconBlockDeposit {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocationEthV2BeaconBlockAttesterSlashing {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocationEthV2BeaconBlockBlsToExecutionChange {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocationEthV2BeaconBlockExecutionTransaction {
-  uint64 slot = 1;
+  uint64 epoch = 1;
 }
 
 message CannonLocation {

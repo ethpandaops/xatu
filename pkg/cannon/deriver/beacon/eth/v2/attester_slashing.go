@@ -31,14 +31,14 @@ type AttesterSlashingDeriverConfig struct {
 type AttesterSlashingDeriver struct {
 	log                 logrus.FieldLogger
 	cfg                 *AttesterSlashingDeriverConfig
-	iterator            *iterator.SlotIterator
+	iterator            *iterator.CheckpointIterator
 	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
 	onLocationCallbacks []func(ctx context.Context, loc uint64) error
 	beacon              *ethereum.BeaconNode
 	clientMeta          *xatu.ClientMeta
 }
 
-func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.SlotIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
+func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
 	return &AttesterSlashingDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/attester_slashing"),
 		cfg:        config,
@@ -106,15 +106,15 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 				}
 
 				for _, fn := range a.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockAttesterSlashing().GetSlot()); errr != nil {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch()); errr != nil {
 						a.log.WithError(errr).Error("Failed to send location")
 					}
 				}
 
-				// Process the slot
-				events, err := a.processSlot(ctx, phase0.Slot(location.GetEthV2BeaconBlockAttesterSlashing().GetSlot()))
+				// Process the epoch
+				events, err := a.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch()))
 				if err != nil {
-					a.log.WithError(err).Error("Failed to process slot")
+					a.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
@@ -145,6 +145,28 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (a *AttesterSlashingDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+	sp, err := a.beacon.Node().Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	allEvents := []*xatu.DecoratedEvent{}
+
+	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+		slot := phase0.Slot(i + uint64(epoch))
+
+		events, err := a.processSlot(ctx, slot)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process slot %d", slot)
+		}
+
+		allEvents = append(allEvents, events...)
+	}
+
+	return allEvents, nil
 }
 
 func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {

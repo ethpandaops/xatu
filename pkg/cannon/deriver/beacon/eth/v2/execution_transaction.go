@@ -26,7 +26,7 @@ import (
 type ExecutionTransactionDeriver struct {
 	log                 logrus.FieldLogger
 	cfg                 *ExecutionTransactionDeriverConfig
-	iterator            *iterator.SlotIterator
+	iterator            *iterator.CheckpointIterator
 	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
 	onLocationCallbacks []func(ctx context.Context, location uint64) error
 	beacon              *ethereum.BeaconNode
@@ -42,7 +42,7 @@ const (
 	ExecutionTransactionDeriverName = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
 )
 
-func NewExecutionTransactionDeriver(log logrus.FieldLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.SlotIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
+func NewExecutionTransactionDeriver(log logrus.FieldLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
 	return &ExecutionTransactionDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/execution_transaction"),
 		cfg:        config,
@@ -110,15 +110,15 @@ func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
 				}
 
 				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockExecutionTransaction().GetSlot()); errr != nil {
+					if errr := fn(ctx, location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch()); errr != nil {
 						b.log.WithError(errr).Error("Failed to send location")
 					}
 				}
 
-				// Process the slot
-				events, err := b.processSlot(ctx, phase0.Slot(location.GetEthV2BeaconBlockExecutionTransaction().GetSlot()))
+				// Process the epoch
+				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch()))
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process slot")
+					b.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
@@ -149,6 +149,28 @@ func (b *ExecutionTransactionDeriver) run(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (b *ExecutionTransactionDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	allEvents := []*xatu.DecoratedEvent{}
+
+	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+		slot := phase0.Slot(i + uint64(epoch))
+
+		events, err := b.processSlot(ctx, slot)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process slot %d", slot)
+		}
+
+		allEvents = append(allEvents, events...)
+	}
+
+	return allEvents, nil
 }
 
 func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {

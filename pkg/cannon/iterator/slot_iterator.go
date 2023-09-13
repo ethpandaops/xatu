@@ -129,22 +129,7 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 }
 
 func (s *SlotIterator) getSlotNumberFromLocation(location *xatu.CannonLocation) (phase0.Slot, error) {
-	switch location.Type {
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
-		return phase0.Slot(location.GetEthV2BeaconBlockAttesterSlashing().Slot), nil
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
-		return phase0.Slot(location.GetEthV2BeaconBlockProposerSlashing().Slot), nil
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
-		return phase0.Slot(location.GetEthV2BeaconBlockBlsToExecutionChange().Slot), nil
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
-		return phase0.Slot(location.GetEthV2BeaconBlockExecutionTransaction().Slot), nil
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
-		return phase0.Slot(location.GetEthV2BeaconBlockVoluntaryExit().Slot), nil
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
-		return phase0.Slot(location.GetEthV2BeaconBlockDeposit().Slot), nil
-	default:
-		return 0, errors.Errorf("unknown cannon type %s", location.Type)
-	}
+	return 0, errors.Errorf("unknown cannon type %s", location.Type)
 }
 
 func (s *SlotIterator) createLocationFromSlotNumber(slot phase0.Slot) (*xatu.CannonLocation, error) {
@@ -153,46 +138,5 @@ func (s *SlotIterator) createLocationFromSlotNumber(slot phase0.Slot) (*xatu.Can
 		Type:      s.cannonType,
 	}
 
-	switch s.cannonType {
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockAttesterSlashing{
-			EthV2BeaconBlockAttesterSlashing: &xatu.CannonLocationEthV2BeaconBlockAttesterSlashing{
-				Slot: uint64(slot),
-			},
-		}
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockProposerSlashing{
-			EthV2BeaconBlockProposerSlashing: &xatu.CannonLocationEthV2BeaconBlockProposerSlashing{
-				Slot: uint64(slot),
-			},
-		}
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockBlsToExecutionChange{
-			EthV2BeaconBlockBlsToExecutionChange: &xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange{
-				Slot: uint64(slot),
-			},
-		}
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionTransaction{
-			EthV2BeaconBlockExecutionTransaction: &xatu.CannonLocationEthV2BeaconBlockExecutionTransaction{
-				Slot: uint64(slot),
-			},
-		}
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockVoluntaryExit{
-			EthV2BeaconBlockVoluntaryExit: &xatu.CannonLocationEthV2BeaconBlockVoluntaryExit{
-				Slot: uint64(slot),
-			},
-		}
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
-		location.Data = &xatu.CannonLocation_EthV2BeaconBlockDeposit{
-			EthV2BeaconBlockDeposit: &xatu.CannonLocationEthV2BeaconBlockDeposit{
-				Slot: uint64(slot),
-			},
-		}
-	default:
-		return location, errors.Errorf("unknown cannon type %s", location.Type)
-	}
-
-	return location, nil
+	return nil, errors.Errorf("unknown cannon type %s", location.Type)
 }

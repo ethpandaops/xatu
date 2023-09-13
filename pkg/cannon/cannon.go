@@ -276,21 +276,24 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			return err
 		}
 
-		slotIteratorMetrics := iterator.NewSlotMetrics("xatu_cannon")
+		checkpointIteratorMetrics := iterator.NewCheckpointMetrics("xatu_cannon")
+
+		finalizedCheckpoint := "finalized"
 
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.AttesterSlashingConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.AttesterSlashingConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,
@@ -298,15 +301,16 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			v2.NewProposerSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.ProposerSlashingConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.ProposerSlashingConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,
@@ -314,15 +318,16 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			v2.NewVoluntaryExitDeriver(
 				c.log,
 				&c.Config.Derivers.VoluntaryExitConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.VoluntaryExitConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,
@@ -330,15 +335,16 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			v2.NewDepositDeriver(
 				c.log,
 				&c.Config.Derivers.DepositConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.DepositConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,
@@ -346,15 +352,16 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			v2.NewBLSToExecutionChangeDeriver(
 				c.log,
 				&c.Config.Derivers.BLSToExecutionConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.BLSToExecutionConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,
@@ -362,15 +369,16 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			v2.NewExecutionTransactionDeriver(
 				c.log,
 				&c.Config.Derivers.ExecutionTransactionConfig,
-				iterator.NewSlotIterator(
+				iterator.NewCheckpointIterator(
 					c.log,
 					networkName,
 					networkID,
 					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
 					c.coordinatorClient,
 					wallclock,
-					&slotIteratorMetrics,
-					*c.Config.Derivers.ExecutionTransactionConfig.HeadSlotLag,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
 				),
 				c.beacon,
 				clientMeta,

@@ -157,7 +157,7 @@ func (b *DepositDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) (
 	allEvents := []*xatu.DecoratedEvent{}
 
 	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
-		slot := phase0.Slot(i + uint64(epoch))
+		slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 
 		events, err := b.processSlot(ctx, slot)
 		if err != nil {

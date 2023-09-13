@@ -73,7 +73,7 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 	// If location is empty we haven't started yet, start at the network default for the type. If the network default
 	// is empty, we'll start at slot 0.
 	if location == nil {
-		location, err = s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkID, s.cannonType))
+		location, err = s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkName, s.cannonType))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create location from slot number 0")
 		}

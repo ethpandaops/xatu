@@ -266,7 +266,9 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 	c.beacon.OnReady(ctx, func(ctx context.Context) error {
 		c.log.Info("Internal beacon node is ready, firing up event derivers")
 
+		networkName := string(c.beacon.Metadata().Network.Name)
 		networkID := fmt.Sprintf("%d", c.beacon.Metadata().Network.ID)
+
 		wallclock := c.beacon.Metadata().Wallclock()
 
 		clientMeta, err := c.createNewClientMeta(ctx)
@@ -274,82 +276,110 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			return err
 		}
 
+		slotIteratorMetrics, err := iterator.NewSlotMetrics("xatu_cannon")
+		if err != nil {
+			return err
+		}
+
+		attesterSlashingIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+
+		proposerSlashingIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+
+		voluntaryExitIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+
+		depositIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+
+		blsToExecutionChangeIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+		executionTransactionIterator := iterator.NewSlotIterator(
+			c.log,
+			networkName,
+			networkID,
+			xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
+			c.coordinatorClient,
+			wallclock,
+			&slotIteratorMetrics,
+		)
+
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.AttesterSlashingConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-					c.coordinatorClient,
-					wallclock,
-				),
+				attesterSlashingIterator,
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewProposerSlashingDeriver(
 				c.log,
 				&c.Config.Derivers.ProposerSlashingConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
-					c.coordinatorClient,
-					wallclock,
-				),
+				proposerSlashingIterator,
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewVoluntaryExitDeriver(
 				c.log,
 				&c.Config.Derivers.VoluntaryExitConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
-					c.coordinatorClient,
-					wallclock,
-				),
+				voluntaryExitIterator,
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewDepositDeriver(
 				c.log,
 				&c.Config.Derivers.DepositConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
-					c.coordinatorClient,
-					wallclock,
-				),
+				depositIterator,
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewBLSToExecutionChangeDeriver(
 				c.log,
 				&c.Config.Derivers.BLSToExecutionConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
-					c.coordinatorClient,
-					wallclock,
-				),
+				blsToExecutionChangeIterator,
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewExecutionTransactionDeriver(
 				c.log,
 				&c.Config.Derivers.ExecutionTransactionConfig,
-				iterator.NewSlotIterator(
-					c.log,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
-					c.coordinatorClient,
-					wallclock,
-				),
+				executionTransactionIterator,
 				c.beacon,
 				clientMeta,
 			),

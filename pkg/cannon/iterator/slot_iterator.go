@@ -19,17 +19,21 @@ type SlotIterator struct {
 	coordinator coordinator.Client
 	wallclock   *ethwallclock.EthereumBeaconChain
 	networkID   string
+	networkName string
+	metrics     *SlotMetrics
 }
 
-func NewSlotIterator(log logrus.FieldLogger, networkID string, cannonType xatu.CannonType, coordinatorClient *coordinator.Client, wallclock *ethwallclock.EthereumBeaconChain) *SlotIterator {
+func NewSlotIterator(log logrus.FieldLogger, networkName, networkID string, cannonType xatu.CannonType, coordinatorClient *coordinator.Client, wallclock *ethwallclock.EthereumBeaconChain, metrics *SlotMetrics) *SlotIterator {
 	return &SlotIterator{
 		log: log.
 			WithField("module", "cannon/iterator/slot_iterator").
 			WithField("cannon_type", cannonType.String()),
+		networkName: networkName,
 		networkID:   networkID,
 		cannonType:  cannonType,
 		coordinator: *coordinatorClient,
 		wallclock:   wallclock,
+		metrics:     metrics,
 	}
 }
 
@@ -38,8 +42,28 @@ func (s *SlotIterator) UpdateLocation(ctx context.Context, location *xatu.Cannon
 }
 
 func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
+	// Calculate the current wallclock slot
+	headSlot, _, err := s.wallclock.Now()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current wallclock slot")
+	}
+
+	var location *xatu.CannonLocation
+	defer func() {
+		if location != nil {
+			slot, errr := s.getSlotNumberFromLocation(location)
+			if errr != nil {
+				s.log.WithError(err).Error("failed to get slot number from location")
+
+				return
+			}
+
+			s.metrics.SetTrailingSlots(s.cannonType.String(), s.networkName, float64(headSlot.Number()-uint64(slot)))
+		}
+	}()
+
 	// Check where we are at from the coordinator
-	location, err := s.coordinator.GetCannonLocation(ctx, s.cannonType, s.networkID)
+	location, err = s.coordinator.GetCannonLocation(ctx, s.cannonType, s.networkID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cannon location")
 	}
@@ -47,18 +71,12 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 	// If location is empty we haven't started yet, start at the network default for the type. If the network default
 	// is empty, we'll start at slot 0.
 	if location == nil {
-		loc, errr := s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkID, s.cannonType))
+		locaction, errr := s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkID, s.cannonType))
 		if errr != nil {
 			return nil, errors.Wrap(err, "failed to create location from slot number 0")
 		}
 
-		return loc, nil
-	}
-
-	// Calculate the current wallclock slot
-	headSlot, _, err := s.wallclock.Now()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current wallclock slot")
+		return locaction, nil
 	}
 
 	locationSlot, err := s.getSlotNumberFromLocation(location)
@@ -85,12 +103,12 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 		time.Sleep(sleepTime)
 	}
 
-	loc, err := s.createLocationFromSlotNumber(phase0.Slot(headSlot.Number()))
+	location, err = s.createLocationFromSlotNumber(phase0.Slot(headSlot.Number()))
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Errorf("failed to create location from slot number: %d", headSlot.Number()).Error())
 	}
 
-	return loc, nil
+	return location, nil
 }
 
 func (s *SlotIterator) getSlotNumberFromLocation(location *xatu.CannonLocation) (phase0.Slot, error) {

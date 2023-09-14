@@ -9,6 +9,7 @@ type Config struct {
 	ExecutionTransactionConfig v2.ExecutionTransactionDeriverConfig `yaml:"executionTransaction"`
 	ProposerSlashingConfig     v2.ProposerSlashingDeriverConfig     `yaml:"proposerSlashing"`
 	VoluntaryExitConfig        v2.VoluntaryExitDeriverConfig        `yaml:"voluntaryExit"`
+	WithdrawalConfig           v2.WithdrawalDeriverConfig           `yaml:"withdrawal"`
 }
 
 func (c *Config) Validate() error {

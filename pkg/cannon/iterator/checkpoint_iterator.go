@@ -146,6 +146,8 @@ func (c *CheckpointIterator) getEpochFromLocation(location *xatu.CannonLocation)
 		return phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().Epoch), nil
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
 		return phase0.Epoch(location.GetEthV2BeaconBlockDeposit().Epoch), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
+		return phase0.Epoch(location.GetEthV2BeaconBlockWithdrawal().Epoch), nil
 	default:
 		return 0, errors.Errorf("unknown cannon type %s", location.Type)
 	}
@@ -191,6 +193,12 @@ func (c *CheckpointIterator) createLocationFromEpochNumber(epoch phase0.Epoch) (
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
 		location.Data = &xatu.CannonLocation_EthV2BeaconBlockDeposit{
 			EthV2BeaconBlockDeposit: &xatu.CannonLocationEthV2BeaconBlockDeposit{
+				Epoch: uint64(epoch),
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockWithdrawal{
+			EthV2BeaconBlockWithdrawal: &xatu.CannonLocationEthV2BeaconBlockWithdrawal{
 				Epoch: uint64(epoch),
 			},
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -16,10 +17,11 @@ type StdOut struct {
 	config *Config
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
+	opts   *options.Options
 	filter xatu.EventFilter
 }
 
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*StdOut, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, opts *options.Options) (*StdOut, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -47,6 +49,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		name:   name,
 		config: config,
 		log:    log,
+		opts:   opts,
 		proc:   proc,
 		filter: filter,
 	}, nil
@@ -74,7 +77,36 @@ func (h *StdOut) HandleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 		return nil
 	}
 
-	h.proc.Write(event)
+	if h.opts.ShippingMethod == options.ShippingMethodAsync {
+		h.proc.Write(event)
 
-	return nil
+		return nil
+	}
+
+	return h.proc.ImmediatelyExportItems(ctx, []*xatu.DecoratedEvent{event})
+}
+
+func (h *StdOut) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	filtered := []*xatu.DecoratedEvent{}
+
+	for _, event := range events {
+		shouldBeDropped, err := h.filter.ShouldBeDropped(event)
+		if err != nil {
+			return err
+		}
+
+		if !shouldBeDropped {
+			filtered = append(filtered, event)
+		}
+	}
+
+	if h.opts.ShippingMethod == options.ShippingMethodAsync {
+		for _, event := range filtered {
+			h.proc.Write(event)
+		}
+
+		return nil
+	}
+
+	return h.proc.ImmediatelyExportItems(ctx, filtered)
 }

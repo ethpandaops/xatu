@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -75,10 +76,8 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 	}
 
 	for _, sink := range e.sinks {
-		for _, event := range filteredEvents {
-			if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-				return nil, err
-			}
+		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
+			return nil, err
 		}
 	}
 
@@ -89,7 +88,13 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
-		sink, err := output.NewSink(out.Name, out.SinkType, out.Config, e.log, out.FilterConfig)
+		sink, err := output.NewSink(out.Name,
+			out.SinkType,
+			out.Config,
+			e.log,
+			out.FilterConfig,
+			options.DefaultOptions().SetShippingMethod(options.ShippingMethodSync),
+		)
 		if err != nil {
 			return nil, err
 		}

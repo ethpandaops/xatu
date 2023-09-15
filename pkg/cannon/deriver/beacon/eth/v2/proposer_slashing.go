@@ -32,7 +32,7 @@ type ProposerSlashingDeriver struct {
 	log                 logrus.FieldLogger
 	cfg                 *ProposerSlashingDeriverConfig
 	iterator            *iterator.CheckpointIterator
-	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
+	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	onLocationCallbacks []func(ctx context.Context, location uint64) error
 	beacon              *ethereum.BeaconNode
 	clientMeta          *xatu.ClientMeta
@@ -56,8 +56,8 @@ func (b *ProposerSlashingDeriver) Name() string {
 	return ProposerSlashingDeriverName.String()
 }
 
-func (b *ProposerSlashingDeriver) OnEventDerived(ctx context.Context, fn func(ctx context.Context, event *xatu.DecoratedEvent) error) {
-	b.onEventCallbacks = append(b.onEventCallbacks, fn)
+func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
+	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
 }
 
 func (b *ProposerSlashingDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
@@ -85,7 +85,7 @@ func (b *ProposerSlashingDeriver) Stop(ctx context.Context) error {
 
 func (b *ProposerSlashingDeriver) run(ctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
-	bo.MaxInterval = 1 * time.Minute
+	bo.MaxInterval = 3 * time.Minute
 
 	for {
 		select {
@@ -119,18 +119,16 @@ func (b *ProposerSlashingDeriver) run(ctx context.Context) {
 					return err
 				}
 
+				// Send the events
+				for _, fn := range b.onEventsCallbacks {
+					if err := fn(ctx, events); err != nil {
+						return errors.Wrap(err, "failed to send events")
+					}
+				}
+
 				// Update our location
 				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
 					return err
-				}
-
-				// Send the events
-				for _, event := range events {
-					for _, fn := range b.onEventCallbacks {
-						if err := fn(ctx, event); err != nil {
-							b.log.WithError(err).Error("Failed to send event")
-						}
-					}
 				}
 
 				bo.Reset()

@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/sirupsen/logrus"
 )
 
@@ -52,7 +53,14 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
-		sink, err := output.NewSink(out.Name, out.SinkType, out.Config, log, out.FilterConfig)
+		sink, err := output.NewSink(
+			out.Name,
+			out.SinkType,
+			out.Config,
+			log,
+			out.FilterConfig,
+			options.DefaultOptions().SetShippingMethod(options.ShippingMethodAsync),
+		)
 		if err != nil {
 			return nil, err
 		}

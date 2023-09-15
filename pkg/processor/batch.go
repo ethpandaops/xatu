@@ -160,6 +160,48 @@ func (bvp *BatchItemProcessor[T]) Write(s *T) {
 	bvp.enqueue(s)
 }
 
+// ImmediatelyExportItems immediately exports the items to the exporter.
+// Useful for propogating errors from the exporter.
+func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, items []*T) error {
+	bvp.batchMutex.Lock()
+	defer bvp.batchMutex.Unlock()
+
+	if bvp.o.ExportTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)
+
+		defer cancel()
+	}
+
+	if l := len(items); l > 0 {
+		countItemsToExport := len(items)
+
+		// Split the items in to chunks of our max batch size
+		for i := 0; i < countItemsToExport; i += bvp.o.MaxExportBatchSize {
+			end := i + bvp.o.MaxExportBatchSize
+			if end > countItemsToExport {
+				end = countItemsToExport
+			}
+
+			itemsBatch := items[i:end]
+
+			bvp.log.WithFields(logrus.Fields{
+				"count": len(itemsBatch),
+			}).Debug("immediately exporting items")
+
+			err := bvp.e.ExportItems(ctx, itemsBatch)
+
+			bvp.metrics.IncItemsExportedBy(float64(len(itemsBatch)))
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Shutdown flushes the queue and waits until all items are processed.
 // It only executes once. Subsequent call does nothing.
 func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {

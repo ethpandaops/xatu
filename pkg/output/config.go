@@ -6,6 +6,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/output/http"
+	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/ethpandaops/xatu/pkg/output/stdout"
 	"github.com/ethpandaops/xatu/pkg/output/xatu"
 	pxatu "github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -29,7 +30,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig) (Sink, error) {
+func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig, opts *options.Options) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}
@@ -48,7 +49,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 			return nil, err
 		}
 
-		return http.New(name, conf, log, &filterConfig)
+		return http.New(name, conf, log, &filterConfig, opts)
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
@@ -62,7 +63,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 			return nil, err
 		}
 
-		return stdout.New(name, conf, log, &filterConfig)
+		return stdout.New(name, conf, log, &filterConfig, opts)
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
@@ -76,7 +77,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 			return nil, err
 		}
 
-		return xatu.New(name, conf, log, &filterConfig)
+		return xatu.New(name, conf, log, &filterConfig, opts)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

@@ -44,6 +44,15 @@ const (
 	DefaultScheduleDelay      = 5000
 	DefaultExportTimeout      = 30000
 	DefaultMaxExportBatchSize = 512
+	DefaultShippingMethod     = ShippingMethodAsync
+)
+
+type ShippingMethod string
+
+const (
+	ShippingMethodUnknown ShippingMethod = "unknown"
+	ShippingMethodAsync   ShippingMethod = "async"
+	ShippingMethodSync    ShippingMethod = "sync"
 )
 
 // BatchItemProcessorOption configures a BatchItemProcessor.
@@ -72,6 +81,9 @@ type BatchItemProcessorOptions struct {
 	// of items one batch after the other without any delay.
 	// The default value of MaxExportBatchSize is 512.
 	MaxExportBatchSize int
+
+	// ShippingMethod is the method used to ship items to the exporter.
+	ShippingMethod ShippingMethod
 }
 
 // BatchItemProcessor is a buffer that batches asynchronously-received
@@ -117,6 +129,7 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		ExportTimeout:      time.Duration(DefaultExportTimeout) * time.Millisecond,
 		MaxQueueSize:       maxQueueSize,
 		MaxExportBatchSize: maxExportBatchSize,
+		ShippingMethod:     DefaultShippingMethod,
 	}
 	for _, opt := range options {
 		opt(&o)
@@ -151,13 +164,21 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 }
 
 // OnEnd method enqueues a item for later processing.
-func (bvp *BatchItemProcessor[T]) Write(s *T) {
-	// Do not enqueue items if we are just going to drop them.
-	if bvp.e == nil {
-		return
+func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
+	if bvp.o.ShippingMethod == ShippingMethodSync {
+		return bvp.ImmediatelyExportItems(ctx, s)
 	}
 
-	bvp.enqueue(s)
+	// Do not enqueue items if we are just going to drop them.
+	if bvp.e == nil {
+		return nil
+	}
+
+	for _, i := range s {
+		bvp.enqueue(i)
+	}
+
+	return nil
 }
 
 // ImmediatelyExportItems immediately exports the items to the exporter.
@@ -284,6 +305,15 @@ func WithBatchTimeout(delay time.Duration) BatchItemProcessorOption {
 func WithExportTimeout(timeout time.Duration) BatchItemProcessorOption {
 	return func(o *BatchItemProcessorOptions) {
 		o.ExportTimeout = timeout
+	}
+}
+
+// WithExportTimeout returns a BatchItemProcessorOption that configures the
+// amount of time a BatchItemProcessor waits for an exporter to export before
+// abandoning the export.
+func WithShippingMethod(method ShippingMethod) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
+		o.ShippingMethod = method
 	}
 }
 

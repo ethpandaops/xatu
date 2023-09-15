@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -15,13 +14,12 @@ const SinkType = "xatu"
 type Xatu struct {
 	name   string
 	config *Config
-	opts   *options.Options
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 	filter xatu.EventFilter
 }
 
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, opts *options.Options) (*Xatu, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -47,6 +45,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		processor.WithBatchTimeout(config.BatchTimeout),
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
+		processor.WithShippingMethod(shippingMethod),
 	)
 	if err != nil {
 		return nil, err
@@ -57,7 +56,6 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		config: config,
 		log:    log,
 		proc:   proc,
-		opts:   opts,
 		filter: filter,
 	}, nil
 }
@@ -84,13 +82,7 @@ func (h *Xatu) HandleNewDecoratedEvent(ctx context.Context, event *xatu.Decorate
 		return nil
 	}
 
-	if h.opts.ShippingMethod == options.ShippingMethodAsync {
-		h.proc.Write(event)
-
-		return nil
-	}
-
-	return h.proc.ImmediatelyExportItems(ctx, []*xatu.DecoratedEvent{event})
+	return h.proc.Write(ctx, []*xatu.DecoratedEvent{event})
 }
 
 func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
@@ -107,13 +99,5 @@ func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 		}
 	}
 
-	if h.opts.ShippingMethod == options.ShippingMethodAsync {
-		for _, event := range filtered {
-			h.proc.Write(event)
-		}
-
-		return nil
-	}
-
-	return h.proc.ImmediatelyExportItems(ctx, filtered)
+	return h.proc.Write(ctx, filtered)
 }

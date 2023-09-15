@@ -320,7 +320,9 @@ func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash commo
 			Hash: hash,
 			Seen: now,
 		}
-		p.txProc.Write(&item)
+		if err := p.txProc.Write(ctx, []*TransactionHashItem{&item}); err != nil {
+			return err
+		}
 	}
 
 	return nil

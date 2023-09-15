@@ -8,7 +8,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/output/options"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
 )
 
@@ -74,7 +74,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 			out.Config,
 			log,
 			out.FilterConfig,
-			options.DefaultOptions().SetShippingMethod(options.ShippingMethodSync),
+			processor.ShippingMethodSync,
 		)
 		if err != nil {
 			return nil, err

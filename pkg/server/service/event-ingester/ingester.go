@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/output/options"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -93,7 +93,7 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 			out.Config,
 			e.log,
 			out.FilterConfig,
-			options.DefaultOptions().SetShippingMethod(options.ShippingMethodSync),
+			processor.ShippingMethodSync,
 		)
 		if err != nil {
 			return nil, err

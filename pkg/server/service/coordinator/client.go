@@ -122,7 +122,7 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 			}
 		}
 
-		c.nodeRecord.Write(pRecord)
+		c.nodeRecord.Write(ctx, pRecord)
 	}
 
 	return &xatu.CreateNodeRecordsResponse{}, nil

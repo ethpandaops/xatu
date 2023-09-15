@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ethpandaops/xatu/pkg/output/options"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -17,11 +16,10 @@ type StdOut struct {
 	config *Config
 	log    logrus.FieldLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
-	opts   *options.Options
 	filter xatu.EventFilter
 }
 
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, opts *options.Options) (*StdOut, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*StdOut, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -40,7 +38,12 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		return nil, err
 	}
 
-	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter, xatu.ImplementationLower()+"_output_"+SinkType+"_"+name, log)
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+		exporter,
+		xatu.ImplementationLower()+"_output_"+SinkType+"_"+name,
+		log,
+		processor.WithShippingMethod(shippingMethod),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +52,6 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		name:   name,
 		config: config,
 		log:    log,
-		opts:   opts,
 		proc:   proc,
 		filter: filter,
 	}, nil
@@ -77,13 +79,7 @@ func (h *StdOut) HandleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 		return nil
 	}
 
-	if h.opts.ShippingMethod == options.ShippingMethodAsync {
-		h.proc.Write(event)
-
-		return nil
-	}
-
-	return h.proc.ImmediatelyExportItems(ctx, []*xatu.DecoratedEvent{event})
+	return h.proc.Write(ctx, []*xatu.DecoratedEvent{event})
 }
 
 func (h *StdOut) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
@@ -100,13 +96,5 @@ func (h *StdOut) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.De
 		}
 	}
 
-	if h.opts.ShippingMethod == options.ShippingMethodAsync {
-		for _, event := range filtered {
-			h.proc.Write(event)
-		}
-
-		return nil
-	}
-
-	return h.proc.ImmediatelyExportItems(ctx, filtered)
+	return h.proc.Write(ctx, filtered)
 }

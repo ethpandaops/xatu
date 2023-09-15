@@ -68,6 +68,7 @@ func New(config *Config, log logrus.FieldLogger) (*Client, error) {
 		processor.WithBatchTimeout(config.BatchTimeout),
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
+		processor.WithShippingMethod(processor.ShippingMethodAsync),
 	)
 	if err != nil {
 		return nil, err
@@ -99,9 +100,7 @@ func (c *Client) Stop(ctx context.Context) error {
 }
 
 func (c *Client) HandleNewNodeRecord(ctx context.Context, record *string) error {
-	c.proc.Write(record)
-
-	return nil
+	return c.proc.Write(ctx, []*string{record})
 }
 
 func (c *Client) ListStaleNodeRecords(ctx context.Context) ([]string, error) {

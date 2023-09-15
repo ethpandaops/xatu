@@ -87,9 +87,11 @@ func TestNewBatchItemProcessorWithNilExporter(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](nil, "processor", nullLogger())
 	require.NoError(t, err)
 
-	bsp.Write(&TestItem{
+	if err := bsp.Write(context.Background(), []*TestItem{{
 		name: "test",
-	})
+	}}); err != nil {
+		t.Errorf("failed to Write to the BatchItemProcessor: %v", err)
+	}
 
 	if err := bsp.ForceFlush(context.Background()); err != nil {
 		t.Errorf("failed to ForceFlush the BatchItemProcessor: %v", err)
@@ -169,9 +171,11 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 				if option.writeNumItems > 0 && i%option.writeNumItems == 0 {
 					time.Sleep(10 * time.Millisecond)
 				}
-				ssp.Write(&TestItem{
+				if err := ssp.Write(context.Background(), []*TestItem{{
 					name: "test",
-				})
+				}}); err != nil {
+					t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+				}
 			}
 
 			time.Sleep(schDelay * 2)
@@ -216,9 +220,11 @@ func TestBatchItemProcessorExportTimeout(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	bvp.Write(&TestItem{
+	if err := bvp.Write(context.Background(), []*TestItem{{
 		name: "test",
-	})
+	}}); err != nil {
+		t.Errorf("failed to Write to the BatchItemProcessor: %v", err)
+	}
 
 	time.Sleep(1 * time.Millisecond)
 
@@ -258,9 +264,11 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 60; i++ {
-		bsp.Write(&TestItem{
+		if err := bsp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
-		})
+		}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
 	}
 
 	require.NoError(t, bsp.Shutdown(context.Background()), "shutting down BatchItemProcessor")
@@ -295,9 +303,12 @@ func TestBatchItemProcessorForceFlushSucceeds(t *testing.T) {
 	}
 
 	for i := 0; i < option.genNumItems; i++ {
-		ssp.Write(&TestItem{
+		if errr := ssp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
-		})
+		}}); errr != nil {
+			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+		}
+
 		time.Sleep(1 * time.Millisecond)
 	}
 
@@ -340,9 +351,12 @@ func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
 	}
 
 	for i := 0; i < option.genNumItems; i++ {
-		ssp.Write(&TestItem{
+		if errr := ssp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
-		})
+		}}); errr != nil {
+			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+		}
+
 		time.Sleep(1 * time.Millisecond)
 	}
 
@@ -358,9 +372,12 @@ func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
 
 	// Generate a new batch, this will succeed
 	for i := 0; i < option.genNumItems; i++ {
-		ssp.Write(&TestItem{
+		if errr := ssp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
-		})
+		}}); errr != nil {
+			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+		}
+
 		time.Sleep(1 * time.Millisecond)
 	}
 
@@ -437,4 +454,26 @@ func nullLogger() *logrus.Logger {
 	log.Out = io.Discard
 
 	return log
+}
+
+// ErrorItemExporter is an ItemExporter that only returns errors when exporting.
+type ErrorItemExporter[T any] struct{}
+
+func (ErrorItemExporter[T]) Shutdown(context.Context) error { return nil }
+
+func (ErrorItemExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
+	return errors.New("export error")
+}
+
+// TestBatchItemProcessorWithSyncErrorExporter tests a processor with ShippingMethod = sync and an exporter that only returns errors.
+func TestBatchItemProcessorWithAsyncErrorExporter(t *testing.T) {
+	bsp, err := NewBatchItemProcessor[TestItem](ErrorItemExporter[TestItem]{}, "processor", nullLogger(), WithShippingMethod(ShippingMethodSync))
+	if err != nil {
+		t.Fatalf("failed to create batch processor: %v", err)
+	}
+
+	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
+	if err == nil {
+		t.Errorf("Expected write to fail")
+	}
 }

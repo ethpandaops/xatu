@@ -19,7 +19,7 @@ type Xatu struct {
 	filter xatu.EventFilter
 }
 
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig) (*Xatu, error) {
+func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -45,6 +45,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		processor.WithBatchTimeout(config.BatchTimeout),
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
+		processor.WithShippingMethod(shippingMethod),
 	)
 	if err != nil {
 		return nil, err
@@ -81,7 +82,22 @@ func (h *Xatu) HandleNewDecoratedEvent(ctx context.Context, event *xatu.Decorate
 		return nil
 	}
 
-	h.proc.Write(event)
+	return h.proc.Write(ctx, []*xatu.DecoratedEvent{event})
+}
 
-	return nil
+func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	filtered := []*xatu.DecoratedEvent{}
+
+	for _, event := range events {
+		shouldBeDropped, err := h.filter.ShouldBeDropped(event)
+		if err != nil {
+			return err
+		}
+
+		if !shouldBeDropped {
+			filtered = append(filtered, event)
+		}
+	}
+
+	return h.proc.Write(ctx, filtered)
 }

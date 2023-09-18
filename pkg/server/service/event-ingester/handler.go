@@ -3,6 +3,7 @@ package eventingester
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -135,13 +136,13 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 		if err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
 
-			continue
+			return nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
 		}
 
 		if err := e.Validate(ctx); err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to validate event")
 
-			continue
+			return nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
 		}
 
 		if shouldFilter := e.Filter(ctx); shouldFilter {

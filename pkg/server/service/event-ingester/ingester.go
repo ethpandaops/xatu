@@ -11,6 +11,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -57,7 +59,7 @@ func (e *Ingester) Stop(ctx context.Context) error {
 
 	for _, sink := range e.sinks {
 		if err := sink.Stop(ctx); err != nil {
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -72,12 +74,12 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 
 	filteredEvents, err := e.handler.Events(ctx, clientID, req.Events)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	for _, sink := range e.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
-			return nil, err
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 

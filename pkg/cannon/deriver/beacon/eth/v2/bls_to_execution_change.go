@@ -181,11 +181,6 @@ func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phas
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
 	events := []*xatu.DecoratedEvent{}
 
 	changes, err := b.getBLSToExecutionChanges(ctx, block)
@@ -194,6 +189,11 @@ func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	for _, change := range changes {
+		blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
+		}
+
 		event, err := b.createEvent(ctx, change, blockIdentifier)
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")

@@ -178,14 +178,14 @@ func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	blockIdentifier, err := GetBlockIdentifier(block, a.beacon.Metadata().Wallclock())
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
 	events := []*xatu.DecoratedEvent{}
 
 	for _, slashing := range a.getAttesterSlashings(ctx, block) {
+		blockIdentifier, err := GetBlockIdentifier(block, a.beacon.Metadata().Wallclock())
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
+		}
+
 		event, err := a.createEvent(ctx, slashing, blockIdentifier)
 		if err != nil {
 			a.log.WithError(err).Error("Failed to create event")

@@ -178,11 +178,6 @@ func (b *ProposerSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
 	events := []*xatu.DecoratedEvent{}
 
 	slashings, err := b.getProposerSlashings(ctx, block)
@@ -191,6 +186,11 @@ func (b *ProposerSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 	}
 
 	for _, slashing := range slashings {
+		blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
+		}
+
 		event, err := b.createEvent(ctx, slashing, blockIdentifier)
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")

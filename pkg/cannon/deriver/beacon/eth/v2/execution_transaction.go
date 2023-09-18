@@ -182,11 +182,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
 	events := []*xatu.DecoratedEvent{}
 
 	transactions, err := b.getExecutionTransactions(ctx, block)
@@ -195,6 +190,11 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	for index, transaction := range transactions {
+		blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
+		}
+
 		from, err := types.Sender(types.LatestSignerForChainID(transaction.ChainId()), transaction)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get transaction sender: %v", err)

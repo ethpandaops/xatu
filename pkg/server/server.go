@@ -167,14 +167,14 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
+	if x.grpcServer != nil {
+		x.grpcServer.GracefulStop()
+	}
+
 	for _, s := range x.services {
 		if err := s.Stop(ctx); err != nil {
 			return err
 		}
-	}
-
-	if x.grpcServer != nil {
-		x.grpcServer.GracefulStop()
 	}
 
 	if x.config.Persistence.Enabled && x.persistence != nil {

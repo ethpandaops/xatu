@@ -167,6 +167,8 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
+	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
+
 	if x.grpcServer != nil {
 		x.grpcServer.GracefulStop()
 	}

@@ -167,14 +167,18 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
+	x.log.WithField("pre_stop_sleep_seconds", x.config.PreStopSleepSeconds).Info("Stopping server")
+
+	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
+
+	if x.grpcServer != nil {
+		x.grpcServer.GracefulStop()
+	}
+
 	for _, s := range x.services {
 		if err := s.Stop(ctx); err != nil {
 			return err
 		}
-	}
-
-	if x.grpcServer != nil {
-		x.grpcServer.GracefulStop()
 	}
 
 	if x.config.Persistence.Enabled && x.persistence != nil {
@@ -206,6 +210,8 @@ func (x *Xatu) stop(ctx context.Context) error {
 			return err
 		}
 	}
+
+	x.log.Info("Server stopped")
 
 	return nil
 }

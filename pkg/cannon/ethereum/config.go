@@ -18,6 +18,8 @@ type Config struct {
 	BlockCacheTTL human.Duration `yaml:"blockCacheTtl" default:"1h"`
 	// BeaconNodeHeaders is a map of headers to send to the beacon node.
 	BeaconNodeHeaders map[string]string `yaml:"beaconNodeHeaders"`
+	// BlockPreloadWorkers is the number of workers to use for preloading blocks.
+	BlockPreloadWorkers uint64 `yaml:"blockPreloadWorkers" default:"5"`
 }
 
 func (c *Config) Validate() error {

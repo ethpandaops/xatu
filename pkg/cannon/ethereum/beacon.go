@@ -20,17 +20,21 @@ type BeaconNode struct {
 	config *Config
 	log    logrus.FieldLogger
 
-	beacon beacon.Node
+	beacon  beacon.Node
+	metrics *Metrics
 
 	services []services.Service
 
 	onReadyCallbacks []func(ctx context.Context) error
 
-	sfGroup    *singleflight.Group
-	blockCache *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
+	sfGroup          *singleflight.Group
+	blockCache       *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
+	blockPreloadChan chan string
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
+	namespace := "xatu_cannon"
+
 	opts := *beacon.
 		DefaultOptions().
 		DisableEmptySlotDetection().
@@ -45,7 +49,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		Name:    name,
 		Addr:    config.BeaconNodeAddress,
 		Headers: config.BeaconNodeHeaders,
-	}, "xatu_cannon", opts)
+	}, namespace, opts)
 
 	metadata := services.NewMetadataService(log, node)
 
@@ -62,7 +66,9 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheTTL.Duration),
 			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
 		),
-		sfGroup: &singleflight.Group{},
+		sfGroup:          &singleflight.Group{},
+		blockPreloadChan: make(chan string, 1000),
+		metrics:          NewMetrics(namespace, name),
 	}, nil
 }
 
@@ -110,6 +116,17 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	}
 
 	go b.blockCache.Start()
+
+	for i := 0; i < int(b.config.BlockPreloadWorkers); i++ {
+		go func() {
+			for identifier := range b.blockPreloadChan {
+				b.log.WithField("identifier", identifier).Debug("Preloading block")
+
+				//nolint:errcheck // We don't care about errors here.
+				b.GetBeaconBlock(ctx, identifier, true)
+			}
+		}()
+	}
 
 	select {
 	case err := <-errs:
@@ -183,12 +200,20 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 }
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
-func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string) (*spec.VersionedSignedBeaconBlock, error) {
+func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
 		// Check the cache first.
 		if item := b.blockCache.Get(identifier); item != nil {
+			if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+				b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
+			}
+
 			return item.Value(), nil
+		}
+
+		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+			b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
 		}
 
 		// Not in the cache, so fetch it.
@@ -203,8 +228,20 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string) (*sp
 		return block, nil
 	})
 	if err != nil {
+		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+			b.metrics.IncBlocksFetchErrors(string(b.Metadata().Network.Name))
+		}
+
 		return nil, err
 	}
 
+	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+		b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
+	}
+
 	return x.(*spec.VersionedSignedBeaconBlock), nil
+}
+
+func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
+	b.blockPreloadChan <- identifier
 }

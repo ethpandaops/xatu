@@ -10,8 +10,12 @@ import (
 
 type Iterator interface {
 	UpdateLocation(ctx context.Context, location *xatu.CannonLocation) error
-	Next(ctx context.Context) (xatu.CannonLocation, error)
+	Next(ctx context.Context) (next, lookAhead *xatu.CannonLocation, err error)
 }
+
+// Ensure that derivers implements the EventDeriver interface
+var _ Iterator = &CheckpointIterator{}
+var _ Iterator = &SlotIterator{}
 
 var (
 	ErrLocationUpToDate = errors.New("location up to date")

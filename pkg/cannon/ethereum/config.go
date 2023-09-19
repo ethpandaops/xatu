@@ -20,6 +20,8 @@ type Config struct {
 	BeaconNodeHeaders map[string]string `yaml:"beaconNodeHeaders"`
 	// BlockPreloadWorkers is the number of workers to use for preloading blocks.
 	BlockPreloadWorkers uint64 `yaml:"blockPreloadWorkers" default:"5"`
+	// BlockPreloadQueueSize is the size of the queue for preloading blocks.
+	BlockPreloadQueueSize uint64 `yaml:"blockPreloadQueueSize" default:"5000"`
 }
 
 func (c *Config) Validate() error {

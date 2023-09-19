@@ -67,7 +67,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
 		),
 		sfGroup:          &singleflight.Group{},
-		blockPreloadChan: make(chan string, 1000),
+		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
 		metrics:          NewMetrics(namespace, name),
 	}, nil
 }
@@ -120,7 +120,9 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	for i := 0; i < int(b.config.BlockPreloadWorkers); i++ {
 		go func() {
 			for identifier := range b.blockPreloadChan {
-				b.log.WithField("identifier", identifier).Debug("Preloading block")
+				b.metrics.SetPreloadBlockQueueSize(string(b.Metadata().Network.Name), len(b.blockPreloadChan))
+
+				b.log.WithField("identifier", identifier).Trace("Preloading block")
 
 				//nolint:errcheck // We don't care about errors here.
 				b.GetBeaconBlock(ctx, identifier, true)

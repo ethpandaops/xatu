@@ -43,13 +43,13 @@ func (s *SlotIterator) UpdateLocation(ctx context.Context, location *xatu.Cannon
 	return s.coordinator.UpsertCannonLocationRequest(ctx, location)
 }
 
-func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
+func (s *SlotIterator) Next(ctx context.Context) (next, lookAhead *xatu.CannonLocation, err error) {
 	var location *xatu.CannonLocation
 
 	// Calculate the current wallclock slot
 	realHeadSlot, _, err := s.wallclock.Now()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current wallclock slot")
+		return nil, nil, errors.Wrap(err, "failed to get current wallclock slot")
 	}
 
 	defer func() {
@@ -71,21 +71,21 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 		// Calculate the current wallclock slot
 		realHeadSlot, _, err := s.wallclock.Now()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current wallclock slot")
+			return nil, nil, errors.Wrap(err, "failed to get current wallclock slot")
 		}
 
 		if realHeadSlot.Number() == 0 {
-			return nil, errors.New("network is pre genesis")
+			return nil, nil, errors.New("network is pre genesis")
 		}
 
 		if realHeadSlot.Number() < s.headSlotDelay {
-			return nil, errors.New("network is too young")
+			return nil, nil, errors.New("network is too young")
 		}
 
 		// Check where we are at from the coordinator
 		location, err = s.coordinator.GetCannonLocation(ctx, s.cannonType, s.networkID)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get cannon location")
+			return nil, nil, errors.Wrap(err, "failed to get cannon location")
 		}
 
 		// If location is empty we haven't started yet, start at the network default for the type. If the network default
@@ -93,15 +93,15 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 		if location == nil {
 			location, err = s.createLocationFromSlotNumber(GetDefaultSlotLocationForNetworkAndType(s.networkName, s.cannonType))
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create location from slot number 0")
+				return nil, nil, errors.Wrap(err, "failed to create location from slot number 0")
 			}
 
-			return location, nil
+			return location, nil, nil
 		}
 
 		locationSlot, err := s.getSlotNumberFromLocation(location)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get slot number from location")
+			return nil, nil, errors.Wrap(err, "failed to get slot number from location")
 		}
 
 		// Calculate the maximum slot we should be at
@@ -121,10 +121,10 @@ func (s *SlotIterator) Next(ctx context.Context) (*xatu.CannonLocation, error) {
 
 		location, err = s.createLocationFromSlotNumber(ourNextSlot)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Errorf("failed to create location from slot number: %d", ourNextSlot).Error())
+			return nil, nil, errors.Wrap(err, fmt.Errorf("failed to create location from slot number: %d", ourNextSlot).Error())
 		}
 
-		return location, nil
+		return location, nil, nil
 	}
 }
 

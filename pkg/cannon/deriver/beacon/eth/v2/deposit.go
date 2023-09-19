@@ -101,10 +101,13 @@ func (b *DepositDeriver) run(ctx context.Context) {
 				}
 
 				// Get the next slot
-				location, err := b.iterator.Next(ctx)
+				location, lookAhead, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
+
+				// Look ahead
+				b.lookAheadAtLocation(ctx, lookAhead)
 
 				for _, fn := range b.onLocationCallbacks {
 					if errr := fn(ctx, location.GetEthV2BeaconBlockDeposit().GetEpoch()); errr != nil {
@@ -143,6 +146,30 @@ func (b *DepositDeriver) run(ctx context.Context) {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
+	}
+}
+
+// lookAheadAtLocation takes a location and looks ahead to do any pre-processing that might be required.
+func (b *DepositDeriver) lookAheadAtLocation(ctx context.Context, location *xatu.CannonLocation) {
+	if location == nil {
+		return
+	}
+
+	// Get the next look ahead epoch
+	epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
+
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+
+		return
+	}
+
+	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+		slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+
+		// Add the block to the preload queue so it's available when we need it
+		b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
 	}
 }
 

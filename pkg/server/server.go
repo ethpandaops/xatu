@@ -167,6 +167,8 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
+	x.log.WithField("pre_stop_sleep_seconds", x.config.PreStopSleepSeconds).Info("Stopping server")
+
 	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
 
 	if x.grpcServer != nil {
@@ -208,6 +210,8 @@ func (x *Xatu) stop(ctx context.Context) error {
 			return err
 		}
 	}
+
+	x.log.Info("Server stopped")
 
 	return nil
 }

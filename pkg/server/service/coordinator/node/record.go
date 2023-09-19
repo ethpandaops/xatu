@@ -55,7 +55,7 @@ func (r *Record) Stop(ctx context.Context) error {
 		}
 	}
 
-	r.log.Info("component stopped")
+	r.log.Info("Component stopped")
 
 	return nil
 }

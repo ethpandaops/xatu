@@ -63,7 +63,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *per
 }
 
 func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	c.log.Info("starting module")
+	c.log.Info("Starting module")
 
 	xatu.RegisterCoordinatorServer(grpcServer, c)
 
@@ -81,7 +81,7 @@ func (c *Client) Stop(ctx context.Context) error {
 		}
 	}
 
-	c.log.Info("module stopped")
+	c.log.Info("Module stopped")
 
 	return nil
 }

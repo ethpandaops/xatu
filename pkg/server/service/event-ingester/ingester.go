@@ -47,7 +47,7 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 }
 
 func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	e.log.Info("starting module")
+	e.log.Info("Starting module")
 
 	xatu.RegisterEventIngesterServer(grpcServer, e)
 
@@ -55,7 +55,7 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 }
 
 func (e *Ingester) Stop(ctx context.Context) error {
-	e.log.Info("stopping module")
+	e.log.Info("Stopping module")
 
 	for _, sink := range e.sinks {
 		if err := sink.Stop(ctx); err != nil {

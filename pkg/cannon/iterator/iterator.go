@@ -10,7 +10,7 @@ import (
 
 type Iterator interface {
 	UpdateLocation(ctx context.Context, location *xatu.CannonLocation) error
-	Next(ctx context.Context) (next, lookAhead *xatu.CannonLocation, err error)
+	Next(ctx context.Context) (next *xatu.CannonLocation, lookAhead []*xatu.CannonLocation, err error)
 }
 
 // Ensure that derivers implements the EventDeriver interface

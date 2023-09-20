@@ -43,7 +43,7 @@ func (s *SlotIterator) UpdateLocation(ctx context.Context, location *xatu.Cannon
 	return s.coordinator.UpsertCannonLocationRequest(ctx, location)
 }
 
-func (s *SlotIterator) Next(ctx context.Context) (next, lookAhead *xatu.CannonLocation, err error) {
+func (s *SlotIterator) Next(ctx context.Context) (next *xatu.CannonLocation, lookAhead []*xatu.CannonLocation, err error) {
 	var location *xatu.CannonLocation
 
 	// Calculate the current wallclock slot

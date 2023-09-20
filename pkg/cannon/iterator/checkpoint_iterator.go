@@ -45,7 +45,7 @@ func (c *CheckpointIterator) UpdateLocation(ctx context.Context, location *xatu.
 	return c.coordinator.UpsertCannonLocationRequest(ctx, location)
 }
 
-func (c *CheckpointIterator) Next(ctx context.Context) (next, lookAhead *xatu.CannonLocation, err error) {
+func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocation, lookAhead []*xatu.CannonLocation, err error) {
 	for {
 		// Grab the current checkpoint from the beacon node
 		checkpoint, err := c.fetchLatestEpoch(ctx)
@@ -71,7 +71,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next, lookAhead *xatu.Ca
 				return nil, nil, errors.Wrap(err, "failed to create location from slot number 0")
 			}
 
-			return location, c.calculateLookAhead(ctx, location), nil
+			return location, c.getLookAheads(ctx, location), nil
 		}
 
 		// If the location is the same as the current checkpoint, we should sleep until the next epoch
@@ -111,11 +111,11 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next, lookAhead *xatu.Ca
 
 		c.metrics.SetCurrentEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(nextEpoch))
 
-		return current, c.calculateLookAhead(ctx, current), nil
+		return current, c.getLookAheads(ctx, current), nil
 	}
 }
 
-func (c *CheckpointIterator) calculateLookAhead(ctx context.Context, location *xatu.CannonLocation) *xatu.CannonLocation {
+func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.CannonLocation) []*xatu.CannonLocation {
 	// Calculate if we should look ahead
 	epoch, err := c.getEpochFromLocation(location)
 	if err != nil {
@@ -127,19 +127,24 @@ func (c *CheckpointIterator) calculateLookAhead(ctx context.Context, location *x
 		return nil
 	}
 
-	if epoch == latestCheckpoint.Epoch {
-		return nil
+	lookAheads := make([]*xatu.CannonLocation, 0)
+
+	for _, i := range []int{1, 2, 3} {
+		lookAheadEpoch := epoch + phase0.Epoch(i)
+
+		if lookAheadEpoch > latestCheckpoint.Epoch {
+			continue
+		}
+
+		loc, err := c.createLocationFromEpochNumber(lookAheadEpoch)
+		if err != nil {
+			return nil
+		}
+
+		lookAheads = append(lookAheads, loc)
 	}
 
-	// We aren't at the head, so we can look ahead
-	lookAheadEpoch := epoch + 1
-
-	loc, err := c.createLocationFromEpochNumber(lookAheadEpoch)
-	if err != nil {
-		return nil
-	}
-
-	return loc
+	return lookAheads
 }
 
 func (c *CheckpointIterator) fetchLatestEpoch(ctx context.Context) (*phase0.Checkpoint, error) {

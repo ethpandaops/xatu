@@ -103,13 +103,13 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 				}
 
 				// Get the next slot
-				location, lookAhead, err := b.iterator.Next(ctx)
+				location, lookAheads, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
 
 				// Look ahead
-				b.lookAheadAtLocation(ctx, lookAhead)
+				b.lookAheadAtLocation(ctx, lookAheads)
 
 				for _, fn := range b.onLocationCallbacks {
 					if errr := fn(ctx, location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch()); errr != nil {
@@ -151,27 +151,29 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 	}
 }
 
-// lookAheadAtLocation takes a location and looks ahead to do any pre-processing that might be required.
-func (b *BLSToExecutionChangeDeriver) lookAheadAtLocation(ctx context.Context, location *xatu.CannonLocation) {
-	if location == nil {
+// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
+func (b *BLSToExecutionChangeDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+	if locations == nil {
 		return
 	}
 
-	// Get the next look ahead epoch
-	epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
+	for _, location := range locations {
+		// Get the next look ahead epoch
+		epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
 
-	sp, err := b.beacon.Node().Spec()
-	if err != nil {
-		b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+		sp, err := b.beacon.Node().Spec()
+		if err != nil {
+			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
 
-		return
-	}
+			return
+		}
 
-	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
-		slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 
-		// Add the block to the preload queue so it's available when we need it
-		b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
+			// Add the block to the preload queue so it's available when we need it
+			b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
+		}
 	}
 }
 

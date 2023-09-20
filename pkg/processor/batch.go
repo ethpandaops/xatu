@@ -187,13 +187,6 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 	bvp.batchMutex.Lock()
 	defer bvp.batchMutex.Unlock()
 
-	if bvp.o.ExportTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)
-
-		defer cancel()
-	}
-
 	if l := len(items); l > 0 {
 		countItemsToExport := len(items)
 
@@ -208,9 +201,9 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 
 			bvp.log.WithFields(logrus.Fields{
 				"count": len(itemsBatch),
-			}).Debug("immediately exporting items")
+			}).Debug("Immediately exporting items")
 
-			err := bvp.e.ExportItems(ctx, itemsBatch)
+			err := bvp.exportWithTimeout(ctx, itemsBatch)
 
 			bvp.metrics.IncItemsExportedBy(float64(len(itemsBatch)))
 
@@ -218,6 +211,23 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+// exportWithTimeout exports the items with a timeout.
+func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []*T) error {
+	if bvp.o.ExportTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)
+
+		defer cancel()
+	}
+
+	err := bvp.e.ExportItems(ctx, itemsBatch)
+	if err != nil {
+		return err
 	}
 
 	return nil

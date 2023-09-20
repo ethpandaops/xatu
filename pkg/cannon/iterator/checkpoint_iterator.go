@@ -50,17 +50,17 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		// Grab the current checkpoint from the beacon node
 		checkpoint, err := c.fetchLatestEpoch(ctx)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to fetch latest checkpoint")
+			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to fetch latest checkpoint")
 		}
 
 		if checkpoint == nil {
-			return nil, nil, errors.New("checkpoint is nil")
+			return nil, []*xatu.CannonLocation{}, errors.New("checkpoint is nil")
 		}
 
 		// Check where we are at from the coordinator
 		location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to get cannon location")
+			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to get cannon location")
 		}
 
 		// If location is empty we haven't started yet, start at the network default for the type. If the network default
@@ -68,7 +68,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		if location == nil {
 			location, err = c.createLocationFromEpochNumber(phase0.Epoch(GetDefaultSlotLocationForNetworkAndType(c.networkName, c.cannonType) / 32))
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to create location from slot number 0")
+				return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to create location from slot number 0")
 			}
 
 			return location, c.getLookAheads(ctx, location), nil
@@ -77,7 +77,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		// If the location is the same as the current checkpoint, we should sleep until the next epoch
 		locationEpoch, err := c.getEpochFromLocation(location)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to get epoch from location")
+			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to get epoch from location")
 		}
 
 		c.metrics.SetTrailingEpochs(c.cannonType.String(), c.networkName, c.checkpointName, float64(checkpoint.Epoch-locationEpoch))
@@ -106,7 +106,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 
 		current, err := c.createLocationFromEpochNumber(nextEpoch)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to create location from epoch number")
+			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to create location from epoch number")
 		}
 
 		c.metrics.SetCurrentEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(nextEpoch))
@@ -119,12 +119,12 @@ func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.C
 	// Calculate if we should look ahead
 	epoch, err := c.getEpochFromLocation(location)
 	if err != nil {
-		return nil
+		return []*xatu.CannonLocation{}
 	}
 
 	latestCheckpoint, err := c.fetchLatestEpoch(ctx)
 	if err != nil {
-		return nil
+		return []*xatu.CannonLocation{}
 	}
 
 	lookAheads := make([]*xatu.CannonLocation, 0)
@@ -138,7 +138,7 @@ func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.C
 
 		loc, err := c.createLocationFromEpochNumber(lookAheadEpoch)
 		if err != nil {
-			return nil
+			return []*xatu.CannonLocation{}
 		}
 
 		lookAheads = append(lookAheads, loc)

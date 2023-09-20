@@ -176,10 +176,6 @@ func (b *ExecutionTransactionDeriver) processEpoch(ctx context.Context, epoch ph
 
 // lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
 func (b *ExecutionTransactionDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
-	if locations == nil {
-		return
-	}
-
 	for _, location := range locations {
 		// Get the next look ahead epoch
 		epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())

@@ -81,6 +81,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		Hash:         event.Hash().String(),
 		Size:         strconv.FormatFloat(float64(event.Size()), 'f', 0, 64),
 		CallDataSize: fmt.Sprintf("%d", len(event.Data())),
+		Type:         wrapperspb.UInt32(uint32(event.Type())),
 	}
 
 	return extra, nil

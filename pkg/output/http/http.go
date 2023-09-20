@@ -68,6 +68,10 @@ func (h *HTTP) Start(ctx context.Context) error {
 	return nil
 }
 
+func (h *HTTP) Name() string {
+	return h.name
+}
+
 func (h *HTTP) Stop(ctx context.Context) error {
 	return h.proc.Shutdown(ctx)
 }

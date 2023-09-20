@@ -57,6 +57,10 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 	}, nil
 }
 
+func (h *StdOut) Name() string {
+	return h.name
+}
+
 func (h *StdOut) Type() string {
 	return SinkType
 }

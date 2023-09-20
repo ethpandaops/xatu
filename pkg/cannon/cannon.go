@@ -24,6 +24,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
+	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -249,11 +250,7 @@ func (c *Cannon) syncClockDrift(ctx context.Context) error {
 func (c *Cannon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
 	for _, sink := range c.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
-			c.log.
-				WithError(err).
-				WithField("sink", sink.Type()).
-				WithField("events", len(events)).
-				Error("Failed to send events to sink")
+			return perrors.Wrapf(err, "failed to handle new decorated events in sink %s", sink.Name())
 		}
 	}
 

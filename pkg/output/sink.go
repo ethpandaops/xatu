@@ -22,6 +22,7 @@ type Sink interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 	Type() string
+	Name() string
 	HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error
 	HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error
 }

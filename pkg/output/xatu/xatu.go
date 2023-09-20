@@ -64,6 +64,10 @@ func (h *Xatu) Type() string {
 	return SinkType
 }
 
+func (h *Xatu) Name() string {
+	return h.name
+}
+
 func (h *Xatu) Start(ctx context.Context) error {
 	return nil
 }

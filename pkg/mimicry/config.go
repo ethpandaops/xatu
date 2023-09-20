@@ -3,6 +3,7 @@ package mimicry
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -14,6 +15,7 @@ type Config struct {
 	LoggingLevel string  `yaml:"logging" default:"info"`
 	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
 	PProfAddr    *string `yaml:"pprofAddr"`
+	ProbeAddr    *string `yaml:"probeAddr"`
 
 	// The name of the mimicry
 	Name string `yaml:"name"`
@@ -29,6 +31,9 @@ type Config struct {
 
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
+
+	// CaptureDelay is the Delay before capturing transactions from a peer
+	CaptureDelay time.Duration `yaml:"captureDelay" default:"3m"`
 }
 
 func (c *Config) Validate() error {

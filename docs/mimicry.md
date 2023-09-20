@@ -52,9 +52,11 @@ Mimicry requires a single `yaml` config file. An example file can be found [here
 | logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
+| probeAddr | string | | The address for health probes. When ommited, the probe server will not be started |
 | name | string |  | Unique name of the mimicry |
 | labels | object |  | A key value map of labels to append to every mimicry event |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
+| captureDelay | string | `3m` | Delay before starting to capture transactions |
 | coordinator.type | string |  | Type of output (`xatu`, `static`) |
 | coordinator.config | object |  | Coordinator type configuration [`xatu`](#coordinator-xatu-configuration)/[`static`](#coordinator-static-configuration) |
 | outputs | array<object> |  | List of outputs for the mimicry to send data to |
@@ -196,6 +198,7 @@ outputs:
 logging: "debug"
 metricsAddr: ":9090"
 pprofAddr: ":6060"
+probeAddr: ":8080"
 
 name: example-instance
 
@@ -203,6 +206,8 @@ labels:
   ethpandaops: rocks
 
 ntpServer: time.google.com
+
+captureDelay: 3m
 
 coordinator:
   type: xatu

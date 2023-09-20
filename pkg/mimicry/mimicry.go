@@ -39,6 +39,8 @@ type Mimicry struct {
 	id uuid.UUID
 
 	metrics *Metrics
+
+	startupTime time.Time
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry, error) {
@@ -56,18 +58,19 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 	}
 
 	mimicry := &Mimicry{
-		Config:     config,
-		sinks:      sinks,
-		clockDrift: time.Duration(0),
-		log:        log,
-		id:         uuid.New(),
-		metrics:    NewMetrics("xatu_mimicry"),
+		Config:      config,
+		sinks:       sinks,
+		clockDrift:  time.Duration(0),
+		log:         log,
+		id:          uuid.New(),
+		metrics:     NewMetrics("xatu_mimicry"),
+		startupTime: time.Now(),
 	}
 
 	mimicry.coordinator, err = coordinator.NewCoordinator(config.Name, config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
 		CreateNewClientMeta: mimicry.createNewClientMeta,
 		DecoratedEvent:      mimicry.handleNewDecoratedEvent,
-	}, log)
+	}, config.CaptureDelay, log)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +85,12 @@ func (m *Mimicry) Start(ctx context.Context) error {
 
 	if m.Config.PProfAddr != nil {
 		if err := m.ServePProf(ctx); err != nil {
+			return err
+		}
+	}
+
+	if m.Config.ProbeAddr != nil {
+		if err := m.ServeProbe(ctx); err != nil {
 			return err
 		}
 	}
@@ -153,6 +162,38 @@ func (m *Mimicry) ServePProf(ctx context.Context) error {
 		m.log.Infof("Serving pprof at %s", *m.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
+			m.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (m *Mimicry) ServeProbe(ctx context.Context) error {
+	probeServer := &http.Server{
+		Addr:              *m.Config.ProbeAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if time.Since(m.startupTime) > m.Config.CaptureDelay {
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte("OK"))
+				if err != nil {
+					m.log.Error("Failed to write response: ", err)
+				}
+			} else {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, err := w.Write([]byte("Service is not ready yet"))
+				if err != nil {
+					m.log.Error("Failed to write response: ", err)
+				}
+			}
+		}),
+	}
+
+	go func() {
+		m.log.Infof("Serving probe at %s", *m.Config.ProbeAddr)
+
+		if err := probeServer.ListenAndServe(); err != nil {
 			m.log.Fatal(err)
 		}
 	}()

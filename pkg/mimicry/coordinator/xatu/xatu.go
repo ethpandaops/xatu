@@ -18,8 +18,9 @@ import (
 const Type = "xatu"
 
 type Xatu struct {
-	handlers *handler.Peer
-	log      logrus.FieldLogger
+	handlers     *handler.Peer
+	captureDelay time.Duration
+	log          logrus.FieldLogger
 
 	cache       *cache.SharedCache
 	coordinator *xatuCoordinator.Coordinator
@@ -30,7 +31,7 @@ type Xatu struct {
 	metrics *Metrics
 }
 
-func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, log logrus.FieldLogger) (*Xatu, error) {
+func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, log logrus.FieldLogger) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -47,13 +48,14 @@ func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, lo
 	handlers.ExecutionStatus = coordinator.HandleExecutionNodeRecordStatus
 
 	return &Xatu{
-		handlers:    handlers,
-		log:         log,
-		cache:       cache.NewSharedCache(),
-		coordinator: coordinator,
-		mu:          sync.Mutex{},
-		peers:       make(map[string]*xatuPeer.Peer),
-		metrics:     NewMetrics("xatu_mimicry_coordinator_xatu"),
+		handlers:     handlers,
+		captureDelay: captureDelay,
+		log:          log,
+		cache:        cache.NewSharedCache(),
+		coordinator:  coordinator,
+		mu:           sync.Mutex{},
+		peers:        make(map[string]*xatuPeer.Peer),
+		metrics:      NewMetrics("xatu_mimicry_coordinator_xatu"),
 	}, nil
 }
 
@@ -149,7 +151,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 
 		for _, record := range res.NodeRecords {
 			if _, ok := x.peers[record]; !ok {
-				x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay)
+				x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay)
 				if err := x.peers[record].Start(ctx); err != nil {
 					x.log.WithError(err).Error("failed to start peer")
 					delete(x.peers, record)

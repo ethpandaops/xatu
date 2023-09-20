@@ -3,6 +3,7 @@ package coordinator
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/static"
@@ -26,7 +27,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, log logrus.FieldLogger) (Coordinator, error) {
+func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, log logrus.FieldLogger) (Coordinator, error) {
 	if coordinatorType == TypeUnknown {
 		return nil, errors.New("coordinator type is required")
 	}
@@ -43,7 +44,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 			return nil, err
 		}
 
-		return static.New(name, conf, handlers, log)
+		return static.New(name, conf, handlers, captureDelay, log)
 	case TypeXatu:
 		conf := &xatuCoordinator.Config{}
 
@@ -55,7 +56,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 			return nil, err
 		}
 
-		return xatu.New(name, conf, handlers, log)
+		return xatu.New(name, conf, handlers, captureDelay, log)
 	default:
 		return nil, fmt.Errorf("coordinator type %s is unknown", coordinatorType)
 	}

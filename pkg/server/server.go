@@ -222,12 +222,12 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	mb50 := 1024 * 1024 * 100
+	mb100 := 1024 * 1024 * 100
 
 	opts := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
 		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
-		grpc.MaxRecvMsgSize(mb50),
+		grpc.MaxRecvMsgSize(mb100),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     5 * time.Minute,
 			MaxConnectionAge:      10 * time.Minute,

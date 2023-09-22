@@ -470,6 +470,9 @@ message ClientMeta {
 
     // CallDataSize is the call data size in bytes.
     string call_data_size = 9 [ json_name = "call_data_size" ];
+    
+    // Type is the transaction type.
+    google.protobuf.UInt32Value type = 10;
   }
 
   message AdditionalEthV2BeaconBlockData {

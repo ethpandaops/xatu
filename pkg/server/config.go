@@ -10,6 +10,13 @@ import (
 type Config struct {
 	// The address to listen on.
 	Addr string `yaml:"addr" default:":8080"`
+	// PreStopSleepSeconds is the number of seconds to sleep before stopping.
+	// Useful for giving kubernetes time to drain connections.
+	// This sleep will happen after a SIGTERM is received, and will
+	// delay the shutdown of the server and all of it's components.
+	// Note: Do not set this to a value greater than the kubernetes
+	// terminationGracePeriodSeconds.
+	PreStopSleepSeconds int `yaml:"preStopSleepSeconds" default:"0"`
 	// MetricsAddr is the address to listen on for metrics.
 	MetricsAddr string `yaml:"metricsAddr" default:":9090"`
 	// PProfAddr is the address to listen on for pprof.

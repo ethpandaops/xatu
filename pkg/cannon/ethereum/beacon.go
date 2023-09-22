@@ -202,11 +202,19 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 }
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
+// This function has been updated to use a semaphore to limit the number of concurrent goroutines.
 func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
 	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
 
+	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
+	sem := make(chan struct{}, b.config.BlockPreloadWorkers)
+
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
+		// Acquire a semaphore before proceeding.
+		sem <- struct{}{}
+		defer func() { <-sem }()
+
 		// Check the cache first.
 		if item := b.blockCache.Get(identifier); item != nil {
 			if len(ignoreMetrics) != 0 && ignoreMetrics[0] {

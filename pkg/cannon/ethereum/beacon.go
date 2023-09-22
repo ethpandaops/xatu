@@ -209,24 +209,24 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
 	sem := make(chan struct{}, b.config.BlockPreloadWorkers)
 
+	// Check the cache first.
+	if item := b.blockCache.Get(identifier); item != nil {
+		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+			b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
+		}
+
+		return item.Value(), nil
+	}
+
+	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+		b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
+	}
+
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
 		// Acquire a semaphore before proceeding.
 		sem <- struct{}{}
 		defer func() { <-sem }()
-
-		// Check the cache first.
-		if item := b.blockCache.Get(identifier); item != nil {
-			if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-				b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
-			}
-
-			return item.Value(), nil
-		}
-
-		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-			b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
-		}
 
 		// Not in the cache, so fetch it.
 		block, err := b.beacon.FetchBlock(ctx, identifier)

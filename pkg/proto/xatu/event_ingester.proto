@@ -522,6 +522,9 @@ message ClientMeta {
 
     // TotalBytesCompressed contains the total bytes size of block with snappy compression
     google.protobuf.UInt64Value total_bytes_compressed = 9 [ json_name = "total_bytes_compressed" ];
+
+    // FinalizedWhenRequested is if the block was finalized when requested
+    bool finalized_when_requested = 10 [ json_name = "finalized_when_requested" ];
   }
 
   message AdditionalEthV2BeaconBlockAttesterSlashingData {

@@ -20,14 +20,17 @@ type BeaconBlockV2 struct {
 	log   logrus.FieldLogger
 	event *xatu.DecoratedEvent
 
-	cache store.Cache
+	// cache to store non-finalized block hashes to only forward them on once.
+	// Typically non finalized blocks are ingested multiple times from the sentry.
+	// Finalized blocks are only ingested once from the cannon.
+	nonFinalizedCache store.Cache
 }
 
 func NewBeaconBlockV2(log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlockV2 {
 	return &BeaconBlockV2{
-		log:   log.WithField("event", BeaconBlockV2Type),
-		event: event,
-		cache: cache,
+		log:               log.WithField("event", BeaconBlockV2Type),
+		event:             event,
+		nonFinalizedCache: cache,
 	}
 }
 
@@ -89,15 +92,20 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 		return true
 	}
 
-	key := "beacon_block" + ":" + hash
+	// check if block wasn't finalized when requested and filter if already in cache
+	if !additionalData.EthV2BeaconBlockV2.GetFinalizedWhenRequested() {
+		key := "beacon_block" + ":" + hash
 
-	_, retrieved, err := b.cache.GetOrSet(ctx, key, version, time.Minute*30)
-	if err != nil {
-		b.log.WithError(err).Error("failed to retrieve from cache")
+		_, retrieved, err := b.nonFinalizedCache.GetOrSet(ctx, key, version, time.Minute*30)
+		if err != nil {
+			b.log.WithError(err).Error("failed to retrieve from cache")
 
-		return true
+			return true
+		}
+
+		// If the block is already in the cache, filter it out
+		return retrieved
 	}
 
-	// If the block is already in the cache, filter it out
-	return retrieved
+	return false
 }

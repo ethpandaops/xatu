@@ -203,20 +203,29 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
 func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
+	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
+
+	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
+	sem := make(chan struct{}, b.config.BlockPreloadWorkers)
+
+	// Check the cache first.
+	if item := b.blockCache.Get(identifier); item != nil {
+		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+			b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
+		}
+
+		return item.Value(), nil
+	}
+
+	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
+		b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
+	}
+
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
-		// Check the cache first.
-		if item := b.blockCache.Get(identifier); item != nil {
-			if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-				b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
-			}
-
-			return item.Value(), nil
-		}
-
-		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-			b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
-		}
+		// Acquire a semaphore before proceeding.
+		sem <- struct{}{}
+		defer func() { <-sem }()
 
 		// Not in the cache, so fetch it.
 		block, err := b.beacon.FetchBlock(ctx, identifier)
@@ -235,10 +244,6 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 		}
 
 		return nil, err
-	}
-
-	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-		b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
 	}
 
 	return x.(*spec.VersionedSignedBeaconBlock), nil

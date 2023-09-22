@@ -203,6 +203,8 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
 func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
+	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
+
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
 		// Check the cache first.
@@ -235,10 +237,6 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 		}
 
 		return nil, err
-	}
-
-	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-		b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
 	}
 
 	return x.(*spec.VersionedSignedBeaconBlock), nil

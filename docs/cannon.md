@@ -1,8 +1,8 @@
-# Sentry
+# Cannon
 
-Client that is run along side an [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). *You must run your own consensus client* and this sentry will connect to it via the consensus client's http server.
+Client that is run along side an [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects canonical data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). *You must run your own consensus client* and this cannon will connect to it via the consensus client's http server.
 
-This sentry can output events to various sinks and it is **not** a hard requirement to run the [Xatu server](./server.md).
+This cannon can output events to various sinks and it is **not** a hard requirement to run the [Xatu server](./server.md).
 
 ## Table of contents
 
@@ -19,43 +19,66 @@ This sentry can output events to various sinks and it is **not** a hard requirem
 
 ## Usage
 
-Sentry requires a [config file](#configuration).
+Cannon requires a [config file](#configuration).
 
 ```bash
 Usage:
-  xatu sentry [flags]
+  xatu cannon [flags]
 
 Flags:
-      --config string   config file (default is sentry.yaml) (default "sentry.yaml")
-  -h, --help            help for sentry
+      --config string   config file (default is cannon.yaml) (default "cannon.yaml")
+  -h, --help            help for cannon
 ```
 
 ## Requirements
 
 - [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) with exposed [http server](https://ethereum.github.io/beacon-APIs/).
-- *Optional* [server](./server.md) running with the [Coordinator](./server.md#coordinator) service enabled.
+- [Server](./server.md) running with the [Coordinator](./server.md#coordinator) service enabled.
 
 ## Configuration
 
-Sentry requires a single `yaml` config file. An example file can be found [here](../example_sentry.yaml)
+Cannon requires a single `yaml` config file. An example file can be found [here](../example_cannon.yaml)
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on |
 | pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
-| name | string |  | Unique name of the sentry |
-| labels | object |  | A key value map of labels to append to every sentry event |
+| name | string |  | Unique name of the cannon |
+| labels | object |  | A key value map of labels to append to every cannon event |
 | ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
+| ethereum.beaconNodeAddress | object |  | A key value map of headers |
+| ethereum.overrideNetworkName | string |  | Override the network name |
+| ethereum.blockCacheSize | int | `1000` | The maximum number of blocks to cache |
+| ethereum.blockCacheTtl | string | `1h` | The maximum duration to cache blocks |
+| ethereum.blockPreloadWorkers | int | `5` | The number of workers to use for preloading blocks |
+| ethereum.blockPreloadQueueSize | int | `5000` | The maximum number of blocks to queue for preloading |
+| coordinator.address | string |  | The address of the [Xatu server](./server.md) |
+| coordinator.tls | bool |  | Server requires TLS |
+| coordinator.headers | object |  | A key value map of headers to append to requests |
+| derivers.attesterSlashing.enabled | bool | `true` | Enable the attester slashing deriver |
+| derivers.attesterSlashing.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.blsToExecutionChange.enabled | bool | `true` | Enable the BLS to execution change deriver |
+| derivers.blsToExecutionChange.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.deposit.enabled | bool | `true` | Enable the deposit deriver |
+| derivers.deposit.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.withdrawal.enabled | bool | `true` | Enable the withdrawal deriver |
+| derivers.withdrawal.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.executionTransaction.enabled | bool | `true` | Enable the execution transaction deriver |
+| derivers.executionTransaction.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.proposerSlashing.enabled | bool | `true` | Enable the proposer slashing deriver |
+| derivers.proposerSlashing.headSlotLag | int | `5` | The number of slots to lag behind the head |
+| derivers.voluntaryExit.enabled | bool | `true` | Enable the voluntary exit deriver |
+| derivers.voluntaryExit.headSlotLag | int | `5` | The number of slots to lag behind the head |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| outputs | array<object> |  | List of outputs for the sentry to send data to |
+| outputs | array<object> |  | List of outputs for the cannon to send data to |
 | outputs[].name | string |  | Name of the output |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `stdout`) |
 | outputs[].config | object |  | Output type configuration [`xatu`](#output-xatu-configuration)/[`http`](#output-http-configuration) |
 
 ### Output `xatu` configuration
 
-Output configuration to send sentry events to a [Xatu server](./server.md).
+Output configuration to send cannon events to a [Xatu server](./server.md).
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
@@ -69,7 +92,7 @@ Output configuration to send sentry events to a [Xatu server](./server.md).
 
 ### Output `http` configuration
 
-Output configuration to send sentry events to a http server.
+Output configuration to send cannon events to a http server.
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
@@ -83,7 +106,10 @@ Output configuration to send sentry events to a http server.
 ### Simple example
 
 ```yaml
-name: example-instance-001
+name: xatu-cannon
+
+coordinator:
+  address: http://localhost:8080
 
 ethereum:
   beaconNodeAddress: http://localhost:5052
@@ -96,7 +122,10 @@ outputs:
 ### Xatu server output example
 
 ```yaml
-name: example-instance-002
+name: xatu-cannon
+
+coordinator:
+  address: http://localhost:8080
 
 ethereum:
   beaconNodeAddress: http://localhost:5052
@@ -111,7 +140,10 @@ outputs:
 ### http server output example
 
 ```yaml
-name: example-instance-003
+name: xatu-cannon
+
+coordinator:
+  address: http://localhost:8080
 
 ethereum:
   beaconNodeAddress: http://localhost:5052
@@ -132,12 +164,15 @@ logging: "debug"
 metricsAddr: ":9090"
 pprofAddr: ":6060"
 
-name: example-instance
+name: xatu-cannon
 
 labels:
   ethpandaops: rocks
 
 ntpServer: time.google.com
+
+coordinator:
+  address: http://localhost:8080
 
 ethereum:
   beaconNodeAddress: http://localhost:5052
@@ -161,10 +196,10 @@ outputs:
 
 ```bash
 # docker
-docker run -d --name xatu-sentry -v $HOST_DIR_CHANGE_ME/config.yaml:/opt/xatu/config.yaml -p 9090:9090 -it ethpandaops/xatu:latest sentry --config /opt/xatu/config.yaml
+docker run -d --name xatu-cannon -v $HOST_DIR_CHANGE_ME/config.yaml:/opt/xatu/config.yaml -p 9090:9090 -it ethpandaops/xatu:latest cannon --config /opt/xatu/config.yaml
 # build
 go build -o dist/xatu main.go
-./dist/xatu sentry --config sentry.yaml
+./dist/xatu cannon --config cannon.yaml
 # dev
-go run main.go sentry --config sentry.yaml
+go run main.go cannon --config cannon.yaml
 ```

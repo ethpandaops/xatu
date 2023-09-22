@@ -202,7 +202,6 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 }
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
-// This function has been updated to use a semaphore to limit the number of concurrent goroutines.
 func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
 	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
 

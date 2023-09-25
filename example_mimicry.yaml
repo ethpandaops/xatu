@@ -1,6 +1,7 @@
 logging: "debug" # panic,fatal,warn,info,debug,trace
 metricsAddr: ":9090"
 # pprofAddr: ":6060" # optional. if supplied it enables pprof server
+# probeAddr: ":8080" # optional. if supplied it enables health probe server
 
 name: example-instance
 
@@ -13,6 +14,11 @@ labels:
 #   time.google.com - GCP
 #   pool.ntp.org - https://www.pool.ntp.org/zone/@
 ntpServer: time.google.com
+
+# Delay before capturing transactions from a peer.
+# This is the avoid the initial deluge of transactions
+# when a peer is first connected to.
+captureDelay: 3m
 
 coordinator:
   type: static

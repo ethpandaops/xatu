@@ -13,7 +13,7 @@ type EventDeriver interface {
 	Name() string
 	CannonType() xatu.CannonType
 	// Callbacks
-	OnEventDerived(ctx context.Context, fn func(ctx context.Context, event *xatu.DecoratedEvent) error)
+	OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error)
 	OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, loc uint64) error)
 }
 

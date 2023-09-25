@@ -15,10 +15,11 @@ import (
 )
 
 type Peer struct {
-	log        logrus.FieldLogger
-	handlers   *handler.Peer
-	cache      *cache.SharedCache
-	retryDelay time.Duration
+	log          logrus.FieldLogger
+	handlers     *handler.Peer
+	cache        *cache.SharedCache
+	retryDelay   time.Duration
+	captureDelay time.Duration
 
 	stopped bool
 	mu      sync.Mutex
@@ -26,13 +27,14 @@ type Peer struct {
 	Record *xatu.CoordinatedNodeRecord
 }
 
-func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay time.Duration) *Peer {
+func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay, captureDelay time.Duration) *Peer {
 	return &Peer{
-		log:        log,
-		handlers:   handlers,
-		cache:      sharedCache,
-		retryDelay: retryDelay,
-		stopped:    false,
+		log:          log,
+		handlers:     handlers,
+		cache:        sharedCache,
+		retryDelay:   retryDelay,
+		captureDelay: captureDelay,
+		stopped:      false,
 		Record: &xatu.CoordinatedNodeRecord{
 			NodeRecord:         record,
 			Connected:          false,
@@ -59,7 +61,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 				p.mu.Unlock()
 
-				peer, err := execution.New(ctx, p.log, p.Record.NodeRecord, p.handlers, p.cache)
+				peer, err := execution.New(ctx, p.log, p.Record.NodeRecord, p.handlers, p.captureDelay, p.cache)
 				if err != nil {
 					return err
 				}

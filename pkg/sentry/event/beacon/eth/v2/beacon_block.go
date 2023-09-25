@@ -532,6 +532,8 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.Event
 
 	extra.Version = e.event.Version.String()
 	extra.BlockRoot = e.blockRoot
+	// Always set to false for sentry events
+	extra.FinalizedWhenRequested = false
 
 	var txCount int
 

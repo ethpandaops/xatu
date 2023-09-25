@@ -5,11 +5,14 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -44,7 +47,7 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 }
 
 func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	e.log.Info("starting module")
+	e.log.Info("Starting module")
 
 	xatu.RegisterEventIngesterServer(grpcServer, e)
 
@@ -52,11 +55,11 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 }
 
 func (e *Ingester) Stop(ctx context.Context) error {
-	e.log.Info("stopping module")
+	e.log.Info("Stopping module")
 
 	for _, sink := range e.sinks {
 		if err := sink.Stop(ctx); err != nil {
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -71,14 +74,12 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 
 	filteredEvents, err := e.handler.Events(ctx, clientID, req.Events)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	for _, sink := range e.sinks {
-		for _, event := range filteredEvents {
-			if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-				return nil, err
-			}
+		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -89,7 +90,13 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
-		sink, err := output.NewSink(out.Name, out.SinkType, out.Config, e.log, out.FilterConfig)
+		sink, err := output.NewSink(out.Name,
+			out.SinkType,
+			out.Config,
+			e.log,
+			out.FilterConfig,
+			processor.ShippingMethodSync,
+		)
 		if err != nil {
 			return nil, err
 		}

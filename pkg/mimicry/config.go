@@ -3,9 +3,11 @@ package mimicry
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,6 +15,7 @@ type Config struct {
 	LoggingLevel string  `yaml:"logging" default:"info"`
 	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
 	PProfAddr    *string `yaml:"pprofAddr"`
+	ProbeAddr    *string `yaml:"probeAddr"`
 
 	// The name of the mimicry
 	Name string `yaml:"name"`
@@ -28,6 +31,9 @@ type Config struct {
 
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
+
+	// CaptureDelay is the Delay before capturing transactions from a peer
+	CaptureDelay time.Duration `yaml:"captureDelay" default:"3m"`
 }
 
 func (c *Config) Validate() error {
@@ -52,7 +58,14 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
-		sink, err := output.NewSink(out.Name, out.SinkType, out.Config, log, out.FilterConfig)
+		sink, err := output.NewSink(
+			out.Name,
+			out.SinkType,
+			out.Config,
+			log,
+			out.FilterConfig,
+			processor.ShippingMethodAsync,
+		)
 		if err != nil {
 			return nil, err
 		}

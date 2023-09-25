@@ -1,0 +1,83 @@
+logging: "debug" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9090"
+# pprofAddr: ":6060" # optional. if supplied it enables pprof server
+
+name: example-instance
+
+labels:
+  ethpandaops: rocks
+
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+coordinator:
+  address: localhost:8080
+  # tls: false
+  # headers:
+  #   authorization: Someb64Value
+
+ethereum:
+  beaconNodeAddress: http://localhost:5052
+  # beaconNodeHeaders:
+  #   authorization: Someb64Value
+  # overrideNetworkName: mainnet
+  # blockCacheSize: 1000
+  # blockCacheTtl: 1h
+  # blockPreloadWorkers: 5
+  # blockPreloadQueueSize: 5000
+
+# derivers:
+#   attesterSlashing:
+#     enabled: true
+#     headSlotLag: 5
+#   blsToExecutionChange:
+#     enabled: true
+#     headSlotLag: 5
+#   deposit:
+#     enabled: true
+#     headSlotLag: 5
+#   withdrawal:
+#     enabled: true
+#     headSlotLag: 5
+#   executionTransaction:
+#     enabled: true
+#     headSlotLag: 5
+#   proposerSlashing:
+#     enabled: true
+#     headSlotLag: 5
+#   voluntaryExit:
+#     enabled: true
+#     headSlotLag: 5
+
+outputs:
+- name: http-sink
+  type: http
+  # filter:
+  #   eventNames:
+  #   - BEACON_API_ETH_V1_EVENTS_BLOCK_DEPOSIT
+  config:
+    address: http://localhost:8080
+    headers:
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512
+- name: xatu-server
+  type: xatu
+  # filter:
+  #   eventNames:
+  #   - BEACON_API_ETH_V1_EVENTS_BLOCK_DEPOSIT
+  config:
+    address: localhost:8080
+    tls: false
+    headers:
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512

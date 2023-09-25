@@ -24,6 +24,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
+	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -246,18 +247,16 @@ func (c *Cannon) syncClockDrift(ctx context.Context) error {
 	return err
 }
 
-func (c *Cannon) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+func (c *Cannon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
 	for _, sink := range c.sinks {
-		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			c.log.
-				WithError(err).
-				WithField("sink", sink.Type()).
-				WithField("event_type", event.GetEvent().GetName()).
-				Error("Failed to send event to sink")
+		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
+			return perrors.Wrapf(err, "failed to handle new decorated events in sink %s", sink.Name())
 		}
 	}
 
-	c.metrics.AddDecoratedEvent(1, event, string(c.beacon.Metadata().Network.Name))
+	for _, event := range events {
+		c.metrics.AddDecoratedEvent(1, event, string(c.beacon.Metadata().Network.Name))
+	}
 
 	return nil
 }
@@ -407,8 +406,8 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		for _, deriver := range c.eventDerivers {
 			d := deriver
 
-			d.OnEventDerived(ctx, func(ctx context.Context, event *xatu.DecoratedEvent) error {
-				return c.handleNewDecoratedEvent(ctx, event)
+			d.OnEventsDerived(ctx, func(ctx context.Context, events []*xatu.DecoratedEvent) error {
+				return c.handleNewDecoratedEvents(ctx, events)
 			})
 
 			d.OnLocationUpdated(ctx, func(ctx context.Context, location uint64) error {

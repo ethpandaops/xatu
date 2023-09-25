@@ -9,18 +9,18 @@ Xatu can run in multiple modes. Each mode can be run independently. The followin
 ```
 ┌───────────┐
 │ CONSENSUS │
-│   CLIENT  │
-└─────▲─────┘
-      │
-      │
-  ┌───▼────┐ ┌──────────┐  ┌───────────┐
-  │  XATU  │ │   XATU   │  │   XATU    │
-  │ SENTRY │ │ MIMICRY  │  │ DISCOVERY │
-  └───┬────┘ └─────┬────┘  └─────┬─────┘
-      │            │             │
-      │            │             │
-      │       ┌────▼─────┐       │
-      └───────►          ◄───────┘
+│   CLIENT  ◄─────┐
+└─────▲─────┘     │
+      │           │
+      │           │
+  ┌───▼────┐ ┌────▼─────┐  ┌───────────┐ ┌───────────┐
+  │  XATU  │ │   XATU   │  │   XATU    │ │   XATU    │
+  │ SENTRY │ │  CANNON  │  │ DISCOVERY │ │ DISCOVERY │
+  └───┬────┘ └─────┬────┘  └─────┬─────┘ └─────┬─────┘
+      │            │             │             │
+      │            │             │             │
+      │       ┌────▼─────┐       │             │
+      └───────►          ◄───────┘─────────────┘
               │   XATU   │
               │  SERVER  │    ┌─────────────┐
               │          ◄────► PERSISTENCE │
@@ -40,6 +40,7 @@ Follow the links for more information on each mode.
 - [**Sentry**](./docs/sentry.md) - Client that runs along side a [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). *You must run your own consensus client* and this projects sentry will connect to it via the consensus client's http server.
 - [**Discovery**](./docs/discovery.md) - Client that uses the [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discovery nodes on the network. Also attempts to connect to execution layer nodes and collect meta data from them.
 - [**Mimicry**](./docs/mimicry.md) - Client that collects data from the execution layer P2P network.
+- [**Cannon**](./docs/sentry.md) - Client that runs along side a [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects canonical finalized data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). *You must run your own consensus client* and this projects cannon client will connect to it via the consensus client's http server.
 
 ## Getting Started
 

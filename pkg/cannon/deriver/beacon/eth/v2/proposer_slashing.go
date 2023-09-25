@@ -31,7 +31,7 @@ type ProposerSlashingDeriver struct {
 	log                 logrus.FieldLogger
 	cfg                 *ProposerSlashingDeriverConfig
 	iterator            *iterator.CheckpointIterator
-	onEventCallbacks    []func(ctx context.Context, event *xatu.DecoratedEvent) error
+	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	onLocationCallbacks []func(ctx context.Context, location uint64) error
 	beacon              *ethereum.BeaconNode
 	clientMeta          *xatu.ClientMeta
@@ -55,8 +55,8 @@ func (b *ProposerSlashingDeriver) Name() string {
 	return ProposerSlashingDeriverName.String()
 }
 
-func (b *ProposerSlashingDeriver) OnEventDerived(ctx context.Context, fn func(ctx context.Context, event *xatu.DecoratedEvent) error) {
-	b.onEventCallbacks = append(b.onEventCallbacks, fn)
+func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
+	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
 }
 
 func (b *ProposerSlashingDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
@@ -84,7 +84,7 @@ func (b *ProposerSlashingDeriver) Stop(ctx context.Context) error {
 
 func (b *ProposerSlashingDeriver) run(ctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
-	bo.MaxInterval = 1 * time.Minute
+	bo.MaxInterval = 3 * time.Minute
 
 	for {
 		select {
@@ -99,10 +99,13 @@ func (b *ProposerSlashingDeriver) run(ctx context.Context) {
 				}
 
 				// Get the next slot
-				location, err := b.iterator.Next(ctx)
+				location, lookAhead, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
+
+				// Look ahead
+				b.lookAheadAtLocation(ctx, lookAhead)
 
 				for _, fn := range b.onLocationCallbacks {
 					if errr := fn(ctx, location.GetEthV2BeaconBlockProposerSlashing().GetEpoch()); errr != nil {
@@ -118,18 +121,16 @@ func (b *ProposerSlashingDeriver) run(ctx context.Context) {
 					return err
 				}
 
+				// Send the events
+				for _, fn := range b.onEventsCallbacks {
+					if err := fn(ctx, events); err != nil {
+						return errors.Wrap(err, "failed to send events")
+					}
+				}
+
 				// Update our location
 				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
 					return err
-				}
-
-				// Send the events
-				for _, event := range events {
-					for _, fn := range b.onEventCallbacks {
-						if err := fn(ctx, event); err != nil {
-							b.log.WithError(err).Error("Failed to send event")
-						}
-					}
 				}
 
 				bo.Reset()
@@ -239,6 +240,32 @@ func (b *ProposerSlashingDeriver) getProposerSlashings(ctx context.Context, bloc
 	}
 
 	return slashings, nil
+}
+
+// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
+func (b *ProposerSlashingDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+	if locations == nil {
+		return
+	}
+
+	for _, location := range locations {
+		// Get the next look ahead epoch
+		epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
+
+		sp, err := b.beacon.Node().Spec()
+		if err != nil {
+			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+
+			return
+		}
+
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+
+			// Add the block to the preload queue so it's available when we need it
+			b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
+		}
+	}
 }
 
 func (b *ProposerSlashingDeriver) createEvent(ctx context.Context, slashing *xatuethv1.ProposerSlashingV2, identifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {

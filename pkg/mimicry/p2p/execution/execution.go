@@ -29,8 +29,9 @@ const PeerType = "execution"
 type Peer struct {
 	log logrus.FieldLogger
 
-	nodeRecord string
-	handlers   *handler.Peer
+	nodeRecord   string
+	handlers     *handler.Peer
+	captureDelay time.Duration
 
 	client *mimicry.Client
 
@@ -54,18 +55,19 @@ type Peer struct {
 	ignoreBefore *time.Time
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, sharedCache *coordCache.SharedCache) (*Peer, error) {
+func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache) (*Peer, error) {
 	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
 	if err != nil {
 		return nil, err
 	}
 
 	return &Peer{
-		log:         log.WithField("node_record", nodeRecord),
-		nodeRecord:  nodeRecord,
-		handlers:    handlers,
-		client:      client,
-		sharedCache: sharedCache,
+		log:          log.WithField("node_record", nodeRecord),
+		nodeRecord:   nodeRecord,
+		handlers:     handlers,
+		captureDelay: captureDelay,
+		client:       client,
+		sharedCache:  sharedCache,
 		network: &networks.Network{
 			Name: networks.NetworkNameNone,
 		},
@@ -194,8 +196,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"fork_id_next": fmt.Sprintf("%d", status.ForkID.Next),
 		}).Debug("got client status")
 
-		// set the ignore before time to 3 minute in the future
-		ignoreBefore := time.Now().Add(3 * time.Minute)
+		// This is the avoid the initial deluge of transactions when a peer is first connected to.
+		ignoreBefore := time.Now().Add(p.captureDelay)
 		p.ignoreBefore = &ignoreBefore
 
 		return nil
@@ -320,7 +322,9 @@ func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash commo
 			Hash: hash,
 			Seen: now,
 		}
-		p.txProc.Write(&item)
+		if err := p.txProc.Write(ctx, []*TransactionHashItem{&item}); err != nil {
+			return err
+		}
 	}
 
 	return nil

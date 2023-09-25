@@ -39,6 +39,7 @@ func (r *Record) Start(ctx context.Context) error {
 		processor.WithBatchTimeout(r.config.BatchTimeout),
 		processor.WithExportTimeout(r.config.ExportTimeout),
 		processor.WithMaxExportBatchSize(r.config.MaxExportBatchSize),
+		processor.WithShippingMethod(processor.ShippingMethodAsync),
 	)
 	if err != nil {
 		return err
@@ -54,11 +55,13 @@ func (r *Record) Stop(ctx context.Context) error {
 		}
 	}
 
-	r.log.Info("component stopped")
+	r.log.Info("Component stopped")
 
 	return nil
 }
 
-func (r *Record) Write(record *node.Record) {
-	r.proc.Write(record)
+func (r *Record) Write(ctx context.Context, record *node.Record) {
+	if err := r.proc.Write(ctx, []*node.Record{record}); err != nil {
+		r.log.WithError(err).Error("failed to write record")
+	}
 }

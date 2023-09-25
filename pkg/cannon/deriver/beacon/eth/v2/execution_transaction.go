@@ -34,8 +34,7 @@ type ExecutionTransactionDeriver struct {
 }
 
 type ExecutionTransactionDeriverConfig struct {
-	Enabled     bool    `yaml:"enabled" default:"true"`
-	HeadSlotLag *uint64 `yaml:"headSlotLag" default:"5"`
+	Enabled bool `yaml:"enabled" default:"true"`
 }
 
 const (

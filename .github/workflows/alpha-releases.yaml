@@ -6,6 +6,8 @@ on:
       - 'release/*'
 
 jobs:
+  permissions:
+    contents: write
   tag-release:
     runs-on: ubuntu-20.04
     steps:

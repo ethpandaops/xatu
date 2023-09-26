@@ -10,6 +10,7 @@ type Config struct {
 	ProposerSlashingConfig     v2.ProposerSlashingDeriverConfig     `yaml:"proposerSlashing"`
 	VoluntaryExitConfig        v2.VoluntaryExitDeriverConfig        `yaml:"voluntaryExit"`
 	WithdrawalConfig           v2.WithdrawalDeriverConfig           `yaml:"withdrawal"`
+	BeaconBlockConfig          v2.BeaconBlockDeriverConfig          `yaml:"beaconBlock"`
 }
 
 func (c *Config) Validate() error {

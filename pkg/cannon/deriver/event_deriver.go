@@ -25,3 +25,4 @@ var _ EventDeriver = &v2.VoluntaryExitDeriver{}
 var _ EventDeriver = &v2.ExecutionTransactionDeriver{}
 var _ EventDeriver = &v2.BLSToExecutionChangeDeriver{}
 var _ EventDeriver = &v2.WithdrawalDeriver{}
+var _ EventDeriver = &v2.BeaconBlockDeriver{}

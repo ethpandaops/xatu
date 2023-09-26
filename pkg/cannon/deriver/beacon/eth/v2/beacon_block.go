@@ -279,8 +279,6 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 	}
 
 	extra.Version = block.Version.String()
-	// Always set to false for sentry events
-	extra.FinalizedWhenRequested = false
 
 	var txCount int
 
@@ -340,6 +338,7 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(compressedTxSize))
 
+	// Always set to true when derived from the cannon.
 	extra.FinalizedWhenRequested = true
 
 	return extra, nil

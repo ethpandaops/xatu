@@ -158,7 +158,7 @@ func (b *BeaconBlockDeriver) lookAheadAtLocation(ctx context.Context, locations 
 
 	for _, location := range locations {
 		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
+		epoch := phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch())
 
 		sp, err := b.beacon.Node().Spec()
 		if err != nil {

@@ -155,7 +155,7 @@ func (b *ProposerSlashingDeriver) processEpoch(ctx context.Context, epoch phase0
 
 	allEvents := []*xatu.DecoratedEvent{}
 
-	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 		slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 
 		events, err := b.processSlot(ctx, slot)
@@ -259,7 +259,7 @@ func (b *ProposerSlashingDeriver) lookAheadAtLocation(ctx context.Context, locat
 			return
 		}
 
-		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch); i++ {
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 
 			// Add the block to the preload queue so it's available when we need it

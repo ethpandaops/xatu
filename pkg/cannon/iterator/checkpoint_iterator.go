@@ -129,7 +129,7 @@ func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.C
 
 	lookAheads := make([]*xatu.CannonLocation, 0)
 
-	for _, i := range []int{1, 2, 3} {
+	for _, i := range []int{1} {
 		lookAheadEpoch := epoch + phase0.Epoch(i)
 
 		if lookAheadEpoch > latestCheckpoint.Epoch {

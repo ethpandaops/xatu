@@ -192,8 +192,6 @@ func (b *BeaconBlockDeriver) processEpoch(ctx context.Context, epoch phase0.Epoc
 			return nil, errors.Wrapf(err, "failed to process slot %d", slot)
 		}
 
-		b.log.WithField("slot", slot).WithField("index", i).Debug("Created event from block")
-
 		allEvents = append(allEvents, events...)
 	}
 

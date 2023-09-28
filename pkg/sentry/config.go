@@ -122,6 +122,8 @@ func (f *ForkChoiceConfig) Validate() error {
 type AttestationDataConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 
+	AllCommittees bool `yaml:"allCommittees" default:"false"`
+
 	Interval struct {
 		Enabled bool           `yaml:"enabled" default:"false"`
 		Every   human.Duration `yaml:"every" default:"12s"`

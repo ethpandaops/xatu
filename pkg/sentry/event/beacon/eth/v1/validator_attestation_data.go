@@ -33,7 +33,7 @@ type ValidatorAttestationDataSnapshot struct {
 
 func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAttestationDataSnapshot, event *phase0.AttestationData, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
 	return &ValidatorAttestationData{
-		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA_V2"),
+		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA"),
 		snapshot:   snapshot,
 		event:      event,
 		beacon:     beacon,

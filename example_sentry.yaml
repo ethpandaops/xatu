@@ -35,6 +35,11 @@ forkChoice:
 attestationData:
   enabled: false
 
+  # Regular beacon node -> validator client pairs only use committee index 0
+  # true - gets data from all committees
+  # false - only gets data from committee index 0
+  allCommittees: false
+
   interval:
     enabled: false
     every: 30s

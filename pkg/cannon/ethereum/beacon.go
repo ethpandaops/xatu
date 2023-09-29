@@ -53,6 +53,10 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 
 	metadata := services.NewMetadataService(log, node)
 
+	if config.OverrideNetworkName != "" {
+		metadata.OverrideNetworkName(config.OverrideNetworkName)
+	}
+
 	svcs := []services.Service{
 		&metadata,
 	}

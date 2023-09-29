@@ -21,7 +21,8 @@ type MetadataService struct {
 	beacon beacon.Node
 	log    logrus.FieldLogger
 
-	Network *networks.Network
+	overrideNetworkName string
+	Network             *networks.Network
 
 	Genesis *v1.Genesis
 	Spec    *state.Spec
@@ -35,12 +36,19 @@ type MetadataService struct {
 
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
 	return MetadataService{
-		beacon:           sbeacon,
-		log:              log.WithField("module", "cannon/ethereum/metadata"),
-		Network:          &networks.Network{Name: networks.NetworkNameNone},
-		onReadyCallbacks: []func(context.Context) error{},
-		mu:               sync.Mutex{},
+		overrideNetworkName: "",
+		beacon:              sbeacon,
+		log:                 log.WithField("module", "cannon/ethereum/metadata"),
+		Network:             &networks.Network{Name: networks.NetworkNameNone},
+		onReadyCallbacks:    []func(context.Context) error{},
+		mu:                  sync.Mutex{},
 	}
+}
+
+func (m *MetadataService) OverrideNetworkName(name string) {
+	m.log.WithField("name", name).Info("Overriding network name")
+
+	m.overrideNetworkName = name
 }
 
 func (m *MetadataService) Start(ctx context.Context) error {
@@ -152,6 +160,10 @@ func (m *MetadataService) DeriveNetwork(_ context.Context) error {
 	}
 
 	network := networks.DeriveFromGenesisRoot(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
+
+	if m.overrideNetworkName != "" {
+		network.Name = networks.NetworkName(m.overrideNetworkName)
+	}
 
 	if network.Name != m.Network.Name {
 		m.log.WithFields(logrus.Fields{

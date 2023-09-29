@@ -20,6 +20,7 @@ var NetworkGenesisRoots = map[string]uint64{
 	"0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95": 1,
 	"0x043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb": 5,
 	"0xd8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078": 11155111,
+	"0x0ea3f6f9515823b59c863454675fefcd1d8b4f2dbe454db166206a41fda060a0": 17000,
 }
 
 var NetworkIds = map[uint64]NetworkName{

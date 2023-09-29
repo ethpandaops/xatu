@@ -82,7 +82,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 
 		c.metrics.SetTrailingEpochs(c.cannonType.String(), c.networkName, c.checkpointName, float64(checkpoint.Epoch-locationEpoch))
 
-		if locationEpoch == checkpoint.Epoch {
+		if locationEpoch >= checkpoint.Epoch {
 			// Sleep until the next epoch
 			epoch := c.wallclock.Epochs().Current()
 

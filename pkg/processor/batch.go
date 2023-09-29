@@ -135,10 +135,7 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		opt(&o)
 	}
 
-	metrics, err := NewMetrics("xatu", name)
-	if err != nil {
-		return nil, err
-	}
+	metrics := DefaultMetrics
 
 	bvp := BatchItemProcessor[T]{
 		e:       exporter,
@@ -165,9 +162,13 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 
 // OnEnd method enqueues a item for later processing.
 func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
+	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
+
 	if bvp.o.ShippingMethod == ShippingMethodSync {
 		return bvp.ImmediatelyExportItems(ctx, s)
 	}
+
+	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 
 	// Do not enqueue items if we are just going to drop them.
 	if bvp.e == nil {
@@ -205,7 +206,7 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 
 			err := bvp.exportWithTimeout(ctx, itemsBatch)
 
-			bvp.metrics.IncItemsExportedBy(float64(len(itemsBatch)))
+			bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
 
 			if err != nil {
 				return err
@@ -329,8 +330,6 @@ func WithShippingMethod(method ShippingMethod) BatchItemProcessorOption {
 
 // exportItems is a subroutine of processing and draining the queue.
 func (bvp *BatchItemProcessor[T]) exportItems(ctx context.Context) error {
-	bvp.metrics.SetItemsQueued(float64(len(bvp.queue)))
-
 	bvp.timer.Reset(bvp.o.BatchTimeout)
 
 	bvp.batchMutex.Lock()
@@ -351,13 +350,9 @@ func (bvp *BatchItemProcessor[T]) exportItems(ctx context.Context) error {
 			"total_dropped": atomic.LoadUint32(&bvp.dropped),
 		}).Debug("exporting items")
 
-		defer func() {
-			bvp.metrics.SetItemsDropped(float64(atomic.LoadUint32(&bvp.dropped)))
-		}()
-
 		err := bvp.e.ExportItems(ctx, bvp.batch)
 
-		bvp.metrics.IncItemsExportedBy(float64(countItemsToExport))
+		bvp.metrics.IncItemsExportedBy(bvp.name, float64(countItemsToExport))
 
 		// A new batch is always created after exporting, even if the batch failed to be exported.
 		//
@@ -476,6 +471,7 @@ func (bvp *BatchItemProcessor[T]) enqueueDrop(ctx context.Context, sd *T) bool {
 		return true
 	default:
 		atomic.AddUint32(&bvp.dropped, 1)
+		bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 	}
 
 	return false

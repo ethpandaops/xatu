@@ -2,15 +2,17 @@ package processor
 
 import "github.com/prometheus/client_golang/prometheus"
 
-type Metrics struct {
-	name string
+var (
+	DefaultMetrics = NewMetrics("xatu")
+)
 
+type Metrics struct {
 	itemsQueued   *prometheus.GaugeVec
-	itemsDropped  *prometheus.GaugeVec
+	itemsDropped  *prometheus.CounterVec
 	itemsExported *prometheus.CounterVec
 }
 
-func NewMetrics(namespace, name string) (*Metrics, error) {
+func NewMetrics(namespace string) *Metrics {
 	if namespace != "" {
 		namespace += "_"
 	}
@@ -23,7 +25,7 @@ func NewMetrics(namespace, name string) (*Metrics, error) {
 			Namespace: namespace,
 			Help:      "Number of items queued",
 		}, []string{"processor"}),
-		itemsDropped: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		itemsDropped: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name:      "items_dropped_total",
 			Namespace: namespace,
 			Help:      "Number of items dropped",
@@ -35,33 +37,21 @@ func NewMetrics(namespace, name string) (*Metrics, error) {
 		}, []string{"processor"}),
 	}
 
-	dupMetricsCollectorError := "duplicate metrics collector registration attempted"
+	prometheus.MustRegister(m.itemsQueued)
+	prometheus.MustRegister(m.itemsDropped)
+	prometheus.MustRegister(m.itemsExported)
 
-	if err := prometheus.Register(m.itemsQueued); err != nil && err.Error() != dupMetricsCollectorError {
-		return nil, err
-	}
-
-	if err := prometheus.Register(m.itemsDropped); err != nil && err.Error() != dupMetricsCollectorError {
-		return nil, err
-	}
-
-	if err := prometheus.Register(m.itemsExported); err != nil && err.Error() != dupMetricsCollectorError {
-		return nil, err
-	}
-
-	m.name = name
-
-	return m, nil
+	return m
 }
 
-func (m *Metrics) SetItemsQueued(count float64) {
-	m.itemsQueued.WithLabelValues(m.name).Set(count)
+func (m *Metrics) SetItemsQueued(name string, count float64) {
+	m.itemsQueued.WithLabelValues(name).Set(count)
 }
 
-func (m *Metrics) SetItemsDropped(count float64) {
-	m.itemsDropped.WithLabelValues(m.name).Set(count)
+func (m *Metrics) IncItemsDroppedBy(name string, count float64) {
+	m.itemsDropped.WithLabelValues(name).Add(count)
 }
 
-func (m *Metrics) IncItemsExportedBy(count float64) {
-	m.itemsExported.WithLabelValues(m.name).Add(count)
+func (m *Metrics) IncItemsExportedBy(name string, count float64) {
+	m.itemsExported.WithLabelValues(name).Add(count)
 }

@@ -15,7 +15,7 @@ Xatu can run in multiple modes. Each mode can be run independently. The followin
       │           │
   ┌───▼────┐ ┌────▼─────┐  ┌───────────┐ ┌───────────┐
   │  XATU  │ │   XATU   │  │   XATU    │ │   XATU    │
-  │ SENTRY │ │  CANNON  │  │ DISCOVERY │ │ DISCOVERY │
+  │ SENTRY │ │  CANNON  │  │  MIMICRY  │ │ DISCOVERY │
   └───┬────┘ └─────┬────┘  └─────┬─────┘ └─────┬─────┘
       │            │             │             │
       │            │             │             │

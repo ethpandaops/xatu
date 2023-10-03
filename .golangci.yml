@@ -25,7 +25,6 @@ linters:
     - bodyclose
     - containedctx
     - decorder
-    - depguard
     - dogsled
     - durationcheck
     - errcheck

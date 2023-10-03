@@ -60,11 +60,11 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
-		}
-
-		epoch, err := c.getEpochFromLocation(next)
-		if err == nil {
-			span.SetAttributes(attribute.Int64("next", int64(epoch)))
+		} else {
+			epoch, err := c.getEpochFromLocation(next)
+			if err == nil {
+				span.SetAttributes(attribute.Int64("next", int64(epoch)))
+			}
 		}
 
 		span.End()

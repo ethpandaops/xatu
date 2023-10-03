@@ -1,6 +1,6 @@
 module github.com/ethpandaops/xatu
 
-go 1.20
+go 1.19
 
 replace github.com/attestantio/go-eth2-client v0.16.3 => github.com/samcm/go-eth2-client v0.15.12
 

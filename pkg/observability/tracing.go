@@ -46,17 +46,7 @@ func SetupOTelSDK(ctx context.Context, tracerProvider *trace.TracerProvider) (sh
 }
 
 func NewResource(serviceName, serviceVersion string) (*resource.Resource, error) {
-	res, err := resource.New(context.Background(),
-		resource.WithFromEnv(),
-		resource.WithProcess(),
-		resource.WithOS(),
-		resource.WithContainer(),
-		resource.WithHost())
-	if err != nil {
-		return nil, fmt.Errorf("creating resource: %w", err)
-	}
-
-	return resource.Merge(res,
+	return resource.Merge(resource.Default(),
 		resource.NewWithAttributes(semconv.SchemaURL,
 			semconv.ServiceName(serviceName),
 			semconv.ServiceVersion(serviceVersion),

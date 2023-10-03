@@ -3,8 +3,11 @@ package stdout
 import (
 	"context"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -21,6 +24,9 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	_, span := observability.Tracer().Start(ctx, "StdOutItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
+	defer span.End()
+
 	e.log.WithField("events", len(items)).Debug("Sending batch of events to stdout sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {

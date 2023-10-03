@@ -103,7 +103,10 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 			return
 		default:
 			operation := func() error {
-				ctx, span := tracer.Start(rctx, fmt.Sprintf("Derive %s", b.Name()))
+				ctx, span := tracer.Start(rctx, fmt.Sprintf("Derive %s", b.Name()),
+					trace.WithAttributes(
+						attribute.String("network", string(b.beacon.Metadata().Network.Name))),
+				)
 				defer span.End()
 
 				time.Sleep(100 * time.Millisecond)

@@ -8,8 +8,12 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -38,6 +42,9 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
+	defer span.End()
+
 	e.log.WithField("events", len(items)).Debug("Sending batch of events to HTTP sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
@@ -45,6 +52,8 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 			WithError(err).
 			WithField("num_events", len(items)).
 			Error("Failed to send events upstream")
+
+		span.SetStatus(codes.Error, err.Error())
 
 		return err
 	}

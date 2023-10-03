@@ -8,9 +8,12 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type CheckpointIterator struct {
@@ -46,6 +49,27 @@ func (c *CheckpointIterator) UpdateLocation(ctx context.Context, location *xatu.
 }
 
 func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocation, lookAhead []*xatu.CannonLocation, err error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"CheckpointIterator.Next",
+		trace.WithAttributes(
+			attribute.String("network", c.networkName),
+			attribute.String("cannon_type", c.cannonType.String()),
+			attribute.String("network_id", c.networkID),
+		),
+	)
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+
+		epoch, err := c.getEpochFromLocation(next)
+		if err == nil {
+			span.SetAttributes(attribute.Int64("next", int64(epoch)))
+		}
+
+		span.End()
+	}()
+
 	for {
 		// Grab the current checkpoint from the beacon node
 		checkpoint, err := c.fetchLatestEpoch(ctx)
@@ -129,7 +153,7 @@ func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.C
 
 	lookAheads := make([]*xatu.CannonLocation, 0)
 
-	for _, i := range []int{1} {
+	for _, i := range []int{1, 2, 3} {
 		lookAheadEpoch := epoch + phase0.Epoch(i)
 
 		if lookAheadEpoch > latestCheckpoint.Epoch {
@@ -148,6 +172,11 @@ func (c *CheckpointIterator) getLookAheads(ctx context.Context, location *xatu.C
 }
 
 func (c *CheckpointIterator) fetchLatestEpoch(ctx context.Context) (*phase0.Checkpoint, error) {
+	_, span := observability.Tracer().Start(ctx,
+		"CheckpointIterator.FetchLatestEpoch",
+	)
+	defer span.End()
+
 	finality, err := c.beaconNode.Node().Finality()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch finality")

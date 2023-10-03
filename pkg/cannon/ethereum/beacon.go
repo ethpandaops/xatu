@@ -9,10 +9,14 @@ import (
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/go-co-op/gocron"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -30,6 +34,7 @@ type BeaconNode struct {
 	sfGroup          *singleflight.Group
 	blockCache       *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
 	blockPreloadChan chan string
+	blockPreloadSem  chan struct{}
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -61,6 +66,9 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		&metadata,
 	}
 
+	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
+	sem := make(chan struct{}, config.BlockPreloadWorkers)
+
 	return &BeaconNode{
 		config:   config,
 		log:      log.WithField("module", "cannon/ethereum/beacon"),
@@ -72,6 +80,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		),
 		sfGroup:          &singleflight.Group{},
 		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
+		blockPreloadSem:  sem,
 		metrics:          NewMetrics(namespace, name),
 	}, nil
 }
@@ -118,6 +127,10 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	if err := b.beacon.Start(ctx); err != nil {
 		return err
 	}
+
+	b.blockCache.OnEviction(func(ctx context.Context, reason ttlcache.EvictionReason, item *ttlcache.Item[string, *spec.VersionedSignedBeaconBlock]) {
+		b.log.WithField("identifier", item.Key()).WithField("reason", reason).Trace("Block evicted from cache")
+	})
 
 	go b.blockCache.Start()
 
@@ -207,10 +220,11 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.
 func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error) {
-	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
+	ctx, span := observability.Tracer().Start(ctx, "ethereum.beacon.GetBeaconBlock", trace.WithAttributes(attribute.String("identifier", identifier)))
 
-	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
-	sem := make(chan struct{}, b.config.BlockPreloadWorkers)
+	defer span.End()
+
+	b.metrics.IncBlocksFetched(string(b.Metadata().Network.Name))
 
 	// Check the cache first.
 	if item := b.blockCache.Get(identifier); item != nil {
@@ -218,18 +232,26 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 			b.metrics.IncBlockCacheHit(string(b.Metadata().Network.Name))
 		}
 
+		span.SetAttributes(attribute.Bool("cached", true))
+
 		return item.Value(), nil
 	}
+
+	span.SetAttributes(attribute.Bool("cached", false))
 
 	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
 		b.metrics.IncBlockCacheMiss(string(b.Metadata().Network.Name))
 	}
 
 	// Use singleflight to ensure we only make one request for a block at a time.
-	x, err, _ := b.sfGroup.Do(identifier, func() (interface{}, error) {
+	x, err, shared := b.sfGroup.Do(identifier, func() (interface{}, error) {
+		span.AddEvent("Acquiring semaphore...")
+
 		// Acquire a semaphore before proceeding.
-		sem <- struct{}{}
-		defer func() { <-sem }()
+		b.blockPreloadSem <- struct{}{}
+		defer func() { <-b.blockPreloadSem }()
+
+		span.AddEvent("Semaphore acquired. Fetching block from beacon api...")
 
 		// Not in the cache, so fetch it.
 		block, err := b.beacon.FetchBlock(ctx, identifier)
@@ -237,12 +259,16 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 			return nil, err
 		}
 
+		span.AddEvent("Block fetched from beacon node.")
+
 		// Add it to the cache.
 		b.blockCache.Set(identifier, block, time.Hour)
 
 		return block, nil
 	})
 	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
 		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
 			b.metrics.IncBlocksFetchErrors(string(b.Metadata().Network.Name))
 		}
@@ -250,9 +276,16 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 		return nil, err
 	}
 
+	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
+
 	return x.(*spec.VersionedSignedBeaconBlock), nil
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
+	// Don't add the block to the preload queue if it's already in the cache.
+	if item := b.blockCache.Get(identifier); item != nil {
+		return
+	}
+
 	b.blockPreloadChan <- identifier
 }

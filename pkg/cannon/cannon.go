@@ -20,6 +20,7 @@ import (
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
@@ -49,6 +50,8 @@ type Cannon struct {
 	eventDerivers []deriver.EventDeriver
 
 	coordinatorClient *coordinator.Client
+
+	shutdownFuncs []func(ctx context.Context) error
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, error) {
@@ -86,10 +89,36 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 		scheduler:         gocron.NewScheduler(time.Local),
 		eventDerivers:     nil, // Derivers are created once the beacon node is ready
 		coordinatorClient: coordinatorClient,
+		shutdownFuncs:     []func(ctx context.Context) error{},
 	}, nil
 }
 
 func (c *Cannon) Start(ctx context.Context) error {
+	// Start tracing if enabled
+	if c.Config.Tracing.Enabled {
+		c.log.Info("Tracing enabled")
+
+		res, err := observability.NewResource(xatu.WithMode(xatu.ModeCannon), xatu.Short())
+		if err != nil {
+			return perrors.Wrap(err, "failed to create tracing resource")
+		}
+
+		tracer, err := observability.NewHTTPTraceProvider(ctx,
+			res,
+			c.Config.Tracing.AsOTelOpts()...,
+		)
+		if err != nil {
+			return perrors.Wrap(err, "failed to create tracing provider")
+		}
+
+		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
+		if err != nil {
+			return perrors.Wrap(err, "failed to setup tracing SDK")
+		}
+
+		c.shutdownFuncs = append(c.shutdownFuncs, shutdown)
+	}
+
 	if err := c.ServeMetrics(ctx); err != nil {
 		return err
 	}
@@ -133,10 +162,32 @@ func (c *Cannon) Start(ctx context.Context) error {
 	sig := <-cancel
 	c.log.Printf("Caught signal: %v", sig)
 
-	c.log.Printf("Flushing sinks")
+	if err := c.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Cannon) Shutdown(ctx context.Context) error {
+	c.log.Printf("Shutting down")
 
 	for _, sink := range c.sinks {
 		if err := sink.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	for _, fun := range c.shutdownFuncs {
+		if err := fun(ctx); err != nil {
+			return err
+		}
+	}
+
+	c.scheduler.Stop()
+
+	for _, deriver := range c.eventDerivers {
+		if err := deriver.Stop(ctx); err != nil {
 			return err
 		}
 	}

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
@@ -9,11 +10,14 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -82,16 +86,19 @@ func (a *AttesterSlashingDeriver) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (a *AttesterSlashingDeriver) run(ctx context.Context) {
+func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxInterval = 3 * time.Minute
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-rctx.Done():
 			return
 		default:
 			operation := func() error {
+				ctx, span := observability.Tracer().Start(rctx, fmt.Sprintf("Derive %s", a.Name()))
+				defer span.End()
+
 				time.Sleep(100 * time.Millisecond)
 
 				if err := a.beacon.Synced(ctx); err != nil {
@@ -149,6 +156,11 @@ func (a *AttesterSlashingDeriver) run(ctx context.Context) {
 
 // lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
 func (a *AttesterSlashingDeriver) lookAheadAtLocations(ctx context.Context, locations []*xatu.CannonLocation) {
+	_, span := observability.Tracer().Start(ctx,
+		"AttesterSlashingDeriver.lookAheadAtLocations",
+	)
+	defer span.End()
+
 	if locations == nil {
 		return
 	}
@@ -174,6 +186,12 @@ func (a *AttesterSlashingDeriver) lookAheadAtLocations(ctx context.Context, loca
 }
 
 func (a *AttesterSlashingDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"AttesterSlashingDeriver.processEpoch",
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+	)
+	defer span.End()
+
 	sp, err := a.beacon.Node().Spec()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain spec")
@@ -196,6 +214,12 @@ func (a *AttesterSlashingDeriver) processEpoch(ctx context.Context, epoch phase0
 }
 
 func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"AttesterSlashingDeriver.processSlot",
+		trace.WithAttributes(attribute.Int64("slot", int64(slot))),
+	)
+	defer span.End()
+
 	// Get the block
 	block, err := a.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {

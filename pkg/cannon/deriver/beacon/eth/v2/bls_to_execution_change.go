@@ -10,11 +10,14 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -85,16 +88,19 @@ func (b *BLSToExecutionChangeDeriver) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
+func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxInterval = 3 * time.Minute
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-rctx.Done():
 			return
 		default:
 			operation := func() error {
+				ctx, span := observability.Tracer().Start(rctx, fmt.Sprintf("Derive %s", b.Name()))
+				defer span.End()
+
 				time.Sleep(100 * time.Millisecond)
 
 				if err := b.beacon.Synced(ctx); err != nil {
@@ -152,6 +158,11 @@ func (b *BLSToExecutionChangeDeriver) run(ctx context.Context) {
 
 // lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
 func (b *BLSToExecutionChangeDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+	_, span := observability.Tracer().Start(ctx,
+		"BLSToExecutionChangeDeriver.lookAheadAtLocations",
+	)
+	defer span.End()
+
 	if locations == nil {
 		return
 	}
@@ -177,6 +188,12 @@ func (b *BLSToExecutionChangeDeriver) lookAheadAtLocation(ctx context.Context, l
 }
 
 func (b *BLSToExecutionChangeDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"BLSToExecutionChangeDeriver.processEpoch",
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+	)
+	defer span.End()
+
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain spec")
@@ -199,6 +216,12 @@ func (b *BLSToExecutionChangeDeriver) processEpoch(ctx context.Context, epoch ph
 }
 
 func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"BLSToExecutionChangeDeriver.processSlot",
+		trace.WithAttributes(attribute.Int64("slot", int64(slot))),
+	)
+	defer span.End()
+
 	// Get the block
 	block, err := b.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {

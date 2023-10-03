@@ -16,6 +16,14 @@ func Full() string {
 	return fmt.Sprintf("%s/%s", Implementation, Short())
 }
 
+func FullWithMode(mode Mode) string {
+	return fmt.Sprintf("%s-%s/%s", Implementation, mode, Short())
+}
+
+func WithMode(mode Mode) string {
+	return fmt.Sprintf("%s-%s", Implementation, mode)
+}
+
 func Short() string {
 	return fmt.Sprintf("%s-%s", Release, GitCommit)
 }

@@ -96,7 +96,11 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 			return
 		default:
 			operation := func() error {
-				ctx, span := observability.Tracer().Start(rctx, fmt.Sprintf("Derive %s", a.Name()))
+				ctx, span := observability.Tracer().Start(rctx,
+					fmt.Sprintf("Derive %s", a.Name()),
+					trace.WithAttributes(
+						attribute.String("network", string(a.beacon.Metadata().Network.Name))),
+				)
 				defer span.End()
 
 				time.Sleep(100 * time.Millisecond)

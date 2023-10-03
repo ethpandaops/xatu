@@ -7,6 +7,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
@@ -37,6 +38,9 @@ type Config struct {
 
 	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -60,6 +64,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Coordinator.Validate(); err != nil {
 		return fmt.Errorf("invalid coordinator config: %w", err)
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

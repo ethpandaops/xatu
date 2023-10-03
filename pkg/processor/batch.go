@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
 )
 
@@ -162,6 +163,9 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 
 // OnEnd method enqueues a item for later processing.
 func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
+	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
+	defer span.End()
+
 	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 
 	if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -185,6 +189,9 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 // ImmediatelyExportItems immediately exports the items to the exporter.
 // Useful for propogating errors from the exporter.
 func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, items []*T) error {
+	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.ImmediatelyExportItems")
+	defer span.End()
+
 	bvp.batchMutex.Lock()
 	defer bvp.batchMutex.Unlock()
 

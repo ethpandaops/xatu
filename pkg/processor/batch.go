@@ -192,9 +192,6 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.ImmediatelyExportItems")
 	defer span.End()
 
-	bvp.batchMutex.Lock()
-	defer bvp.batchMutex.Unlock()
-
 	if l := len(items); l > 0 {
 		countItemsToExport := len(items)
 

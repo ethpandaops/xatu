@@ -2,10 +2,8 @@ module github.com/ethpandaops/xatu
 
 go 1.19
 
-replace github.com/attestantio/go-eth2-client v0.16.3 => github.com/samcm/go-eth2-client v0.15.12
-
 require (
-	github.com/attestantio/go-eth2-client v0.16.3
+	github.com/attestantio/go-eth2-client v0.18.3
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/beevik/ntp v1.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
@@ -106,7 +104,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
-	github.com/rs/zerolog v1.29.0 // indirect
+	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect

@@ -104,6 +104,11 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		return nil, errors.Wrap(err, "failed to marshal extra_data")
 	}
 
+	validity, err := eth2v1.ForkChoiceNodeValidityFromString(f.Validity)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert validity")
+	}
+
 	return &eth2v1.ForkChoiceNode{
 		Slot:               phase0.Slot(f.Slot),
 		BlockRoot:          blockRoot,
@@ -111,7 +116,7 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpoch),
 		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpoch),
 		Weight:             f.Weight,
-		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
+		Validity:           validity,
 		ExecutionBlockHash: executionBlockHash,
 		ExtraData:          extraData,
 	}, nil
@@ -140,6 +145,11 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		return nil, errors.Wrap(err, "failed to marshal extra_data")
 	}
 
+	validity, err := eth2v1.ForkChoiceNodeValidityFromString(f.Validity)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert validity")
+	}
+
 	return &eth2v1.ForkChoiceNode{
 		Slot:               phase0.Slot(f.Slot.GetValue()),
 		BlockRoot:          blockRoot,
@@ -147,7 +157,7 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		JustifiedEpoch:     phase0.Epoch(f.JustifiedEpoch.GetValue()),
 		FinalizedEpoch:     phase0.Epoch(f.FinalizedEpoch.GetValue()),
 		Weight:             f.Weight.GetValue(),
-		Validity:           eth2v1.ForkChoiceNodeValidity(f.Validity),
+		Validity:           validity,
 		ExecutionBlockHash: executionBlockHash,
 		ExtraData:          extraData,
 	}, nil
@@ -220,7 +230,7 @@ func NewForkChoiceNodeFromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkChoi
 		JustifiedEpoch:     uint64(node.JustifiedEpoch),
 		FinalizedEpoch:     uint64(node.FinalizedEpoch),
 		Weight:             node.Weight,
-		Validity:           string(node.Validity),
+		Validity:           node.Validity.String(),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),
 	}, nil
@@ -239,7 +249,7 @@ func NewForkChoiceNodeV2FromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkCh
 		JustifiedEpoch:     &wrapperspb.UInt64Value{Value: uint64(node.JustifiedEpoch)},
 		FinalizedEpoch:     &wrapperspb.UInt64Value{Value: uint64(node.FinalizedEpoch)},
 		Weight:             &wrapperspb.UInt64Value{Value: node.Weight},
-		Validity:           string(node.Validity),
+		Validity:           node.Validity.String(),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),
 	}, nil

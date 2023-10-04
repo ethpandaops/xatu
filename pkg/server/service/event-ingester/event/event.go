@@ -48,6 +48,7 @@ const (
 	TypeBeaconEthV2BeaconExecutionTransaction   Type = v2.BeaconBlockExecutionTransactionType
 	TypeBeaconEthV2BeaconBLSToExecutionChange   Type = v2.BeaconBlockBLSToExecutionChangeType
 	TypeBeaconEthV2BeaconWithdrawal             Type = v2.BeaconBlockWithdrawalType
+	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
 )
 
 type Event interface {
@@ -125,6 +126,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v2.NewBeaconBlockBLSToExecutionChange(log, event), nil
 	case TypeBeaconEthV2BeaconWithdrawal:
 		return v2.NewBeaconBlockWithdrawal(log, event), nil
+	case TypeBeaconETHV1EventsBlobSidecar:
+		return v1.NewEventsBlobSidecar(log, event), nil
 
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)

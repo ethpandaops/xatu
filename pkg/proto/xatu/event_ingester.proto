@@ -600,6 +600,17 @@ message ClientMeta {
     AttestationDataSnapshot Snapshot = 5 [ json_name = "snapshot" ];
   }
 
+  message AdditionalEthV1EventsBlobSidecarData {
+    // Epoch contains the epoch information for the blob sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the blob sidecar.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the blob sidecar.
+    PropagationV2 propagation = 3;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -687,6 +698,8 @@ message ClientMeta {
     AdditionalEthV2BeaconBlockExecutionTransactionData eth_v2_beacon_block_execution_transaction = 40 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
     // AdditionalEthV2BeaconBlockWithdrawalData contains additional data on withdrawals derived from beacon blocks.
     AdditionalEthV2BeaconBlockWithdrawalData eth_v2_beacon_block_withdrawal = 41 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
+    // AdditionalEthV1EventsBlobSidecarData contains additional data about the eth v1 blob sidecar event.
+    AdditionalEthV1EventsBlobSidecarData eth_v1_events_blob_sidecar = 42 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
   }
 }
 
@@ -784,6 +797,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE = 29;
     BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 30;
     BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 31;
+    BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -830,5 +844,6 @@ message DecoratedEvent {
     xatu.eth.v2.SignedBLSToExecutionChangeV2 eth_v2_beacon_block_bls_to_execution_change = 31 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
     xatu.eth.v1.Transaction eth_v2_beacon_block_execution_transaction = 32 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
     xatu.eth.v1.WithdrawalV2 eth_v2_beacon_block_withdrawal = 33 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
+    xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
   }; 
 }

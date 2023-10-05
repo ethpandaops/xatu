@@ -162,3 +162,15 @@ message EventContributionAndProofV2 {
 
   ContributionAndProofV2 message = 2;
 }
+
+message EventBlobSidecar {
+  string block_root = 1 [ json_name = "block_root" ];
+
+  google.protobuf.UInt64Value slot = 2;
+
+  google.protobuf.UInt64Value index = 3;
+
+  string kzg_commitment = 4 [ json_name = "kzg_commitment" ];
+
+  string versioned_hash = 5 [ json_name = "versioned_hash" ];
+}

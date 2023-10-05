@@ -3,7 +3,6 @@ package blockprint
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 )
 
 type BlocksPerClientResponse struct {
@@ -32,20 +31,14 @@ type SyncStatusResponse struct {
 }
 
 func (c *Client) BlocksPerClient(ctx context.Context, startEpoch, endEpoch string) (*BlocksPerClientResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.endpoint+"/blocks_per_client/"+startEpoch+"/"+endEpoch, http.NoBody)
+	data, err := c.get(ctx, "/blocks_per_client/"+startEpoch+"/"+endEpoch)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 
 	var result BlocksPerClientResponse
 
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
 		return nil, err
 	}

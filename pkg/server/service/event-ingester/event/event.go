@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/blockprint"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
@@ -48,6 +49,7 @@ const (
 	TypeBeaconEthV2BeaconExecutionTransaction   Type = v2.BeaconBlockExecutionTransactionType
 	TypeBeaconEthV2BeaconBLSToExecutionChange   Type = v2.BeaconBlockBLSToExecutionChangeType
 	TypeBeaconEthV2BeaconWithdrawal             Type = v2.BeaconBlockWithdrawalType
+	TypeBlockprintBlockClassification           Type = blockprint.BlockClassificationType
 )
 
 type Event interface {
@@ -125,6 +127,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v2.NewBeaconBlockBLSToExecutionChange(log, event), nil
 	case TypeBeaconEthV2BeaconWithdrawal:
 		return v2.NewBeaconBlockWithdrawal(log, event), nil
+	case TypeBlockprintBlockClassification:
+		return blockprint.NewBlockClassification(log, event), nil
 
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)

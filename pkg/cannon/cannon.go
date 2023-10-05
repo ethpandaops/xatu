@@ -15,9 +15,11 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
+	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -328,7 +330,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 		checkpointIteratorMetrics := iterator.NewCheckpointMetrics("xatu_cannon")
 
+		blockprintIteratorMetrics := iterator.NewBlockprintMetrics("xatu_cannon")
+
 		finalizedCheckpoint := "finalized"
+
+		blockprintClient := aBlockprint.NewClient(
+			c.Config.Derivers.BlockClassificationConfig.Endpoint,
+			c.Config.Derivers.BlockClassificationConfig.Headers,
+		)
 
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
@@ -467,6 +476,22 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				c.beacon,
 				clientMeta,
 			),
+			blockprint.NewBlockClassificationDeriver(
+				c.log,
+				&c.Config.Derivers.BlockClassificationConfig,
+				iterator.NewBlockprintIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
+					c.coordinatorClient,
+					&blockprintIteratorMetrics,
+					blockprintClient,
+				),
+				c.beacon,
+				clientMeta,
+				blockprintClient,
+			),
 		}
 
 		c.eventDerivers = eventDerivers
@@ -476,12 +501,6 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 			d.OnEventsDerived(ctx, func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 				return c.handleNewDecoratedEvents(ctx, events)
-			})
-
-			d.OnLocationUpdated(ctx, func(ctx context.Context, location uint64) error {
-				c.metrics.SetDeriverLocation(location, d.CannonType(), string(c.beacon.Metadata().Network.Name))
-
-				return nil
 			})
 
 			c.log.

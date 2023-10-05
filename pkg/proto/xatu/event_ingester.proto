@@ -16,6 +16,8 @@ import "pkg/proto/eth/v1/fork_choice.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
 
+import "pkg/proto/blockprint/block_classification.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -568,6 +570,14 @@ message ClientMeta {
     BlockIdentifier block = 1;
   }
 
+  message AdditionalBlockprintBlockClassificationData {
+    // Epoch contains the epoch information for the block classification.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the block classification.
+    SlotV2 slot = 2;
+  }
+
   message AttestationDataSnapshot {
     // RequestedAtSlotStartDiffMs is the difference how far in to the slot the
     // sentry was when it requested the attestation data snapshot (in milliseconds).
@@ -687,6 +697,8 @@ message ClientMeta {
     AdditionalEthV2BeaconBlockExecutionTransactionData eth_v2_beacon_block_execution_transaction = 40 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
     // AdditionalEthV2BeaconBlockWithdrawalData contains additional data on withdrawals derived from beacon blocks.
     AdditionalEthV2BeaconBlockWithdrawalData eth_v2_beacon_block_withdrawal = 41 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
+    // AdditionalBlockprintBlockClassification contains additional data on blockprint block classifications.
+    AdditionalBlockprintBlockClassificationData blockprint_block_classification = 42 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
   }
 }
 
@@ -784,6 +796,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE = 29;
     BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 30;
     BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 31;
+    BLOCKPRINT_BLOCK_CLASSIFICATION = 32;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -830,5 +843,6 @@ message DecoratedEvent {
     xatu.eth.v2.SignedBLSToExecutionChangeV2 eth_v2_beacon_block_bls_to_execution_change = 31 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE" ];
     xatu.eth.v1.Transaction eth_v2_beacon_block_execution_transaction = 32 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
     xatu.eth.v1.WithdrawalV2 eth_v2_beacon_block_withdrawal = 33 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
+    xatu.blockprint.BlockClassification blockprint_block_classification = 34 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
   }; 
 }

@@ -119,6 +119,19 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+
+	case xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION:
+		l.Type = "BLOCKPRINT_BLOCK_CLASSIFICATION"
+
+		data := msg.GetBlockprintBlockClassification()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		l.Value = string(b)
+
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -238,6 +251,19 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlock{
 			EthV2BeaconBlock: data,
+		}
+	case "BLOCKPRINT_BLOCK_CLASSIFICATION":
+		msg.Type = xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION
+
+		data := &xatu.CannonLocationBlockprintBlockClassification{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_BlockprintBlockClassification{
+			BlockprintBlockClassification: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

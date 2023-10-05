@@ -27,13 +27,12 @@ import (
 )
 
 type ExecutionTransactionDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *ExecutionTransactionDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *ExecutionTransactionDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 type ExecutionTransactionDeriverConfig struct {
@@ -64,10 +63,6 @@ func (b *ExecutionTransactionDeriver) Name() string {
 
 func (b *ExecutionTransactionDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *ExecutionTransactionDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *ExecutionTransactionDeriver) Start(ctx context.Context) error {
@@ -119,12 +114,6 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch()))

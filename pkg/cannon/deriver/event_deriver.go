@@ -4,6 +4,7 @@ import (
 	"context"
 
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -14,7 +15,6 @@ type EventDeriver interface {
 	CannonType() xatu.CannonType
 	// Callbacks
 	OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error)
-	OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, loc uint64) error)
 }
 
 // Ensure that derivers implements the EventDeriver interface
@@ -26,3 +26,4 @@ var _ EventDeriver = &v2.ExecutionTransactionDeriver{}
 var _ EventDeriver = &v2.BLSToExecutionChangeDeriver{}
 var _ EventDeriver = &v2.WithdrawalDeriver{}
 var _ EventDeriver = &v2.BeaconBlockDeriver{}
+var _ EventDeriver = &blockprint.BlockClassificationDeriver{}

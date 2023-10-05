@@ -32,13 +32,12 @@ type AttesterSlashingDeriverConfig struct {
 }
 
 type AttesterSlashingDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *AttesterSlashingDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, loc uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *AttesterSlashingDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
@@ -61,10 +60,6 @@ func (a *AttesterSlashingDeriver) Name() string {
 
 func (a *AttesterSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	a.onEventsCallbacks = append(a.onEventsCallbacks, fn)
-}
-
-func (a *AttesterSlashingDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, loc uint64) error) {
-	a.onLocationCallbacks = append(a.onLocationCallbacks, fn)
 }
 
 func (a *AttesterSlashingDeriver) Start(ctx context.Context) error {
@@ -117,12 +112,6 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				a.lookAheadAtLocations(ctx, lookAhead)
-
-				for _, fn := range a.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch()); errr != nil {
-						a.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := a.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch()))

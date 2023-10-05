@@ -97,6 +97,7 @@ enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 5;
   BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 6;
   BEACON_API_ETH_V2_BEACON_BLOCK = 7;
+  BLOCKPRINT_BLOCK_CLASSIFICATION = 8;
 }
 
 message CannonLocationEthV2BeaconBlockVoluntaryExit {
@@ -131,6 +132,11 @@ message CannonLocationEthV2BeaconBlock {
   uint64 epoch = 1;
 }
 
+message CannonLocationBlockprintBlockClassification {
+  uint64 slot = 1;
+  uint64 target_end_slot = 2;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -143,6 +149,7 @@ message CannonLocation {
     CannonLocationEthV2BeaconBlockExecutionTransaction eth_v2_beacon_block_execution_transaction = 8 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION" ];
     CannonLocationEthV2BeaconBlockWithdrawal eth_v2_beacon_block_withdrawal = 9 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
     CannonLocationEthV2BeaconBlock eth_v2_beacon_block = 10 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
+    CannonLocationBlockprintBlockClassification blockprint_block_classification = 11 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
   }
 }
 

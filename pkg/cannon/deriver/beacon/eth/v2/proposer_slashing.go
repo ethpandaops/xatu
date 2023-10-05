@@ -32,13 +32,12 @@ type ProposerSlashingDeriverConfig struct {
 }
 
 type ProposerSlashingDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *ProposerSlashingDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *ProposerSlashingDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
@@ -61,10 +60,6 @@ func (b *ProposerSlashingDeriver) Name() string {
 
 func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *ProposerSlashingDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *ProposerSlashingDeriver) Start(ctx context.Context) error {
@@ -116,12 +111,6 @@ func (b *ProposerSlashingDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockProposerSlashing().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockProposerSlashing().GetEpoch()))

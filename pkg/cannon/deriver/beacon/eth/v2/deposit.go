@@ -32,13 +32,12 @@ type DepositDeriverConfig struct {
 }
 
 type DepositDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *DepositDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *DepositDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
@@ -61,10 +60,6 @@ func (b *DepositDeriver) Name() string {
 
 func (b *DepositDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *DepositDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *DepositDeriver) Start(ctx context.Context) error {
@@ -116,12 +111,6 @@ func (b *DepositDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockDeposit().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockDeposit().GetEpoch()))

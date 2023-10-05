@@ -157,6 +157,9 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 					return err
 				}
 
+				// Sleep if everything went well to avoid hammering the API
+				time.Sleep(5000 * time.Millisecond)
+
 				bo.Reset()
 
 				return nil

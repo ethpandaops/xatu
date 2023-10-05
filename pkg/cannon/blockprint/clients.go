@@ -12,7 +12,7 @@ var (
 	ClientNameLodestar   = ClientName("Lodestar")
 	ClientNameNimbus     = ClientName("Nimbus")
 	ClientNameTeku       = ClientName("Teku")
-	ClientNameGrandine   = ClientName("Teku")
+	ClientNameGrandine   = ClientName("Grandine")
 )
 
 func (p ProbabilityMap) safeGet(name ClientName) float64 {

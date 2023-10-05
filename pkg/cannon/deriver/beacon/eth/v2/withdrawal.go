@@ -32,13 +32,12 @@ type WithdrawalDeriverConfig struct {
 }
 
 type WithdrawalDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *WithdrawalDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *WithdrawalDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewWithdrawalDeriver(log logrus.FieldLogger, config *WithdrawalDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
@@ -61,10 +60,6 @@ func (b *WithdrawalDeriver) Name() string {
 
 func (b *WithdrawalDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *WithdrawalDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *WithdrawalDeriver) Start(ctx context.Context) error {
@@ -117,12 +112,6 @@ func (b *WithdrawalDeriver) run(rctx context.Context) {
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
 
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockWithdrawal().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
-
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockWithdrawal().GetEpoch()))
 				if err != nil {
@@ -147,8 +136,10 @@ func (b *WithdrawalDeriver) run(rctx context.Context) {
 				return nil
 			}
 
-			if err := backoff.Retry(operation, bo); err != nil {
-				b.log.WithError(err).Error("Failed to process epoch")
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
+				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
 	}

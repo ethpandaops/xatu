@@ -34,13 +34,12 @@ type BLSToExecutionChangeDeriverConfig struct {
 }
 
 type BLSToExecutionChangeDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *BLSToExecutionChangeDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, loc uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *BLSToExecutionChangeDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
@@ -63,10 +62,6 @@ func (b *BLSToExecutionChangeDeriver) Name() string {
 
 func (b *BLSToExecutionChangeDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *BLSToExecutionChangeDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
@@ -118,12 +113,6 @@ func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAheads)
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch()))

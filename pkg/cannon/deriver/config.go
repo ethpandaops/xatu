@@ -1,18 +1,27 @@
 package deriver
 
-import v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+import (
+	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
+	"github.com/pkg/errors"
+)
 
 type Config struct {
-	AttesterSlashingConfig     v2.AttesterSlashingDeriverConfig     `yaml:"attesterSlashing"`
-	BLSToExecutionConfig       v2.BLSToExecutionChangeDeriverConfig `yaml:"blsToExecutionChange"`
-	DepositConfig              v2.DepositDeriverConfig              `yaml:"deposit"`
-	ExecutionTransactionConfig v2.ExecutionTransactionDeriverConfig `yaml:"executionTransaction"`
-	ProposerSlashingConfig     v2.ProposerSlashingDeriverConfig     `yaml:"proposerSlashing"`
-	VoluntaryExitConfig        v2.VoluntaryExitDeriverConfig        `yaml:"voluntaryExit"`
-	WithdrawalConfig           v2.WithdrawalDeriverConfig           `yaml:"withdrawal"`
-	BeaconBlockConfig          v2.BeaconBlockDeriverConfig          `yaml:"beaconBlock"`
+	AttesterSlashingConfig     v2.AttesterSlashingDeriverConfig            `yaml:"attesterSlashing"`
+	BLSToExecutionConfig       v2.BLSToExecutionChangeDeriverConfig        `yaml:"blsToExecutionChange"`
+	DepositConfig              v2.DepositDeriverConfig                     `yaml:"deposit"`
+	ExecutionTransactionConfig v2.ExecutionTransactionDeriverConfig        `yaml:"executionTransaction"`
+	ProposerSlashingConfig     v2.ProposerSlashingDeriverConfig            `yaml:"proposerSlashing"`
+	VoluntaryExitConfig        v2.VoluntaryExitDeriverConfig               `yaml:"voluntaryExit"`
+	WithdrawalConfig           v2.WithdrawalDeriverConfig                  `yaml:"withdrawal"`
+	BeaconBlockConfig          v2.BeaconBlockDeriverConfig                 `yaml:"beaconBlock"`
+	BlockClassificationConfig  blockprint.BlockClassificationDeriverConfig `yaml:"blockClassification"`
 }
 
 func (c *Config) Validate() error {
+	if err := c.BlockClassificationConfig.Validate(); err != nil {
+		return errors.Wrap(err, "invalid block classification deriver config")
+	}
+
 	return nil
 }

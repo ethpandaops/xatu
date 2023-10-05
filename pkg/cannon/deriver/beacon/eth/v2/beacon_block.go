@@ -37,13 +37,12 @@ type BeaconBlockDeriverConfig struct {
 }
 
 type BeaconBlockDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *BeaconBlockDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *BeaconBlockDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewBeaconBlockDeriver(log logrus.FieldLogger, config *BeaconBlockDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlockDeriver {
@@ -66,10 +65,6 @@ func (b *BeaconBlockDeriver) Name() string {
 
 func (b *BeaconBlockDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *BeaconBlockDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *BeaconBlockDeriver) Start(ctx context.Context) error {
@@ -134,15 +129,7 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
 
-				span.AddEvent("Look ahead complete. Firing location callbacks...")
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlock().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
-
-				span.AddEvent("Location callbacks complete. Processing epoch...")
+				span.AddEvent("Look ahead complete. Processing epoch...")
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch()))

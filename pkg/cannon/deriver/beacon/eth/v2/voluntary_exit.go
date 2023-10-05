@@ -32,13 +32,12 @@ type VoluntaryExitDeriverConfig struct {
 }
 
 type VoluntaryExitDeriver struct {
-	log                 logrus.FieldLogger
-	cfg                 *VoluntaryExitDeriverConfig
-	iterator            *iterator.CheckpointIterator
-	onEventsCallbacks   []func(ctx context.Context, events []*xatu.DecoratedEvent) error
-	onLocationCallbacks []func(ctx context.Context, location uint64) error
-	beacon              *ethereum.BeaconNode
-	clientMeta          *xatu.ClientMeta
+	log               logrus.FieldLogger
+	cfg               *VoluntaryExitDeriverConfig
+	iterator          *iterator.CheckpointIterator
+	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
+	beacon            *ethereum.BeaconNode
+	clientMeta        *xatu.ClientMeta
 }
 
 func NewVoluntaryExitDeriver(log logrus.FieldLogger, config *VoluntaryExitDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
@@ -61,10 +60,6 @@ func (b *VoluntaryExitDeriver) Name() string {
 
 func (b *VoluntaryExitDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
-}
-
-func (b *VoluntaryExitDeriver) OnLocationUpdated(ctx context.Context, fn func(ctx context.Context, location uint64) error) {
-	b.onLocationCallbacks = append(b.onLocationCallbacks, fn)
 }
 
 func (b *VoluntaryExitDeriver) Start(ctx context.Context) error {
@@ -116,12 +111,6 @@ func (b *VoluntaryExitDeriver) run(rctx context.Context) {
 
 				// Look ahead
 				b.lookAheadAtLocation(ctx, lookAhead)
-
-				for _, fn := range b.onLocationCallbacks {
-					if errr := fn(ctx, location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch()); errr != nil {
-						b.log.WithError(errr).Error("Failed to send location")
-					}
-				}
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch()))

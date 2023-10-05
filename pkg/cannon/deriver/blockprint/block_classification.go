@@ -28,7 +28,7 @@ const (
 )
 
 type BlockClassificationDeriverConfig struct {
-	Enabled   bool              `yaml:"enabled" default:"true"`
+	Enabled   bool              `yaml:"enabled" default:"false"`
 	Endpoint  string            `yaml:"endpoint" default:"http://localhost:8080"`
 	Headers   map[string]string `yaml:"headers"`
 	BatchSize int               `yaml:"batchSize" default:"50"`

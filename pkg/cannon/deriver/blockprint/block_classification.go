@@ -226,8 +226,6 @@ func (b *BlockClassificationDeriver) processBlocks(ctx context.Context, blocks [
 }
 
 func (b *BlockClassificationDeriver) createEvent(ctx context.Context, classification *pBlockprint.BlockClassification, slot *xatu.SlotV2, epoch *xatu.EpochV2) (*xatu.DecoratedEvent, error) {
-	b.log.WithField("slot", slot).Info("Creating event")
-
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {

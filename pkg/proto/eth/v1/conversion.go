@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/attestantio/go-eth2-client/spec/capella"
+	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -23,6 +24,14 @@ func EpochAsString(epoch phase0.Epoch) string {
 
 func BLSSignatureToString(s *phase0.BLSSignature) string {
 	return fmt.Sprintf("%#x", s)
+}
+
+func KzgCommitmentToString(c deneb.KzgCommitment) string {
+	return fmt.Sprintf("%#x", c)
+}
+
+func VersionedHashToString(h deneb.VersionedHash) string {
+	return fmt.Sprintf("%#x", h)
 }
 
 func BytesToString(b []byte) string {

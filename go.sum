@@ -4,8 +4,8 @@ github.com/VictoriaMetrics/fastcache v1.12.1 h1:i0mICQuojGDL3KblA7wUNlY5lOK6a4bw
 github.com/VictoriaMetrics/fastcache v1.12.1/go.mod h1:tX04vaqcNoQeGLD+ra5pU5sWkuxnzWhEzLwhP9w653o=
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156 h1:eMwmnE/GDgah4HI848JfFxHt+iPb26b4zyfspmqY0/8=
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156/go.mod h1:Cb/ax3seSYIx7SuZdm2G2xzfwmv3TPSk2ucNfQESPXM=
-github.com/attestantio/go-eth2-client v0.18.3 h1:hUSYh+uMLyw4mJcXWcvrPLd8ozJl61aWMdx5Cpq9hxk=
-github.com/attestantio/go-eth2-client v0.18.3/go.mod h1:KSVlZSW1A3jUg5H8O89DLtqxgJprRfTtI7k89fLdhu0=
+github.com/attestantio/go-eth2-client v0.18.4-0.20231004102804-73681300fc5f h1:mD27pBWiiAFHt02Nml9lfjG1uYw2PwuGl9po2MHBZ1Q=
+github.com/attestantio/go-eth2-client v0.18.4-0.20231004102804-73681300fc5f/go.mod h1:KSVlZSW1A3jUg5H8O89DLtqxgJprRfTtI7k89fLdhu0=
 github.com/avast/retry-go/v4 v4.3.4 h1:pHLkL7jvCvP317I8Ge+Km2Yhntv3SdkJm7uekkqbKhM=
 github.com/avast/retry-go/v4 v4.3.4/go.mod h1:rv+Nla6Vk3/ilU0H51VHddWHiwimzX66yZ0JT6T+UvE=
 github.com/beevik/ntp v1.0.0 h1:d0Lgy1xbNNqVyGfvg2Z96ItKcfyn3lzgus/oRoj9vnk=
@@ -51,8 +51,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/ethereum/go-ethereum v1.12.0 h1:bdnhLPtqETd4m3mS8BGMNvBTf36bO5bx/hxE2zljOa0=
 github.com/ethereum/go-ethereum v1.12.0/go.mod h1:/oo2X/dZLJjf2mJ6YT9wcWxa4nNJDBKDBU6sFIpx1Gs=
-github.com/ethpandaops/beacon v0.27.0 h1:ex+fiN19DVcqnNB2qYUV+QJZaXhFCzpgbjrWnvMhkw4=
-github.com/ethpandaops/beacon v0.27.0/go.mod h1:p+PMyAYXro2hgNEMNbCtzLOvzHund9Q9BTPATvf8/SA=
+github.com/ethpandaops/beacon v0.29.0 h1:sUNcr2BAoqUQgKyg0PuQwH4wCiDj33n13AG6JlsV7bs=
+github.com/ethpandaops/beacon v0.29.0/go.mod h1:m4zoHS/lI/g4rdGEPeXRIJdsC0HkhJmMjmNgzABfuV4=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30 h1:xziHHIPT9iHoocM91UXwxICQoF121cdfontVAFwtapM=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30/go.mod h1:5UfUQ+9IBe1iZsk3KBoF/jtnRv7WVnMjebik4EW6ULE=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=

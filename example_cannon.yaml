@@ -33,25 +33,20 @@ ethereum:
 # derivers:
 #   attesterSlashing:
 #     enabled: true
-#     headSlotLag: 5
 #   blsToExecutionChange:
 #     enabled: true
-#     headSlotLag: 5
 #   deposit:
 #     enabled: true
-#     headSlotLag: 5
 #   withdrawal:
 #     enabled: true
-#     headSlotLag: 5
 #   executionTransaction:
 #     enabled: true
-#     headSlotLag: 5
 #   proposerSlashing:
 #     enabled: true
-#     headSlotLag: 5
 #   voluntaryExit:
 #     enabled: true
-#     headSlotLag: 5
+#   blockClassification:
+#     enabled: false
 
 outputs:
 - name: http-sink

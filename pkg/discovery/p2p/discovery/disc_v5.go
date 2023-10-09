@@ -307,9 +307,6 @@ func (d *DiscV5) OnNodeRecord(ctx context.Context, handler func(ctx context.Cont
 }
 
 func (l *ListenerV5) Close() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	if l.discovery != nil {
 		l.discovery.Close()
 	}
@@ -319,8 +316,13 @@ func (l *ListenerV5) Close() error {
 		l.localNode = nil
 	}
 
-	if l.conn != nil {
-		return l.conn.Close()
+	l.mu.Lock()
+	conn := l.conn
+	l.conn = nil
+	l.mu.Unlock()
+
+	if conn != nil {
+		return conn.Close()
 	}
 
 	return nil

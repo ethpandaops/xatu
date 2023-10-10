@@ -230,7 +230,12 @@ func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 
 	events := []*xatu.DecoratedEvent{}
 
-	for _, slashing := range a.getAttesterSlashings(ctx, block) {
+	slashings, err := a.getAttesterSlashings(ctx, block)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get attester slashings for slot %d", slot)
+	}
+
+	for _, slashing := range slashings {
 		event, err := a.createEvent(ctx, slashing, blockIdentifier)
 		if err != nil {
 			a.log.WithError(err).Error("Failed to create event")
@@ -244,12 +249,12 @@ func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 	return events, nil
 }
 
-func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) []*xatuethv1.AttesterSlashingV2 {
+func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.AttesterSlashingV2, error) {
 	slashings := []*xatuethv1.AttesterSlashingV2{}
 
 	attesterSlashings, err := block.AttesterSlashings()
 	if err != nil {
-		a.log.WithError(err).Error("Failed to obtain attester slashings")
+		return nil, errors.Wrap(err, "failed to obtain attester slashings")
 	}
 
 	for _, slashing := range attesterSlashings {
@@ -259,7 +264,7 @@ func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, bloc
 		})
 	}
 
-	return slashings
+	return slashings, nil
 }
 
 func convertIndexedAttestation(attestation *phase0.IndexedAttestation) *xatuethv1.IndexedAttestationV2 {

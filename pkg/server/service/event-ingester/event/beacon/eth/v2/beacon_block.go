@@ -77,6 +77,8 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_BellatrixBlock).BellatrixBlock.StateRoot
 	case "capella":
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_CapellaBlock).CapellaBlock.StateRoot
+	case "deneb":
+		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_DenebBlock).DenebBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

@@ -251,19 +251,9 @@ func (b *VoluntaryExitDeriver) processSlot(ctx context.Context, slot phase0.Slot
 func (b *VoluntaryExitDeriver) getVoluntaryExits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.SignedVoluntaryExitV2, error) {
 	exits := []*xatuethv1.SignedVoluntaryExitV2{}
 
-	var voluntaryExits []*phase0.SignedVoluntaryExit
-
-	switch block.Version {
-	case spec.DataVersionPhase0:
-		voluntaryExits = block.Phase0.Message.Body.VoluntaryExits
-	case spec.DataVersionAltair:
-		voluntaryExits = block.Altair.Message.Body.VoluntaryExits
-	case spec.DataVersionBellatrix:
-		voluntaryExits = block.Bellatrix.Message.Body.VoluntaryExits
-	case spec.DataVersionCapella:
-		voluntaryExits = block.Capella.Message.Body.VoluntaryExits
-	default:
-		return nil, fmt.Errorf("unsupported block version: %s", block.Version.String())
+	voluntaryExits, err := block.VoluntaryExits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain voluntary exits")
 	}
 
 	for _, exit := range voluntaryExits {

@@ -22,6 +22,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromBellatrix(block)
 	case spec.DataVersionCapella:
 		data = NewEventBlockFromCapella(block)
+	case spec.DataVersionDeneb:
+		data = NewEventBlockFromDeneb(block)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -198,5 +200,65 @@ func NewEventBlockFromCapella(block *spec.VersionedSignedBeaconBlock) *v2.EventB
 			},
 		},
 		Signature: block.Capella.Signature.String(),
+	}
+}
+
+func NewEventBlockFromDeneb(block *spec.VersionedSignedBeaconBlock) *v2.EventBlockV2 {
+	kzgCommitments := []string{}
+
+	for _, commitment := range block.Deneb.Message.Body.BlobKzgCommitments {
+		kzgCommitments = append(kzgCommitments, commitment.String())
+	}
+
+	return &v2.EventBlockV2{
+		Version: v2.BlockVersion_DENEB,
+		Message: &v2.EventBlockV2_DenebBlock{
+			DenebBlock: &v2.BeaconBlockDeneb{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Deneb.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.Deneb.Message.ProposerIndex)},
+				ParentRoot:    block.Deneb.Message.ParentRoot.String(),
+				StateRoot:     block.Deneb.Message.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyDeneb{
+					RandaoReveal: block.Deneb.Message.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Deneb.Message.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Deneb.Message.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Deneb.Message.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Deneb.Message.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Deneb.Message.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromPhase0(block.Deneb.Message.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromPhase0(block.Deneb.Message.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Deneb.Message.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Deneb.Message.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Deneb.Message.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Deneb.Message.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					ExecutionPayload: &v1.ExecutionPayloadDeneb{
+						ParentHash:    block.Deneb.Message.Body.ExecutionPayload.ParentHash.String(),
+						FeeRecipient:  block.Deneb.Message.Body.ExecutionPayload.FeeRecipient.String(),
+						StateRoot:     fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.StateRoot[:]),
+						ReceiptsRoot:  fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.ReceiptsRoot[:]),
+						LogsBloom:     fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.LogsBloom[:]),
+						PrevRandao:    fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.PrevRandao[:]),
+						BlockNumber:   &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.BlockNumber},
+						GasLimit:      &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.GasLimit},
+						GasUsed:       &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.GasUsed},
+						Timestamp:     &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.Timestamp},
+						ExtraData:     fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.ExtraData),
+						BaseFeePerGas: fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
+						BlockHash:     block.Deneb.Message.Body.ExecutionPayload.BlockHash.String(),
+						Transactions:  getTransactions(block.Deneb.Message.Body.ExecutionPayload.Transactions),
+						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Deneb.Message.Body.ExecutionPayload.Withdrawals),
+						BlobGasUsed:   &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.BlobGasUsed},
+						ExcessBlobGas: &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.ExcessBlobGas},
+					},
+					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Deneb.Message.Body.BLSToExecutionChanges),
+					BlobKzgCommitments:    kzgCommitments,
+				},
+			},
+		},
+		Signature: block.Deneb.Signature.String(),
 	}
 }

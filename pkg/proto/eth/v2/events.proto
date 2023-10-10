@@ -18,6 +18,8 @@ enum BlockVersion {
   BELLATRIX = 3;
 
   CAPELLA = 4;
+
+  DENEB = 5;
 }
 
 message EventBlock {
@@ -29,6 +31,8 @@ message EventBlock {
     v2.BeaconBlockBellatrix bellatrix_block = 3 [ json_name = "BELLATRIX" ];
 
     v2.BeaconBlockCapella capella_block = 4 [ json_name = "CAPELLA" ];
+
+    v2.BeaconBlockDeneb deneb_block = 7 [ json_name = "DENEB" ];
   }
 
   string signature = 5;
@@ -45,6 +49,8 @@ message EventBlockV2 {
     v2.BeaconBlockBellatrixV2 bellatrix_block = 3 [ json_name = "BELLATRIX" ];
 
     v2.BeaconBlockCapellaV2 capella_block = 4 [ json_name = "CAPELLA" ];
+
+    v2.BeaconBlockDeneb deneb_block = 7 [ json_name = "DENEB" ];
   }
 
   string signature = 5;

@@ -90,7 +90,7 @@ func (c *CheckpointIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		// If location is empty we haven't started yet, start at the network default for the type. If the network default
 		// is empty, we'll start at epoch 0.
 		if location == nil {
-			location, err = c.createLocationFromEpochNumber(phase0.Epoch(GetDefaultSlotLocationForNetworkAndType(c.networkName, c.cannonType) / 32))
+			location, err = c.createLocationFromEpochNumber(phase0.Epoch(GetDefaultSlotLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType) / 32))
 			if err != nil {
 				return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to create location from slot number 0")
 			}
@@ -211,6 +211,8 @@ func (c *CheckpointIterator) getEpochFromLocation(location *xatu.CannonLocation)
 		return phase0.Epoch(location.GetEthV2BeaconBlockWithdrawal().Epoch), nil
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
 		return phase0.Epoch(location.GetEthV2BeaconBlock().Epoch), nil
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
+		return phase0.Epoch(location.GetEthV1BeaconBlobSidecar().Epoch), nil
 	default:
 		return 0, errors.Errorf("unknown cannon type %s", location.Type)
 	}
@@ -268,6 +270,12 @@ func (c *CheckpointIterator) createLocationFromEpochNumber(epoch phase0.Epoch) (
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
 		location.Data = &xatu.CannonLocation_EthV2BeaconBlock{
 			EthV2BeaconBlock: &xatu.CannonLocationEthV2BeaconBlock{
+				Epoch: uint64(epoch),
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
+		location.Data = &xatu.CannonLocation_EthV1BeaconBlobSidecar{
+			EthV1BeaconBlobSidecar: &xatu.CannonLocationEthV1BeaconBlobSidecar{
 				Epoch: uint64(epoch),
 			},
 		}

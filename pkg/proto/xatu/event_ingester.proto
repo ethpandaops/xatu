@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
 import "pkg/proto/eth/v1/attestation.proto";
+import "pkg/proto/eth/v1/blob.proto";
 import "pkg/proto/eth/v1/events.proto";
 import "pkg/proto/eth/v1/committee.proto";
 import "pkg/proto/eth/v2/events.proto";
@@ -621,6 +622,17 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1BeaconBlobSidecarData {
+    // Epoch contains the epoch information for the blob sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the blob sidecar.
+    SlotV2 slot = 2;
+
+    // DataSizeKB contains the size of the blob sidecar in bytes.
+    google.protobuf.UInt64Value data_size = 3 [ json_name = "data_size" ];
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -712,6 +724,8 @@ message ClientMeta {
     AdditionalEthV1EventsBlobSidecarData eth_v1_events_blob_sidecar = 42 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
     // AdditionalBlockprintBlockClassification contains additional data on blockprint block classifications.
     AdditionalBlockprintBlockClassificationData blockprint_block_classification = 43 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
+    // AdditionalEthV1BeaconBlobSidecarData contains additional data on beacon blob sidecars.
+    AdditionalEthV1BeaconBlobSidecarData eth_v1_beacon_blob_sidecar = 44 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
   }
 }
 
@@ -811,6 +825,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 31;
     BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
     BLOCKPRINT_BLOCK_CLASSIFICATION = 33;
+    BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -859,5 +874,6 @@ message DecoratedEvent {
     xatu.eth.v1.WithdrawalV2 eth_v2_beacon_block_withdrawal = 33 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
     xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
     xatu.blockprint.BlockClassification blockprint_block_classification = 35 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
+    xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
   }; 
 }

@@ -1,6 +1,7 @@
 package deriver
 
 import (
+	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/pkg/errors"
@@ -16,6 +17,7 @@ type Config struct {
 	WithdrawalConfig           v2.WithdrawalDeriverConfig                  `yaml:"withdrawal"`
 	BeaconBlockConfig          v2.BeaconBlockDeriverConfig                 `yaml:"beaconBlock"`
 	BlockClassificationConfig  blockprint.BlockClassificationDeriverConfig `yaml:"blockClassification"`
+	BeaconBlobSidecarConfig    v1.BeaconBlobDeriverConfig                  `yaml:"beaconBlobSidecar"`
 }
 
 func (c *Config) Validate() error {

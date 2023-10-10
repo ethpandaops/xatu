@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -15,7 +16,6 @@ type Iterator interface {
 
 // Ensure that derivers implements the EventDeriver interface
 var _ Iterator = &CheckpointIterator{}
-var _ Iterator = &SlotIterator{}
 
 var (
 	ErrLocationUpToDate = errors.New("location up to date")
@@ -23,27 +23,9 @@ var (
 	SlotZero = phase0.Slot(0)
 )
 
-func GetDefaultSlotLocationForNetworkAndType(network string, cannonType xatu.CannonType) phase0.Slot {
-	switch network {
-	case "goerli", "prater":
-		return getSlotFromNetworkAndType(cannonType, GoerliDefaultSlotStartingPosition)
-	case "mainnet":
-		return getSlotFromNetworkAndType(cannonType, MainnetDefaultSlotStartingPosition)
-	case "sepolia":
-		return getSlotFromNetworkAndType(cannonType, SepoliaDefaultSlotStartingPosition)
-	case "holesky":
-		return getSlotFromNetworkAndType(cannonType, HoleskyDefaultSlotStartingPosition)
-	default:
-		return SlotZero
-	}
-}
-
-func getSlotFromNetworkAndType(typ xatu.CannonType, networkDefaults DefaultSlotStartingPositions) phase0.Slot {
-	if networkDefaults == nil {
-		return SlotZero
-	}
-
-	if slot, exists := networkDefaults[typ]; exists {
+func GetDefaultSlotLocation(forkEpochs state.ForkEpochs, cannonType xatu.CannonType) phase0.Slot {
+	defaults := NewSlotDefaultsFromForkEpochs(forkEpochs)
+	if slot, exists := defaults[cannonType]; exists {
 		return slot
 	}
 

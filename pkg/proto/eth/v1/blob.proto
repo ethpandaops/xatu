@@ -7,7 +7,7 @@ import "google/protobuf/wrappers.proto";
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 message BlobSidecar {
-  bytes data = 1;
+  bytes blob = 1;
   string kzg_commitment = 2 [ json_name = "kzg_commitment" ];
   string kzg_proof = 3 [ json_name = "kzg_proof" ];
   google.protobuf.UInt64Value slot = 4;

@@ -232,7 +232,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlockBlobSidecar{
 			EthV1BeaconBlockBlobSidecar: &xatuethv1.BlobSidecar{
 				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.Slot)},
-				Data:            blob.Blob[:],
+				Blob:            blob.Blob[:],
 				Index:           &wrapperspb.UInt64Value{Value: uint64(blob.Index)},
 				BlockRoot:       blob.BlockRoot.String(),
 				BlockParentRoot: blob.BlockParentRoot.String(),
@@ -259,7 +259,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 
 func (b *BeaconBlobDeriver) getAdditionalData(_ context.Context, blob *deneb.BlobSidecar) (*xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData{
-		DataSizeKb: &wrapperspb.UInt64Value{Value: uint64(len(blob.Blob) / 1024)},
+		DataSize: &wrapperspb.UInt64Value{Value: uint64(len(blob.Blob))},
 	}
 
 	slot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(blob.Slot))

@@ -629,8 +629,8 @@ message ClientMeta {
     // Slot contains the slot information for the blob sidecar.
     SlotV2 slot = 2;
 
-    // DataSizeKB contains the size of the blob sidecar in KB.
-    google.protobuf.UInt64Value data_size_kb = 3 [ json_name = "data_size_kb" ];
+    // DataSizeKB contains the size of the blob sidecar in bytes.
+    google.protobuf.UInt64Value data_size = 3 [ json_name = "data_size" ];
   }
 
   // AdditionalData contains additional, computed data as set by the client

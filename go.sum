@@ -51,8 +51,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/ethereum/go-ethereum v1.12.0 h1:bdnhLPtqETd4m3mS8BGMNvBTf36bO5bx/hxE2zljOa0=
 github.com/ethereum/go-ethereum v1.12.0/go.mod h1:/oo2X/dZLJjf2mJ6YT9wcWxa4nNJDBKDBU6sFIpx1Gs=
-github.com/ethpandaops/beacon v0.29.0 h1:sUNcr2BAoqUQgKyg0PuQwH4wCiDj33n13AG6JlsV7bs=
-github.com/ethpandaops/beacon v0.29.0/go.mod h1:m4zoHS/lI/g4rdGEPeXRIJdsC0HkhJmMjmNgzABfuV4=
+github.com/ethpandaops/beacon v0.30.0 h1:bDzadzl7z8fE9/PCAss+BC3z/1dG2PI3dsNOEBtJVZE=
+github.com/ethpandaops/beacon v0.30.0/go.mod h1:m4zoHS/lI/g4rdGEPeXRIJdsC0HkhJmMjmNgzABfuV4=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30 h1:xziHHIPT9iHoocM91UXwxICQoF121cdfontVAFwtapM=
 github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30/go.mod h1:5UfUQ+9IBe1iZsk3KBoF/jtnRv7WVnMjebik4EW6ULE=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=

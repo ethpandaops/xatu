@@ -18,6 +18,7 @@ import (
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
+	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -491,6 +492,23 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				c.beacon,
 				clientMeta,
 				blockprintClient,
+			),
+			v1.NewBeaconBlobDeriver(
+				c.log,
+				&c.Config.Derivers.BeaconBlobSidecarConfig,
+				iterator.NewCheckpointIterator(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
+					c.coordinatorClient,
+					wallclock,
+					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
+				),
+				c.beacon,
+				clientMeta,
 			),
 		}
 

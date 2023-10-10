@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package xatu.eth.v1;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+message BlobSidecar {
+  bytes data = 1;
+  string kzg_commitment = 2 [ json_name = "kzg_commitment" ];
+  string kzg_proof = 3 [ json_name = "kzg_proof" ];
+  google.protobuf.UInt64Value slot = 4;
+  string block_root = 5 [ json_name = "block_root" ];
+  string block_parent_root = 6 [ json_name = "block_parent_root" ];
+  google.protobuf.UInt64Value proposer_index = 7 [ json_name = "proposer_index" ];
+  google.protobuf.UInt64Value index = 8;
+}

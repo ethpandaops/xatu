@@ -2,53 +2,36 @@ package iterator
 
 import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-type DefaultSlotStartingPositions map[xatu.CannonType]phase0.Slot
+func NewSlotDefaultsFromForkEpochs(forkEpochs state.ForkEpochs) map[xatu.CannonType]phase0.Slot {
+	var (
+		bellatrixEpoch,
+		capellaEpoch,
+		denebEpoch phase0.Epoch
+	)
 
-var (
-	GoerliDefaultSlotStartingPosition = DefaultSlotStartingPositions{
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:          phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:                 phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE: phase0.Slot(162304 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:              phase0.Slot(162304 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:   phase0.Slot(112260 * 32), // Bellatrix fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:                         phase0.Slot(0),
+	bellatrix, err := forkEpochs.GetByName("BELLATRIX")
+	if err == nil {
+		bellatrixEpoch = bellatrix.Epoch
 	}
 
-	MainnetDefaultSlotStartingPosition = DefaultSlotStartingPositions{
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:          phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:                 phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE: phase0.Slot(194048 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:              phase0.Slot(194048 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:   phase0.Slot(144896 * 32), // Bellatrix fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:                         phase0.Slot(0),
+	capella, err := forkEpochs.GetByName("CAPELLA")
+	if err == nil {
+		capellaEpoch = capella.Epoch
 	}
 
-	SepoliaDefaultSlotStartingPosition = DefaultSlotStartingPositions{
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:          phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:                 phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE: phase0.Slot(56832 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:              phase0.Slot(56832 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:   phase0.Slot(100 * 32),   // Bellatrix fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:                         phase0.Slot(0),
+	deneb, err := forkEpochs.GetByName("DENEB")
+	if err == nil {
+		denebEpoch = deneb.Epoch
 	}
 
-	HoleskyDefaultSlotStartingPosition = DefaultSlotStartingPositions{
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:       phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:          phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:                 phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE: phase0.Slot(256 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:              phase0.Slot(256 * 32), // Capella fork
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:   phase0.Slot(0),
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:                         phase0.Slot(0),
+	return map[xatu.CannonType]phase0.Slot{
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE: phase0.Slot(capellaEpoch * 32),
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:              phase0.Slot(capellaEpoch * 32),
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:   phase0.Slot(bellatrixEpoch * 32),
+		xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:                  phase0.Slot(denebEpoch * 32),
 	}
-)
+}

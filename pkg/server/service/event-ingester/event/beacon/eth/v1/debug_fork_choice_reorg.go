@@ -34,6 +34,7 @@ func (b *DebugForkChoiceReorg) Validate(_ context.Context) error {
 		return errors.New("failed to cast event data")
 	}
 
+	//nolint:staticcheck // Handled by v2
 	if event.EthV1ForkChoiceReorg.Before == nil && event.EthV1ForkChoiceReorg.After == nil {
 		return errors.New("both before and after fork choice snapshots are nil")
 	}

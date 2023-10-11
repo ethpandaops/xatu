@@ -369,6 +369,13 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 		}
 
 		addTxData(capellaTxs)
+	case spec.DataVersionDeneb:
+		denebTxs := make([][]byte, len(block.Deneb.Message.Body.ExecutionPayload.Transactions))
+		for i, tx := range block.Deneb.Message.Body.ExecutionPayload.Transactions {
+			denebTxs[i] = tx
+		}
+
+		addTxData(denebTxs)
 	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)

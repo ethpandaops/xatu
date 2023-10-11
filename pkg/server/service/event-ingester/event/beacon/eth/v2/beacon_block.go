@@ -70,13 +70,20 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 
 	switch version {
 	case "phase0":
+		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_Phase0Block).Phase0Block.StateRoot
 	case "altair":
+		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_AltairBlock).AltairBlock.StateRoot
 	case "bellatrix":
+		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_BellatrixBlock).BellatrixBlock.StateRoot
 	case "capella":
+		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_CapellaBlock).CapellaBlock.StateRoot
+	case "deneb":
+		//nolint:staticcheck // Handled by v2
+		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_DenebBlock).DenebBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

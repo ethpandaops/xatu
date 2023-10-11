@@ -249,30 +249,20 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 }
 
 func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.DepositV2, error) {
-	exits := []*xatuethv1.DepositV2{}
+	deposits := []*xatuethv1.DepositV2{}
 
-	var deposits []*phase0.Deposit
-
-	switch block.Version {
-	case spec.DataVersionPhase0:
-		deposits = block.Phase0.Message.Body.Deposits
-	case spec.DataVersionAltair:
-		deposits = block.Altair.Message.Body.Deposits
-	case spec.DataVersionBellatrix:
-		deposits = block.Bellatrix.Message.Body.Deposits
-	case spec.DataVersionCapella:
-		deposits = block.Capella.Message.Body.Deposits
-	default:
-		return nil, fmt.Errorf("unsupported block version: %s", block.Version.String())
+	dps, err := block.Deposits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain deposits")
 	}
 
-	for _, deposit := range deposits {
+	for _, deposit := range dps {
 		proof := []string{}
 		for _, p := range deposit.Proof {
 			proof = append(proof, fmt.Sprintf("0x%x", p))
 		}
 
-		exits = append(exits, &xatuethv1.DepositV2{
+		deposits = append(deposits, &xatuethv1.DepositV2{
 			Proof: proof,
 			Data: &xatuethv1.DepositV2_Data{
 				Pubkey:                deposit.Data.PublicKey.String(),
@@ -283,7 +273,7 @@ func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedS
 		})
 	}
 
-	return exits, nil
+	return deposits, nil
 }
 
 func (b *DepositDeriver) createEvent(ctx context.Context, deposit *xatuethv1.DepositV2, identifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {

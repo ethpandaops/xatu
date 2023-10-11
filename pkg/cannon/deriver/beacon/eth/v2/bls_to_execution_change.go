@@ -253,26 +253,20 @@ func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phas
 func (b *BLSToExecutionChangeDeriver) getBLSToExecutionChanges(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv2.SignedBLSToExecutionChangeV2, error) {
 	changes := []*xatuethv2.SignedBLSToExecutionChangeV2{}
 
-	switch block.Version {
-	case spec.DataVersionPhase0:
-		return changes, nil
-	case spec.DataVersionAltair:
-		return changes, nil
-	case spec.DataVersionBellatrix:
-		return changes, nil
-	case spec.DataVersionCapella:
-		for _, change := range block.Capella.Message.Body.BLSToExecutionChanges {
-			changes = append(changes, &xatuethv2.SignedBLSToExecutionChangeV2{
-				Message: &xatuethv2.BLSToExecutionChangeV2{
-					ValidatorIndex:     wrapperspb.UInt64(uint64(change.Message.ValidatorIndex)),
-					FromBlsPubkey:      change.Message.FromBLSPubkey.String(),
-					ToExecutionAddress: change.Message.ToExecutionAddress.String(),
-				},
-				Signature: change.Signature.String(),
-			})
-		}
-	default:
-		return nil, fmt.Errorf("unsupported block version: %s", block.Version.String())
+	chs, err := block.BLSToExecutionChanges()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain BLS to execution changes")
+	}
+
+	for _, change := range chs {
+		changes = append(changes, &xatuethv2.SignedBLSToExecutionChangeV2{
+			Message: &xatuethv2.BLSToExecutionChangeV2{
+				ValidatorIndex:     wrapperspb.UInt64(uint64(change.Message.ValidatorIndex)),
+				FromBlsPubkey:      change.Message.FromBLSPubkey.String(),
+				ToExecutionAddress: change.Message.ToExecutionAddress.String(),
+			},
+			Signature: change.Signature.String(),
+		})
 	}
 
 	return changes, nil

@@ -289,31 +289,16 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*types.Transaction, error) {
 	transactions := []*types.Transaction{}
 
-	switch block.Version {
-	case spec.DataVersionPhase0:
-		return transactions, nil
-	case spec.DataVersionAltair:
-		return transactions, nil
-	case spec.DataVersionBellatrix:
-		for _, transaction := range block.Bellatrix.Message.Body.ExecutionPayload.Transactions {
-			ethTransaction := new(types.Transaction)
-			if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
-			}
+	txs, err := block.ExecutionTransactions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get execution transactions: %v", err)
+	}
 
-			transactions = append(transactions, ethTransaction)
+	for _, transaction := range txs {
+		ethTransaction := new(types.Transaction)
+		if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
 		}
-	case spec.DataVersionCapella:
-		for _, transaction := range block.Capella.Message.Body.ExecutionPayload.Transactions {
-			ethTransaction := new(types.Transaction)
-			if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
-			}
-
-			transactions = append(transactions, ethTransaction)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported block version: %s", block.Version.String())
 	}
 
 	return transactions, nil

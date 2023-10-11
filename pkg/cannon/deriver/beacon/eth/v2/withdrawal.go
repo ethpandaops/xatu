@@ -248,12 +248,12 @@ func (b *WithdrawalDeriver) lookAheadAtLocation(ctx context.Context, locations [
 func (b *WithdrawalDeriver) getWithdrawals(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.WithdrawalV2, error) {
 	withdrawals := []*xatuethv1.WithdrawalV2{}
 
-	switch block.Version {
-	case spec.DataVersionPhase0, spec.DataVersionAltair, spec.DataVersionBellatrix:
-		return withdrawals, nil
+	withd, err := block.Withdrawals()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain withdrawals")
 	}
 
-	for _, withdrawal := range block.Capella.Message.Body.ExecutionPayload.Withdrawals {
+	for _, withdrawal := range withd {
 		withdrawals = append(withdrawals, &xatuethv1.WithdrawalV2{
 			Index:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Index)},
 			ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(withdrawal.ValidatorIndex)},

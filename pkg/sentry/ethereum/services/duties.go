@@ -222,7 +222,7 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 }
 
 func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch, skipCache ...bool) error {
-	if skipCache != nil && !skipCache[0] {
+	if len(skipCache) != 0 && !skipCache[0] {
 		if duties := m.beaconCommittees.Get(epoch); duties != nil {
 			return nil
 		}

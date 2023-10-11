@@ -87,6 +87,27 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		m.fetchNiceToHaveEpochDuties(ctx)
 	})
 
+	m.beacon.OnChainReOrg(ctx, func(ctx context.Context, ev *v1.ChainReorgEvent) error {
+		// Clear the cache for the reorged epoch and all future epochs.
+		for _, epoch := range m.beaconCommittees.Keys() {
+			if epoch >= ev.Epoch {
+				m.log.WithFields(logrus.Fields{
+					"epoch": epoch,
+					"event": ev,
+				}).Info("Clearing beacon committee after reorg event")
+
+				if err := m.fetchBeaconCommittee(ctx, epoch, true); err != nil {
+					m.log.WithError(err).WithFields(logrus.Fields{
+						"epoch": epoch,
+						"event": ev,
+					}).Error("Failed to fetch new beacon committee after reorg")
+				}
+			}
+		}
+
+		return nil
+	})
+
 	go m.beaconCommittees.Start()
 
 	return nil
@@ -200,9 +221,11 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 	}
 }
 
-func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch) error {
-	if duties := m.beaconCommittees.Get(epoch); duties != nil {
-		return nil
+func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch, skipCache ...bool) error {
+	if len(skipCache) != 0 && !skipCache[0] {
+		if duties := m.beaconCommittees.Get(epoch); duties != nil {
+			return nil
+		}
 	}
 
 	m.mu.Lock()

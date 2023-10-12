@@ -47,6 +47,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | name | string |  | Unique name of the sentry |
 | labels | object |  | A key value map of labels to append to every sentry event |
 | ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
+| ethereum.beaconSubscriptions | array<string> |  | List of [topcis](https://ethereum.github.io/beacon-APIs/#/Events/eventstream) to subscribe to. If empty, all subscriptions are subscribed to.
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
 | outputs | array<object> |  | List of outputs for the sentry to send data to |
 | outputs[].name | string |  | Name of the output |

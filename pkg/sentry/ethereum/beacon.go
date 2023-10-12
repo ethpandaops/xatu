@@ -27,8 +27,16 @@ type BeaconNode struct {
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
-		EnableDefaultBeaconSubscription().
 		DisablePrometheusMetrics()
+
+	if config.BeaconSubscriptions != nil {
+		opts.BeaconSubscription = beacon.BeaconSubscriptionOptions{
+			Enabled: true,
+			Topics:  *config.BeaconSubscriptions,
+		}
+	} else {
+		opts.EnableDefaultBeaconSubscription()
+	}
 
 	opts.HealthCheck.Interval.Duration = time.Second * 3
 	opts.HealthCheck.SuccessfulResponses = 1

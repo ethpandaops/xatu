@@ -10,6 +10,8 @@ type Config struct {
 	OverrideNetworkName string `yaml:"overrideNetworkName"  default:""`
 	// BeaconNodeHeaders is a map of headers to send to the beacon node.
 	BeaconNodeHeaders map[string]string `yaml:"beaconNodeHeaders"`
+	// BeaconSubscriptions is a list of beacon subscriptions to subscribe to.
+	BeaconSubscriptions *[]string `yaml:"beaconSubscriptions"`
 }
 
 func (c *Config) Validate() error {

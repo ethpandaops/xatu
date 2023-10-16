@@ -62,8 +62,6 @@ func (e ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-const MAX_MSG_BYTE_SIZE = 1024 * 1024
-
 func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	msgs := make([]*sarama.ProducerMessage, 0, len(items))
 	msgByteSize := 0
@@ -80,7 +78,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 			Value: eventPayload,
 		}
 		msgByteSize = m.ByteSize(2)
-		if msgByteSize > MAX_MSG_BYTE_SIZE {
+		if msgByteSize > e.config.FlushBytes {
 			e.log.WithField("event_id", routingKey).WithField("msg_size", msgByteSize).Debug("Message too large, consider increasing `max_message_bytes`")
 			continue
 		}

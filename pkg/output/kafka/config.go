@@ -22,7 +22,7 @@ type Config struct {
 func (c *Config) Validate() error {
 
 	if c.Brokers == "" {
-		return errors.New("address is required")
+		return errors.New("brokers is required")
 	}
 
 	return nil

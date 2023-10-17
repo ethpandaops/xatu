@@ -9,6 +9,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
+	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/go-co-op/gocron"
 	"github.com/jellydator/ttlcache/v3"
@@ -111,6 +112,10 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			}
 
 			wg.Wait()
+		}
+
+		if b.Metadata().Network.Name == networks.NetworkNameUnknown {
+			errs <- errors.New("unknown network detected. Please override the network name via config if you are using a custom network")
 		}
 
 		b.log.Info("All services are ready")

@@ -159,11 +159,17 @@ func (m *MetadataService) DeriveNetwork(_ context.Context) error {
 		return errors.New("genesis is not available")
 	}
 
+	if m.Spec == nil {
+		return errors.New("spec is not available")
+	}
+
 	network := networks.DeriveFromGenesisRoot(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
 
 	if m.overrideNetworkName != "" {
 		network.Name = networks.NetworkName(m.overrideNetworkName)
 	}
+
+	network.ID = m.Spec.DepositChainID
 
 	if network.Name != m.Network.Name {
 		m.log.WithFields(logrus.Fields{

@@ -39,20 +39,20 @@ Flags:
 
 Sentry requires a single `yaml` config file. An example file can be found [here](../example_sentry.yaml)
 
-| Name| Type | Default | Description |
-| --- | --- | --- | --- |
-| logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`) |
-| metricsAddr | string | `:9090` | The address the metrics server will listen on |
-| pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started |
-| name | string |  | Unique name of the sentry |
-| labels | object |  | A key value map of labels to append to every sentry event |
-| ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint |
-| ethereum.beaconSubscriptions | array<string> |  | List of [topcis](https://ethereum.github.io/beacon-APIs/#/Events/eventstream) to subscribe to. If empty, all subscriptions are subscribed to.
-| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events |
-| outputs | array<object> |  | List of outputs for the sentry to send data to |
-| outputs[].name | string |  | Name of the output |
-| outputs[].type | string |  | Type of output (`xatu`, `http`, `stdout`) |
-| outputs[].config | object |  | Output type configuration [`xatu`](#output-xatu-configuration)/[`http`](#output-http-configuration) |
+| Name| Type | Default | Description                                                                                                                                   |
+| --- | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
+| logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`)                                                                                |
+| metricsAddr | string | `:9090` | The address the metrics server will listen on                                                                                                 |
+| pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started            |
+| name | string |  | Unique name of the sentry                                                                                                                     |
+| labels | object |  | A key value map of labels to append to every sentry event                                                                                     |
+| ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint                |
+| ethereum.beaconSubscriptions | array<string> |  | List of [topcis](https://ethereum.github.io/beacon-APIs/#/Events/eventstream) to subscribe to. If empty, all subscriptions are subscribed to. 
+| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                                |
+| outputs | array<object> |  | List of outputs for the sentry to send data to                                                                                                |
+| outputs[].name | string |  | Name of the output                                                                                                                            |
+| outputs[].type | string |  | Type of output (`xatu`, `http`, `kafka`, stdout`)                                                                                             |
+| outputs[].config | object |  | Output type configuration [`xatu`](#output-xatu-configuration)/[`http`](#output-http-configuration)/[`kafka`](#output-kafka-configuration)                                                                                      |
 
 ### Output `xatu` configuration
 
@@ -80,6 +80,22 @@ Output configuration to send sentry events to a http server.
 | outputs[].config.batchTimeout | string | `5s` | The maximum duration for constructing a batch. Processor forcefully sends available events when timeout is reached |
 | outputs[].config.exportTimeout | string | `30s` | The maximum duration for exporting events. If the timeout is reached, the export will be cancelled |
 | outputs[].config.maxExportBatchSize | int | `512` | MaxExportBatchSize is the maximum number of events to process in a single batch. If there are more than one batch worth of events then it processes multiple batches of events one batch after the other without any delay |
+
+### Output `kafka` configuration
+
+Output configuration to send sentry events to a kafka server.
+
+| Name                            | Type   | Default   | Allowed Values                      | Description                                                                                                                             |
+| ------------------------------- | ------ |-----------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| outputs[].config.brokers        | string |           |                                     | Comma delimited list of brokers. Eg: `localhost:19091,localhost:19092`                                                                  |
+| outputs[].config.topic          | string |           |                                     | Name of the topic.                                                                                                                      |
+| outputs[].config.flushFrequency | string | `3s`      |                                     | The maximum time a single batch can wait before a flush. Producer flushes the batch when the limit is reached.                          |
+| outputs[].config.flushMessages  | int    | `500`     |                                     | The maximum number of events in a single batch before a flush. Producer flushes the batch when the limit is reached.                    |
+| outputs[].config.flushBytes     | int    | `1000000` |                                     | The maximum size (in bytes) of a single batch before a flush. Producer flushes the batch when the limit is reached.                     |
+| outputs[].config.maxRetries     | int    | `3`       |                                     | The maximum retries allowed for a single batch delivery. The batch would be dropped, if the producer fails to flush with-in this limit. |
+| outputs[].config.compression    | string | `none`    | `none` `gzip` `snappy` `lz4` `zstd` | Compression to use.                                                                                                                     |
+| outputs[].config.requiredAcks   | string | `leader`  | `none` `leader` `all`               | Number of ack's required for a succesful batch delivery.                                                                                |
+| outputs[].config.partitioning   | string | `none`    | `none` `random`                     | Paritioning to use for the distribution of messages across the partitions.                                                              |
 
 ### Simple example
 
@@ -126,6 +142,22 @@ outputs:
       authorization: "Basic Someb64Value"
 ```
 
+### kafka server output example
+
+```yaml
+name: example-instance-004
+
+ethereum:
+  beaconNodeAddress: http://localhost:5052
+
+outputs:
+- name: kafka-sink
+  type: kafka
+  config:
+    brokers: localhost:19092
+    topic: events
+```
+
 ### Complex example with multiple outputs example
 
 ```yaml
@@ -156,6 +188,11 @@ outputs:
     batchTimeout: 5s
     exportTimeout: 30s
     maxExportBatchSize: 512
+- name: kafka-sink   
+  type: kafka
+  config:
+    brokers: localhost:19092
+    topic: events
 ```
 
 ## Running locally

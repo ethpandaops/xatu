@@ -186,6 +186,11 @@ services:
         address: http://localhost:8081
         headers:
           authorization: "Basic Someb64Value"
+    - name: kafka-sink
+      type: kafka
+      config:
+        brokers: localhost:19092
+        topic: events
 ```
 
 ## Services

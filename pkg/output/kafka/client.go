@@ -1,8 +1,9 @@
 package kafka
 
 import (
-	"github.com/IBM/sarama"
 	"strings"
+
+	"github.com/IBM/sarama"
 )
 
 type CompressionStrategy string
@@ -33,6 +34,7 @@ var (
 func NewSyncProducer(config *Config) (sarama.SyncProducer, error) {
 	producerConfig := Init(config)
 	brokersList := strings.Split(config.Brokers, ",")
+
 	return sarama.NewSyncProducer(brokersList, producerConfig)
 }
 func Init(config *Config) *sarama.Config {
@@ -51,6 +53,7 @@ func Init(config *Config) *sarama.Config {
 	default:
 		c.Producer.RequiredAcks = sarama.WaitForLocal
 	}
+
 	switch config.Compression {
 	case CompressionStrategyLZ4:
 		c.Producer.Compression = sarama.CompressionLZ4
@@ -63,11 +66,13 @@ func Init(config *Config) *sarama.Config {
 	default:
 		c.Producer.Compression = sarama.CompressionNone
 	}
+
 	switch config.Partitioning {
 	case PartitionStrategyNone:
 		c.Producer.Partitioner = sarama.NewHashPartitioner
 	default:
 		c.Producer.Partitioner = sarama.NewRandomPartitioner
 	}
+
 	return c
 }

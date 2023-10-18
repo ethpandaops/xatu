@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"errors"
+
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"

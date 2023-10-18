@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"errors"
+
 	"github.com/IBM/sarama"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -20,7 +21,6 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
-
 	producer, err := NewSyncProducer(config)
 
 	if err != nil {
@@ -29,6 +29,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 			WithField("output_name", name).
 			WithField("output_type", SinkType).
 			Error("Error while creating the Kafka Client")
+
 		return ItemExporter{}, err
 	}
 
@@ -65,41 +66,51 @@ func (e ItemExporter) Shutdown(ctx context.Context) error {
 func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	msgs := make([]*sarama.ProducerMessage, 0, len(items))
 	msgByteSize := 0
+
 	for _, p := range items {
 		r, err := protojson.Marshal(p)
 		if err != nil {
 			return err
 		}
-		routingKey := sarama.StringEncoder(p.Event.Id)
-		eventPayload := sarama.StringEncoder(r)
+
+		routingKey, eventPayload := sarama.StringEncoder(p.Event.Id), sarama.StringEncoder(r)
 		m := &sarama.ProducerMessage{
 			Topic: e.config.Topic,
 			Key:   routingKey,
 			Value: eventPayload,
 		}
+
 		msgByteSize = m.ByteSize(2)
 		if msgByteSize > e.config.FlushBytes {
 			e.log.WithField("event_id", routingKey).WithField("msg_size", msgByteSize).Debug("Message too large, consider increasing `max_message_bytes`")
+
 			continue
 		}
+
 		msgs = append(msgs, m)
 	}
-	err := e.client.SendMessages(msgs)
+
 	errorCount := 0
+
+	err := e.client.SendMessages(msgs)
 	if err != nil {
 		var errs sarama.ProducerErrors
 		if errors.As(err, &errs) {
 			errorCount = len(errs)
+
 			for _, producerError := range errs {
 				e.log.
 					WithError(producerError.Err).
-					WithField("num_events", len(errs)).
+					WithField("events", errorCount).
 					Error("Failed to send events to Kafka")
+
 				return producerError
 			}
 		}
+
 		return err
 	}
+
 	e.log.WithField("count", len(msgs)-errorCount).Debug("Items written to Kafka")
 
 	return nil

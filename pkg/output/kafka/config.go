@@ -20,10 +20,10 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-
 	if c.Brokers == "" {
 		return errors.New("brokers is required")
 	}
+
 	if c.Topic == "" {
 		return errors.New("topic is required")
 	}

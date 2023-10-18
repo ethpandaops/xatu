@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -232,7 +233,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlockBlobSidecar{
 			EthV1BeaconBlockBlobSidecar: &xatuethv1.BlobSidecar{
 				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.Slot)},
-				Blob:            blob.Blob[:],
+				Blob:            fmt.Sprintf("0x%s", hex.EncodeToString(blob.Blob[:])),
 				Index:           &wrapperspb.UInt64Value{Value: uint64(blob.Index)},
 				BlockRoot:       blob.BlockRoot.String(),
 				BlockParentRoot: blob.BlockParentRoot.String(),

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -27,7 +28,10 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
-	var opts []grpc.DialOption
+	opts := []grpc.DialOption{
+		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+	}
 
 	if config.TLS {
 		host, _, err := net.SplitHostPort(config.Address)

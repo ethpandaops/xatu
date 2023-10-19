@@ -224,6 +224,8 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	mb100 := 1024 * 1024 * 100
 
+	grpc_prometheus.EnableHandlingTimeHistogram()
+
 	opts := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
 		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),

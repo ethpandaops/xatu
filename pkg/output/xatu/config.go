@@ -13,6 +13,7 @@ type Config struct {
 	BatchTimeout       time.Duration     `yaml:"batchTimeout" default:"5s"`
 	ExportTimeout      time.Duration     `yaml:"exportTimeout" default:"30s"`
 	MaxExportBatchSize int               `yaml:"maxExportBatchSize" default:"512"`
+	Connections        int               `yaml:"connections" default:"1"`
 }
 
 func (c *Config) Validate() error {

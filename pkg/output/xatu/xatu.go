@@ -38,7 +38,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		return nil, err
 	}
 
-	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter,
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](&exporter,
 		xatu.ImplementationLower()+"_output_"+SinkType+"_"+name,
 		log,
 		processor.WithMaxQueueSize(config.MaxQueueSize),

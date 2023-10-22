@@ -80,3 +80,4 @@ outputs:
     batchTimeout: 5s
     exportTimeout: 30s
     maxExportBatchSize: 512
+    connections: 5

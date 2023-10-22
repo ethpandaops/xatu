@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -22,8 +23,10 @@ type ItemExporter struct {
 	config *Config
 	log    logrus.FieldLogger
 
-	client pb.EventIngesterClient
-	conn   *grpc.ClientConn
+	clients     []pb.EventIngesterClient
+	conns       []*grpc.ClientConn
+	mu          sync.Mutex
+	currentConn int
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
@@ -40,26 +43,50 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	conn, err := grpc.Dial(config.Address, opts...)
-	if err != nil {
-		return ItemExporter{}, fmt.Errorf("fail to dial: %v", err)
+	var conns []*grpc.ClientConn
+
+	var clients []pb.EventIngesterClient
+
+	for i := 0; i < config.Connections; i++ {
+		conn, err := grpc.Dial(config.Address, opts...)
+		if err != nil {
+			for _, c := range conns {
+				c.Close()
+			}
+
+			return ItemExporter{}, fmt.Errorf("fail to dial: %v", err)
+		}
+
+		conns = append(conns, conn)
+		clients = append(clients, pb.NewEventIngesterClient(conn))
 	}
 
 	return ItemExporter{
-		config: config,
-		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
-		conn:   conn,
-		client: pb.NewEventIngesterClient(conn),
+		config:  config,
+		log:     log.WithField("output_name", name).WithField("output_type", SinkType),
+		conns:   conns,
+		clients: clients,
 	}, nil
 }
 
-func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEvent) error {
+func (e *ItemExporter) getNextConn() int {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	conn := e.currentConn
+	e.currentConn = (e.currentConn + 1) % len(e.conns)
+
+	return conn
+}
+
+func (e *ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEvent) error {
 	_, span := observability.Tracer().Start(ctx, "XatuItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
 	e.log.WithField("events", len(items)).Debug("Sending batch of events to xatu sink")
 
-	if err := e.sendUpstream(ctx, items); err != nil {
+	connIndex := e.getNextConn()
+	if err := e.sendUpstream(ctx, items, connIndex); err != nil {
 		e.log.
 			WithError(err).
 			WithField("num_events", len(items)).
@@ -73,11 +100,17 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEven
 	return nil
 }
 
-func (e ItemExporter) Shutdown(ctx context.Context) error {
-	return e.conn.Close()
+func (e *ItemExporter) Shutdown(ctx context.Context) error {
+	for _, conn := range e.conns {
+		if err := conn.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEvent, connIndex int) error {
 	req := &pb.CreateEventsRequest{
 		Events: items,
 	}
@@ -85,7 +118,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	md := metadata.New(e.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	rsp, err := e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
+	rsp, err := e.clients[connIndex].CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
 	if err != nil {
 		return err
 	}

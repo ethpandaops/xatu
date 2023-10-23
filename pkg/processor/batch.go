@@ -355,7 +355,7 @@ func WithWorkers(workers int) BatchItemProcessorOption {
 func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	for {
 		select {
-		case <-bvp.stopCh:
+		case <-bvp.stopWorkersCh:
 			return
 		case sd := <-bvp.queue:
 			bvp.batchMutex.Lock()
@@ -396,6 +396,8 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context) {
 		case <-bvp.stopWorkersCh:
 			return
 		case <-bvp.batchReady:
+			bvp.timer.Reset(bvp.o.BatchTimeout)
+
 			batch := <-bvp.batches
 			if err := bvp.exportWithTimeout(ctx, batch); err != nil {
 				bvp.log.WithError(err).Error("failed to export items")

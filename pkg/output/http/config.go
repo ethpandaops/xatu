@@ -14,6 +14,7 @@ type Config struct {
 	MaxExportBatchSize int                 `yaml:"maxExportBatchSize" default:"512"`
 	Compression        CompressionStrategy `yaml:"compression" default:"none"`
 	KeepAlive          *bool               `yaml:"keepAlive" default:"true"`
+	Workers            int                 `yaml:"workers" default:"1"`
 }
 
 func (c *Config) Validate() error {

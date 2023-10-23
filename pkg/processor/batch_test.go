@@ -93,10 +93,6 @@ func TestNewBatchItemProcessorWithNilExporter(t *testing.T) {
 		t.Errorf("failed to Write to the BatchItemProcessor: %v", err)
 	}
 
-	if err := bsp.ForceFlush(context.Background()); err != nil {
-		t.Errorf("failed to ForceFlush the BatchItemProcessor: %v", err)
-	}
-
 	if err := bsp.Shutdown(context.Background()); err != nil {
 		t.Errorf("failed to Shutdown the BatchItemProcessor: %v", err)
 	}
@@ -258,9 +254,29 @@ func TestBatchItemProcessorShutdown(t *testing.T) {
 	assert.Equal(t, 1, bp.shutdownCount)
 }
 
+func TestBatchItemProcessorDrainQueue(t *testing.T) {
+	be := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(5), WithBatchTimeout(5*time.Minute))
+	require.NoError(t, err)
+
+	itemsToExport := 500
+
+	for i := 0; i < itemsToExport; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{
+			name: strconv.Itoa(i),
+		}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
+	}
+
+	require.NoError(t, bsp.Shutdown(context.Background()), "shutting down BatchItemProcessor")
+
+	assert.Equal(t, itemsToExport, be.len(), "Queue should have been drained on shutdown")
+}
+
 func TestBatchItemProcessorPostShutdown(t *testing.T) {
 	be := testBatchExporter[TestItem]{}
-	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(50))
+	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(50), WithBatchTimeout(5*time.Millisecond))
 	require.NoError(t, err)
 
 	for i := 0; i < 60; i++ {
@@ -275,137 +291,124 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 
 	lenJustAfterShutdown := be.len()
 
-	assert.NoError(t, bsp.ForceFlush(context.Background()), "force flushing BatchItemProcessor")
+	for i := 0; i < 60; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{
+			name: strconv.Itoa(i),
+		}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
+	}
 
-	assert.Equal(t, lenJustAfterShutdown, be.len(), "Write and ForceFlush should have no effect after Shutdown")
+	assert.Equal(t, lenJustAfterShutdown, be.len(), "Write should have no effect after Shutdown")
 }
 
-func TestBatchItemProcessorForceFlushSucceeds(t *testing.T) {
+type slowExporter[T TestItem] struct {
+	itemsExported int
+}
+
+func (slowExporter[T]) Shutdown(context.Context) error { return nil }
+func (t *slowExporter[T]) ExportItems(ctx context.Context, items []*T) error {
+	time.Sleep(100 * time.Millisecond)
+
+	t.itemsExported += len(items)
+
+	<-ctx.Done()
+
+	return ctx.Err()
+}
+
+func TestMultipleWorkersConsumeConcurrently(t *testing.T) {
+	te := slowExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithBatchTimeout(5*time.Minute), WithWorkers(20))
+	require.NoError(t, err)
+
+	itemsToExport := 100
+
+	for i := 0; i < itemsToExport; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
+	}
+
+	time.Sleep(1 * time.Second) // give some time for workers to process
+
+	if te.itemsExported != itemsToExport {
+		t.Errorf("Expected all items to be exported, got: %v", te.itemsExported)
+	}
+}
+
+func TestWorkersProcessBatches(t *testing.T) {
 	te := testBatchExporter[TestItem]{}
-	option := testOption{
-		name: "default BatchItemProcessorOptions",
-		o: []BatchItemProcessorOption{
-			WithMaxQueueSize(0),
-			WithMaxExportBatchSize(3000),
-		},
-		genNumItems:    2053,
-		wantNumItems:   2053,
-		wantBatchCount: 1,
-	}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5))
+	require.NoError(t, err)
 
-	ssp, err := createAndRegisterBatchSP(option.o, &te)
-	if err != nil {
-		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
-	}
+	itemsToExport := 50
 
-	if ssp == nil {
-		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
-	}
-
-	for i := 0; i < option.genNumItems; i++ {
-		if errr := ssp.Write(context.Background(), []*TestItem{{
-			name: strconv.Itoa(i),
-		}}); errr != nil {
-			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+	for i := 0; i < itemsToExport; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
 		}
-
-		time.Sleep(1 * time.Millisecond)
 	}
 
-	// Force flush any held item batches
-	err = ssp.ForceFlush(context.Background())
+	time.Sleep(1 * time.Second)
 
-	assertMaxItemDiff(t, te.len(), option.wantNumItems, 10)
-
-	gotBatchCount := te.getBatchCount()
-	if gotBatchCount < option.wantBatchCount {
-		t.Errorf("number batches: got %+v, want >= %+v\n",
-			gotBatchCount, option.wantBatchCount)
-		t.Errorf("Batches %v\n", te.sizes)
+	if te.getBatchCount() != 5 {
+		t.Errorf("Expected 5 batches, got: %v", te.getBatchCount())
 	}
 
-	assert.NoError(t, err)
-}
-
-func TestBatchItemProcessorDropBatchIfFailed(t *testing.T) {
-	te := testBatchExporter[TestItem]{
-		errors: []error{errors.New("fail to export")},
-	}
-	option := testOption{
-		o: []BatchItemProcessorOption{
-			WithMaxQueueSize(0),
-			WithMaxExportBatchSize(2000),
-		},
-		genNumItems:    1000,
-		wantNumItems:   1000,
-		wantBatchCount: 1,
-	}
-
-	ssp, err := createAndRegisterBatchSP(option.o, &te)
-	if err != nil {
-		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
-	}
-
-	if ssp == nil {
-		t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
-	}
-
-	for i := 0; i < option.genNumItems; i++ {
-		if errr := ssp.Write(context.Background(), []*TestItem{{
-			name: strconv.Itoa(i),
-		}}); errr != nil {
-			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
-		}
-
-		time.Sleep(1 * time.Millisecond)
-	}
-
-	// Force flush any held item batches
-	err = ssp.ForceFlush(context.Background())
-	assert.Error(t, err)
-	assert.EqualError(t, err, "fail to export")
-
-	// First flush will fail, nothing should be exported.
-	assertMaxItemDiff(t, te.droppedCount, option.wantNumItems, 10)
-	assert.Equal(t, 0, te.len())
-	assert.Equal(t, 0, te.getBatchCount())
-
-	// Generate a new batch, this will succeed
-	for i := 0; i < option.genNumItems; i++ {
-		if errr := ssp.Write(context.Background(), []*TestItem{{
-			name: strconv.Itoa(i),
-		}}); errr != nil {
-			t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
-		}
-
-		time.Sleep(1 * time.Millisecond)
-	}
-
-	// Force flush any held item batches
-	err = ssp.ForceFlush(context.Background())
-	assert.NoError(t, err)
-
-	assertMaxItemDiff(t, te.len(), option.wantNumItems, 10)
-	gotBatchCount := te.getBatchCount()
-
-	if gotBatchCount < option.wantBatchCount {
-		t.Errorf("number batches: got %+v, want >= %+v\n",
-			gotBatchCount, option.wantBatchCount)
-		t.Errorf("Batches %v\n", te.sizes)
+	if te.len() != itemsToExport {
+		t.Errorf("Expected all items to be exported, got: %v", te.len())
 	}
 }
 
-func assertMaxItemDiff(t *testing.T, got, want, maxDif int) {
-	t.Helper()
+func TestDrainQueueWithMultipleWorkers(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5))
+	require.NoError(t, err)
 
-	itemDifference := want - got
-	if itemDifference < 0 {
-		itemDifference *= -1
+	itemsToExport := 100
+
+	for i := 0; i < itemsToExport; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
 	}
 
-	if itemDifference > maxDif {
-		t.Errorf("number of exported item not equal to or within %d less than: got %+v, want %+v\n",
-			maxDif, got, want)
+	if err := bsp.Shutdown(context.Background()); err != nil {
+		t.Errorf("Error shutting down BatchItemProcessor\n")
+	}
+
+	if te.len() != itemsToExport {
+		t.Errorf("Expected all items to be exported after drain, got: %v", te.len())
+	}
+}
+
+func TestBatchItemProcessorTimerFunctionality(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	batchTimeout := 500 * time.Millisecond
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(50), WithBatchTimeout(batchTimeout), WithWorkers(5))
+	require.NoError(t, err)
+
+	// Add items less than the max batch size
+	itemsToExport := 25
+
+	for i := 0; i < itemsToExport; i++ {
+		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
+			t.Errorf("Error writing to BatchItemProcessor\n")
+		}
+	}
+
+	// Wait for more than the batchTimeout duration
+	time.Sleep(batchTimeout + 100*time.Millisecond)
+
+	// Check if items have been exported due to timer trigger
+	if te.len() != itemsToExport {
+		t.Errorf("Expected %v items to be exported due to timer, but got: %v", itemsToExport, te.len())
+	}
+
+	// Ensure that it was exported as a single batch
+	if te.getBatchCount() != 1 {
+		t.Errorf("Expected 1 batch to be exported due to timer, but got: %v", te.getBatchCount())
 	}
 }
 
@@ -418,33 +421,37 @@ func (indefiniteExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 	return ctx.Err()
 }
 
-func TestBatchItemProcessorForceFlushTimeout(t *testing.T) {
+func TestBatchItemProcessorTimeout(t *testing.T) {
 	// Add timeout to context to test deadline
-	ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 	<-ctx.Done()
 
-	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger())
+	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger(), WithShippingMethod(ShippingMethodSync), WithExportTimeout(time.Millisecond*10))
 	if err != nil {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
 
-	if got, want := bsp.ForceFlush(ctx), context.DeadlineExceeded; !errors.Is(got, want) {
+	if got, want := bsp.Write(ctx, []*TestItem{{}}), context.DeadlineExceeded; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
 	}
 }
 
-func TestBatchItemProcessorForceFlushCancellation(t *testing.T) {
+func TestBatchItemProcessorCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	// Cancel the context
-	cancel()
+	go func() {
+		time.Sleep(time.Millisecond * 100)
 
-	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger())
+		cancel()
+	}()
+
+	bsp, err := NewBatchItemProcessor[TestItem](indefiniteExporter[TestItem]{}, "processor", nullLogger(), WithShippingMethod(ShippingMethodSync))
 	if err != nil {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
 
-	if got, want := bsp.ForceFlush(ctx), context.Canceled; !errors.Is(got, want) {
+	if got, want := bsp.Write(ctx, []*TestItem{{}}), context.Canceled; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
 	}
 }

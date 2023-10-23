@@ -382,6 +382,8 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 				bvp.batchReady <- true
 			}
 
+			bvp.timer.Reset(bvp.o.BatchTimeout)
+
 			bvp.batchMutex.Unlock()
 		}
 	}

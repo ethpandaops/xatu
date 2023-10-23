@@ -228,8 +228,6 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 
 			err := bvp.exportWithTimeout(ctx, itemsBatch)
 
-			bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
-
 			if err != nil {
 				return err
 			}
@@ -247,6 +245,8 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 
 		defer cancel()
 	}
+
+	bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
 
 	err := bvp.e.ExportItems(ctx, itemsBatch)
 	if err != nil {

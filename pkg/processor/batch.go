@@ -380,9 +380,11 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 				bvp.batches <- batchCopy
 				bvp.batch = bvp.batch[:0]
 				bvp.batchReady <- true
+			} else {
+				// Reset the timer if there are no items in the batch.
+				// If there are items in the batch, one of the workers will reset the timer.
+				bvp.timer.Reset(bvp.o.BatchTimeout)
 			}
-
-			bvp.timer.Reset(bvp.o.BatchTimeout)
 
 			bvp.batchMutex.Unlock()
 		}

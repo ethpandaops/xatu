@@ -46,6 +46,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		processor.WithExportTimeout(config.ExportTimeout),
 		processor.WithMaxExportBatchSize(config.MaxExportBatchSize),
 		processor.WithShippingMethod(shippingMethod),
+		processor.WithWorkers(config.Workers),
 	)
 	if err != nil {
 		return nil, err

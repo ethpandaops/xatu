@@ -99,6 +99,21 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		return nil
 	})
 
+	m.beacon.OnSyncStatus(ctx, func(ctx context.Context, ev *beacon.SyncStatusEvent) error {
+		if ev.State.IsSyncing != m.lastSyncState {
+			if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
+				m.log.
+					WithError(err).
+					WithField("is_syncing", ev.State.IsSyncing).
+					Warn("Failed to fetch required epoch duties after a sync status change")
+			}
+		}
+
+		m.lastSyncState = ev.State.IsSyncing
+
+		return nil
+	})
+
 	go m.beaconCommittees.Start()
 
 	return nil

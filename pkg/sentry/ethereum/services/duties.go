@@ -30,6 +30,8 @@ type DutiesService struct {
 	bootstrapped bool
 
 	onReadyCallbacks []func(context.Context) error
+
+	lastSyncState bool
 }
 
 func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *MetadataService) DutiesService {
@@ -47,13 +49,15 @@ func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *Met
 		metadata: metadata,
 
 		bootstrapped: false,
+
+		lastSyncState: false,
 	}
 }
 
 func (m *DutiesService) Start(ctx context.Context) error {
 	go func() {
 		operation := func() error {
-			if err := m.fetchRequiredEpochDuties(ctx); err != nil {
+			if err := m.fetchRequiredEpochDuties(ctx, false); err != nil {
 				return err
 			}
 
@@ -79,7 +83,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	}()
 
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
-		if err := m.fetchRequiredEpochDuties(ctx); err != nil {
+		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
 		}
 
@@ -88,21 +92,8 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	})
 
 	m.beacon.OnChainReOrg(ctx, func(ctx context.Context, ev *v1.ChainReorgEvent) error {
-		// Clear the cache for the reorged epoch and all future epochs.
-		for _, epoch := range m.beaconCommittees.Keys() {
-			if epoch >= ev.Epoch {
-				m.log.WithFields(logrus.Fields{
-					"epoch": epoch,
-					"event": ev,
-				}).Info("Clearing beacon committee after reorg event")
-
-				if err := m.fetchBeaconCommittee(ctx, epoch, true); err != nil {
-					m.log.WithError(err).WithFields(logrus.Fields{
-						"epoch": epoch,
-						"event": ev,
-					}).Error("Failed to fetch new beacon committee after reorg")
-				}
-			}
+		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
 		}
 
 		return nil
@@ -138,6 +129,7 @@ func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch 
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber),
+		phase0.Epoch(epochNumber + 1),
 	}
 
 	return epochs
@@ -150,10 +142,6 @@ func (m *DutiesService) NiceToHaveEpochDuties(ctx context.Context) []phase0.Epoc
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber - 1),
-		phase0.Epoch(epochNumber - 2),
-		phase0.Epoch(epochNumber - 3),
-
-		phase0.Epoch(epochNumber + 1),
 	}
 
 	final := map[phase0.Epoch]struct{}{}
@@ -181,14 +169,14 @@ func (m *DutiesService) Ready(ctx context.Context) error {
 	return nil
 }
 
-func (m *DutiesService) fetchRequiredEpochDuties(ctx context.Context) error {
+func (m *DutiesService) fetchRequiredEpochDuties(ctx context.Context, overrideCache ...bool) error {
 	if m.metadata.Wallclock() == nil {
 		return fmt.Errorf("metadata service is not ready")
 	}
 
 	for _, epoch := range m.RequiredEpochDuties(ctx) {
-		if duties := m.beaconCommittees.Get(epoch); duties == nil {
-			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
+		if duties := m.beaconCommittees.Get(epoch); duties == nil || len(overrideCache) != 0 && overrideCache[0] {
+			if err := m.fetchBeaconCommittee(ctx, epoch, overrideCache...); err != nil {
 				return err
 			}
 		}
@@ -221,8 +209,8 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 	}
 }
 
-func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch, skipCache ...bool) error {
-	if len(skipCache) != 0 && !skipCache[0] {
+func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch, overrideCache ...bool) error {
+	if len(overrideCache) != 0 && !overrideCache[0] {
 		if duties := m.beaconCommittees.Get(epoch); duties != nil {
 			return nil
 		}

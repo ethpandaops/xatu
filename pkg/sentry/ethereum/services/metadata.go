@@ -110,6 +110,10 @@ func (m *MetadataService) Ready(ctx context.Context) error {
 		return errors.New("network name is not available")
 	}
 
+	if m.wallclock == nil {
+		return errors.New("wallclock is not available")
+	}
+
 	return nil
 }
 

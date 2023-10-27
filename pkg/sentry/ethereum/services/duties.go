@@ -202,7 +202,6 @@ func (m *DutiesService) fetchRequiredEpochDuties(ctx context.Context, overrideCa
 	}
 
 	for _, epoch := range m.RequiredEpochDuties(ctx) {
-		m.log.WithField("epoch", epoch).WithField("override_cache", overrideCache).Debug("Fetching required beacon committee")
 		if duties := m.beaconCommittees.Get(epoch); duties == nil || len(overrideCache) != 0 && overrideCache[0] {
 			if err := m.fetchBeaconCommittee(ctx, epoch, overrideCache...); err != nil {
 				return err
@@ -246,6 +245,8 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	m.log.WithField("epoch", epoch).WithField("override_cache", overrideCache).Debug("Fetching beacon committee")
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", epoch)
 	if err != nil {

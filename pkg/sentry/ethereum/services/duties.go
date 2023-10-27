@@ -87,11 +87,19 @@ func (m *DutiesService) Start(ctx context.Context) error {
 			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
 		}
 
+		// Sleep for a bit to give the beacon node a chance to run its epoch transition.
+		// We don't really care about nice-to-have duties so the sleep here is fine.
+		// "Required" duties (aka the current epoch) will be refetched the moment that epoch
+		// starts.
+		time.Sleep(15 * time.Second)
+
 		//nolint:errcheck // We don't care about the error here
 		m.fetchNiceToHaveEpochDuties(ctx)
 	})
 
 	m.beacon.OnChainReOrg(ctx, func(ctx context.Context, ev *v1.ChainReorgEvent) error {
+		m.log.Info("Chain reorg detected - refetching beacon committees")
+
 		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
 		}
@@ -101,6 +109,10 @@ func (m *DutiesService) Start(ctx context.Context) error {
 
 	m.beacon.OnSyncStatus(ctx, func(ctx context.Context, ev *beacon.SyncStatusEvent) error {
 		if ev.State.IsSyncing != m.lastSyncState {
+			m.log.WithFields(logrus.Fields{
+				"is_syncing": ev.State.IsSyncing,
+			}).Info("Sync status changed - refetching beacon committees")
+
 			if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
 				m.log.
 					WithError(err).
@@ -144,7 +156,6 @@ func (m *DutiesService) RequiredEpochDuties(ctx context.Context) []phase0.Epoch 
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber),
-		phase0.Epoch(epochNumber + 1),
 	}
 
 	return epochs
@@ -157,6 +168,7 @@ func (m *DutiesService) NiceToHaveEpochDuties(ctx context.Context) []phase0.Epoc
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber - 1),
+		phase0.Epoch(epochNumber + 1),
 	}
 
 	final := map[phase0.Epoch]struct{}{}
@@ -190,6 +202,7 @@ func (m *DutiesService) fetchRequiredEpochDuties(ctx context.Context, overrideCa
 	}
 
 	for _, epoch := range m.RequiredEpochDuties(ctx) {
+		m.log.WithField("epoch", epoch).WithField("override_cache", overrideCache).Debug("Fetching required beacon committee")
 		if duties := m.beaconCommittees.Get(epoch); duties == nil || len(overrideCache) != 0 && overrideCache[0] {
 			if err := m.fetchBeaconCommittee(ctx, epoch, overrideCache...); err != nil {
 				return err

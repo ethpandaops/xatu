@@ -19,6 +19,8 @@ import "pkg/proto/eth/v1/execution_engine.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
+import "pkg/proto/libp2p/peer.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -636,6 +638,38 @@ message ClientMeta {
     string versioned_hash = 4 [ json_name = "versioned_hash" ];
   }
 
+  message AdditionalBeaconP2PAttestationData {  
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalEthV1AttestationSourceV2Data source = 1;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalEthV1AttestationTargetV2Data target = 2;
+
+    // Slot contains the slot information for the attestation.
+    SlotV2 slot = 3;
+
+    // Epoch contains the epoch information for the attestation.
+    EpochV2 epoch = 4;
+
+    // Propagation contains information about the propagation of the
+    // attestation.
+    PropagationV2 propagation = 5;
+
+    // AttestingValidator contains data about the validator that created the attestation.
+    // Note: only available for unaggregated attestations.
+    AttestingValidatorV2 attesting_validator = 6 [ json_name = "attesting_validator" ];
+
+    // Peer contains information on the peer that sent us the attestation.
+    libp2p.Peer peer = 7;
+
+    // Subnet is the subnet that the attestation was sent on.
+    google.protobuf.UInt32Value subnet = 8;
+
+    // Validated is if the attestation was validated.
+    google.protobuf.BoolValue validated = 9;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -729,6 +763,8 @@ message ClientMeta {
     AdditionalBlockprintBlockClassificationData blockprint_block_classification = 43 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     // AdditionalEthV1BeaconBlobSidecarData contains additional data on beacon blob sidecars.
     AdditionalEthV1BeaconBlobSidecarData eth_v1_beacon_blob_sidecar = 44 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    // AdditionalBeaconP2PAttestation contains additional data on unvalidated beacon attestations that were received over the p2p network.
+    AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 45 [ json_name = "BEACON_P2P_ATTESTATION" ];
   }
 }
 
@@ -829,6 +865,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
     BLOCKPRINT_BLOCK_CLASSIFICATION = 33;
     BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
+    BEACON_P2P_ATTESTATION = 35;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -878,5 +915,6 @@ message DecoratedEvent {
     xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
     xatu.blockprint.BlockClassification blockprint_block_classification = 35 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    xatu.eth.v1.AttestationV2 beacon_p2p_attestation = 37 [ json_name = "BEACON_P2P_ATTESTATION" ];
   }; 
 }

@@ -11,6 +11,7 @@ import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/blob.proto";
 import "pkg/proto/eth/v1/events.proto";
 import "pkg/proto/eth/v1/committee.proto";
+import "pkg/proto/eth/v1/duties.proto";
 import "pkg/proto/eth/v2/events.proto";
 import "pkg/proto/eth/v2/withdrawals.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
@@ -636,6 +637,14 @@ message ClientMeta {
     string versioned_hash = 4 [ json_name = "versioned_hash" ];
   }
 
+  message AdditionalEthV1ProposerDutyData {
+    // Epoch contains the epoch information for the proposer duty.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the proposer duty.
+    SlotV2 slot = 2;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -729,6 +738,8 @@ message ClientMeta {
     AdditionalBlockprintBlockClassificationData blockprint_block_classification = 43 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     // AdditionalEthV1BeaconBlobSidecarData contains additional data on beacon blob sidecars.
     AdditionalEthV1BeaconBlobSidecarData eth_v1_beacon_blob_sidecar = 44 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    // AdditionalEthV1ProposerDutyData contains addtional data on proposer duties.
+    AdditionalEthV1ProposerDutyData eth_v1_proposer_duty = 45 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
   }
 }
 
@@ -829,6 +840,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
     BLOCKPRINT_BLOCK_CLASSIFICATION = 33;
     BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
+    BEACON_API_ETH_V1_PROPOSER_DUTY = 35;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -878,5 +890,6 @@ message DecoratedEvent {
     xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
     xatu.blockprint.BlockClassification blockprint_block_classification = 35 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    xatu.eth.v1.ProposerDuty eth_v1_proposer_duty = 37 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
   }; 
 }

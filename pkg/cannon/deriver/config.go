@@ -18,6 +18,7 @@ type Config struct {
 	BeaconBlockConfig          v2.BeaconBlockDeriverConfig                 `yaml:"beaconBlock"`
 	BlockClassificationConfig  blockprint.BlockClassificationDeriverConfig `yaml:"blockClassification"`
 	BeaconBlobSidecarConfig    v1.BeaconBlobDeriverConfig                  `yaml:"beaconBlobSidecar"`
+	ProposerDutyConfig         v1.ProposerDutyDeriverConfig                `yaml:"proposerDuty"`
 }
 
 func (c *Config) Validate() error {

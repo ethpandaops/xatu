@@ -99,6 +99,12 @@ enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK = 7;
   BLOCKPRINT_BLOCK_CLASSIFICATION = 8;
   BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 9;
+  BEACON_API_ETH_V1_PROPOSER_DUTY = 10;
+}
+
+message BackfillingCheckpointMarker {
+  uint64 finalized_epoch = 1;
+  int64 backfill_epoch = 2;
 }
 
 message CannonLocationEthV2BeaconBlockVoluntaryExit {
@@ -142,6 +148,10 @@ message CannonLocationEthV1BeaconBlobSidecar {
   uint64 epoch = 1;
 }
 
+message CannonLocationEthV1BeaconProposerDuty {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -156,6 +166,7 @@ message CannonLocation {
     CannonLocationEthV2BeaconBlock eth_v2_beacon_block = 10 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
     CannonLocationBlockprintBlockClassification blockprint_block_classification = 11 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     CannonLocationEthV1BeaconBlobSidecar eth_v1_beacon_blob_sidecar = 12 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    CannonLocationEthV1BeaconProposerDuty eth_v1_beacon_proposer_duty = 13 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
   }
 }
 

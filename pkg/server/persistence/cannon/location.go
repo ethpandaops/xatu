@@ -143,6 +143,17 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY:
+		l.Type = "BEACON_API_ETH_V1_PROPOSER_DUTY"
+
+		data := msg.GetEthV1BeaconProposerDuty()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		l.Value = string(b)
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -288,6 +299,19 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconBlobSidecar{
 			EthV1BeaconBlobSidecar: data,
+		}
+	case "BEACON_API_ETH_V1_PROPOSER_DUTY":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY
+
+		data := &xatu.CannonLocationEthV1BeaconProposerDuty{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
+			EthV1BeaconProposerDuty: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

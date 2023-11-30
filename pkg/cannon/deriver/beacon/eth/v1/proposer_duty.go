@@ -174,10 +174,8 @@ func (b *ProposerDutyDeriver) run(rctx context.Context) {
 					}
 				}
 
-				nextLocation := proto.Clone(location).(*xatu.CannonLocation)
-
 				if processingFinalizedEpoch {
-					nextLocation.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
+					location.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
 						EthV1BeaconProposerDuty: &xatu.CannonLocationEthV1BeaconProposerDuty{
 							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
 								BackfillEpoch:  location.GetEthV1BeaconProposerDuty().GetBackfillingCheckpointMarker().GetBackfillEpoch(),
@@ -185,26 +183,22 @@ func (b *ProposerDutyDeriver) run(rctx context.Context) {
 							},
 						},
 					}
-
 				} else {
-					nextLocation.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
+					location.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
 						EthV1BeaconProposerDuty: &xatu.CannonLocationEthV1BeaconProposerDuty{
 							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-								BackfillEpoch:  int64(epochToProcess),
-								FinalizedEpoch: uint64(location.GetEthV1BeaconProposerDuty().GetBackfillingCheckpointMarker().GetFinalizedEpoch()),
+								BackfillEpoch:  epochToProcess,
+								FinalizedEpoch: location.GetEthV1BeaconProposerDuty().GetBackfillingCheckpointMarker().GetFinalizedEpoch(),
 							},
 						},
 					}
-
 				}
 
-				span.SetAttributes(attribute.Int64("epoch", int64(epochToProcess)))
+				span.SetAttributes(attribute.Int64("epoch", epochToProcess))
 				span.SetAttributes(attribute.Bool("is_backfill", !processingFinalizedEpoch))
 
-				location.Data = nextLocation.Data
-
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, nextLocation); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err

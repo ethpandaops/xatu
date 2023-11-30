@@ -64,7 +64,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (next *xatu.CannonLoca
 			marker, err := c.getMarker(next)
 			if err == nil {
 				span.SetAttributes(attribute.Int64("finalized_epoch", int64(marker.FinalizedEpoch)))
-				span.SetAttributes(attribute.Int64("backfill_epoch", int64(marker.BackfillEpoch)))
+				span.SetAttributes(attribute.Int64("backfill_epoch", marker.BackfillEpoch))
 				c.metrics.SetBackfillEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.BackfillEpoch))
 				c.metrics.SetFinalizedEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.FinalizedEpoch))
 			}

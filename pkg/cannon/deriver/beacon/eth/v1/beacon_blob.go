@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/api"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
@@ -193,6 +194,16 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	// Get the block
 	blobs, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case 404:
+				return []*xatu.DecoratedEvent{}, nil
+			case 503:
+				return nil, errors.New("beacon node is syncing")
+			}
+		}
+
 		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
 	}
 
@@ -232,14 +243,14 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 		},
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlockBlobSidecar{
 			EthV1BeaconBlockBlobSidecar: &xatuethv1.BlobSidecar{
-				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.Slot)},
+				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.Slot)},
 				Blob:            fmt.Sprintf("0x%s", hex.EncodeToString(blob.Blob[:])),
 				Index:           &wrapperspb.UInt64Value{Value: uint64(blob.Index)},
-				BlockRoot:       blob.BlockRoot.String(),
-				BlockParentRoot: blob.BlockParentRoot.String(),
-				ProposerIndex:   &wrapperspb.UInt64Value{Value: uint64(blob.ProposerIndex)},
-				KzgCommitment:   blob.KzgCommitment.String(),
-				KzgProof:        blob.KzgProof.String(),
+				BlockRoot:       blob.SignedBlockHeader.Message.BodyRoot.String(),
+				BlockParentRoot: blob.SignedBlockHeader.Message.ParentRoot.String(),
+				ProposerIndex:   &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.ProposerIndex)},
+				KzgCommitment:   blob.KZGCommitment.String(),
+				KzgProof:        blob.KZGProof.String(),
 			},
 		},
 	}
@@ -261,15 +272,15 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 func (b *BeaconBlobDeriver) getAdditionalData(_ context.Context, blob *deneb.BlobSidecar) (*xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData{
 		DataSize:      &wrapperspb.UInt64Value{Value: uint64(len(blob.Blob))},
-		VersionedHash: ethereum.ConvertKzgCommitmentToVersionedHash(blob.KzgCommitment[:]).String(),
+		VersionedHash: ethereum.ConvertKzgCommitmentToVersionedHash(blob.KZGCommitment[:]).String(),
 	}
 
-	slot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(blob.Slot))
-	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(blob.Slot))
+	slot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(blob.SignedBlockHeader.Message.Slot))
+	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(blob.SignedBlockHeader.Message.Slot))
 
 	extra.Slot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
-		Number:        &wrapperspb.UInt64Value{Value: uint64(blob.Slot)},
+		Number:        &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.Slot)},
 	}
 
 	extra.Epoch = &xatu.EpochV2{

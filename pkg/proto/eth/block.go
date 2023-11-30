@@ -206,7 +206,7 @@ func NewEventBlockFromCapella(block *spec.VersionedSignedBeaconBlock) *v2.EventB
 func NewEventBlockFromDeneb(block *spec.VersionedSignedBeaconBlock) *v2.EventBlockV2 {
 	kzgCommitments := []string{}
 
-	for _, commitment := range block.Deneb.Message.Body.BlobKzgCommitments {
+	for _, commitment := range block.Deneb.Message.Body.BlobKZGCommitments {
 		kzgCommitments = append(kzgCommitments, commitment.String())
 	}
 

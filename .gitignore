@@ -3,6 +3,7 @@ server.yaml
 discovery.yaml
 mimicry.yaml
 cannon.yaml
+seer.yaml
 dist
 GeoLite2-ASN.mmdb
 GeoLite2-City.mmdb

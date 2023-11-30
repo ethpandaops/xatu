@@ -26,7 +26,7 @@ func BLSSignatureToString(s *phase0.BLSSignature) string {
 	return fmt.Sprintf("%#x", s)
 }
 
-func KzgCommitmentToString(c deneb.KzgCommitment) string {
+func KzgCommitmentToString(c deneb.KZGCommitment) string {
 	return fmt.Sprintf("%#x", c)
 }
 

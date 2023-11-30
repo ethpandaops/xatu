@@ -4,14 +4,14 @@ go 1.19
 
 require (
 	github.com/IBM/sarama v1.41.2
-	github.com/attestantio/go-eth2-client v0.18.4-0.20231012194602-0eff364fec01
+	github.com/attestantio/go-eth2-client v0.19.5
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/beevik/ntp v1.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
 	github.com/ethereum/go-ethereum v1.12.0
-	github.com/ethpandaops/beacon v0.31.0
+	github.com/ethpandaops/beacon v0.32.0
 	github.com/ethpandaops/ethcore v0.0.0-20230804013106-6453c36c8c30
 	github.com/ethpandaops/ethwallclock v0.3.0
 	github.com/go-co-op/gocron v1.27.1
@@ -77,6 +77,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
+	github.com/huandu/go-clone v1.6.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/huin/goupnp v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

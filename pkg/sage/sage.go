@@ -177,7 +177,7 @@ func (a *Sage) ServePProf(ctx context.Context) error {
 	}
 
 	go func() {
-		a.log.Infof("Serving pprof at %s", a.config.PProfAddr)
+		a.log.Infof("Serving pprof at %s", *a.config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
 			a.log.Fatal(err)

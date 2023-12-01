@@ -287,9 +287,9 @@ func (d *DiscV5) UpdateBootNodes(bootNodes []string) error {
 	bn := []*enode.Node{}
 
 	for _, addr := range bootNodes {
-		bootNode, parsager := enode.Parse(enode.ValidSchemes, addr)
-		if parsager != nil {
-			return parsager
+		bootNode, parseErr := enode.Parse(enode.ValidSchemes, addr)
+		if parseErr != nil {
+			return parseErr
 		}
 
 		bn = append(bn, bootNode)

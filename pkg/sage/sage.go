@@ -99,13 +99,16 @@ func (a *Sage) Start(ctx context.Context) error {
 	a.beacon.OnReady(ctx, func(ctx context.Context) error {
 		a.log.Info("Beacon node is ready")
 
+		//nolint:goconst // Not critical
 		if a.beacon.Metadata().Network.Name == "unknown" {
 			a.log.Fatal("Unable to determine network. Provide a network name override in the config")
 
 			return errors.New("unable to determine network name")
 		}
 
-		a.subscribeToEvents(ctx)
+		if err := a.subscribeToEvents(ctx); err != nil {
+			a.log.Fatal(err)
+		}
 
 		return nil
 	})
@@ -208,7 +211,7 @@ func (a *Sage) subscribeToEvents(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			a.armiarma.SubscribeWithContext(ctx, "timed_ethereum_attestation", func(msg *sse.Event) {
+			if err := a.armiarma.SubscribeWithContext(ctx, "timed_ethereum_attestation", func(msg *sse.Event) {
 				event := &armiarma.TimedEthereumAttestation{}
 
 				if err := json.Unmarshal(msg.Data, event); err != nil {
@@ -219,7 +222,9 @@ func (a *Sage) subscribeToEvents(ctx context.Context) error {
 
 				// Add the event to the channel
 				a.attestationCh <- event
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 }

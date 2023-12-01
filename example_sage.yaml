@@ -2,7 +2,7 @@ logging: "debug" # panic,fatal,warn,info,debug,trace
 metricsAddr: ":9095"
 pprofAddr: ":6065" # optional. if supplied it enables pprof server
 
-armiarmaURL: http://localhost:9099/events
+armiarmaUrl: http://localhost:9099/events
 
 ethereum:
   beaconNodeAddress: http://localhost:5052

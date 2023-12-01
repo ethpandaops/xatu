@@ -22,6 +22,6 @@ func NewMetrics(namespace string) *Metrics {
 	return m
 }
 
-func (m *Metrics) AddDecoratedEvent(count int, eventType string, network string) {
+func (m *Metrics) AddDecoratedEvent(count int, eventType, network string) {
 	m.decoratedEventTotal.WithLabelValues(eventType, network).Add(float64(count))
 }

@@ -20,7 +20,7 @@ type Config struct {
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 	// ArmiarmaURL configuration
-	ArmiarmaURL string `yaml:"armiarmaURL"`
+	ArmiarmaURL string `yaml:"armiarmaUrl"`
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
 	// Ethereum configuration

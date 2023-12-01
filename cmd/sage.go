@@ -5,27 +5,27 @@ import (
 	"os"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/seer"
+	"github.com/ethpandaops/xatu/pkg/sage"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
 )
 
 var (
-	seerCfgFile string
+	sageCfgFile string
 )
 
-// seerCmd represents the seer command
-var seerCmd = &cobra.Command{
-	Use:   "seer",
-	Short: "Runs Xatu in seer mode.",
-	Long:  `Runs Xatu in seer mode, which means it will connect to an Ethereum beacon p2p network and listen for events (via Armiarma).`,
+// sageCmd represents the sage command
+var sageCmd = &cobra.Command{
+	Use:   "sage",
+	Short: "Runs Xatu in sage mode.",
+	Long:  `Runs Xatu in sage mode, which means it will connect to an Ethereum beacon p2p network and listen for events (via Armiarma).`,
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", seerCfgFile).Info("Loading config")
+		log.WithField("location", sageCfgFile).Info("Loading config")
 
-		config, err := loadseerConfigFromFile(seerCfgFile)
+		config, err := loadsageConfigFromFile(sageCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -39,31 +39,31 @@ var seerCmd = &cobra.Command{
 
 		log.SetLevel(logLevel)
 
-		seer, err := seer.New(cmd.Context(), log, config)
+		sage, err := sage.New(cmd.Context(), log, config)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if err := seer.Start(cmd.Context()); err != nil {
+		if err := sage.Start(cmd.Context()); err != nil {
 			log.Fatal(err)
 		}
 
-		log.Info("Xatu seer exited - cya!")
+		log.Info("Xatu sage exited - cya!")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(seerCmd)
+	rootCmd.AddCommand(sageCmd)
 
-	seerCmd.Flags().StringVar(&seerCfgFile, "config", "seer.yaml", "config file (default is seer.yaml)")
+	sageCmd.Flags().StringVar(&sageCfgFile, "config", "sage.yaml", "config file (default is sage.yaml)")
 }
 
-func loadseerConfigFromFile(file string) (*seer.Config, error) {
+func loadsageConfigFromFile(file string) (*sage.Config, error) {
 	if file == "" {
-		file = "seer.yaml"
+		file = "sage.yaml"
 	}
 
-	config := &seer.Config{}
+	config := &sage.Config{}
 
 	if err := defaults.Set(config); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func loadseerConfigFromFile(file string) (*seer.Config, error) {
 		return nil, err
 	}
 
-	type plain seer.Config
+	type plain sage.Config
 
 	if err := yaml.Unmarshal(yamlFile, (*plain)(config)); err != nil {
 		return nil, err

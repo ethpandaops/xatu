@@ -50,7 +50,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 
 	return &BeaconNode{
 		config:   config,
-		log:      log.WithField("module", "seer/ethereum/beacon"),
+		log:      log.WithField("module", "sage/ethereum/beacon"),
 		beacon:   node,
 		services: svcs,
 	}, nil

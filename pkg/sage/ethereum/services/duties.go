@@ -37,7 +37,7 @@ type DutiesService struct {
 func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *MetadataService) DutiesService {
 	return DutiesService{
 		beacon: sbeacon,
-		log:    log.WithField("module", "seer/ethereum/duties"),
+		log:    log.WithField("module", "sage/ethereum/duties"),
 		beaconCommittees: ttlcache.New(
 			ttlcache.WithTTL[phase0.Epoch, []*v1.BeaconCommittee](60 * time.Minute),
 		),

@@ -1,4 +1,4 @@
-package seer
+package sage
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/seer/cache"
-	"github.com/ethpandaops/xatu/pkg/seer/ethereum"
-	"github.com/ethpandaops/xatu/pkg/seer/event"
+	"github.com/ethpandaops/xatu/pkg/sage/cache"
+	"github.com/ethpandaops/xatu/pkg/sage/ethereum"
+	"github.com/ethpandaops/xatu/pkg/sage/event/armiarma"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/r3labs/sse/v2"
@@ -21,7 +21,7 @@ import (
 	"gopkg.in/cenkalti/backoff.v1"
 )
 
-type Seer struct {
+type sage struct {
 	log            logrus.FieldLogger
 	config         *Config
 	armiarma       *sse.Client
@@ -30,10 +30,10 @@ type Seer struct {
 	id             uuid.UUID
 	duplicateCache *cache.DuplicateCache
 
-	attestationCh chan *event.WrappedAttestation
+	attestationCh chan *armiarma.TimedEthereumAttestation
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Seer, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*sage, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -69,22 +69,22 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Seer, er
 
 	duplicateCache := cache.NewDuplicateCache()
 
-	return &Seer{
-		log:            log.WithField("module", "seer"),
+	return &sage{
+		log:            log.WithField("module", "sage"),
 		config:         config,
 		armiarma:       client,
 		beacon:         beacon,
 		id:             uuid.New(),
 		sinks:          sinks,
 		duplicateCache: duplicateCache,
-		attestationCh:  make(chan *event.WrappedAttestation, 20000),
+		attestationCh:  make(chan *armiarma.TimedEthereumAttestation, 20000),
 	}, nil
 }
 
-func (a *Seer) Start(ctx context.Context) error {
+func (a *sage) Start(ctx context.Context) error {
 	a.log.
 		WithField("version", xatu.Full()).
-		Info("Starting Xatu in Seer mode")
+		Info("Starting Xatu in sage mode")
 
 	a.startWorkers(ctx)
 
@@ -125,7 +125,7 @@ func (a *Seer) Start(ctx context.Context) error {
 	return nil
 }
 
-func (a *Seer) startWorkers(ctx context.Context) {
+func (a *sage) startWorkers(ctx context.Context) {
 	a.log.WithField("count", a.config.Workers).Info("Starting workers")
 
 	for i := 0; i < a.config.Workers; i++ {
@@ -133,7 +133,7 @@ func (a *Seer) startWorkers(ctx context.Context) {
 	}
 }
 
-func (a *Seer) processChannels(ctx context.Context) {
+func (a *sage) processChannels(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -146,7 +146,7 @@ func (a *Seer) processChannels(ctx context.Context) {
 	}
 }
 
-func (a *Seer) subscribeToEvents(ctx context.Context) error {
+func (a *sage) subscribeToEvents(ctx context.Context) error {
 	a.log.Info("Subscribing to events upstream")
 
 	for {
@@ -154,8 +154,8 @@ func (a *Seer) subscribeToEvents(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			a.armiarma.SubscribeWithContext(ctx, "attestation", func(msg *sse.Event) {
-				event := &event.WrappedAttestation{}
+			a.armiarma.SubscribeWithContext(ctx, "timed_ethereum_attestation", func(msg *sse.Event) {
+				event := &armiarma.TimedEthereumAttestation{}
 
 				if err := json.Unmarshal(msg.Data, event); err != nil {
 					a.log.WithError(err).Error("Failed to unmarshal attestation event")
@@ -170,7 +170,7 @@ func (a *Seer) subscribeToEvents(ctx context.Context) error {
 	}
 }
 
-func (a *Seer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+func (a *sage) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
 	var networkMeta *xatu.ClientMeta_Ethereum_Network
 
 	network := a.beacon.Metadata().Network
@@ -186,7 +186,7 @@ func (a *Seer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error
 	}
 
 	return &xatu.ClientMeta{
-		Name:           "seer",
+		Name:           "sage",
 		Version:        xatu.Short(),
 		Id:             a.id.String(),
 		Implementation: xatu.Implementation,
@@ -204,7 +204,7 @@ func (a *Seer) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error
 	}, nil
 }
 
-func (a *Seer) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+func (a *sage) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
 	network := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
 	networkStr := fmt.Sprintf("%d", network)
 

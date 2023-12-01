@@ -1,4 +1,4 @@
-package seer
+package sage
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
-	"github.com/ethpandaops/xatu/pkg/seer/ethereum"
+	"github.com/ethpandaops/xatu/pkg/sage/ethereum"
 	"github.com/sirupsen/logrus"
 )
 

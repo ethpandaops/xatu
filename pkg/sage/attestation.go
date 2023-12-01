@@ -1,12 +1,13 @@
-package seer
+package sage
 
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/seer/event"
+	"github.com/ethpandaops/xatu/pkg/sage/event"
+	"github.com/ethpandaops/xatu/pkg/sage/event/armiarma"
 )
 
-func (a *Seer) handleAttestationEvent(ctx context.Context, e *event.WrappedAttestation) error {
+func (a *sage) handleAttestationEvent(ctx context.Context, e *armiarma.TimedEthereumAttestation) error {
 	meta, err := a.createNewClientMeta(ctx)
 	if err != nil {
 		return err

@@ -21,7 +21,7 @@ import (
 	"gopkg.in/cenkalti/backoff.v1"
 )
 
-type sage struct {
+type Sage struct {
 	log            logrus.FieldLogger
 	config         *Config
 	armiarma       *sse.Client
@@ -30,10 +30,12 @@ type sage struct {
 	id             uuid.UUID
 	duplicateCache *cache.DuplicateCache
 
+	metrics *Metrics
+
 	attestationCh chan *armiarma.TimedEthereumAttestation
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*sage, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sage, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -69,19 +71,20 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*sage, er
 
 	duplicateCache := cache.NewDuplicateCache()
 
-	return &sage{
+	return &Sage{
 		log:            log.WithField("module", "sage"),
 		config:         config,
 		armiarma:       client,
 		beacon:         beacon,
 		id:             uuid.New(),
 		sinks:          sinks,
+		metrics:        NewMetrics("xatu_sage"),
 		duplicateCache: duplicateCache,
 		attestationCh:  make(chan *armiarma.TimedEthereumAttestation, 20000),
 	}, nil
 }
 
-func (a *sage) Start(ctx context.Context) error {
+func (a *Sage) Start(ctx context.Context) error {
 	a.log.
 		WithField("version", xatu.Full()).
 		Info("Starting Xatu in sage mode")
@@ -125,7 +128,7 @@ func (a *sage) Start(ctx context.Context) error {
 	return nil
 }
 
-func (a *sage) startWorkers(ctx context.Context) {
+func (a *Sage) startWorkers(ctx context.Context) {
 	a.log.WithField("count", a.config.Workers).Info("Starting workers")
 
 	for i := 0; i < a.config.Workers; i++ {
@@ -133,7 +136,7 @@ func (a *sage) startWorkers(ctx context.Context) {
 	}
 }
 
-func (a *sage) processChannels(ctx context.Context) {
+func (a *Sage) processChannels(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -146,7 +149,7 @@ func (a *sage) processChannels(ctx context.Context) {
 	}
 }
 
-func (a *sage) subscribeToEvents(ctx context.Context) error {
+func (a *Sage) subscribeToEvents(ctx context.Context) error {
 	a.log.Info("Subscribing to events upstream")
 
 	for {
@@ -170,7 +173,7 @@ func (a *sage) subscribeToEvents(ctx context.Context) error {
 	}
 }
 
-func (a *sage) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+func (a *Sage) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
 	var networkMeta *xatu.ClientMeta_Ethereum_Network
 
 	network := a.beacon.Metadata().Network
@@ -204,7 +207,7 @@ func (a *sage) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error
 	}, nil
 }
 
-func (a *sage) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+func (a *Sage) handleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
 	network := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
 	networkStr := fmt.Sprintf("%d", network)
 
@@ -217,7 +220,7 @@ func (a *sage) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decorate
 		eventType = "unknown"
 	}
 
-	// s.metrics.AddDecoratedEvent(1, eventType, networkStr)
+	a.metrics.AddDecoratedEvent(1, eventType, networkStr)
 
 	for _, sink := range a.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {

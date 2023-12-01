@@ -7,7 +7,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sage/event/armiarma"
 )
 
-func (a *sage) handleAttestationEvent(ctx context.Context, e *armiarma.TimedEthereumAttestation) error {
+func (a *Sage) handleAttestationEvent(ctx context.Context, e *armiarma.TimedEthereumAttestation) error {
 	meta, err := a.createNewClientMeta(ctx)
 	if err != nil {
 		return err

@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -16,6 +18,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sage/event/armiarma"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/cenkalti/backoff.v1"
@@ -107,6 +110,10 @@ func (a *Sage) Start(ctx context.Context) error {
 		return nil
 	})
 
+	if err := a.ServeMetrics(ctx); err != nil {
+		return err
+	}
+
 	if err := a.beacon.Start(ctx); err != nil {
 		return errors.Wrap(err, "failed to start beacon node")
 	}
@@ -134,6 +141,27 @@ func (a *Sage) startWorkers(ctx context.Context) {
 	for i := 0; i < a.config.Workers; i++ {
 		go a.processChannels(ctx)
 	}
+}
+
+func (a *Sage) ServeMetrics(ctx context.Context) error {
+	go func() {
+		sm := http.NewServeMux()
+		sm.Handle("/metrics", promhttp.Handler())
+
+		server := &http.Server{
+			Addr:              a.config.MetricsAddr,
+			ReadHeaderTimeout: 15 * time.Second,
+			Handler:           sm,
+		}
+
+		a.log.Infof("Serving metrics at %s", a.config.MetricsAddr)
+
+		if err := server.ListenAndServe(); err != nil {
+			a.log.Fatal(err)
+		}
+	}()
+
+	return nil
 }
 
 func (a *Sage) processChannels(ctx context.Context) {

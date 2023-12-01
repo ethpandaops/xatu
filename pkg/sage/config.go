@@ -15,6 +15,8 @@ type Config struct {
 	LoggingLevel string `yaml:"logging" default:"info"`
 	// PProfAddr is the address to listen on for pprof.
 	PProfAddr *string `yaml:"pprofAddr"`
+	// MetricsAddr is the address to server prometheus metrics on.
+	MetricsAddr string `yaml:"metricsAddr" default:":9093"`
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 	// ArmiarmaURL configuration

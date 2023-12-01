@@ -110,6 +110,12 @@ func (a *Sage) Start(ctx context.Context) error {
 		return nil
 	})
 
+	if a.config.PProfAddr != nil {
+		if err := a.ServePProf(ctx); err != nil {
+			return err
+		}
+	}
+
 	if err := a.ServeMetrics(ctx); err != nil {
 		return err
 	}
@@ -157,6 +163,23 @@ func (a *Sage) ServeMetrics(ctx context.Context) error {
 		a.log.Infof("Serving metrics at %s", a.config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
+			a.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (a *Sage) ServePProf(ctx context.Context) error {
+	pprofServer := &http.Server{
+		Addr:              *a.config.PProfAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+	}
+
+	go func() {
+		a.log.Infof("Serving pprof at %s", a.config.PProfAddr)
+
+		if err := pprofServer.ListenAndServe(); err != nil {
 			a.log.Fatal(err)
 		}
 	}()

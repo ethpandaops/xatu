@@ -49,6 +49,8 @@ Sage requires a single `yaml` config file. An example file can be found [here](.
 | ethereum.beaconNodeAddress | object |  | A key value map of headers                                                                                                                 |
 | ethereum.overrideNetworkName | string |  | Override the network name                                                                                                                  |
 | armiarmaUrl | string |  | The address of the Armiarma instance                                                                                           |
+| workers | int | 1  | The count of workers processing attestations. Will result in more duplicate attestations if count is greater than 1                                                                                          |
+| duplicateAttestationThreshold | int | 3 | The amount of times to forward on the same attestation                                                                                   |
 | outputs | array<object> |  | List of outputs for the sage to send data to                                                                                             |
 | outputs[].name | string |  | Name of the output                                                                                                                         |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `kafka`, `stdout`)                                                                                         |

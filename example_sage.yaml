@@ -1,0 +1,58 @@
+logging: "debug" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9095"
+pprofAddr: ":6065" # optional. if supplied it enables pprof server
+
+armiarmaUrl: http://localhost:9099/events
+
+# workers is the number of workers to use for processing events.
+# Warning: Running more than 1 worker may result in more than $DUPLICATE_ATTESTATION_THRESHOLD
+workers: 1
+# duplicateAttestationThreshold is the number of duplicate attestations to allow before
+# dropping the attestation.
+duplicateAttestationThreshold: 3
+
+ethereum:
+  beaconNodeAddress: http://localhost:5052
+  beaconNodeHeaders:
+    # Authorization: Basic eW91aGF2aW5nYWxhdWdobWF0ZT8=
+
+outputs:
+- name: http-sink
+  type: http
+  # filter:
+  #   eventNames:
+  #   - BEACON_P2P_ATTESTATION
+  config:
+    address: http://localhost:8080
+    headers:
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512
+- name: xatu-server
+  type: xatu
+  # filter:
+  #   eventNames:
+  #   - BEACON_P2P_ATTESTATION
+  config:
+    address: localhost:8080
+    tls: false
+    headers:
+      authorization: Someb64Value
+    maxQueueSize: 51200
+    batchTimeout: 5s
+    exportTimeout: 30s
+    maxExportBatchSize: 512
+- name: kafka-sink
+  type: kafka
+  config:
+    brokers: localhost:19092
+    topic: events
+    flushFrequency: 1s
+    flushMessages: 500
+    flushBytes: 1000000
+    maxRetries: 6
+    compression: snappy
+    requiredAcks: leader
+    partitioning: random

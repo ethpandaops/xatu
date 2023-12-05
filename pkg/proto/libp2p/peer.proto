@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package xatu.libp2p;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/libp2p";
+
+import "google/protobuf/wrappers.proto";
+
+
+message Peer {
+  // ID is the ID of the peer.
+  string id = 1;
+  // Port is the port of the peer.
+  google.protobuf.UInt32Value port = 2;
+  // IP is the IP of the peer.
+  string ip = 3;
+  // UserAgent is the user agent of the peer.
+  string user_agent = 4 [ json_name = "user_agent" ];
+  // ProtocolVersion is the protocol version of the peer.
+  string protocol_version = 5 [ json_name = "protocol_version" ];
+  // Protocols is the protocols of the peer.
+  repeated string protocols = 6;
+  // Latency is the latency of the peer (in milliseconds).
+  google.protobuf.UInt64Value latency = 7;
+}

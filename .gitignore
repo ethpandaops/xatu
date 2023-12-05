@@ -9,3 +9,4 @@ GeoLite2-ASN.mmdb
 GeoLite2-City.mmdb
 __debug_bin*
 .vscode/launch.json
+sage.yaml

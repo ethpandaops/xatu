@@ -2,6 +2,8 @@ logging: "debug" # panic,fatal,warn,info,debug,trace
 metricsAddr: ":9095"
 pprofAddr: ":6065" # optional. if supplied it enables pprof server
 
+name: example-instance
+
 armiarmaUrl: http://localhost:9099/events
 
 # workers is the number of workers to use for processing events.

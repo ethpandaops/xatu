@@ -17,6 +17,8 @@ type Config struct {
 	PProfAddr *string `yaml:"pprofAddr"`
 	// MetricsAddr is the address to server prometheus metrics on.
 	MetricsAddr string `yaml:"metricsAddr" default:":9093"`
+	// Name is the name of the service.
+	Name string `yaml:"name" default:"xatu-sage"`
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 	// ArmiarmaURL configuration

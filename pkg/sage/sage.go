@@ -245,7 +245,7 @@ func (a *Sage) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error
 	}
 
 	return &xatu.ClientMeta{
-		Name:           "sage",
+		Name:           a.config.Name,
 		Version:        xatu.Short(),
 		Id:             a.id.String(),
 		Implementation: xatu.Implementation,

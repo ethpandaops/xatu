@@ -40,3 +40,7 @@ func (b *BeaconBlockWithdrawal) Validate(ctx context.Context) error {
 func (b *BeaconBlockWithdrawal) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *BeaconBlockWithdrawal) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

@@ -108,3 +108,7 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 	// If the block is already in the cache, filter it out
 	return retrieved
 }
+
+func (b *BeaconBlock) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

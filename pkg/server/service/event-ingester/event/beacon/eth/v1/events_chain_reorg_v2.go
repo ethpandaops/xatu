@@ -40,3 +40,7 @@ func (b *EventsChainReorgV2) Validate(ctx context.Context) error {
 func (b *EventsChainReorgV2) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *EventsChainReorgV2) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

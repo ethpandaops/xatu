@@ -40,3 +40,7 @@ func (b *EventsAttestation) Validate(ctx context.Context) error {
 func (b *EventsAttestation) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *EventsAttestation) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

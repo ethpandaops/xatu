@@ -76,7 +76,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 		}
 	}
 
-	var sGeo *xatu.ServerMeta_Client_Geo
+	var clientGeo *xatu.ServerMeta_Geo
 
 	if ipAddress != "" {
 		// grab the first ip if there are multiple
@@ -95,7 +95,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 			}
 
 			if geoipLookupResult != nil {
-				sGeo = &xatu.ServerMeta_Client_Geo{
+				clientGeo = &xatu.ServerMeta_Geo{
 					Country:                      geoipLookupResult.CountryName,
 					CountryCode:                  geoipLookupResult.CountryCode,
 					City:                         geoipLookupResult.CityName,
@@ -107,16 +107,6 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 				}
 			}
 		}
-	}
-
-	meta := xatu.ServerMeta{
-		Event: &xatu.ServerMeta_Event{
-			ReceivedDateTime: receivedAt,
-		},
-		Client: &xatu.ServerMeta_Client{
-			IP:  ipAddress,
-			Geo: sGeo,
-		},
 	}
 
 	filteredEvents := make([]*xatu.DecoratedEvent, 0, len(events))
@@ -132,7 +122,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 
 		eventName := event.Event.Name.String()
 
-		e, err := eventHandler.New(eventHandler.Type(eventName), h.log, event, h.cache)
+		e, err := eventHandler.New(eventHandler.Type(eventName), h.log, event, h.cache, h.geoipProvider)
 		if err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
 
@@ -153,7 +143,17 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 
 		h.metrics.AddDecoratedEventReceived(1, eventName, clientID)
 
-		event.Meta.Server = &meta
+		meta := xatu.ServerMeta{
+			Event: &xatu.ServerMeta_Event{
+				ReceivedDateTime: receivedAt,
+			},
+			Client: &xatu.ServerMeta_Client{
+				IP:  ipAddress,
+				Geo: clientGeo,
+			},
+		}
+
+		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
 		filteredEvents = append(filteredEvents, event)
 	}

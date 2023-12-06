@@ -40,3 +40,7 @@ func (b *EventsVoluntaryExitV2) Validate(ctx context.Context) error {
 func (b *EventsVoluntaryExitV2) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *EventsVoluntaryExitV2) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

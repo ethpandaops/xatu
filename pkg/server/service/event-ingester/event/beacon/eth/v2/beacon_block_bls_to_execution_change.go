@@ -40,3 +40,7 @@ func (b *BeaconBlockBLSToExecutionChange) Validate(ctx context.Context) error {
 func (b *BeaconBlockBLSToExecutionChange) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *BeaconBlockBLSToExecutionChange) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

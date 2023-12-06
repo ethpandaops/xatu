@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
+	"github.com/ethpandaops/xatu/pkg/sage/ethereum/services"
 	"github.com/go-co-op/gocron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -40,7 +40,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		Headers: config.BeaconNodeHeaders,
 	}, "xatu_sentry", opts)
 
-	metadata := services.NewMetadataService(log, node)
+	metadata := services.NewMetadataService(log, node, config.OverrideNetworkName)
 	duties := services.NewDutiesService(log, node, &metadata)
 
 	svcs := []services.Service{

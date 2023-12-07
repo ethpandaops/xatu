@@ -3,8 +3,10 @@ package v1
 import (
 	"context"
 	"errors"
+	"net"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,14 +15,16 @@ const (
 )
 
 type BeaconP2PAttestation struct {
-	log   logrus.FieldLogger
-	event *xatu.DecoratedEvent
+	log           logrus.FieldLogger
+	event         *xatu.DecoratedEvent
+	geoipProvider geoip.Provider
 }
 
-func NewBeaconP2PAttestation(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconP2PAttestation {
+func NewBeaconP2PAttestation(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *BeaconP2PAttestation {
 	return &BeaconP2PAttestation{
-		log:   log.WithField("event", BeaconP2PAttestationType),
-		event: event,
+		log:           log.WithField("event", BeaconP2PAttestationType),
+		event:         event,
+		geoipProvider: geoipProvider,
 	}
 }
 
@@ -39,4 +43,46 @@ func (b *BeaconP2PAttestation) Validate(_ context.Context) error {
 
 func (b *BeaconP2PAttestation) Filter(_ context.Context) bool {
 	return false
+}
+
+func (b *BeaconP2PAttestation) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_BEACON_P2P_ATTESTATION)
+	if !ok {
+		b.log.Error("failed to cast client additional data")
+
+		return meta
+	}
+
+	ipAddress := additionalData.BEACON_P2P_ATTESTATION.GetPeer().GetIp()
+
+	if ipAddress != "" {
+		ip := net.ParseIP(ipAddress)
+		if ip != nil && b.geoipProvider != nil {
+			geoipLookupResult, err := b.geoipProvider.LookupIP(ctx, ip)
+			if err != nil {
+				b.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+			}
+
+			if geoipLookupResult != nil {
+				meta.AdditionalData = &xatu.ServerMeta_BEACON_P2P_ATTESTATION{
+					BEACON_P2P_ATTESTATION: &xatu.ServerMeta_AdditionalBeaconP2PAttestationData{
+						Peer: &xatu.ServerMeta_Peer{
+							Geo: &xatu.ServerMeta_Geo{
+								Country:                      geoipLookupResult.CountryName,
+								CountryCode:                  geoipLookupResult.CountryCode,
+								City:                         geoipLookupResult.CityName,
+								Latitude:                     geoipLookupResult.Latitude,
+								Longitude:                    geoipLookupResult.Longitude,
+								ContinentCode:                geoipLookupResult.ContinentCode,
+								AutonomousSystemNumber:       geoipLookupResult.AutonomousSystemNumber,
+								AutonomousSystemOrganization: geoipLookupResult.AutonomousSystemOrganization,
+							},
+						},
+					},
+				}
+			}
+		}
+	}
+
+	return meta
 }

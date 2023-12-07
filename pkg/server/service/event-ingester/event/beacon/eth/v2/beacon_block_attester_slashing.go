@@ -40,3 +40,7 @@ func (b *BeaconBlockAttesterSlashing) Validate(ctx context.Context) error {
 func (b *BeaconBlockAttesterSlashing) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *BeaconBlockAttesterSlashing) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

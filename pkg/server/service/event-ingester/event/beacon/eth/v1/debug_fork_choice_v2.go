@@ -40,3 +40,7 @@ func (b *DebugForkChoiceV2) Validate(_ context.Context) error {
 func (b *DebugForkChoiceV2) Filter(_ context.Context) bool {
 	return false
 }
+
+func (b *DebugForkChoiceV2) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

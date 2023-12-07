@@ -40,3 +40,7 @@ func (b *EventsHeadV2) Validate(ctx context.Context) error {
 func (b *EventsHeadV2) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *EventsHeadV2) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

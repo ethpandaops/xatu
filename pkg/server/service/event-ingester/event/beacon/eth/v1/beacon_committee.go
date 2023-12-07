@@ -40,3 +40,7 @@ func (b *BeaconCommittee) Validate(_ context.Context) error {
 func (b *BeaconCommittee) Filter(_ context.Context) bool {
 	return false
 }
+
+func (b *BeaconCommittee) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

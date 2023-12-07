@@ -40,3 +40,7 @@ func (b *Transaction) Validate(ctx context.Context) error {
 func (b *Transaction) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *Transaction) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

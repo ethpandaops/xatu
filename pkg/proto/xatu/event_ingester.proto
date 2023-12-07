@@ -775,34 +775,34 @@ message ServerMeta {
         [ json_name = "received_date_time" ];
   }
 
-  message Client {
-    message Geo {
-      // City is the city of the client as far as the server is concerned.
-      string City = 1 [ json_name = "city" ];
-      // Country is the country of the client as far as the server is concerned.
-      string Country = 2 [ json_name = "country" ];
-      // CountryCode is the country code of the client as far as the server is
-      // concerned.
-      string CountryCode = 3 [ json_name = "country_code" ];
-      // ContinentCode is the continent code of the client as far as the server
-      // is concerned.
-      string ContinentCode = 4 [ json_name = "continent_code" ];
-      // Latitude is the latitude of the client as far as the server is
-      // concerned.
-      double Latitude = 5 [ json_name = "latitude" ];
-      // Longitude is the longitude of the client as far as the server is
-      // concerned.
-      double Longitude = 6 [ json_name = "longitude" ];
-      // AutonomousSystemNumber is the autonomous system number of the client as
-      // far as the server is concerned.
-      uint32 AutonomousSystemNumber = 7
-          [ json_name = "autonomous_system_number" ];
-      // AutonomousSystemOrganization is the autonomous system organization of
-      // the client as far as the server is concerned.
-      string AutonomousSystemOrganization = 8
-          [ json_name = "autonomous_system_organization" ];
-    }
+  message Geo {
+    // City is the city of the client as far as the server is concerned.
+    string City = 1 [ json_name = "city" ];
+    // Country is the country of the client as far as the server is concerned.
+    string Country = 2 [ json_name = "country" ];
+    // CountryCode is the country code of the client as far as the server is
+    // concerned.
+    string CountryCode = 3 [ json_name = "country_code" ];
+    // ContinentCode is the continent code of the client as far as the server
+    // is concerned.
+    string ContinentCode = 4 [ json_name = "continent_code" ];
+    // Latitude is the latitude of the client as far as the server is
+    // concerned.
+    double Latitude = 5 [ json_name = "latitude" ];
+    // Longitude is the longitude of the client as far as the server is
+    // concerned.
+    double Longitude = 6 [ json_name = "longitude" ];
+    // AutonomousSystemNumber is the autonomous system number of the client as
+    // far as the server is concerned.
+    uint32 AutonomousSystemNumber = 7
+        [ json_name = "autonomous_system_number" ];
+    // AutonomousSystemOrganization is the autonomous system organization of
+    // the client as far as the server is concerned.
+    string AutonomousSystemOrganization = 8
+        [ json_name = "autonomous_system_organization" ];
+  }
 
+  message Client {
     // IP is the ip of the client as far as the server is concerned.
     string IP = 1 [ json_name = "ip" ];
 
@@ -811,14 +811,27 @@ message ServerMeta {
     Geo geo = 2;
   }
 
+  message Peer {
+    // Geo contains geo information about the peer
+    Geo geo = 1;
+  }
+
+  message AdditionalBeaconP2PAttestationData {  
+    Peer peer = 1;
+  }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
   // Client contains information about the client from the server's perspective.
   Client client = 2;
-
-  // AdditionalData contains additional data as set by the server.
-  map<string, string> additional_data = 3 [ json_name = "additional_data" ];
+ 
+  // AdditionalData contains additional, computed data as set by the server
+  // about the event.
+  oneof AdditionalData {
+    // AdditionalBeaconP2PAttestation contains additional data on unvalidated beacon attestations that were received over the p2p network.
+    AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 3 [ json_name = "BEACON_P2P_ATTESTATION" ];
+  }
 }
 
 message Meta {

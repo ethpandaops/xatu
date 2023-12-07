@@ -40,3 +40,7 @@ func (b *BlockClassification) Validate(ctx context.Context) error {
 func (b *BlockClassification) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *BlockClassification) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

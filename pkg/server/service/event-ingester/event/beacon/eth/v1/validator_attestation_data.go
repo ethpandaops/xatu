@@ -40,3 +40,7 @@ func (b *ValidatorAttestationData) Validate(_ context.Context) error {
 func (b *ValidatorAttestationData) Filter(_ context.Context) bool {
 	return false
 }
+
+func (b *ValidatorAttestationData) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

@@ -331,6 +331,8 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 		checkpointIteratorMetrics := iterator.NewCheckpointMetrics("xatu_cannon")
 
+		backfillingCheckpointIteratorMetrics := iterator.NewBackfillingCheckpointMetrics("xatu_cannon")
+
 		blockprintIteratorMetrics := iterator.NewBlockprintMetrics("xatu_cannon")
 
 		finalizedCheckpoint := "finalized"
@@ -504,6 +506,23 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.coordinatorClient,
 					wallclock,
 					&checkpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
+				),
+				c.beacon,
+				clientMeta,
+			),
+			v1.NewProposerDutyDeriver(
+				c.log,
+				&c.Config.Derivers.ProposerDutyConfig,
+				iterator.NewBackfillingCheckpoint(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY,
+					c.coordinatorClient,
+					wallclock,
+					&backfillingCheckpointIteratorMetrics,
 					c.beacon,
 					finalizedCheckpoint,
 				),

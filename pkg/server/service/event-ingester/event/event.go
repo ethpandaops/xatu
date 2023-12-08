@@ -53,6 +53,7 @@ const (
 	TypeBlockprintBlockClassification           Type = blockprint.BlockClassificationType
 	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
+	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 )
 
@@ -70,6 +71,12 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 	}
 
 	switch eventType {
+	case TypeBeaconP2PAttestation:
+		return v1.NewBeaconP2PAttestation(log, event, geoipProvider), nil
+	case TypeBeaconETHV1EventsAttestation:
+		return v1.NewEventsAttestation(log, event), nil
+	case TypeBeaconETHV1EventsAttestationV2:
+		return v1.NewEventsAttestationV2(log, event), nil
 	case TypeBeaconETHV1EventsBlock:
 		return v1.NewEventsBlock(log, event), nil
 	case TypeBeaconETHV1EventsBlockV2:
@@ -90,10 +97,6 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewEventsVoluntaryExit(log, event), nil
 	case TypeBeaconETHV1EventsVoluntaryExitV2:
 		return v1.NewEventsVoluntaryExitV2(log, event), nil
-	case TypeBeaconETHV1EventsAttestation:
-		return v1.NewEventsAttestation(log, event), nil
-	case TypeBeaconETHV1EventsAttestationV2:
-		return v1.NewEventsAttestationV2(log, event), nil
 	case TypeBeaconETHV1EventsContributionAndProof:
 		return v1.NewEventsContributionAndProof(log, event), nil
 	case TypeBeaconETHV1EventsContributionAndProofV2:
@@ -138,8 +141,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewEventsBlobSidecar(log, event), nil
 	case TypeBeaconETHV1BeaconBlobSidecar:
 		return v1.NewBeaconBlobSidecar(log, event), nil
-	case TypeBeaconP2PAttestation:
-		return v1.NewBeaconP2PAttestation(log, event, geoipProvider), nil
+	case TypeBeaconEthV1ProposerDuty:
+		return v1.NewBeaconProposerDuty(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

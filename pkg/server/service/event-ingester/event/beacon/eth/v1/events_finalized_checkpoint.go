@@ -40,3 +40,7 @@ func (b *EventsFinalizedCheckpoint) Validate(ctx context.Context) error {
 func (b *EventsFinalizedCheckpoint) Filter(ctx context.Context) bool {
 	return false
 }
+
+func (b *EventsFinalizedCheckpoint) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

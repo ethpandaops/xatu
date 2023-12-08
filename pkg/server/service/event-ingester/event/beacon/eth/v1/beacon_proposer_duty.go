@@ -40,3 +40,7 @@ func (b *BeaconProposerDuty) Validate(_ context.Context) error {
 func (b *BeaconProposerDuty) Filter(_ context.Context) bool {
 	return false
 }
+
+func (b *BeaconProposerDuty) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

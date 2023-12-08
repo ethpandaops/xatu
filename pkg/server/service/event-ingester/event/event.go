@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/blockprint"
@@ -53,21 +54,29 @@ const (
 	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
+	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 )
 
 type Event interface {
 	Type() string
 	Validate(ctx context.Context) error
 	Filter(ctx context.Context) bool
+	AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta
 }
 
 //nolint:gocyclo //not that complex
-func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) (Event, error) {
+func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache, geoipProvider geoip.Provider) (Event, error) {
 	if eventType == TypeUnknown {
 		return nil, errors.New("event type is required")
 	}
 
 	switch eventType {
+	case TypeBeaconP2PAttestation:
+		return v1.NewBeaconP2PAttestation(log, event, geoipProvider), nil
+	case TypeBeaconETHV1EventsAttestation:
+		return v1.NewEventsAttestation(log, event), nil
+	case TypeBeaconETHV1EventsAttestationV2:
+		return v1.NewEventsAttestationV2(log, event), nil
 	case TypeBeaconETHV1EventsBlock:
 		return v1.NewEventsBlock(log, event), nil
 	case TypeBeaconETHV1EventsBlockV2:
@@ -88,10 +97,6 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewEventsVoluntaryExit(log, event), nil
 	case TypeBeaconETHV1EventsVoluntaryExitV2:
 		return v1.NewEventsVoluntaryExitV2(log, event), nil
-	case TypeBeaconETHV1EventsAttestation:
-		return v1.NewEventsAttestation(log, event), nil
-	case TypeBeaconETHV1EventsAttestationV2:
-		return v1.NewEventsAttestationV2(log, event), nil
 	case TypeBeaconETHV1EventsContributionAndProof:
 		return v1.NewEventsContributionAndProof(log, event), nil
 	case TypeBeaconETHV1EventsContributionAndProofV2:
@@ -138,7 +143,6 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewBeaconBlobSidecar(log, event), nil
 	case TypeBeaconEthV1ProposerDuty:
 		return v1.NewBeaconProposerDuty(log, event), nil
-
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

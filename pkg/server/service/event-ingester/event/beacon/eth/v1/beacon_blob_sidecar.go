@@ -40,3 +40,7 @@ func (b *BeaconBlobSidecar) Validate(_ context.Context) error {
 func (b *BeaconBlobSidecar) Filter(_ context.Context) bool {
 	return false
 }
+
+func (b *BeaconBlobSidecar) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	return meta
+}

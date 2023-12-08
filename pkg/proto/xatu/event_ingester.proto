@@ -20,6 +20,8 @@ import "pkg/proto/eth/v1/execution_engine.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
+import "pkg/proto/libp2p/peer.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -637,6 +639,38 @@ message ClientMeta {
     string versioned_hash = 4 [ json_name = "versioned_hash" ];
   }
 
+  message AdditionalBeaconP2PAttestationData {  
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalEthV1AttestationSourceV2Data source = 1;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalEthV1AttestationTargetV2Data target = 2;
+
+    // Slot contains the slot information for the attestation.
+    SlotV2 slot = 3;
+
+    // Epoch contains the epoch information for the attestation.
+    EpochV2 epoch = 4;
+
+    // Propagation contains information about the propagation of the
+    // attestation.
+    PropagationV2 propagation = 5;
+
+    // AttestingValidator contains data about the validator that created the attestation.
+    // Note: only available for unaggregated attestations.
+    AttestingValidatorV2 attesting_validator = 6 [ json_name = "attesting_validator" ];
+
+    // Peer contains information on the peer that sent us the attestation.
+    libp2p.Peer peer = 7;
+
+    // Subnet is the subnet that the attestation was sent on.
+    google.protobuf.UInt32Value subnet = 8;
+
+    // Validated is if the attestation was validated.
+    google.protobuf.BoolValue validated = 9;
+  }
+
   message AdditionalEthV1ProposerDutyData {
     // Epoch contains the epoch information for the proposer duty.
     EpochV2 epoch = 1;
@@ -738,8 +772,10 @@ message ClientMeta {
     AdditionalBlockprintBlockClassificationData blockprint_block_classification = 43 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     // AdditionalEthV1BeaconBlobSidecarData contains additional data on beacon blob sidecars.
     AdditionalEthV1BeaconBlobSidecarData eth_v1_beacon_blob_sidecar = 44 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
+    // AdditionalBeaconP2PAttestation contains additional data on unvalidated beacon attestations that were received over the p2p network.
+    AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 45 [ json_name = "BEACON_P2P_ATTESTATION" ];
     // AdditionalEthV1ProposerDutyData contains addtional data on proposer duties.
-    AdditionalEthV1ProposerDutyData eth_v1_proposer_duty = 45 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
+    AdditionalEthV1ProposerDutyData eth_v1_proposer_duty = 46 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
   }
 }
 
@@ -750,34 +786,34 @@ message ServerMeta {
         [ json_name = "received_date_time" ];
   }
 
-  message Client {
-    message Geo {
-      // City is the city of the client as far as the server is concerned.
-      string City = 1 [ json_name = "city" ];
-      // Country is the country of the client as far as the server is concerned.
-      string Country = 2 [ json_name = "country" ];
-      // CountryCode is the country code of the client as far as the server is
-      // concerned.
-      string CountryCode = 3 [ json_name = "country_code" ];
-      // ContinentCode is the continent code of the client as far as the server
-      // is concerned.
-      string ContinentCode = 4 [ json_name = "continent_code" ];
-      // Latitude is the latitude of the client as far as the server is
-      // concerned.
-      double Latitude = 5 [ json_name = "latitude" ];
-      // Longitude is the longitude of the client as far as the server is
-      // concerned.
-      double Longitude = 6 [ json_name = "longitude" ];
-      // AutonomousSystemNumber is the autonomous system number of the client as
-      // far as the server is concerned.
-      uint32 AutonomousSystemNumber = 7
-          [ json_name = "autonomous_system_number" ];
-      // AutonomousSystemOrganization is the autonomous system organization of
-      // the client as far as the server is concerned.
-      string AutonomousSystemOrganization = 8
-          [ json_name = "autonomous_system_organization" ];
-    }
+  message Geo {
+    // City is the city of the client as far as the server is concerned.
+    string City = 1 [ json_name = "city" ];
+    // Country is the country of the client as far as the server is concerned.
+    string Country = 2 [ json_name = "country" ];
+    // CountryCode is the country code of the client as far as the server is
+    // concerned.
+    string CountryCode = 3 [ json_name = "country_code" ];
+    // ContinentCode is the continent code of the client as far as the server
+    // is concerned.
+    string ContinentCode = 4 [ json_name = "continent_code" ];
+    // Latitude is the latitude of the client as far as the server is
+    // concerned.
+    double Latitude = 5 [ json_name = "latitude" ];
+    // Longitude is the longitude of the client as far as the server is
+    // concerned.
+    double Longitude = 6 [ json_name = "longitude" ];
+    // AutonomousSystemNumber is the autonomous system number of the client as
+    // far as the server is concerned.
+    uint32 AutonomousSystemNumber = 7
+        [ json_name = "autonomous_system_number" ];
+    // AutonomousSystemOrganization is the autonomous system organization of
+    // the client as far as the server is concerned.
+    string AutonomousSystemOrganization = 8
+        [ json_name = "autonomous_system_organization" ];
+  }
 
+  message Client {
     // IP is the ip of the client as far as the server is concerned.
     string IP = 1 [ json_name = "ip" ];
 
@@ -786,14 +822,27 @@ message ServerMeta {
     Geo geo = 2;
   }
 
+  message Peer {
+    // Geo contains geo information about the peer
+    Geo geo = 1;
+  }
+
+  message AdditionalBeaconP2PAttestationData {  
+    Peer peer = 1;
+  }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
   // Client contains information about the client from the server's perspective.
   Client client = 2;
-
-  // AdditionalData contains additional data as set by the server.
-  map<string, string> additional_data = 3 [ json_name = "additional_data" ];
+ 
+  // AdditionalData contains additional, computed data as set by the server
+  // about the event.
+  oneof AdditionalData {
+    // AdditionalBeaconP2PAttestation contains additional data on unvalidated beacon attestations that were received over the p2p network.
+    AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 3 [ json_name = "BEACON_P2P_ATTESTATION" ];
+  }
 }
 
 message Meta {
@@ -840,7 +889,8 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
     BLOCKPRINT_BLOCK_CLASSIFICATION = 33;
     BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
-    BEACON_API_ETH_V1_PROPOSER_DUTY = 35;
+    BEACON_P2P_ATTESTATION = 35;
+    BEACON_API_ETH_V1_PROPOSER_DUTY = 36;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -890,6 +940,7 @@ message DecoratedEvent {
     xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34  [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
     xatu.blockprint.BlockClassification blockprint_block_classification = 35 [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
-    xatu.eth.v1.ProposerDuty eth_v1_proposer_duty = 37 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
+    xatu.eth.v1.AttestationV2 beacon_p2p_attestation = 37 [ json_name = "BEACON_P2P_ATTESTATION" ];
+    xatu.eth.v1.ProposerDuty eth_v1_proposer_duty = 38 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
   }; 
 }

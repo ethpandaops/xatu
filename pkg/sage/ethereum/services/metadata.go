@@ -57,6 +57,13 @@ func (m *MetadataService) Start(ctx context.Context) error {
 				return err
 			}
 
+			m.log.WithFields(logrus.Fields{
+				"genesis_time":     m.Genesis.GenesisTime,
+				"network":          m.Network.Name,
+				"deposit_chain_id": m.Spec.DepositChainID,
+				"config_name":      m.Spec.ConfigName,
+			}).Info("Metadata is ready")
+
 			return nil
 		}
 

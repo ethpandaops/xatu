@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package xatu.eth.v1;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+// ProposerDuty is the duty of a validator to propose a block at a given slot.
+message ProposerDuty {
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  google.protobuf.UInt64Value slot = 2;
+  string pubkey = 3;
+}

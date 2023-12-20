@@ -1,0 +1,163 @@
+version: '3.7'
+
+services:
+  xatu-server:
+    image: ethpandaops/xatu:latest
+    command: server --config /etc/xatu-server/config.yaml
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config.yaml
+    networks:
+      - xatu-net
+
+  postgres:
+    image: postgres:latest
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: xatu
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    networks:
+      - xatu-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - xatu-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG4J_LOGGERS: 'kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR'
+      KAFKA_CREATE_TOPICS: |
+        - "beacon-api-eth-v1-beacon-blob-sidecar:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-beacon-committee:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-debug-fork-choice:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-debug-fork-choice-reorg:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-debug-fork-choice-reorg-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-debug-fork-choice-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-attestation:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-attestation-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-blob-sidecar:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-block:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-block-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-chain-reorg:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-chain-reorg-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-contribution-and-proof:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-contribution-and-proof-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-finalized-checkpoint:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-finalized-checkpoint-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-head:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-head-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-voluntary-exit:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-events-voluntary-exit-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-proposer-duty:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v1-validator-attestation-data:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-attester-slashing:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-bls-to-execution-change:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-deposit:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-execution-transaction:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-proposer-slashing:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-voluntary-exit:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-api-eth-v2-beacon-block-withdrawal:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "beacon-p2p-attestation:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "blockprint-block-classification:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "consumer-offsets---84e7a678d08f4bd226872e5cdd4eb527fadc1c6a:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "mempool-transaction:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+        - "mempool-transaction-v2:1:1:compact:cleanup.policy=compact,retention.ms=300000"
+    ports:
+      - "9092:9092"
+    networks:
+      - xatu-net
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    environment:
+      ZOO_LOG4J_PROP: 'ERROR,CONSOLE'
+    ports:
+      - "2181:2181"
+    networks:
+      - xatu-net
+      
+  vector-http-kafka:
+    image: timberio/vector:0.34.1-alpine
+    volumes:
+      - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
+    environment:
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_USERNAME: xatu
+      KAFKA_PASSWORD: password
+    ports:
+      - "9005:9005"
+    networks:
+      - xatu-net
+    depends_on:
+      - kafka
+
+  vector-kafka-clickhouse:
+    image: timberio/vector:0.34.1-alpine
+    volumes:
+      - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
+    networks:
+      - xatu-net
+    environment:
+      CLICKHOUSE_ENDPOINT: "clickhouse:9000"
+      CLICKHOUSE_USER: user
+      CLICKHOUSE_PASSWORD: password
+    depends_on:
+      - clickhouse
+  clickhouse-migrator:
+    image: migrate/migrate
+    volumes:
+      - ./deploy/migrations/clickhouse:/migrations
+    command: ["-path", "/migrations", "-database", "clickhouse://clickhouse:9000?username=user&password=password&database=default&x-multi-statement=true", "up"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - xatu-net
+
+  clickhouse:
+    image: yandex/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    networks:
+      - xatu-net
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: user
+      CLICKHOUSE_PASSWORD: password
+      CLICKHOUSE_CLUSTER: xatu
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./deploy/local/docker-compose/clickhouse/macros-01.xml:/etc/clickhouse-server/config.d/macros.xml
+      - ./deploy/local/docker-compose/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+    healthcheck:
+      test: ["CMD-SHELL", "set -x; wget --spider --quiet http://localhost:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+networks:
+  xatu-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  clickhouse-data:
+    driver: local

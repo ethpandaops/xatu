@@ -47,7 +47,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		Headers: config.BeaconNodeHeaders,
 	}, "xatu_sentry", opts)
 
-	metadata := services.NewMetadataService(log, node)
+	metadata := services.NewMetadataService(log, node, config.OverrideNetworkName)
 	duties := services.NewDutiesService(log, node, &metadata)
 
 	svcs := []services.Service{

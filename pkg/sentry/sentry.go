@@ -19,6 +19,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/altair"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/output"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -115,6 +116,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
+
+		if s.beacon.Metadata().Network.Name == networks.NetworkNameUnknown {
+			s.log.Fatal("Unable to determine Ethereum network. Provide an override network name via ethereum.overrideNetworkName")
+		}
 
 		s.beacon.Node().OnAttestation(ctx, func(ctx context.Context, attestation *phase0.Attestation) error {
 			now := time.Now().Add(s.clockDrift)
@@ -399,6 +404,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 	}
 
 	for _, sink := range s.sinks {
+		s.log.WithField("type", sink.Type()).WithField("name", sink.Name()).Info("Starting sink")
+
 		if err := sink.Start(ctx); err != nil {
 			return err
 		}

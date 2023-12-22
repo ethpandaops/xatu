@@ -30,16 +30,19 @@ type MetadataService struct {
 
 	onReadyCallbacks []func(context.Context) error
 
+	overrideNetworkName string
+
 	mu sync.Mutex
 }
 
-func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
+func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node, overrideNetworkName string) MetadataService {
 	return MetadataService{
-		beacon:           sbeacon,
-		log:              log.WithField("module", "sentry/ethereum/metadata"),
-		Network:          &networks.Network{Name: networks.NetworkNameNone},
-		onReadyCallbacks: []func(context.Context) error{},
-		mu:               sync.Mutex{},
+		beacon:              sbeacon,
+		log:                 log.WithField("module", "sentry/ethereum/metadata"),
+		Network:             &networks.Network{Name: networks.NetworkNameNone},
+		onReadyCallbacks:    []func(context.Context) error{},
+		mu:                  sync.Mutex{},
+		overrideNetworkName: overrideNetworkName,
 	}
 }
 
@@ -156,6 +159,12 @@ func (m *MetadataService) DeriveNetwork(_ context.Context) error {
 	}
 
 	network := networks.DeriveFromGenesisRoot(xatuethv1.RootAsString(m.Genesis.GenesisValidatorsRoot))
+
+	if m.overrideNetworkName != "" {
+		network.Name = networks.NetworkName(m.overrideNetworkName)
+
+		network.ID = m.Spec.DepositChainID
+	}
 
 	if network.Name != m.Network.Name {
 		m.log.WithFields(logrus.Fields{

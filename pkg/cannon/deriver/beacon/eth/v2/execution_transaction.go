@@ -299,6 +299,8 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 		if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
 		}
+
+		transactions = append(transactions, ethTransaction)
 	}
 
 	return transactions, nil

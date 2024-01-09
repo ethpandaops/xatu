@@ -1,4 +1,4 @@
-name: Go Test
+name: Smoke Test
 
 on:
   pull_request:
@@ -43,7 +43,7 @@ jobs:
         kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package "$(cat network_params.yaml)"
     - name: Run Xatu stack
       run: |
-        docker compose up;
+        docker compose up --detach --log-level ERROR;
         echo "Xatu stack is running."
     - name: Discover beacon nodes
       run: |

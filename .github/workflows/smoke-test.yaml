@@ -45,13 +45,12 @@ jobs:
       run: |
         docker compose up --detach --quiet-pull;
         echo "Xatu stack is running."
-    - name: Discover beacon nodes
+    - name: Create Xatu Sentry for every participant
       run: |
         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
         export BEACON_SERVICES=$(readarray -t array <<< "$services")
         echo "Beacon nodes discovered: $BEACON_SERVICES"
-    - name: Create Xatu Sentry for every participant
-      run: |
+
         for service in "${BEACON_SERVICES[@]}"; do
           port=$(kurtosis port print xatu $service http)
           echo "Creating Xatu Sentry for $service which is running at $port..."
@@ -96,7 +95,11 @@ jobs:
         done
     - name: Check Clickhouse for attestation data from every participant
       run: |
-        for service in $BEACON_SERVICES; do
+        export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
+        export BEACON_SERVICES=$(readarray -t array <<< "$services")
+        echo "Beacon nodes discovered: $BEACON_SERVICES"
+        
+        for service in "${BEACON_SERVICES[@]}"; do
             echo "Checking Clickhouse for attestation data from $service..."
             while true; do
                 if docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.beacon_api_eth_v1_events_attestation WHERE event_date_time > now() - INTERVAL 1 HOUR AND meta_client_name == '$service"; then

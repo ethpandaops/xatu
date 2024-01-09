@@ -47,11 +47,12 @@ jobs:
         echo "Xatu stack is running."
     - name: Discover beacon nodes
       run: |
-        export BEACON_SERVICES=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
+        export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
+        export BEACON_SERVICES=$(readarray -t array <<< "$services")
         echo "Beacon nodes discovered: $BEACON_SERVICES"
     - name: Create Xatu Sentry for every participant
       run: |
-        for service in $BEACON_SERVICES; do
+        for service in "${BEACON_SERVICES[@]}"; do
           port=$(kurtosis port print xatu $service http)
           echo "Creating Xatu Sentry for $service which is running at $port..."
           cat <<EOF > $(service).yaml

@@ -48,7 +48,7 @@ jobs:
     - name: Create Xatu Sentry for every participant
       run: |
         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
-        export BEACON_SERVICES=$(readarray -t array <<< "$services")
+        readarray -t BEACON_SERVICES <<< "$services";
         echo "Beacon nodes discovered: $BEACON_SERVICES"
 
         for service in "${BEACON_SERVICES[@]}"; do
@@ -96,8 +96,7 @@ jobs:
     - name: Check Clickhouse for attestation data from every participant
       run: |
         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
-        export BEACON_SERVICES=$(readarray -t array <<< "$services")
-        echo "Beacon nodes discovered: $BEACON_SERVICES"
+        readarray -t BEACON_SERVICES <<< "$services";
 
         for service in "${BEACON_SERVICES[@]}"; do
             echo "Checking Clickhouse for attestation data from $service..."

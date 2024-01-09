@@ -52,42 +52,45 @@ jobs:
     - name: Create Xatu Sentry for every participant
       run: |
         for service in $BEACON_SERVICES; do
-            port=$(kurtosis port print xatu $service http)
-            cat <<EOF > $(service).yaml
-              name: $service
-              ethereum:
-                beaconNodeAddress: $port
-                overrideNetworkName: "xatu-devnet"
-              forkChoice:
+          port=$(kurtosis port print xatu $service http)
+          echo "Creating Xatu Sentry for $service which is running at $port..."
+          cat <<EOF > $(service).yaml
+            name: $service
+            ethereum:
+              beaconNodeAddress: $port
+              overrideNetworkName: "xatu-devnet"
+            forkChoice:
+              enabled: true
+            
+              onReOrgEvent:
                 enabled: true
-              
-                onReOrgEvent:
-                  enabled: true
-                            
-                at:
-                  enabled: true
-                  slotTimes:
-                  - 4s
-              
-              attestationData:
+                          
+              at:
                 enabled: true
-              
-                at:
-                  enabled: true
-                  slotTimes:
-                  - 4s
-              
-              beaconCommittees:
+                slotTimes:
+                - 4s
+            
+            attestationData:
+              enabled: true
+            
+              at:
                 enabled: true
-              output:
-              - name: xatu
-                type: xatu
-                config:
-                  address: xatu-server:8080
-                  tls: false
-            <<EOF
+                slotTimes:
+                - 4s
+            
+            beaconCommittees:
+              enabled: true
+            output:
+            - name: xatu
+              type: xatu
+              config:
+                address: xatu-server:8080
+                tls: false
+          <<EOF
 
-        docker run -d -v $(pwd)/$(service).yaml:/opt/config.yaml --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml
+          cat $(service).yaml;
+
+          docker run -d -v $(pwd)/$(service).yaml:/opt/config.yaml --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml;
 
         done
     - name: Check Clickhouse for attestation data from every participant

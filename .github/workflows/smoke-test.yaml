@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  setup-ethereum-network-and-run-xatu:
+  smoke-test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -20,7 +20,7 @@ jobs:
         sudo apt install kurtosis-cli
     - name: Create Kurtosis config file
       run: |
-        cat <<EOF > network-params.yaml
+        cat <<EOF > network_params.yaml
           participants:
             - el_client_type: geth
               cl_client_type: teku
@@ -90,16 +90,19 @@ jobs:
         docker run -d -v $(pwd)/$(service).yaml:/opt/config.yaml --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml
 
         done
-    - name: Check Clickhouse for attestation data
+    - name: Check Clickhouse for attestation data from every participant
       run: |
-        while true; do
-        if docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.beacon_api_eth_v1_events_attestation WHERE event_date_time > now() - INTERVAL 1 HOUR"; then
-            echo "Attestations table has data."
-            break
-        else
-            echo "Attestations table is empty. Checking again in 2 seconds..."
-            sleep 2
-        fi
+        for service in $BEACON_SERVICES; do
+            echo "Checking Clickhouse for attestation data from $service..."
+            while true; do
+                if docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.beacon_api_eth_v1_events_attestation WHERE event_date_time > now() - INTERVAL 1 HOUR AND meta_client_name == '$service"; then
+                    echo "Attestations table has data."
+                    break
+                else
+                    echo "Attestations table is empty. Checking again in 2 seconds..."
+                    sleep 2
+                fi
+            done
+            echo "Attestation data from $service is present"
         done
-        echo "Attestation data is present. Exiting successfully."
 

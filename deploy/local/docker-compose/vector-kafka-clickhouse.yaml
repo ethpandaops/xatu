@@ -393,8 +393,7 @@ transforms:
         namespace: xatu
         name: xatu_server_events_matched
         tags:
-          event: "{{`{{event.name}}`}}"
-          client_name: "{{`{{meta.client.name}}`}}"
+          event: "{{event.name}}"
           source: "xatu-kafka-clickhouse"
   xatu_server_events_router_unmatched:
     type: log_to_metric
@@ -406,8 +405,7 @@ transforms:
         namespace: xatu
         name: xatu_server_events_unmatched
         tags:
-          event: "{{`{{event.name}}`}}"
-          client_name: "{{`{{meta.client.name}}`}}"
+          event: "{{event.name}}"
           source: "xatu-kafka-clickhouse"
   beacon_api_eth_v1_beacon_committee_formatted:
     type: remap

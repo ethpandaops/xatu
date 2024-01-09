@@ -33,12 +33,7 @@ CREATE TABLE beacon_api_eth_v1_events_blob_sidecar_local on cluster '{cluster}' 
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 ALTER TABLE default.beacon_api_eth_v1_events_blob_sidecar_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains beacon API eventstream "blob_sidecar" data from each sentry client attached to a beacon node.',

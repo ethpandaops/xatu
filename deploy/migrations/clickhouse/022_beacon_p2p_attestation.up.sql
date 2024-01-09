@@ -62,12 +62,7 @@ CREATE TABLE default.beacon_p2p_attestation_local on cluster '{cluster}'
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, unique_key, meta_network_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, unique_key, meta_network_name);
 
 ALTER TABLE default.beacon_p2p_attestation_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains beacon chain P2P "attestation" data',

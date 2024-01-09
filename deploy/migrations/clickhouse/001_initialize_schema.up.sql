@@ -38,12 +38,7 @@ CREATE TABLE beacon_api_eth_v1_events_head_local on cluster '{cluster}' (
   PROJECTION projection_block (SELECT * ORDER BY block)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_head on cluster '{cluster}' AS beacon_api_eth_v1_events_head_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_head_local, rand());
@@ -85,12 +80,7 @@ CREATE TABLE beacon_api_eth_v1_events_block_local on cluster '{cluster}' (
   PROJECTION projection_block (SELECT * ORDER BY block)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_block on cluster '{cluster}' AS beacon_api_eth_v1_events_block_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_block_local, rand());
@@ -140,12 +130,7 @@ CREATE TABLE beacon_api_eth_v1_events_attestation_local on cluster '{cluster}' (
   PROJECTION projection_beacon_block_root (SELECT * ORDER BY beacon_block_root)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_attestation on cluster '{cluster}' AS beacon_api_eth_v1_events_attestation_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_attestation_local, rand());
@@ -183,12 +168,7 @@ CREATE TABLE beacon_api_eth_v1_events_voluntary_exit_local on cluster '{cluster}
   PROJECTION projection_validator_index (SELECT * ORDER BY validator_index)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(epoch_start_date_time)
-ORDER BY (epoch_start_date_time, meta_network_name, meta_client_name)
-TTL epoch_start_date_time TO VOLUME 'default',
-    epoch_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    epoch_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    epoch_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    epoch_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (epoch_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_voluntary_exit on cluster '{cluster}' AS beacon_api_eth_v1_events_voluntary_exit_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_voluntary_exit_local, rand());
@@ -228,12 +208,7 @@ CREATE TABLE beacon_api_eth_v1_events_finalized_checkpoint_local on cluster '{cl
   PROJECTION projection_state (SELECT * ORDER BY state)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(epoch_start_date_time)
-ORDER BY (epoch_start_date_time, meta_network_name, meta_client_name)
-TTL epoch_start_date_time TO VOLUME 'default',
-    epoch_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    epoch_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    epoch_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    epoch_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (epoch_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_finalized_checkpoint on cluster '{cluster}' AS beacon_api_eth_v1_events_finalized_checkpoint_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_finalized_checkpoint_local, rand());
@@ -282,12 +257,7 @@ CREATE TABLE beacon_api_eth_v1_events_chain_reorg_local on cluster '{cluster}' (
   PROJECTION projection_old_head_block (SELECT * ORDER BY old_head_block)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_chain_reorg on cluster '{cluster}' AS beacon_api_eth_v1_events_chain_reorg_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_chain_reorg_local, rand());
@@ -334,12 +304,7 @@ CREATE TABLE beacon_api_eth_v1_events_contribution_and_proof_local on cluster '{
   PROJECTION projection_contribution_beacon_block_root (SELECT * ORDER BY contribution_beacon_block_root)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(contribution_slot_start_date_time)
-ORDER BY (contribution_slot_start_date_time, meta_network_name, meta_client_name)
-TTL contribution_slot_start_date_time TO VOLUME 'default',
-    contribution_slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    contribution_slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    contribution_slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    contribution_slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (contribution_slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_events_contribution_and_proof on cluster '{cluster}' AS beacon_api_eth_v1_events_contribution_and_proof_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_contribution_and_proof_local, rand());
@@ -363,12 +328,7 @@ CREATE TABLE beacon_api_slot_local on cluster '{cluster}' (
   PROJECTION projection_epoch (SELECT * ORDER BY epoch)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, slot, meta_network_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, slot, meta_network_name);
 
 CREATE MATERIALIZED VIEW beacon_api_slot_block_mv_local on cluster '{cluster}'
 TO beacon_api_slot_local
@@ -447,12 +407,7 @@ CREATE TABLE mempool_transaction_local on cluster '{cluster}' (
   PROJECTION projection_to (SELECT * ORDER BY to)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(event_date_time)
-ORDER BY (event_date_time, meta_network_name, meta_client_name)
-TTL toDateTime(event_date_time) TO VOLUME 'default',
-    toDateTime(event_date_time) + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    toDateTime(event_date_time) + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    toDateTime(event_date_time) + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    toDateTime(event_date_time) + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (event_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE mempool_transaction on cluster '{cluster}' AS mempool_transaction_local
 ENGINE = Distributed('{cluster}', default, mempool_transaction_local, rand());
@@ -506,12 +461,7 @@ CREATE TABLE beacon_api_eth_v2_beacon_block_local on cluster '{cluster}' (
   PROJECTION projection_execution_payload_parent_hash (SELECT * ORDER BY execution_payload_parent_hash)
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v2_beacon_block on cluster '{cluster}' AS beacon_api_eth_v2_beacon_block_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v2_beacon_block_local, rand());

@@ -76,6 +76,12 @@ helm repo add ethereum-helm-charts https://ethpandaops.github.io/ethereum-helm-c
 helm install xatu ethereum-helm-charts/xatu -f your_values.yaml
 ```
 
+### Locally via docker compose
+
+```bash
+docker compose up
+```
+
 ## Contributing
 
 Contributions are greatly appreciated! Pull requests will be reviewed and merged promptly if you're interested in improving Xatu! 

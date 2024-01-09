@@ -39,11 +39,7 @@ CREATE TABLE default.mempool_dumpster_transaction_local on cluster '{cluster}'
   inclusion_delay_ms Nullable(Int64) Codec(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(timestamp_ms)
-ORDER BY (timestamp_ms, unique_key, chain_id)
-TTL toDateTime(timestamp_ms) TO VOLUME 'default',
-    toDateTime(timestamp_ms) + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    toDateTime(timestamp_ms) + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    toDateTime(timestamp_ms) + INTERVAL 40 MONTH DELETE;
+ORDER BY (timestamp_ms, unique_key, chain_id);
 
 ALTER TABLE default.mempool_dumpster_transaction_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains transactions from mempool dumpster dataset',
@@ -79,11 +75,7 @@ CREATE TABLE default.mempool_dumpster_transaction_source_local on cluster '{clus
   source LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(timestamp_ms)
-ORDER BY (timestamp_ms, unique_key)
-TTL toDateTime(timestamp_ms) TO VOLUME 'default',
-    toDateTime(timestamp_ms) + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    toDateTime(timestamp_ms) + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    toDateTime(timestamp_ms) + INTERVAL 40 MONTH DELETE;
+ORDER BY (timestamp_ms, unique_key);
 
 ALTER TABLE default.mempool_dumpster_transaction_source_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains transactions from mempool dumpster dataset',
@@ -129,11 +121,7 @@ CREATE TABLE default.block_native_mempool_transaction_local on cluster '{cluster
   gasused Nullable(UInt64) Codec(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(detecttime)
-ORDER BY (detecttime, unique_key, network)
-TTL toDateTime(detecttime) TO VOLUME 'default',
-    toDateTime(detecttime) + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    toDateTime(detecttime) + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    toDateTime(detecttime) + INTERVAL 40 MONTH DELETE;
+ORDER BY (detecttime, unique_key, network);
 
 ALTER TABLE default.block_native_mempool_transaction_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains transactions from block native mempool dataset',

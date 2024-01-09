@@ -22,22 +22,9 @@ persistence:
 
 store:
   type: memory
-  # type: redis-cluster
-  # config:
-  #   address: redis://<user>:<password>@<host>:<port>/<db>?addr=<host2>:<port2>&addr=<host3>:<port3>
-  #   prefix: xatu
-  # type: redis-server
-  # config:
-  #   address: redis://<user>:<pass>@<ip>:<port>/<db>
-  #   prefix: xatu
 
 geoip:
   enabled: false
-  # type: maxmind
-  # config:
-  #   database:
-  #     city: ./GeoLite2-City.mmdb
-  #     asn: ./GeoLite2-ASN.mmdb
 
 services:
   coordinator:

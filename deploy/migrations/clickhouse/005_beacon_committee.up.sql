@@ -30,12 +30,7 @@ CREATE TABLE beacon_api_eth_v1_beacon_committee_local on cluster '{cluster}' (
   meta_labels Map(String, String) Codec(ZSTD(1))
 ) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
-TTL slot_start_date_time TO VOLUME 'default',
-    slot_start_date_time + INTERVAL 3 MONTH DELETE WHERE meta_network_name != 'mainnet',
-    slot_start_date_time + INTERVAL 6 MONTH TO VOLUME 'hdd1',
-    slot_start_date_time + INTERVAL 18 MONTH TO VOLUME 'hdd2',
-    slot_start_date_time + INTERVAL 40 MONTH DELETE WHERE meta_network_name = 'mainnet';
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 CREATE TABLE beacon_api_eth_v1_beacon_committee on cluster '{cluster}' AS beacon_api_eth_v1_beacon_committee_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_beacon_committee_local, rand());

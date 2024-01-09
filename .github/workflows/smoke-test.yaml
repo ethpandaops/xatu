@@ -86,7 +86,7 @@ jobs:
               config:
                 address: xatu-server:8080
                 tls: false
-          EOF
+        <<EOF
 
           cat "${service}.yaml";
 
@@ -98,7 +98,7 @@ jobs:
         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
         export BEACON_SERVICES=$(readarray -t array <<< "$services")
         echo "Beacon nodes discovered: $BEACON_SERVICES"
-        
+
         for service in "${BEACON_SERVICES[@]}"; do
             echo "Checking Clickhouse for attestation data from $service..."
             while true; do

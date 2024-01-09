@@ -55,7 +55,7 @@ jobs:
         for service in "${BEACON_SERVICES[@]}"; do
           port=$(kurtosis port print xatu $service http)
           echo "Creating Xatu Sentry for $service which is running at $port..."
-          cat <<EOF > $(service).yaml
+          cat <<EOF > "${service}.yaml"
             name: $service
             ethereum:
               beaconNodeAddress: $port
@@ -87,11 +87,11 @@ jobs:
               config:
                 address: xatu-server:8080
                 tls: false
-          <<EOF
+          EOF
 
-          cat $(service).yaml;
+          cat "${service}.yaml";
 
-          docker run -d -v $(pwd)/$(service).yaml:/opt/config.yaml --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml;
+          docker run -d -v "$(pwd)/${service}.yaml:/opt/config.yaml" --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml;
 
         done
     - name: Check Clickhouse for attestation data from every participant

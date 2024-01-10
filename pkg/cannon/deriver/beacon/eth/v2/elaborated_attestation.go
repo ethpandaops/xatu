@@ -356,7 +356,7 @@ func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx 
 	}
 
 	attestationSlot := b.beacon.Metadata().Wallclock().Slots().FromNumber(attestation.Data.Slot.Value)
-	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationSlot.Number()))
+	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(attestationSlot.Number())
 
 	// Build out the target section
 	targetEpoch := b.beacon.Metadata().Wallclock().Epochs().FromNumber(attestation.Data.Target.Epoch.GetValue())

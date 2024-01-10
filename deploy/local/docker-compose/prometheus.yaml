@@ -1,0 +1,10 @@
+scrape_configs:
+  - job_name: 'xatu-server'
+    static_configs:
+      - targets: ['xatu-server:9090']
+  - job_name: 'vector-kafka-clickhouse'
+    static_configs:
+      - targets: ['vector-kafka-clickhouse:9598']
+  - job_name: 'vector-http-kafka'
+    static_configs:
+      - targets: ['vector-http-kafka:9598']

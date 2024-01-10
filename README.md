@@ -76,6 +76,64 @@ helm repo add ethereum-helm-charts https://ethpandaops.github.io/ethereum-helm-c
 helm install xatu ethereum-helm-charts/xatu -f your_values.yaml
 ```
 
+### Locally via docker compose
+
+```bash
+docker compose up
+```
+
+This will setup a pipeline to import events from Xatu server into a clickhouse instance. This will **not** run `sentry`/`discovery`/`mimicry`/`cannon`/`sage` clients but allow you run them locally and connect to the server.
+
+There is also a grafana instance running with dashboards that can be used to visualize the data.
+
+Exposed ports:
+- `8080` - Xatu server
+- `9000` - Clickhouse native port
+- `8123` - Clickhouse http port
+- `3000` - Grafana
+
+Links:
+- [Clickhouse playground](http://localhost:8123/play)
+- [Grafana](http://localhost:3000)
+
+Example sentry config to connect to the server:
+```yaml
+logging: "info"
+metricsAddr: ":9095"
+
+name: example-instance
+
+labels:
+  ethpandaops: rocks
+
+ntpServer: time.google.com
+
+ethereum:
+  # connect to your own consensus client
+  beaconNodeAddress: http://localhost:5052
+
+forkChoice:
+  enabled: false
+
+attestationData:
+  enabled: false
+
+beaconCommittees:
+  enabled: false
+
+outputs:
+  - name: xatu
+    type: xatu
+    config:
+      address: localhost:8080
+      tls: false
+      maxQueueSize: 51200
+      batchTimeout: 5s
+      exportTimeout: 30s
+      maxExportBatchSize: 5
+      connections: 3
+```
+
 ## Contributing
 
 Contributions are greatly appreciated! Pull requests will be reviewed and merged promptly if you're interested in improving Xatu! 

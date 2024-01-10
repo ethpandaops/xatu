@@ -1,0 +1,345 @@
+version: '3.7'
+
+services:
+  clickhouse-01:
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    container_name: clickhouse-01
+    hostname: clickhouse-01
+    user: 101:101
+    networks:
+      - xatu-net
+    volumes:
+      # - clickhouse-01-data:/var/lib/clickhouse/
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
+    depends_on:
+      clickhouse-keeper-01:
+        condition: service_healthy
+      clickhouse-keeper-02:
+        condition: service_healthy
+      clickhouse-keeper-03:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-01:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+  clickhouse-02:
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    container_name: clickhouse-02
+    hostname: clickhouse-02
+    user: 101:101
+    networks:
+      - xatu-net
+    volumes:
+      # - clickhouse-02-data:/var/lib/clickhouse/
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:8124:8123"
+      - "127.0.0.1:9001:9000"
+    depends_on:
+      clickhouse-keeper-01:
+        condition: service_healthy
+      clickhouse-keeper-02:
+        condition: service_healthy
+      clickhouse-keeper-03:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-02:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+  clickhouse-keeper-01:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-01
+    hostname: clickhouse-keeper-01
+    networks:
+      - xatu-net
+    volumes:
+     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9181:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  clickhouse-keeper-02:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-02
+    hostname: clickhouse-keeper-02
+    networks:
+      - xatu-net
+    volumes:
+     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9182:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  clickhouse-keeper-03:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-03
+    hostname: clickhouse-keeper-03
+    networks:
+      - xatu-net
+    volumes:
+     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9183:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  xatu-server:
+    image: ethpandaops/xatu:latest
+    command: server --config /etc/xatu-server/config.yaml
+    ports:
+      - "8080:8080"
+      - "9096:9090"
+    volumes:
+      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config.yaml
+    networks:
+      - xatu-net
+
+  postgres:
+    image: postgres:15
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: xatu
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d xatu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - xatu-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - xatu-net
+    environment:
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource,vertamedia-clickhouse-datasource
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/xatu/basic_overview.json
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
+    volumes:
+      - ./deploy/local/docker-compose/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./deploy/local/docker-compose/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./deploy/local/docker-compose/grafana/dashboards:/var/lib/grafana/dashboards
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    networks:
+      - xatu-net
+    volumes:
+      - prometheus-data:/prometheus
+      - ./deploy/local/docker-compose/prometheus.yaml:/etc/prometheus/prometheus.yml
+
+  init-kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: init-kafka
+    container_name: init-kafka
+    entrypoint: 
+      - bash
+      - -c
+    command:
+      - |
+        topics=(
+          "beacon-api-eth-v1-beacon-blob-sidecar"
+          "beacon-api-eth-v1-beacon-committee"
+          "beacon-api-eth-v1-debug-fork-choice"
+          "beacon-api-eth-v1-debug-fork-choice-reorg"
+          "beacon-api-eth-v1-debug-fork-choice-reorg-v2"
+          "beacon-api-eth-v1-debug-fork-choice-v2"
+          "beacon-api-eth-v1-events-attestation"
+          "beacon-api-eth-v1-events-attestation-v2"
+          "beacon-api-eth-v1-events-blob-sidecar"
+          "beacon-api-eth-v1-events-block"
+          "beacon-api-eth-v1-events-block-v2"
+          "beacon-api-eth-v1-events-chain-reorg"
+          "beacon-api-eth-v1-events-chain-reorg-v2"
+          "beacon-api-eth-v1-events-contribution-and-proof"
+          "beacon-api-eth-v1-events-contribution-and-proof-v2"
+          "beacon-api-eth-v1-events-finalized-checkpoint"
+          "beacon-api-eth-v1-events-finalized-checkpoint-v2"
+          "beacon-api-eth-v1-events-head"
+          "beacon-api-eth-v1-events-head-v2"
+          "beacon-api-eth-v1-events-voluntary-exit"
+          "beacon-api-eth-v1-events-voluntary-exit-v2"
+          "beacon-api-eth-v1-proposer-duty"
+          "beacon-api-eth-v1-validator-attestation-data"
+          "beacon-api-eth-v2-beacon-block"
+          "beacon-api-eth-v2-beacon-block-attester-slashing"
+          "beacon-api-eth-v2-beacon-block-bls-to-execution-change"
+          "beacon-api-eth-v2-beacon-block-deposit"
+          "beacon-api-eth-v2-beacon-block-execution-transaction"
+          "beacon-api-eth-v2-beacon-block-proposer-slashing"
+          "beacon-api-eth-v2-beacon-block-v2"
+          "beacon-api-eth-v2-beacon-block-voluntary-exit"
+          "beacon-api-eth-v2-beacon-block-withdrawal"
+          "beacon-p2p-attestation"
+          "blockprint-block-classification"
+          "mempool-transaction"
+          "mempool-transaction-v2"
+        )
+        for topic in "$${topics[@]}"; do
+          echo "Creating topic: $$topic";
+          kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=compact --config retention.ms=300000 --topic "$$topic"
+        done
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - xatu-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG4J_LOGGERS: 'kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR'
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    networks:
+      - xatu-net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    environment:
+      ZOO_LOG4J_PROP: 'ERROR,CONSOLE'
+    ports:
+      - "2181:2181"
+    networks:
+      - xatu-net
+    healthcheck:
+      test: ["CMD", "./bin/zkServer.sh", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  vector-http-kafka:
+    image: timberio/vector:0.34.1-alpine
+    volumes:
+      - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+    ports:
+      - "9005:9005"
+    networks:
+      - xatu-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  vector-kafka-clickhouse:
+    image: timberio/vector:0.34.1-alpine
+    volumes:
+      - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
+    networks:
+      - xatu-net
+    environment:
+      CLICKHOUSE_ENDPOINT: "clickhouse-01:8123"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      KAFKA_BROKERS: "kafka:29092"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse-01:
+        condition: service_healthy
+      clickhouse-02:
+        condition: service_healthy
+  postgres-migrator:
+    image: migrate/migrate
+    volumes:
+      - ./migrations/postgres:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://user:password@postgres:5432/xatu?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - xatu-net
+  clickhouse-migrator:
+    image: migrate/migrate
+    volumes:
+      - ./deploy/migrations/clickhouse:/migrations
+    command: ["-path", "/migrations", "-database", "clickhouse://clickhouse-01:9000?username=default&database=default&x-multi-statement=true", "up"]
+    depends_on:
+      clickhouse-01:
+        condition: service_healthy
+      clickhouse-02:
+        condition: service_healthy
+    networks:
+      - xatu-net
+
+networks:
+  xatu-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  clickhouse-01-data:
+    driver: local
+  clickhouse-02-data:
+    driver: local
+  prometheus-data:
+    driver: local

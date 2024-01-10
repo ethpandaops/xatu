@@ -1,0 +1,49 @@
+logging: "info" # panic,fatal,warn,info,debug,trace
+addr: ":8080"
+metricsAddr: ":9090"
+# pprofAddr: ":6060" # optional. if supplied it enables pprof server
+
+labels:
+  ethpandaops: rocks
+ 
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+persistence:
+  enabled: true
+  driverName: postgres
+  connectionString: postgres://user:password@postgres:5432/xatu?sslmode=disable
+  maxIdleConns: 2
+  maxOpenConns: 5
+
+store:
+  type: memory
+
+geoip:
+  enabled: false
+
+services:
+  coordinator:
+    enabled: true # requires persistence to be enabled
+    nodeRecord:
+      maxQueueSize: 51200
+      batchTimeout: 5s
+      exportTimeout: 30s
+      maxExportBatchSize: 512
+  eventIngester:
+    enabled: true
+    outputs:
+    - name: general
+      type: http
+      config:
+        address: http://vector-http-kafka:9005
+        maxQueueSize: 102400
+        batchTimeout: 1s
+        exportTimeout: 30s
+        maxExportBatchSize: 64
+        compression: none
+        keepAlive: true

@@ -1,0 +1,1 @@
+CREATE DATABASE dbt ON CLUSTER '{cluster}'

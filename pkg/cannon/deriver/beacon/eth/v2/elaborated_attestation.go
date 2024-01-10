@@ -355,11 +355,11 @@ func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx 
 		},
 	}
 
-	attestationSlot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(attestation.Data.Slot.Value))
+	attestationSlot := b.beacon.Metadata().Wallclock().Slots().FromNumber(attestation.Data.Slot.Value)
 	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationSlot.Number()))
 
 	// Build out the target section
-	targetEpoch := b.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(attestation.Data.Target.Epoch.GetValue()))
+	targetEpoch := b.beacon.Metadata().Wallclock().Epochs().FromNumber(attestation.Data.Target.Epoch.GetValue())
 	target := &xatu.ClientMeta_AdditionalEthV1AttestationTargetV2Data{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
@@ -368,7 +368,7 @@ func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx 
 	}
 
 	// Build out the source section
-	sourceEpoch := b.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(attestation.Data.Source.Epoch.GetValue()))
+	sourceEpoch := b.beacon.Metadata().Wallclock().Epochs().FromNumber(attestation.Data.Source.Epoch.GetValue())
 	source := &xatu.ClientMeta_AdditionalEthV1AttestationSourceV2Data{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},

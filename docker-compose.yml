@@ -17,9 +17,12 @@ services:
       - "127.0.0.1:8123:8123"
       - "127.0.0.1:9000:9000"
     depends_on:
-      - clickhouse-keeper-01
-      - clickhouse-keeper-02
-      - clickhouse-keeper-03
+      clickhouse-keeper-01:
+        condition: service_healthy
+      clickhouse-keeper-02:
+        condition: service_healthy
+      clickhouse-keeper-03:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-01:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
       interval: 5s
@@ -42,9 +45,12 @@ services:
       - "127.0.0.1:8124:8123"
       - "127.0.0.1:9001:9000"
     depends_on:
-      - clickhouse-keeper-01
-      - clickhouse-keeper-02
-      - clickhouse-keeper-03
+      clickhouse-keeper-01:
+        condition: service_healthy
+      clickhouse-keeper-02:
+        condition: service_healthy
+      clickhouse-keeper-03:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-02:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
       interval: 5s
@@ -62,6 +68,12 @@ services:
      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
         - "127.0.0.1:9181:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
   clickhouse-keeper-02:
     image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
     user: "101:101"
@@ -73,6 +85,12 @@ services:
      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
         - "127.0.0.1:9182:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
   clickhouse-keeper-03:
     image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
     user: "101:101"
@@ -84,6 +102,12 @@ services:
      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
         - "127.0.0.1:9183:9181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
   xatu-server:
     image: ethpandaops/xatu:latest
     command: server --config /etc/xatu-server/config.yaml
@@ -121,6 +145,9 @@ services:
     environment:
       GF_INSTALL_PLUGINS: grafana-clickhouse-datasource,vertamedia-clickhouse-datasource
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/xatu/basic_overview.json
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
     volumes:
       - ./deploy/local/docker-compose/grafana/datasources:/etc/grafana/provisioning/datasources
       - ./deploy/local/docker-compose/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
@@ -217,6 +244,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 5s
+    depends_on:
+      zookeeper:
+        condition: service_healthy
   zookeeper:
     image: zookeeper
     container_name: zookeeper
@@ -226,7 +256,13 @@ services:
       - "2181:2181"
     networks:
       - xatu-net
-      
+    healthcheck:
+      test: ["CMD", "./bin/zkServer.sh", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
   vector-http-kafka:
     image: timberio/vector:0.34.1-alpine
     volumes:
@@ -237,8 +273,15 @@ services:
       - "9005:9005"
     networks:
       - xatu-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
 
   vector-kafka-clickhouse:
     image: timberio/vector:0.34.1-alpine
@@ -251,10 +294,19 @@ services:
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ""
       KAFKA_BROKERS: "kafka:29092"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
     depends_on:
-      - kafka
-      - clickhouse-01
-      - clickhouse-02
+      kafka:
+        condition: service_healthy
+      clickhouse-01:
+        condition: service_healthy
+      clickhouse-02:
+        condition: service_healthy
   postgres-migrator:
     image: migrate/migrate
     volumes:

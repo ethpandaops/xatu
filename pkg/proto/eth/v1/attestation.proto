@@ -64,3 +64,11 @@ message SignedAggregateAttestationAndProof {
 
   string signature = 2;
 }
+
+message ElaboratedAttestation {
+  string signature = 1;
+
+  AttestationDataV2 data = 2;
+
+  repeated google.protobuf.UInt64Value validator_indexes = 3 [ json_name = "validator_indexes" ];
+}

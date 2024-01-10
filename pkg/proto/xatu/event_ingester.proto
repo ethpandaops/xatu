@@ -679,6 +679,27 @@ message ClientMeta {
     SlotV2 slot = 2;
   }
 
+  message AdditionalEthV2BeaconBlockElaboratedAttestationData {
+    // Block contains the information about the block that we are deriving the elaborated attestation from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the position of the attestation in the block.
+    google.protobuf.UInt64Value position_in_block = 2 [ json_name = "position_in_block" ];
+
+    // Epoch contains the epoch information for the slot of the attestation.
+    EpochV2 epoch = 3;
+
+    // Slot contains the slot information for the slot of the attestation.
+    SlotV2 slot = 4;
+
+    // Source contains information for source of the attestation.
+    AdditionalEthV1AttestationSourceV2Data source = 5;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalEthV1AttestationTargetV2Data target = 6;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -773,9 +794,11 @@ message ClientMeta {
     // AdditionalEthV1BeaconBlobSidecarData contains additional data on beacon blob sidecars.
     AdditionalEthV1BeaconBlobSidecarData eth_v1_beacon_blob_sidecar = 44 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
     // AdditionalBeaconP2PAttestation contains additional data on unvalidated beacon attestations that were received over the p2p network.
-    AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 45 [ json_name = "BEACON_P2P_ATTESTATION" ];
+    AdditionalBeaconP2PAttestationData beacon_p2p_attestation = 45 [ json_name = "BEACON_P2P_ATTESTATION" ];
     // AdditionalEthV1ProposerDutyData contains addtional data on proposer duties.
     AdditionalEthV1ProposerDutyData eth_v1_proposer_duty = 46 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
+    // AdditionalEthV2BeaconBlockElaboratedAttestationData contains additional data on derived attestations derived from beacon blocks.
+    AdditionalEthV2BeaconBlockElaboratedAttestationData eth_v2_beacon_block_elaborated_attestation = 47 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
   }
 }
 
@@ -891,6 +914,7 @@ message Event {
     BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
     BEACON_P2P_ATTESTATION = 35;
     BEACON_API_ETH_V1_PROPOSER_DUTY = 36;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION = 37;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -942,5 +966,7 @@ message DecoratedEvent {
     xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
     xatu.eth.v1.AttestationV2 beacon_p2p_attestation = 37 [ json_name = "BEACON_P2P_ATTESTATION" ];
     xatu.eth.v1.ProposerDuty eth_v1_proposer_duty = 38 [ json_name = "BEACON_API_ETH_V1_PROPOSER_DUTY" ];
+    xatu.eth.v1.ElaboratedAttestation eth_v2_beacon_block_elaborated_attestation = 39 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
   }; 
 }
+ 

@@ -75,8 +75,8 @@ func (h *AttestationHydrator) CreateXatuEvent(ctx context.Context) (*xatu.Decora
 	if err != nil {
 		h.log.WithError(err).Error("Failed to get extra attestation data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_BEACON_P2P_ATTESTATION{
-			BEACON_P2P_ATTESTATION: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_BeaconP2PAttestation{
+			BeaconP2PAttestation: additionalData,
 		}
 	}
 

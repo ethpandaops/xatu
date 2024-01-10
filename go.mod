@@ -39,6 +39,7 @@ require (
 	golang.org/x/sync v0.4.0
 	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0
+	gopkg.in/cenkalti/backoff.v1 v1.1.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -141,7 +142,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
-	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect

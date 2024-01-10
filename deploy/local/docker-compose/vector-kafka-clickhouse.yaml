@@ -322,6 +322,7 @@ transforms:
       blockprint_block_classification: .event.name == "BLOCKPRINT_BLOCK_CLASSIFICATION"
       canonical_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
       canonical_beacon_block_attester_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
+      canonical_beacon_block_elaborated_attestation: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION"
       canonical_beacon_block_bls_to_execution_change: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE"
       canonical_beacon_block_deposit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT"
       canonical_beacon_block_execution_transaction: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
@@ -359,6 +360,7 @@ transforms:
       - xatu_server_events_router.canonical_beacon_blob_sidecar
       - xatu_server_events_router.canonical_beacon_block
       - xatu_server_events_router.canonical_beacon_block_attester_slashing
+      - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
       - xatu_server_events_router.canonical_beacon_block_bls_to_execution_change
       - xatu_server_events_router.canonical_beacon_block_deposit
       - xatu_server_events_router.canonical_beacon_block_execution_transaction
@@ -1609,7 +1611,102 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  canonical_beacon_block_elatorated_attestation_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
 
+      .block_slot = .meta.client.additional_data.block.slot.number
+      block_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
+      if err == null {
+        .block_slot_start_date_time = to_unix_timestamp(block_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse block slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .block_epoch = .meta.client.additional_data.block.epoch.number
+      block_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.epoch.start_date_time, format: "%+");
+      if err == null {
+        .block_epoch_start_date_time = to_unix_timestamp(block_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse block epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      
+      .position_in_block = .meta.client.additional_data.position_in_block
+      .block_root = .meta.client.additional_data.block.root
+
+      .validators = .data.validator_indexes
+      .committee_index = .data.data.index
+      .beacon_block_root = .data.data.beacon_block_root
+      .slot = .data.data.slot
+      
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .source_epoch = .data.data.source.epoch
+      source_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.source.epoch.start_date_time, format: "%+");
+      if err == null {
+        .source_epoch_start_date_time = to_unix_timestamp(source_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse source epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .source_root = .data.data.source.root
+
+      .target_epoch = .data.data.target.epoch
+      target_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.target.epoch.start_date_time, format: "%+");
+      if err == null {
+        .target_epoch_start_date_time = to_unix_timestamp(target_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse target epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .target_root = .data.data.target.root
+      key, err = .block_root + .block_slot + .position_in_block + .signature + .beacon_block_root + .slot + .committee_index + .source_root + .target_root
+      if err != null {
+        .error = err
+        .error_description = "failed to generate unique key"
+      }
+
+      .unique_key = seahash(key)
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+
+  
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2131,6 +2228,28 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_proposer_duty
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    acknowledgements:
+      enabled: false
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 5
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_block_elaborated_attestation_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_block_elatorated_attestation_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_elaborated_attestation
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

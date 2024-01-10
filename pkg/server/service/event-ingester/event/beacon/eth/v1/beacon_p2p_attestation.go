@@ -46,14 +46,14 @@ func (b *BeaconP2PAttestation) Filter(_ context.Context) bool {
 }
 
 func (b *BeaconP2PAttestation) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
-	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_BEACON_P2P_ATTESTATION)
+	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_BeaconP2PAttestation)
 	if !ok {
 		b.log.Error("failed to cast client additional data")
 
 		return meta
 	}
 
-	ipAddress := additionalData.BEACON_P2P_ATTESTATION.GetPeer().GetIp()
+	ipAddress := additionalData.BeaconP2PAttestation.GetPeer().GetIp()
 
 	if ipAddress != "" {
 		ip := net.ParseIP(ipAddress)

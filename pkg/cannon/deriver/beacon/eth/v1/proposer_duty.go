@@ -209,8 +209,10 @@ func (b *ProposerDutyDeriver) run(rctx context.Context) {
 				return nil
 			}
 
-			if err := backoff.Retry(operation, bo); err != nil {
-				b.log.WithError(err).Error("Failed to process location")
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
+				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
 	}

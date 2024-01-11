@@ -55,7 +55,7 @@ const (
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
-	TypeBeaconEthV1ElaboratedAttestation        Type = v2.BeaconBlockElaboratedAttestationType
+	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
 )
 
 type Event interface {
@@ -144,7 +144,7 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewBeaconBlobSidecar(log, event), nil
 	case TypeBeaconEthV1ProposerDuty:
 		return v1.NewBeaconProposerDuty(log, event), nil
-	case TypeBeaconEthV1ElaboratedAttestation:
+	case TypeBeaconEthV2BeaconElaboratedAttestation:
 		return v2.NewBeaconBlockElaboratedAttestation(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)

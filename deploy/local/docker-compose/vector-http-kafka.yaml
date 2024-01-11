@@ -41,6 +41,7 @@ transforms:
       eth_v1_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY"
       eth_v1_validator_attestation_data: .event.name == "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA"
       eth_v2_beacon_block_attester_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
+      eth_v2_beacon_block_elaborated_attestation: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION"
       eth_v2_beacon_block_bls_to_execution_change: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE"
       eth_v2_beacon_block_deposit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT"
       eth_v2_beacon_block_execution_transaction: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
@@ -643,6 +644,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-proposer-duty
+    acknowledgements:
+      enabled: false
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  beacon_api_eth_v2_beacon_block_elaborated_attestation_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    inputs:
+      - xatu_server_events_router.eth_v2_beacon_block_elaborated_attestation
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v2-beacon-block-elaborated-attestation
     acknowledgements:
       enabled: false
     compression: snappy

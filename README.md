@@ -79,7 +79,7 @@ helm install xatu ethereum-helm-charts/xatu -f your_values.yaml
 ### Locally via docker compose
 
 ```bash
-docker compose up
+docker compose up --detach
 ```
 
 This will setup a pipeline to import events from Xatu server into a clickhouse instance. This will **not** run `sentry`/`discovery`/`mimicry`/`cannon`/`sage` clients but allow you run them locally and connect to the server.

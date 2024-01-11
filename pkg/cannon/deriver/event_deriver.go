@@ -27,3 +27,4 @@ var _ EventDeriver = &v2.BLSToExecutionChangeDeriver{}
 var _ EventDeriver = &v2.WithdrawalDeriver{}
 var _ EventDeriver = &v2.BeaconBlockDeriver{}
 var _ EventDeriver = &blockprint.BlockClassificationDeriver{}
+var _ EventDeriver = &v2.ElaboratedAttestationDeriver{}

@@ -63,8 +63,11 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		metadata.OverrideNetworkName(config.OverrideNetworkName)
 	}
 
+	duties := services.NewDutiesService(log, node, &metadata)
+
 	svcs := []services.Service{
 		&metadata,
+		&duties,
 	}
 
 	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
@@ -182,6 +185,16 @@ func (b *BeaconNode) Metadata() *services.MetadataService {
 	}
 
 	return service.(*services.MetadataService)
+}
+
+func (b *BeaconNode) Duties() *services.DutiesService {
+	service, err := b.getServiceByName("duties")
+	if err != nil {
+		// This should never happen. If it does, good luck.
+		return nil
+	}
+
+	return service.(*services.DutiesService)
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {

@@ -427,6 +427,69 @@ func (x *SignedAggregateAttestationAndProof) GetSignature() string {
 	return ""
 }
 
+type ElaboratedAttestation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Signature        string                    `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+	Data             *AttestationDataV2        `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	ValidatorIndexes []*wrapperspb.UInt64Value `protobuf:"bytes,3,rep,name=validator_indexes,proto3" json:"validator_indexes,omitempty"`
+}
+
+func (x *ElaboratedAttestation) Reset() {
+	*x = ElaboratedAttestation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_attestation_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ElaboratedAttestation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ElaboratedAttestation) ProtoMessage() {}
+
+func (x *ElaboratedAttestation) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_attestation_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ElaboratedAttestation.ProtoReflect.Descriptor instead.
+func (*ElaboratedAttestation) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_attestation_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ElaboratedAttestation) GetSignature() string {
+	if x != nil {
+		return x.Signature
+	}
+	return ""
+}
+
+func (x *ElaboratedAttestation) GetData() *AttestationDataV2 {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *ElaboratedAttestation) GetValidatorIndexes() []*wrapperspb.UInt64Value {
+	if x != nil {
+		return x.ValidatorIndexes
+	}
+	return nil
+}
+
 var File_pkg_proto_eth_v1_attestation_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_eth_v1_attestation_proto_rawDesc = []byte{
@@ -506,11 +569,22 @@ var file_pkg_proto_eth_v1_attestation_proto_rawDesc = []byte{
 	0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x6e, 0x64, 0x50, 0x72, 0x6f,
 	0x6f, 0x66, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73,
 	0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61,
-	0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x22, 0xb5, 0x01, 0x0a, 0x15, 0x45, 0x6c,
+	0x61, 0x62, 0x6f, 0x72, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72,
+	0x65, 0x12, 0x32, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1e, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74,
+	0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x56, 0x32, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x4a, 0x0a, 0x11, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x11,
+	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x65,
+	0x73, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75,
+	0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -525,7 +599,7 @@ func file_pkg_proto_eth_v1_attestation_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v1_attestation_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v1_attestation_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_pkg_proto_eth_v1_attestation_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_pkg_proto_eth_v1_attestation_proto_goTypes = []interface{}{
 	(*Attestation)(nil),                        // 0: xatu.eth.v1.Attestation
 	(*AttestationV2)(nil),                      // 1: xatu.eth.v1.AttestationV2
@@ -533,26 +607,29 @@ var file_pkg_proto_eth_v1_attestation_proto_goTypes = []interface{}{
 	(*AttestationDataV2)(nil),                  // 3: xatu.eth.v1.AttestationDataV2
 	(*AggregateAttestationAndProof)(nil),       // 4: xatu.eth.v1.AggregateAttestationAndProof
 	(*SignedAggregateAttestationAndProof)(nil), // 5: xatu.eth.v1.SignedAggregateAttestationAndProof
-	(*Checkpoint)(nil),                         // 6: xatu.eth.v1.Checkpoint
-	(*wrapperspb.UInt64Value)(nil),             // 7: google.protobuf.UInt64Value
-	(*CheckpointV2)(nil),                       // 8: xatu.eth.v1.CheckpointV2
+	(*ElaboratedAttestation)(nil),              // 6: xatu.eth.v1.ElaboratedAttestation
+	(*Checkpoint)(nil),                         // 7: xatu.eth.v1.Checkpoint
+	(*wrapperspb.UInt64Value)(nil),             // 8: google.protobuf.UInt64Value
+	(*CheckpointV2)(nil),                       // 9: xatu.eth.v1.CheckpointV2
 }
 var file_pkg_proto_eth_v1_attestation_proto_depIdxs = []int32{
 	2,  // 0: xatu.eth.v1.Attestation.data:type_name -> xatu.eth.v1.AttestationData
 	3,  // 1: xatu.eth.v1.AttestationV2.data:type_name -> xatu.eth.v1.AttestationDataV2
-	6,  // 2: xatu.eth.v1.AttestationData.source:type_name -> xatu.eth.v1.Checkpoint
-	6,  // 3: xatu.eth.v1.AttestationData.target:type_name -> xatu.eth.v1.Checkpoint
-	7,  // 4: xatu.eth.v1.AttestationDataV2.slot:type_name -> google.protobuf.UInt64Value
-	7,  // 5: xatu.eth.v1.AttestationDataV2.index:type_name -> google.protobuf.UInt64Value
-	8,  // 6: xatu.eth.v1.AttestationDataV2.source:type_name -> xatu.eth.v1.CheckpointV2
-	8,  // 7: xatu.eth.v1.AttestationDataV2.target:type_name -> xatu.eth.v1.CheckpointV2
+	7,  // 2: xatu.eth.v1.AttestationData.source:type_name -> xatu.eth.v1.Checkpoint
+	7,  // 3: xatu.eth.v1.AttestationData.target:type_name -> xatu.eth.v1.Checkpoint
+	8,  // 4: xatu.eth.v1.AttestationDataV2.slot:type_name -> google.protobuf.UInt64Value
+	8,  // 5: xatu.eth.v1.AttestationDataV2.index:type_name -> google.protobuf.UInt64Value
+	9,  // 6: xatu.eth.v1.AttestationDataV2.source:type_name -> xatu.eth.v1.CheckpointV2
+	9,  // 7: xatu.eth.v1.AttestationDataV2.target:type_name -> xatu.eth.v1.CheckpointV2
 	0,  // 8: xatu.eth.v1.AggregateAttestationAndProof.aggregate:type_name -> xatu.eth.v1.Attestation
 	4,  // 9: xatu.eth.v1.SignedAggregateAttestationAndProof.message:type_name -> xatu.eth.v1.AggregateAttestationAndProof
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 10: xatu.eth.v1.ElaboratedAttestation.data:type_name -> xatu.eth.v1.AttestationDataV2
+	8,  // 11: xatu.eth.v1.ElaboratedAttestation.validator_indexes:type_name -> google.protobuf.UInt64Value
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v1_attestation_proto_init() }
@@ -634,6 +711,18 @@ func file_pkg_proto_eth_v1_attestation_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_eth_v1_attestation_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ElaboratedAttestation); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -641,7 +730,7 @@ func file_pkg_proto_eth_v1_attestation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v1_attestation_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

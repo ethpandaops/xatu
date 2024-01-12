@@ -598,7 +598,6 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 
 			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
 				// Sleep until the next epochl and then retrty
-
 				c.log.Debug("Derived epoch is not active yet, sleeping until next epoch")
 
 				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()

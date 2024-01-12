@@ -20,7 +20,7 @@ CREATE TABLE default.mempool_dumpster_transaction_local on cluster '{cluster}'
 (
   unique_key Int64 CODEC(ZSTD(1)),
   updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
-  timestamp_ms DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
+  timestamp DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
   hash FixedString(66) Codec(ZSTD(1)),
   chain_id UInt32 Codec(ZSTD(1)),
   from FixedString(42) Codec(ZSTD(1)),
@@ -35,17 +35,17 @@ CREATE TABLE default.mempool_dumpster_transaction_local on cluster '{cluster}'
   data_4bytes Nullable(FixedString(10)) Codec(ZSTD(1)),
   sources Array(LowCardinality(String)),
   included_at_block_height Nullable(UInt64) Codec(ZSTD(1)),
-  included_block_timestamp_ms Nullable(DateTime64(3)) Codec(DoubleDelta, ZSTD(1)),
+  included_block_timestamp Nullable(DateTime64(3)) Codec(DoubleDelta, ZSTD(1)),
   inclusion_delay_ms Nullable(Int64) Codec(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
-PARTITION BY toStartOfMonth(timestamp_ms)
-ORDER BY (timestamp_ms, unique_key, chain_id);
+PARTITION BY toStartOfMonth(timestamp)
+ORDER BY (timestamp, unique_key, chain_id);
 
 ALTER TABLE default.mempool_dumpster_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from mempool dumpster dataset',
+MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions; https://github.com/flashbots/mempool-dumpster?tab=readme-ov-file#schema-of-output-files',
 COMMENT COLUMN unique_key 'Unique key for the row, this is outside the source data and used for deduplication',
 COMMENT COLUMN updated_date_time 'When this row was last updated, this is outside the source data and used for deduplication',
-COMMENT COLUMN timestamp_ms 'Timestamp of the transaction',
+COMMENT COLUMN timestamp 'Timestamp of the transaction',
 COMMENT COLUMN hash 'The hash of the transaction',
 COMMENT COLUMN chain_id 'The chain id of the transaction',
 COMMENT COLUMN from 'The address of the account that sent the transaction',
@@ -60,33 +60,11 @@ COMMENT COLUMN data_size 'The size of the call data of the transaction in bytes'
 COMMENT COLUMN data_4bytes 'The first 4 bytes of the call data of the transaction',
 COMMENT COLUMN sources 'The sources that saw this transaction in their mempool',
 COMMENT COLUMN included_at_block_height 'The block height at which this transaction was included',
-COMMENT COLUMN included_block_timestamp_ms 'The timestamp of the block at which this transaction was included',
+COMMENT COLUMN included_block_timestamp 'The timestamp of the block at which this transaction was included',
 COMMENT COLUMN inclusion_delay_ms 'The delay between the transaction timestamp and the block timestamp';
 
 CREATE TABLE mempool_dumpster_transaction on cluster '{cluster}' AS mempool_dumpster_transaction_local
 ENGINE = Distributed('{cluster}', default, mempool_dumpster_transaction_local, rand());
-
-CREATE TABLE default.mempool_dumpster_transaction_source_local on cluster '{cluster}'
-(
-  unique_key Int64 CODEC(ZSTD(1)),
-  updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
-  timestamp_ms DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
-  hash FixedString(66) Codec(ZSTD(1)),
-  source LowCardinality(String)
-) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
-PARTITION BY toStartOfMonth(timestamp_ms)
-ORDER BY (timestamp_ms, unique_key);
-
-ALTER TABLE default.mempool_dumpster_transaction_source_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from mempool dumpster dataset',
-COMMENT COLUMN unique_key 'Unique key for the row, this is outside the source data and used for deduplication',
-COMMENT COLUMN updated_date_time 'When this row was last updated, this is outside the source data and used for deduplication',
-COMMENT COLUMN timestamp_ms 'Timestamp of the transaction',
-COMMENT COLUMN hash 'The hash of the transaction',
-COMMENT COLUMN source 'The source that saw this transaction in their mempool';
-
-CREATE TABLE mempool_dumpster_transaction_source on cluster '{cluster}' AS mempool_dumpster_transaction_source_local
-ENGINE = Distributed('{cluster}', default, mempool_dumpster_transaction_source_local, rand());
 
 CREATE TABLE default.block_native_mempool_transaction_local on cluster '{cluster}'
 (

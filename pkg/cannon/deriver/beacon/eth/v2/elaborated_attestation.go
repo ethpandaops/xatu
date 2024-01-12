@@ -269,6 +269,15 @@ func (b *ElaboratedAttestationDeriver) processSlot(ctx context.Context, slot pha
 		return nil, errors.Wrapf(err, "failed to get elaborated attestations for slot %d", slot)
 	}
 
+	attestations, err := block.Attestations()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get attestations for block %s", block.String())
+	}
+
+	if len(events) != len(attestations) {
+		return nil, errors.Errorf("number of events (%d) does not match number of attestations (%d)", len(events), len(attestations))
+	}
+
 	return events, nil
 }
 
@@ -305,6 +314,15 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
 		}
 
+		duty, err := b.beacon.Duties().GetBeaconCommitteeByEpochAndIndex(ctx, phase0.Epoch(epoch.Number()), attestation.Data.Index)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get beacon committee for epoch %d and index %d", epoch.Number(), attestation.Data.Index)
+		}
+
+		// Calculate the inclusion distance of the attestation by comparing the slot of the attestation with the slot of when the validator
+		// was scheduled to attest.
+		inclusionDistance := uint64(attestation.Data.Slot) - uint64(duty.Slot)
+
 		elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
 			Signature: attestation.Signature.String(),
 			Data: &xatuethv1.AttestationDataV2{
@@ -323,7 +341,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			ValidatorIndexes: indexes,
 		}
 
-		event, err := b.createEventFromElaboratedAttestation(ctx, elaboratedAttestation, uint64(positionInBlock), blockIdentifier)
+		event, err := b.createEventFromElaboratedAttestation(ctx, elaboratedAttestation, uint64(positionInBlock), blockIdentifier, inclusionDistance)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create event for attestation %s", attestation.String())
 		}
@@ -334,7 +352,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	return events, nil
 }
 
-func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx context.Context, attestation *xatuethv1.ElaboratedAttestation, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {
+func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx context.Context, attestation *xatuethv1.ElaboratedAttestation, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, inclusionDistance uint64) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -388,8 +406,9 @@ func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx 
 				Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 				StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 			},
-			Source: source,
-			Target: target,
+			Source:            source,
+			Target:            target,
+			InclusionDistance: wrapperspb.UInt64(inclusionDistance),
 		},
 	}
 

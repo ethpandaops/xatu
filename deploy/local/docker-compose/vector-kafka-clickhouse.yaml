@@ -1652,6 +1652,8 @@ transforms:
       .committee_index = .data.data.index
       .beacon_block_root = .data.data.beacon_block_root
       .slot = .data.data.slot
+
+      .inclusion_distance = .meta.client.additional_data.inclusion_distance
       
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1693,6 +1695,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .target_root = .data.data.target.root
+
       key, err = .block_root + .block_slot + .position_in_block + .signature + .beacon_block_root + .slot + .committee_index + .source_root + .target_root
       if err != null {
         .error = err

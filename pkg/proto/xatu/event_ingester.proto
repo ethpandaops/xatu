@@ -698,6 +698,9 @@ message ClientMeta {
     // Target contains information of the block at the start of the current
     // epoch.
     AdditionalEthV1AttestationTargetV2Data target = 6;
+
+    // Inclusion distance.
+    google.protobuf.UInt64Value inclusion_distance = 7 [ json_name = "inclusion_distance" ];
   }
 
   // AdditionalData contains additional, computed data as set by the client

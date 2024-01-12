@@ -14,6 +14,7 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
@@ -557,18 +558,61 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				return c.handleNewDecoratedEvents(ctx, events)
 			})
 
-			c.log.
-				WithField("deriver", deriver.Name()).
-				WithField("type", deriver.CannonType()).
-				Info("Starting cannon event deriver")
-
-			if err := deriver.Start(ctx); err != nil {
-				return err
-			}
+			go func() {
+				if err := c.startDeriverWhenReady(ctx, d); err != nil {
+					c.log.WithError(err).Error("Failed to start deriver")
+				}
+			}()
 		}
 
 		return nil
 	})
 
 	return nil
+}
+
+func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriver) error {
+	for {
+		// Handle derivers that require phase0, since its not actually a fork it'll never appear
+		// in the spec.
+		if d.ActivationFork() != ethereum.ForkNamePhase0 {
+			spec, err := c.beacon.Node().Spec()
+			if err != nil {
+				c.log.WithError(err).Error("Failed to get spec")
+
+				time.Sleep(5 * time.Second)
+
+				continue
+			}
+
+			slot := c.beacon.Node().Wallclock().Slots().Current()
+
+			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork())
+			if err != nil {
+				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
+
+				time.Sleep(5 * time.Second)
+
+				continue
+			}
+
+			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
+				// Sleep until the next epochl and then retrty
+
+				c.log.Debug("Derived epoch is not active yet, sleeping until next epoch")
+
+				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+
+				time.Sleep(time.Until(epoch.TimeWindow().End()))
+
+				continue
+			}
+		}
+
+		c.log.
+			WithField("deriver", d.Name()).
+			Info("Starting cannon event deriver")
+
+		return d.Start(ctx)
+	}
 }

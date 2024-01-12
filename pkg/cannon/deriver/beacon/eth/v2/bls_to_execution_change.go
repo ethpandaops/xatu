@@ -64,6 +64,10 @@ func (b *BLSToExecutionChangeDeriver) OnEventsDerived(ctx context.Context, fn fu
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
 }
 
+func (b *BLSToExecutionChangeDeriver) ActivationFork() string {
+	return ethereum.ForkNameCapella
+}
+
 func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
 		b.log.Info("BLS to execution change deriver disabled")
@@ -74,7 +78,7 @@ func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
 	b.log.Info("BLS to execution change deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

@@ -57,6 +57,10 @@ func (b *ExecutionTransactionDeriver) CannonType() xatu.CannonType {
 	return ExecutionTransactionDeriverName
 }
 
+func (b *ExecutionTransactionDeriver) ActivationFork() string {
+	return ethereum.ForkNameBellatrix
+}
+
 func (b *ExecutionTransactionDeriver) Name() string {
 	return ExecutionTransactionDeriverName.String()
 }
@@ -75,7 +79,7 @@ func (b *ExecutionTransactionDeriver) Start(ctx context.Context) error {
 	b.log.Info("Execution transaction deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

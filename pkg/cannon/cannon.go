@@ -16,6 +16,7 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/ethwallclock"
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
@@ -551,6 +552,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 		c.eventDerivers = eventDerivers
 
+		// Refresh the spec every epoch
+		c.beacon.Metadata().Wallclock().OnEpochChanged(func(current ethwallclock.Epoch) {
+			_, err := c.beacon.Node().FetchSpec(ctx)
+			if err != nil {
+				c.log.WithError(err).Error("Failed to refresh spec")
+			}
+		})
+
 		for _, deriver := range c.eventDerivers {
 			d := deriver
 
@@ -591,7 +600,9 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 			if err != nil {
 				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
 
-				time.Sleep(5 * time.Second)
+				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+
+				time.Sleep(time.Until(epoch.TimeWindow().End()))
 
 				continue
 			}

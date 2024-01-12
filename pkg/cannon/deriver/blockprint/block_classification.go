@@ -67,6 +67,10 @@ func (b *BlockClassificationDeriver) CannonType() xatu.CannonType {
 	return BlockClassificationName
 }
 
+func (b *BlockClassificationDeriver) ActivationFork() string {
+	return ethereum.ForkNamePhase0
+}
+
 func (b *BlockClassificationDeriver) Name() string {
 	return BlockClassificationName.String()
 }
@@ -85,7 +89,7 @@ func (b *BlockClassificationDeriver) Start(ctx context.Context) error {
 	b.log.Info("BlockClassification deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

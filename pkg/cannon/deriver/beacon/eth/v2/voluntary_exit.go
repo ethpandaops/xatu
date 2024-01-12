@@ -54,6 +54,10 @@ func (b *VoluntaryExitDeriver) CannonType() xatu.CannonType {
 	return VoluntaryExitDeriverName
 }
 
+func (b *VoluntaryExitDeriver) ActivationFork() string {
+	return ethereum.ForkNamePhase0
+}
+
 func (b *VoluntaryExitDeriver) Name() string {
 	return VoluntaryExitDeriverName.String()
 }
@@ -72,7 +76,7 @@ func (b *VoluntaryExitDeriver) Start(ctx context.Context) error {
 	b.log.Info("Voluntary exit deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

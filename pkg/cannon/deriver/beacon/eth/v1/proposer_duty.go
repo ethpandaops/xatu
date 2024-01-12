@@ -56,6 +56,10 @@ func (b *ProposerDutyDeriver) CannonType() xatu.CannonType {
 	return ProposerDutyDeriverName
 }
 
+func (b *ProposerDutyDeriver) ActivationFork() string {
+	return ethereum.ForkNamePhase0
+}
+
 func (b *ProposerDutyDeriver) Name() string {
 	return ProposerDutyDeriverName.String()
 }
@@ -74,7 +78,7 @@ func (b *ProposerDutyDeriver) Start(ctx context.Context) error {
 	b.log.Info("Proposer duty deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

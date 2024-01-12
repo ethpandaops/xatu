@@ -59,6 +59,10 @@ func (b *BeaconBlockDeriver) CannonType() xatu.CannonType {
 	return BeaconBlockDeriverName
 }
 
+func (b *BeaconBlockDeriver) ActivationFork() string {
+	return ethereum.ForkNamePhase0
+}
+
 func (b *BeaconBlockDeriver) Name() string {
 	return BeaconBlockDeriverName.String()
 }
@@ -77,7 +81,7 @@ func (b *BeaconBlockDeriver) Start(ctx context.Context) error {
 	b.log.Info("Beacon block deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

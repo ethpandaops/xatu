@@ -31,7 +31,7 @@ const (
 )
 
 type BeaconBlobDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"false"`
+	Enabled bool `yaml:"enabled" default:"true"`
 }
 
 type BeaconBlobDeriver struct {
@@ -57,6 +57,10 @@ func (b *BeaconBlobDeriver) CannonType() xatu.CannonType {
 	return BeaconBlobDeriverName
 }
 
+func (b *BeaconBlobDeriver) ActivationFork() string {
+	return ethereum.ForkNameDeneb
+}
+
 func (b *BeaconBlobDeriver) Name() string {
 	return BeaconBlobDeriverName.String()
 }
@@ -75,7 +79,7 @@ func (b *BeaconBlobDeriver) Start(ctx context.Context) error {
 	b.log.Info("Beacon blob deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

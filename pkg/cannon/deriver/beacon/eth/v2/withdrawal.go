@@ -58,6 +58,10 @@ func (b *WithdrawalDeriver) Name() string {
 	return WithdrawalDeriverName.String()
 }
 
+func (b *WithdrawalDeriver) ActivationFork() string {
+	return ethereum.ForkNameCapella
+}
+
 func (b *WithdrawalDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
 }
@@ -72,7 +76,7 @@ func (b *WithdrawalDeriver) Start(ctx context.Context) error {
 	b.log.Info("Withdrawal deriver enabled")
 
 	// Start our main loop
-	go b.run(ctx)
+	b.run(ctx)
 
 	return nil
 }

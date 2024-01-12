@@ -16,6 +16,7 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/ethwallclock"
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
@@ -551,6 +552,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 		c.eventDerivers = eventDerivers
 
+		// Refresh the spec every epoch
+		c.beacon.Metadata().Wallclock().OnEpochChanged(func(current ethwallclock.Epoch) {
+			_, err := c.beacon.Node().FetchSpec(ctx)
+			if err != nil {
+				c.log.WithError(err).Error("Failed to refresh spec")
+			}
+		})
+
 		for _, deriver := range c.eventDerivers {
 			d := deriver
 
@@ -591,18 +600,40 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 			if err != nil {
 				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
 
-				time.Sleep(5 * time.Second)
+				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+
+				time.Sleep(time.Until(epoch.TimeWindow().End()))
 
 				continue
 			}
 
 			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
 				// Sleep until the next epochl and then retrty
-				c.log.Debug("Derived epoch is not active yet, sleeping until next epoch")
+				currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 
-				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+				activationForkEpoch := c.beacon.Node().Wallclock().Epochs().FromNumber(uint64(fork.Epoch))
 
-				time.Sleep(time.Until(epoch.TimeWindow().End()))
+				sleepFor := time.Until(activationForkEpoch.TimeWindow().End())
+
+				if activationForkEpoch.Number()-currentEpoch.Number() > 100000 {
+					// If the fork epoch is over 100k epochs away we are most likely dealing with a
+					// placeholder fork epoch. We should sleep until the end of the current fork epoch and then
+					// wait for the spec to refresh. This gives the beacon node a chance to give us the real
+					// fork epoch once its scheduled.
+					sleepFor = time.Until(currentEpoch.TimeWindow().End())
+				}
+
+				c.log.
+					WithField("current_epoch", currentEpoch.Number()).
+					WithField("activation_fork_name", d.ActivationFork()).
+					WithField("activation_fork_epoch", fork.Epoch).
+					WithField("estimated_time_until_fork", time.Until(
+						activationForkEpoch.TimeWindow().Start(),
+					)).
+					WithField("check_again_in", sleepFor).
+					Warn("Deriver required fork is not active yet")
+
+				time.Sleep(sleepFor)
 
 				continue
 			}

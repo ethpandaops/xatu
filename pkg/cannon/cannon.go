@@ -609,11 +609,31 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 
 			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
 				// Sleep until the next epochl and then retrty
-				c.log.Debug("Derived epoch is not active yet, sleeping until next epoch")
+				currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 
-				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+				activationForkEpoch := c.beacon.Node().Wallclock().Epochs().FromNumber(uint64(fork.Epoch))
 
-				time.Sleep(time.Until(epoch.TimeWindow().End()))
+				sleepFor := time.Until(activationForkEpoch.TimeWindow().End())
+
+				if activationForkEpoch.Number()-currentEpoch.Number() > 100000 {
+					// If the fork epoch is over 100k epochs away we are most likely dealing with a
+					// placeholder fork epoch. We should sleep until the end of the current fork epoch and then
+					// wait for the spec to refresh. This gives the beacon node a chance to give us the real
+					// fork epoch once its scheduled.
+					sleepFor = time.Until(currentEpoch.TimeWindow().End())
+				}
+
+				c.log.
+					WithField("current_epoch", currentEpoch.Number()).
+					WithField("activation_fork_name", d.ActivationFork()).
+					WithField("activation_fork_epoch", fork.Epoch).
+					WithField("estimated_time_until_fork", time.Until(
+						activationForkEpoch.TimeWindow().Start(),
+					)).
+					WithField("check_again_in", sleepFor).
+					Warn("Deriver required fork is not active yet")
+
+				time.Sleep(sleepFor)
 
 				continue
 			}

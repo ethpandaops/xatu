@@ -136,6 +136,21 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, stateID string
 	return committees, nil
 }
 
+func (m *DutiesService) GetBeaconCommitteeByEpochAndIndex(ctx context.Context, epoch phase0.Epoch, commiteeIndex phase0.CommitteeIndex) (*v1.BeaconCommittee, error) {
+	duties, err := m.FetchBeaconCommittee(context.Background(), "head", epoch)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch, err)
+	}
+
+	for _, duty := range duties {
+		if duty.Index == commiteeIndex {
+			return duty, nil
+		}
+	}
+
+	return nil, fmt.Errorf("beacon committee not found")
+}
+
 func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
 	if _, err := m.FetchBeaconCommittee(context.Background(), "head", epoch); err != nil {
 		return 0, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch, err)

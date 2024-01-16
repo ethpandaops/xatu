@@ -42,7 +42,7 @@ PARTITION BY toStartOfMonth(timestamp)
 ORDER BY (timestamp, unique_key, chain_id);
 
 ALTER TABLE default.mempool_dumpster_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions; https://github.com/flashbots/mempool-dumpster?tab=readme-ov-file#schema-of-output-files',
+MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions: https://github.com/flashbots/mempool-dumpster?tab=readme-ov-file#schema-of-output-files',
 COMMENT COLUMN unique_key 'Unique key for the row, this is outside the source data and used for deduplication',
 COMMENT COLUMN updated_date_time 'When this row was last updated, this is outside the source data and used for deduplication',
 COMMENT COLUMN timestamp 'Timestamp of the transaction',

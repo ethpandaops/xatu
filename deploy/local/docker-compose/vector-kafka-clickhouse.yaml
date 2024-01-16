@@ -593,7 +593,6 @@ transforms:
         .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
         .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
       }
-      .signature = .data.signature
       .aggregation_bits = .data.aggregation_bits
       .beacon_block_root = .data.data.beacon_block_root
       .epoch = .meta.client.additional_data.epoch.number
@@ -1521,7 +1520,6 @@ transforms:
         .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
         .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
       }
-      .signature = .data.signature
       .aggregation_bits = .data.aggregation_bits
       .beacon_block_root = .data.data.beacon_block_root
       .epoch = .meta.client.additional_data.epoch.number
@@ -1693,7 +1691,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .target_root = .data.data.target.root
-      key, err = .block_root + .block_slot + .position_in_block + .signature + .beacon_block_root + .slot + .committee_index + .source_root + .target_root
+      key, err = .block_root + .block_slot + .position_in_block + .beacon_block_root + .slot + .committee_index + .source_root + .target_root
       if err != null {
         .error = err
         .error_description = "failed to generate unique key"

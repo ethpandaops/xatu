@@ -593,7 +593,6 @@ transforms:
         .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
         .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
       }
-      .signature = .data.signature
       .aggregation_bits = .data.aggregation_bits
       .beacon_block_root = .data.data.beacon_block_root
       .epoch = .meta.client.additional_data.epoch.number

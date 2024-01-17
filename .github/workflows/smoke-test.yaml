@@ -1,114 +1,100 @@
-# name: Smoke Test
+name: Smoke Test
 
-# on:
-#   pull_request:
+on:
+  pull_request:
 
-# jobs:
-#   smoke-test:
-#     runs-on: ubuntu-latest
-#     steps:
-#     - name: Checkout repository
-#       uses: actions/checkout@v2
-#     - name: Build xatu image
-#       run: |
-#         docker build -t ethpandaops/xatu:latest .
-#         echo "Xatu image is built."
-#     - name: Install Kurtosis
-#       run: |
-#         echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-#         sudo apt update
-#         sudo apt install kurtosis-cli
-#     - name: Create Kurtosis config file
-#       run: |
-#         cat <<EOF > network_params.yaml
-#           participants:
-#             - el_client_type: geth
-#               cl_client_type: teku
-#             - el_client_type: nethermind
-#               cl_client_type: prysm
-#             - el_client_type: erigon
-#               cl_client_type: lighthouse
-#             - el_client_type: besu
-#               cl_client_type: lighthouse
-#             - el_client_type: reth
-#               cl_client_type: lodestar
-#             - el_client_type: ethereumjs
-#               cl_client_type: nimbus
-#           additional_services: []
-#           network_parans:
-#             genesis_delay: 60
-#         <<EOF
-#     - name: Start Ethereum network with Kurtosis
-#       run: |
-#         kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package "$(cat network_params.yaml)"
-#     - name: Run Xatu stack
-#       run: |
-#         docker compose up --detach --quiet-pull;
-#         echo "Xatu stack is running."
-#     - name: Create Xatu Sentry for every participant
-#       run: |
-#         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
-#         readarray -t BEACON_SERVICES <<< "$services";
-#         echo "Beacon nodes discovered: $BEACON_SERVICES"
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Build xatu image
+      run: |
+        docker build -t ethpandaops/xatu:local .
+        echo "Xatu image is built."
+    - name: Install Kurtosis
+      run: |
+        echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+        sudo apt update
+        sudo apt install kurtosis-cli
+    - name: Create Kurtosis config file
+      run: |
+        cat <<EOF > network_params.yaml
+          participants:
+            - el_client_type: geth
+              cl_client_type: teku
+            - el_client_type: nethermind
+              cl_client_type: prysm
+            - el_client_type: erigon
+              cl_client_type: lighthouse
+            - el_client_type: besu
+              cl_client_type: lighthouse
+            - el_client_type: reth
+              cl_client_type: lodestar
+            - el_client_type: ethereumjs
+              cl_client_type: nimbus
+          additional_services: []
+          network_parans:
+            genesis_delay: 180
+          xatu_sentry_enabled: true
+          xatu_server_addr: xatu-server:8080
+          xatu_sentry_image: ethpandaops/xatu:local
+        <<EOF
+    - name: Start Ethereum network with Kurtosis & Run Xatu stack
+      timeout-minutes: 10
+      shell: bash
+      run: |
+        echo "Starting Kurtosis..."
+        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package@fd4290f91ea1396cd47e084e2d32ddcb954296f5 "$(cat network_params.yaml)" > kurtosis.log &
+        KURTOSIS_PID=$!;
 
-#         for service in "${BEACON_SERVICES[@]}"; do
-#           port=$(kurtosis port print xatu $service http)
-#           echo "Creating Xatu Sentry for $service which is running at $port..."
-#           cat <<EOF > "${service}.yaml"
-#             name: $service
-#             ethereum:
-#               beaconNodeAddress: $port
-#               overrideNetworkName: "xatu-devnet"
-#             forkChoice:
-#               enabled: true
-            
-#               onReOrgEvent:
-#                 enabled: true
-                          
-#               at:
-#                 enabled: true
-#                 slotTimes:
-#                 - 4s
-            
-#             attestationData:
-#               enabled: true
-            
-#               at:
-#                 enabled: true
-#                 slotTimes:
-#                 - 4s
-            
-#             beaconCommittees:
-#               enabled: true
-#             output:
-#             - name: xatu
-#               type: xatu
-#               config:
-#                 address: xatu-server:8080
-#                 tls: false
-#         <<EOF
+        echo "Starting Xatu stack..."
+        docker compose up --detach --quiet-pull > docker-compose.log &
+        DOCKER_PID=$!
 
-#           cat "${service}.yaml";
+        echo "Waiting for Kurtosis to finish starting..."
+        wait $KURTOSIS_PID;
+        KURTOSIS_EXIT_CODE=$?
 
-#           docker run -d -v "$(pwd)/${service}.yaml:/opt/config.yaml" --network=xatu_xatu-net ethpandaops/xatu:latest sentry --config /opt/config.yaml;
+        if [ $KURTOSIS_EXIT_CODE -ne 0 ]; then
+          echo "An error occurred with Kurtosis: exit code $KURTOSIS_EXIT_CODE"
+          cat kurtosis.log
+          exit 1
+        fi
 
-#         done
-#     - name: Check Clickhouse for attestation data from every participant
-#       run: |
-#         export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
-#         readarray -t BEACON_SERVICES <<< "$services";
+        echo "Waiting for Xatu stack to finish starting..."
+        wait $DOCKER_PID;
+        DOCKER_EXIT_CODE=$?
 
-#         for service in "${BEACON_SERVICES[@]}"; do
-#             echo "Checking Clickhouse for attestation data from $service..."
-#             while true; do
-#                 if docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.beacon_api_eth_v1_events_attestation WHERE event_date_time > now() - INTERVAL 1 HOUR AND meta_client_name == '$service"; then
-#                     echo "Attestations table has data."
-#                     break
-#                 else
-#                     echo "Attestations table is empty. Checking again in 2 seconds..."
-#                     sleep 2
-#                 fi
-#             done
-#             echo "Attestation data from $service is present"
-#         done
+        if [ $DOCKER_EXIT_CODE -ne 0 ]; then
+          echo "An error occurred with Docker: exit code $DOCKER_EXIT_CODE"
+          cat docker-compose.log
+          exit 1
+        fi
 
+        echo "Kurtosis and Xatu stack have started successfully."
+    - name: Add all xatu-sentry containers to the xatu network
+      run: |
+        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; done
+    - name: Verify Clickhouse attestation data count matches service count
+      run: |
+        export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
+        readarray -t BEACON_SERVICES <<< "$services";
+        services_count=${#BEACON_SERVICES[@]}
+
+        echo "Checking Clickhouse for attestation data count matching $services_count services..."
+        while true; do
+            attestation_count=$(docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(DISTINCT meta_client_name) FROM default.beacon_api_eth_v1_events_attestation")
+            if [[ $attestation_count -eq $services_count ]]; then
+                echo "Attestations table has data for all $services_count services."
+                break
+            else
+                echo "Attestations table data count for services is $attestation_count. Expected $services_count. Checking again in 2 seconds..."
+                sleep 2
+            fi
+        done
+
+    - name: Dump docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v2

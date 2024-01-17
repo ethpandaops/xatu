@@ -41,39 +41,27 @@ jobs:
           xatu_server_addr: xatu-server:8080
           xatu_sentry_image: ethpandaops/xatu:local
         <<EOF
-    - name: Start Ethereum network with Kurtosis & Run Xatu stack
+
+    - name: Start Ethereum network with Kurtosis
       timeout-minutes: 10
       shell: bash
       run: |
         echo "Starting Kurtosis..."
-        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package@fd4290f91ea1396cd47e084e2d32ddcb954296f5 "$(cat network_params.yaml)" > kurtosis.log &
-        KURTOSIS_PID=$!;
 
+        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package@fd4290f91ea1396cd47e084e2d32ddcb954296f5 "$(cat network_params.yaml)";
+        
+        echo "Kurtosis has started successfully."
+    - name: Run Xatu stack
+      timeout-minutes: 10
+      shell: bash
+      run: |
         echo "Starting Xatu stack..."
-        docker compose up --detach --quiet-pull > docker-compose.log &
-        DOCKER_PID=$!
 
-        echo "Waiting for Kurtosis to finish starting..."
-        wait $KURTOSIS_PID;
-        KURTOSIS_EXIT_CODE=$?
+        docker compose up --detach --quiet-pull
 
-        if [ $KURTOSIS_EXIT_CODE -ne 0 ]; then
-          echo "An error occurred with Kurtosis: exit code $KURTOSIS_EXIT_CODE"
-          cat kurtosis.log
-          exit 1
-        fi
+        echo "Xatu stack has started successfully."
 
-        echo "Waiting for Xatu stack to finish starting..."
-        wait $DOCKER_PID;
-        DOCKER_EXIT_CODE=$?
 
-        if [ $DOCKER_EXIT_CODE -ne 0 ]; then
-          echo "An error occurred with Docker: exit code $DOCKER_EXIT_CODE"
-          cat docker-compose.log
-          exit 1
-        fi
-
-        echo "Kurtosis and Xatu stack have started successfully."
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; done

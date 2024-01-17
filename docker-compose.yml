@@ -27,7 +27,7 @@ services:
       test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-01:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
       interval: 5s
       timeout: 10s
-      retries: 10
+      retries: 15
       start_period: 15s
   clickhouse-02:
     image: "clickhouse/clickhouse-server:${CHVER:-latest}"
@@ -55,7 +55,7 @@ services:
       test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-02:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
       interval: 5s
       timeout: 10s
-      retries: 10
+      retries: 15
       start_period: 15s
   clickhouse-keeper-01:
     image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"

@@ -85,7 +85,7 @@ jobs:
 
         echo "Checking Clickhouse for attestation data count matching $services_count services..."
         while true; do
-            attestation_count=$(docker --network xatu_xatu-net exec clickhouse-01 clickhouse-client --query "SELECT COUNT(DISTINCT meta_client_name) FROM default.beacon_api_eth_v1_events_attestation")
+            attestation_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(DISTINCT meta_client_name) FROM default.beacon_api_eth_v1_events_attestation")
             if [[ $attestation_count -eq $services_count ]]; then
                 echo "Attestations table has data for all $services_count services."
                 break
@@ -96,5 +96,5 @@ jobs:
         done
 
     - name: Dump docker logs on failure
-      if: failure()
+      if: always()
       uses: jwalton/gh-docker-logs@v2

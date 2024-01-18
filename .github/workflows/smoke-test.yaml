@@ -84,7 +84,7 @@ jobs:
             for sentry in "${all_sentries[@]}"; do
                 echo "Checking $table table for $sentry..."
                 while true; do
-                    data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = $sentry" || true)
+                    data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
                         echo "$table table has data from $sentry."
                         break

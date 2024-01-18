@@ -38,8 +38,9 @@ jobs:
           network_parans:
             genesis_delay: 180
           xatu_sentry_enabled: true
-          xatu_server_addr: xatu-server:8080
-          xatu_sentry_image: ethpandaops/xatu:local
+          xatu_sentry_params:
+            xatu_server_addr: xatu-server:8080
+            xatu_sentry_image: ethpandaops/xatu:local
         <<EOF
 
     - name: Start Ethereum network with Kurtosis
@@ -48,7 +49,7 @@ jobs:
       run: |
         echo "Starting Kurtosis..."
 
-        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package@fd4290f91ea1396cd47e084e2d32ddcb954296f5 "$(cat network_params.yaml)";
+        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml;
         
         echo "Kurtosis has started successfully."
     - name: Run Xatu stack
@@ -65,24 +66,37 @@ jobs:
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; done
-    - name: Verify Clickhouse attestation data count matches service count
+    - name: Verify Clickhouse has data from all sentries
+      timeout-minutes: 10
       run: |
-        export services=$(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator)
-        readarray -t BEACON_SERVICES <<< "$services";
-        services_count=${#BEACON_SERVICES[@]}
+        echo "Checking Clickhouse for data from all sentries"
 
-        echo "Checking Clickhouse for attestation data count matching $services_count services..."
-        while true; do
-            attestation_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(DISTINCT meta_client_name) FROM default.beacon_api_eth_v1_events_attestation")
-            if [[ $attestation_count -eq $services_count ]]; then
-                echo "Attestations table has data for all $services_count services."
-                break
-            else
-                echo "Attestations table data count for services is $attestation_count. Expected $services_count. Checking again in 2 seconds..."
-                sleep 2
-            fi
+        all_sentries=($(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator))
+
+        tables=(
+            "beacon_api_eth_v1_events_attestation"
+            "beacon_api_eth_v1_events_block"
+            "beacon_api_eth_v1_events_head"
+        )
+
+        for table in "${tables[@]}"; do
+            echo "Checking $table table..."
+            for sentry in "${all_sentries[@]}"; do
+                echo "Checking $table table for $sentry..."
+                while true; do
+                    data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'")
+                    if [[ $data_count -gt 0 ]]; then
+                        echo "$table table has data from $sentry."
+                        break
+                    else
+                        echo "$table table data count for $sentry is $data_count. Checking again in 2 seconds..."
+
+                        sleep 2
+                    fi
+                done
+            done
         done
 
-    - name: Dump docker logs on failure
-      if: always()
-      uses: jwalton/gh-docker-logs@v2
+    # - name: Dump docker logs on failure
+    #   if: always()
+    #   uses: jwalton/gh-docker-logs@v2

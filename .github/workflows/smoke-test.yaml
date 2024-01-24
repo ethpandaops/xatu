@@ -79,6 +79,15 @@ jobs:
             "beacon_api_eth_v1_events_head"
         )
 
+        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
+        print_logs() {
+            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
+                echo "Logs for $container:\n\n"
+                docker logs --tail 5 $container
+                echo "\n\n"
+            done
+        }
+
         # Check for any data in the tables before digging in to the individual sentries
         for table in "${tables[@]}"; do
             echo "Checking $table table..."
@@ -92,15 +101,6 @@ jobs:
                 print_logs vector
             fi
         done
-
-        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
-        print_logs() {
-            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
-                echo "Logs for $container:\n\n"
-                docker logs --tail 5 $container
-                echo "\n\n"
-            done
-        }
 
         for table in "${tables[@]}"; do
             echo "Checking $table table..."

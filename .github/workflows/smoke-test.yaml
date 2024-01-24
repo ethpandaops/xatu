@@ -5,7 +5,11 @@ on:
 
 jobs:
   smoke-test:
-    runs-on: ubuntu-latest
+    runs-on:
+    - environment=production
+    - size=xxlarge
+    - provider=ethpandaops
+    - realm=platform
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2

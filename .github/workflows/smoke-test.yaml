@@ -104,22 +104,45 @@ jobs:
         )
 
         # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
+        pretty_print() {
+            local message=$1
+            local color=$2
+            local no_color='\033[0m'
+            local green='\033[0;32m'
+            local red='\033[0;31m'
+            local bright_red='\033[1;31m'
+
+            # Choose color based on the type of message
+            if [ "$color" == "green" ]; then
+                color=$green
+            elif [ "$color" == "red" ]; then
+                color=$red
+            elif [ "$color" == "bright_red" ]; then
+                color=$bright_red
+            else
+                color=$no_color
+            fi
+
+            echo -e "${color}######################${no_color}"
+            echo -e "${color}      $message      ${no_color}"
+            echo -e "${color}######################${no_color}"
+        }
+
         print_logs() {
             for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
                 echo "Logs for $container:\n\n"
                 docker logs --tail 5 $container
-                echo "\n\n"
             done
         }
 
         # Check for any data in the tables before digging in to the individual sentries
         for table in "${tables[@]}"; do
-            echo "Checking $table table..."
+            pretty_print "Checking $table table..." "none"
             data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
             if [[ $data_count -gt 0 ]]; then
-                echo "$table table has $data_count entries"
+                pretty_print "$table table has $data_count entries" "green"
             else
-                echo "$table table has no entries."
+                pretty_print "$table table has no entries." "bright_red"
 
                 print_logs xatu-server
                 print_logs vector
@@ -127,16 +150,16 @@ jobs:
         done
 
         for table in "${tables[@]}"; do
-            echo "Checking $table table..."
+            pretty_print "Checking $table table..." "none"
             for sentry in "${all_sentries[@]}"; do
-                echo "Checking $table table for $sentry..."
+                pretty_print "Checking $table table for $sentry..." "none"
                 while true; do
                     data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
-                        echo "$table has $data_count entries from $sentry"
+                        pretty_print "$table has $data_count entries from $sentry" "green"
                         break
                     else
-                        echo "$table has $data_count rows from $sentry."
+                        pretty_print "$table has no entries from $sentry." "bright_red"
 
                         print_logs $sentry
 

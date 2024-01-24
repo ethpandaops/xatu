@@ -65,7 +65,7 @@ jobs:
 
     - name: Add all xatu-sentry containers to the xatu network
       run: |
-        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; done
+        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; done
     - name: Verify Clickhouse has data from all sentries
       timeout-minutes: 10
       run: |
@@ -100,7 +100,7 @@ jobs:
                     else
                         echo "$table table data count for $sentry is $data_count."
 
-                        print_logs xatu-sentry
+                        print_logs $sentry
 
                         sleep 5
                     fi

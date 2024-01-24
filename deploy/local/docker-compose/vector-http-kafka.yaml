@@ -2,6 +2,8 @@ api:
   enabled: true
   address: 0.0.0.0:8686
   playground: false
+acknowledgements:
+  enabled: true
 sources:
   xatu_server_events_http:
     address: 0.0.0.0:9005
@@ -63,13 +65,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_beacon_committee
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-beacon-committee
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -79,13 +81,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_head
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-head
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -95,13 +97,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_head_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-head-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -111,13 +113,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_blob_sidecar
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-blob-sidecar
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -127,13 +129,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_block
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-block
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -143,13 +145,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_block_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-block-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -159,13 +161,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_attestation
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-attestation
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -175,13 +177,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_attestation_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-attestation-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -191,13 +193,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_validator_attestation_data
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-validator-attestation-data
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -207,13 +209,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_voluntary_exit
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-voluntary-exit
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -223,13 +225,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_voluntary_exit_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-voluntary-exit-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -239,13 +241,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_finalized_checkpoint
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-finalized-checkpoint
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -255,13 +257,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_finalized_checkpoint_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-finalized-checkpoint-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -271,13 +273,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_chain_reorg
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-chain-reorg
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -287,13 +289,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_chain_reorg_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-chain-reorg-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -303,13 +305,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_contribution_and_proof
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-contribution-and-proof
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -319,13 +321,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_events_contribution_and_proof_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-contribution-and-proof-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -335,13 +337,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.mempool_transaction
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: mempool-transaction
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -351,13 +353,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.mempool_transaction_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: mempool-transaction-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -367,13 +369,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -385,13 +387,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -403,13 +405,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_debug_fork_choice
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-debug-fork-choice
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -421,13 +423,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_debug_fork_choice_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-debug-fork-choice-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -439,13 +441,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_debug_fork_choice_reorg
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-debug-fork-choice-reorg
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -457,13 +459,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_debug_fork_choice_reorg_v2
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-debug-fork-choice-reorg-v2
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -475,13 +477,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_proposer_slashing
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-proposer-slashing
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -491,13 +493,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_attester_slashing
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-attester-slashing
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -507,13 +509,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_bls_to_execution_change
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-bls-to-execution-change
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -523,13 +525,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_execution_transaction
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-execution-transaction
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -541,13 +543,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_voluntary_exit
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-voluntary-exit
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -557,13 +559,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_deposit
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-deposit
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -573,13 +575,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_withdrawal
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-withdrawal
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -589,13 +591,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.blockprint_block_classification
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: blockprint-block-classification
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -605,13 +607,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_beacon_blob_sidecar
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-beacon-blob-sidecar
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -623,13 +625,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.beacon_p2p_attestation
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-p2p-attestation
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -639,13 +641,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v1_proposer_duty
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-proposer-duty
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true
@@ -655,13 +657,13 @@ sinks:
     type: kafka
     buffer:
       max_events: 500000
+    batch:
+      timeout_secs: 0.5
     inputs:
       - xatu_server_events_router.eth_v2_beacon_block_elaborated_attestation
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-elaborated-attestation
-    acknowledgements:
-      enabled: false
     compression: snappy
     healthcheck:
       enabled: true

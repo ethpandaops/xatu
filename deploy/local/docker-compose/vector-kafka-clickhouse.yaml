@@ -2,13 +2,13 @@ api:
   enabled: true
   address: 0.0.0.0:8686
   playground: false
+acknowledgements:
+  enabled: true
 sources:
   internal_metrics:
     type: internal_metrics
   beacon_api_eth_v1_beacon_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-beacon
     key_field: "event.id"
@@ -21,8 +21,6 @@ sources:
       message.max.bytes: "10485760" # 10MB
   beacon_api_eth_v1_events_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-events
     key_field: "event.id"
@@ -35,8 +33,6 @@ sources:
       message.max.bytes: "10485760" # 10MB
   beacon_api_eth_v1_validator_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-validator
     key_field: "event.id"
@@ -49,8 +45,6 @@ sources:
       message.max.bytes: "10485760" # 10MB
   mempool_transaction_events_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-mempool-transaction-events
     key_field: "event.id"
@@ -61,8 +55,6 @@ sources:
       - "^mempool-transaction.+"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     auto_offset_reset: earliest
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v2-beacon-block-events
@@ -75,8 +67,6 @@ sources:
       message.max.bytes: "10485760" # 10MB
   blockprint_block_classification_events_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-blockprint-block-classification-events
     key_field: "event.id"
@@ -87,8 +77,6 @@ sources:
       - "blockprint-block-classification"
   beacon_api_eth_v1_beacon_blob_sidecar_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     auto_offset_reset: earliest
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-beacon-blob-sidecar-events
@@ -101,8 +89,6 @@ sources:
       message.max.bytes: "10485760" # 10MB
   beacon_p2p_events_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-beacon-p2p-events
     key_field: "event.id"
@@ -113,8 +99,6 @@ sources:
       - "^beacon-p2p.+"
   beacon_api_eth_v1_proposer_kafka:
     type: kafka
-    acknowledgements:
-      enabled: false
     bootstrap_servers: "${KAFKA_BROKERS}"
     group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-proposer
     key_field: "event.id"
@@ -1724,12 +1708,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_beacon_committee
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 1000000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 1000000
     healthcheck:
@@ -1746,12 +1728,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_events_head
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1768,12 +1748,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_events_blob_sidecar
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1790,12 +1768,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_events_block
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1812,12 +1788,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_events_attestation
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 1000000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 1000000
     healthcheck:
@@ -1834,12 +1808,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_validator_attestation_data
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1856,12 +1828,10 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: beacon_api_eth_v1_events_voluntary_exit
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1878,12 +1848,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1900,12 +1868,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1922,12 +1888,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1944,12 +1908,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1966,12 +1928,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -1988,12 +1948,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2010,12 +1968,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2032,12 +1988,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2054,12 +2008,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2076,12 +2028,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2098,12 +2048,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2120,12 +2068,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2142,12 +2088,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2164,12 +2108,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2186,12 +2128,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2208,12 +2148,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 1000000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 1000000
     healthcheck:
@@ -2230,12 +2168,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:
@@ -2252,12 +2188,10 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
-    acknowledgements:
-      enabled: false
     batch:
       max_bytes: 52428800
       max_events: 200000
-      timeout_secs: 5
+      timeout_secs: 1
     buffer:
       max_events: 200000
     healthcheck:

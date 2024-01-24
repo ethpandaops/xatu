@@ -9,11 +9,7 @@ concurrency:
 jobs:
   smoke-test:
     timeout-minutes: 20
-    runs-on:
-    - environment=production
-    - size=xxlarge
-    - provider=ethpandaops
-    - realm=platform
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2

@@ -24,6 +24,7 @@ jobs:
           participants:
             - el_client_type: geth
               cl_client_type: teku
+              cl_client_image: ethpandaops/teku:master-16c4354
             - el_client_type: nethermind
               cl_client_type: prysm
             - el_client_type: erigon
@@ -41,6 +42,14 @@ jobs:
           xatu_sentry_params:
             xatu_server_addr: xatu-server:8080
             xatu_sentry_image: ethpandaops/xatu:local
+            beacon_subscriptions:
+            - attestation
+            - block
+            - chain_reorg
+            - finalized_checkpoint
+            - head
+            - voluntary_exit
+            - contribution_and_proof
         <<EOF
 
     - name: Start Ethereum network with Kurtosis

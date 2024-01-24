@@ -65,7 +65,7 @@ jobs:
 
     - name: Add all xatu-sentry containers to the xatu network
       run: |
-        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; done
+        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done
     - name: Verify Clickhouse has data from all sentries
       timeout-minutes: 10
       run: |
@@ -78,6 +78,20 @@ jobs:
             "beacon_api_eth_v1_events_block"
             "beacon_api_eth_v1_events_head"
         )
+
+        # Check for any data in the tables before digging in to the individual sentries
+        for table in "${tables[@]}"; do
+            echo "Checking $table table..."
+            data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+            if [[ $data_count -gt 0 ]]; then
+                echo "$table table has $data_count entries"
+            else
+                echo "$table table has no entries."
+
+                print_logs xatu-server
+                print_logs vector
+            fi
+        done
 
         # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
         print_logs() {
@@ -95,7 +109,7 @@ jobs:
                 while true; do
                     data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
-                        echo "$table table has data from $sentry."
+                        echo "$table table has $data_count entries in $table from $sentry"
                         break
                     else
                         echo "$table table data count for $sentry is $data_count."

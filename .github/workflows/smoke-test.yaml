@@ -71,7 +71,7 @@ jobs:
       run: |
         echo "Checking Clickhouse for data from all sentries"
 
-        all_sentries=($(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator))
+        all_sentries=($(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator | sed 's/^cl-//'))
 
         tables=(
             "beacon_api_eth_v1_events_attestation"

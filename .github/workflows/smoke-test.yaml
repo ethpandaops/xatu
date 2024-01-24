@@ -3,8 +3,12 @@ name: Smoke Test
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke-test:
+    timeout-minutes: 20
     runs-on:
     - environment=production
     - size=xxlarge

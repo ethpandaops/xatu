@@ -52,24 +52,37 @@ jobs:
             - contribution_and_proof
         <<EOF
 
-    - name: Start Ethereum network with Kurtosis
-      timeout-minutes: 10
+    - name: Start Ethereum network with Kurtosis and Run Xatu stack in parallel
+      timeout-minutes: 20
       shell: bash
       run: |
         echo "Starting Kurtosis..."
+        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml & 
+        KURTOSIS_PID=$!
 
-        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml;
-        
-        echo "Kurtosis has started successfully."
-    - name: Run Xatu stack
-      timeout-minutes: 10
-      shell: bash
-      run: |
         echo "Starting Xatu stack..."
+        docker compose up --detach --quiet-pull &
+        XATU_STACK_PID=$!
 
-        docker compose up --detach --quiet-pull
+        echo "Waiting for Kurtosis to start..."
+        wait $KURTOSIS_PID
+        KURTOSIS_EXIT_CODE=$?
 
-        echo "Xatu stack has started successfully."
+        if [ $KURTOSIS_EXIT_CODE -ne 0 ]; then
+          echo "Kurtosis failed to start."
+          exit $KURTOSIS_EXIT_CODE
+        fi
+
+        echo "Waiting for Xatu stack to start..."
+        wait $XATU_STACK_PID
+        XATU_STACK_EXIT_CODE=$?
+
+        if [ $XATU_STACK_EXIT_CODE -ne 0 ]; then
+          echo "Xatu stack failed to start."
+          exit $XATU_STACK_EXIT_CODE
+        fi
+
+        echo "Kurtosis and Xatu stack have started successfully."
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done

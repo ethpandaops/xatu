@@ -70,8 +70,6 @@ jobs:
         docker compose up --detach --quiet-pull
 
         echo "Xatu stack has started successfully."
-
-
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done
@@ -118,10 +116,10 @@ jobs:
                 while true; do
                     data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
-                        echo "$table table has $data_count entries in $table from $sentry"
+                        echo "$table has $data_count entries from $sentry"
                         break
                     else
-                        echo "$table table data count for $sentry is $data_count."
+                        echo "$table has $data_count rows from $sentry."
 
                         print_logs $sentry
 

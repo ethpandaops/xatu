@@ -79,6 +79,15 @@ jobs:
             "beacon_api_eth_v1_events_head"
         )
 
+        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
+        print_logs() {
+            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
+                echo "Logs for $container:\n\n"
+                docker logs --tail 5 $container
+                echo "\n\n"
+            done
+        }
+
         for table in "${tables[@]}"; do
             echo "Checking $table table..."
             for sentry in "${all_sentries[@]}"; do
@@ -89,14 +98,27 @@ jobs:
                         echo "$table table has data from $sentry."
                         break
                     else
-                        echo "$table table data count for $sentry is $data_count. Checking again in 2 seconds..."
+                        echo "$table table data count for $sentry is $data_count."
 
-                        sleep 2
+                        print_logs xatu-sentry
+
+                        sleep 5
                     fi
                 done
             done
         done
 
-    # - name: Dump docker logs on failure
-    #   if: always()
-    #   uses: jwalton/gh-docker-logs@v2
+    - name: Collect docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v2
+      with:
+        dest: './logs'
+    - name: Tar logs
+      if: failure()
+      run: tar cvzf ./logs.tgz ./logs
+    - name: Upload logs to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: logs.tgz
+        path: ./logs.tgz

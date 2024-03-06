@@ -111,6 +111,9 @@ services:
   xatu-server:
     image: ethpandaops/xatu:latest
     command: server --config /etc/xatu-server/config.yaml
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
       - "9096:9090"

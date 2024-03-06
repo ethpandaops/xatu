@@ -128,9 +128,11 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		// setup client implementation and version info
 		split := strings.SplitN(hello.Name, "/", 2)
 		p.implmentation = strings.ToLower(split[0])
+
 		if len(split) > 1 {
 			p.version = split[1]
 		}
+
 		p.name = hello.Name
 		p.capabilities = &hello.Caps
 		p.protocolVersion = hello.Version
@@ -175,20 +177,29 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			}
 		}
 
-		// setup signer and chain config for working out transaction "from" addresses
-		networkID := status.NetworkID
-		p.chainConfig = params.AllEthashProtocolChanges
-		chainID := new(big.Int).SetUint64(networkID)
-		p.chainConfig.ChainID = chainID
-		p.chainConfig.EIP155Block = big.NewInt(0)
-		p.signer = types.MakeSigner(p.chainConfig, big.NewInt(0), 0)
-
 		// setup peer network/fork info
 		p.network = networks.DeriveFromID(status.NetworkID)
 		p.forkID = &xatu.ForkID{
 			Hash: "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
 			Next: fmt.Sprintf("%d", status.ForkID.Next),
 		}
+
+		// setup signer
+		switch p.network.Name {
+		case networks.NetworkNameMainnet:
+			p.chainConfig = params.MainnetChainConfig
+		case networks.NetworkNameGoerli:
+			p.chainConfig = params.GoerliChainConfig
+		case networks.NetworkNameHolesky:
+			p.chainConfig = params.HoleskyChainConfig
+		case networks.NetworkNameSepolia:
+			p.chainConfig = params.SepoliaChainConfig
+		default:
+			p.chainConfig = params.MainnetChainConfig
+		}
+
+		chainID := new(big.Int).SetUint64(p.network.ID)
+		p.signer = types.NewCancunSigner(chainID)
 
 		p.log.WithFields(logrus.Fields{
 			"network":      p.network.Name,
@@ -203,31 +214,13 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnNewPooledTransactionHashes66(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes66) error {
+	p.client.OnNewPooledTransactionHashes(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes) error {
 		if !p.shouldGetTransactions() {
 			return nil
 		}
 
-		now := time.Now()
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
-			for _, hash := range *hashes {
-				if errT := p.processTransaction(ctx, now, hash); errT != nil {
-					p.log.WithError(errT).Error("failed processing event")
-				}
-			}
-		}
-
-		return nil
-	})
-
-	p.client.OnNewPooledTransactionHashes68(ctx, func(ctx context.Context, hashes *mimicry.NewPooledTransactionHashes68) error {
-		if !p.shouldGetTransactions() {
-			return nil
-		}
-
-		now := time.Now()
-		if p.handlers.DecoratedEvent != nil && hashes != nil {
-			// TODO: handle eth68+ transaction size/types as well
+			now := time.Now()
 			for _, hash := range hashes.Hashes {
 				if errT := p.processTransaction(ctx, now, hash); errT != nil {
 					p.log.WithError(errT).Error("failed processing event")
@@ -245,6 +238,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
+
 			for _, tx := range *txs {
 				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
@@ -253,6 +247,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 					if errT != nil {
 						p.log.WithError(errT).Error("failed handling transaction")
 					}
+
 					if event != nil {
 						if errT := p.handlers.DecoratedEvent(ctx, event); errT != nil {
 							p.log.WithError(errT).Error("failed handling decorated event")

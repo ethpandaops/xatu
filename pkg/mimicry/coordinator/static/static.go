@@ -71,6 +71,7 @@ func (s *Static) Start(ctx context.Context) error {
 						s.peersMux.Lock()
 						(*peers)[record] = false
 						s.peersMux.Unlock()
+
 						if peer != nil {
 							if err = peer.Stop(ctx); err != nil {
 								s.log.WithError(err).Warn("failed to stop peer")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	//nolint:blank-imports // Required for postgres driver
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )

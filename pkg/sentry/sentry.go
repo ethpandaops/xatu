@@ -180,7 +180,9 @@ func (s *Sentry) Start(ctx context.Context) error {
 			go func() {
 				// some clients require a small delay before being able to fetch the block
 				time.Sleep(1 * time.Second)
+
 				blockRoot := xatuethv1.RootAsString(block.Block)
+
 				beaconBlock, err := s.beacon.Node().FetchBlock(ctx, blockRoot)
 				if err != nil {
 					s.log.WithError(err).Error("Failed to fetch block")

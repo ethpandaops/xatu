@@ -73,10 +73,12 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 
 	extra := &xatu.ClientMeta_AdditionalMempoolTransactionV2Data{
 		Nonce:        wrapperspb.UInt64(event.Nonce()),
-		GasPrice:     event.GasPrice().String(),
 		From:         from.String(),
 		To:           to,
 		Gas:          wrapperspb.UInt64(event.Gas()),
+		GasPrice:     event.GasPrice().String(),
+		GasTipCap:    event.GasTipCap().String(),
+		GasFeeCap:    event.GasFeeCap().String(),
 		Value:        event.Value().String(),
 		Hash:         event.Hash().String(),
 		Size:         strconv.FormatFloat(float64(event.Size()), 'f', 0, 64),
@@ -84,7 +86,55 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		Type:         wrapperspb.UInt32(uint32(event.Type())),
 	}
 
+	if event.Type() == 3 {
+		blobHashes := make([]string, len(event.BlobHashes()))
+
+		for i := 0; i < len(event.BlobHashes()); i++ {
+			hash := event.BlobHashes()[i]
+			blobHashes[i] = hash.String()
+		}
+
+		extra.BlobGas = wrapperspb.UInt64(event.BlobGas())
+		extra.BlobGasFeeCap = event.BlobGasFeeCap().String()
+		extra.BlobHashes = blobHashes
+		sidecarsEmptySize := 0
+		sidecarsSize := 0
+
+		for i := 0; i < len(event.BlobTxSidecar().Blobs); i++ {
+			sidecar := event.BlobTxSidecar().Blobs[i][:]
+			sidecarsSize += len(sidecar)
+			sidecarsEmptySize += countConsecutiveEmptyBytes(sidecar, 4)
+		}
+
+		extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
+		extra.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
+	}
+
 	return extra, nil
+}
+
+func countConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
+	count := 0
+	consecutiveZeros := 0
+
+	for _, b := range byteArray {
+		if b == 0 {
+			consecutiveZeros++
+		} else {
+			if consecutiveZeros > threshold {
+				count += consecutiveZeros
+			}
+
+			consecutiveZeros = 0
+		}
+	}
+
+	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
+	if consecutiveZeros > threshold {
+		count += consecutiveZeros
+	}
+
+	return count
 }
 
 type TransactionHashItem struct {
@@ -134,7 +184,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 		}
 
 		if txs != nil {
-			for _, tx := range txs.PooledTransactionsPacket {
+			for _, tx := range txs.PooledTransactionsResponse {
 				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
 				if !retrieved {

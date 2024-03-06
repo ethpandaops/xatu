@@ -130,8 +130,10 @@ message ExecutionPayloadDeneb {
   string block_hash = 13 [ json_name = "block_hash" ];
   repeated string transactions = 14;
   repeated WithdrawalV2 withdrawals = 15;
-  google.protobuf.UInt64Value blob_gas_used = 16 [ json_name = "blob_gas_used" ];
-  google.protobuf.UInt64Value excess_blob_gas = 17 [ json_name = "excess_blob_gas" ];
+  google.protobuf.UInt64Value blob_gas_used = 16
+      [ json_name = "blob_gas_used" ];
+  google.protobuf.UInt64Value excess_blob_gas = 17
+      [ json_name = "excess_blob_gas" ];
 }
 
 message Withdrawal {
@@ -202,4 +204,12 @@ message Transaction {
   google.protobuf.UInt64Value nonce = 8;
   string value = 9;
   google.protobuf.UInt32Value type = 10;
+  string gas_tip_cap = 11 [ json_name = "gas_tip_cap" ];
+  string gas_fee_cap = 12 [ json_name = "gas_fee_cap" ];
+  google.protobuf.UInt64Value blob_gas = 13 [ json_name = "blob_gas" ];
+  string blob_gas_fee_cap = 14 [ json_name = "blob_gas_fee_cap" ];
+  repeated string blob_hashes = 15 [ json_name = "blob_hashes" ];
+  string blob_sidecars_size = 16 [ json_name = "blob_sidecars_size" ];
+  string blob_sidecars_empty_size = 17
+      [ json_name = "blob_sidecars_empty_size" ];
 }

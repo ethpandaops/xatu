@@ -265,16 +265,42 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		}
 
 		tx := &xatuethv1.Transaction{
-			Nonce:    wrapperspb.UInt64(transaction.Nonce()),
-			GasPrice: gasPrice.String(),
-			Gas:      wrapperspb.UInt64(transaction.Gas()),
-			To:       to,
-			From:     from.Hex(),
-			Value:    value.String(),
-			Input:    hex.EncodeToString(transaction.Data()),
-			Hash:     transaction.Hash().Hex(),
-			ChainId:  chainID.String(),
-			Type:     wrapperspb.UInt32(uint32(transaction.Type())),
+			Nonce:     wrapperspb.UInt64(transaction.Nonce()),
+			Gas:       wrapperspb.UInt64(transaction.Gas()),
+			GasPrice:  transaction.GasPrice().String(),
+			GasTipCap: transaction.GasTipCap().String(),
+			GasFeeCap: transaction.GasFeeCap().String(),
+			To:        to,
+			From:      from.Hex(),
+			Value:     value.String(),
+			Input:     hex.EncodeToString(transaction.Data()),
+			Hash:      transaction.Hash().Hex(),
+			ChainId:   chainID.String(),
+			Type:      wrapperspb.UInt32(uint32(transaction.Type())),
+		}
+
+		if transaction.Type() == 3 {
+			blobHashes := make([]string, len(transaction.BlobHashes()))
+
+			for i := 0; i < len(transaction.BlobHashes()); i++ {
+				hash := transaction.BlobHashes()[i]
+				blobHashes[i] = hash.String()
+			}
+
+			tx.BlobGas = wrapperspb.UInt64(transaction.BlobGas())
+			tx.BlobGasFeeCap = transaction.BlobGasFeeCap().String()
+			tx.BlobHashes = blobHashes
+			sidecarsEmptySize := 0
+			sidecarsSize := 0
+
+			for i := 0; i < len(transaction.BlobTxSidecar().Blobs); i++ {
+				sidecar := transaction.BlobTxSidecar().Blobs[i][:]
+				sidecarsSize += len(sidecar)
+				sidecarsEmptySize += countConsecutiveEmptyBytes(sidecar, 4)
+			}
+
+			tx.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
+			tx.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
 		}
 
 		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction)
@@ -288,6 +314,30 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	return events, nil
+}
+
+func countConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
+	count := 0
+	consecutiveZeros := 0
+
+	for _, b := range byteArray {
+		if b == 0 {
+			consecutiveZeros++
+		} else {
+			if consecutiveZeros > threshold {
+				count += consecutiveZeros
+			}
+
+			consecutiveZeros = 0
+		}
+	}
+
+	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
+	if consecutiveZeros > threshold {
+		count += consecutiveZeros
+	}
+
+	return count
 }
 
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*types.Transaction, error) {

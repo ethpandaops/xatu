@@ -51,6 +51,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.hello != nil {
 			s.Name = p.hello.Name
 			s.ProtocolVersion = p.hello.Version
+
 			if p.hello.Caps != nil {
 				for _, cap := range p.hello.Caps {
 					s.Capabilities = append(s.Capabilities, &xatu.ExecutionNodeStatus_Capability{

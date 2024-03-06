@@ -33,6 +33,7 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 			// We need to store it since fetchDebugForkChoice() will update the latest fork choice
 			// after it fetches the new one.
 			var latestForkChoice v1.ForkChoice
+
 			validLatestForkChoice := false
 
 			if s.latestForkChoice != nil {

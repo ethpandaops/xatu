@@ -24,7 +24,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
-	//nolint:blank-imports // Required for grpc.WithCompression
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 )
@@ -150,6 +149,7 @@ func (x *Xatu) Start(ctx context.Context) error {
 	})
 	g.Go(func() error {
 		<-gCtx.Done()
+
 		if err := x.stop(ctx); err != nil {
 			return err
 		}

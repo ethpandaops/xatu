@@ -156,9 +156,11 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 		t.Run(option.name, func(t *testing.T) {
 			te := testBatchExporter[TestItem]{}
 			ssp, err := createAndRegisterBatchSP(option.o, &te)
+
 			if err != nil {
 				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
 			}
+
 			if ssp == nil {
 				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
 			}
@@ -167,6 +169,7 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 				if option.writeNumItems > 0 && i%option.writeNumItems == 0 {
 					time.Sleep(10 * time.Millisecond)
 				}
+
 				if err := ssp.Write(context.Background(), []*TestItem{{
 					name: "test",
 				}}); err != nil {

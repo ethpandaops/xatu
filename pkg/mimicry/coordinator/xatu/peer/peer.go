@@ -68,6 +68,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 				defer func() {
 					p.Record.Connected = false
+
 					if peer != nil {
 						if err = peer.Stop(ctx); err != nil {
 							p.log.WithError(err).Warn("failed to stop peer")

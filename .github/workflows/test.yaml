@@ -10,9 +10,9 @@ jobs:
   full_ci:
     strategy:
       matrix:
-        go_version: [ 1.20.x ]
+        go_version: [ 1.22.x ]
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: checkout

@@ -13,6 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 )
 
 func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event *types.Transaction) (*xatu.DecoratedEvent, error) {
@@ -103,7 +105,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		for i := 0; i < len(event.BlobTxSidecar().Blobs); i++ {
 			sidecar := event.BlobTxSidecar().Blobs[i][:]
 			sidecarsSize += len(sidecar)
-			sidecarsEmptySize += countConsecutiveEmptyBytes(sidecar, 4)
+			sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
 		}
 
 		extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
@@ -111,30 +113,6 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 	}
 
 	return extra, nil
-}
-
-func countConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
-	count := 0
-	consecutiveZeros := 0
-
-	for _, b := range byteArray {
-		if b == 0 {
-			consecutiveZeros++
-		} else {
-			if consecutiveZeros > threshold {
-				count += consecutiveZeros
-			}
-
-			consecutiveZeros = 0
-		}
-	}
-
-	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
-	if consecutiveZeros > threshold {
-		count += consecutiveZeros
-	}
-
-	return count
 }
 
 type TransactionHashItem struct {

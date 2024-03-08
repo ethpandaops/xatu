@@ -278,6 +278,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 func (b *BeaconBlobDeriver) getAdditionalData(_ context.Context, blob *deneb.BlobSidecar) (*xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData{
 		DataSize:      &wrapperspb.UInt64Value{Value: uint64(len(blob.Blob))},
+		DataEmptySize: &wrapperspb.UInt64Value{Value: uint64(ethereum.CountConsecutiveEmptyBytes(blob.Blob[:], 4))},
 		VersionedHash: ethereum.ConvertKzgCommitmentToVersionedHash(blob.KZGCommitment[:]).String(),
 	}
 

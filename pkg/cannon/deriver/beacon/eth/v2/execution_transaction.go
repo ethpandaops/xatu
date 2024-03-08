@@ -247,6 +247,8 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			default:
 				return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
 			}
+		} else {
+			return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
 		}
 	}
 
@@ -318,11 +320,10 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 				sidecar := blobSidecarsMap[hash.String()]
 
 				if sidecar != nil {
-					sidecarSize := len(sidecar.Blob)
-					sidecarsSize += sidecarSize
-					sidecarsEmptySize += countConsecutiveEmptyBytes(sidecar.Blob[:], 4)
+					sidecarsSize += len(sidecar.Blob)
+					sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar.Blob[:], 4)
 				} else {
-					b.log.WithField("versioned hash", hash.String()).WithField("transaction hash", transaction.Hash().Hex()).Warn("Missing blob sidecar")
+					b.log.WithField("versioned hash", hash.String()).WithField("transaction", transaction.Hash().Hex()).Warn("missing blob sidecar")
 				}
 			}
 
@@ -347,30 +348,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	return events, nil
-}
-
-func countConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
-	count := 0
-	consecutiveZeros := 0
-
-	for _, b := range byteArray {
-		if b == 0 {
-			consecutiveZeros++
-		} else {
-			if consecutiveZeros > threshold {
-				count += consecutiveZeros
-			}
-
-			consecutiveZeros = 0
-		}
-	}
-
-	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
-	if consecutiveZeros > threshold {
-		count += consecutiveZeros
-	}
-
-	return count
 }
 
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*types.Transaction, error) {

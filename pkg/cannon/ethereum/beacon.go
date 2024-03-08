@@ -91,8 +91,8 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
 		blockPreloadSem:  blockSem,
 		blobSidecarsCache: ttlcache.New(
-			ttlcache.WithTTL[string, []*deneb.BlobSidecar](config.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, []*deneb.BlobSidecar](config.BlockCacheSize),
+			ttlcache.WithTTL[string, []*deneb.BlobSidecar](config.BlobSidecarsCacheTTL.Duration),
+			ttlcache.WithCapacity[string, []*deneb.BlobSidecar](config.BlobSidecarsCacheSize),
 		),
 		blobSidecarsPreloadChan: make(chan string, config.BlobSidecarsPreloadQueueSize),
 		blobSidecarsPreloadSem:  blobSidecarsSem,

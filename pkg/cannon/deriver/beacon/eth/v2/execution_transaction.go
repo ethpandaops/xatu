@@ -333,8 +333,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 
 			tx.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
 			tx.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
-		} else {
-			continue
 		}
 
 		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction)

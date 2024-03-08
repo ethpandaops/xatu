@@ -61,3 +61,11 @@ COMMENT COLUMN blob_gas_fee_cap 'The max fee the user has set for the transactio
 COMMENT COLUMN blob_hashes 'The hashes of the blob commitments for blob transactions',
 COMMENT COLUMN blob_sidecars_size 'The total size of the sidecars for blob transactions in bytes',
 COMMENT COLUMN blob_sidecars_empty_size 'The total empty size of the sidecars for blob transactions in bytes';
+
+ALTER TABLE canonical_beacon_blob_sidecar_local on cluster '{cluster}'
+ADD COLUMN blob_empty_size Nullable(UInt32) Codec(ZSTD(1)) AFTER blob_size,
+COMMENT COLUMN blob_empty_size 'The total empty size of the blob in bytes';
+
+ALTER TABLE canonical_beacon_blob_sidecar on cluster '{cluster}'
+ADD COLUMN blob_empty_size Nullable(UInt32) Codec(ZSTD(1)) AFTER blob_size,
+COMMENT COLUMN blob_empty_size 'The total empty size of the blob in bytes';

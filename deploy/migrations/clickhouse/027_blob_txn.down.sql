@@ -33,3 +33,9 @@ ALTER TABLE canonical_beacon_block_execution_transaction on cluster '{cluster}'
     DROP COLUMN blob_hashes,
     DROP COLUMN blob_sidecars_size,
     DROP COLUMN blob_sidecars_empty_size;
+
+ALTER TABLE canonical_beacon_blob_sidecar_local on cluster '{cluster}'
+    DROP COLUMN blob_empty_size;
+
+ALTER TABLE canonical_beacon_blob_sidecar on cluster '{cluster}'
+    DROP COLUMN blob_empty_size;

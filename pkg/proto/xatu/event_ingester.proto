@@ -680,11 +680,15 @@ message ClientMeta {
     // Slot contains the slot information for the blob sidecar.
     SlotV2 slot = 2;
 
-    // DataSizeKB contains the size of the blob sidecar in bytes.
+    // DataSize contains the size of the blob sidecar in bytes.
     google.protobuf.UInt64Value data_size = 3 [ json_name = "data_size" ];
 
     // VersionedHash is the versioned hash for the blob sidecar.
     string versioned_hash = 4 [ json_name = "versioned_hash" ];
+
+    // DataEmptySize contains the amount of empty bytes of the blob sidecar.
+    google.protobuf.UInt64Value data_empty_size = 5
+        [ json_name = "data_empty_size" ];
   }
 
   message AdditionalBeaconP2PAttestationData {

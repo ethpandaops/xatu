@@ -296,7 +296,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			for i := 0; i < len(transaction.BlobTxSidecar().Blobs); i++ {
 				sidecar := transaction.BlobTxSidecar().Blobs[i][:]
 				sidecarsSize += len(sidecar)
-				sidecarsEmptySize += countConsecutiveEmptyBytes(sidecar, 4)
+				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
 			}
 
 			tx.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
@@ -314,30 +314,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	return events, nil
-}
-
-func countConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
-	count := 0
-	consecutiveZeros := 0
-
-	for _, b := range byteArray {
-		if b == 0 {
-			consecutiveZeros++
-		} else {
-			if consecutiveZeros > threshold {
-				count += consecutiveZeros
-			}
-
-			consecutiveZeros = 0
-		}
-	}
-
-	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
-	if consecutiveZeros > threshold {
-		count += consecutiveZeros
-	}
-
-	return count
 }
 
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*types.Transaction, error) {

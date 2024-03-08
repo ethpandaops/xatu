@@ -10,6 +10,7 @@ type Config struct {
 	TLS          bool              `yaml:"tls" default:"false"`
 	NetworkIds   []uint64          `yaml:"networkIds"`
 	ForkIDHashes []string          `yaml:"forkIdHashes"`
+	Capabilities []string          `yaml:"capabilities"`
 	MaxPeers     uint32            `yaml:"maxPeers" default:"100"`
 }
 

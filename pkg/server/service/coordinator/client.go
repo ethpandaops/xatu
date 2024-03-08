@@ -252,7 +252,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	limit -= uint32(len(targetedNodes))
 
 	if limit > 0 {
-		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, int(limit))
+		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, req.Capabilities, int(limit))
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}

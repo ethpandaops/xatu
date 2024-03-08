@@ -36,6 +36,7 @@ coordinator:
   #     authorization: Someb64Value
   #   networkIds: [1]
   #   forkIdHashes: [0xf0afd0e3]
+  #   capabilities: [eth/68]
   #   maxPeers: 100
 
 outputs:

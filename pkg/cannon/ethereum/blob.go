@@ -16,3 +16,27 @@ func ConvertKzgCommitmentToVersionedHash(commitment []byte) common.Hash {
 
 	return versionedHash
 }
+
+func CountConsecutiveEmptyBytes(byteArray []byte, threshold int) int {
+	count := 0
+	consecutiveZeros := 0
+
+	for _, b := range byteArray {
+		if b == 0 {
+			consecutiveZeros++
+		} else {
+			if consecutiveZeros > threshold {
+				count += consecutiveZeros
+			}
+
+			consecutiveZeros = 0
+		}
+	}
+
+	// Check if the last sequence in the array is longer than the threshold and hasn't been counted yet
+	if consecutiveZeros > threshold {
+		count += consecutiveZeros
+	}
+
+	return count
+}

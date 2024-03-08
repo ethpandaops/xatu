@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
@@ -33,13 +32,10 @@ type BeaconNode struct {
 
 	onReadyCallbacks []func(ctx context.Context) error
 
-	sfGroup                 *singleflight.Group
-	blockCache              *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
-	blockPreloadChan        chan string
-	blockPreloadSem         chan struct{}
-	blobSidecarsCache       *ttlcache.Cache[string, []*deneb.BlobSidecar]
-	blobSidecarsPreloadChan chan string
-	blobSidecarsPreloadSem  chan struct{}
+	sfGroup          *singleflight.Group
+	blockCache       *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
+	blockPreloadChan chan string
+	blockPreloadSem  chan struct{}
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -75,8 +71,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	}
 
 	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
-	blockSem := make(chan struct{}, config.BlockPreloadWorkers)
-	blobSidecarsSem := make(chan struct{}, config.BlobSidecarsPreloadWorkers)
+	sem := make(chan struct{}, config.BlockPreloadWorkers)
 
 	return &BeaconNode{
 		config:   config,
@@ -89,14 +84,8 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
 		),
 		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
-		blockPreloadSem:  blockSem,
-		blobSidecarsCache: ttlcache.New(
-			ttlcache.WithTTL[string, []*deneb.BlobSidecar](config.BlobSidecarsCacheTTL.Duration),
-			ttlcache.WithCapacity[string, []*deneb.BlobSidecar](config.BlobSidecarsCacheSize),
-		),
-		blobSidecarsPreloadChan: make(chan string, config.BlobSidecarsPreloadQueueSize),
-		blobSidecarsPreloadSem:  blobSidecarsSem,
-		metrics:                 NewMetrics(namespace, name),
+		blockPreloadSem:  sem,
+		metrics:          NewMetrics(namespace, name),
 	}, nil
 }
 
@@ -317,76 +306,4 @@ func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
 	}
 
 	b.blockPreloadChan <- identifier
-}
-
-// GetBeaconBlobSidecars returns a block's blob sidecars.
-func (b *BeaconNode) GetBeaconBlobSidecars(ctx context.Context, identifier string, ignoreMetrics ...bool) ([]*deneb.BlobSidecar, error) {
-	ctx, span := observability.Tracer().Start(ctx, "ethereum.beacon.GetBeaconBlobSidecars", trace.WithAttributes(attribute.String("identifier", identifier)))
-
-	defer span.End()
-
-	b.metrics.IncBlobSidecarsFetched(string(b.Metadata().Network.Name))
-
-	// Check the cache first.
-	if item := b.blobSidecarsCache.Get(identifier); item != nil {
-		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-			b.metrics.IncBlobSidecarsCacheHit(string(b.Metadata().Network.Name))
-		}
-
-		span.SetAttributes(attribute.Bool("cached", true))
-
-		return item.Value(), nil
-	}
-
-	span.SetAttributes(attribute.Bool("cached", false))
-
-	if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-		b.metrics.IncBlobSidecarsCacheMiss(string(b.Metadata().Network.Name))
-	}
-
-	// Use singleflight to ensure we only make one request for a block at a time.
-	x, err, shared := b.sfGroup.Do(identifier, func() (interface{}, error) {
-		span.AddEvent("Acquiring semaphore...")
-
-		// Acquire a semaphore before proceeding.
-		b.blobSidecarsPreloadSem <- struct{}{}
-		defer func() { <-b.blobSidecarsPreloadSem }()
-
-		span.AddEvent("Semaphore acquired. Fetching blob sidecars from beacon api...")
-
-		// Not in the cache, so fetch it.
-		blobSidecars, err := b.beacon.FetchBeaconBlockBlobs(ctx, identifier)
-		if err != nil {
-			return nil, err
-		}
-
-		span.AddEvent("BlobSidecar fetched from beacon node.")
-
-		// Add it to the cache.
-		b.blobSidecarsCache.Set(identifier, blobSidecars, time.Hour)
-
-		return blobSidecars, nil
-	})
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-
-		if len(ignoreMetrics) != 0 && ignoreMetrics[0] {
-			b.metrics.IncBlobSidecarsFetchErrors(string(b.Metadata().Network.Name))
-		}
-
-		return nil, err
-	}
-
-	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
-
-	return x.([]*deneb.BlobSidecar), nil
-}
-
-func (b *BeaconNode) LazyLoadBeaconBlobSidecars(identifier string) {
-	// Don't add the blob sidecars to the preload queue if it's already in the cache.
-	if item := b.blobSidecarsCache.Get(identifier); item != nil {
-		return
-	}
-
-	b.blobSidecarsPreloadChan <- identifier
 }

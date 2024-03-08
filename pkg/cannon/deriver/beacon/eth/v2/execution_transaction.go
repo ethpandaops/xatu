@@ -206,9 +206,6 @@ func (b *ExecutionTransactionDeriver) lookAheadAtLocation(ctx context.Context, l
 
 			// Add the block to the preload queue so it's available when we need it
 			b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
-
-			// Add the blob sidecars to the preload queue so it's available when we need it
-			b.beacon.LazyLoadBeaconBlobSidecars(xatuethv1.SlotAsString(slot))
 		}
 	}
 }
@@ -235,7 +232,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
 	}
 
-	blobSidecars, err := b.beacon.GetBeaconBlobSidecars(ctx, xatuethv1.SlotAsString(slot))
+	blobSidecars, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) {

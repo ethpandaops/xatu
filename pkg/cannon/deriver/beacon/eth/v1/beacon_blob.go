@@ -119,19 +119,14 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 				span.AddEvent("Grabbing next location")
 
 				// Get the next slot
-				location, lookAhead, err := b.iterator.Next(ctx)
+				location, _, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				span.AddEvent("Obtained next location, looking ahead...", trace.WithAttributes(attribute.Int64("location", int64(location.GetEthV1BeaconBlobSidecar().GetEpoch()))))
-
-				// Look ahead
-				b.lookAheadAtLocation(ctx, lookAhead)
-
-				span.AddEvent("Look ahead complete. Processing epoch...")
+				span.AddEvent("Obtained next location. Processing epoch...", trace.WithAttributes(attribute.Int64("location", int64(location.GetEthV1BeaconBlobSidecar().GetEpoch()))))
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch()))
@@ -179,37 +174,6 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 	}
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
-func (b *BeaconBlobDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
-	_, span := observability.Tracer().Start(ctx,
-		"BeaconBlobDeriver.lookAheadAtLocations",
-	)
-	defer span.End()
-
-	if locations == nil {
-		return
-	}
-
-	for _, location := range locations {
-		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch())
-
-		sp, err := b.beacon.Node().Spec()
-		if err != nil {
-			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
-
-			return
-		}
-
-		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
-			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
-
-			// Add the block sidecars to the preload queue so it's available when we need it
-			b.beacon.LazyLoadBeaconBlobSidecars(xatuethv1.SlotAsString(slot))
-		}
-	}
-}
-
 func (b *BeaconBlobDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BeaconBlobDeriver.processEpoch",
@@ -245,7 +209,7 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	)
 	defer span.End()
 
-	blobs, err := b.beacon.GetBeaconBlobSidecars(ctx, xatuethv1.SlotAsString(slot))
+	blobs, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) {

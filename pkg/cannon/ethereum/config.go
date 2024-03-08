@@ -22,14 +22,6 @@ type Config struct {
 	BlockPreloadWorkers uint64 `yaml:"blockPreloadWorkers" default:"5"`
 	// BlockPreloadQueueSize is the size of the queue for preloading blocks.
 	BlockPreloadQueueSize uint64 `yaml:"blockPreloadQueueSize" default:"5000"`
-	// BlobSidecarsCacheSize is the number of blob sidecars to cache.
-	BlobSidecarsCacheSize uint64 `yaml:"blobSidecarsCacheSize" default:"500"`
-	// BlobSidecarsCacheTTL is the time to live for blob sidecars in the cache.
-	BlobSidecarsCacheTTL human.Duration `yaml:"blobSidecarsCacheTtl" default:"10m"`
-	// BlobSidecarsPreloadWorkers is the number of workers to use for preloading blob sidecars.
-	BlobSidecarsPreloadWorkers uint64 `yaml:"blobSidecarsPreloadWorkers" default:"5"`
-	// BlobSidecarsPreloadQueueSize is the size of the queue for preloading blob sidecars.
-	BlobSidecarsPreloadQueueSize uint64 `yaml:"blobSidecarsPreloadQueueSize" default:"5000"`
 }
 
 func (c *Config) Validate() error {

@@ -108,19 +108,30 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 
 				time.Sleep(100 * time.Millisecond)
 
+				span.AddEvent("Checking if beacon node is synced")
+
 				if err := b.beacon.Synced(ctx); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
+				span.AddEvent("Grabbing next location")
+
 				// Get the next slot
-				location, _, err := b.iterator.Next(ctx)
+				location, lookAhead, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
+
+				span.AddEvent("Obtained next location, looking ahead...", trace.WithAttributes(attribute.Int64("location", int64(location.GetEthV1BeaconBlobSidecar().GetEpoch()))))
+
+				// Look ahead
+				b.lookAheadAtLocation(ctx, lookAhead)
+
+				span.AddEvent("Look ahead complete. Processing epoch...")
 
 				// Process the epoch
 				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch()))
@@ -132,6 +143,8 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 					return err
 				}
 
+				span.AddEvent("Epoch processing complete. Sending events...")
+
 				// Send the events
 				for _, fn := range b.onEventsCallbacks {
 					if err := fn(ctx, events); err != nil {
@@ -141,12 +154,16 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 					}
 				}
 
+				span.AddEvent("Events sent. Updating location...")
+
 				// Update our location
 				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
+
+				span.AddEvent("Location updated. Done.")
 
 				bo.Reset()
 
@@ -158,6 +175,37 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 			}); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
+		}
+	}
+}
+
+// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
+func (b *BeaconBlobDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+	_, span := observability.Tracer().Start(ctx,
+		"BeaconBlobDeriver.lookAheadAtLocations",
+	)
+	defer span.End()
+
+	if locations == nil {
+		return
+	}
+
+	for _, location := range locations {
+		// Get the next look ahead epoch
+		epoch := phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch())
+
+		sp, err := b.beacon.Node().Spec()
+		if err != nil {
+			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+
+			return
+		}
+
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
+			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+
+			// Add the block sidecars to the preload queue so it's available when we need it
+			b.beacon.LazyLoadBeaconBlobSidecars(xatuethv1.SlotAsString(slot))
 		}
 	}
 }
@@ -197,8 +245,7 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	)
 	defer span.End()
 
-	// Get the block
-	blobs, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+	blobs, err := b.beacon.GetBeaconBlobSidecars(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) {
@@ -210,7 +257,7 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 			}
 		}
 
-		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
+		return nil, errors.Wrapf(err, "failed to get beacon blob sidecars for slot %d", slot)
 	}
 
 	if blobs == nil {
@@ -222,7 +269,7 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	for _, blob := range blobs {
 		event, err := b.createEventFromBlob(ctx, blob)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create event from block for slot %d", slot)
+			return nil, errors.Wrapf(err, "failed to create event from blob sidecars for slot %d", slot)
 		}
 
 		events = append(events, event)

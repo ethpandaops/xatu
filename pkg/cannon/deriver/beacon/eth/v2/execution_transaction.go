@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/api"
 	"github.com/attestantio/go-eth2-client/spec"
+	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -204,6 +206,9 @@ func (b *ExecutionTransactionDeriver) lookAheadAtLocation(ctx context.Context, l
 
 			// Add the block to the preload queue so it's available when we need it
 			b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
+
+			// Add the blob sidecars to the preload queue so it's available when we need it
+			b.beacon.LazyLoadBeaconBlobSidecars(xatuethv1.SlotAsString(slot))
 		}
 	}
 }
@@ -228,6 +233,30 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
+	}
+
+	blobSidecars, err := b.beacon.GetBeaconBlobSidecars(ctx, xatuethv1.SlotAsString(slot))
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case 404:
+				b.log.WithError(err).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
+			case 503:
+				return nil, errors.New("beacon node is syncing")
+			default:
+				return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+			}
+		} else {
+			return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+		}
+	}
+
+	blobSidecarsMap := map[string]*deneb.BlobSidecar{}
+
+	for _, blobSidecar := range blobSidecars {
+		versionedHash := ethereum.ConvertKzgCommitmentToVersionedHash(blobSidecar.KZGCommitment[:])
+		blobSidecarsMap[versionedHash.String()] = blobSidecar
 	}
 
 	events := []*xatu.DecoratedEvent{}
@@ -282,22 +311,25 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		if transaction.Type() == 3 {
 			blobHashes := make([]string, len(transaction.BlobHashes()))
 
+			sidecarsEmptySize := 0
+			sidecarsSize := 0
+
 			for i := 0; i < len(transaction.BlobHashes()); i++ {
 				hash := transaction.BlobHashes()[i]
 				blobHashes[i] = hash.String()
+				sidecar := blobSidecarsMap[hash.String()]
+
+				if sidecar != nil {
+					sidecarsSize += len(sidecar.Blob)
+					sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar.Blob[:], 4)
+				} else {
+					b.log.WithField("versioned hash", hash.String()).WithField("transaction", transaction.Hash().Hex()).Warn("missing blob sidecar")
+				}
 			}
 
 			tx.BlobGas = wrapperspb.UInt64(transaction.BlobGas())
 			tx.BlobGasFeeCap = transaction.BlobGasFeeCap().String()
 			tx.BlobHashes = blobHashes
-			sidecarsEmptySize := 0
-			sidecarsSize := 0
-
-			for i := 0; i < len(transaction.BlobTxSidecar().Blobs); i++ {
-				sidecar := transaction.BlobTxSidecar().Blobs[i][:]
-				sidecarsSize += len(sidecar)
-				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
-			}
 
 			tx.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
 			tx.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)

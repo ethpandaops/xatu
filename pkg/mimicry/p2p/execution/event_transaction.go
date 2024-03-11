@@ -89,10 +89,11 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 	}
 
 	if event.Type() == 3 {
-		blobHashes := make([]string, len(event.BlobHashes()))
+		hashes := event.BlobHashes()
+		blobHashes := make([]string, len(hashes))
 
-		for i := 0; i < len(event.BlobHashes()); i++ {
-			hash := event.BlobHashes()[i]
+		for i := 0; i < len(hashes); i++ {
+			hash := hashes[i]
 			blobHashes[i] = hash.String()
 		}
 
@@ -102,10 +103,16 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		sidecarsEmptySize := 0
 		sidecarsSize := 0
 
-		for i := 0; i < len(event.BlobTxSidecar().Blobs); i++ {
-			sidecar := event.BlobTxSidecar().Blobs[i][:]
-			sidecarsSize += len(sidecar)
-			sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
+		sidecars := event.BlobTxSidecar()
+
+		if sidecars != nil {
+			for i := 0; i < len(sidecars.Blobs); i++ {
+				sidecars := sidecars.Blobs[i][:]
+				sidecarsSize += len(sidecars)
+				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecars, 4)
+			}
+		} else {
+			p.log.WithField("versioned hash", event.Hash().String()).WithField("transaction", event.Hash().String()).Warn("no sidecars found for a type 3 transaction")
 		}
 
 		extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)

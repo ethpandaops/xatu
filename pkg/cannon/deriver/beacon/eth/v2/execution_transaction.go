@@ -305,11 +305,15 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			Type:      wrapperspb.UInt32(uint32(transaction.Type())),
 		}
 
+		sidecarsEmptySize := 0
+		sidecarsSize := 0
+
 		if transaction.Type() == 3 {
 			blobHashes := make([]string, len(transaction.BlobHashes()))
 
-			sidecarsEmptySize := 0
-			sidecarsSize := 0
+			if len(transaction.BlobHashes()) == 0 {
+				b.log.WithField("transaction", transaction.Hash().Hex()).Warn("no versioned hashes for type 3 transaction")
+			}
 
 			for i := 0; i < len(transaction.BlobHashes()); i++ {
 				hash := transaction.BlobHashes()[i]
@@ -327,12 +331,9 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			tx.BlobGas = wrapperspb.UInt64(transaction.BlobGas())
 			tx.BlobGasFeeCap = transaction.BlobGasFeeCap().String()
 			tx.BlobHashes = blobHashes
-
-			tx.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
-			tx.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
 		}
 
-		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction)
+		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction, sidecarsSize, sidecarsEmptySize)
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")
 
@@ -365,7 +366,7 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Conte
 	return transactions, nil
 }
 
-func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction) (*xatu.DecoratedEvent, error) {
+func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction, sidecarsSize, sidecarsEmptySize int) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -388,10 +389,12 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 
 	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlockExecutionTransaction{
 		EthV2BeaconBlockExecutionTransaction: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{
-			Block:           blockIdentifier,
-			PositionInBlock: wrapperspb.UInt64(positionInBlock),
-			Size:            strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
-			CallDataSize:    fmt.Sprintf("%d", len(rlpTransaction.Data())),
+			Block:                 blockIdentifier,
+			PositionInBlock:       wrapperspb.UInt64(positionInBlock),
+			Size:                  strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
+			CallDataSize:          fmt.Sprintf("%d", len(rlpTransaction.Data())),
+			BlobSidecarsSize:      fmt.Sprint(sidecarsSize),
+			BlobSidecarsEmptySize: fmt.Sprint(sidecarsEmptySize),
 		},
 	}
 

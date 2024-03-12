@@ -209,7 +209,4 @@ message Transaction {
   google.protobuf.UInt64Value blob_gas = 13 [ json_name = "blob_gas" ];
   string blob_gas_fee_cap = 14 [ json_name = "blob_gas_fee_cap" ];
   repeated string blob_hashes = 15 [ json_name = "blob_hashes" ];
-  string blob_sidecars_size = 16 [ json_name = "blob_sidecars_size" ];
-  string blob_sidecars_empty_size = 17
-      [ json_name = "blob_sidecars_empty_size" ];
 }

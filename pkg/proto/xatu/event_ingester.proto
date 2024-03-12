@@ -611,6 +611,11 @@ message ClientMeta {
     string size = 3;
     // CallDataSize is the call data size in bytes.
     string call_data_size = 4 [ json_name = "call_data_size" ];
+    // BlobSidecarsSize is the size of the blob sidecars in bytes.
+    string blob_sidecars_size = 5 [ json_name = "blob_sidecars_size" ];
+    // BlobSidecarsEmptySize is the amount of empty bytes of the blob sidecars.
+    string blob_sidecars_empty_size = 6
+        [ json_name = "blob_sidecars_empty_size" ];
   }
 
   message AdditionalEthV2BeaconBlockWithdrawalData {

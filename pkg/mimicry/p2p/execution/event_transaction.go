@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/jellydator/ttlcache/v3"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -112,7 +113,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecars, 4)
 			}
 		} else {
-			p.log.WithField("versioned hash", event.Hash().String()).WithField("transaction", event.Hash().String()).Warn("no sidecars found for a type 3 transaction")
+			return nil, errors.Errorf("no sidecars found for a type 3 transaction %s", event.Hash().String())
 		}
 
 		extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)

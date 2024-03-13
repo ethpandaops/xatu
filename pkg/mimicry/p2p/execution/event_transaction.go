@@ -108,9 +108,9 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 
 		if sidecars != nil {
 			for i := 0; i < len(sidecars.Blobs); i++ {
-				sidecars := sidecars.Blobs[i][:]
-				sidecarsSize += len(sidecars)
-				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecars, 4)
+				sidecar := sidecars.Blobs[i][:]
+				sidecarsSize += len(sidecar)
+				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
 			}
 		} else {
 			return nil, errors.Errorf("no sidecars found for a type 3 transaction %s", event.Hash().String())

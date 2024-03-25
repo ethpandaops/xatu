@@ -1,21 +1,22 @@
 <clickhouse replace="true">
     <logger>
-        <level>information</level>
-        <log>/var/log/clickhouse-keeper/clickhouse-keeper.log</log>
-        <errorlog>/var/log/clickhouse-keeper/clickhouse-keeper.err.log</errorlog>
-        <size>1000M</size>
-        <count>3</count>
+        <level>debug</level>
+        <console>1</console>
     </logger>
     <listen_host>0.0.0.0</listen_host>
     <keeper_server>
-        <tcp_port>9181</tcp_port>
         <server_id>3</server_id>
+        <tcp_port>9181</tcp_port>
+        <path>/var/lib/clickhouse-keeper</path>
         <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
         <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+        <enable_reconfiguration>true</enable_reconfiguration>
+        <four_letter_word_allow_list>*</four_letter_word_allow_list>
+
         <coordination_settings>
             <operation_timeout_ms>10000</operation_timeout_ms>
             <session_timeout_ms>30000</session_timeout_ms>
-            <raft_logs_level>information</raft_logs_level>
+            <raft_logs_level>warning</raft_logs_level>
         </coordination_settings>
         <raft_configuration>
             <server>

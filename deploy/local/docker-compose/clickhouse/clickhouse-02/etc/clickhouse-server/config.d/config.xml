@@ -1,10 +1,7 @@
 <clickhouse replace="true">
     <logger>
-        <level>trace</level>
-        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
-        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
-        <size>1000M</size>
-        <count>3</count>
+        <level>debug</level>
+        <console>1</console>
     </logger>
     <display_name>cluster_2S_1R node 2</display_name>
     <listen_host>0.0.0.0</listen_host>

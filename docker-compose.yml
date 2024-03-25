@@ -58,7 +58,7 @@ services:
       retries: 15
       start_period: 15s
   clickhouse-keeper-01:
-    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-01
     hostname: clickhouse-keeper-01
@@ -75,7 +75,7 @@ services:
       retries: 3
       start_period: 5s
   clickhouse-keeper-02:
-    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-02
     hostname: clickhouse-keeper-02
@@ -92,7 +92,7 @@ services:
       retries: 3
       start_period: 5s
   clickhouse-keeper-03:
-    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-03
     hostname: clickhouse-keeper-03

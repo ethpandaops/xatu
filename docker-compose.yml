@@ -1,7 +1,10 @@
-version: '3.7'
+version: "3.7"
 
 services:
   clickhouse-01:
+    profiles:
+      - clickhouse
+      - ""
     image: "clickhouse/clickhouse-server:${CHVER:-latest}"
     container_name: clickhouse-01
     hostname: clickhouse-01
@@ -24,12 +27,19 @@ services:
       clickhouse-keeper-03:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-01:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "set -x; wget --spider --quiet http://clickhouse-01:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1",
+        ]
       interval: 5s
       timeout: 10s
       retries: 15
       start_period: 15s
   clickhouse-02:
+    profiles:
+      - clickhouse
+      - ""
     image: "clickhouse/clickhouse-server:${CHVER:-latest}"
     container_name: clickhouse-02
     hostname: clickhouse-02
@@ -52,12 +62,19 @@ services:
       clickhouse-keeper-03:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "set -x; wget --spider --quiet http://clickhouse-02:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "set -x; wget --spider --quiet http://clickhouse-02:9000 || exit 1; wget --spider --quiet --header 'Host: localhost' --post-data 'query=SELECT 1' http://localhost:8123 || exit 1",
+        ]
       interval: 5s
       timeout: 10s
       retries: 15
       start_period: 15s
   clickhouse-keeper-01:
+    profiles:
+      - clickhouse
+      - ""
     image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-01
@@ -65,9 +82,9 @@ services:
     networks:
       - xatu-net
     volumes:
-     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
-        - "127.0.0.1:9181:9181"
+      - "127.0.0.1:9181:9181"
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
       interval: 30s
@@ -75,6 +92,9 @@ services:
       retries: 3
       start_period: 5s
   clickhouse-keeper-02:
+    profiles:
+      - clickhouse
+      - ""
     image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-02
@@ -82,9 +102,9 @@ services:
     networks:
       - xatu-net
     volumes:
-     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
-        - "127.0.0.1:9182:9181"
+      - "127.0.0.1:9182:9181"
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
       interval: 30s
@@ -92,6 +112,9 @@ services:
       retries: 3
       start_period: 5s
   clickhouse-keeper-03:
+    profiles:
+      - clickhouse
+      - ""
     image: "clickhouse/clickhouse-keeper:23.12-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-03
@@ -99,9 +122,9 @@ services:
     networks:
       - xatu-net
     volumes:
-     - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
     ports:
-        - "127.0.0.1:9183:9181"
+      - "127.0.0.1:9183:9181"
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
       interval: 30s
@@ -109,6 +132,8 @@ services:
       retries: 3
       start_period: 5s
   xatu-server:
+    profiles:
+      - ""
     image: ethpandaops/xatu:latest
     command: server --config /etc/xatu-server/config.yaml
     build:
@@ -123,6 +148,8 @@ services:
       - xatu-net
 
   postgres:
+    profiles:
+      - ""
     image: postgres:15
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -140,6 +167,8 @@ services:
       - xatu-net
 
   grafana:
+    profiles:
+      - ""
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
@@ -156,6 +185,8 @@ services:
       - ./deploy/local/docker-compose/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./deploy/local/docker-compose/grafana/dashboards:/var/lib/grafana/dashboards
   prometheus:
+    profiles:
+      - ""
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
@@ -166,10 +197,12 @@ services:
       - ./deploy/local/docker-compose/prometheus.yaml:/etc/prometheus/prometheus.yml
 
   init-kafka:
+    profiles:
+      - ""
     image: confluentinc/cp-kafka:latest
     hostname: init-kafka
     container_name: init-kafka
-    entrypoint: 
+    entrypoint:
       - bash
       - -c
     command:
@@ -224,6 +257,8 @@ services:
       - xatu-net
 
   kafka:
+    profiles:
+      - ""
     image: confluentinc/cp-kafka:latest
     hostname: kafka
     container_name: kafka
@@ -236,14 +271,19 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_LOG4J_LOGGERS: 'kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR'
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR"
     ports:
       - "29092:29092"
       - "9092:9092"
     networks:
       - xatu-net
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=localhost:9092"]
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server=localhost:9092",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -252,10 +292,12 @@ services:
       zookeeper:
         condition: service_healthy
   zookeeper:
+    profiles:
+      - ""
     image: zookeeper
     container_name: zookeeper
     environment:
-      ZOO_LOG4J_PROP: 'ERROR,CONSOLE'
+      ZOO_LOG4J_PROP: "ERROR,CONSOLE"
     ports:
       - "2181:2181"
     networks:
@@ -268,6 +310,8 @@ services:
       start_period: 5s
 
   vector-http-kafka:
+    profiles:
+      - ""
     image: timberio/vector:0.34.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
@@ -288,6 +332,8 @@ services:
         condition: service_healthy
 
   vector-kafka-clickhouse:
+    profiles:
+      - ""
     image: timberio/vector:0.34.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
@@ -312,20 +358,39 @@ services:
       clickhouse-02:
         condition: service_healthy
   postgres-migrator:
+    profiles:
+      - ""
     image: migrate/migrate
     volumes:
       - ./migrations/postgres:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://user:password@postgres:5432/xatu?sslmode=disable", "up"]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://user:password@postgres:5432/xatu?sslmode=disable",
+        "up",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - xatu-net
   clickhouse-migrator:
+    profiles:
+      - clickhouse
+      - ""
     image: migrate/migrate
     volumes:
       - ./deploy/migrations/clickhouse:/migrations
-    command: ["-path", "/migrations", "-database", "clickhouse://clickhouse-01:9000?username=default&database=default&x-multi-statement=true", "up"]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "clickhouse://clickhouse-01:9000?username=default&database=default&x-multi-statement=true",
+        "up",
+      ]
     depends_on:
       clickhouse-01:
         condition: service_healthy

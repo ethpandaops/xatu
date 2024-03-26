@@ -14,7 +14,8 @@ require (
 	github.com/ethpandaops/beacon v0.35.0
 	github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c
 	github.com/ethpandaops/ethwallclock v0.3.0
-	github.com/go-co-op/gocron v1.27.1
+	github.com/go-co-op/gocron v1.16.2
+	github.com/go-co-op/gocron/v2 v2.2.5
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0

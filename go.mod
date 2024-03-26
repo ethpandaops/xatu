@@ -1,6 +1,6 @@
 module github.com/ethpandaops/xatu
 
-go 1.22.0
+go 1.22.1
 
 require (
 	github.com/IBM/sarama v1.43.0

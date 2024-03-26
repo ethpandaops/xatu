@@ -150,7 +150,7 @@ services:
   postgres:
     profiles:
       - ""
-    image: postgres:15
+    image: postgres:16
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:

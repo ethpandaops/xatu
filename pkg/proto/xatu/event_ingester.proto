@@ -735,6 +735,11 @@ message ClientMeta {
 
     // Slot contains the slot information for the proposer duty.
     SlotV2 slot = 2;
+
+    // StateID is the state ID when the proposer duty was requested.
+    // This can be used to determine if the proposer duty was canonical
+    // by checking if the state_id is 'finalized'.
+    string state_id = 3 [ json_name = "state_id" ];
   }
 
   message AdditionalEthV2BeaconBlockElaboratedAttestationData {

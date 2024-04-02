@@ -295,7 +295,9 @@ func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, d
 }
 
 func (b *ProposerDutyDeriver) getAdditionalData(_ context.Context, duty *apiv1.ProposerDuty) (*xatu.ClientMeta_AdditionalEthV1ProposerDutyData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{}
+	extra := &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{
+		StateId: xatuethv1.StateIDFinalized,
+	}
 
 	slot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(duty.Slot))
 	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(duty.Slot))

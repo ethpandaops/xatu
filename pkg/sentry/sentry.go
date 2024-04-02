@@ -114,6 +114,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.startProposerDutyWatcher(ctx); err != nil {
+		return err
+	}
+
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
 

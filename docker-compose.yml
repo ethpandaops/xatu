@@ -134,7 +134,6 @@ services:
   xatu-server:
     profiles:
       - ""
-    image: ethpandaops/xatu:latest
     command: server --config /etc/xatu-server/config.yaml
     build:
       context: .

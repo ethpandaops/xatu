@@ -269,7 +269,7 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	m.log.
 		WithField("epoch", epoch).
 		WithField("override_cache", overrideCache).
-		WithField("wallclock_epoch", wallclockEpoch).
+		WithField("wallclock_epoch", wallclockEpoch.Number()).
 		Debug("Fetching beacon committee")
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", epoch)

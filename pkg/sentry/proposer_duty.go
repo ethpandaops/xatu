@@ -13,6 +13,7 @@ func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
 	if !s.Config.ProposerDuty.Enabled {
 		return nil
 	}
+
 	// Subscribe to future proposer duty events.
 	s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
 		if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {

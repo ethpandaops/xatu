@@ -40,6 +40,9 @@ type Config struct {
 
 	// AttestationData configuration
 	AttestationData *AttestationDataConfig `yaml:"attestationData" default:"{'enabled': false}"`
+
+	// ProposerDuty configuration
+	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
 }
 
 func (c *Config) Validate() error {
@@ -153,4 +156,8 @@ func (f *AttestationDataConfig) Validate() error {
 
 type BeaconCommitteesConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
+}
+
+type ProposerDutyConfig struct {
+	Enabled bool `yaml:"enabled" default:"true"`
 }

@@ -21,9 +21,13 @@ type DutiesService struct {
 
 	beaconCommittees *ttlcache.Cache[phase0.Epoch, []*v1.BeaconCommittee]
 
-	onBeaconCommitteeSubscriptions []func(phase0.Epoch, []*v1.BeaconCommittee) error
+	proposerDuties *ttlcache.Cache[phase0.Epoch, []*v1.ProposerDuty]
 
-	mu sync.Mutex
+	onBeaconCommitteeSubscriptions []func(phase0.Epoch, []*v1.BeaconCommittee) error
+	onProposerDutiesSubscriptions  []func(phase0.Epoch, []*v1.ProposerDuty) error
+
+	committeeMu sync.Mutex
+	proposerMu  sync.Mutex
 
 	metadata *MetadataService
 
@@ -41,9 +45,14 @@ func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *Met
 		beaconCommittees: ttlcache.New(
 			ttlcache.WithTTL[phase0.Epoch, []*v1.BeaconCommittee](60 * time.Minute),
 		),
-		mu: sync.Mutex{},
+		proposerDuties: ttlcache.New(
+			ttlcache.WithTTL[phase0.Epoch, []*v1.ProposerDuty](60 * time.Minute),
+		),
+		committeeMu: sync.Mutex{},
+		proposerMu:  sync.Mutex{},
 
 		onBeaconCommitteeSubscriptions: []func(phase0.Epoch, []*v1.BeaconCommittee) error{},
+		onProposerDutiesSubscriptions:  []func(phase0.Epoch, []*v1.ProposerDuty) error{},
 		onReadyCallbacks:               []func(context.Context) error{},
 
 		metadata: metadata,
@@ -58,6 +67,12 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	go func() {
 		operation := func() error {
 			if err := m.fetchRequiredEpochDuties(ctx, false); err != nil {
+				return err
+			}
+
+			epoch := m.metadata.Wallclock().Epochs().Current()
+
+			if err := m.fetchProposerDuties(ctx, phase0.Epoch(epoch.Number())); err != nil {
 				return err
 			}
 
@@ -82,12 +97,12 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Fetch beacon committees
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
 		// Sleep for a bit to give the beacon node a chance to run its epoch transition.
 		// We don't really care about nice-to-have duties so the sleep here is fine.
 		// "Required" duties (aka the current epoch) will be refetched the moment that epoch
 		// starts.
-
 		time.Sleep(500 * time.Millisecond)
 
 		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
@@ -100,6 +115,17 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		m.fetchNiceToHaveEpochDuties(ctx)
 	})
 
+	// Fetch proposer duties
+	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
+		// Sleep for a bit to give the beacon node a chance to run its epoch transition.
+		time.Sleep(100 * time.Millisecond)
+
+		if err := m.fetchProposerDuties(ctx, phase0.Epoch(epoch.Number())); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch proposer duties")
+		}
+	})
+
+	// Anticipate the next epoch and fetch the next epoch's beacon committees.
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
 		m.log.
 			WithField("current_epoch", epoch.Number()).
@@ -146,6 +172,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	})
 
 	go m.beaconCommittees.Start()
+	go m.proposerDuties.Start()
 
 	return nil
 }
@@ -158,6 +185,10 @@ func (m *DutiesService) Stop(ctx context.Context) error {
 
 func (m *DutiesService) OnBeaconCommittee(fn func(phase0.Epoch, []*v1.BeaconCommittee) error) {
 	m.onBeaconCommitteeSubscriptions = append(m.onBeaconCommitteeSubscriptions, fn)
+}
+
+func (m *DutiesService) OnProposerDuties(fn func(phase0.Epoch, []*v1.ProposerDuty) error) {
+	m.onProposerDutiesSubscriptions = append(m.onProposerDutiesSubscriptions, fn)
 }
 
 func (m *DutiesService) OnReady(ctx context.Context, fn func(context.Context) error) {
@@ -254,6 +285,14 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 	}
 }
 
+func (m *DutiesService) fireOnProposerDutiesSubscriptions(epoch phase0.Epoch, duties []*v1.ProposerDuty) {
+	for _, fn := range m.onProposerDutiesSubscriptions {
+		if err := fn(epoch, duties); err != nil {
+			m.log.WithError(err).Error("Failed to fire on proposer duties subscription")
+		}
+	}
+}
+
 func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch, overrideCache ...bool) error {
 	if len(overrideCache) != 0 && !overrideCache[0] {
 		if duties := m.beaconCommittees.Get(epoch); duties != nil {
@@ -261,8 +300,8 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 		}
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.committeeMu.Lock()
+	defer m.committeeMu.Unlock()
 
 	wallclockEpoch := m.metadata.Wallclock().Epochs().Current()
 
@@ -286,8 +325,46 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	return nil
 }
 
+func (m *DutiesService) fetchProposerDuties(ctx context.Context, epoch phase0.Epoch) error {
+	if duties := m.proposerDuties.Get(epoch); duties != nil {
+		return nil
+	}
+
+	m.proposerMu.Lock()
+	defer m.proposerMu.Unlock()
+
+	wallclockEpoch := m.metadata.Wallclock().Epochs().Current()
+
+	m.log.
+		WithField("epoch", epoch).
+		WithField("wallclock_epoch", wallclockEpoch.Number()).
+		Debug("Fetching proposer duties")
+
+	duties, err := m.beacon.FetchProposerDuties(ctx, epoch)
+	if err != nil {
+		m.log.WithError(err).Error("Failed to fetch proposer duties")
+
+		return err
+	}
+
+	m.proposerDuties.Set(epoch, duties, time.Minute*60)
+
+	m.fireOnProposerDutiesSubscriptions(epoch, duties)
+
+	return nil
+}
+
 func (m *DutiesService) GetAttestationDuties(epoch phase0.Epoch) ([]*v1.BeaconCommittee, error) {
 	duties := m.beaconCommittees.Get(epoch)
+	if duties == nil {
+		return nil, fmt.Errorf("duties for epoch %d are not known", epoch)
+	}
+
+	return duties.Value(), nil
+}
+
+func (m *DutiesService) GetProposerDuties(epoch phase0.Epoch) ([]*v1.ProposerDuty, error) {
+	duties := m.proposerDuties.Get(epoch)
 	if duties == nil {
 		return nil, fmt.Errorf("duties for epoch %d are not known", epoch)
 	}

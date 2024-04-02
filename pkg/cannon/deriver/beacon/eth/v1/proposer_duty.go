@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
@@ -295,7 +296,9 @@ func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, d
 }
 
 func (b *ProposerDutyDeriver) getAdditionalData(_ context.Context, duty *apiv1.ProposerDuty) (*xatu.ClientMeta_AdditionalEthV1ProposerDutyData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{}
+	extra := &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{
+		StateId: v1.StateIDFinalized,
+	}
 
 	slot := b.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(duty.Slot))
 	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(duty.Slot))

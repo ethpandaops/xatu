@@ -127,12 +127,13 @@ func (m *DutiesService) Start(ctx context.Context) error {
 
 	// Anticipate the next epoch and fetch the next epoch's beacon committees.
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
+		// Sleep until just before the start of the next epoch to fetch the next epoch's duties.
+		time.Sleep(epoch.TimeWindow().EndsIn() - 2*time.Second)
+
 		m.log.
 			WithField("current_epoch", epoch.Number()).
 			WithField("next_epoch", epoch.Number()+1).
 			Debug("Fetching beacon committees for next epoch")
-		// Sleep until just before the start of the next epoch to fetch the next epoch's duties.
-		time.Sleep(epoch.TimeWindow().EndsIn() - 2*time.Second)
 
 		if err := m.fetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()+1), true); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch required epoch duties in anticipation of an epoch change")

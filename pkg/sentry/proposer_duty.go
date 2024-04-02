@@ -10,20 +10,19 @@ import (
 )
 
 func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
-	if !s.Config.BeaconCommittees.Enabled {
+	if !s.Config.ProposerDuty.Enabled {
 		return nil
 	}
+	// Subscribe to future proposer duty events.
+	s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
+		if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {
+			s.log.WithError(err).Error("Failed to create new proposer duties event")
+		}
+
+		return nil
+	})
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
-		// Subscribe to future proposer duty events.
-		s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
-			if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {
-				s.log.WithError(err).Error("Failed to create new proposer duties event")
-			}
-
-			return nil
-		})
-
 		// Grab the current epoch duties.
 		now := s.beacon.Metadata().Wallclock().Epochs().Current()
 		epochs := []phase0.Epoch{

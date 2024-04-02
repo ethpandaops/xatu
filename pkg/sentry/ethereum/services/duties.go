@@ -83,14 +83,17 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	}()
 
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
-		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
-		}
-
 		// Sleep for a bit to give the beacon node a chance to run its epoch transition.
 		// We don't really care about nice-to-have duties so the sleep here is fine.
 		// "Required" duties (aka the current epoch) will be refetched the moment that epoch
 		// starts.
+
+		time.Sleep(500 * time.Millisecond)
+
+		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch required epoch duties after an epoch change")
+		}
+
 		time.Sleep(15 * time.Second)
 
 		//nolint:errcheck // We don't care about the error here
@@ -98,17 +101,14 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	})
 
 	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
-		next := epoch.Number() + 1
-
+		m.log.
+			WithField("current_epoch", epoch.Number()).
+			WithField("next_epoch", epoch.Number()+1).
+			Debug("Fetching beacon committees for next epoch")
 		// Sleep until just before the start of the next epoch to fetch the next epoch's duties.
 		time.Sleep(epoch.TimeWindow().EndsIn() - 2*time.Second)
 
-		m.log.
-			WithField("current_epoch", epoch.Number()).
-			WithField("next_epoch", next).
-			Debug("Fetching beacon committees for next epoch")
-
-		if err := m.fetchBeaconCommittee(ctx, phase0.Epoch(next), true); err != nil {
+		if err := m.fetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()+1), true); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch required epoch duties in anticipation of an epoch change")
 		}
 
@@ -187,7 +187,6 @@ func (m *DutiesService) NiceToHaveEpochDuties(ctx context.Context) []phase0.Epoc
 
 	epochs := []phase0.Epoch{
 		phase0.Epoch(epochNumber - 1),
-		phase0.Epoch(epochNumber + 1),
 	}
 
 	final := map[phase0.Epoch]struct{}{}
@@ -265,7 +264,13 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.log.WithField("epoch", epoch).WithField("override_cache", overrideCache).Debug("Fetching beacon committee")
+	wallclockEpoch := m.metadata.Wallclock().Epochs().Current()
+
+	m.log.
+		WithField("epoch", epoch).
+		WithField("override_cache", overrideCache).
+		WithField("wallclock_epoch", wallclockEpoch.Number()).
+		Debug("Fetching beacon committee")
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", epoch)
 	if err != nil {

@@ -33,7 +33,6 @@ func (s *Sentry) startBeaconCommitteesWatcher(ctx context.Context) error {
 		// Grab the current epoch (+1) committees.
 		now := s.beacon.Metadata().Wallclock().Epochs().Current()
 		epochs := []phase0.Epoch{
-			phase0.Epoch(now.Number() + 1),
 			phase0.Epoch(now.Number()),
 		}
 

@@ -97,6 +97,25 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		m.fetchNiceToHaveEpochDuties(ctx)
 	})
 
+	m.metadata.Wallclock().OnEpochChanged(func(epoch ethwallclock.Epoch) {
+		next := epoch.Number() + 1
+
+		// Sleep until just before the start of the next epoch to fetch the next epoch's duties.
+		time.Sleep(epoch.TimeWindow().EndsIn() - 2*time.Second)
+
+		m.log.
+			WithField("current_epoch", epoch.Number()).
+			WithField("next_epoch", next).
+			Debug("Fetching beacon committees for next epoch")
+
+		if err := m.fetchBeaconCommittee(ctx, phase0.Epoch(next), true); err != nil {
+			m.log.WithError(err).Warn("Failed to fetch required epoch duties in anticipation of an epoch change")
+		}
+
+		//nolint:errcheck // We don't care about the error here
+		m.fetchNiceToHaveEpochDuties(ctx)
+	})
+
 	m.beacon.OnChainReOrg(ctx, func(ctx context.Context, ev *v1.ChainReorgEvent) error {
 		m.log.Info("Chain reorg detected - refetching beacon committees")
 

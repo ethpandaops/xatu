@@ -237,6 +237,19 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,
 		}),
+		grpc.ChainUnaryInterceptor(
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+				resp, err := handler(ctx, req)
+				if err != nil {
+					x.log.
+						WithField("method", info.FullMethod).
+						WithError(err).
+						Error("RPC Error")
+				}
+
+				return resp, err
+			},
+		),
 	}
 	x.grpcServer = grpc.NewServer(opts...)
 

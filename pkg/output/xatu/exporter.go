@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -14,12 +13,10 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
-	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 type ItemExporter struct {
@@ -30,10 +27,27 @@ type ItemExporter struct {
 	conn   *grpc.ClientConn
 }
 
+var (
+	retryPolicy = `{
+		"methodConfig": [{
+		  "name": [{"service": "xatu.EventIngester"}],
+		  "waitForReady": true,
+		  "retryPolicy": {
+			  "MaxAttempts": 5,
+			  "InitialBackoff": ".01s",
+			  "MaxBackoff": "15s",
+			  "BackoffMultiplier": 1.0,
+			  "RetryableStatusCodes": [ "UNAVAILABLE", "UNKNOWN" ]
+		  }
+		}]}
+	`
+)
+
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	opts := []grpc.DialOption{
 		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		grpc.WithDefaultServiceConfig(retryPolicy),
 	}
 
 	if config.TLS {
@@ -98,27 +112,9 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 
 	var err error
 
-	for attempt := 0; attempt < e.config.Retry.MaxAttempts; attempt++ {
-		rsp, err = e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
-		if err != nil {
-			st, ok := status.FromError(err)
-
-			if ok && st.Code() == grpcCodes.Unknown || st.Code() == grpcCodes.Unavailable {
-				logCtx.
-					WithField("attempt", attempt+1).
-					WithField("max_attempts", e.config.Retry.MaxAttempts).
-					WithField("code", st.Code()).
-					Warn("Transient error occurred when exporting items, retrying...")
-
-				time.Sleep(e.config.Retry.Interval)
-
-				continue
-			}
-
-			return err
-		}
-
-		break
+	rsp, err = e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
+	if err != nil {
+		return err
 	}
 
 	logCtx.WithField("response", rsp).Debug("Received response from Xatu sink")

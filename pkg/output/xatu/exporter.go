@@ -31,13 +31,13 @@ var (
 	retryPolicy = `{
 		"methodConfig": [{
 		  "name": [{"service": "xatu.EventIngester"}],
-		  "waitForReady": true,
+		  "waitForReady": false,
 		  "retryPolicy": {
 			  "MaxAttempts": 5,
-			  "InitialBackoff": ".01s",
+			  "InitialBackoff": "1s",
 			  "MaxBackoff": "15s",
-			  "BackoffMultiplier": 1.0,
-			  "RetryableStatusCodes": [ "UNAVAILABLE", "UNKNOWN" ]
+			  "BackoffMultiplier": 1.5,
+			  "RetryableStatusCodes": [ "UNAVAILABLE", "UNKNOWN", "INTERNAL" ]
 		  }
 		}]}
 	`

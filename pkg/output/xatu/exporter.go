@@ -7,12 +7,14 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	grpc_codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
@@ -31,6 +33,8 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 	opts := []grpc.DialOption{
 		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		grpc.WithStreamInterceptor(retry.StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor()),
 	}
 
 	if config.TLS {
@@ -86,15 +90,46 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 		Events: items,
 	}
 
+	logCtx := e.log.WithField("num_events", len(items))
+
 	md := metadata.New(e.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	rsp, err := e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
+	var rsp *pb.CreateEventsResponse
+
+	var err error
+
+	opts := []grpc.CallOption{
+		grpc.UseCompressor(gzip.Name),
+	}
+
+	if e.config.Retry.Enabled {
+		opts = append(opts,
+			retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				logCtx.
+					WithField("attempt", attempt).
+					WithError(err).
+					Warn("Failed to export events. Retrying...")
+			}),
+			retry.WithMax(uint(e.config.Retry.MaxAttempts)),
+			retry.WithBackoff(retry.BackoffExponential(e.config.Retry.Scalar)),
+			retry.WithCodes(
+				grpc_codes.Unavailable,
+				grpc_codes.Internal,
+				grpc_codes.ResourceExhausted,
+				grpc_codes.Unknown,
+				grpc_codes.Unauthenticated,
+				grpc_codes.Canceled,
+			),
+		)
+	}
+
+	rsp, err = e.client.CreateEvents(ctx, req, opts...)
 	if err != nil {
 		return err
 	}
 
-	e.log.WithField("response", rsp).Debug("Received response from Xatu sink")
+	logCtx.WithField("response", rsp).Debug("Received response from Xatu sink")
 
 	return nil
 }

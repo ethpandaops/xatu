@@ -9,6 +9,7 @@ var (
 type Metrics struct {
 	itemsQueued   *prometheus.GaugeVec
 	itemsDropped  *prometheus.CounterVec
+	itemsFailed   *prometheus.CounterVec
 	itemsExported *prometheus.CounterVec
 }
 
@@ -30,6 +31,11 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Help:      "Number of items dropped",
 		}, []string{"processor"}),
+		itemsFailed: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name:      "items_failed_total",
+			Namespace: namespace,
+			Help:      "Number of items failed",
+		}, []string{"processor"}),
 		itemsExported: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name:      "items_exported_total",
 			Namespace: namespace,
@@ -39,6 +45,7 @@ func NewMetrics(namespace string) *Metrics {
 
 	prometheus.MustRegister(m.itemsQueued)
 	prometheus.MustRegister(m.itemsDropped)
+	prometheus.MustRegister(m.itemsFailed)
 	prometheus.MustRegister(m.itemsExported)
 
 	return m
@@ -54,4 +61,8 @@ func (m *Metrics) IncItemsDroppedBy(name string, count float64) {
 
 func (m *Metrics) IncItemsExportedBy(name string, count float64) {
 	m.itemsExported.WithLabelValues(name).Add(count)
+}
+
+func (m *Metrics) IncItemsFailedBy(name string, count float64) {
+	m.itemsFailed.WithLabelValues(name).Add(count)
 }

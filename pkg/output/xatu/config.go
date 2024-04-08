@@ -14,6 +14,7 @@ type Config struct {
 	ExportTimeout      time.Duration     `yaml:"exportTimeout" default:"30s"`
 	MaxExportBatchSize int               `yaml:"maxExportBatchSize" default:"512"`
 	Workers            int               `yaml:"workers" default:"1"`
+	Retry              RetryConfig       `yaml:"retry"`
 }
 
 func (c *Config) Validate() error {
@@ -22,4 +23,10 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+type RetryConfig struct {
+	Enabled     bool          `yaml:"enabled" default:"true"`
+	Scalar      time.Duration `yaml:"scalar" default:"0.5s"`
+	MaxAttempts int           `yaml:"maxAttempts" default:"3"`
 }

@@ -30,11 +30,10 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+
 	opts := []grpc.DialOption{
-		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
-		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
-		grpc.WithStreamInterceptor(retry.StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor()),
+		grpc.WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor, retry.UnaryClientInterceptor()),
+		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
 	}
 
 	if config.TLS {

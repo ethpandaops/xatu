@@ -235,6 +235,9 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,
 		}),
+		grpc.ChainStreamInterceptor(
+			grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor),
+		),
 		grpc.ChainUnaryInterceptor(
 			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {

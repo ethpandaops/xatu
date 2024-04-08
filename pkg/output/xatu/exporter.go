@@ -7,12 +7,14 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	grpc_codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
@@ -27,27 +29,12 @@ type ItemExporter struct {
 	conn   *grpc.ClientConn
 }
 
-var (
-	retryPolicy = `{
-		"methodConfig": [{
-		  "name": [{"service": "xatu.EventIngester"}],
-		  "waitForReady": false,
-		  "retryPolicy": {
-			  "MaxAttempts": 5,
-			  "InitialBackoff": "1s",
-			  "MaxBackoff": "15s",
-			  "BackoffMultiplier": 1.5,
-			  "RetryableStatusCodes": [ "UNAVAILABLE", "UNKNOWN", "INTERNAL" ]
-		  }
-		}]}
-	`
-)
-
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
 	opts := []grpc.DialOption{
 		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
-		grpc.WithDefaultServiceConfig(retryPolicy),
+		grpc.WithStreamInterceptor(retry.StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(retry.UnaryClientInterceptor()),
 	}
 
 	if config.TLS {
@@ -112,7 +99,32 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 
 	var err error
 
-	rsp, err = e.client.CreateEvents(ctx, req, grpc.UseCompressor(gzip.Name))
+	opts := []grpc.CallOption{
+		grpc.UseCompressor(gzip.Name),
+	}
+
+	if e.config.Retry.Enabled {
+		opts = append(opts,
+			retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				logCtx.
+					WithField("attempt", attempt).
+					WithError(err).
+					Warn("Failed to export events. Retrying...")
+			}),
+			retry.WithMax(uint(e.config.Retry.MaxAttempts)),
+			retry.WithBackoff(retry.BackoffExponential(e.config.Retry.Scalar)),
+			retry.WithCodes(
+				grpc_codes.Unavailable,
+				grpc_codes.Internal,
+				grpc_codes.ResourceExhausted,
+				grpc_codes.Unknown,
+				grpc_codes.Unauthenticated,
+				grpc_codes.Canceled,
+			),
+		)
+	}
+
+	rsp, err = e.client.CreateEvents(ctx, req, opts...)
 	if err != nil {
 		return err
 	}

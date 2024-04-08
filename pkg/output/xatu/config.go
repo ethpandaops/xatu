@@ -17,15 +17,16 @@ type Config struct {
 	Retry              RetryConfig       `yaml:"retry"`
 }
 
-type RetryConfig struct {
-	Interval    time.Duration `yaml:"interval" default:"5s"`
-	MaxAttempts int           `yaml:"maxAttempts" default:"5"`
-}
-
 func (c *Config) Validate() error {
 	if c.Address == "" {
 		return errors.New("address is required")
 	}
 
 	return nil
+}
+
+type RetryConfig struct {
+	Enabled     bool          `yaml:"enabled" default:"true"`
+	Scalar      time.Duration `yaml:"scalar" default:"0.5s"`
+	MaxAttempts int           `yaml:"maxAttempts" default:"3"`
 }

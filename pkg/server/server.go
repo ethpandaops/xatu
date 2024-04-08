@@ -227,8 +227,6 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 	grpc_prometheus.EnableHandlingTimeHistogram()
 
 	opts := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
-		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
 		grpc.MaxRecvMsgSize(mb100),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     5 * time.Minute,
@@ -237,7 +235,11 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,
 		}),
+		grpc.ChainStreamInterceptor(
+			grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor),
+		),
 		grpc.ChainUnaryInterceptor(
+			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 				resp, err := handler(ctx, req)
 				if err != nil {

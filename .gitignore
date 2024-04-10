@@ -2,6 +2,8 @@ sentry.yaml
 server.yaml
 discovery.yaml
 mimicry.yaml
+cl-mimicry.yaml
+el-mimicry.yaml
 cannon.yaml
 sage.yaml
 dist

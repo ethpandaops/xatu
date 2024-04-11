@@ -109,7 +109,11 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 		return err
 	}
 
-	node.OnEvent(m.handleHermesEvent)
+	node.OnEvent(func(ctx context.Context, event *host.TraceEvent) {
+		if err := m.handleHermesEvent(ctx, event); err != nil {
+			m.log.WithError(err).Error("Failed to handle hermes event")
+		}
+	})
 
 	m.node = node
 
@@ -205,10 +209,6 @@ func (m *Mimicry) ServePProf(ctx context.Context) error {
 	return nil
 }
 
-func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent) {
-	m.log.WithField("event", event).Info("Received event")
-}
-
 func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
 	return &xatu.ClientMeta{
 		Name:           m.Config.Name,
@@ -217,7 +217,15 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(m.clockDrift.Milliseconds()),
-		Labels:         m.Config.Labels,
+		Ethereum: &xatu.ClientMeta_Ethereum{
+			Network: &xatu.ClientMeta_Ethereum_Network{
+				Name: m.Config.Ethereum.Network,
+			},
+			Execution: &xatu.ClientMeta_Ethereum_Execution{},
+			Consensus: &xatu.ClientMeta_Ethereum_Consensus{},
+		},
+
+		Labels: m.Config.Labels,
 	}, nil
 }
 

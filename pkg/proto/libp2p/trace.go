@@ -231,12 +231,12 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 	}
 
 	return &RejectMessage{
-		MessageId:    wrapperspb.String(messageID),
-		ReceivedFrom: wrapperspb.String(receivedFrom.String()),
-		Reason:       wrapperspb.String(reason),
-		Topic:        wrapperspb.String(topic),
-		MsgSize:      wrapperspb.UInt32(uint32(msgSize)),
-		SeqNo:        wrapperspb.String(hex.EncodeToString(seqNo)),
+		MessageId:   wrapperspb.String(messageID),
+		PeerId:      wrapperspb.String(receivedFrom.String()),
+		Reason:      wrapperspb.String(reason),
+		Topic:       wrapperspb.String(topic),
+		MessageSize: wrapperspb.UInt32(uint32(msgSize)),
+		SeqNo:       wrapperspb.String(hex.EncodeToString(seqNo)),
 	}, nil
 }
 
@@ -278,12 +278,12 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 	}
 
 	return &DuplicateMessage{
-		MessageId:    wrapperspb.String(messageID),
-		ReceivedFrom: wrapperspb.String(receivedFrom.String()),
-		Topic:        wrapperspb.String(topic),
-		MsgSize:      wrapperspb.UInt32(uint32(msgSize)),
-		SeqNo:        wrapperspb.String(hex.EncodeToString(seqNo)),
-		Local:        wrapperspb.Bool(local),
+		MessageId:   wrapperspb.String(messageID),
+		PeerId:      wrapperspb.String(receivedFrom.String()),
+		Topic:       wrapperspb.String(topic),
+		MessageSize: wrapperspb.UInt32(uint32(msgSize)),
+		SeqNo:       wrapperspb.String(hex.EncodeToString(seqNo)),
+		Local:       wrapperspb.Bool(local),
 	}, nil
 }
 
@@ -347,7 +347,7 @@ func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	}
 
 	r := &RecvRPC{
-		ReceivedFrom: wrapperspb.String(payload.PeerID.String()),
+		PeerId: wrapperspb.String(payload.PeerID.String()),
 		Meta: &RPCMeta{
 			PeerId:        wrapperspb.String(payload.PeerID.String()),
 			Messages:      convertRPCMessages(payload.Messages),
@@ -590,11 +590,11 @@ func TraceEventToValidateMessage(event *host.TraceEvent) (*ValidateMessage, erro
 	}
 
 	return &ValidateMessage{
-		MessageId: wrapperspb.String(messageID),
-		PeerId:    wrapperspb.String(receivedFrom.String()),
-		Topic:     wrapperspb.String(topic),
-		Local:     wrapperspb.Bool(local),
-		MsgSize:   wrapperspb.UInt32(uint32(msgSize)),
-		SeqNo:     wrapperspb.String(hex.EncodeToString(seqNo)),
+		MessageId:   wrapperspb.String(messageID),
+		PeerId:      wrapperspb.String(receivedFrom.String()),
+		Topic:       wrapperspb.String(topic),
+		Local:       wrapperspb.Bool(local),
+		MessageSize: wrapperspb.UInt32(uint32(msgSize)),
+		SeqNo:       wrapperspb.String(hex.EncodeToString(seqNo)),
 	}, nil
 }

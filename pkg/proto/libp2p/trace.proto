@@ -45,19 +45,19 @@ message PublishMessage {
 
 message RejectMessage {
   google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue received_from = 2 [json_name = "received_from"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
   google.protobuf.StringValue reason = 3;
   google.protobuf.StringValue topic = 4;
   google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value msg_size = 6 [json_name = "msg_size"];
+  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
 }
 
 message DuplicateMessage {
   google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue received_from = 2 [json_name = "received_from"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
   google.protobuf.StringValue topic = 3;
   google.protobuf.StringValue seq_no = 4 [json_name = "seq_no"];
-  google.protobuf.UInt32Value msg_size = 5 [json_name = "msg_size"];
+  google.protobuf.UInt32Value message_size = 5 [json_name = "message_size"];
   google.protobuf.BoolValue local = 6;
 }
 
@@ -67,7 +67,7 @@ message DeliverMessage {
   google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
   google.protobuf.BoolValue local = 4;
   google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value msg_size = 6 [json_name = "msg_size"];
+  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
 }
 
 message ValidateMessage {
@@ -76,7 +76,7 @@ message ValidateMessage {
   google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
   google.protobuf.BoolValue local = 4;
   google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value msg_size = 6 [json_name = "msg_size"];
+  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
 }
 
 message AddPeer {
@@ -89,7 +89,7 @@ message RemovePeer {
 }
 
 message RecvRPC {
-  google.protobuf.StringValue received_from = 1 [json_name = "received_from"];
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   RPCMeta meta = 2;
 }
 

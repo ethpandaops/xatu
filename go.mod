@@ -2,7 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.22.0
 
-replace github.com/probe-lab/hermes => ../hermes
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240411071540-e67fb0f894e0
 
 require (
 	github.com/IBM/sarama v1.43.0
@@ -12,7 +12,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
-	github.com/dennis-tra/go-kinesis v0.0.0-20240326083914-7acf5f8dc24e
 	github.com/ethereum/go-ethereum v1.13.14
 	github.com/ethpandaops/beacon v0.35.0
 	github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c
@@ -27,10 +26,12 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-libp2p v0.33.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
+	github.com/multiformats/go-multiaddr v0.12.2
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkg/errors v0.9.1
 	github.com/probe-lab/hermes v0.0.0-20240327153144-a2528356b4f7
 	github.com/prometheus/client_golang v1.19.0
+	github.com/prysmaticlabs/prysm/v5 v5.0.2
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -83,6 +84,7 @@ require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deckarep/golang-set/v2 v2.5.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/dennis-tra/go-kinesis v0.0.0-20240326083914-7acf5f8dc24e // indirect
 	github.com/dgraph-io/ristretto v0.0.4-0.20210318174700-74754f61e018 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -176,7 +178,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
-	github.com/multiformats/go-multiaddr v0.12.2 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.2.0 // indirect
@@ -198,7 +199,6 @@ require (
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.4-beta // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect
-	github.com/prysmaticlabs/prysm/v5 v5.0.2 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/quic-go v0.42.0 // indirect
 	github.com/quic-go/webtransport-go v0.6.0 // indirect

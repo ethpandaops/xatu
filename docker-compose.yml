@@ -351,16 +351,19 @@ services:
   vector-kafka-clickhouse:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: timberio/vector:0.37.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
     networks:
       - xatu-net
+    ports:
+      - "8686:8686"
     environment:
       CLICKHOUSE_ENDPOINT: "clickhouse-01:8123"
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ""
       KAFKA_BROKERS: "kafka:29092"
+      VECTOR_LOG: "debug"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
       interval: 30s

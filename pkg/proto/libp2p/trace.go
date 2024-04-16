@@ -367,7 +367,7 @@ func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	}
 
 	r := &SendRPC{
-		SendTo: wrapperspb.String(payload.PeerID.String()),
+		PeerId: wrapperspb.String(payload.PeerID.String()),
 		Meta: &RPCMeta{
 			PeerId:        wrapperspb.String(payload.PeerID.String()),
 			Messages:      convertRPCMessages(payload.Messages),

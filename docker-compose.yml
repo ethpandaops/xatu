@@ -75,7 +75,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
+    image: "clickhouse/clickhouse-keeper:24.3-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-01
     hostname: clickhouse-keeper-01
@@ -95,7 +95,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
+    image: "clickhouse/clickhouse-keeper:24.3-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-02
     hostname: clickhouse-keeper-02
@@ -115,7 +115,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
+    image: "clickhouse/clickhouse-keeper:24.3-alpine"
     user: "101:101"
     container_name: clickhouse-keeper-03
     hostname: clickhouse-keeper-03

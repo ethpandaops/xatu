@@ -366,7 +366,7 @@ ENGINE = Distributed('{cluster}', default, libp2p_remove_peer_local, rand());
 CREATE TABLE libp2p_rpc_meta_message_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
-    message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     rpc_meta_unique_key Int64,
     message_id String CODEC(ZSTD(1)),
     topic String CODEC(ZSTD(1)),
@@ -377,12 +377,12 @@ CREATE TABLE libp2p_rpc_meta_message_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index);
 
 ALTER TABLE libp2p_rpc_meta_message_local  ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the RPC meta messages from the peer',
 COMMENT COLUMN unique_key 'Unique identifier for each RPC message record',
-COMMENT COLUMN message_index 'Position in the RPC meta message array',
+COMMENT COLUMN control_index 'Position in the RPC meta message array',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the RPC metadata',
 COMMENT COLUMN message_id 'Identifier of the message',
 COMMENT COLUMN topic 'Topic associated with the message',
@@ -399,7 +399,7 @@ ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_message_local, rand()
 CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
-    message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     rpc_meta_unique_key Int64,
     subscribe Bool,
     topic_id String CODEC(ZSTD(1)),
@@ -410,12 +410,12 @@ CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index);
 
 ALTER TABLE libp2p_rpc_meta_subscription_local  ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the RPC subscriptions from the peer.',
 COMMENT COLUMN unique_key 'Unique identifier for each RPC subscription record',
-COMMENT COLUMN message_index 'Position in the RPC meta subscription array',
+COMMENT COLUMN control_index 'Position in the RPC meta subscription array',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the RPC subscription metadata',
 COMMENT COLUMN subscribe 'Boolean indicating if it is a subscription or unsubscription',
 COMMENT COLUMN topic_id 'Topic ID associated with the subscription',
@@ -434,6 +434,7 @@ CREATE TABLE libp2p_rpc_meta_control_ihave_local ON CLUSTER '{cluster}'
     unique_key Int64,
     rpc_meta_unique_key Int64,
     message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     topic_id String CODEC(ZSTD(1)),
     message_id String CODEC(ZSTD(1)),
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -443,12 +444,13 @@ CREATE TABLE libp2p_rpc_meta_control_ihave_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index, message_index);
 
 ALTER TABLE libp2p_rpc_meta_control_ihave_local  ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the "I have" control messages from the peer.',
 COMMENT COLUMN unique_key 'Unique identifier for each "I have" control record',
-COMMENT COLUMN message_index 'Position in the RPC meta control IHAVE array',
+COMMENT COLUMN control_index 'Position in the RPC meta control IWANT array',
+COMMENT COLUMN message_index 'Position in the RPC meta control IWANT message_ids array',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the "I have" control metadata',
 COMMENT COLUMN topic_id 'Topic ID associated with the "I have" control',
 COMMENT COLUMN message_id 'Identifier of the message associated with the "I have" control',
@@ -465,6 +467,7 @@ ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_ihave_local, 
 CREATE TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     rpc_meta_unique_key Int64,
     message_id String CODEC(ZSTD(1)),
@@ -475,12 +478,13 @@ CREATE TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index, message_index);
 
 ALTER TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the "I want" control messages from the peer.',
 COMMENT COLUMN unique_key 'Unique identifier for each "I want" control record',
-COMMENT COLUMN message_index 'Position in the RPC meta control IWANT array',
+COMMENT COLUMN message_index 'Position in the RPC meta control IWANT message_ids array',
+COMMENT COLUMN control_index 'Position in the RPC meta control IWANT array',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the "I want" control metadata',
 COMMENT COLUMN message_id 'Identifier of the message associated with the "I want" control',
 COMMENT COLUMN updated_date_time 'Timestamp when the "I want" control record was last updated',
@@ -496,7 +500,7 @@ ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_iwant_local, 
 CREATE TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
-    message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     rpc_meta_unique_key Int64,
     topic_id String CODEC(ZSTD(1)),
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -506,12 +510,12 @@ CREATE TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index);
 
 ALTER TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the "Graft" control messages from the peer.',
 COMMENT COLUMN unique_key 'Unique identifier for each "Graft" control record',
-COMMENT COLUMN message_index 'Position in the RPC meta control GRAFT array',
+COMMENT COLUMN control_index 'Position in the RPC meta control GRAFT array',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the "Graft" control metadata',
 COMMENT COLUMN topic_id 'Topic ID associated with the "Graft" control',
 COMMENT COLUMN updated_date_time 'Timestamp when the "Graft" control record was last updated',
@@ -528,7 +532,8 @@ CREATE TABLE libp2p_rpc_meta_control_prune_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
     rpc_meta_unique_key Int64,
-    message_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    control_index Int32 CODEC(DoubleDelta, ZSTD(1)),
+    peer_id_index Int32 CODEC(DoubleDelta, ZSTD(1)),
     topic_id String CODEC(ZSTD(1)),
     peer_id String CODEC(ZSTD(1)),
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -537,11 +542,11 @@ CREATE TABLE libp2p_rpc_meta_control_prune_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-ORDER BY (event_date_time, message_index);
+ORDER BY (event_date_time, control_index);
 
 ALTER TABLE libp2p_rpc_meta_control_prune_local  ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the details of the "Prune" control messages from the peer.',
-COMMENT COLUMN message_index 'Position in the RPC meta control PRUNE array',
+COMMENT COLUMN control_index 'Position in the RPC meta control PRUNE array',
 COMMENT COLUMN unique_key 'Unique identifier for each "Prune" control record',
 COMMENT COLUMN rpc_meta_unique_key 'Unique key associated with the "Prune" control metadata',
 COMMENT COLUMN topic_id 'Topic ID associated with the "Prune" control',
@@ -563,7 +568,7 @@ CREATE TABLE libp2p_recv_rpc_local ON CLUSTER '{cluster}'
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     session_start_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
-    received_from String CODEC(ZSTD(1)),
+    peer_id String CODEC(ZSTD(1)),
     meta_client_name LowCardinality(String),
     meta_client_id String CODEC(ZSTD(1)),
     meta_client_version LowCardinality(String),
@@ -593,7 +598,7 @@ COMMENT COLUMN unique_key 'Unique identifier for each record',
 COMMENT COLUMN updated_date_time 'Timestamp when the record was last updated',
 COMMENT COLUMN event_date_time 'Timestamp of the event',
 COMMENT COLUMN session_start_date_time 'Timestamp of the session start',
-COMMENT COLUMN received_from 'Identifier of the sender',
+COMMENT COLUMN peer_id 'Peer ID of the sender',
 COMMENT COLUMN meta_client_name 'Name of the client that generated the event',
 COMMENT COLUMN meta_client_id 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.',
 COMMENT COLUMN meta_client_version 'Version of the client that generated the event',
@@ -618,7 +623,7 @@ CREATE TABLE libp2p_send_rpc_local ON CLUSTER '{cluster}'
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     session_start_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
-    send_to String CODEC(ZSTD(1)),
+    peer_id String CODEC(ZSTD(1)),
     meta_client_name LowCardinality(String),
     meta_client_id String CODEC(ZSTD(1)),
     meta_client_version LowCardinality(String),
@@ -645,7 +650,7 @@ COMMENT COLUMN unique_key 'Unique identifier for each record',
 COMMENT COLUMN updated_date_time 'Timestamp when the record was last updated',
 COMMENT COLUMN event_date_time 'Timestamp of the event',
 COMMENT COLUMN session_start_date_time 'Timestamp of the session start',
-COMMENT COLUMN send_to 'Identifier of the receiver',
+COMMENT COLUMN peer_id 'Peer ID of the receiver',
 COMMENT COLUMN meta_client_name 'Name of the client that generated the event',
 COMMENT COLUMN meta_client_id 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.',
 COMMENT COLUMN meta_client_version 'Version of the client that generated the event',

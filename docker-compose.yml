@@ -363,7 +363,6 @@ services:
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ""
       KAFKA_BROKERS: "kafka:29092"
-      VECTOR_LOG: "debug"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
       interval: 30s

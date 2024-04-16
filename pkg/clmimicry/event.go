@@ -321,7 +321,7 @@ func (m *Mimicry) handleRecvRPCEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToSendRPC(event)
+	data, err := libp2p.TraceEventToRecvRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
 	}
@@ -346,8 +346,8 @@ func (m *Mimicry) handleRecvRPCEvent(ctx context.Context,
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceSendRpc{
-			Libp2PTraceSendRpc: data,
+		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
+			Libp2PTraceRecvRpc: data,
 		},
 	}
 

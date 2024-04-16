@@ -94,7 +94,7 @@ message RecvRPC {
 }
 
 message SendRPC {
-  google.protobuf.StringValue send_to = 1 [json_name = "send_to"];
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   RPCMeta meta = 2;
 }
 

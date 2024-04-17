@@ -80,6 +80,8 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            -e DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }} \
+            -e DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
             goreleaser/goreleaser-cross:v1.22.2 release --clean --config .goreleaser.yaml.new

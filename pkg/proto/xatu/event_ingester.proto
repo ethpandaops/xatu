@@ -21,6 +21,7 @@ import "pkg/proto/eth/v1/execution_engine.proto";
 import "pkg/proto/blockprint/block_classification.proto";
 
 import "pkg/proto/libp2p/peer.proto";
+import "pkg/proto/libp2p/trace.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -765,6 +766,41 @@ message ClientMeta {
     AdditionalEthV1AttestationTargetV2Data target = 6;
   }
 
+  // AdditionalLibP2PTraceAddPeerData: Holds additional data for an add peer event in LibP2P tracing.
+  message AdditionalLibP2PTraceAddPeerData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRemovePeerData: Holds additional data for a remove peer event in LibP2P tracing.
+  message AdditionalLibP2PTraceRemovePeerData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRecvRPCData: Holds additional data for a receive RPC event in LibP2P tracing.
+  message AdditionalLibP2PTraceRecvRPCData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceSendRPCData: Holds additional data for a send RPC event in LibP2P tracing.
+  message AdditionalLibP2PTraceSendRPCData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
+  message AdditionalLibP2PTraceJoinData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceConnectedData: Holds additional data for a connected event in LibP2P tracing.
+  message AdditionalLibP2PTraceConnectedData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceDisconnectedData: Holds additional data for a disconnected event in LibP2P tracing.
+  message AdditionalLibP2PTraceDisconnectedData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+  
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -930,6 +966,15 @@ message ClientMeta {
     AdditionalEthV2BeaconBlockElaboratedAttestationData
         eth_v2_beacon_block_elaborated_attestation = 47
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
+    
+    // AdditionalLibP2PTraceData contains additional data about libp2p traces.
+    AdditionalLibP2PTraceAddPeerData libp2p_trace_add_peer = 48 [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
+    AdditionalLibP2PTraceRemovePeerData libp2p_trace_remove_peer = 49 [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];
+    AdditionalLibP2PTraceRecvRPCData libp2p_trace_recv_rpc = 50 [ json_name = "LIBP2P_TRACE_RECV_RPC" ];
+    AdditionalLibP2PTraceSendRPCData libp2p_trace_send_rpc = 51 [ json_name = "LIBP2P_TRACE_SEND_RPC" ];
+    AdditionalLibP2PTraceJoinData libp2p_trace_join = 52 [ json_name = "LIBP2P_TRACE_JOIN" ];
+    AdditionalLibP2PTraceConnectedData libp2p_trace_connected = 53 [ json_name = "LIBP2P_TRACE_CONNECTED" ];
+    AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 54 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
   }
 }
 
@@ -1046,6 +1091,16 @@ message Event {
     BEACON_P2P_ATTESTATION = 35;
     BEACON_API_ETH_V1_PROPOSER_DUTY = 36;
     BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION = 37;
+    LIBP2P_TRACE_CONNECTED = 38;
+    LIBP2P_TRACE_DISCONNECTED = 39;
+    LIBP2P_TRACE_ADD_PEER = 40;
+    LIBP2P_TRACE_REMOVE_PEER = 41;
+    LIBP2P_TRACE_RECV_RPC = 42;
+    LIBP2P_TRACE_SEND_RPC = 43;
+    LIBP2P_TRACE_DROP_RPC = 44;
+    LIBP2P_TRACE_JOIN = 45;
+    LIBP2P_TRACE_UNKNOWN = 46;
+    
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1155,5 +1210,19 @@ message DecoratedEvent {
     xatu.eth.v1.ElaboratedAttestation
         eth_v2_beacon_block_elaborated_attestation = 39
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
+    xatu.libp2p.AddPeer libp2p_trace_add_peer = 40
+        [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
+    xatu.libp2p.RemovePeer libp2p_trace_remove_peer = 41
+        [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];
+    xatu.libp2p.RecvRPC libp2p_trace_recv_rpc = 42
+        [ json_name = "LIBP2P_TRACE_RECV_RPC" ];
+    xatu.libp2p.SendRPC libp2p_trace_send_rpc = 43
+        [ json_name = "LIBP2P_TRACE_SEND_RPC" ];
+    xatu.libp2p.Join libp2p_trace_join = 44
+        [ json_name = "LIBP2P_TRACE_JOIN" ];
+    xatu.libp2p.Connected libp2p_trace_connected = 45
+        [ json_name = "LIBP2P_TRACE_CONNECTED" ];
+    xatu.libp2p.Disconnected libp2p_trace_disconnected = 46
+        [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
   };
 }

@@ -1,7 +1,7 @@
 api:
   enabled: true
   address: 0.0.0.0:8686
-  playground: false
+  playground: true
 acknowledgements:
   enabled: true
 sources:
@@ -109,6 +109,18 @@ sources:
       - "^beacon-api-eth-v1-proposer-.+"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  libp2p_trace_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-libp2p-trace
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "^libp2p-trace.+"
+    auto_offset_reset: earliest
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -122,6 +134,7 @@ transforms:
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_p2p_events_kafka
       - beacon_api_eth_v1_proposer_kafka
+      - libp2p_trace_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -337,6 +350,13 @@ transforms:
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
+      libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
+      libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
+      libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
+      libp2p_trace_remove_peer: .event.name == "LIBP2P_TRACE_REMOVE_PEER"
+      libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
+      libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
+      libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -375,6 +395,13 @@ transforms:
       - xatu_server_events_router.eth_v2_beacon_block_v2
       - xatu_server_events_router.mempool_transaction
       - xatu_server_events_router.mempool_transaction_v2
+      - xatu_server_events_router.libp2p_trace_connected
+      - xatu_server_events_router.libp2p_trace_disconnected
+      - xatu_server_events_router.libp2p_trace_add_peer
+      - xatu_server_events_router.libp2p_trace_remove_peer
+      - xatu_server_events_router.libp2p_trace_recv_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
+      - xatu_server_events_router.libp2p_trace_join
     metrics:
       - type: counter
         field: event.name
@@ -1732,7 +1759,418 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
-  
+  libp2p_trace_connected_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_connected
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .remote_peer = .data.remote_peer
+      .remote_maddrs = .data.remote_maddrs
+      .agent_version = .data.agent_version
+      .direction = .data.direction
+      opened, err = parse_timestamp(.data.opened, format: "%+")
+      if err == null {
+        .opened = to_unix_timestamp(opened)
+      } else {
+        .error = err
+        .error_description = "failed to parse opened"
+      }
+      .transient = .data.transient
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  libp2p_trace_disconnected_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_disconnected
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .remote_peer = .data.remote_peer
+      .remote_maddrs = .data.remote_maddrs
+      .agent_version = .data.agent_version
+      .direction = .data.direction
+      opened, err = parse_timestamp(.data.opened, format: "%+")
+      if err == null {
+        .opened = to_unix_timestamp(opened)
+      } else {
+        .error = err
+        .error_description = "failed to parse opened"
+      }
+      .transient = .data.transient
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  libp2p_trace_add_peer_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_add_peer
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .peer_id = .data.peer_id
+      .protocol = .data.protocol
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_remove_peer_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_remove_peer
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .peer_id = .data.peer_id
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_join_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_join
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .topic = .data.topic
+      .peer_id = .meta.client.additional_data.metadata.peer_id
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_rpc_exploder:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_recv_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
+    source: |-
+      # Parsing the main RPC event
+      .unique_key = seahash(.event.id)
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+      .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+      }
+      .updated_date_time = to_unix_timestamp(now())
+
+      # Emit the main RPC event record
+      events = []
+
+      rootEvent = {
+          "event_name": .event.name,
+          "unique_key": .unique_key,
+          "key": .event.id,
+          "event_date_time": .event_date_time,
+          "updated_date_time": .updated_date_time,
+          "peer_id": .data.meta.peer_id,
+          "meta_client_name": .meta_client_name,
+          "meta_client_id": .meta_client_id,
+          "meta_client_version": .meta_client_version,
+          "meta_client_implementation": .meta_client_implementation,
+          "meta_client_os": .meta_client_os,
+          "meta_client_ip": .meta_client_ip,
+          "meta_network_id": .meta_network_id,
+          "meta_network_name": .meta_network_name,
+          "meta_client_geo_city": .meta_client_geo_city,
+          "meta_client_geo_country": .meta_client_geo_country,
+          "meta_client_geo_country_code": .meta_client_geo_country_code,
+          "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+          "meta_client_geo_longitude": .meta_client_geo_longitude,
+          "meta_client_geo_latitude": .meta_client_geo_latitude,
+          "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+          "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization
+      }
+
+      if .error != null {
+          log(., level: "error", rate_limit_secs: 60)
+          assert!(.error == null, message: join!(["Error occurred when generating libp2p_rpc base event: ", .error_description]))
+      }
+
+      error = null
+      errorMsg = ""
+      errDebug = {}
+
+      if .data.meta.subscriptions != null {
+        for_each(array!(.data.meta.subscriptions)) -> |_index, sub| {
+            key, err = rootEvent.key + "rpc_meta_subscription" + to_string(_index)
+            if err != null {
+                errDebug = {
+                    "root_event_key": rootEvent.key,
+                    "index": _index,
+                }
+                error = err
+                errorMsg = "failed to generate unique key for rpc_meta_subscription"
+            }
+
+            unique_key = seahash(key)
+
+            events = push(events, {
+                "event_name": "LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
+                "unique_key": unique_key,
+                "control_index": _index,
+                "rpc_meta_unique_key": rootEvent.unique_key,
+                "subscribe": sub.subscribe,
+                "topic_id": sub.topic_id,
+                "updated_date_time": rootEvent.updated_date_time,
+                "event_date_time": rootEvent.event_date_time,
+                "peer_id": rootEvent.peer_id,
+                "meta_network_id": rootEvent.meta_network_id,
+                "meta_network_name": .rootEvent.meta_network_name,
+                "meta_client_name": .rootEvent.meta_client_name,
+            })
+        }
+      }
+
+      if error != null {
+          log(., level: "error", rate_limit_secs: 60)
+          assert!(error == null, message: join!(["Error occurred when generating libp2p_rpc_meta events: ", errorMsg]))
+      }
+
+      if .data.meta.messages != null {
+        for_each(array!(.data.meta.messages)) -> |_index, message| {
+            key, err = rootEvent.key + "rpc_meta_message" + to_string(_index)
+            if err != null {
+                errDebug = {
+                    "root_event_key": rootEvent.key,
+                    "index": _index,
+                }
+                error = err
+                errorMsg = "failed to generate unique key for rpc_meta_message"
+            }
+
+            unique_key = seahash(key)
+
+            events = push(events, {
+                "event_name": "LIBP2P_TRACE_RPC_META_MESSAGE",
+                "unique_key": unique_key,
+                "control_index": _index,
+                "rpc_meta_unique_key": rootEvent.unique_key,
+                "topic": message.topic,
+                "updated_date_time": rootEvent.updated_date_time,
+                "event_date_time": rootEvent.event_date_time,
+                "peer_id": rootEvent.peer_id,
+                "meta_network_id": rootEvent.meta_network_id,
+                "meta_network_name": .rootEvent.meta_network_name,
+                "meta_client_name": .rootEvent.meta_client_name,
+            })
+        }
+      }
+
+      metaControl = []
+      if .data.meta.control != null {
+          metaControl = .data.meta.control
+      }
+
+      if metaControl.ihave != null {
+          for_each(array!(metaControl.ihave)) -> |_ihaveindex, ihave| {
+              metaMessageIds = []
+              if ihave.message_ids != null {
+                  metaMessageIds = ihave.message_ids
+              }
+              for_each(array!(metaMessageIds)) -> |_messageindex, message_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_ihave" +to_string(_ihaveindex)+ "_" + to_string(_messageindex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "index": _messageindex,
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_ihave"
+                  }
+
+                  unique_key = seahash(key)
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "message_index": _messageindex,
+                      "control_index": _ihaveindex,
+                      "message_id": message_id,
+                      "topic_id": ihave.topic_id,
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id": rootEvent.peer_id,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": .rootEvent.meta_network_name,
+                      "meta_client_name": .rootEvent.meta_client_name,
+                  })
+              }
+          }
+      }
+
+      if metaControl.iwant != null {
+          for_each(array!(metaControl.iwant)) -> |_iwantindex, iwant| {
+              metaMessageIds = []
+              if iwant.message_ids != null {
+                  metaIHave = iwant.message_ids
+              }
+              for_each(array!(iwant.message_ids)) -> |_messageindex, message_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_iwant" + to_string(_iwantindex)+ "_" + to_string(_messageindex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "index": _messageindex,
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_iwant"
+                  }
+
+                  unique_key = seahash(key)
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_IWANT",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "message_index": _messageindex,
+                      "control_index": _iwantindex,
+                      "message_id": message_id,
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id": rootEvent.peer_id,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": .rootEvent.meta_network_name,
+                      "meta_client_name": .rootEvent.meta_client_name,
+                  })
+              }
+          }
+      }
+
+
+      if metaControl.graft != null {
+          for_each(array!(metaControl.graft)) -> |_index, graft| {
+              key, err = rootEvent.key + "rpc_meta_control_graft" + to_string(_index)+ "_" + graft.topic_id
+              if err != null {
+                  errDebug = {
+                      "root_event_key": rootEvent.key,
+                      "topic_id": graft.topic_id,
+                  }
+                  error = err
+                  errorMsg = "failed to generate unique key for rpc_meta_control_graft"
+              }
+
+              unique_key = seahash(key)
+
+              events = push(events, {
+                  "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT",
+                  "unique_key": unique_key,
+                  "rpc_meta_unique_key": rootEvent.unique_key,
+                  "control_index": _index,
+                  "topic_id": graft.topic_id,
+                  "updated_date_time": rootEvent.updated_date_time,
+                  "event_date_time": rootEvent.event_date_time,
+                  "peer_id": rootEvent.peer_id,
+                  "meta_network_id": rootEvent.meta_network_id,
+                  "meta_network_name": .rootEvent.meta_network_name,
+                  "meta_client_name": .rootEvent.meta_client_name,
+              })
+          }
+      }
+
+      if metaControl.prune != null {
+          for_each(array!(metaControl.prune)) -> |_pruneIndex, prune| {
+              metaPeerIds = []
+              if prune.peer_ids != null {
+                  metaPeerIds = prune.peer_ids
+              }
+              for_each(array!(metaPeerIds)) -> |_peerIndex, peer_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_prune" + to_string(_pruneIndex)+ "_" + to_string(_peerIndex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "topic_id": prune.topic_id,
+                          "prune_index": _pruneIndex,
+                          "peer_id": peer_id
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_prune"
+                  }
+
+                  unique_key = seahash(key)
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "control_index": _pruneIndex,
+                      "peer_id_index": _peerIndex,
+                      "topic_id": prune.topic_id,
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id": rootEvent.peer_id,
+                      "graft_peer_id": peer_id,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": .rootEvent.meta_network_name,
+                      "meta_client_name": .rootEvent.meta_client_name,
+                  })
+              }
+          }
+      }
+
+      if error != null {
+          assert!(error == null, message: join!(["Error occurred when generating libp2p_rpc_meta events: ", errorMsg]))
+          # TODO: Add LOG
+      }
+
+      del(rootEvent.key)
+
+      events = push(events, rootEvent)
+
+      . = events
+
+  libp2p_trace_rpc_events_formatted:
+    type: route
+    inputs:
+      - libp2p_trace_rpc_exploder
+    route:
+      meta_control_prune: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE"
+      meta_control_graft: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT"
+      meta_control_iwant: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
+      meta_control_ihave: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
+      meta_message: .event_name == "LIBP2P_TRACE_RPC_META_MESSAGE"
+      meta_subscription: .event_name == "LIBP2P_TRACE_RPC_META_SUBSCRIPTION"
+      recv_rpc: .event_name == "LIBP2P_TRACE_RECV_RPC"
+      send_rpc: .event_name == "LIBP2P_TRACE_SEND_RPC"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2248,6 +2686,266 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_elaborated_attestation
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_connected_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_connected_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_connected
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false  
+  libp2p_trace_disconnected_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_disconnected_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_disconnected
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_add_peer_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_add_peer_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_add_peer
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_removed_peer_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_remove_peer_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_remove_peer
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_join_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_join_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_join
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_prune_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_prune
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_prune
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_graft_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_graft
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_graft
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_iwant_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_iwant
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_iwant
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_ihave_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_ihave
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_ihave
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_message_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_message
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_message
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_subscription_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_subscription
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_subscription
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_recv_rpc_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.recv_rpc
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_recv_rpc
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_send_rpc_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.send_rpc
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_send_rpc
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

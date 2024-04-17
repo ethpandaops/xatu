@@ -241,6 +241,13 @@ services:
           "blockprint-block-classification"
           "mempool-transaction"
           "mempool-transaction-v2"
+          "libp2p-trace-connected"
+          "libp2p-trace-disconnected"
+          "libp2p-trace-add-peer"
+          "libp2p-trace-remove-peer"
+          "libp2p-trace-recv-rpc"
+          "libp2p-trace-send-rpc"
+          "libp2p-trace-join"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";
@@ -330,11 +337,13 @@ services:
   vector-kafka-clickhouse:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: timberio/vector:0.37.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
     networks:
       - xatu-net
+    ports:
+      - "8686:8686"
     environment:
       CLICKHOUSE_ENDPOINT: "clickhouse-01:8123"
       CLICKHOUSE_USER: default

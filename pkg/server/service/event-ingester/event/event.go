@@ -10,6 +10,7 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/blockprint"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
@@ -17,7 +18,7 @@ import (
 
 type Type string
 
-const (
+var (
 	TypeUnknown                                 Type = "unknown"
 	TypeBeaconETHV1EventsBlock                  Type = v1.EventsBlockType
 	TypeBeaconETHV1EventsBlockV2                Type = v1.EventsBlockV2Type
@@ -56,6 +57,13 @@ const (
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
+	TypeLibP2PTraceAddPeer                      Type = Type(libp2p.TraceAddPeerType)
+	TypeLibP2PTraceConnected                    Type = Type(libp2p.TraceConnectedType)
+	TypeLibP2PTraceJoin                         Type = Type(libp2p.TraceJoinType)
+	TypeLibP2PTraceDisconnected                 Type = Type(libp2p.TraceDisconnectedType)
+	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
+	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
+	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
 )
 
 type Event interface {
@@ -146,6 +154,20 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return v1.NewBeaconProposerDuty(log, event), nil
 	case TypeBeaconEthV2BeaconElaboratedAttestation:
 		return v2.NewBeaconBlockElaboratedAttestation(log, event), nil
+	case TypeLibP2PTraceAddPeer:
+		return libp2p.NewTraceAddPeer(log, event), nil
+	case TypeLibP2PTraceConnected:
+		return libp2p.NewTraceConnected(log, event), nil
+	case TypeLibP2PTraceJoin:
+		return libp2p.NewTraceJoin(log, event), nil
+	case TypeLibP2PTraceDisconnected:
+		return libp2p.NewTraceDisconnected(log, event), nil
+	case TypeLibP2PTraceRemovePeer:
+		return libp2p.NewTraceRemovePeer(log, event), nil
+	case TypeLibP2PTraceRecvRPC:
+		return libp2p.NewTraceRecvRPC(log, event), nil
+	case TypeLibP2PTraceSendRPC:
+		return libp2p.NewTraceSendRPC(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

@@ -1869,6 +1869,7 @@ transforms:
         .error_description = "failed to parse event date time"
       }
       .topic = .data.topic
+      .peer_id = .meta.client.additional_data.metadata.peer_id
       .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
@@ -2784,7 +2785,7 @@ sinks:
       - libp2p_trace_join_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: libp2p_join_peer
+    table: libp2p_join
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

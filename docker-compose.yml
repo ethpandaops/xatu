@@ -20,11 +20,11 @@ services:
       - "127.0.0.1:8123:8123"
       - "127.0.0.1:9000:9000"
     depends_on:
-      clickhouse-keeper-01:
+      zookeeper-01:
         condition: service_healthy
-      clickhouse-keeper-02:
+      zookeeper-02:
         condition: service_healthy
-      clickhouse-keeper-03:
+      zookeeper-03:
         condition: service_healthy
     healthcheck:
       test:
@@ -55,11 +55,11 @@ services:
       - "127.0.0.1:8124:8123"
       - "127.0.0.1:9001:9000"
     depends_on:
-      clickhouse-keeper-01:
+      zookeeper-01:
         condition: service_healthy
-      clickhouse-keeper-02:
+      zookeeper-02:
         condition: service_healthy
-      clickhouse-keeper-03:
+      zookeeper-03:
         condition: service_healthy
     healthcheck:
       test:
@@ -71,62 +71,59 @@ services:
       timeout: 10s
       retries: 15
       start_period: 15s
-  clickhouse-keeper-01:
+  zookeeper-01:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
-    user: "101:101"
-    container_name: clickhouse-keeper-01
-    hostname: clickhouse-keeper-01
+    image: zookeeper:3.9
+    container_name: zookeeper-01
+    hostname: zookeeper-01
     networks:
       - xatu-net
-    volumes:
-      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
-    ports:
-      - "127.0.0.1:9181:9181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+      ZOO_SERVERS: "server.1=zookeeper-01:2888:3888;2181 server.2=zookeeper-02:2888:3888;2181 server.3=zookeeper-03:2888:3888;2181"
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep -q 'imok'"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
-  clickhouse-keeper-02:
+  zookeeper-02:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
-    user: "101:101"
-    container_name: clickhouse-keeper-02
-    hostname: clickhouse-keeper-02
+    image: zookeeper:3.9
+    container_name: zookeeper-02
+    hostname: zookeeper-02
     networks:
       - xatu-net
-    volumes:
-      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
-    ports:
-      - "127.0.0.1:9182:9181"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+      ZOO_SERVERS: "server.1=zookeeper-01:2888:3888;2181 server.2=zookeeper-02:2888:3888;2181 server.3=zookeeper-03:2888:3888;2181"
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep -q 'imok'"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
-  clickhouse-keeper-03:
+  zookeeper-03:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-keeper:23.12-alpine"
-    user: "101:101"
-    container_name: clickhouse-keeper-03
-    hostname: clickhouse-keeper-03
+    image: zookeeper:3.9
+    container_name: zookeeper-03
+    hostname: zookeeper-03
     networks:
       - xatu-net
-    volumes:
-      - ./deploy/local/docker-compose/clickhouse/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
-    ports:
-      - "127.0.0.1:9183:9181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+      ZOO_SERVERS: "server.1=zookeeper-01:2888:3888;2181 server.2=zookeeper-02:2888:3888;2181 server.3=zookeeper-03:2888:3888;2181"
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 9181 | grep -q 'imok'"]
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep -q 'imok'"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -5,41 +5,72 @@ before:
     - go mod tidy
     - go generate ./...
 builds:
-  - env:
+  - id: linux-amd64
+    env:
       - CGO_ENABLED=1
-      - >-
-        {{- if eq .Os "darwin" }}
-          {{- if eq .Arch "amd64"}}CC=o64-clang{{- end }}
-          {{- if eq .Arch "arm64"}}CC=aarch64-apple-darwin20.2-clang{{- end }}
-        {{- end }}
-        {{- if eq .Os "windows" }}
-          {{- if eq .Arch "amd64" }}CC=x86_64-w64-mingw32-gcc{{- end }}
-        {{- end }}
-      - >-
-        {{- if eq .Os "darwin" }}
-          {{- if eq .Arch "amd64"}}CXX=o64-clang+{{- end }}
-          {{- if eq .Arch "arm64"}}CXX=aarch64-apple-darwin20.2-clang++{{- end }}
-        {{- end }}
-        {{- if eq .Os "windows" }}
-          {{- if eq .Arch "amd64" }}CXX=x86_64-w64-mingw32-g++{{- end }}
-        {{- end }}
+      - CC=x86_64-linux-gnu-gcc
+      - CXX=x86_64-linux-gnu-g++
     binary: xatu-{{.Version}}
     goos:
-      - linux
-      - windows
-      - darwin
+    - linux
+    goarch: 
+    - amd64
+    ldflags:
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
 
+  - id: linux-arm64
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    binary: xatu-{{.Version}}
+    goos: 
+    - linux
+    goarch: 
+    - arm64
+    ldflags:
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: windows-amd64
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    binary: xatu-{{.Version}}
+    goos:
+    - windows
     goarch:
-      - amd64
-      - arm64
-    goarm:
-      - 6
-      - 7
-    ignore:
-      - goarch: 386
-      # broken with go-ethereum github.com/prometheus/tsdb module
-      - goos: windows
-        goarch: arm64
+    - amd64
+    ldflags:
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: darwin-amd64
+    env:
+      - CGO_ENABLED=1
+      - CC=o64-clang
+      - CXX=o64-clang++
+    binary: xatu-{{.Version}}
+    goos:
+    - darwin
+    goarch:
+    - amd64
+    ldflags:
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: darwin-arm64
+    env:
+      - CGO_ENABLED=1
+      - CC=o64-clang
+      - CXX=o64-clang++
+    binary: xatu-{{.Version}}
+    goos:
+    - darwin
+    goarch:
+    - arm64
     ldflags:
       - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
     mod_timestamp: "{{ .CommitTimestamp }}"

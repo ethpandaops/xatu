@@ -38,25 +38,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           endpoint: builders
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Update GoReleaser config
+      - name: Run GoReleaser in Docker
         run: |
-          cp .goreleaser.yaml ../.goreleaser.yaml.new
-
-          # If we have a RELEASE_SUFFIX, update the goreleaser config to not set
-          # the release as the latest
-          if [[ -n "$RELEASE_SUFFIX" ]]; then
-            echo "release:" >> ../.goreleaser.yaml.new
-            echo "  prerelease: true" >> ../.goreleaser.yaml.new
-            echo "  make_latest: false" >> ../.goreleaser.yaml.new
-          fi
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean --config ../.goreleaser.yaml.new --skip-publish --skip-validate
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            goreleaser/goreleaser-cross:latest release --clean --config .goreleaser.yaml --skip-publish --skip-validate

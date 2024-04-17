@@ -74,12 +74,11 @@ jobs:
             echo "  prerelease: true" >> ../.goreleaser.yaml.new
             echo "  make_latest: false" >> ../.goreleaser.yaml.new
           fi
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean --config ../.goreleaser.yaml.new
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_SUFFIX: ${{ env.RELEASE_SUFFIX }}
+      - name: Run GoReleaser in Docker
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
+            goreleaser/goreleaser-cross:latest release --clean --config .goreleaser.yaml.new

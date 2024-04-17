@@ -20,7 +20,6 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
 	"github.com/probe-lab/hermes/eth"
-	hermes "github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prysmaticlabs/prysm/v5/config/params"
@@ -44,7 +43,10 @@ type Mimicry struct {
 
 	startupTime time.Time
 
-	node *hermes.Node
+	node *eth.Node
+
+	networkConfig *params.NetworkConfig
+	beaconConfig  *params.BeaconChainConfig
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry, error) {
@@ -80,6 +82,9 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 		return fmt.Errorf("get config for %s: %w", m.Config.Ethereum.Network, err)
 	}
 
+	m.networkConfig = netConfig
+	m.beaconConfig = beaConfig
+
 	genesisRoot := genConfig.GenesisValidatorRoot
 	genesisTime := genConfig.GenesisTime
 
@@ -104,7 +109,7 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	nodeConfig.Tracer = otel.GetTracerProvider().Tracer("hermes")
 	nodeConfig.Meter = otel.GetMeterProvider().Meter("hermes")
 
-	node, err := hermes.NewNode(nodeConfig)
+	node, err := eth.NewNode(nodeConfig)
 	if err != nil {
 		return err
 	}
@@ -220,6 +225,7 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
 				Name: m.Config.Ethereum.Network,
+				Id:   m.beaconConfig.DepositNetworkID,
 			},
 			Execution: &xatu.ClientMeta_Ethereum_Execution{},
 			Consensus: &xatu.ClientMeta_Ethereum_Consensus{},

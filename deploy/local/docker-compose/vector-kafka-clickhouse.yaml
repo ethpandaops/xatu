@@ -354,20 +354,9 @@ transforms:
       libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
       libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
       libp2p_trace_remove_peer: .event.name == "LIBP2P_TRACE_REMOVE_PEER"
-      # libp2p_trace_publish_message: .event.name == "LIBP2P_TRACE_PUBLISH_MESSAGE"
-      # libp2p_trace_reject_message: .event.name == "LIBP2P_TRACE_REJECT_MESSAGE"
-      # libp2p_trace_duplicate_message: .event.name == "LIBP2P_TRACE_DUPLICATE_MESSAGE"
-      # libp2p_trace_deliver_message: .event.name == "LIBP2P_TRACE_DELIVER_MESSAGE"
       libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
       libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
-      # libp2p_trace_drop_rpc: .event.name == "LIBP2P_TRACE_DROP_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
-      # libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
-      # libp2p_trace_graft: .event.name == "LIBP2P_TRACE_GRAFT"
-      # libp2p_trace_prune: .event.name == "LIBP2P_TRACE_PRUNE"
-      # libp2p_trace_validate_message: .event.name == "LIBP2P_TRACE_VALIDATE_MESSAGE"
-      # libp2p_trace_throttle_peer: .event.name == "LIBP2P_TRACE_THROTTLE_PEER"
-      # libp2p_trace_undeliverable_message: .event.name == "LIBP2P_TRACE_UNDELIVERABLE_MESSAGE"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -410,20 +399,9 @@ transforms:
       - xatu_server_events_router.libp2p_trace_disconnected
       - xatu_server_events_router.libp2p_trace_add_peer
       - xatu_server_events_router.libp2p_trace_remove_peer
-      # - xatu_server_events_router.libp2p_trace_publish_message
-      # - xatu_server_events_router.libp2p_trace_reject_message
-      # - xatu_server_events_router.libp2p_trace_duplicate_message
-      # - xatu_server_events_router.libp2p_trace_deliver_message
       - xatu_server_events_router.libp2p_trace_recv_rpc
-      # - xatu_server_events_router.libp2p_trace_send_rpc
-      # - xatu_server_events_router.libp2p_trace_drop_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
       - xatu_server_events_router.libp2p_trace_join
-      # - xatu_server_events_router.libp2p_trace_leave
-      # - xatu_server_events_router.libp2p_trace_graft
-      # - xatu_server_events_router.libp2p_trace_prune
-      # - xatu_server_events_router.libp2p_trace_validate_message
-      # - xatu_server_events_router.libp2p_trace_throttle_peer
-      # - xatu_server_events_router.libp2p_trace_undeliverable_message
     metrics:
       - type: counter
         field: event.name
@@ -1923,7 +1901,7 @@ transforms:
           "key": .event.id,
           "event_date_time": .event_date_time,
           "updated_date_time": .updated_date_time,
-          "peer_id": .received_from,
+          "peer_id": .data.meta.peer_id,
           "meta_client_name": .meta_client_name,
           "meta_client_id": .meta_client_id,
           "meta_client_version": .meta_client_version,
@@ -1951,33 +1929,35 @@ transforms:
       errorMsg = ""
       errDebug = {}
 
-      for_each(array!(.data.meta.subscriptions)) -> |_index, sub| {
-          key, err = rootEvent.key + "rpc_meta_subscription" + to_string(_index)
-          if err != null {
-              errDebug = {
-                  "root_event_key": rootEvent.key,
-                  "index": _index,
-              }
-              error = err
-              errorMsg = "failed to generate unique key for rpc_meta_subscription"
-          }
+      if .data.meta.subscriptions != null {
+        for_each(array!(.data.meta.subscriptions)) -> |_index, sub| {
+            key, err = rootEvent.key + "rpc_meta_subscription" + to_string(_index)
+            if err != null {
+                errDebug = {
+                    "root_event_key": rootEvent.key,
+                    "index": _index,
+                }
+                error = err
+                errorMsg = "failed to generate unique key for rpc_meta_subscription"
+            }
 
-          unique_key = seahash(key)
+            unique_key = seahash(key)
 
-          events = push(events, {
-              "event_name": "LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
-              "unique_key": unique_key,
-              "control_index": _index,
-              "rpc_meta_unique_key": rootEvent.unique_key,
-              "subscribe": sub.subscribe,
-              "topic_id": sub.topic_id,
-              "updated_date_time": rootEvent.updated_date_time,
-              "event_date_time": rootEvent.event_date_time,
-              "peer_id": rootEvent.received_from,
-              "meta_network_id": rootEvent.meta_network_id,
-              "meta_network_name": .rootEvent.meta_network_name,
-              "meta_client_name": .rootEvent.meta_client_name,
-          })
+            events = push(events, {
+                "event_name": "LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
+                "unique_key": unique_key,
+                "control_index": _index,
+                "rpc_meta_unique_key": rootEvent.unique_key,
+                "subscribe": sub.subscribe,
+                "topic_id": sub.topic_id,
+                "updated_date_time": rootEvent.updated_date_time,
+                "event_date_time": rootEvent.event_date_time,
+                "peer_id": rootEvent.peer_id,
+                "meta_network_id": rootEvent.meta_network_id,
+                "meta_network_name": .rootEvent.meta_network_name,
+                "meta_client_name": .rootEvent.meta_client_name,
+            })
+        }
       }
 
       if error != null {
@@ -2007,7 +1987,7 @@ transforms:
                 "topic": message.topic,
                 "updated_date_time": rootEvent.updated_date_time,
                 "event_date_time": rootEvent.event_date_time,
-                "peer_id": rootEvent.received_from,
+                "peer_id": rootEvent.peer_id,
                 "meta_network_id": rootEvent.meta_network_id,
                 "meta_network_name": .rootEvent.meta_network_name,
                 "meta_client_name": .rootEvent.meta_client_name,
@@ -2049,7 +2029,7 @@ transforms:
                       "topic_id": ihave.topic_id,
                       "updated_date_time": rootEvent.updated_date_time,
                       "event_date_time": rootEvent.event_date_time,
-                      "peer_id": rootEvent.received_from,
+                      "peer_id": rootEvent.peer_id,
                       "meta_network_id": rootEvent.meta_network_id,
                       "meta_network_name": .rootEvent.meta_network_name,
                       "meta_client_name": .rootEvent.meta_client_name,
@@ -2086,7 +2066,7 @@ transforms:
                       "message_id": message_id,
                       "updated_date_time": rootEvent.updated_date_time,
                       "event_date_time": rootEvent.event_date_time,
-                      "peer_id": rootEvent.received_from,
+                      "peer_id": rootEvent.peer_id,
                       "meta_network_id": rootEvent.meta_network_id,
                       "meta_network_name": .rootEvent.meta_network_name,
                       "meta_client_name": .rootEvent.meta_client_name,
@@ -2118,7 +2098,7 @@ transforms:
                   "topic_id": graft.topic_id,
                   "updated_date_time": rootEvent.updated_date_time,
                   "event_date_time": rootEvent.event_date_time,
-                  "peer_id": rootEvent.received_from,
+                  "peer_id": rootEvent.peer_id,
                   "meta_network_id": rootEvent.meta_network_id,
                   "meta_network_name": .rootEvent.meta_network_name,
                   "meta_client_name": .rootEvent.meta_client_name,
@@ -2156,7 +2136,7 @@ transforms:
                       "topic_id": prune.topic_id,
                       "updated_date_time": rootEvent.updated_date_time,
                       "event_date_time": rootEvent.event_date_time,
-                      "peer_id": rootEvent.received_from,
+                      "peer_id": rootEvent.peer_id,
                       "graft_peer_id": peer_id,
                       "meta_network_id": rootEvent.meta_network_id,
                       "meta_network_name": .rootEvent.meta_network_name,

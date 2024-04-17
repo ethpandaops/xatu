@@ -74,9 +74,6 @@ jobs:
             echo "  prerelease: true" >> .goreleaser.yaml.new
             echo "  make_latest: false" >> .goreleaser.yaml.new
           fi
-
-          # Add the new file to gitignore
-          echo ".goreleaser.yaml.new" >> .gitignore
       - name: Run GoReleaser in Docker
         run: |
           docker run --rm \

@@ -62,19 +62,8 @@ var (
 	TypeLibP2PTraceJoin                         Type = Type(libp2p.TraceJoinType)
 	TypeLibP2PTraceDisconnected                 Type = Type(libp2p.TraceDisconnectedType)
 	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
-	TypeLibP2PTracePublishMessage               Type = Type(libp2p.TracePublishMessageType)
-	TypeLibP2PTraceRejectMessage                Type = Type(libp2p.TraceRejectMessageType)
-	TypeLibP2PTraceDuplicateMessage             Type = Type(libp2p.TraceDuplicateMessageType)
-	TypeLibP2PTraceDeliverMessage               Type = Type(libp2p.TraceDeliverMessageType)
 	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
 	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
-	TypeLibP2PTraceDropRPC                      Type = Type(libp2p.TraceDropRPCType)
-	TypeLibP2PTraceLeave                        Type = Type(libp2p.TraceLeaveType)
-	TypeLibP2PTraceGraft                        Type = Type(libp2p.TraceGraftType)
-	TypeLibP2PTracePrune                        Type = Type(libp2p.TracePruneType)
-	TypeLibP2PTraceValidateMessage              Type = Type(libp2p.TraceValidateMessageType)
-	TypeLibP2PTraceThrottlePeer                 Type = Type(libp2p.TraceThrottlePeerType)
-	TypeLibP2PTraceUndeliverableMessage         Type = Type(libp2p.TraceUndeliverableMessageType)
 )
 
 type Event interface {
@@ -175,33 +164,10 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceDisconnected(log, event), nil
 	case TypeLibP2PTraceRemovePeer:
 		return libp2p.NewTraceRemovePeer(log, event), nil
-	case TypeLibP2PTracePublishMessage:
-		return libp2p.NewTracePublishMessage(log, event), nil
-	case TypeLibP2PTraceRejectMessage:
-		return libp2p.NewTraceRejectMessage(log, event), nil
-	case TypeLibP2PTraceDuplicateMessage:
-		return libp2p.NewTraceDuplicateMessage(log, event), nil
-	case TypeLibP2PTraceDeliverMessage:
-		return libp2p.NewTraceDeliverMessage(log, event), nil
 	case TypeLibP2PTraceRecvRPC:
 		return libp2p.NewTraceRecvRPC(log, event), nil
 	case TypeLibP2PTraceSendRPC:
 		return libp2p.NewTraceSendRPC(log, event), nil
-	case TypeLibP2PTraceDropRPC:
-		return libp2p.NewTraceDropRPC(log, event), nil
-	case TypeLibP2PTraceLeave:
-		return libp2p.NewTraceLeave(log, event), nil
-	case TypeLibP2PTraceGraft:
-		return libp2p.NewTraceGraft(log, event), nil
-	case TypeLibP2PTracePrune:
-		return libp2p.NewTracePrune(log, event), nil
-	case TypeLibP2PTraceValidateMessage:
-		return libp2p.NewTraceValidateMessage(log, event), nil
-	case TypeLibP2PTraceThrottlePeer:
-		return libp2p.NewTraceThrottlePeer(log, event), nil
-	case TypeLibP2PTraceUndeliverableMessage:
-		return libp2p.NewTraceUndeliverableMessage(log, event), nil
-
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

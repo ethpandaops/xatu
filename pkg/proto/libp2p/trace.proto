@@ -13,70 +13,9 @@ enum EventType {
   DISCONNECTED = 2;
   ADD_PEER = 3;
   REMOVE_PEER = 4;
-  PUBLISH_MESSAGE = 5;
-  REJECT_MESSAGE = 6;
-  DUPLICATE_MESSAGE = 7;
-  DELIVER_MESSAGE = 8;
-  RECV_RPC = 9;
-  SEND_RPC = 10;
-  DROP_RPC = 11;
-  JOIN = 12;
-  LEAVE = 13;
-  GRAFT = 14;
-  PRUNE = 15;
-  VALIDATE_MESSAGE = 16;
-  THROTTLE_PEER = 17;
-  UNDELIVERABLE_MESSAGE = 18;
-  HANDLE_STREAM = 19;
-  HANDLE_STATUS = 20;
-  HANDLE_METADATA = 21;
-  HANDLE_BLOB_SIDECARS_BY_RANGE = 22;
-  HANDLE_BLOB_SIDECARS_BY_ROOT = 23;
-  HANDLE_PING = 24;
-  HANDLE_GOODBYE = 25;
-  HANDLE_BEACON_BLOCKS_BY_RANGE = 26;
-  HANDLE_BEACON_BLOCKS_BY_ROOT = 27;
-}
-
-message PublishMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
-}
-
-message RejectMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
-  google.protobuf.StringValue reason = 3;
-  google.protobuf.StringValue topic = 4;
-  google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
-}
-
-message DuplicateMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
-  google.protobuf.StringValue topic = 3;
-  google.protobuf.StringValue seq_no = 4 [json_name = "seq_no"];
-  google.protobuf.UInt32Value message_size = 5 [json_name = "message_size"];
-  google.protobuf.BoolValue local = 6;
-}
-
-message DeliverMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
-  google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
-  google.protobuf.BoolValue local = 4;
-  google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
-}
-
-message ValidateMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
-  google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
-  google.protobuf.BoolValue local = 4;
-  google.protobuf.StringValue seq_no = 5 [json_name = "seq_no"];
-  google.protobuf.UInt32Value message_size = 6 [json_name = "message_size"];
+  RECV_RPC = 5;
+  SEND_RPC = 6;
+  JOIN = 7;
 }
 
 message AddPeer {
@@ -98,38 +37,12 @@ message SendRPC {
   RPCMeta meta = 2;
 }
 
-message DropRPC {
-  google.protobuf.StringValue send_to = 1 [json_name = "send_to"];
-  RPCMeta meta = 2;
-}
-
 message Join {
   google.protobuf.StringValue topic = 1;
 }
 
 message Leave {
   google.protobuf.StringValue topic = 2;
-}
-
-message Graft {
-  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
-  google.protobuf.StringValue topic = 2;
-}
-
-message Prune {
-  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
-  google.protobuf.StringValue topic = 2;
-}
-
-message ThrottlePeer {
-  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
-}
-
-message UndeliverableMessage {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
-  google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
-  google.protobuf.BoolValue local = 4 [json_name = "local"];
 }
 
 message RPCMeta {

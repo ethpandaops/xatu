@@ -766,26 +766,6 @@ message ClientMeta {
     AdditionalEthV1AttestationTargetV2Data target = 6;
   }
 
-  // AdditionalLibP2PTracePublishMessageData: Holds additional data for a publish message event in LibP2P tracing.
-  message AdditionalLibP2PTracePublishMessageData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceRejectMessageData: Holds additional data for a reject message event in LibP2P tracing.
-  message AdditionalLibP2PTraceRejectMessageData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceDuplicateMessageData: Holds additional data for a duplicate message event in LibP2P tracing.
-  message AdditionalLibP2PTraceDuplicateMessageData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceDeliverMessageData: Holds additional data for a deliver message event in LibP2P tracing.
-  message AdditionalLibP2PTraceDeliverMessageData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
   // AdditionalLibP2PTraceAddPeerData: Holds additional data for an add peer event in LibP2P tracing.
   message AdditionalLibP2PTraceAddPeerData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -806,43 +786,8 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
-  // AdditionalLibP2PTraceDropRPCData: Holds additional data for a drop RPC event in LibP2P tracing.
-  message AdditionalLibP2PTraceDropRPCData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
   // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
   message AdditionalLibP2PTraceJoinData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceLeaveData: Holds additional data for a leave event in LibP2P tracing.
-  message AdditionalLibP2PTraceLeaveData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceGraftData: Holds additional data for a graft event in LibP2P tracing.
-  message AdditionalLibP2PTraceGraftData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTracePruneData: Holds additional data for a prune event in LibP2P tracing.
-  message AdditionalLibP2PTracePruneData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceValidateMessageData: Holds additional data for a validate message event in LibP2P tracing.
-  message AdditionalLibP2PTraceValidateMessageData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceThrottlePeerData: Holds additional data for a throttle peer event in LibP2P tracing.
-  message AdditionalLibP2PTraceThrottlePeerData {
-    xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  // AdditionalLibP2PTraceUndeliverableMessageData: Holds additional data for an undeliverable message event in LibP2P tracing.
-  message AdditionalLibP2PTraceUndeliverableMessageData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
@@ -1023,24 +968,13 @@ message ClientMeta {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
     
     // AdditionalLibP2PTraceData contains additional data about libp2p traces.
-    AdditionalLibP2PTracePublishMessageData libp2p_trace_publish_message = 48 [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
-    AdditionalLibP2PTraceRejectMessageData libp2p_trace_reject_message = 49 [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
-    AdditionalLibP2PTraceDuplicateMessageData libp2p_trace_duplicate_message = 50 [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
-    AdditionalLibP2PTraceDeliverMessageData libp2p_trace_deliver_message = 51 [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
-    AdditionalLibP2PTraceAddPeerData libp2p_trace_add_peer = 52 [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
-    AdditionalLibP2PTraceRemovePeerData libp2p_trace_remove_peer = 53 [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];
-    AdditionalLibP2PTraceRecvRPCData libp2p_trace_recv_rpc = 54 [ json_name = "LIBP2P_TRACE_RECV_RPC" ];
-    AdditionalLibP2PTraceSendRPCData libp2p_trace_send_rpc = 55 [ json_name = "LIBP2P_TRACE_SEND_RPC" ];
-    AdditionalLibP2PTraceDropRPCData libp2p_trace_drop_rpc = 56 [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
-    AdditionalLibP2PTraceJoinData libp2p_trace_join = 57 [ json_name = "LIBP2P_TRACE_JOIN" ];
-    AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 58 [ json_name = "LIBP2P_TRACE_LEAVE" ];
-    AdditionalLibP2PTraceGraftData libp2p_trace_graft = 59 [ json_name = "LIBP2P_TRACE_GRAFT" ];
-    AdditionalLibP2PTracePruneData libp2p_trace_prune = 60 [ json_name = "LIBP2P_TRACE_PRUNE" ];
-    AdditionalLibP2PTraceValidateMessageData libp2p_trace_validate_message = 61 [ json_name = "LIBP2P_TRACE_VALIDATE_MESSAGE" ];
-    AdditionalLibP2PTraceThrottlePeerData libp2p_trace_throttle_peer = 62 [ json_name = "LIBP2P_TRACE_THROTTLE_PEER" ];
-    AdditionalLibP2PTraceUndeliverableMessageData libp2p_trace_undeliverable_message = 63 [ json_name = "LIBP2P_TRACE_UNDELIVERABLE_MESSAGE" ];
-    AdditionalLibP2PTraceConnectedData libp2p_trace_connected = 64 [ json_name = "LIBP2P_TRACE_CONNECTED" ];
-    AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 65 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
+    AdditionalLibP2PTraceAddPeerData libp2p_trace_add_peer = 48 [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
+    AdditionalLibP2PTraceRemovePeerData libp2p_trace_remove_peer = 49 [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];
+    AdditionalLibP2PTraceRecvRPCData libp2p_trace_recv_rpc = 50 [ json_name = "LIBP2P_TRACE_RECV_RPC" ];
+    AdditionalLibP2PTraceSendRPCData libp2p_trace_send_rpc = 51 [ json_name = "LIBP2P_TRACE_SEND_RPC" ];
+    AdditionalLibP2PTraceJoinData libp2p_trace_join = 52 [ json_name = "LIBP2P_TRACE_JOIN" ];
+    AdditionalLibP2PTraceConnectedData libp2p_trace_connected = 53 [ json_name = "LIBP2P_TRACE_CONNECTED" ];
+    AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 54 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
   }
 }
 
@@ -1161,30 +1095,11 @@ message Event {
     LIBP2P_TRACE_DISCONNECTED = 39;
     LIBP2P_TRACE_ADD_PEER = 40;
     LIBP2P_TRACE_REMOVE_PEER = 41;
-    LIBP2P_TRACE_PUBLISH_MESSAGE = 42;
-    LIBP2P_TRACE_REJECT_MESSAGE = 43;
-    LIBP2P_TRACE_DUPLICATE_MESSAGE = 44;
-    LIBP2P_TRACE_DELIVER_MESSAGE = 45;
-    LIBP2P_TRACE_RECV_RPC = 46;
-    LIBP2P_TRACE_SEND_RPC = 47;
-    LIBP2P_TRACE_DROP_RPC = 48;
-    LIBP2P_TRACE_JOIN = 49;
-    LIBP2P_TRACE_LEAVE = 50;
-    LIBP2P_TRACE_GRAFT = 51;
-    LIBP2P_TRACE_PRUNE = 52;
-    LIBP2P_TRACE_VALIDATE_MESSAGE = 53;
-    LIBP2P_TRACE_THROTTLE_PEER = 54;
-    LIBP2P_TRACE_UNDELIVERABLE_MESSAGE = 55;
-    LIBP2P_TRACE_HANDLE_STREAM = 56;
-    LIBP2P_TRACE_HANDLE_STATUS = 57;
-    LIBP2P_TRACE_HANDLE_METADATA = 58;
-    LIBP2P_TRACE_HANDLE_BLOB_SIDECARS_BY_RANGE = 59;
-    LIBP2P_TRACE_HANDLE_BLOB_SIDECARS_BY_ROOT = 60;
-    LIBP2P_TRACE_HANDLE_PING = 61;
-    LIBP2P_TRACE_HANDLE_GOODBYE = 62;
-    LIBP2P_TRACE_HANDLE_BEACON_BLOCKS_BY_RANGE = 63;
-    LIBP2P_TRACE_HANDLE_BEACON_BLOCKS_BY_ROOT = 64;
-    LIBP2P_TRACE_UNKNOWN = 65;
+    LIBP2P_TRACE_RECV_RPC = 42;
+    LIBP2P_TRACE_SEND_RPC = 43;
+    LIBP2P_TRACE_DROP_RPC = 44;
+    LIBP2P_TRACE_JOIN = 45;
+    LIBP2P_TRACE_UNKNOWN = 46;
     
   }
   // Name is the name of the event.
@@ -1295,41 +1210,19 @@ message DecoratedEvent {
     xatu.eth.v1.ElaboratedAttestation
         eth_v2_beacon_block_elaborated_attestation = 39
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
-    xatu.libp2p.PublishMessage libp2p_trace_publish_message = 40
-        [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
-    xatu.libp2p.RejectMessage libp2p_trace_reject_message = 41
-        [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
-    xatu.libp2p.DuplicateMessage libp2p_trace_duplicate_message = 42
-        [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
-    xatu.libp2p.DeliverMessage libp2p_trace_deliver_message = 43
-        [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
-    xatu.libp2p.AddPeer libp2p_trace_add_peer = 44
+    xatu.libp2p.AddPeer libp2p_trace_add_peer = 40
         [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
-    xatu.libp2p.RemovePeer libp2p_trace_remove_peer = 45
+    xatu.libp2p.RemovePeer libp2p_trace_remove_peer = 41
         [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];
-    xatu.libp2p.RecvRPC libp2p_trace_recv_rpc = 46
+    xatu.libp2p.RecvRPC libp2p_trace_recv_rpc = 42
         [ json_name = "LIBP2P_TRACE_RECV_RPC" ];
-    xatu.libp2p.SendRPC libp2p_trace_send_rpc = 47
+    xatu.libp2p.SendRPC libp2p_trace_send_rpc = 43
         [ json_name = "LIBP2P_TRACE_SEND_RPC" ];
-    xatu.libp2p.DropRPC libp2p_trace_drop_rpc = 48
-        [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
-    xatu.libp2p.Join libp2p_trace_join = 49
+    xatu.libp2p.Join libp2p_trace_join = 44
         [ json_name = "LIBP2P_TRACE_JOIN" ];
-    xatu.libp2p.Leave libp2p_trace_leave = 50
-        [ json_name = "LIBP2P_TRACE_LEAVE" ];
-    xatu.libp2p.Graft libp2p_trace_graft = 51
-        [ json_name = "LIBP2P_TRACE_GRAFT" ];
-    xatu.libp2p.Prune libp2p_trace_prune = 52
-        [ json_name = "LIBP2P_TRACE_PRUNE" ];
-    xatu.libp2p.ValidateMessage libp2p_trace_validate_message = 53
-        [ json_name = "LIBP2P_TRACE_VALIDATE_MESSAGE" ];
-    xatu.libp2p.ThrottlePeer libp2p_trace_throttle_peer = 54
-        [ json_name = "LIBP2P_TRACE_THROTTLE_PEER" ];
-    xatu.libp2p.UndeliverableMessage libp2p_trace_undeliverable_message = 55
-        [ json_name = "LIBP2P_TRACE_UNDELIVERABLE_MESSAGE" ];
-    xatu.libp2p.Connected libp2p_trace_connected = 56
+    xatu.libp2p.Connected libp2p_trace_connected = 45
         [ json_name = "LIBP2P_TRACE_CONNECTED" ];
-    xatu.libp2p.Disconnected libp2p_trace_disconnected = 57
+    xatu.libp2p.Disconnected libp2p_trace_disconnected = 46
         [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
   };
 }

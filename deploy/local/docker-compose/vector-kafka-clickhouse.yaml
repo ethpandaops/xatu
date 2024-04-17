@@ -1793,13 +1793,6 @@ transforms:
         .error = err
         .error_description = "failed to parse event date time"
       }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-        .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
-      }
       .remote_peer = .data.remote_peer
       .remote_maddrs = .data.remote_maddrs
       .agent_version = .data.agent_version
@@ -1828,13 +1821,6 @@ transforms:
       } else {
         .error = err
         .error_description = "failed to parse event date time"
-      }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-        .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
       }
       .remote_peer = .data.remote_peer
       .remote_maddrs = .data.remote_maddrs
@@ -1865,13 +1851,6 @@ transforms:
         .error = err
         .error_description = "failed to parse event date time"
       }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-        .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
-      }
       .peer_id = .data.peer_id
       .protocol = .data.protocol
       .unique_key = seahash(.event.id)
@@ -1892,13 +1871,6 @@ transforms:
         .error = err
         .error_description = "failed to parse event date time"
       }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-        .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
-      }
       .peer_id = .data.peer_id
       .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
@@ -1917,13 +1889,6 @@ transforms:
       } else {
         .error = err
         .error_description = "failed to parse event date time"
-      }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-        .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
       }
       .topic = .data.topic
       .unique_key = seahash(.event.id)
@@ -1947,14 +1912,6 @@ transforms:
         .error = err
         .error_description = "failed to parse event date time"
       }
-      session_start_date_time, err = parse_timestamp(.meta.client.additional_data.metadata.session_start_date_time, format: "%+");
-      if err == null {
-      .session_start_date_time = to_unix_timestamp(session_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse session start date time"
-      }
-
       .updated_date_time = to_unix_timestamp(now())
 
       # Emit the main RPC event record
@@ -1966,7 +1923,6 @@ transforms:
           "key": .event.id,
           "event_date_time": .event_date_time,
           "updated_date_time": .updated_date_time,
-          "session_start_date_time": .session_start_date_time,
           "peer_id": .received_from,
           "meta_client_name": .meta_client_name,
           "meta_client_id": .meta_client_id,

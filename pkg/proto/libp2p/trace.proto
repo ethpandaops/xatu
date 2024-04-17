@@ -176,7 +176,6 @@ message ControlPruneMeta {
 
 message TraceEventMetadata {
   google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
-  google.protobuf.Timestamp session_start_date_time = 2 [ json_name = "session_start_date_time" ];
 }
 
 message Connected {

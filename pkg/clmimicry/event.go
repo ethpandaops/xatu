@@ -31,8 +31,7 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	}
 
 	traceMeta := &libp2p.TraceEventMetadata{
-		PeerId:               wrapperspb.String(event.PeerID.String()),
-		SessionStartDateTime: timestamppb.New(m.startupTime),
+		PeerId: wrapperspb.String(event.PeerID.String()),
 	}
 
 	switch typ {

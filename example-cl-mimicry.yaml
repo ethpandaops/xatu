@@ -1,0 +1,24 @@
+logging: "debug" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9095"
+pprofAddr: ":6065" # optional. if supplied it enables pprof server
+
+name: example-instance
+
+ethereum:
+  network: mainnet # mainnet, sepolia, holesky
+node:
+  privateKeyStr: ""
+  dialTimeout: "5s"
+  devp2pHost: "0.0.0.0"
+  devp2pPort: 0
+  libp2pHost: "0.0.0.0"
+  libp2pPort: 0
+  prysmHost: "127.0.0.1"
+  prysmPortHttp: 5052
+  prysmPortGrpc: 4000
+  maxPeers: 30
+  dialConcurrency: 16
+
+outputs:
+- name: log 
+  type: stdout

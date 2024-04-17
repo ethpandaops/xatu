@@ -58,20 +58,9 @@ transforms:
       libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
       libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
       libp2p_trace_remove_peer: .event.name == "LIBP2P_TRACE_REMOVE_PEER"
-      libp2p_trace_publish_message: .event.name == "LIBP2P_TRACE_PUBLISH_MESSAGE"
-      libp2p_trace_reject_message: .event.name == "LIBP2P_TRACE_REJECT_MESSAGE"
-      libp2p_trace_duplicate_message: .event.name == "LIBP2P_TRACE_DUPLICATE_MESSAGE"
-      libp2p_trace_deliver_message: .event.name == "LIBP2P_TRACE_DELIVER_MESSAGE"
       libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
       libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
-      libp2p_trace_drop_rpc: .event.name == "LIBP2P_TRACE_DROP_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
-      libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
-      libp2p_trace_graft: .event.name == "LIBP2P_TRACE_GRAFT"
-      libp2p_trace_prune: .event.name == "LIBP2P_TRACE_PRUNE"
-      libp2p_trace_validate_message: .event.name == "LIBP2P_TRACE_VALIDATE_MESSAGE"
-      libp2p_trace_throttle_peer: .event.name == "LIBP2P_TRACE_THROTTLE_PEER"
-      libp2p_trace_undeliverable_message: .event.name == "LIBP2P_TRACE_UNDELIVERABLE_MESSAGE"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -751,70 +740,6 @@ sinks:
       enabled: true
     encoding:
       codec: json
-  libp2p_trace_publish_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_publish_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-publish-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_reject_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_reject_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-reject-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_duplicate_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_duplicate_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-duplicate-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_deliver_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_deliver_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-deliver-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
   libp2p_trace_recv_rpc_kafka:
     type: kafka
     buffer:
@@ -847,22 +772,6 @@ sinks:
       enabled: true
     encoding:
       codec: json
-  libp2p_trace_drop_rpc_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_drop_rpc
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-drop-rpc
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
   libp2p_trace_join_kafka:
     type: kafka
     buffer:
@@ -879,102 +788,3 @@ sinks:
       enabled: true
     encoding:
       codec: json
-  libp2p_trace_leave_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_leave
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-leave
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_graft_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_graft
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-graft
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_prune_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_prune
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-prune
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_validate_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_validate_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-validate-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_throttle_peer_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_throttle_peer
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-throttle-peer
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-  libp2p_trace_undeliverable_message_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.libp2p_trace_undeliverable_message
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: libp2p-trace-undeliverable-message
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
-
-
-

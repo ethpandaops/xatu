@@ -248,20 +248,9 @@ services:
           "libp2p-trace-disconnected"
           "libp2p-trace-add-peer"
           "libp2p-trace-remove-peer"
-          "libp2p-trace-publish-message"
-          "libp2p-trace-reject-message"
-          "libp2p-trace-duplicate-message"
-          "libp2p-trace-deliver-message"
           "libp2p-trace-recv-rpc"
           "libp2p-trace-send-rpc"
-          "libp2p-trace-drop-rpc"
           "libp2p-trace-join"
-          "libp2p-trace-leave"
-          "libp2p-trace-graft"
-          "libp2p-trace-prune"
-          "libp2p-trace-validate-message"
-          "libp2p-trace-throttle-peer"
-          "libp2p-trace-undeliverable-message"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

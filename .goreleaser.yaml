@@ -5,7 +5,25 @@ before:
     - go mod tidy
     - go generate ./...
 builds:
-  - binary: xatu-{{.Version}}
+  - env:
+      - CGO_ENABLED=1
+      - >-
+        {{- if eq .Os "darwin" }}
+          {{- if eq .Arch "amd64"}}CC=o64-clang{{- end }}
+          {{- if eq .Arch "arm64"}}CC=aarch64-apple-darwin20.2-clang{{- end }}
+        {{- end }}
+        {{- if eq .Os "windows" }}
+          {{- if eq .Arch "amd64" }}CC=x86_64-w64-mingw32-gcc{{- end }}
+        {{- end }}
+      - >-
+        {{- if eq .Os "darwin" }}
+          {{- if eq .Arch "amd64"}}CXX=o64-clang+{{- end }}
+          {{- if eq .Arch "arm64"}}CXX=aarch64-apple-darwin20.2-clang++{{- end }}
+        {{- end }}
+        {{- if eq .Os "windows" }}
+          {{- if eq .Arch "amd64" }}CXX=x86_64-w64-mingw32-g++{{- end }}
+        {{- end }}
+    binary: xatu-{{.Version}}
     goos:
       - linux
       - windows
@@ -22,6 +40,7 @@ builds:
       # broken with go-ethereum github.com/prometheus/tsdb module
       - goos: windows
         goarch: arm64
+      - goos: windows
     ldflags:
       - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
     mod_timestamp: "{{ .CommitTimestamp }}"

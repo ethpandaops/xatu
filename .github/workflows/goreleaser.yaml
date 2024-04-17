@@ -81,4 +81,4 @@ jobs:
             -w /workspace \
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
-            goreleaser/goreleaser-cross:latest release --clean --config .goreleaser.yaml.new
+            goreleaser/goreleaser-cross:v1.22.2 release --clean --config .goreleaser.yaml.new

@@ -44,4 +44,5 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            goreleaser/goreleaser-cross:latest release --clean --config .goreleaser.yaml --skip-publish --skip-validate
+            -e RELEASE_SUFFIx="test"
+            goreleaser/goreleaser-cross:v1.22.2 release --clean --config .goreleaser.yaml --skip=publish --skip=validate

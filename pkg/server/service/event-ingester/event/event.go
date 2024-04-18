@@ -157,11 +157,11 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 	case TypeLibP2PTraceAddPeer:
 		return libp2p.NewTraceAddPeer(log, event), nil
 	case TypeLibP2PTraceConnected:
-		return libp2p.NewTraceConnected(log, event), nil
+		return libp2p.NewTraceConnected(log, event, geoipProvider), nil
 	case TypeLibP2PTraceJoin:
 		return libp2p.NewTraceJoin(log, event), nil
 	case TypeLibP2PTraceDisconnected:
-		return libp2p.NewTraceDisconnected(log, event), nil
+		return libp2p.NewTraceDisconnected(log, event, geoipProvider), nil
 	case TypeLibP2PTraceRemovePeer:
 		return libp2p.NewTraceRemovePeer(log, event), nil
 	case TypeLibP2PTraceRecvRPC:

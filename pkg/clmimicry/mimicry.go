@@ -140,6 +140,12 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		}
 	}
 
+	if m.Config.ProbeAddr != nil {
+		if err := m.ServeProbe(ctx); err != nil {
+			return err
+		}
+	}
+
 	m.log.
 		WithField("version", xatu.Full()).
 		WithField("id", m.id.String()).
@@ -207,6 +213,30 @@ func (m *Mimicry) ServePProf(ctx context.Context) error {
 		m.log.Infof("Serving pprof at %s", *m.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
+			m.log.Fatal(err)
+		}
+	}()
+
+	return nil
+}
+
+func (m *Mimicry) ServeProbe(ctx context.Context) error {
+	probeServer := &http.Server{
+		Addr:              *m.Config.ProbeAddr,
+		ReadHeaderTimeout: 120 * time.Second,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte("OK"))
+			if err != nil {
+				m.log.Error("Failed to write response: ", err)
+			}
+		}),
+	}
+
+	go func() {
+		m.log.Infof("Serving probe at %s", *m.Config.ProbeAddr)
+
+		if err := probeServer.ListenAndServe(); err != nil {
 			m.log.Fatal(err)
 		}
 	}()

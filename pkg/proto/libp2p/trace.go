@@ -287,3 +287,171 @@ func TraceEventToDisconnected(event *host.TraceEvent) (*Disconnected, error) {
 		Transient:    wrapperspb.Bool(payload.Transient),
 	}, nil
 }
+
+func TraceEventToHandleMetadata(event *host.TraceEvent) (*HandleMetadata, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for HandleMetadata")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for HandleMetadata")
+	}
+
+	protocolID, ok := payload["ProtocolID"].(protocol.ID)
+	if !ok {
+		return nil, fmt.Errorf("protocolID is required for HandleMetadata")
+	}
+
+	latencyS, ok := payload["LatencyS"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("latencyS is required for HandleMetadata")
+	}
+
+	seqNumber, ok := payload["SeqNumber"].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("seqNumber is required for HandleMetadata")
+	}
+
+	attnets, ok := payload["Attnets"].(string)
+	if !ok {
+		return nil, fmt.Errorf("attnets is required for HandleMetadata")
+	}
+
+	syncnets, ok := payload["Syncnets"].(string)
+	if !ok {
+		return nil, fmt.Errorf("syncnets is required for HandleMetadata")
+	}
+
+	errorStr, _ := payload["Error"].(*string)
+
+	metadata := &HandleMetadata{
+		PeerId:     wrapperspb.String(peerID.String()),
+		ProtocolId: wrapperspb.String(string(protocolID)),
+		Latency:    wrapperspb.Float(float32(latencyS)),
+		Metadata: &Metadata{
+			SeqNumber: wrapperspb.UInt64(seqNumber),
+			Attnets:   wrapperspb.String(attnets),
+			Syncnets:  wrapperspb.String(syncnets),
+		},
+	}
+	if errorStr != nil {
+		metadata.Error = wrapperspb.String(*errorStr)
+	}
+
+	return metadata, nil
+}
+
+func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for HandleStatus")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for HandleStatus")
+	}
+
+	protocolID, ok := payload["ProtocolID"].(protocol.ID)
+	if !ok {
+		return nil, fmt.Errorf("protocolID is required for HandleStatus")
+	}
+
+	latencyS, ok := payload["LatencyS"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("latencyS is required for HandleStatus")
+	}
+
+	requestData, ok := payload["Request"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("request is required for HandleStatus")
+	}
+
+	request, err := parseStatus(requestData)
+	if err != nil {
+		return nil, err
+	}
+
+	responseData, ok := payload["Response"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("response is required for HandleStatus")
+	}
+
+	response, err := parseStatus(responseData)
+	if err != nil {
+		return nil, err
+	}
+
+	errorStr, _ := payload["Error"].(*string)
+
+	status := &HandleStatus{
+		PeerId:     wrapperspb.String(peerID.String()),
+		ProtocolId: wrapperspb.String(string(protocolID)),
+		Latency:    wrapperspb.Float(float32(latencyS)),
+		Request: &Status{
+			ForkDigest:     wrapperspb.String(request.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(request.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(request.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(request.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(request.HeadSlot),
+		},
+		Response: &Status{
+			ForkDigest:     wrapperspb.String(response.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(response.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(response.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(response.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(response.HeadSlot),
+		},
+	}
+
+	if errorStr != nil {
+		status.Error = wrapperspb.String(*errorStr)
+	}
+
+	return status, nil
+}
+
+type statusFields struct {
+	ForkDigest     string
+	FinalizedRoot  string
+	FinalizedEpoch uint64
+	HeadRoot       string
+	HeadSlot       uint64
+}
+
+func parseStatus(data map[string]any) (*statusFields, error) {
+	forkDigest, ok := data["ForkDigest"].(string)
+	if !ok {
+		return nil, fmt.Errorf("ForkDigest is required in status")
+	}
+
+	finalizedRoot, ok := data["FinalizedRoot"].(string)
+	if !ok {
+		return nil, fmt.Errorf("FinalizedRoot is required in status")
+	}
+
+	finalizedEpoch, ok := data["FinalizedEpoch"].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("FinalizedEpoch is required in status")
+	}
+
+	headRoot, ok := data["HeadRoot"].(string)
+	if !ok {
+		return nil, fmt.Errorf("HeadRoot is required in status")
+	}
+
+	headSlot, ok := data["HeadSlot"].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("HeadSlot is required in status")
+	}
+
+	return &statusFields{
+		ForkDigest:     forkDigest,
+		FinalizedRoot:  finalizedRoot,
+		FinalizedEpoch: finalizedEpoch,
+		HeadRoot:       headRoot,
+		HeadSlot:       headSlot,
+	}, nil
+}

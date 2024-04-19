@@ -4,6 +4,8 @@ package xatu.libp2p;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/libp2p";
 
+import "pkg/proto/libp2p/eth.proto";
+
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -16,6 +18,8 @@ enum EventType {
   RECV_RPC = 5;
   SEND_RPC = 6;
   JOIN = 7;
+  HANDLE_STATUS = 8;
+  HANDLE_METADATA = 9;
 }
 
 message AddPeer {
@@ -107,4 +111,21 @@ message Disconnected {
   google.protobuf.StringValue direction = 4 [json_name = "direction"];
   google.protobuf.Timestamp opened = 5 [ json_name = "opened" ];
   google.protobuf.BoolValue transient = 6 [json_name = "transient"];
+}
+
+message HandleStatus {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue protocol_id = 2 [json_name = "protocol_id"];
+  google.protobuf.StringValue error = 3;
+  google.protobuf.FloatValue latency = 4;
+  xatu.libp2p.Status request = 5;
+  xatu.libp2p.Status response = 6;
+}
+
+message HandleMetadata {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue protocol_id = 2 [json_name = "protocol_id"];
+  google.protobuf.StringValue error = 3;
+  google.protobuf.FloatValue latency = 4;
+  xatu.libp2p.Metadata metadata = 5;
 }

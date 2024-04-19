@@ -52,6 +52,10 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 	case libp2p.EventType_JOIN:
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
+	case libp2p.EventType_HANDLE_METADATA:
+		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
+	case libp2p.EventType_HANDLE_STATUS:
+		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	default:
 		return fmt.Errorf("unsupported event type: %v", typ)
 	}
@@ -310,6 +314,80 @@ func (m *Mimicry) handleJoinEvent(ctx context.Context,
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceJoin{
 			Libp2PTraceJoin: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent) error {
+	data, err := libp2p.TraceEventToHandleMetadata(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to handle metadata event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHandleMetadata{
+		Libp2PTraceHandleMetadata: &xatu.ClientMeta_AdditionalLibP2PTraceHandleMetadataData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceHandleMetadata{
+			Libp2PTraceHandleMetadata: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent) error {
+	data, err := libp2p.TraceEventToHandleStatus(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to handle status event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHandleStatus{
+		Libp2PTraceHandleStatus: &xatu.ClientMeta_AdditionalLibP2PTraceHandleStatusData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceHandleStatus{
+			Libp2PTraceHandleStatus: data,
 		},
 	}
 

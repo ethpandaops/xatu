@@ -800,6 +800,16 @@ message ClientMeta {
   message AdditionalLibP2PTraceDisconnectedData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
+
+  // AdditionalLibP2PTraceHandleMetadataData: Holds additional data for a handle metadata event in LibP2P tracing.
+  message AdditionalLibP2PTraceHandleMetadataData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceHandleStatusData: Holds additional data for a handle status event in LibP2P tracing.
+  message AdditionalLibP2PTraceHandleStatusData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
   
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
@@ -975,6 +985,8 @@ message ClientMeta {
     AdditionalLibP2PTraceJoinData libp2p_trace_join = 52 [ json_name = "LIBP2P_TRACE_JOIN" ];
     AdditionalLibP2PTraceConnectedData libp2p_trace_connected = 53 [ json_name = "LIBP2P_TRACE_CONNECTED" ];
     AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 54 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
+    AdditionalLibP2PTraceHandleMetadataData libp2p_trace_handle_metadata = 55 [ json_name = "LIBP2P_TRACE_HANDLE_METADATA" ];
+    AdditionalLibP2PTraceHandleStatusData libp2p_trace_handle_status = 56 [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
   }
 }
 
@@ -1100,7 +1112,8 @@ message Event {
     LIBP2P_TRACE_DROP_RPC = 44;
     LIBP2P_TRACE_JOIN = 45;
     LIBP2P_TRACE_UNKNOWN = 46;
-    
+    LIBP2P_TRACE_HANDLE_METADATA = 47;
+    LIBP2P_TRACE_HANDLE_STATUS = 48;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1224,5 +1237,9 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_CONNECTED" ];
     xatu.libp2p.Disconnected libp2p_trace_disconnected = 46
         [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
+    xatu.libp2p.HandleMetadata libp2p_trace_handle_metadata = 47
+        [ json_name = "LIBP2P_TRACE_HANDLE_METADATA" ];
+    xatu.libp2p.HandleStatus libp2p_trace_handle_status = 48
+        [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
   };
 }

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package xatu.libp2p;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/libp2p";
+
+import "google/protobuf/wrappers.proto";
+
+message Status {
+    google.protobuf.StringValue fork_digest = 1 [json_name = "fork_digest"];
+    google.protobuf.StringValue finalized_root = 2 [json_name = "finalized_root"];
+    google.protobuf.UInt64Value finalized_epoch = 3 [json_name = "finalized_epoch"];
+    google.protobuf.StringValue head_root = 4 [json_name = "head_root"];
+    google.protobuf.UInt64Value head_slot = 5 [json_name = "head_slot"];
+}
+
+message Metadata {
+    google.protobuf.UInt64Value seq_number = 1 [json_name = "seq_number"];
+    google.protobuf.StringValue attnets = 2;
+    google.protobuf.StringValue syncnets = 3;
+}

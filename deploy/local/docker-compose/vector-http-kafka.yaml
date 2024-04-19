@@ -62,7 +62,7 @@ transforms:
       libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
       libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
-      libp2p_trace_handle_stream: .event.name == "LIBP2P_TRACE_HANDLE_STREAM"
+      libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
 sinks:
   metrics:
     type: prometheus_exporter

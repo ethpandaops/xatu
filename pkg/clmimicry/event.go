@@ -54,8 +54,8 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
 	case libp2p.EventType_HANDLE_METADATA:
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_HANDLE_STATUS:
-		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
+	case libp2p.EventType_HANDLE_MESSAGE:
+		return m.handleHandleMessageEvent(ctx, clientMeta, traceMeta, event)
 	default:
 		return fmt.Errorf("unsupported event type: %v", typ)
 	}
@@ -318,6 +318,57 @@ func (m *Mimicry) handleJoinEvent(ctx context.Context,
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent) error {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return errors.New("invalid payload type for handleMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return errors.New("invalid topic type for handleMessage")
+	}
+
+	m.log.WithField("topic", topic).Debug("Received handleMessage event")
+
+	return nil
+
+	// data, err := libp2p.TraceEventToHandleMetadata(event)
+	// if err != nil {
+	// 	return errors.Wrapf(err, "failed to convert event to handle message event")
+	// }
+
+	// metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	// if !ok {
+	// 	return fmt.Errorf("failed to clone client metadata")
+	// }
+
+	// metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHandleMetadata{
+	// 	Libp2PTraceHandleMetadata: &xatu.ClientMeta_AdditionalLibP2PTraceHandleMetadataData{
+	// 		Metadata: traceMeta,
+	// 	},
+	// }
+
+	// decoratedEvent := &xatu.DecoratedEvent{
+	// 	Event: &xatu.Event{
+	// 		Name:     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
+	// 		DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+	// 		Id:       uuid.New().String(),
+	// 	},
+	// 	Meta: &xatu.Meta{
+	// 		Client: metadata,
+	// 	},
+	// 	Data: &xatu.DecoratedEvent_Libp2PTraceHandleMetadata{
+	// 		Libp2PTraceHandleMetadata: data,
+	// 	},
+	// }
+
+	// return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
 func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,

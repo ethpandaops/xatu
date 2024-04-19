@@ -18,7 +18,7 @@ enum EventType {
   RECV_RPC = 5;
   SEND_RPC = 6;
   JOIN = 7;
-  HANDLE_STATUS = 8;
+  HANDLE_MESSAGE = 8;
   HANDLE_METADATA = 9;
 }
 

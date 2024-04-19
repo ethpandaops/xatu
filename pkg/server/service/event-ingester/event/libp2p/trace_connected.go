@@ -55,7 +55,7 @@ func (tc *TraceConnected) AppendServerMeta(ctx context.Context, meta *xatu.Serve
 	}
 
 	multiaddr := data.Libp2PTraceConnected.GetRemoteMaddrs().GetValue()
-	if multiaddr != "" {
+	if multiaddr == "" {
 		return meta
 	}
 

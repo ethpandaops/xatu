@@ -1,3 +1,3 @@
-FROM gcr.io/distroless/static-debian11:latest
+FROM gcr.io/distroless/cc-debian12:latest
 COPY xatu* /xatu
 ENTRYPOINT ["/xatu"]

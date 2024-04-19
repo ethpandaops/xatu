@@ -1028,6 +1028,10 @@ message ServerMeta {
 
   message AdditionalBeaconP2PAttestationData { Peer peer = 1; }
 
+  message AdditionalLibp2PTraceConnectedData { Peer peer = 1; }
+
+  message AdditionalLibp2PTraceDisconnectedData { Peer peer = 1; }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
@@ -1041,6 +1045,14 @@ message ServerMeta {
     // beacon attestations that were received over the p2p network.
     AdditionalBeaconP2PAttestationData BEACON_P2P_ATTESTATION = 3
         [ json_name = "BEACON_P2P_ATTESTATION" ];
+    // AdditionalLibp2PTraceConnected contains additional data on peer
+    // geo location
+    AdditionalLibp2PTraceConnectedData LIBP2P_TRACE_CONNECTED = 4
+        [ json_name = "LIBP2P_TRACE_CONNECTED" ];
+    // AdditionalLibp2PTraceDisconnected contains additional data on peer
+    // geo location
+    AdditionalLibp2PTraceDisconnectedData LIBP2P_TRACE_DISCONNECTED = 5
+        [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
   }
 }
 

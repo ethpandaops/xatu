@@ -248,6 +248,8 @@ services:
           "libp2p-trace-recv-rpc"
           "libp2p-trace-send-rpc"
           "libp2p-trace-join"
+          "libp2p-trace-handle-metadata"
+          "libp2p-trace-handle-status"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

@@ -61,6 +61,8 @@ transforms:
       libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
       libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
+      libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
+      libp2p_trace_handle_stream: .event.name == "LIBP2P_TRACE_HANDLE_STREAM"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -783,6 +785,38 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-join
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_handle_metadata_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_handle_metadata
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-handle-metadata
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_handle_status_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_handle_status
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-handle-status
     compression: snappy
     healthcheck:
       enabled: true

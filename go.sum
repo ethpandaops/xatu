@@ -264,6 +264,8 @@ github.com/ethpandaops/beacon v0.35.0 h1:ZkHfxm41N0wkv503Xdb6rFxLuEnIonClUQWUPFH
 github.com/ethpandaops/beacon v0.35.0/go.mod h1:B+SLxj1gnDd/Ia7cl/uuhzo1wyVf2p2puL6lmzPdPro=
 github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c h1:B/Auy5g6Nv4Pd8R9W9dC1IpysO7LzEmqb2C4iYM4j2A=
 github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
+github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756 h1:8JWjrRfP14m0oxOk03m11n/xgdY5ceyUf/ZxYdOs5gE=
+github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=
 github.com/ethpandaops/ethwallclock v0.3.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
 github.com/ethpandaops/hermes v0.0.0-20240416064533-1564b5db6dc6 h1:htFz7bZLN4QSnPSMK38eDPtze8ZiMbl//j/unKxmxL0=

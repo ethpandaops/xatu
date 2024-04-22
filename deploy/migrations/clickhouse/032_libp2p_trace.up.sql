@@ -191,7 +191,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_message AS libp2p_rpc_meta_message_local
+CREATE TABLE libp2p_rpc_meta_message ON CLUSTER '{cluster}' AS libp2p_rpc_meta_message_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_message_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
@@ -256,7 +256,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_subscription AS libp2p_rpc_meta_subscription_local
+CREATE TABLE libp2p_rpc_meta_subscription ON CLUSTER '{cluster}' AS libp2p_rpc_meta_subscription_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_subscription_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_control_ihave_local ON CLUSTER '{cluster}'
@@ -323,7 +323,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_ihave AS libp2p_rpc_meta_control_ihave_local
+CREATE TABLE libp2p_rpc_meta_control_ihave ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_ihave_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_ihave_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
@@ -382,7 +382,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_iwant AS libp2p_rpc_meta_control_iwant_local
+CREATE TABLE libp2p_rpc_meta_control_iwant  ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_iwant_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_iwant_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
@@ -445,7 +445,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_graft AS libp2p_rpc_meta_control_graft_local
+CREATE TABLE libp2p_rpc_meta_control_graft ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_graft_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_graft_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_control_prune_local ON CLUSTER '{cluster}'
@@ -511,7 +511,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_prune ON cluster '{cluster}'  AS libp2p_rpc_meta_control_prune_local
+CREATE TABLE libp2p_rpc_meta_control_prune ON CLUSTER '{cluster}'  AS libp2p_rpc_meta_control_prune_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_prune_local, rand());
 
 -- Creating local and distributed tables for libp2p_recv_rpc

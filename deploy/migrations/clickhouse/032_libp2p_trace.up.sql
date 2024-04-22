@@ -191,7 +191,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_message ON CLUSTER '{cluster}' AS libp2p_rpc_meta_message_local
+CREATE TABLE libp2p_rpc_meta_message  ON CLUSTER '{cluster}' AS libp2p_rpc_meta_message_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_message_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
@@ -617,7 +617,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_send_rpc AS libp2p_send_rpc_local
+CREATE TABLE libp2p_send_rpc ON CLUSTER '{cluster}' AS libp2p_send_rpc_local
 ENGINE = Distributed('{cluster}', default, libp2p_send_rpc_local, rand());
 
 -- Creating local and distributed tables for libp2p_join

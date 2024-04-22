@@ -248,11 +248,15 @@ services:
           "libp2p-trace-recv-rpc"
           "libp2p-trace-send-rpc"
           "libp2p-trace-join"
+          "libp2p-trace-handle-metadata"
+          "libp2p-trace-handle-status"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";
           kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=compact --config retention.ms=300000 --topic "$$topic"
         done
+
+        sleep 3;
     depends_on:
       kafka:
         condition: service_healthy
@@ -333,6 +337,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
 
   vector-kafka-clickhouse:
     profiles:
@@ -362,6 +368,10 @@ services:
         condition: service_healthy
       clickhouse-02:
         condition: service_healthy
+      clickhouse-migrator:
+        condition: service_completed_successfully
+      init-kafka:
+        condition: service_completed_successfully
   postgres-migrator:
     profiles:
       - ""

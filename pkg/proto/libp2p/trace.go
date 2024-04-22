@@ -8,6 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/probe-lab/hermes/host"
+	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -286,4 +287,136 @@ func TraceEventToDisconnected(event *host.TraceEvent) (*Disconnected, error) {
 		Opened:       timestamppb.New(payload.Opened),
 		Transient:    wrapperspb.Bool(payload.Transient),
 	}, nil
+}
+
+func TraceEventToHandleMetadata(event *host.TraceEvent) (*HandleMetadata, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for HandleMetadata")
+	}
+
+	metadata := &HandleMetadata{}
+
+	if peerID, ok := payload["PeerID"].(peer.ID); ok {
+		metadata.PeerId = wrapperspb.String(peerID.String())
+	}
+
+	if protocolID, ok := payload["ProtocolID"].(protocol.ID); ok {
+		metadata.ProtocolId = wrapperspb.String(string(protocolID))
+	}
+
+	if latencyS, ok := payload["LatencyS"].(float64); ok {
+		metadata.Latency = wrapperspb.Float(float32(latencyS))
+	}
+
+	metadata.Metadata = &Metadata{}
+
+	if seqNumber, ok := payload["SeqNumber"].(uint64); ok {
+		metadata.Metadata.SeqNumber = wrapperspb.UInt64(seqNumber)
+	}
+
+	if attnets, ok := payload["Attnets"].(string); ok {
+		metadata.Metadata.Attnets = wrapperspb.String(attnets)
+	}
+
+	if syncnets, ok := payload["Syncnets"].(string); ok {
+		metadata.Metadata.Syncnets = wrapperspb.String(syncnets)
+	}
+
+	if errorStr, ok := payload["Error"].(string); ok {
+		metadata.Error = wrapperspb.String(errorStr)
+	}
+
+	return metadata, nil
+}
+
+func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for HandleStatus")
+	}
+
+	status := &HandleStatus{}
+
+	if peerID, ok := payload["PeerID"].(peer.ID); ok {
+		status.PeerId = wrapperspb.String(peerID.String())
+	}
+
+	if protocolID, ok := payload["ProtocolID"].(protocol.ID); ok {
+		status.ProtocolId = wrapperspb.String(string(protocolID))
+	}
+
+	if latencyS, ok := payload["LatencyS"].(float64); ok {
+		status.Latency = wrapperspb.Float(float32(latencyS))
+	}
+
+	if requestData, ok := payload["Request"].(map[string]any); ok {
+		request, err := parseStatus(requestData)
+		if err != nil {
+			return nil, err
+		}
+
+		status.Request = &Status{
+			ForkDigest:     wrapperspb.String(request.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(request.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(request.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(request.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(request.HeadSlot),
+		}
+	}
+
+	if responseData, ok := payload["Response"].(map[string]any); ok {
+		response, err := parseStatus(responseData)
+		if err != nil {
+			return nil, err
+		}
+
+		status.Response = &Status{
+			ForkDigest:     wrapperspb.String(response.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(response.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(response.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(response.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(response.HeadSlot),
+		}
+	}
+
+	if errorStr, ok := payload["Error"].(string); ok {
+		status.Error = wrapperspb.String(errorStr)
+	}
+
+	return status, nil
+}
+
+type statusFields struct {
+	ForkDigest     string
+	FinalizedRoot  string
+	FinalizedEpoch uint64
+	HeadRoot       string
+	HeadSlot       uint64
+}
+
+func parseStatus(data map[string]any) (*statusFields, error) {
+	status := &statusFields{}
+
+	if forkDigest, ok := data["ForkDigest"].(string); ok {
+		status.ForkDigest = forkDigest
+	}
+
+	if finalizedRoot, ok := data["FinalizedRoot"].(string); ok {
+		status.FinalizedRoot = finalizedRoot
+	}
+
+	if finalizedEpoch, ok := data["FinalizedEpoch"].(primitives.Epoch); ok {
+		status.FinalizedEpoch = uint64(finalizedEpoch)
+	}
+
+	if headRoot, ok := data["HeadRoot"].(string); ok {
+		status.HeadRoot = headRoot
+	}
+
+	if headSlot, ok := data["HeadSlot"].(primitives.Slot); ok {
+		status.HeadSlot = uint64(headSlot)
+	}
+
+	return status, nil
 }

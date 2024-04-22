@@ -64,6 +64,8 @@ var (
 	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
 	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
 	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
+	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
+	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
 )
 
 type Event interface {
@@ -168,6 +170,10 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceRecvRPC(log, event), nil
 	case TypeLibP2PTraceSendRPC:
 		return libp2p.NewTraceSendRPC(log, event), nil
+	case TypeLibP2PTraceHandleStatus:
+		return libp2p.NewTraceHandleStatus(log, event), nil
+	case TypeLibP2PTraceHandleMetadata:
+		return libp2p.NewTraceHandleMetadata(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

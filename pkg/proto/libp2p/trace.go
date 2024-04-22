@@ -8,6 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/probe-lab/hermes/host"
+	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -405,16 +406,16 @@ func parseStatus(data map[string]any) (*statusFields, error) {
 		status.FinalizedRoot = finalizedRoot
 	}
 
-	if finalizedEpoch, ok := data["FinalizedEpoch"].(uint64); ok {
-		status.FinalizedEpoch = finalizedEpoch
+	if finalizedEpoch, ok := data["FinalizedEpoch"].(primitives.Epoch); ok {
+		status.FinalizedEpoch = uint64(finalizedEpoch)
 	}
 
 	if headRoot, ok := data["HeadRoot"].(string); ok {
 		status.HeadRoot = headRoot
 	}
 
-	if headSlot, ok := data["HeadSlot"].(uint64); ok {
-		status.HeadSlot = headSlot
+	if headSlot, ok := data["HeadSlot"].(primitives.Slot); ok {
+		status.HeadSlot = uint64(headSlot)
 	}
 
 	return status, nil

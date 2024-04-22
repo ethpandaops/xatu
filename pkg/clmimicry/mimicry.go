@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,8 +23,10 @@ import (
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/core/signing"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/encoder"
 	"github.com/prysmaticlabs/prysm/v5/config/params"
-	"github.com/prysmaticlabs/prysm/v5/network/forks"
+	"github.com/prysmaticlabs/prysm/v5/time/slots"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 )
@@ -88,7 +91,16 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	genesisRoot := genConfig.GenesisValidatorRoot
 	genesisTime := genConfig.GenesisTime
 
-	forkDigest, err := forks.CreateForkDigest(genesisTime, genesisRoot)
+	// compute fork version and fork digest
+	currentSlot := slots.Since(genesisTime)
+	currentEpoch := slots.ToEpoch(currentSlot)
+
+	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, beaConfig)
+	if err != nil {
+		return fmt.Errorf("compute fork version for epoch %d: %w", currentEpoch, err)
+	}
+
+	forkDigest, err := signing.ComputeForkDigest(currentForkVersion[:], genesisRoot)
 	if err != nil {
 		return fmt.Errorf("create fork digest (%s, %x): %w", genesisTime, genesisRoot, err)
 	}
@@ -106,11 +118,23 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	nodeConfig.ForkDigest = forkDigest
 	nodeConfig.PubSubSubscriptionRequestLimit = 200
 	nodeConfig.PubSubQueueSize = 200
+	nodeConfig.Libp2pPeerscoreSnapshotFreq = 60 * time.Second
+	nodeConfig.GossipSubMessageEncoder = encoder.SszNetworkEncoder{}
+	nodeConfig.RPCEncoder = encoder.SszNetworkEncoder{}
 	nodeConfig.Tracer = otel.GetTracerProvider().Tracer("hermes")
 	nodeConfig.Meter = otel.GetMeterProvider().Meter("hermes")
 
+	err = nodeConfig.Validate()
+	if err != nil {
+		return fmt.Errorf("invalid Hermes node config: %w", err)
+	}
+
 	node, err := eth.NewNode(nodeConfig)
 	if err != nil {
+		if strings.Contains(err.Error(), "in correct fork_digest") {
+			return fmt.Errorf("invalid fork digest (config.ethereum.network and prysm network probably don't match): %w", err)
+		}
+
 		return err
 	}
 

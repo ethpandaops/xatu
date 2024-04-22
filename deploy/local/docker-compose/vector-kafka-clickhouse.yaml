@@ -2041,19 +2041,15 @@ transforms:
         .response_head_root = .data.response.head_root
         .response_head_slot = .data.response.head_slot
       }
-      .latency_seconds = .data.latency
-      .protocol_id_parts = split(.data.protocol_id, "/")
-      if length(.protocol_id_parts) >= 5 {
-        .protocol_layer = .protocol_id_parts[1]
-        .protocol_type = .protocol_id_parts[2]
-        .protocol_name = .protocol_id_parts[3]
-        .protocol_version = .protocol_id_parts[4]
-        .protocol_encoding = .protocol_id_parts[5]
-      } else {
-        .error = "incomplete_protocol_id"
-        .error_description = "protocol_id does not contain enough parts"
+
+      .latency_milliseconds, err = .data.latency * 1000
+      if err != null {
+        .error = err
+        .error_description = "failed to convert latency to millseconds"
         log(., level: "error", rate_limit_secs: 60)
       }
+
+      .protocol = .data.protocol_id
 
       .updated_date_time = to_unix_timestamp(now())
 
@@ -2092,20 +2088,14 @@ transforms:
       .seq_number = .data.metadata.seq_number
       .syncnets = .data.metadata.syncnets
 
-      .latency_seconds = .data.latency
-      
-      .protocol_id_parts = split(.data.protocol_id, "/")
-      if length(.protocol_id_parts) >= 5 {
-        .protocol_layer = .protocol_id_parts[1]
-        .protocol_type = .protocol_id_parts[2]
-        .protocol_name = .protocol_id_parts[3]
-        .protocol_version = .protocol_id_parts[4]
-        .protocol_encoding = .protocol_id_parts[5]
-      } else {
-        .error = "incomplete_protocol_id"
-        .error_description = "protocol_id does not contain enough parts"
+      .latency_milliseconds, err = .data.latency * 1000
+      if err != null {
+        .error = err
+        .error_description = "failed to convert latency to millseconds"
         log(., level: "error", rate_limit_secs: 60)
       }
+      
+      .protocol = .data.protocol_id
 
       .updated_date_time = to_unix_timestamp(now())
 

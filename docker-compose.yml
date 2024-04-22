@@ -255,6 +255,8 @@ services:
           echo "Creating topic: $$topic";
           kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=compact --config retention.ms=300000 --topic "$$topic"
         done
+
+        sleep 3;
     depends_on:
       kafka:
         condition: service_healthy
@@ -367,6 +369,8 @@ services:
       clickhouse-02:
         condition: service_healthy
       clickhouse-migrator:
+        condition: service_completed_successfully
+      init-kafka:
         condition: service_completed_successfully
   postgres-migrator:
     profiles:

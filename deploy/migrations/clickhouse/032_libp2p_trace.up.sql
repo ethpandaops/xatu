@@ -17,7 +17,7 @@ COMMENT COLUMN peer_id 'Peer ID',
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_peer on cluster '{cluster}' AS  libp2p_peer_local
+CREATE TABLE libp2p_peer ON CLUSTER '{cluster}' AS  libp2p_peer_local
 ENGINE = Distributed('{cluster}', default, libp2p_peer_local, rand());
 
 -- Creating local and distributed tables for libp2p_add_peer
@@ -27,7 +27,7 @@ CREATE TABLE libp2p_add_peer_local ON CLUSTER '{cluster}'
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     peer_id_unique_key Int64,
-    protocol String CODEC(ZSTD(1)),
+    protocol LowCardinality(String),
     meta_client_name LowCardinality(String),
     meta_client_id String CODEC(ZSTD(1)),
     meta_client_version LowCardinality(String),
@@ -72,7 +72,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_add_peer on cluster '{cluster}' AS  libp2p_add_peer_local
+CREATE TABLE libp2p_add_peer ON CLUSTER '{cluster}' AS  libp2p_add_peer_local
 ENGINE = Distributed('{cluster}', default, libp2p_add_peer_local, rand());
 
 -- Creating local and distributed tables for libp2p_remove_peer
@@ -125,7 +125,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_remove_peer on cluster '{cluster}' AS libp2p_remove_peer_local
+CREATE TABLE libp2p_remove_peer ON CLUSTER '{cluster}' AS libp2p_remove_peer_local
 ENGINE = Distributed('{cluster}', default, libp2p_remove_peer_local, rand());
 
 -- Creating tables for RPC meta data with ReplicatedReplacingMergeTree and Distributed engines
@@ -191,7 +191,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_message  ON CLUSTER '{cluster}' AS libp2p_rpc_meta_message_local
+CREATE TABLE libp2p_rpc_meta_message ON CLUSTER '{cluster}' AS libp2p_rpc_meta_message_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_message_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
@@ -382,7 +382,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_iwant  ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_iwant_local
+CREATE TABLE libp2p_rpc_meta_control_iwant ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_iwant_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_iwant_local, rand());
 
 CREATE TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
@@ -511,7 +511,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_rpc_meta_control_prune ON CLUSTER '{cluster}'  AS libp2p_rpc_meta_control_prune_local
+CREATE TABLE libp2p_rpc_meta_control_prune ON CLUSTER '{cluster}' AS libp2p_rpc_meta_control_prune_local
 ENGINE = Distributed('{cluster}', default, libp2p_rpc_meta_control_prune_local, rand());
 
 -- Creating local and distributed tables for libp2p_recv_rpc
@@ -564,7 +564,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_recv_rpc on cluster '{cluster}' AS libp2p_recv_rpc_local
+CREATE TABLE libp2p_recv_rpc ON CLUSTER '{cluster}' AS libp2p_recv_rpc_local
 ENGINE = Distributed('{cluster}', default, libp2p_recv_rpc_local, rand());
 
 -- Creating local and distributed tables for libp2p_send_rpc
@@ -678,7 +678,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_join on cluster '{cluster}' AS libp2p_join_local
+CREATE TABLE libp2p_join ON CLUSTER '{cluster}' AS libp2p_join_local
 ENGINE = Distributed('{cluster}', default, libp2p_join_local, rand());
 
 -- Creating local and distributed tables for libp2p_connected
@@ -687,7 +687,7 @@ CREATE TABLE libp2p_connected_local ON CLUSTER '{cluster}'
     unique_key Int64,
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
-    remote_peer_id_unique_key String CODEC(ZSTD(1)),
+    remote_peer_id_unique_key Int64,
     remote_protocol LowCardinality(String),
     remote_transport_protocol LowCardinality(String),
     remote_port UInt16 CODEC(ZSTD(1)),
@@ -700,8 +700,13 @@ CREATE TABLE libp2p_connected_local ON CLUSTER '{cluster}'
     remote_geo_latitude Nullable(Float64) CODEC(ZSTD(1)),
     remote_geo_autonomous_system_number Nullable(UInt32) CODEC(ZSTD(1)),
     remote_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
-    remote_agent_version String CODEC(ZSTD(1)),
-    direction String CODEC(ZSTD(1)),
+    remote_agent_implementation LowCardinality(String),
+    remote_agent_version LowCardinality(String),
+    remote_agent_version_major LowCardinality(String),
+    remote_agent_version_minor LowCardinality(String),
+    remote_agent_version_patch LowCardinality(String),
+    remote_agent_platform LowCardinality(String),
+    direction LowCardinality(String),
     opened DateTime CODEC(DoubleDelta, ZSTD(1)),
     transient Bool,
     meta_client_name LowCardinality(String),
@@ -742,7 +747,12 @@ COMMENT COLUMN remote_geo_longitude 'Longitude of the remote peer that generated
 COMMENT COLUMN remote_geo_latitude 'Latitude of the remote peer that generated the event',
 COMMENT COLUMN remote_geo_autonomous_system_number 'Autonomous system number of the remote peer that generated the event',
 COMMENT COLUMN remote_geo_autonomous_system_organization 'Autonomous system organization of the remote peer that generated the event',
-COMMENT COLUMN remote_agent_version 'Agent version of the remote peer',
+COMMENT COLUMN remote_agent_implementation 'Implementation of the remote peer',
+COMMENT COLUMN remote_agent_version 'Version of the remote peer',
+COMMENT COLUMN remote_agent_version_major 'Major version of the remote peer',
+COMMENT COLUMN remote_agent_version_minor 'Minor version of the remote peer',
+COMMENT COLUMN remote_agent_version_patch 'Patch version of the remote peer',
+COMMENT COLUMN remote_agent_platform 'Platform of the remote peer',
 COMMENT COLUMN direction 'Connection direction',
 COMMENT COLUMN opened 'Timestamp when the connection was opened',
 COMMENT COLUMN transient 'Whether the connection is transient',
@@ -763,7 +773,7 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_connected on cluster '{cluster}' AS libp2p_connected_local
+CREATE TABLE libp2p_connected ON CLUSTER '{cluster}' AS libp2p_connected_local
 ENGINE = Distributed('{cluster}', default, libp2p_connected_local, rand());
 
 -- Creating local and distributed tables for libp2p_disconnected
@@ -785,8 +795,13 @@ CREATE TABLE libp2p_disconnected_local ON CLUSTER '{cluster}'
     remote_geo_latitude Nullable(Float64) CODEC(ZSTD(1)),
     remote_geo_autonomous_system_number Nullable(UInt32) CODEC(ZSTD(1)),
     remote_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
-    remote_agent_version String CODEC(ZSTD(1)),
-    direction String CODEC(ZSTD(1)),
+    remote_agent_implementation LowCardinality(String),
+    remote_agent_version LowCardinality(String),
+    remote_agent_version_major LowCardinality(String),
+    remote_agent_version_minor LowCardinality(String),
+    remote_agent_version_patch LowCardinality(String),
+    remote_agent_platform LowCardinality(String),
+    direction LowCardinality(String),
     opened DateTime CODEC(DoubleDelta, ZSTD(1)),
     transient Bool,
     meta_client_name LowCardinality(String),
@@ -827,7 +842,12 @@ COMMENT COLUMN remote_geo_longitude 'Longitude of the remote peer that generated
 COMMENT COLUMN remote_geo_latitude 'Latitude of the remote peer that generated the event',
 COMMENT COLUMN remote_geo_autonomous_system_number 'Autonomous system number of the remote peer that generated the event',
 COMMENT COLUMN remote_geo_autonomous_system_organization 'Autonomous system organization of the remote peer that generated the event',
-COMMENT COLUMN remote_agent_version 'Agent version of the remote peer',
+COMMENT COLUMN remote_agent_implementation 'Implementation of the remote peer',
+COMMENT COLUMN remote_agent_version 'Version of the remote peer',
+COMMENT COLUMN remote_agent_version_major 'Major version of the remote peer',
+COMMENT COLUMN remote_agent_version_minor 'Minor version of the remote peer',
+COMMENT COLUMN remote_agent_version_patch 'Patch version of the remote peer',
+COMMENT COLUMN remote_agent_platform 'Platform of the remote peer',
 COMMENT COLUMN direction 'Connection direction',
 COMMENT COLUMN opened 'Timestamp when the connection was opened',
 COMMENT COLUMN transient 'Whether the connection is transient',
@@ -848,5 +868,5 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_disconnected on cluster '{cluster}' AS libp2p_disconnected_local
+CREATE TABLE libp2p_disconnected ON CLUSTER '{cluster}' AS libp2p_disconnected_local
 ENGINE = Distributed('{cluster}', default, libp2p_disconnected_local, rand());

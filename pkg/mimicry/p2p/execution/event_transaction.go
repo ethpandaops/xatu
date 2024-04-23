@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -40,6 +41,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		Event: &xatu.Event{
 			Name:     xatu.Event_MEMPOOL_TRANSACTION_V2,
 			DateTime: timestamppb.New(now),
+			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
 			Client: meta,

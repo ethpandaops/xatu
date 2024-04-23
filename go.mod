@@ -29,7 +29,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.12.2
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkg/errors v0.9.1
-	github.com/probe-lab/hermes v0.0.0-20240327153144-a2528356b4f7
+	github.com/probe-lab/hermes v0.0.0-20240419131851-307e7aab9fc8
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prysmaticlabs/prysm/v5 v5.0.2
 	github.com/r3labs/sse/v2 v2.10.0

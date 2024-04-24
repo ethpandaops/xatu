@@ -63,6 +63,7 @@ transforms:
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
       libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
       libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
+      libp2p_trace_gossipsub_beacon_block : .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -817,6 +818,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-handle-status
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_gossipsub_beacon_block_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_block
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-gossipsub-beacon-block
     compression: snappy
     healthcheck:
       enabled: true

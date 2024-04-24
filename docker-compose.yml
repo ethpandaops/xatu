@@ -250,6 +250,7 @@ services:
           "libp2p-trace-join"
           "libp2p-trace-handle-metadata"
           "libp2p-trace-handle-status"
+          "libp2p-trace-gossipsub-beacon-block"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

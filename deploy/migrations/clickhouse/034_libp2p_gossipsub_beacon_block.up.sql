@@ -38,9 +38,6 @@ CREATE TABLE libp2p_gossipsub_beacon_block_local on cluster '{cluster}' (
 PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
-CREATE TABLE libp2p_gossipsub_beacon_block on cluster '{cluster}' AS libp2p_gossipsub_beacon_block_local
-ENGINE = Distributed('{cluster}', default, libp2p_gossipsub_beacon_block_local, rand());
-
 ALTER TABLE libp2p_gossipsub_beacon_block_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Table for libp2p gossipsub beacon block data.',
 COMMENT COLUMN event_date_time 'Timestamp of the event with millisecond precision',
@@ -78,3 +75,6 @@ COMMENT COLUMN meta_client_geo_autonomous_system_number 'Autonomous system numbe
 COMMENT COLUMN meta_client_geo_autonomous_system_organization 'Autonomous system organization of the client that generated the event',
 COMMENT COLUMN meta_network_id 'Network ID associated with the client',
 COMMENT COLUMN meta_network_name 'Name of the network associated with the client';
+
+CREATE TABLE libp2p_gossipsub_beacon_block on cluster '{cluster}' AS libp2p_gossipsub_beacon_block_local
+ENGINE = Distributed('{cluster}', default, libp2p_gossipsub_beacon_block_local, rand());

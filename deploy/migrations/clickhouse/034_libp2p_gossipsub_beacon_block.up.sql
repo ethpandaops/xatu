@@ -1,4 +1,5 @@
 CREATE TABLE libp2p_gossipsub_beacon_block_local on cluster '{cluster}' (
+    unique_key Int64,
     event_date_time DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
     slot UInt32 Codec(DoubleDelta, ZSTD(1)),
     slot_start_date_time DateTime Codec(DoubleDelta, ZSTD(1)),
@@ -34,12 +35,13 @@ CREATE TABLE libp2p_gossipsub_beacon_block_local on cluster '{cluster}' (
     meta_client_geo_autonomous_system_organization Nullable(String) Codec(ZSTD(1)),
     meta_network_id Int32 Codec(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
-) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
+) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
 PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_gossipsub_beacon_block_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Table for libp2p gossipsub beacon block data.',
+COMMENT COLUMN unique_key 'Unique identifier for each record',
 COMMENT COLUMN event_date_time 'Timestamp of the event with millisecond precision',
 COMMENT COLUMN slot 'Slot number associated with the event',
 COMMENT COLUMN slot_start_date_time 'Start date and time of the slot',

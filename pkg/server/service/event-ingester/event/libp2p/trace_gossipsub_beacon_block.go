@@ -18,7 +18,6 @@ type TraceGossipSubBeaconBlock struct {
 }
 
 func NewTraceGossipSubBeaconBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGossipSubBeaconBlock {
-
 	return &TraceGossipSubBeaconBlock{
 		log:   log.WithField("event", TraceGossipSubBeaconBlockType),
 		event: event,

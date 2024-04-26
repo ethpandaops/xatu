@@ -66,6 +66,7 @@ var (
 	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
 	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
+	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
 )
 
 type Event interface {
@@ -174,6 +175,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceHandleStatus(log, event), nil
 	case TypeLibP2PTraceHandleMetadata:
 		return libp2p.NewTraceHandleMetadata(log, event), nil
+	case TypeLibP2PTraceGossipSubBeaconBlock:
+		return libp2p.NewTraceGossipSubBeaconBlock(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

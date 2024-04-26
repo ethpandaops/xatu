@@ -3,6 +3,7 @@ package clmimicry
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -20,16 +21,7 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	}
 
 	// Log the event type
-	m.log.WithField("type", event.Type).Debug("Received Hermes event")
-
-	// Cast the event type to our xatu Libp2p event types
-	typ := libp2p.EventTypeFromHermesEventType(event.Type)
-	if typ == libp2p.EventType_UNKNOWN {
-		// Log an error and return nil if the event type is not supported
-		m.log.Debugf("Got unsupported Hermes event type: %v", event.Type)
-
-		return nil
-	}
+	m.log.WithField("type", event.Type).Trace("Received Hermes event")
 
 	clientMeta, err := m.createNewClientMeta(ctx)
 	if err != nil {
@@ -40,27 +32,31 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 		PeerId: wrapperspb.String(event.PeerID.String()),
 	}
 
-	switch typ {
-	case libp2p.EventType_ADD_PEER:
+	switch event.Type {
+	case "ADD_PEER":
 		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_RECV_RPC:
+	case "RECV_RPC":
 		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_SEND_RPC:
+	case "SEND_RPC":
 		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_CONNECTED:
+	case "CONNECTED":
 		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_DISCONNECTED:
+	case "DISCONNECTED":
 		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_REMOVE_PEER:
+	case "REMOVE_PEER":
 		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_JOIN:
+	case "JOIN":
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_HANDLE_METADATA:
+	case "HANDLE_METADATA":
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
-	case libp2p.EventType_HANDLE_STATUS:
+	case "HANDLE_STATUS":
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
+	case "HANDLE_MESSAGE":
+		return m.handleHandleMessageEvent(ctx, clientMeta, traceMeta, event)
 	default:
-		return fmt.Errorf("unsupported event type: %v", typ)
+		m.log.WithField("type", event.Type).Trace("Unsupported Hermes event")
+
+		return nil
 	}
 }
 
@@ -395,4 +391,32 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent) error {
+	// We route based on the topic of the message
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return errors.New("invalid payload type for HandleMessage event")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return errors.New("missing topic in HandleMessage event")
+	}
+
+	if strings.Contains(topic, "beacon_block") {
+		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub beacon block")
+		}
+
+		return nil
+	} else {
+		m.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
+
+		return nil
+	}
 }

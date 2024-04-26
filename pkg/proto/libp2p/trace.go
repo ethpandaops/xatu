@@ -13,14 +13,6 @@ import (
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-func EventTypeFromHermesEventType(e host.EventType) EventType {
-	if val, ok := EventType_value[string(e)]; ok {
-		return EventType(val)
-	}
-
-	return EventType(0) // Return an Unknown EventType if not found
-}
-
 // Helper function to convert a Hermes TraceEvent to a libp2p AddPeer
 func TraceEventToAddPeer(event *host.TraceEvent) (*AddPeer, error) {
 	payload, ok := event.Payload.(map[string]any)

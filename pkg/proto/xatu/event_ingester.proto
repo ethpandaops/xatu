@@ -22,6 +22,7 @@ import "pkg/proto/blockprint/block_classification.proto";
 
 import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
+import "pkg/proto/libp2p/gossipsub/eth.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
@@ -810,6 +811,36 @@ message ClientMeta {
   message AdditionalLibP2PTraceHandleStatusData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
+
+  // AdditionalLibP2PTraceHandleStreamData: Holds additional data for a the gossip sub handle stream event in LibP2P tracing.
+  message AdditionalLibP2PTraceGossipSubBeaconBlockData {
+    // Epoch contains the epoch information for the beacon block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the beacon block.
+    SlotV2 slot = 2;
+
+    // WallclockEpoch contains the epoch information for the beacon block in the wall clock time.
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the beacon block in the wall clock time.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // Propagation contains information about the propagation of the beacon block.
+    PropagationV2 propagation = 5;
+
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+
+    // Topic is the gossip sub topic the beacon block was received on.
+    google.protobuf.StringValue topic = 7;
+
+    // MessageSize is the size of the beacon block message in bytes.
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+
+    // MessageID is a unique identifier for the beacon block message.
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
   
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
@@ -987,6 +1018,9 @@ message ClientMeta {
     AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 54 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
     AdditionalLibP2PTraceHandleMetadataData libp2p_trace_handle_metadata = 55 [ json_name = "LIBP2P_TRACE_HANDLE_METADATA" ];
     AdditionalLibP2PTraceHandleStatusData libp2p_trace_handle_status = 56 [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
+
+    // AdditionalLibP2PTraceGossipSubBeaconBlockData contains additional data about the gossip sub beacon block event.
+    AdditionalLibP2PTraceGossipSubBeaconBlockData libp2p_trace_gossipsub_beacon_block = 57 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
   }
 }
 
@@ -1126,6 +1160,7 @@ message Event {
     LIBP2P_TRACE_UNKNOWN = 46;
     LIBP2P_TRACE_HANDLE_METADATA = 47;
     LIBP2P_TRACE_HANDLE_STATUS = 48;
+    LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK = 49;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1253,5 +1288,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_HANDLE_METADATA" ];
     xatu.libp2p.HandleStatus libp2p_trace_handle_status = 48
         [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
+    xatu.libp2p.gossipsub.eth.BeaconBlock libp2p_trace_gossipsub_beacon_block = 49
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
   };
 }

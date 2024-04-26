@@ -262,14 +262,12 @@ github.com/ethereum/go-ethereum v1.13.14 h1:EwiY3FZP94derMCIam1iW4HFVrSgIcpsu0Hw
 github.com/ethereum/go-ethereum v1.13.14/go.mod h1:TN8ZiHrdJwSe8Cb6x+p0hs5CxhJZPbqB7hHkaUXcmIU=
 github.com/ethpandaops/beacon v0.35.0 h1:ZkHfxm41N0wkv503Xdb6rFxLuEnIonClUQWUPFHS5VU=
 github.com/ethpandaops/beacon v0.35.0/go.mod h1:B+SLxj1gnDd/Ia7cl/uuhzo1wyVf2p2puL6lmzPdPro=
-github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c h1:B/Auy5g6Nv4Pd8R9W9dC1IpysO7LzEmqb2C4iYM4j2A=
-github.com/ethpandaops/ethcore v0.0.0-20240306031202-16f9e1926c0c/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756 h1:8JWjrRfP14m0oxOk03m11n/xgdY5ceyUf/ZxYdOs5gE=
 github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=
 github.com/ethpandaops/ethwallclock v0.3.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/hermes v0.0.0-20240422024036-5bcb536550d4 h1:y3MoajkTvlaNZFfEjGzI3U/EhBetpzDlntrEJjISPfU=
-github.com/ethpandaops/hermes v0.0.0-20240422024036-5bcb536550d4/go.mod h1:WOtvdP1zl53vuoOX6PRZ9oAbbJUiDso50efmAjoUZzI=
+github.com/ethpandaops/hermes v0.0.0-20240424055612-d87881163f3b h1:Iigwjof7KReOiEPHRAl3KWXFYDkVBN3GjxC8qwzdfwM=
+github.com/ethpandaops/hermes v0.0.0-20240424055612-d87881163f3b/go.mod h1:WOtvdP1zl53vuoOX6PRZ9oAbbJUiDso50efmAjoUZzI=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=

@@ -3608,7 +3608,6 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-<<<<<<< HEAD
   libp2p_trace_gossipsub_beacon_block_clickhouse:
     type: clickhouse
     inputs:
@@ -3629,5 +3628,3 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-=======
->>>>>>> master

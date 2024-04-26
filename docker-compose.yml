@@ -139,6 +139,8 @@ services:
     profiles:
       - ""
     command: server --config /etc/xatu-server/config.yaml
+    container_name: xatu-server
+    hostname: xatu-server
     build:
       context: .
       dockerfile: Dockerfile
@@ -154,6 +156,8 @@ services:
     profiles:
       - ""
     image: postgres:15
+    container_name: xatu-postgres
+    hostname: xatu-postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
@@ -173,6 +177,7 @@ services:
     profiles:
       - ""
     image: grafana/grafana:latest
+    container_name: xatu-grafana
     ports:
       - "3000:3000"
     networks:
@@ -332,6 +337,7 @@ services:
     profiles:
       - ""
     image: timberio/vector:0.34.1-alpine
+    container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
     environment:
@@ -356,6 +362,7 @@ services:
     profiles:
       - ""
     image: timberio/vector:0.37.1-alpine
+    container_name: xatu-vector-kafka-clickhouse
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
     networks:
@@ -388,6 +395,7 @@ services:
     profiles:
       - ""
     image: migrate/migrate
+    container_name: xatu-postgres-migrator
     volumes:
       - ./migrations/postgres:/migrations
     command:
@@ -408,6 +416,7 @@ services:
       - clickhouse
       - ""
     image: migrate/migrate
+    container_name: xatu-clickhouse-migrator
     volumes:
       - ./deploy/migrations/clickhouse:/migrations
     command:

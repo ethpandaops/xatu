@@ -4,7 +4,7 @@ scrape_configs:
       - targets: ['xatu-server:9090']
   - job_name: 'vector-kafka-clickhouse'
     static_configs:
-      - targets: ['vector-kafka-clickhouse:9598']
+      - targets: ['xatu-vector-kafka-clickhouse:9598']
   - job_name: 'vector-http-kafka'
     static_configs:
-      - targets: ['vector-http-kafka:9598']
+      - targets: ['xatu-vector-http-kafka:9598']

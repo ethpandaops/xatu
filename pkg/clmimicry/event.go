@@ -34,24 +34,61 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 
 	switch event.Type {
 	case "ADD_PEER":
+		if !m.Config.Events.AddPeerEnabled {
+			return nil
+		}
+
 		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
 	case "RECV_RPC":
+		if !m.Config.Events.RecvRPCEnabled {
+			return nil
+		}
+
 		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
 	case "SEND_RPC":
+		if !m.Config.Events.SendRPCEnabled {
+			return nil
+		}
+
 		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
 	case "CONNECTED":
+		if !m.Config.Events.ConnectedEnabled {
+			return nil
+		}
+
 		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
 	case "DISCONNECTED":
+		if !m.Config.Events.DisconnectedEnabled {
+			return nil
+		}
+
 		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 	case "REMOVE_PEER":
+		if !m.Config.Events.RemovePeerEnabled {
+			return nil
+		}
+
 		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 	case "JOIN":
+		if !m.Config.Events.JoinEnabled {
+			return nil
+		}
+
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
 	case "HANDLE_METADATA":
+		if !m.Config.Events.HandleMetadataEnabled {
+			return nil
+		}
+
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 	case "HANDLE_STATUS":
+		if !m.Config.Events.HandleStatusEnabled {
+			return nil
+		}
+
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	case "HANDLE_MESSAGE":
+		// Handle message events are specific to gossipsub
 		return m.handleHandleMessageEvent(ctx, clientMeta, traceMeta, event)
 	default:
 		m.log.WithField("type", event.Type).Trace("Unsupported Hermes event")
@@ -408,7 +445,23 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 		return errors.New("missing topic in HandleMessage event")
 	}
 
+	if strings.Contains(topic, "beacon_attestation") {
+		if !m.Config.Events.GossipSubAttestationEnabled {
+			return nil
+		}
+
+		if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
+		}
+
+		return nil
+	}
+
 	if strings.Contains(topic, "beacon_block") {
+		if !m.Config.Events.GossipSubBeaconBlockEnabled {
+			return nil
+		}
+
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
 		}

@@ -5,6 +5,9 @@ scrape_configs:
   - job_name: 'vector-kafka-clickhouse'
     static_configs:
       - targets: ['vector-kafka-clickhouse:9598']
+  - job_name: 'vector-kafka-clickhouse-libp2p'
+    static_configs:
+      - targets: ['vector-kafka-clickhouse-libp2p:9598']
   - job_name: 'vector-http-kafka'
     static_configs:
       - targets: ['vector-http-kafka:9598']

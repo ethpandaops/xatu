@@ -34,9 +34,9 @@ CREATE TABLE libp2p_handle_status_local ON CLUSTER '{cluster}'
     meta_client_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
-) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
-PARTITION BY toYYYYMM(event_date_time)
-ORDER BY (event_date_time, unique_key);
+) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toStartOfMonth(event_date_time)
+ORDER BY (event_date_time, unique_key, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_handle_status_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the status handling events for libp2p peers.',
@@ -75,7 +75,7 @@ COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
 CREATE TABLE libp2p_handle_status ON CLUSTER '{cluster}' AS libp2p_handle_status_local
-ENGINE = Distributed('{cluster}', default, libp2p_handle_status_local, rand());
+ENGINE = Distributed('{cluster}', default, libp2p_handle_status_local, unique_key);
 
 CREATE TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
 (
@@ -105,9 +105,9 @@ CREATE TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
     meta_client_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
-) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', unique_key)
+) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toYYYYMM(event_date_time)
-ORDER BY (event_date_time, unique_key);
+ORDER BY (event_date_time, unique_key, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains the metadata handling events for libp2p peers.',
@@ -139,4 +139,4 @@ COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
 CREATE TABLE libp2p_handle_metadata ON CLUSTER '{cluster}' AS libp2p_handle_metadata_local
-ENGINE = Distributed('{cluster}', default, libp2p_handle_metadata_local, rand());
+ENGINE = Distributed('{cluster}', default, libp2p_handle_metadata_local, unique_key);

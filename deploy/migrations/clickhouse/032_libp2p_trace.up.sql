@@ -18,7 +18,7 @@ COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
 CREATE TABLE libp2p_peer ON CLUSTER '{cluster}' AS  libp2p_peer_local
-ENGINE = Distributed('{cluster}', default, libp2p_peer_local, rand());
+ENGINE = Distributed('{cluster}', default, libp2p_peer_local, unique_key);
 
 -- Creating local and distributed tables for libp2p_add_peer
 CREATE TABLE libp2p_add_peer_local ON CLUSTER '{cluster}'

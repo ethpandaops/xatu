@@ -159,6 +159,7 @@ CREATE TABLE libp2p_rpc_meta_message_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_message_local  ON CLUSTER '{cluster}'
@@ -224,6 +225,7 @@ CREATE TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_subscription_local  ON CLUSTER '{cluster}'
@@ -290,6 +292,7 @@ CREATE TABLE libp2p_rpc_meta_control_ihave_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, message_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_control_ihave_local  ON CLUSTER '{cluster}'
@@ -353,6 +356,7 @@ CREATE TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, message_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_control_iwant_local ON CLUSTER '{cluster}'
@@ -414,6 +418,7 @@ CREATE TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_control_graft_local ON CLUSTER '{cluster}'
@@ -479,6 +484,7 @@ CREATE TABLE libp2p_rpc_meta_control_prune_local ON CLUSTER '{cluster}'
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, control_index, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_rpc_meta_control_prune_local  ON CLUSTER '{cluster}'

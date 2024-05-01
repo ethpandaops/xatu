@@ -1,0 +1,1723 @@
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+  playground: true
+acknowledgements:
+  enabled: true
+sources:
+  internal_metrics:
+    type: internal_metrics
+  libp2p_trace_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-libp2p-trace
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "^libp2p-trace.+"
+    auto_offset_reset: earliest
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
+transforms:
+  xatu_server_events_meta:
+    type: remap
+    inputs:
+      - libp2p_trace_kafka
+    source: |-
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      if exists(.meta.server.client.ip) && is_string(.meta.server.client.ip) {
+        if is_ipv4!(.meta.server.client.ip) {
+          .meta_client_ip = ip_to_ipv6!(.meta.server.client.ip)
+        } else if is_ipv6!(.meta.server.client.ip) {
+          .meta_client_ip = .meta.server.client.ip
+        }
+      }
+      if exists(.meta.server.client.geo) {
+        .meta_client_geo_city = .meta.server.client.geo.city
+        .meta_client_geo_country = .meta.server.client.geo.country
+        .meta_client_geo_country_code = .meta.server.client.geo.country_code
+        .meta_client_geo_continent_code = .meta.server.client.geo.continent_code
+        .meta_client_geo_longitude = .meta.server.client.geo.longitude
+        .meta_client_geo_latitude = .meta.server.client.geo.latitude
+        .meta_client_geo_autonomous_system_number = .meta.server.client.geo.autonomous_system_number
+        .meta_client_geo_autonomous_system_organization = .meta.server.client.geo.autonomous_system_organization
+      }
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      if exists(.meta.client.ethereum.consensus) {
+        .meta_consensus_implementation = .meta.client.ethereum.consensus.implementation
+        if is_string(.meta.client.ethereum.consensus.version) {
+          version, err = split(.meta.client.ethereum.consensus.version, "/", limit: 3)
+          if err == null && length(version) > 1 {
+            .meta_consensus_version = version[1]
+          }
+          if is_string(.meta_consensus_version) {
+            sematic_version, err = split(.meta_consensus_version, ".", limit: 3)
+            if err == null {
+              if sematic_version[0] != null {
+                version_major, err = replace(sematic_version[0], "v", "", count: 1)
+                if err == null {
+                  .meta_consensus_version_major = version_major
+                  .meta_consensus_version_minor = sematic_version[1]
+                  if sematic_version[2] != null {
+                    version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                    if err == null {
+                      .meta_consensus_version_patch = version_patch
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if exists(.meta.client.ethereum.execution) {
+        if exists(.meta.client.ethereum.execution.fork_id) {
+          .meta_execution_fork_id_hash = .meta.client.ethereum.execution.fork_id.hash
+          .meta_execution_fork_id_next = .meta.client.ethereum.execution.fork_id.next
+        }
+      }
+      if exists(.meta.client.labels) {
+        .meta_labels = .meta.client.labels
+      }
+
+      # handle event name pathing and map it back to .data, .meta.client.additional_data, .meta.server.additional_data
+      if !exists(.data) {
+        data, err = get(value: ., path: [.event.name])
+        if err == null {
+          .data = data
+        } else {
+          .error = err
+          .error_description = "failed to get data"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+
+        cleanedUpData, err = remove(value: ., path: [.event.name])
+        if err == null {
+          . = cleanedUpData
+        } else {
+          .error = err
+          .error_description = "failed to remove data"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+
+        if exists(.meta.client) {
+          clientAdditionalData, err = get(value: .meta.client, path: [.event.name])
+          if err == null {
+            .meta.client.additional_data = clientAdditionalData
+          } else {
+            .error = err
+            .error_description = "failed to get client additional data"
+            log(., level: "error", rate_limit_secs: 60)
+          }
+
+          cleanedUpClient, err = remove(value: .meta.client, path: [.event.name])
+          if err == null {
+            .meta.client = cleanedUpClient
+          } else {
+            .error = err
+            .error_description = "failed to remove client additional data"
+            log(., level: "error", rate_limit_secs: 60)
+          }
+        }
+
+        if exists(.meta.server) {
+          serverAdditionalData, err = get(value: .meta.server, path: [.event.name])
+          if err == null {
+            .meta.server.additional_data = serverAdditionalData
+          } else {
+            .error = err
+            .error_description = "failed to get server additional data"
+            log(., level: "error", rate_limit_secs: 60)
+          }
+
+          cleanedUpClient, err = remove(value: .meta.server, path: [.event.name])
+          if err == null {
+            .meta.server = cleanedUpClient
+          } else {
+            .error = err
+            .error_description = "failed to remove server additional data"
+            log(., level: "error", rate_limit_secs: 60)
+          }
+        }
+      }
+      if exists(.meta.client.additional_data.peer.user_agent) {
+        agent, err = split(.meta.client.additional_data.peer.user_agent, "/", limit: 4)
+        if err == null && length(agent) > 1 {
+          implementation, err = downcase(agent[0])
+          if err == null {
+            .peer_implementation = implementation
+            # handle teku case with teku/teku/v1.1.1
+            if agent[0] == agent[1] {
+              .peer_version = agent[2]
+            } else {
+              .peer_version = agent[1]
+            }
+          }
+        }
+        if is_string(.peer_version) {
+          sematic_version, err = split(.peer_version, ".", limit: 3)
+          if err == null {
+            if sematic_version[0] != null {
+              version_major, err = replace(sematic_version[0], "v", "", count: 1)
+              if err == null {
+                .peer_version_major = version_major
+                .peer_version_minor = sematic_version[1]
+                if sematic_version[2] != null {
+                  version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                  if err == null {
+                    .peer_version_patch = version_patch
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if exists(.meta.server.additional_data.peer.geo) {
+        .peer_geo_city = .meta.server.additional_data.peer.geo.city
+        .peer_geo_country = .meta.server.additional_data.peer.geo.country
+        .peer_geo_country_code = .meta.server.additional_data.peer.geo.country_code
+        .peer_geo_continent_code = .meta.server.additional_data.peer.geo.continent_code
+        .peer_geo_longitude = .meta.server.additional_data.peer.geo.longitude
+        .peer_geo_latitude = .meta.server.additional_data.peer.geo.latitude
+        .peer_geo_autonomous_system_number = .meta.server.additional_data.peer.geo.autonomous_system_number
+        .peer_geo_autonomous_system_organization = .meta.server.additional_data.peer.geo.autonomous_system_organization
+      }
+
+      # delete kafka fields
+      del(.timestamp)
+      del(.topic)
+      del(.source_type)
+      del(.partition)
+      del(.offset)
+      del(.message_key)
+      del(.headers)
+      del(.path)
+  xatu_server_events_router:
+    type: route
+    inputs:
+      - xatu_server_events_meta
+    route:
+      libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
+      libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
+      libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
+      libp2p_trace_remove_peer: .event.name == "LIBP2P_TRACE_REMOVE_PEER"
+      libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
+      libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
+      libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
+      libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
+      libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
+      libp2p_trace_gossipsub_beacon_block: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
+      libp2p_trace_gossipsub_beacon_attestation: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION"
+  xatu_server_events_router_matched:
+    type: log_to_metric
+    inputs:
+      - xatu_server_events_router.libp2p_trace_connected
+      - xatu_server_events_router.libp2p_trace_disconnected
+      - xatu_server_events_router.libp2p_trace_add_peer
+      - xatu_server_events_router.libp2p_trace_remove_peer
+      - xatu_server_events_router.libp2p_trace_recv_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
+      - xatu_server_events_router.libp2p_trace_join
+      - xatu_server_events_router.libp2p_trace_handle_metadata
+      - xatu_server_events_router.libp2p_trace_handle_status
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_block
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_attestation
+    metrics:
+      - type: counter
+        field: event.name
+        namespace: xatu
+        name: xatu_server_events_matched
+        tags:
+          event: "{{event.name}}"
+          source: "xatu-kafka-clickhouse"
+  xatu_server_events_router_unmatched:
+    type: log_to_metric
+    inputs:
+      - xatu_server_events_router._unmatched
+    metrics:
+      - type: counter
+        field: event.name
+        namespace: xatu
+        name: xatu_server_events_unmatched
+        tags:
+          event: "{{event.name}}"
+          source: "xatu-kafka-clickhouse"
+  libp2p_trace_peer_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_connected
+      - xatu_server_events_router.libp2p_trace_disconnected
+    source: |-
+      .peer_id = .data.remote_peer
+      key, err = .data.remote_peer + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .unique_key = seahash(key)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  libp2p_trace_connected_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_connected
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      peer_id_key, err = .data.remote_peer + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .remote_peer_id_unique_key = seahash(peer_id_key)
+      addrParts, err = split(.data.remote_maddrs, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split remote_maddrs"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(addrParts) >= 5 {
+            .remote_protocol = addrParts[1]
+            .remote_ip = addrParts[2]
+            .remote_transport_protocol = addrParts[3]
+            .remote_port = addrParts[4]
+        } else {
+            .error_description = "failed to split remote_maddrs"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+      if exists(.meta.server.additional_data.peer.geo) {
+        .remote_geo_city = .meta.server.additional_data.peer.geo.city
+        .remote_geo_country = .meta.server.additional_data.peer.geo.country
+        .remote_geo_country_code = .meta.server.additional_data.peer.geo.country_code
+        .remote_geo_continent_code = .meta.server.additional_data.peer.geo.continent_code
+        .remote_geo_longitude = .meta.server.additional_data.peer.geo.longitude
+        .remote_geo_latitude = .meta.server.additional_data.peer.geo.latitude
+        .remote_geo_autonomous_system_number = .meta.server.additional_data.peer.geo.autonomous_system_number
+        .remote_geo_autonomous_system_organization = .meta.server.additional_data.peer.geo.autonomous_system_organization
+      }
+      if is_string(.data.agent_version) {
+        agent_version_cleaned = replace(to_string!(.data.agent_version), "teku/teku", "teku", count: 1)
+        agent_version = split(agent_version_cleaned, "/", limit: 4)
+        if length(agent_version) > 0 {
+          if is_string(agent_version[0]) {
+            implementation, err = downcase(agent_version[0])
+            if err == null {
+              .remote_agent_implementation = implementation
+            }
+          }
+        }
+        if length(agent_version) > 1 {
+          if is_string(agent_version[1]) {
+            .remote_agent_version = agent_version[1]
+            if is_string(.remote_agent_version) {
+              sematic_version, err = split(.remote_agent_version, ".", limit: 3)
+              if err == null {
+                if sematic_version[0] != null {
+                  version_major, err = replace(sematic_version[0], "v", "", count: 1)
+                  if err == null {
+                    .remote_agent_version_major = version_major
+                    .remote_agent_version_minor = sematic_version[1]
+                    if sematic_version[2] != null {
+                      version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                      if err == null {
+                        .remote_agent_version_patch = version_patch
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if length(agent_version) > 2 {
+          if is_string(agent_version[2]) && .remote_agent_implementation != "prysm" {
+            .remote_agent_platform = agent_version[2]
+          }
+        }
+      }
+      .direction = .data.direction
+      opened, err = parse_timestamp(.data.opened, format: "%+")
+      if err == null {
+        .opened = to_unix_timestamp(opened)
+      } else {
+        .error = err
+        .error_description = "failed to parse opened"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .transient = .data.transient
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  libp2p_trace_disconnected_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_disconnected
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      peer_id_key, err = .data.remote_peer + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .remote_peer_id_unique_key = seahash(peer_id_key)
+      addrParts, err = split(.data.remote_maddrs, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split remote_maddrs"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(addrParts) >= 5 {
+            .remote_protocol = addrParts[1]
+            .remote_ip = addrParts[2]
+            .remote_transport_protocol = addrParts[3]
+            .remote_port = addrParts[4]
+        } else {
+            .error_description = "failed to split remote_maddrs"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+      if exists(.meta.server.additional_data.peer.geo) {
+        .remote_geo_city = .meta.server.additional_data.peer.geo.city
+        .remote_geo_country = .meta.server.additional_data.peer.geo.country
+        .remote_geo_country_code = .meta.server.additional_data.peer.geo.country_code
+        .remote_geo_continent_code = .meta.server.additional_data.peer.geo.continent_code
+        .remote_geo_longitude = .meta.server.additional_data.peer.geo.longitude
+        .remote_geo_latitude = .meta.server.additional_data.peer.geo.latitude
+        .remote_geo_autonomous_system_number = .meta.server.additional_data.peer.geo.autonomous_system_number
+        .remote_geo_autonomous_system_organization = .meta.server.additional_data.peer.geo.autonomous_system_organization
+      }
+      if is_string(.data.agent_version) {
+        agent_version_cleaned = replace(to_string!(.data.agent_version), "teku/teku", "teku", count: 1)
+        agent_version = split(agent_version_cleaned, "/", limit: 4)
+        if length(agent_version) > 0 {
+          if is_string(agent_version[0]) {
+            implementation, err = downcase(agent_version[0])
+            if err == null {
+              .remote_agent_implementation = implementation
+            }
+          }
+        }
+        if length(agent_version) > 1 {
+          if is_string(agent_version[1]) {
+            .remote_agent_version = agent_version[1]
+            if is_string(.remote_agent_version) {
+              sematic_version, err = split(.remote_agent_version, ".", limit: 3)
+              if err == null {
+                if sematic_version[0] != null {
+                  version_major, err = replace(sematic_version[0], "v", "", count: 1)
+                  if err == null {
+                    .remote_agent_version_major = version_major
+                    .remote_agent_version_minor = sematic_version[1]
+                    if sematic_version[2] != null {
+                      version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                      if err == null {
+                        .remote_agent_version_patch = version_patch
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if length(agent_version) > 2 {
+          if is_string(agent_version[2]) && .remote_agent_implementation != "prysm" {
+            .remote_agent_platform = agent_version[2]
+          }
+        }
+      }
+      .direction = .data.direction
+      opened, err = parse_timestamp(.data.opened, format: "%+")
+      if err == null {
+        .opened = to_unix_timestamp(opened)
+      } else {
+        .error = err
+        .error_description = "failed to parse opened"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .transient = .data.transient
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  libp2p_trace_add_peer_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_add_peer
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      peer_id_key, err = .data.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .protocol = .data.protocol
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_remove_peer_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_remove_peer
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      peer_id_key, err = .data.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_join_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_join
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      topicParts, err = split(.data.topic, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split topic"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
+  libp2p_trace_gossipsub_beacon_block_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_block
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+
+      .proposer_index = .data.proposer_index
+
+
+      .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
+      .block = .data.block
+
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      topicParts, err = split(.meta.client.additional_data.topic, "/")
+      if err != null {
+          .error = err
+          .error_description = "failed to split topic"
+      } else {
+        if length(topicParts) != 5 {
+            errDebug = {
+                "topic": .meta.client.additional_data.topic,
+            }
+            .error_description = "failed to split topic"
+        }
+      }
+
+      .topic_layer = topicParts[1]
+      .topic_fork_digest_value = topicParts[2]
+      .topic_name = topicParts[3]
+      .topic_encoding = topicParts[4]
+
+      .message_size = .meta.client.additional_data.message_size
+      .message_id = .meta.client.additional_data.message_id
+      
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_gossipsub_beacon_attestation_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_attestation
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+
+      .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
+      .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
+
+      .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
+      .beacon_block_root = .data.data.beacon_block_root
+      .committee_index = .data.data.index
+
+      .slot = .data.data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .source_epoch = .data.data.source.epoch
+      source_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.source.epoch.start_date_time, format: "%+");
+      if err == null {
+          .source_epoch_start_date_time = to_unix_timestamp(source_epoch_start_date_time)
+      } else {
+          .error = err
+          .error_description = "failed to parse source epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+      }
+      .source_root = .data.data.source.root
+      .target_epoch = .data.data.target.epoch
+      target_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.target.epoch.start_date_time, format: "%+");
+      if err == null {
+          .target_epoch_start_date_time = to_unix_timestamp(target_epoch_start_date_time)
+      } else {
+          .error = err
+          .error_description = "failed to parse target epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .target_root = .data.data.target.root
+      topicParts, err = split(.meta.client.additional_data.topic, "/")
+      if err != null {
+          .error = err
+          .error_description = "failed to split topic"
+      } else {
+        if length(topicParts) != 5 {
+            .errDebug = {
+                "topic": .meta.client.additional_data.topic,
+            }
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      .topic_layer = topicParts[1]
+      .topic_fork_digest_value = topicParts[2]
+      .topic_name = topicParts[3]
+      .topic_encoding = topicParts[4]
+
+      .message_size = .meta.client.additional_data.message_size
+      .message_id = .meta.client.additional_data.message_id
+      
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_rpc_exploder:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_recv_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
+    source: |-
+      # Parsing the main RPC event
+      .unique_key = seahash(.event.id)
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+      .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .updated_date_time = to_unix_timestamp(now())
+
+      # Emit the main RPC event record
+      events = []
+      
+      peer_id_key, err = .data.meta.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      rootEvent = {
+          "event_name": .event.name,
+          "unique_key": .unique_key,
+          "key": .event.id,
+          "event_date_time": .event_date_time,
+          "updated_date_time": .updated_date_time,
+          "peer_id_unique_key": seahash(peer_id_key),
+          "meta_client_name": .meta_client_name,
+          "meta_client_id": .meta_client_id,
+          "meta_client_version": .meta_client_version,
+          "meta_client_implementation": .meta_client_implementation,
+          "meta_client_os": .meta_client_os,
+          "meta_client_ip": .meta_client_ip,
+          "meta_network_id": .meta_network_id,
+          "meta_network_name": .meta_network_name,
+          "meta_client_geo_city": .meta_client_geo_city,
+          "meta_client_geo_country": .meta_client_geo_country,
+          "meta_client_geo_country_code": .meta_client_geo_country_code,
+          "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+          "meta_client_geo_longitude": .meta_client_geo_longitude,
+          "meta_client_geo_latitude": .meta_client_geo_latitude,
+          "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+          "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization
+      }
+
+      if .error != null {
+          log(., level: "error", rate_limit_secs: 60)
+          assert!(.error == null, message: join!(["Error occurred when generating libp2p_rpc base event: ", .error_description]))
+      }
+
+      error = null
+      errorMsg = ""
+      errDebug = {}
+
+      if .data.meta.subscriptions != null {
+        for_each(array!(.data.meta.subscriptions)) -> |_index, sub| {
+            key, err = rootEvent.key + "rpc_meta_subscription" + to_string(_index)
+            if err != null {
+                errDebug = {
+                    "root_event_key": rootEvent.key,
+                    "index": _index,
+                }
+                error = err
+                errorMsg = "failed to generate unique key for rpc_meta_subscription"
+            }
+
+            unique_key = seahash(key)
+
+            topicParts, err = split(sub.topic_id, "/")
+            if err != null {
+                .error = err
+                .error_description = "failed to split topic for rpc_meta_subscription"
+            } else {
+              if length(topicParts) != 5 {
+                  errDebug = {
+                      "topic_id": sub.topic_id,
+                  }
+                  .error_description = "failed to split topic for rpc_meta_subscription"
+              }
+            }
+
+            events = push(events, {
+                "event_name": "LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
+                "unique_key": unique_key,
+                "control_index": _index,
+                "rpc_meta_unique_key": rootEvent.unique_key,
+                "subscribe": sub.subscribe,
+                "topic_layer": topicParts[1],
+                "topic_fork_digest_value": topicParts[2],
+                "topic_name": topicParts[3],
+                "topic_encoding": topicParts[4],
+                "updated_date_time": rootEvent.updated_date_time,
+                "event_date_time": rootEvent.event_date_time,
+                "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                "meta_client_name": rootEvent.meta_client_name,
+                "meta_client_id": rootEvent.meta_client_id,
+                "meta_client_version": rootEvent.meta_client_version,
+                "meta_client_implementation": rootEvent.meta_client_implementation,
+                "meta_client_os": rootEvent.meta_client_os,
+                "meta_client_ip": rootEvent.meta_client_ip,
+                "meta_network_id": rootEvent.meta_network_id,
+                "meta_network_name": rootEvent.meta_network_name,
+                "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+            })
+        }
+      }
+
+      if error != null {
+          log(., level: "error", rate_limit_secs: 60)
+          assert!(error == null, message: join!(["Error occurred when generating libp2p_rpc_meta events: ", errorMsg]))
+      }
+
+      if .data.meta.messages != null {
+        for_each(array!(.data.meta.messages)) -> |_index, message| {
+            key, err = rootEvent.key + "rpc_meta_message" + to_string(_index)
+            if err != null {
+                errDebug = {
+                    "root_event_key": rootEvent.key,
+                    "index": _index,
+                }
+                error = err
+                errorMsg = "failed to generate unique key for rpc_meta_message"
+            }
+
+            unique_key = seahash(key)
+
+            topicParts, err = split(message.topic, "/")
+            if err != null {
+                .error = err
+                .error_description = "failed to split topic for rpc_meta_message"
+            } else {
+              if length(topicParts) != 5 {
+                  errDebug = {
+                      "topic_id": message.topic,
+                  }
+                  .error_description = "failed to split topic for rpc_meta_message"
+              }
+            }
+
+            events = push(events, {
+                "event_name": "LIBP2P_TRACE_RPC_META_MESSAGE",
+                "unique_key": unique_key,
+                "control_index": _index,
+                "rpc_meta_unique_key": rootEvent.unique_key,
+                "topic_layer": topicParts[1],
+                "topic_fork_digest_value": topicParts[2],
+                "topic_name": topicParts[3],
+                "topic_encoding": topicParts[4],
+                "updated_date_time": rootEvent.updated_date_time,
+                "event_date_time": rootEvent.event_date_time,
+                "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                "meta_client_name": rootEvent.meta_client_name,
+                "meta_client_id": rootEvent.meta_client_id,
+                "meta_client_version": rootEvent.meta_client_version,
+                "meta_client_implementation": rootEvent.meta_client_implementation,
+                "meta_client_os": rootEvent.meta_client_os,
+                "meta_client_ip": rootEvent.meta_client_ip,
+                "meta_network_id": rootEvent.meta_network_id,
+                "meta_network_name": rootEvent.meta_network_name,
+                "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+            })
+        }
+      }
+
+      metaControl = []
+      if .data.meta.control != null {
+          metaControl = .data.meta.control
+      }
+
+      if metaControl.ihave != null {
+          for_each(array!(metaControl.ihave)) -> |_ihaveindex, ihave| {
+              metaMessageIds = []
+              if ihave.message_ids != null {
+                  metaMessageIds = ihave.message_ids
+              }
+              for_each(array!(metaMessageIds)) -> |_messageindex, message_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_ihave" +to_string(_ihaveindex)+ "_" + to_string(_messageindex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "index": _messageindex,
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_ihave"
+                  }
+
+                  unique_key = seahash(key)
+
+                  topicParts, err = split(ihave.topic_id, "/")
+                  if err != null {
+                      .error = err
+                      .error_description = "failed to split topic for rpc_meta_control_ihave"
+                  } else {
+                    if length(topicParts) != 5 {
+                        errDebug = {
+                            "topic_id": ihave.topic_id,
+                        }
+                        .error_description = "failed to split topic for rpc_meta_control_ihave"
+                    }
+                  }
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "message_index": _messageindex,
+                      "control_index": _ihaveindex,
+                      "message_id": message_id,
+                      "topic_layer": topicParts[1],
+                      "topic_fork_digest_value": topicParts[2],
+                      "topic_name": topicParts[3],
+                      "topic_encoding": topicParts[4],
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                      "meta_client_name": rootEvent.meta_client_name,
+                      "meta_client_id": rootEvent.meta_client_id,
+                      "meta_client_version": rootEvent.meta_client_version,
+                      "meta_client_implementation": rootEvent.meta_client_implementation,
+                      "meta_client_os": rootEvent.meta_client_os,
+                      "meta_client_ip": rootEvent.meta_client_ip,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": rootEvent.meta_network_name,
+                      "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                      "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                      "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                      "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                      "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                      "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                      "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                      "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+                  })
+              }
+          }
+      }
+
+      if metaControl.iwant != null {
+          for_each(array!(metaControl.iwant)) -> |_iwantindex, iwant| {
+              metaMessageIds = []
+              if iwant.message_ids != null {
+                  metaIHave = iwant.message_ids
+              }
+              for_each(array!(iwant.message_ids)) -> |_messageindex, message_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_iwant" + to_string(_iwantindex)+ "_" + to_string(_messageindex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "index": _messageindex,
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_iwant"
+                  }
+
+                  unique_key = seahash(key)
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_IWANT",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "message_index": _messageindex,
+                      "control_index": _iwantindex,
+                      "message_id": message_id,
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                      "meta_client_name": rootEvent.meta_client_name,
+                      "meta_client_id": rootEvent.meta_client_id,
+                      "meta_client_version": rootEvent.meta_client_version,
+                      "meta_client_implementation": rootEvent.meta_client_implementation,
+                      "meta_client_os": rootEvent.meta_client_os,
+                      "meta_client_ip": rootEvent.meta_client_ip,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": rootEvent.meta_network_name,
+                      "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                      "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                      "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                      "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                      "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                      "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                      "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                      "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+                  })
+              }
+          }
+      }
+
+
+      if metaControl.graft != null {
+          for_each(array!(metaControl.graft)) -> |_index, graft| {
+              key, err = rootEvent.key + "rpc_meta_control_graft" + to_string(_index)+ "_" + graft.topic_id
+              if err != null {
+                  errDebug = {
+                      "root_event_key": rootEvent.key,
+                      "topic_id": graft.topic_id,
+                  }
+                  error = err
+                  errorMsg = "failed to generate unique key for rpc_meta_control_graft"
+              }
+
+              unique_key = seahash(key)
+
+              topicParts, err = split(graft.topic_id, "/")
+              if err != null {
+                  .error = err
+                  .error_description = "failed to split topic for rpc_meta_control_graft"
+              } else {
+                if length(topicParts) != 5 {
+                    errDebug = {
+                        "topic_id": graft.topic_id,
+                    }
+                    .error_description = "failed to split topic for rpc_meta_control_graft"
+                }
+              }
+
+              events = push(events, {
+                  "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT",
+                  "unique_key": unique_key,
+                  "rpc_meta_unique_key": rootEvent.unique_key,
+                  "control_index": _index,
+                  "topic_layer": topicParts[1],
+                  "topic_fork_digest_value": topicParts[2],
+                  "topic_name": topicParts[3],
+                  "topic_encoding": topicParts[4],
+                  "updated_date_time": rootEvent.updated_date_time,
+                  "event_date_time": rootEvent.event_date_time,
+                  "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                  "meta_client_name": rootEvent.meta_client_name,
+                  "meta_client_id": rootEvent.meta_client_id,
+                  "meta_client_version": rootEvent.meta_client_version,
+                  "meta_client_implementation": rootEvent.meta_client_implementation,
+                  "meta_client_os": rootEvent.meta_client_os,
+                  "meta_client_ip": rootEvent.meta_client_ip,
+                  "meta_network_id": rootEvent.meta_network_id,
+                  "meta_network_name": rootEvent.meta_network_name,
+                  "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                  "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                  "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                  "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                  "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                  "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                  "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                  "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+              })
+          }
+      }
+
+      if metaControl.prune != null {
+          for_each(array!(metaControl.prune)) -> |_pruneIndex, prune| {
+              metaPeerIds = []
+              if prune.peer_ids != null {
+                  metaPeerIds = prune.peer_ids
+              }
+              for_each(array!(metaPeerIds)) -> |_peerIndex, peer_id| {
+                  key, err = rootEvent.key + "rpc_meta_control_prune" + to_string(_pruneIndex)+ "_" + to_string(_peerIndex)
+                  if err != null {
+                      errDebug = {
+                          "root_event_key": rootEvent.key,
+                          "topic_id": prune.topic_id,
+                          "prune_index": _pruneIndex,
+                          "peer_id": peer_id
+                      }
+                      error = err
+                      errorMsg = "failed to generate unique key for rpc_meta_control_prune"
+                  }
+
+                  peer_id_key, err = peer_id + rootEvent.meta_network_name
+                  if err != null {
+                      errDebug = {
+                          "root_meta_network_name": rootEvent.key,
+                          "peer_id": peer_id,
+                      }
+                    .error = err
+                    .error_description = "failed to generate peer id unique key for rpc_meta_control_prune"
+                  }
+
+                  unique_key = seahash(key)
+                  graft_peer_id_unique_key = seahash(peer_id_key)
+
+                  topicParts, err = split(prune.topic_id, "/")
+                  if err != null {
+                      .error = err
+                      .error_description = "failed to split topic for rpc_meta_control_prune"
+                  } else {
+                    if length(topicParts) != 5 {
+                        errDebug = {
+                            "topic_id": prune.topic_id,
+                        }
+                        .error_description = "failed to split topic for rpc_meta_control_prune"
+                    }
+                  }
+
+                  events = push(events, {
+                      "event_name": "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE",
+                      "unique_key": unique_key,
+                      "rpc_meta_unique_key": rootEvent.unique_key,
+                      "control_index": _pruneIndex,
+                      "peer_id_index": _peerIndex,
+                      "topic_layer": topicParts[1],
+                      "topic_fork_digest_value": topicParts[2],
+                      "topic_name": topicParts[3],
+                      "topic_encoding": topicParts[4],
+                      "updated_date_time": rootEvent.updated_date_time,
+                      "event_date_time": rootEvent.event_date_time,
+                      "peer_id_unique_key": rootEvent.peer_id_unique_key,
+                      "graft_peer_id_unique_key": graft_peer_id_unique_key,
+                      "meta_client_name": rootEvent.meta_client_name,
+                      "meta_client_id": rootEvent.meta_client_id,
+                      "meta_client_version": rootEvent.meta_client_version,
+                      "meta_client_implementation": rootEvent.meta_client_implementation,
+                      "meta_client_os": rootEvent.meta_client_os,
+                      "meta_client_ip": rootEvent.meta_client_ip,
+                      "meta_network_id": rootEvent.meta_network_id,
+                      "meta_network_name": rootEvent.meta_network_name,
+                      "meta_client_geo_city": rootEvent.meta_client_geo_city,
+                      "meta_client_geo_country": rootEvent.meta_client_geo_country,
+                      "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
+                      "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
+                      "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
+                      "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
+                      "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
+                      "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization
+                  })
+              }
+          }
+      }
+
+      if error != null {
+          .error = error
+          .error_description = errorMsg
+          log(., level: "error", rate_limit_secs: 60)
+          assert!(error == null, message: join!(["Error occurred when generating libp2p_rpc_meta events: ", errorMsg]))
+      }
+
+      del(rootEvent.key)
+
+      events = push(events, rootEvent)
+
+      . = events
+
+  libp2p_trace_rpc_events_formatted:
+    type: route
+    inputs:
+      - libp2p_trace_rpc_exploder
+    route:
+      meta_control_prune: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE"
+      meta_control_graft: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT"
+      meta_control_iwant: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
+      meta_control_ihave: .event_name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
+      meta_message: .event_name == "LIBP2P_TRACE_RPC_META_MESSAGE"
+      meta_subscription: .event_name == "LIBP2P_TRACE_RPC_META_SUBSCRIPTION"
+      recv_rpc: .event_name == "LIBP2P_TRACE_RECV_RPC"
+      send_rpc: .event_name == "LIBP2P_TRACE_SEND_RPC"
+  libp2p_trace_handle_status_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_handle_status
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      peer_id_key, err = .data.peer_id + .meta.ethereum.network.name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+
+      if .data.error != null {
+        .error = .data.error
+      }
+
+      if .data.request != null {
+        .request_finalized_epoch = .data.request.finalized_epoch
+        .request_finalized_root = .data.request.finalized_root
+        .request_fork_digest = .data.request.fork_digest
+        .request_head_root = .data.request.head_root
+        .request_head_slot = .data.request.head_slot
+      }
+      if .data.response != null {
+        .response_finalized_epoch = .data.response.finalized_epoch
+        .response_finalized_root = .data.response.finalized_root
+        .response_fork_digest = .data.response.fork_digest
+        .response_head_root = .data.response.head_root
+        .response_head_slot = .data.response.head_slot
+      }
+
+      .latency_milliseconds, err = .data.latency * 1000
+      if err != null {
+        .error = err
+        .error_description = "failed to convert latency to millseconds"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .protocol = .data.protocol_id
+
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_handle_metadata_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_handle_metadata
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      peer_id_key, err = .data.peer_id + .meta.ethereum.network.name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .unique_key = seahash(.event.id)
+
+      if .data.error != null {
+        .error = .data.error
+      }
+
+      .attnets = .data.metadata.attnets
+      .seq_number = .data.metadata.seq_number
+      .syncnets = .data.metadata.syncnets
+
+      .latency_milliseconds, err = .data.latency * 1000
+      if err != null {
+        .error = err
+        .error_description = "failed to convert latency to millseconds"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      
+      .protocol = .data.protocol_id
+
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+sinks:
+  metrics:
+    type: prometheus_exporter
+    address: 0.0.0.0:9598
+    inputs:
+      - xatu_server_events_router_matched
+      - xatu_server_events_router_unmatched
+      - internal_metrics
+  libp2p_trace_peer_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_peer_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_peer
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false 
+  libp2p_trace_connected_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_connected_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_connected
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false  
+  libp2p_trace_disconnected_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_disconnected_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_disconnected
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_add_peer_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_add_peer_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_add_peer
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_removed_peer_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_remove_peer_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_remove_peer
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_join_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_join_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_join
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_prune_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_prune
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_prune
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_graft_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_graft
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_graft
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_iwant_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_iwant
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_iwant
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_control_ihave_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_control_ihave
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_control_ihave
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_message_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_message
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_message
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_subscription_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.meta_subscription
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_subscription
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_recv_rpc_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.recv_rpc
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_recv_rpc
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_send_rpc_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_events_formatted.send_rpc
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_send_rpc
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_handle_status_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_handle_status_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_handle_status
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_handle_metadata_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_handle_metadata_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_handle_metadata
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_gossipsub_beacon_block_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_gossipsub_beacon_block_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_gossipsub_beacon_block
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_gossipsub_beacon_attestation_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_gossipsub_beacon_attestation_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_gossipsub_beacon_attestation
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false

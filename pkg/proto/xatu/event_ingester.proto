@@ -841,6 +841,58 @@ message ClientMeta {
     // MessageID is a unique identifier for the beacon block message.
     google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
   }
+
+  message AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData {
+    // Epoch contains the epoch information for the source.
+    EpochV2 epoch = 1;
+  }
+
+  message AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData {
+    // Epoch contains the epoch information for the target.
+    EpochV2 epoch = 1;
+  }
+
+  message AdditionalLibP2PTraceGossipSubBeaconAttestationData {
+    // Source contains information for the best currently justified checkpoint.
+    AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData source = 1;
+
+    // Target contains information of the block at the start of the current
+    // epoch.
+    AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData target = 2;
+
+    // Slot contains the slot information for the attestation.
+    SlotV2 slot = 3;
+
+    // Epoch contains the epoch information for the attestation.
+    EpochV2 epoch = 4;
+
+    // Propagation contains information about the propagation of the
+    // attestation.
+    PropagationV2 propagation = 5;
+
+    // AttestingValidator contains data about the validator that created the
+    // attestation. Note: only available for unaggregated attestations.
+    AttestingValidatorV2 attesting_validator = 6
+        [ json_name = "attesting_validator" ];
+
+    // WallclockEpoch contains the epoch information for the attestation on the wall clock when the attestation was received.
+    EpochV2 wallclock_epoch = 7 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the attestation on the wall clock when the attestation was received.
+    SlotV2 wallclock_slot = 8 [ json_name = "wallclock_slot" ];
+
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 9;
+
+    // Topic is the gossip sub topic the beacon block was received on.
+    google.protobuf.StringValue topic = 10;
+
+    // MessageSize is the size of the beacon block message in bytes.
+    google.protobuf.UInt32Value message_size = 11 [ json_name = "message_size" ];
+
+    // MessageID is a unique identifier for the beacon block message.
+    google.protobuf.StringValue message_id = 12 [ json_name = "message_id" ];
+  }
   
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
@@ -1021,6 +1073,8 @@ message ClientMeta {
 
     // AdditionalLibP2PTraceGossipSubBeaconBlockData contains additional data about the gossip sub beacon block event.
     AdditionalLibP2PTraceGossipSubBeaconBlockData libp2p_trace_gossipsub_beacon_block = 57 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
+    // AdditionalLibP2PTraceGossipSubBeaconAttestationData contains additional data about the gossip sub beacon attestation event.
+    AdditionalLibP2PTraceGossipSubBeaconAttestationData libp2p_trace_gossipsub_beacon_attestation = 58 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
   }
 }
 
@@ -1161,6 +1215,7 @@ message Event {
     LIBP2P_TRACE_HANDLE_METADATA = 47;
     LIBP2P_TRACE_HANDLE_STATUS = 48;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK = 49;
+    LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION = 50;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1290,5 +1345,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
     xatu.libp2p.gossipsub.eth.BeaconBlock libp2p_trace_gossipsub_beacon_block = 49
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
+    xatu.eth.v1.Attestation libp2p_trace_gossipsub_beacon_attestation = 50
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
   };
 }

@@ -249,6 +249,7 @@ services:
           "libp2p-trace-handle-metadata"
           "libp2p-trace-handle-status"
           "libp2p-trace-gossipsub-beacon-block"
+          "libp2p-trace-gossipsub-beacon-attestation"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";
@@ -349,6 +350,36 @@ services:
       - xatu-net
     ports:
       - "8686:8686"
+    environment:
+      CLICKHOUSE_ENDPOINT: "clickhouse-01:8123"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      KAFKA_BROKERS: "kafka:29092"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse-01:
+        condition: service_healthy
+      clickhouse-02:
+        condition: service_healthy
+      clickhouse-migrator:
+        condition: service_completed_successfully
+      init-kafka:
+        condition: service_completed_successfully
+  vector-kafka-clickhouse-libp2p:
+    profiles:
+      - ""
+    image: timberio/vector:0.37.1-alpine
+    volumes:
+      - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
+    networks:
+      - xatu-net
     environment:
       CLICKHOUSE_ENDPOINT: "clickhouse-01:8123"
       CLICKHOUSE_USER: default

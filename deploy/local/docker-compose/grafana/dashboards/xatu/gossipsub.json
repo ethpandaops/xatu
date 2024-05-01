@@ -1,0 +1,4517 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "dark-red",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": true,
+          "tags": [],
+          "type": "tags"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "red",
+        "name": "Slot annotations",
+        "target": {
+          "limit": 2000,
+          "matchAny": true,
+          "refId": "Anno",
+          "tags": [
+            "slot",
+            "xatu"
+          ],
+          "type": "tags"
+        }
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 5,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 28,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 30,
+      "interval": "$interval",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_client_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${client_name}"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_network_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${network_name}"
+                  ]
+                }
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  count(DISTINCT(meta_client_name))\nFROM default.libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from:date:seconds})\n  AND slot_start_date_time <= (toDateTime(${__to:date:seconds}) - INTERVAL 1 MINUTE)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Active sentries",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 34,
+      "interval": "$interval",
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "field": "count",
+                  "fixed": 5,
+                  "max": 5,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "A"
+            },
+            "location": {
+              "geohash": "meta_client_geo_city",
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lat": 5.747627,
+          "lon": 22,
+          "zoom": 1
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "name": "meta_client_geo_longitude"
+                },
+                {
+                  "name": "meta_client_geo_latitude"
+                },
+                {
+                  "name": "meta_client_geo_city"
+                },
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_geo_longitude",
+                "meta_client_geo_latitude",
+                "meta_client_geo_city"
+              ],
+              "mode": "aggregate",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n    meta_client_geo_latitude as latitude,\n    meta_client_geo_longitude as longitude,\n    meta_client_geo_city as city,\n    count(DISTINCT meta_client_name) as `count`\n    \nFROM \n    libp2p_gossipsub_beacon_block\nWHERE\n    slot_start_date_time >= now() - toIntervalMinute(2)\n    AND slot_start_date_time <= now() - toIntervalMinute(1)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\nGROUP BY\n    slot_start_date_time,\n    meta_client_geo_longitude,\n    meta_client_geo_latitude,\n    meta_client_geo_city\nORDER BY slot_start_date_time DESC\nLIMIT 1 by latitude, longitude\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Sentries",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 193,
+      "interval": "$interval",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_client_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${client_name}"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_network_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${network_name}"
+                  ]
+                }
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  count(DISTINCT(peer_id_unique_key))\nFROM default.libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from:date:seconds})\n  AND slot_start_date_time <= (toDateTime(${__to:date:seconds}) - INTERVAL 1 MINUTE)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Peers sending us blocks",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 54,
+      "panels": [],
+      "title": "Summary per client",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 46,
+      "interval": "$interval",
+      "maxPerRow": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "repeat": "geo_continent_code",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_client_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${client_name}"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_network_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${network_name}"
+                  ]
+                }
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  count(DISTINCT(meta_client_name))\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from:date:seconds})\n  AND slot_start_date_time <= (toDateTime(${__to:date:seconds}) - INTERVAL 1 MINUTE)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code = '${geo_continent_code}'\nGROUP BY time\nORDER BY time\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Active sentries ${geo_continent_code}",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 17,
+      "panels": [],
+      "title": "Blocks",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "dash": [
+                10,
+                10
+              ],
+              "fill": "dash"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p95"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p05"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "min"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "min"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 4
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "p95",
+                  "average",
+                  "p50",
+                  "p05",
+                  "min"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 36,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(propagation_slot_start_diff) max,\n  quantile(0.95)(propagation_slot_start_diff) p95,\n  avg(propagation_slot_start_diff) average,\n  quantile(0.50)(propagation_slot_start_diff) p50,\n  quantile(0.05)(propagation_slot_start_diff) p05,\n  min(propagation_slot_start_diff) min\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Block arrival time in slot",
+      "type": "timeseries"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 39,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          }
+        },
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Plasma",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "dtdurationms"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "rawQuery": "SELECT\n    (intDiv(toUInt32(slot_start_date_time), 60) * 60) * 1000 + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, 250)), 250) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE slot_start_date_time >= toDateTime(1714092003) AND slot_start_date_time <= toDateTime(1714113603)\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN ('xatu-cl-mimicry-sfo3-holesky-002','xatu-cl-mimicry-syd1-holesky-002','xatu-cl-mimicry-sfo3-holesky-001','xatu-cl-mimicry-syd1-holesky-001')\n  AND meta_network_name IN ('holesky')\nGROUP BY\n    timestamp,\n    diff",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_block"
+        }
+      ],
+      "title": "Block arrival time in slot",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "std dev population"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p90 - p10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 59,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  stddevPop(propagation_slot_start_diff) `std dev population`,\n  quantile(0.90)(propagation_slot_start_diff) - quantile(0.10)(propagation_slot_start_diff) `p90 - p10`\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND propagation_slot_start_diff < 10000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Block arrival time spread",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "dash": [
+                10,
+                10
+              ],
+              "fill": "dash"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p95"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p05"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "min"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "min"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 4
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "p95",
+                  "average",
+                  "p50",
+                  "p05",
+                  "min"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 37,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(diff) max,\n  quantile(0.95)(diff) p95,\n  avg(diff) average,\n  quantile(0.50)(diff) p50,\n  quantile(0.05)(diff) p05,\n  min(diff) min\nFROM (\n    SELECT\n        slot,\n        slot_start_date_time,\n        block,\n        meta_network_name,\n        max(propagation_slot_start_diff) - min(propagation_slot_start_diff) AS diff\n    FROM libp2p_gossipsub_beacon_block FINAL\n    WHERE\n        $__timeFilter(slot_start_date_time)\n        AND meta_network_name IN (${network_name})\n        AND meta_client_geo_continent_code IN (${geo_continent_code})\n    GROUP BY slot, slot_start_date_time, block, meta_network_name\n)\nWHERE\n  diff > 0\n  AND diff < 100000\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Block arrival time difference between sentries (by consensus client)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 51
+      },
+      "id": 38,
+      "interval": "12s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "name",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_name"
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  slot_start_date_time,\n  count(DISTINCT(block))\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY slot_start_date_time\nORDER BY slot_start_date_time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique Blocks per slot",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 51
+      },
+      "id": 31,
+      "interval": "$interval",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "max",
+                  "alias": "",
+                  "column": "epoch"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(epoch)\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest epoch",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 51
+      },
+      "id": 32,
+      "interval": "$interval",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "max",
+                  "alias": "",
+                  "column": "slot"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(slot)\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest slot",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 156,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "name",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_name"
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  meta_client_name as name,\n  COUNT(block) as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY time, meta_client_name\nORDER BY time ASC\nLIMIT 100000",
+          "refId": "A"
+        }
+      ],
+      "title": "Blocks per instance",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "name"
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 66
+      },
+      "id": 174,
+      "panels": [],
+      "title": "Block size",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "dash": [
+                10,
+                10
+              ],
+              "fill": "dash"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^(?!bucketed_bytes$).+$/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "max"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p95"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p05"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "min"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "min"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 4
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 17,
+        "x": 0,
+        "y": 67
+      },
+      "id": 173,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "bucketed_bytes"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "WITH \n    filtered AS (\n        SELECT \n            message_size, \n            floor(message_size / 25600) * 25600 AS bucketed_bytes,\n            propagation_slot_start_diff\n        FROM \n            default.libp2p_gossipsub_beacon_block FINAL\n        WHERE \n            slot_start_date_time >= $__fromTime AND \n            slot_start_date_time <= $__toTime AND\n            propagation_slot_start_diff < 8000 AND\n            meta_client_name IN (${client_name}) AND\n            meta_network_name IN (${network_name}) AND\n            meta_client_geo_continent_code IN (${geo_continent_code})\n    )\nSELECT \n    bucketed_bytes,\n    MAX(propagation_slot_start_diff) AS max,\n    quantile(0.95)(propagation_slot_start_diff) AS p95,\n    AVG(propagation_slot_start_diff) AS avg,\n    quantile(0.50)(propagation_slot_start_diff) AS p50,\n    quantile(0.05)(propagation_slot_start_diff) AS p05,\n    MIN(propagation_slot_start_diff) AS min\nFROM \n    filtered\nGROUP BY \n    bucketed_bytes\nORDER BY \n    bucketed_bytes ASC;\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Block arrival time for block size (compressed, 25KiB buckets)",
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^(?!bucketed_bytes$).+$/"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "max"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 17,
+        "y": 67
+      },
+      "id": 191,
+      "interval": "$interval_tight",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "WITH \n    filtered AS (\n        SELECT \n            message_size, \n            floor(message_size / 102400) * 102400 AS bucketed_bytes,\n            propagation_slot_start_diff\n        FROM \n            default.libp2p_gossipsub_beacon_block FINAL\n        WHERE \n            slot_start_date_time >= $__fromTime AND \n            slot_start_date_time <= $__toTime AND\n            propagation_slot_start_diff < 8000 AND\n            meta_client_name IN (${client_name}) AND\n            meta_network_name IN (${network_name}) AND\n            meta_client_geo_continent_code IN (${geo_continent_code})\n    )\nSELECT \n    bucketed_bytes,\n    MAX(propagation_slot_start_diff) AS max,\n    quantile(0.95)(propagation_slot_start_diff) AS p95,\n    AVG(propagation_slot_start_diff) AS avg,\n    quantile(0.50)(propagation_slot_start_diff) AS p50,\n    quantile(0.05)(propagation_slot_start_diff) AS p05,\n    MIN(propagation_slot_start_diff) AS min\nFROM \n    filtered\nGROUP BY \n    bucketed_bytes\nORDER BY \n    bucketed_bytes ASC;\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Block propagation for block size (100KiB buckets)",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Attestations",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 300000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p95"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p05"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "min"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 34
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "min"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 77
+      },
+      "id": 95,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "hide": false,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(propagation_slot_start_diff) as  max,\n  quantile(0.95)(propagation_slot_start_diff) as  p95,\n  avg(propagation_slot_start_diff) as average,\n  quantile(0.50)(propagation_slot_start_diff) as p50,\n  quantile(0.05)(propagation_slot_start_diff) as p05,\n  min(propagation_slot_start_diff) as min\nFROM default.libp2p_gossipsub_beacon_attestation FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND (wallclock_slot - slot) < 2\n  AND isNotNull(attesting_validator_index)\n  AND propagation_slot_start_diff < 384000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestation arrival time in slot",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "Similar to inclusion distance but instead of when it was included in a block, it's instead when a sentry saw a attestation and the \"distance\" between its target and the current slot. \"0\" being the attestation for the current slot, \"1\" being current slot - 1 etc.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "percent"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 2
+              },
+              {
+                "color": "#EF843C",
+                "value": 5
+              },
+              {
+                "color": "#E24D42",
+                "value": 10
+              },
+              {
+                "color": "#1F78C1",
+                "value": 20
+              },
+              {
+                "color": "#BA43A9",
+                "value": 30
+              },
+              {
+                "color": "#705DA0",
+                "value": 50
+              },
+              {
+                "color": "#508642",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 86
+      },
+      "id": 151,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [],
+              "columns": [
+                {
+                  "name": "event_date_time"
+                },
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  toDateTime(slot_start_date_time) as time,\n  percent\nFROM \n(\n    SELECT\n        slot_start_date_time,\n        interval,\n        round((inclusion_count / interval_total) * 100, 2) AS percent\n    FROM\n    (\n        SELECT\n            slot_start_date_time,\n            interval,\n            inclusion_count,\n            sum(inclusion_count) OVER (PARTITION BY slot_start_date_time) AS interval_total\n        FROM\n        (\n            SELECT\n                slot_start_date_time,\n                floor(divide(propagation_slot_start_diff, 12000)) as interval,\n                count(DISTINCT source_root, target_root, aggregation_bits, beacon_block_root, attesting_validator_index, attesting_validator_committee_index) as inclusion_count\n            FROM default.libp2p_gossipsub_beacon_attestation FINAL\n\n            WHERE\n                $__timeFilter(slot_start_date_time)\n                AND meta_client_name IN (${client_name})\n                AND meta_network_name IN (${network_name})\n                AND meta_client_geo_continent_code IN (${geo_continent_code})\n                AND isNotNull(attesting_validator_index)\n            GROUP BY\n                slot_start_date_time,\n                interval\n            ORDER BY inclusion_count DESC\n        )\n    )\n)\nORDER BY time ASC, percent DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestation seen distance",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "percent": {
+                "aggregations": [
+                  "allValues"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "percent (allValues)"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "percent (allValues)": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 19,
+        "w": 24,
+        "x": 0,
+        "y": 93
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 75,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {},
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Plasma",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "dtdurationms"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateColDataType": "",
+          "dateLoading": false,
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "datetimeLoading": false,
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "interval": "",
+          "intervalFactor": 1,
+          "query": "SELECT\n    $timeSeries + 12000 as timestamp,\n    toUInt8(propagation_slot_start_diff / ${heatmap_interval}) * ${heatmap_interval} as diff,\n    sum(toUInt16(1)) as count\nFROM default.libp2p_gossipsub_beacon_attestation FINAL\n\nWHERE $timeFilter\n  AND (wallclock_slot - slot) < 2\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\n  AND diff < 30000\n  AND isNotNull(attesting_validator_index)\n\nGROUP BY\n    timestamp,\n    diff\n    \nLIMIT 10000000\n",
+          "rawQuery": "SELECT\n    (intDiv(toUInt32(slot_start_date_time), 12) * 12) * 1000 + 12000 as timestamp,\n    toUInt8(propagation_slot_start_diff / 250) * 250 as diff,\n    sum(toUInt16(1)) as count\nFROM default.libp2p_gossipsub_beacon_attestation FINAL\n\nWHERE slot_start_date_time >= toDateTime(1714369860) AND slot_start_date_time <= toDateTime(1714373460)\n  AND (wallclock_slot - slot) < 2\n  AND meta_client_name IN ('example-instance')\n  AND meta_network_name IN ('mainnet')\n  AND meta_client_geo_continent_code IN ('')\n  AND diff < 30000\n  AND isNotNull(attesting_validator_index)\n\nGROUP BY\n    timestamp,\n    diff\n    \nLIMIT 10000000",
+          "refId": "A",
+          "round": "12s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_attestation",
+          "tableLoading": false
+        }
+      ],
+      "title": "Attestation arrival time in slot",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "For a given slot, what beacon block roots had attestations against them",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "percent"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 2
+              },
+              {
+                "color": "#EF843C",
+                "value": 5
+              },
+              {
+                "color": "#E24D42",
+                "value": 10
+              },
+              {
+                "color": "#1F78C1",
+                "value": 20
+              },
+              {
+                "color": "#BA43A9",
+                "value": 30
+              },
+              {
+                "color": "#705DA0",
+                "value": 50
+              },
+              {
+                "color": "#508642",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 112
+      },
+      "id": 117,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [],
+              "columns": [
+                {
+                  "name": "event_date_time"
+                },
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  toDateTime(slot_start_date_time) as time,\n  percent\nFROM \n(\n  SELECT\n      slot_start_date_time,\n      beacon_block_root,\n      round((attestation_count / beacon_block_root_total) * 100, 2) AS percent\n  FROM\n  (\n      SELECT\n          slot_start_date_time,\n          beacon_block_root,\n          attestation_count,\n          sum(attestation_count) OVER (PARTITION BY slot_start_date_time) AS beacon_block_root_total\n      FROM\n      (\n          SELECT\n              slot_start_date_time,\n              beacon_block_root,\n              sum(toUInt32(1)) AS attestation_count\n          FROM default.libp2p_gossipsub_beacon_attestation FINAL\n          WHERE\n              $__timeFilter(slot_start_date_time)\n              AND meta_client_name IN (${client_name})\n              AND meta_network_name IN (${network_name})\n              AND meta_client_geo_continent_code IN (${geo_continent_code})\n              AND isNotNull(attesting_validator_index)\n          GROUP BY\n              slot_start_date_time,\n              beacon_block_root\n          ORDER BY attestation_count DESC\n      )\n  )\n)\nORDER BY time ASC, percent DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestation agreement",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "percent": {
+                "aggregations": [
+                  "allValues"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "percent (allValues)"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "percent (allValues)": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 300000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "std dev population"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p90 - p10"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 119
+      },
+      "id": 100,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  stddevPop(propagation_slot_start_diff) `std dev population`,\n  quantile(0.90)(propagation_slot_start_diff) - quantile(0.10)(propagation_slot_start_diff) `p90 - p10`\nFROM default.libp2p_gossipsub_beacon_attestation FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND (wallclock_slot - slot) < 2\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\n  AND isNotNull(attesting_validator_index)\n  AND propagation_slot_start_diff < 384000\nGROUP BY time\nORDER BY time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestation arrival time spread",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "The difference between when an attestation is seen by the first and last instance",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 3600000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "dash": [
+                10,
+                10
+              ],
+              "fill": "dash"
+            },
+            "lineWidth": 2,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 4,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p95"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "average"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "p05"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p05"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "min"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "min"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 4
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "p95",
+                  "average",
+                  "p50",
+                  "p05",
+                  "min"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 125
+      },
+      "id": 41,
+      "interval": "$interval_loose",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  max(diff) max,\n  quantile(0.95)(diff) p95,\n  avg(diff) average,\n  quantile(0.50)(diff) p50,\n  quantile(0.05)(diff) p05,\n  min(diff) min\nFROM (\n    SELECT\n        slot,\n        slot_start_date_time,\n        aggregation_bits,\n        committee_index,\n        meta_network_name,\n        max(propagation_slot_start_diff) - min(propagation_slot_start_diff) AS diff,\n        COUNT(*) as count\n    FROM default.libp2p_gossipsub_beacon_attestation FINAL\n    WHERE\n        $__timeFilter(slot_start_date_time)\n        AND slot_start_date_time <= toDateTime(${__to:date:seconds})\n        AND meta_network_name IN (${network_name})\n        AND meta_client_geo_continent_code IN (${geo_continent_code})\n        AND isNotNull(attesting_validator_index)\n    GROUP BY slot, slot_start_date_time, aggregation_bits, committee_index, meta_network_name\n    HAVING diff > 0 AND diff < 30000 AND count > 1\n)\nGROUP BY time\nORDER BY time ASC\nLIMIT 100000\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestation propagation difference between instances",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 300000,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 133
+      },
+      "id": 3,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "name",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_name"
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  meta_client_name as name,\n  COUNT(*) as count\nFROM\n  default.libp2p_gossipsub_beacon_attestation FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY\n  meta_client_name, time\nORDER BY\n  meta_client_name, time\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestations per instance",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "name"
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 300000,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 13,
+        "x": 0,
+        "y": 144
+      },
+      "id": 194,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "name",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_name"
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  topic_name,\n  COUNT(*) as count\nFROM\n  default.libp2p_gossipsub_beacon_attestation FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY\n  topic_name, time\nORDER BY\n  topic_name, time\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Attestations per subnet",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "topic_name"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": -1,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 300000,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 11,
+        "x": 13,
+        "y": 144
+      },
+      "id": 195,
+      "interval": "$interval_tight",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "name",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_name"
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT\n  slot_start_date_time,\n  count(DISTINCT(beacon_block_root))\nFROM default.libp2p_gossipsub_beacon_attestation FINAL\nWHERE\n  $__timeFilter(slot_start_date_time)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\n  AND meta_client_geo_continent_code IN (${geo_continent_code})\nGROUP BY slot_start_date_time\nORDER BY slot_start_date_time ASC\nLIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique block roots per slot",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "name"
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "mainnet"
+          ],
+          "value": [
+            "mainnet"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT meta_network_name\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Network",
+        "multi": true,
+        "name": "network_name",
+        "options": [],
+        "query": "SELECT meta_network_name\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT meta_client_name\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Sentry",
+        "multi": true,
+        "name": "client_name",
+        "options": [],
+        "query": "SELECT meta_client_name\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Continent",
+        "multi": true,
+        "name": "geo_continent_code",
+        "options": [],
+        "query": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "250",
+          "value": "250"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Heatmap interval (MS)",
+        "multi": false,
+        "name": "heatmap_interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "250",
+            "value": "250"
+          }
+        ],
+        "query": "100,250",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "auto": true,
+        "auto_count": 300,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval_tight"
+        },
+        "hide": 2,
+        "name": "interval_tight",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval_tight"
+          },
+          {
+            "selected": false,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 2,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval_loose"
+        },
+        "hide": 2,
+        "name": "interval_loose",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval_loose"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "description": "Table prefix",
+        "hide": 0,
+        "label": "Prefix",
+        "name": "table_prefix",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "description": "Table prefix for attestations",
+        "hide": 0,
+        "label": "Attestation Prefix",
+        "name": "attestation_prefix",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Gossipsub Events",
+  "uid": "d49d224e-0b6a-4319-b968-63afd535db56",
+  "version": 11,
+  "weekStart": ""
+}

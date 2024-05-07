@@ -151,6 +151,22 @@ You can start up the clickhouse cluster only with migrations automatically appli
 docker compose --profile clickhouse up --detach
 ```
 
+### Building xatu changes
+
+When making changes to the xatu codebase, you can build the docker image with the following command:
+
+```bash
+docker compose up -d --build
+```
+
+### Cleaning up docker volumes
+
+We use docker volumes to store data between restarts. If you would like to clean up the volumes, you can do so with the following command:
+
+```bash
+docker compose down -v
+```
+
 ## Contributing
 
 Contributions are greatly appreciated! Pull requests will be reviewed and merged promptly if you're interested in improving Xatu!

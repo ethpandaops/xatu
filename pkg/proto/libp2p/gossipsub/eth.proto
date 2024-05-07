@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package xatu.libp2p.gossipsub.eth;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub";
+
+import "google/protobuf/wrappers.proto";
+
+message BeaconBlock {
+    google.protobuf.StringValue block = 1 [json_name = "block"];
+    google.protobuf.UInt64Value slot = 2 [json_name = "slot"];
+    google.protobuf.UInt64Value proposer_index = 3 [json_name = "proposer_index"];
+}
+

@@ -42,8 +42,8 @@ services:
       config:
         address: http://xatu-vector-http-kafka:9005
         maxQueueSize: 102400
-        batchTimeout: 1s
+        batchTimeout: 3s
         exportTimeout: 30s
-        maxExportBatchSize: 64
+        maxExportBatchSize: 5000
         compression: none
         keepAlive: true

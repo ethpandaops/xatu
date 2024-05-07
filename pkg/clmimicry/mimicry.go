@@ -16,6 +16,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
@@ -50,6 +51,8 @@ type Mimicry struct {
 
 	networkConfig *params.NetworkConfig
 	beaconConfig  *params.BeaconChainConfig
+
+	ethereum *ethereum.BeaconNode
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry, error) {
@@ -66,6 +69,22 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 		return nil, err
 	}
 
+	addr := fmt.Sprintf("%s:%d", config.Node.PrysmHost, config.Node.PrysmPortHTTP)
+
+	if !strings.HasPrefix(addr, "http") {
+		addr = "http://" + addr
+	}
+
+	client, err := ethereum.NewBeaconNode(ctx,
+		config.Name,
+		&config.Ethereum,
+		log,
+		addr,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ethereum client: %w", err)
+	}
+
 	mimicry := &Mimicry{
 		Config:      config,
 		sinks:       sinks,
@@ -74,6 +93,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 		id:          uuid.New(),
 		metrics:     NewMetrics("xatu_cl_mimicry"),
 		startupTime: time.Now(),
+		ethereum:    client,
 	}
 
 	return mimicry, nil
@@ -116,6 +136,7 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	nodeConfig.NetworkConfig = netConfig
 	nodeConfig.BeaconConfig = beaConfig
 	nodeConfig.ForkDigest = forkDigest
+	nodeConfig.ForkVersion = currentForkVersion
 	nodeConfig.PubSubSubscriptionRequestLimit = 200
 	nodeConfig.PubSubQueueSize = 200
 	nodeConfig.Libp2pPeerscoreSnapshotFreq = 60 * time.Second
@@ -185,8 +206,18 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		}
 	}
 
-	if err := m.startHermes(ctx); err != nil {
-		return fmt.Errorf("failed to start hermes: %w", err)
+	m.ethereum.OnReady(ctx, func(ctx context.Context) error {
+		m.log.Info("Ethereum client is ready. Starting Hermes..")
+
+		if err := m.startHermes(ctx); err != nil {
+			m.log.Fatal("failed to start hermes: %w", err)
+		}
+
+		return nil
+	})
+
+	if err := m.ethereum.Start(ctx); err != nil {
+		return err
 	}
 
 	cancel := make(chan os.Signal, 1)

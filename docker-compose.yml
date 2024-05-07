@@ -398,7 +398,7 @@ services:
       - ""
     image: timberio/vector:0.37.1-alpine
     volumes:
-      - ./deploy/local/docker-compose/xatu-vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
+      - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
     networks:
       - xatu-net
     environment:
@@ -413,15 +413,15 @@ services:
       retries: 5
       start_period: 5s
     depends_on:
-      kafka:
+      xatu-kafka:
         condition: service_healthy
-      clickhouse-01:
+      xatu-clickhouse-01:
         condition: service_healthy
-      clickhouse-02:
+      xatu-clickhouse-02:
         condition: service_healthy
-      clickhouse-migrator:
+      xatu-clickhouse-migrator:
         condition: service_completed_successfully
-      init-kafka:
+      xatu-init-kafka:
         condition: service_completed_successfully
   xatu-postgres-migrator:
     profiles:

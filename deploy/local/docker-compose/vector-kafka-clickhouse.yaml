@@ -428,6 +428,8 @@ transforms:
         .error_description = "failed to parse epoch start date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
       del(.meta)
@@ -470,6 +472,8 @@ transforms:
       .execution_optimistic = .data.execution_optimistic
       .previous_duty_dependent_root = .data.previous_duty_dependent_root
       .current_duty_dependent_root = .data.current_duty_dependent_root
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -509,6 +513,8 @@ transforms:
       .blob_index = .data.index
       .kzg_commitment = .data.kzg_commitment
       .versioned_hash = .data.versioned_hash
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -547,6 +553,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -676,6 +684,8 @@ transforms:
       }
       .request_duration = .meta.client.additional_data.snapshot.request_duration_ms
       .request_slot_start_diff = .meta.client.additional_data.snapshot.requested_at_slot_start_diff_ms
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -704,6 +714,8 @@ transforms:
       }
       .validator_index = .data.message.validator_index
       .signature = .data.signature
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -733,6 +745,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -775,6 +789,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -818,6 +834,8 @@ transforms:
       }
       .selection_proof = .data.message.selection_proof
       .signature = .data.signature
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
@@ -925,6 +943,8 @@ transforms:
       .execution_payload_transactions_count = .meta.client.additional_data.transactions_count
       .execution_payload_transactions_total_bytes = .meta.client.additional_data.transactions_total_bytes
       .execution_payload_transactions_total_bytes_compressed = .meta.client.additional_data.transactions_total_bytes_compressed
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)

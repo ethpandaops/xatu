@@ -2,7 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.22.0
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240501013510-f8170ec5da4d
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240508034827-0c42cafd65a5
 
 require (
 	github.com/IBM/sarama v1.43.0
@@ -31,7 +31,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/probe-lab/hermes v0.0.0-20240327153144-a2528356b4f7
 	github.com/prometheus/client_golang v1.19.0
-	github.com/prysmaticlabs/prysm/v5 v5.0.2
+	github.com/prysmaticlabs/prysm/v5 v5.0.4-0.20240507051732-39060d20cdd9
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -93,7 +93,7 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
-	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
+	github.com/ethereum/c-kzg-4844 v1.0.1-0.20240422190800-13be436f5927 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/ferranbt/fastssz v0.1.3 // indirect
 	github.com/flynn/noise v1.1.0 // indirect

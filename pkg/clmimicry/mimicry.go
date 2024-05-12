@@ -99,10 +99,47 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 	return mimicry, nil
 }
 
-func (m *Mimicry) startHermes(ctx context.Context) error {
-	genConfig, netConfig, beaConfig, err := eth.GetConfigsByNetworkName(m.Config.Ethereum.Network)
+func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.GenesisConfig, *params.NetworkConfig, *params.BeaconChainConfig, error) {
+	if m.Config.Ethereum.CustomNetwork == nil {
+		return eth.GetConfigsByNetworkName(m.Config.Ethereum.Network)
+	}
+
+	m.log.WithField("network", m.Config.Ethereum.Network).Info("Using a custom Ethereum network")
+
+	genesis := m.ethereum.Metadata().Genesis
+
+	genesisConfig := &eth.GenesisConfig{
+		GenesisValidatorRoot: genesis.GenesisValidatorsRoot[:],
+		GenesisTime:          genesis.GenesisTime,
+	}
+
+	beaconChainConfig, err := m.FetchConfigFromUpstream(ctx)
 	if err != nil {
-		return fmt.Errorf("get config for %s: %w", m.Config.Ethereum.Network, err)
+		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network config.yaml: %w", err)
+	}
+
+	networkConfig := params.BeaconNetworkConfig() // TODO: Support others
+
+	bootnodes, err := FetchBootnodeENRsFromURL(ctx, m.Config.Ethereum.CustomNetwork.BootnodeENRURL)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network bootnodes.yaml: %w", err)
+	}
+
+	depositContractBlock, err := FetchDepositContractBlockFromURL(ctx, m.Config.Ethereum.CustomNetwork.DepositContractBlockURL)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network deposit contract block.yaml: %w", err)
+	}
+
+	networkConfig.BootstrapNodes = bootnodes
+	networkConfig.ContractDeploymentBlock = depositContractBlock
+
+	return genesisConfig, networkConfig, beaconChainConfig, nil
+}
+
+func (m *Mimicry) startHermes(ctx context.Context) error {
+	genConfig, netConfig, beaConfig, err := m.deriveNetworkConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to derive network config for %s: %w", m.Config.Ethereum.Network, err)
 	}
 
 	m.networkConfig = netConfig
@@ -210,7 +247,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		m.log.Info("Ethereum client is ready. Starting Hermes..")
 
 		if err := m.startHermes(ctx); err != nil {
-			m.log.Fatal("failed to start hermes: %w", err)
+			m.log.Fatalf("failed to start hermes: %w", err)
 		}
 
 		return nil

@@ -256,8 +256,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.7/go.mod h1:cwu0lG7PUMfa9snN8LXBig5ynNVH9qI8YYLbd1fK2po=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/ethereum/c-kzg-4844 v0.4.0 h1:3MS1s4JtA868KpJxroZoepdV0ZKBp3u/O5HcZ7R3nlY=
-github.com/ethereum/c-kzg-4844 v0.4.0/go.mod h1:VewdlzQmpT5QSrVhbBuGoCdFJkpaJlO1aQputP83wc0=
+github.com/ethereum/c-kzg-4844 v1.0.1-0.20240422190800-13be436f5927 h1:ffWmm0RUR2+VqJsCkf94HqgEwZi2fgbm2iq+O/GdJNI=
+github.com/ethereum/c-kzg-4844 v1.0.1-0.20240422190800-13be436f5927/go.mod h1:VewdlzQmpT5QSrVhbBuGoCdFJkpaJlO1aQputP83wc0=
 github.com/ethereum/go-ethereum v1.13.14 h1:EwiY3FZP94derMCIam1iW4HFVrSgIcpsu0HwTQtm6CQ=
 github.com/ethereum/go-ethereum v1.13.14/go.mod h1:TN8ZiHrdJwSe8Cb6x+p0hs5CxhJZPbqB7hHkaUXcmIU=
 github.com/ethpandaops/beacon v0.36.0 h1:BIsb0ftrrOSwsORCNPvq7df3O5f6sVcFm7guGLpFztc=
@@ -266,8 +266,8 @@ github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756 h1:8JWjrRfP14m
 github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=
 github.com/ethpandaops/ethwallclock v0.3.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/hermes v0.0.0-20240501013510-f8170ec5da4d h1:mWBuU7mhpN11c2bbcImFyLSl+TJ208N4aGhMhadflIw=
-github.com/ethpandaops/hermes v0.0.0-20240501013510-f8170ec5da4d/go.mod h1:WOtvdP1zl53vuoOX6PRZ9oAbbJUiDso50efmAjoUZzI=
+github.com/ethpandaops/hermes v0.0.0-20240508034827-0c42cafd65a5 h1:kbXv4MfY+3xJ5ldL5bxf6AVU0CqmmYFfYSSHssoOUYE=
+github.com/ethpandaops/hermes v0.0.0-20240508034827-0c42cafd65a5/go.mod h1:Z65YW+OhX67VHToofu2+wZDdMUgQ1AnvaEPgB9GzTC0=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
@@ -878,8 +878,8 @@ github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c h1:9PHRCuO
 github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c/go.mod h1:ZRws458tYHS/Zs936OQ6oCrL+Ict5O4Xpwve1UQ6C9M=
 github.com/prysmaticlabs/protoc-gen-go-cast v0.0.0-20230228205207-28762a7b9294 h1:q9wE0ZZRdTUAAeyFP/w0SwBEnCqlVy2+on6X2/e+eAU=
 github.com/prysmaticlabs/protoc-gen-go-cast v0.0.0-20230228205207-28762a7b9294/go.mod h1:ZVEbRdnMkGhp/pu35zq4SXxtvUwWK0J1MATtekZpH2Y=
-github.com/prysmaticlabs/prysm/v5 v5.0.2 h1:xcSUvrCVfOGslKYUb5Hpyz98N9I8fC2p7DMAZfiqEIA=
-github.com/prysmaticlabs/prysm/v5 v5.0.2/go.mod h1:XG4nOU925zemOimoexcrFP4oA57f+RTQbp7V/TH9UOM=
+github.com/prysmaticlabs/prysm/v5 v5.0.4-0.20240507051732-39060d20cdd9 h1:z6b+3uqU4t2lJAAYIB75Yp8sBaCeo4p1/+uHxZxXkmw=
+github.com/prysmaticlabs/prysm/v5 v5.0.4-0.20240507051732-39060d20cdd9/go.mod h1:5Pt2wu6NOUTSzLWcoEco/SraJ4kEEx5HubrHBTsmGmE=
 github.com/quic-go/qpack v0.4.0 h1:Cr9BXA1sQS2SmDUWjSofMPNKmvF6IiIfDRmgU0w1ZCo=
 github.com/quic-go/qpack v0.4.0/go.mod h1:UZVnYIfi5GRk+zI9UMaCPsmZ2xKJP7XBUvVyT1Knj9A=
 github.com/quic-go/quic-go v0.42.0 h1:uSfdap0eveIl8KXnipv9K7nlwZ5IqLlYOpJ58u5utpM=

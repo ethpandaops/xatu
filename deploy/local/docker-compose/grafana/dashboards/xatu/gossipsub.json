@@ -591,7 +591,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "id": 17,
       "panels": [],
@@ -853,7 +853,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 19
       },
       "id": 36,
       "interval": "$interval_tight",
@@ -964,7 +964,7 @@
         "h": 13,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 28
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -1153,7 +1153,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 41
       },
       "id": 59,
       "interval": "$interval_tight",
@@ -1487,7 +1487,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 47
       },
       "id": 37,
       "interval": "$interval_tight",
@@ -1624,7 +1624,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 51
+        "y": 55
       },
       "id": 38,
       "interval": "12s",
@@ -1713,7 +1713,7 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 51
+        "y": 55
       },
       "id": 31,
       "interval": "$interval",
@@ -1803,7 +1803,7 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 51
+        "y": 55
       },
       "id": 32,
       "interval": "$interval",
@@ -1929,7 +1929,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 61
       },
       "id": 156,
       "interval": "$interval_tight",
@@ -2007,7 +2007,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 66
+        "y": 70
       },
       "id": 174,
       "panels": [],
@@ -2253,7 +2253,7 @@
         "h": 9,
         "w": 17,
         "x": 0,
-        "y": 67
+        "y": 71
       },
       "id": 173,
       "options": {
@@ -2433,7 +2433,7 @@
         "h": 9,
         "w": 7,
         "x": 17,
-        "y": 67
+        "y": 71
       },
       "id": 191,
       "interval": "$interval_tight",
@@ -2518,7 +2518,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 76
+        "y": 80
       },
       "id": 8,
       "panels": [],
@@ -2752,7 +2752,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 77
+        "y": 81
       },
       "id": 95,
       "interval": "$interval_tight",
@@ -2890,7 +2890,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 90
       },
       "id": 151,
       "options": {
@@ -3013,7 +3013,7 @@
         "h": 19,
         "w": 24,
         "x": 0,
-        "y": 93
+        "y": 97
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -3155,8 +3155,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "transparent",
-                "value": null
+                "color": "transparent"
               },
               {
                 "color": "#EAB839",
@@ -3200,7 +3199,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 112
+        "y": 116
       },
       "id": 117,
       "options": {
@@ -3342,8 +3341,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3386,7 +3384,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 119
+        "y": 123
       },
       "id": 100,
       "interval": "$interval_tight",
@@ -3521,8 +3519,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3720,7 +3717,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 125
+        "y": 129
       },
       "id": 41,
       "interval": "$interval_loose",
@@ -3845,8 +3842,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3861,7 +3857,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 133
+        "y": 137
       },
       "id": 3,
       "interval": "$interval_tight",
@@ -3980,8 +3976,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3996,7 +3991,7 @@
         "h": 11,
         "w": 13,
         "x": 0,
-        "y": 144
+        "y": 148
       },
       "id": 194,
       "interval": "$interval_tight",
@@ -4119,8 +4114,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -4135,7 +4129,7 @@
         "h": 11,
         "w": 11,
         "x": 13,
-        "y": 144
+        "y": 148
       },
       "id": 195,
       "interval": "$interval_tight",
@@ -4206,6 +4200,527 @@
         }
       ],
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 159
+      },
+      "id": 196,
+      "panels": [],
+      "title": "PeerDAS",
+      "type": "row"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 160
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 197,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          }
+        },
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Plasma",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    $timeSeries + 12000 as timestamp,\n    column_index,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\nWHERE $timeFilter\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    column_index",
+          "rawQuery": "SELECT\n    (intDiv(toUInt32(slot_start_date_time), 12) * 12) * 1000 + 12000 as timestamp,\n    column_index,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\nWHERE slot_start_date_time >= toDateTime(1715604658) AND slot_start_date_time <= toDateTime(1715608258)\n  AND meta_client_name IN ('example-instance')\n  AND meta_network_name IN ('kurtosis')\nGROUP BY\n    timestamp,\n    column_index",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_data_column_sidecar_local"
+        }
+      ],
+      "title": "Columns seen",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 173
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 198,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          }
+        },
+        "cellGap": 2,
+        "cellValues": {
+          "unit": "ms"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Plasma",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    $timeSeries + 12000 as timestamp,\n    column_index,\n    min(propagation_slot_start_diff)\nFROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\nWHERE $timeFilter\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    column_index",
+          "rawQuery": "SELECT\n    (intDiv(toUInt32(slot_start_date_time), 12) * 12) * 1000 + 12000 as timestamp,\n    column_index,\n    min(propagation_slot_start_diff)\nFROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\nWHERE slot_start_date_time >= toDateTime(1715605502) AND slot_start_date_time <= toDateTime(1715609102)\n  AND meta_client_name IN ('example-instance')\n  AND meta_network_name IN ('kurtosis')\nGROUP BY\n    timestamp,\n    column_index",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_data_column_sidecar_local"
+        }
+      ],
+      "title": "Columns arrival time",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 186
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 200,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          }
+        },
+        "cellGap": 1,
+        "cellValues": {
+          "unit": "ms"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "max": 1,
+          "min": 0,
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Greys",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {},
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "WITH BlockData AS (\n    SELECT\n        slot_start_date_time,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_block_propagation\n    FROM default.libp2p_gossipsub_beacon_block\n    WHERE $timeFilter\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY\n        slot_start_date_time,\n        meta_network_name\n),\nColumnSidecarData AS (\n    SELECT\n        slot_start_date_time,\n        column_index,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_propagation_slot_start_diff\n    FROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\n    WHERE $timeFilter\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY\n        slot_start_date_time,\n        column_index,\n        meta_network_name\n)\nSELECT\n    $timeSeries + 12000 AS timestamp,\n    cs.column_index,\n    min(cs.min_propagation_slot_start_diff - bd.min_block_propagation) AS propagation_diff\nFROM ColumnSidecarData cs\nJOIN BlockData bd\n    ON cs.slot_start_date_time = bd.slot_start_date_time\n    AND cs.meta_network_name = bd.meta_network_name\n GROUP BY\n    timestamp,\n    column_index\n",
+          "rawQuery": "WITH BlockData AS (\n    SELECT\n        slot_start_date_time,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_block_propagation\n    FROM default.libp2p_gossipsub_beacon_block\n    WHERE slot_start_date_time >= toDateTime(1715608688) AND slot_start_date_time <= toDateTime(1715610488)\n      AND meta_client_name IN ('example-instance')\n      AND meta_network_name IN ('kurtosis')\n    GROUP BY\n        slot_start_date_time,\n        meta_network_name\n),\nColumnSidecarData AS (\n    SELECT\n        slot_start_date_time,\n        column_index,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_propagation_slot_start_diff\n    FROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\n    WHERE slot_start_date_time >= toDateTime(1715608688) AND slot_start_date_time <= toDateTime(1715610488)\n      AND meta_client_name IN ('example-instance')\n      AND meta_network_name IN ('kurtosis')\n    GROUP BY\n        slot_start_date_time,\n        column_index,\n        meta_network_name\n)\nSELECT\n    (intDiv(toUInt32(slot_start_date_time), 12) * 12) * 1000 + 12000 AS timestamp,\n    cs.column_index,\n    min(cs.min_propagation_slot_start_diff - bd.min_block_propagation) AS propagation_diff\nFROM ColumnSidecarData cs\nJOIN BlockData bd\n    ON cs.slot_start_date_time = bd.slot_start_date_time\n    AND cs.meta_network_name = bd.meta_network_name\n GROUP BY\n    timestamp,\n    column_index",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_data_column_sidecar_local"
+        }
+      ],
+      "title": "Which arrived first between the block and column? (black = column, white = block)",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
+    },
+    {
+      "cards": {},
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateYlOrRd",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "P7C0E9263B64B2A80"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 199
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 201,
+      "interval": "$interval_tight",
+      "legend": {
+        "show": true
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          }
+        },
+        "cellGap": 1,
+        "cellValues": {
+          "unit": "ms"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Plasma",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {},
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "le"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "database": "default",
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "P7C0E9263B64B2A80"
+          },
+          "dateTimeColDataType": "slot_start_date_time",
+          "dateTimeType": "DATETIME",
+          "editorMode": "builder",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT\n    $timeSeries + 12000 as timestamp,\n    multiply(floor(divide(propagation_slot_start_diff, $heatmap_interval)), $heatmap_interval) as diff,\n    count() as count\nFROM default.libp2p_gossipsub_beacon_block FINAL\nWHERE $timeFilter\n  AND propagation_slot_start_diff < 100000\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY\n    timestamp,\n    diff",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "WITH BlockData AS (\n    SELECT\n        slot_start_date_time,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_block_propagation\n    FROM default.libp2p_gossipsub_beacon_block\n    WHERE $timeFilter\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY\n        slot_start_date_time,\n        meta_network_name\n),\nColumnSidecarData AS (\n    SELECT\n        slot_start_date_time,\n        column_index,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_propagation_slot_start_diff\n    FROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\n    WHERE $timeFilter\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY\n        slot_start_date_time,\n        column_index,\n        meta_network_name\n)\nSELECT\n    $timeSeries + 12000 AS timestamp,\n    cs.column_index,\n    min(cs.min_propagation_slot_start_diff - bd.min_block_propagation) AS propagation_diff\nFROM ColumnSidecarData cs\nJOIN BlockData bd\n    ON cs.slot_start_date_time = bd.slot_start_date_time\n    AND cs.meta_network_name = bd.meta_network_name\n GROUP BY\n    timestamp,\n    column_index\n",
+          "rawQuery": "WITH BlockData AS (\n    SELECT\n        slot_start_date_time,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_block_propagation\n    FROM default.libp2p_gossipsub_beacon_block\n    WHERE slot_start_date_time >= toDateTime(1715608688) AND slot_start_date_time <= toDateTime(1715610488)\n      AND meta_client_name IN ('example-instance')\n      AND meta_network_name IN ('kurtosis')\n    GROUP BY\n        slot_start_date_time,\n        meta_network_name\n),\nColumnSidecarData AS (\n    SELECT\n        slot_start_date_time,\n        column_index,\n        meta_network_name,\n        MIN(propagation_slot_start_diff) AS min_propagation_slot_start_diff\n    FROM default.libp2p_gossipsub_beacon_data_column_sidecar FINAL\n    WHERE slot_start_date_time >= toDateTime(1715608688) AND slot_start_date_time <= toDateTime(1715610488)\n      AND meta_client_name IN ('example-instance')\n      AND meta_network_name IN ('kurtosis')\n    GROUP BY\n        slot_start_date_time,\n        column_index,\n        meta_network_name\n)\nSELECT\n    (intDiv(toUInt32(slot_start_date_time), 12) * 12) * 1000 + 12000 AS timestamp,\n    cs.column_index,\n    min(cs.min_propagation_slot_start_diff - bd.min_block_propagation) AS propagation_diff\nFROM ColumnSidecarData cs\nJOIN BlockData bd\n    ON cs.slot_start_date_time = bd.slot_start_date_time\n    AND cs.meta_network_name = bd.meta_network_name\n GROUP BY\n    timestamp,\n    column_index",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true,
+          "table": "libp2p_gossipsub_beacon_data_column_sidecar_local"
+        }
+      ],
+      "title": "Columns arrival time after block arrival",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "yAxis": {
+        "format": "s",
+        "logBase": 1,
+        "show": true
+      },
+      "yBucketBound": "auto"
     }
   ],
   "refresh": "",
@@ -4218,10 +4733,10 @@
         "current": {
           "selected": true,
           "text": [
-            "mainnet"
+            "All"
           ],
           "value": [
-            "mainnet"
+            "$__all"
           ]
         },
         "datasource": {
@@ -4505,13 +5020,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Gossipsub Events",
-  "uid": "d49d224e-0b6a-4319-b968-63afd535db56",
-  "version": 11,
+  "title": "PeerDAS",
+  "uid": "bdll5r2tw9a80e",
+  "version": 2,
   "weekStart": ""
 }

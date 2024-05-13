@@ -113,10 +113,16 @@ func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.GenesisConfig, 
 		GenesisTime:          genesis.GenesisTime,
 	}
 
-	beaconChainConfig, err := m.FetchConfigFromUpstream(ctx)
+	beaconChainConfig, err := m.FetchConfigFromURL(ctx, m.Config.Ethereum.CustomNetwork.ConfigURL)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network config.yaml: %w", err)
 	}
+
+	if err := params.SetActive(beaconChainConfig); err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to set active network config: %w", err)
+	}
+
+	params.OverrideBeaconConfig(beaconChainConfig)
 
 	networkConfig := params.BeaconNetworkConfig() // TODO: Support others
 
@@ -132,6 +138,8 @@ func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.GenesisConfig, 
 
 	networkConfig.BootstrapNodes = bootnodes
 	networkConfig.ContractDeploymentBlock = depositContractBlock
+
+	params.OverrideBeaconNetworkConfig(networkConfig)
 
 	return genesisConfig, networkConfig, beaconChainConfig, nil
 }
@@ -247,7 +255,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		m.log.Info("Ethereum client is ready. Starting Hermes..")
 
 		if err := m.startHermes(ctx); err != nil {
-			m.log.Fatalf("failed to start hermes: %w", err)
+			m.log.Fatalf("failed to start hermes: %s", err.Error())
 		}
 
 		return nil

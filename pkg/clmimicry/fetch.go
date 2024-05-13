@@ -9,22 +9,26 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (m *Mimicry) FetchConfigFromUpstream(ctx context.Context) (*params.BeaconChainConfig, error) {
-
-	spec, err := m.ethereum.Node().FetchRawSpec(ctx)
+func (m *Mimicry) FetchConfigFromURL(ctx context.Context, url string) (*params.BeaconChainConfig, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Marshal the spec to a yaml string
-	yamlSpec, err := yaml.Marshal(spec)
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	config := &params.BeaconChainConfig{}
+	config := params.MainnetConfig().Copy()
 
-	out, err := params.UnmarshalConfig(yamlSpec, config)
+	out, err := params.UnmarshalConfig(data, config)
 	if err != nil {
 		return nil, err
 	}

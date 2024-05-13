@@ -19,55 +19,56 @@ import (
 type Type string
 
 var (
-	TypeUnknown                                 Type = "unknown"
-	TypeBeaconETHV1EventsBlock                  Type = v1.EventsBlockType
-	TypeBeaconETHV1EventsBlockV2                Type = v1.EventsBlockV2Type
-	TypeBeaconETHV1EventsChainReorg             Type = v1.EventsChainReorgType
-	TypeBeaconETHV1EventsChainReorgV2           Type = v1.EventsChainReorgV2Type
-	TypeBeaconETHV1EventsFinalizedCheckpoint    Type = v1.EventsFinalizedCheckpointType
-	TypeBeaconETHV1EventsFinalizedCheckpointV2  Type = v1.EventsFinalizedCheckpointV2Type
-	TypeBeaconETHV1EventsHead                   Type = v1.EventsHeadType
-	TypeBeaconETHV1EventsHeadV2                 Type = v1.EventsHeadV2Type
-	TypeBeaconETHV1EventsVoluntaryExit          Type = v1.EventsVoluntaryExitType
-	TypeBeaconETHV1EventsVoluntaryExitV2        Type = v1.EventsVoluntaryExitV2Type
-	TypeBeaconETHV1EventsAttestation            Type = v1.EventsAttestationType
-	TypeBeaconETHV1EventsAttestationV2          Type = v1.EventsAttestationV2Type
-	TypeBeaconETHV1EventsContributionAndProof   Type = v1.EventsContributionAndProofType
-	TypeBeaconETHV1EventsContributionAndProofV2 Type = v1.EventsContributionAndProofV2Type
-	TypeMempoolTransaction                      Type = mempool.TransactionType
-	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
-	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
-	TypeBeaconETHV2BeaconBlockV2                Type = v2.BeaconBlockV2Type
-	TypeDebugForkChoice                         Type = v1.DebugForkChoiceType
-	TypeDebugForkChoiceV2                       Type = v1.DebugForkChoiceV2Type
-	TypeDebugForkChoiceReorg                    Type = v1.DebugForkChoiceReorgType
-	TypeDebugForkChoiceReorgV2                  Type = v1.DebugForkChoiceReorgV2Type
-	TypeBeaconEthV1BeaconCommittee              Type = v1.BeaconCommitteeType
-	TypeBeaconEthV1ValidatorAttestationData     Type = v1.ValidatorAttestationDataType
-	TypeBeaconEthV2BeaconBlockAttesterSlashing  Type = v2.BeaconBlockAttesterSlashingType
-	TypeBeaconEthV2BeaconBlockProposerSlashing  Type = v2.BeaconBlockProposerSlashingType
-	TypeBeaconEthV2BeaconBlockVoluntaryExit     Type = v2.BeaconBlockVoluntaryExitType
-	TypeBeaconEthV2BeaconBlockDeposit           Type = v2.BeaconBlockDepositType
-	TypeBeaconEthV2BeaconExecutionTransaction   Type = v2.BeaconBlockExecutionTransactionType
-	TypeBeaconEthV2BeaconBLSToExecutionChange   Type = v2.BeaconBlockBLSToExecutionChangeType
-	TypeBeaconEthV2BeaconWithdrawal             Type = v2.BeaconBlockWithdrawalType
-	TypeBlockprintBlockClassification           Type = blockprint.BlockClassificationType
-	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
-	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
-	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
-	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
-	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
-	TypeLibP2PTraceAddPeer                      Type = Type(libp2p.TraceAddPeerType)
-	TypeLibP2PTraceConnected                    Type = Type(libp2p.TraceConnectedType)
-	TypeLibP2PTraceJoin                         Type = Type(libp2p.TraceJoinType)
-	TypeLibP2PTraceDisconnected                 Type = Type(libp2p.TraceDisconnectedType)
-	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
-	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
-	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
-	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
-	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
-	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
-	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
+	TypeUnknown                                     Type = "unknown"
+	TypeBeaconETHV1EventsBlock                      Type = v1.EventsBlockType
+	TypeBeaconETHV1EventsBlockV2                    Type = v1.EventsBlockV2Type
+	TypeBeaconETHV1EventsChainReorg                 Type = v1.EventsChainReorgType
+	TypeBeaconETHV1EventsChainReorgV2               Type = v1.EventsChainReorgV2Type
+	TypeBeaconETHV1EventsFinalizedCheckpoint        Type = v1.EventsFinalizedCheckpointType
+	TypeBeaconETHV1EventsFinalizedCheckpointV2      Type = v1.EventsFinalizedCheckpointV2Type
+	TypeBeaconETHV1EventsHead                       Type = v1.EventsHeadType
+	TypeBeaconETHV1EventsHeadV2                     Type = v1.EventsHeadV2Type
+	TypeBeaconETHV1EventsVoluntaryExit              Type = v1.EventsVoluntaryExitType
+	TypeBeaconETHV1EventsVoluntaryExitV2            Type = v1.EventsVoluntaryExitV2Type
+	TypeBeaconETHV1EventsAttestation                Type = v1.EventsAttestationType
+	TypeBeaconETHV1EventsAttestationV2              Type = v1.EventsAttestationV2Type
+	TypeBeaconETHV1EventsContributionAndProof       Type = v1.EventsContributionAndProofType
+	TypeBeaconETHV1EventsContributionAndProofV2     Type = v1.EventsContributionAndProofV2Type
+	TypeMempoolTransaction                          Type = mempool.TransactionType
+	TypeMempoolTransactionV2                        Type = mempool.TransactionV2Type
+	TypeBeaconETHV2BeaconBlock                      Type = v2.BeaconBlockType
+	TypeBeaconETHV2BeaconBlockV2                    Type = v2.BeaconBlockV2Type
+	TypeDebugForkChoice                             Type = v1.DebugForkChoiceType
+	TypeDebugForkChoiceV2                           Type = v1.DebugForkChoiceV2Type
+	TypeDebugForkChoiceReorg                        Type = v1.DebugForkChoiceReorgType
+	TypeDebugForkChoiceReorgV2                      Type = v1.DebugForkChoiceReorgV2Type
+	TypeBeaconEthV1BeaconCommittee                  Type = v1.BeaconCommitteeType
+	TypeBeaconEthV1ValidatorAttestationData         Type = v1.ValidatorAttestationDataType
+	TypeBeaconEthV2BeaconBlockAttesterSlashing      Type = v2.BeaconBlockAttesterSlashingType
+	TypeBeaconEthV2BeaconBlockProposerSlashing      Type = v2.BeaconBlockProposerSlashingType
+	TypeBeaconEthV2BeaconBlockVoluntaryExit         Type = v2.BeaconBlockVoluntaryExitType
+	TypeBeaconEthV2BeaconBlockDeposit               Type = v2.BeaconBlockDepositType
+	TypeBeaconEthV2BeaconExecutionTransaction       Type = v2.BeaconBlockExecutionTransactionType
+	TypeBeaconEthV2BeaconBLSToExecutionChange       Type = v2.BeaconBlockBLSToExecutionChangeType
+	TypeBeaconEthV2BeaconWithdrawal                 Type = v2.BeaconBlockWithdrawalType
+	TypeBlockprintBlockClassification               Type = blockprint.BlockClassificationType
+	TypeBeaconETHV1EventsBlobSidecar                Type = v1.EventsBlobSidecarType
+	TypeBeaconETHV1BeaconBlobSidecar                Type = v1.BeaconBlobSidecarType
+	TypeBeaconEthV1ProposerDuty                     Type = v1.BeaconProposerDutyType
+	TypeBeaconP2PAttestation                        Type = v1.BeaconP2PAttestationType
+	TypeBeaconEthV2BeaconElaboratedAttestation      Type = v2.BeaconBlockElaboratedAttestationType
+	TypeLibP2PTraceAddPeer                          Type = Type(libp2p.TraceAddPeerType)
+	TypeLibP2PTraceConnected                        Type = Type(libp2p.TraceConnectedType)
+	TypeLibP2PTraceJoin                             Type = Type(libp2p.TraceJoinType)
+	TypeLibP2PTraceDisconnected                     Type = Type(libp2p.TraceDisconnectedType)
+	TypeLibP2PTraceRemovePeer                       Type = Type(libp2p.TraceRemovePeerType)
+	TypeLibP2PTraceRecvRPC                          Type = Type(libp2p.TraceRecvRPCType)
+	TypeLibP2PTraceSendRPC                          Type = Type(libp2p.TraceSendRPCType)
+	TypeLibP2PTraceHandleStatus                     Type = Type(libp2p.TraceHandleStatusType)
+	TypeLibP2PTraceHandleMetadata                   Type = Type(libp2p.TraceHandleMetadataType)
+	TypeLibP2PTraceGossipSubBeaconBlock             Type = Type(libp2p.TraceGossipSubBeaconBlockType)
+	TypeLibP2PTraceGossipSubBeaconAttestation       Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
+	TypeLibP2PTraceGossipSubBeaconDataColumnSidecar Type = Type(libp2p.TraceGossipSubBeaconDataColumnSidecarType)
 )
 
 type Event interface {
@@ -180,6 +181,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceGossipSubBeaconBlock(log, event), nil
 	case TypeLibP2PTraceGossipSubBeaconAttestation:
 		return libp2p.NewTraceGossipSubBeaconAttestation(log, event), nil
+	case TypeLibP2PTraceGossipSubBeaconDataColumnSidecar:
+		return libp2p.NewTraceGossipSubBeaconDataColumnSidecar(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

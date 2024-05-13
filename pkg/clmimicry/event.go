@@ -457,6 +457,18 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 		return nil
 	}
 
+	if strings.Contains(topic, "data_column_sidecar") {
+		if !m.Config.Events.GossipSubDataColumnSidecarEnabled {
+			return nil
+		}
+
+		if err := m.handleGossipDataColumnSidecar(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub data column sidecar")
+		}
+
+		return nil
+	}
+
 	if strings.Contains(topic, "beacon_block") {
 		if !m.Config.Events.GossipSubBeaconBlockEnabled {
 			return nil

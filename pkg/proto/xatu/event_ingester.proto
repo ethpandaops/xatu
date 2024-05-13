@@ -856,7 +856,7 @@ message ClientMeta {
     // Source contains information for the best currently justified checkpoint.
     AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData source = 1;
 
-    // Target contains information of the block at the start of the current
+    // Target contains information of the attestation at the start of the current
     // epoch.
     AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData target = 2;
 
@@ -884,16 +884,56 @@ message ClientMeta {
     // Metadata contains additional trace event metadata.
     xatu.libp2p.TraceEventMetadata metadata = 9;
 
-    // Topic is the gossip sub topic the beacon block was received on.
+    // Topic is the gossip sub topic the attestation was received on.
     google.protobuf.StringValue topic = 10;
 
-    // MessageSize is the size of the beacon block message in bytes.
+    // MessageSize is the size of the attestation message in bytes.
     google.protobuf.UInt32Value message_size = 11 [ json_name = "message_size" ];
 
-    // MessageID is a unique identifier for the beacon block message.
+    // MessageID is a unique identifier for the attestation message.
     google.protobuf.StringValue message_id = 12 [ json_name = "message_id" ];
   }
-  
+
+
+  message AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarSourceData {
+    // Epoch contains the epoch information for the source.
+    EpochV2 epoch = 1;
+  }
+
+  message AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarTargetData {
+    // Epoch contains the epoch information for the target.
+    EpochV2 epoch = 1;
+  }
+
+  message AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData {
+    // Slot contains the slot information for the data column sidecar.
+    SlotV2 slot = 1;
+
+    // Epoch contains the epoch information for the data column sidecar.
+    EpochV2 epoch = 2;
+
+    // Propagation contains information about the propagation of the
+    // data column sidecar.
+    PropagationV2 propagation = 3;
+
+    // WallclockEpoch contains the epoch information for the data column sidecar on the wall clock when the data column sidecar was received.
+    EpochV2 wallclock_epoch = 4 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the data column sidecar on the wall clock when the data column sidecar was received.
+    SlotV2 wallclock_slot = 5 [ json_name = "wallclock_slot" ];
+
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+
+    // Topic is the gossip sub topic the data column sidecar was received on.
+    google.protobuf.StringValue topic = 7;
+
+    // MessageSize is the size of the data column sidecar message in bytes.
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+
+    // MessageID is a unique identifier for the data column sidecar message.
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1075,6 +1115,8 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubBeaconBlockData libp2p_trace_gossipsub_beacon_block = 57 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
     // AdditionalLibP2PTraceGossipSubBeaconAttestationData contains additional data about the gossip sub beacon attestation event.
     AdditionalLibP2PTraceGossipSubBeaconAttestationData libp2p_trace_gossipsub_beacon_attestation = 58 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
+    // AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData contains additional data about the gossip sub beacon data column sidecar event.
+    AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData libp2p_trace_gossipsub_beacon_data_column_sidecar = 59 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR" ];
   }
 }
 
@@ -1216,6 +1258,7 @@ message Event {
     LIBP2P_TRACE_HANDLE_STATUS = 48;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK = 49;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION = 50;
+    LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR = 51;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1347,5 +1390,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
     xatu.eth.v1.Attestation libp2p_trace_gossipsub_beacon_attestation = 50
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
+    xatu.libp2p.gossipsub.eth.DataColumnSidecar libp2p_trace_gossipsub_beacon_data_column_sidecar = 51
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR" ];
   };
 }

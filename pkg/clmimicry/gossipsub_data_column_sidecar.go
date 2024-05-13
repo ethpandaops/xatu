@@ -2,6 +2,7 @@ package clmimicry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,25 +27,30 @@ func (m *Mimicry) handleGossipDataColumnSidecar(ctx context.Context,
 		return fmt.Errorf("invalid sidecar")
 	}
 
-	dataColumn := ""
-	for _, bytes := range eSidecar.DataColumn {
-		dataColumn += string(bytes)
+	row := 0 // PeerDAS is 1d initially
+
+	if len(eSidecar.DataColumn) == 0 {
+		return errors.New("invalid sidecar data column")
 	}
 
-	kzgCommitments := make([]string, len(eSidecar.KzgCommitments))
-	for i, bytes := range eSidecar.KzgCommitments {
-		kzgCommitments[i] = fmt.Sprintf("0x%x", bytes)
+	dataColumn := string(eSidecar.DataColumn[row])
+
+	if len(eSidecar.KzgCommitments) == 0 {
+		return errors.New("invalid sidecar kzg commitments")
 	}
 
-	kzgProof := ""
-	for _, bytes := range eSidecar.KzgProof {
-		kzgProof += string(bytes)
+	kzgCommitments := []string{}
+
+	for _, bytes := range eSidecar.KzgCommitments {
+		kzgCommitments = append(kzgCommitments, fmt.Sprintf("0x%x", bytes))
 	}
 
-	kzgCommitmentsInclusionProof := ""
-	for _, bytes := range eSidecar.KzgCommitmentsInclusionProof {
-		kzgCommitmentsInclusionProof += string(bytes)
+	if len(eSidecar.KzgProof) == 0 {
+		return errors.New("invalid sidecar kzg proof")
 	}
+
+	kzgProof := eSidecar.KzgProof[row]
+	kzgCommitmentsInclusionProof := eSidecar.KzgCommitmentsInclusionProof[row]
 
 	signedBlockHeader := &xatuethv1.SignedBeaconBlockHeaderV2{
 		Message: &xatuethv1.BeaconBlockHeaderV2{
@@ -59,11 +65,11 @@ func (m *Mimicry) handleGossipDataColumnSidecar(ctx context.Context,
 
 	sidecar := &gossipsub.DataColumnSidecar{
 		ColumnIndex:                  wrapperspb.UInt64(eSidecar.ColumnIndex),
-		DataColumn:                   dataColumn,
+		DataColumn:                   fmt.Sprintf("0x%x", dataColumn),
 		KzgCommitments:               kzgCommitments,
-		KzgProof:                     kzgProof,
+		KzgProof:                     fmt.Sprintf("0x%x", kzgProof),
 		SignedBlockHeader:            signedBlockHeader,
-		KzgCommitmentsInclusionProof: kzgCommitmentsInclusionProof,
+		KzgCommitmentsInclusionProof: fmt.Sprintf("0x%x", kzgCommitmentsInclusionProof),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -87,7 +93,7 @@ func (m *Mimicry) handleGossipDataColumnSidecar(ctx context.Context,
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION,
+			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR,
 			DateTime: timestamppb.New(timestamp.Add(m.clockDrift)),
 			Id:       uuid.New().String(),
 		},

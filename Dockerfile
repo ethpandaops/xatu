@@ -1,7 +1,9 @@
 FROM golang:1.22 AS builder
 WORKDIR /src
 COPY go.sum go.mod ./
-RUN go mod download
+ARG GOPROXY
+ENV GOPROXY=${GOPROXY}
+RUN go mod download -x
 COPY . .
 RUN go build -o /bin/app .
 

@@ -266,8 +266,8 @@ github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756 h1:8JWjrRfP14m
 github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=
 github.com/ethpandaops/ethwallclock v0.3.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/hermes v0.0.0-20240513080348-eafb396a7027 h1:Q9QXjCXYsvFmrlZ+F+w1plLufilUVTLS9trGONbV6IE=
-github.com/ethpandaops/hermes v0.0.0-20240513080348-eafb396a7027/go.mod h1:Z65YW+OhX67VHToofu2+wZDdMUgQ1AnvaEPgB9GzTC0=
+github.com/ethpandaops/hermes v0.0.0-20240513121617-967d7180f2b3 h1:QLESeVZCK5Tq8h3CdtaRcpf8yHKeCVAnTCLk3lV0eBA=
+github.com/ethpandaops/hermes v0.0.0-20240513121617-967d7180f2b3/go.mod h1:Z65YW+OhX67VHToofu2+wZDdMUgQ1AnvaEPgB9GzTC0=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=

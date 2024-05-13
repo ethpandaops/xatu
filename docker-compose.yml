@@ -144,6 +144,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        GOPROXY: ${GOPROXY}
     ports:
       - "8080:8080"
       - "9096:9090"
@@ -264,6 +266,7 @@ services:
           "libp2p-trace-handle-status"
           "libp2p-trace-gossipsub-beacon-block"
           "libp2p-trace-gossipsub-beacon-attestation"
+          "libp2p-trace-gossipsub-beacon-data-column-sidecar"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

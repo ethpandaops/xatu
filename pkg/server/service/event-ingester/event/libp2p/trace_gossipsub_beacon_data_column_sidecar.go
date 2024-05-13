@@ -29,7 +29,7 @@ func (gsb *TraceGossipSubBeaconDataColumnSidecar) Type() string {
 }
 
 func (gsb *TraceGossipSubBeaconDataColumnSidecar) Validate(ctx context.Context) error {
-	_, ok := gsb.event.Data.(*xatu.DecoratedEvent_Libp2PTraceGossipsubBeaconAttestation)
+	_, ok := gsb.event.Data.(*xatu.DecoratedEvent_Libp2PTraceGossipsubBeaconDataColumnSidecar)
 	if !ok {
 		return errors.New("failed to cast event data to TraceGossipSubBeaconDataColumnSidecar")
 	}

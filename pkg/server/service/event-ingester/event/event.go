@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
@@ -13,7 +15,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
 )
 
 type Type string
@@ -68,6 +69,7 @@ var (
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
 	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
+	TypeLibP2PTraceGossipSubBlobSidecar         Type = Type(libp2p.TraceGossipSubBlobSidecarType)
 )
 
 type Event interface {
@@ -180,6 +182,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceGossipSubBeaconBlock(log, event), nil
 	case TypeLibP2PTraceGossipSubBeaconAttestation:
 		return libp2p.NewTraceGossipSubBeaconAttestation(log, event), nil
+	case TypeLibP2PTraceGossipSubBlobSidecar:
+		return libp2p.NewTraceGossipSubBlobSidecar(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

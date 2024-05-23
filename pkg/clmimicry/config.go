@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	hermes "github.com/probe-lab/hermes/eth"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
-	hermes "github.com/probe-lab/hermes/eth"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -142,6 +143,7 @@ type EventConfig struct {
 	HandleStatusEnabled         bool `yaml:"handleStatusEnabled" default:"true"`
 	GossipSubBeaconBlockEnabled bool `yaml:"gossipSubBeaconBlockEnabled" default:"true"`
 	GossipSubAttestationEnabled bool `yaml:"gossipSubAttestationEnabled" default:"true"`
+	GossipSubBlobSidecarEnabled bool `yaml:"gossipSubBlobSidecarEnabled" default:"true"`
 }
 
 func (e *EventConfig) Validate() error {

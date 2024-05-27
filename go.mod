@@ -2,7 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.22.0
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240501013510-f8170ec5da4d
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240527060557-ae23464cdc41
 
 require (
 	github.com/IBM/sarama v1.43.0
@@ -12,7 +12,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
-	github.com/ethereum/go-ethereum v1.13.14
+	github.com/ethereum/go-ethereum v1.13.15
 	github.com/ethpandaops/beacon v0.35.0
 	github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756
 	github.com/ethpandaops/ethwallclock v0.3.0

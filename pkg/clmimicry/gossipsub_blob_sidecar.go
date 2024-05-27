@@ -28,7 +28,7 @@ func (m *Mimicry) handleGossipBlobSidecar(
 		return fmt.Errorf("invalid slot")
 	}
 
-	blobIndex, ok := payload["BlobIndex"].(uint64)
+	blobIndex, ok := payload["index"].(uint64)
 	if !ok {
 		return fmt.Errorf("invalid blob index")
 	}
@@ -65,7 +65,7 @@ func (m *Mimicry) handleGossipBlobSidecar(
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
-			Client: clientMeta,
+			Client: metadata,
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceGossipsubBlobSidecar{
 			Libp2PTraceGossipsubBlobSidecar: data,
@@ -105,7 +105,7 @@ func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
 		return nil, fmt.Errorf("invalid message ID")
 	}
 
-	msgSize, ok := payload["MsgSize"].(uint32)
+	msgSize, ok := payload["MsgSize"].(int)
 	if !ok {
 		return nil, fmt.Errorf("invalid message size")
 	}
@@ -136,8 +136,9 @@ func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
 			PeerId: wrapperspb.String(peerID),
 		},
 		Topic:       wrapperspb.String(topic),
-		MessageSize: wrapperspb.UInt32(msgSize),
+		MessageSize: wrapperspb.UInt32(uint32(msgSize)),
 		MessageId:   wrapperspb.String(msgID),
 	}
+
 	return data, nil
 }

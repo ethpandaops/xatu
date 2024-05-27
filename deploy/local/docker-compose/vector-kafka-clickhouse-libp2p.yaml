@@ -793,7 +793,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      .slot = .data.data.slot
+      .slot = .data.slot
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
         .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
@@ -834,7 +834,7 @@ transforms:
 
       .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
       .proposer_index = .data.proposer_index
-      .blob_index = .data.data.blob_index
+      .blob_index = .data.index
 
       peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
       if err != null {

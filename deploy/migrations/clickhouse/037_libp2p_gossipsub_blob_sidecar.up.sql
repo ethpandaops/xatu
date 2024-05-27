@@ -15,7 +15,7 @@ ON CLUSTER '{cluster}' (
     proposer_index UInt32 CODEC(ZSTD(1)),
     blob_index UInt32 CODEC(ZSTD(1)),
     peer_id_unique_key Int64,
-    message_id String CODEC(ZSTD(1)),z
+    message_id String CODEC(ZSTD(1)),
     message_size UInt32 Codec(ZSTD(1)),
     topic_layer LowCardinality(String),
     topic_fork_digest_value LowCardinality(String),
@@ -37,9 +37,9 @@ ON CLUSTER '{cluster}' (
     meta_client_geo_autonomous_system_organization Nullable(String) Codec(ZSTD(1)),
     meta_network_id Int32 Codec(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
-) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
+) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
+ORDER BY (slot_start_date_time, unique_key, meta_network_name, meta_client_name);
 
 ALTER TABLE libp2p_gossipsub_blob_sidecar_local 
 ON CLUSTER '{cluster}'
@@ -85,4 +85,4 @@ COMMENT COLUMN meta_network_name 'Name of the network associated with the client
 CREATE TABLE libp2p_gossipsub_blob_sidecar 
 ON CLUSTER '{cluster}'
 AS libp2p_gossipsub_blob_sidecar_local 
-ENGINE = Distributed('{cluster}', '{database}', 'libp2p_gossipsub_blob_sidecar_local', rand());
+ENGINE = Distributed('{cluster}', default, libp2p_gossipsub_blob_sidecar_local, unique_key);

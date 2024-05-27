@@ -3,7 +3,6 @@ package clmimicry
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
@@ -34,11 +33,6 @@ func (m *Mimicry) handleGossipBeaconBlock(ctx context.Context,
 		return fmt.Errorf("invalid proposer index")
 	}
 
-	timestamp, ok := payload["Timestamp"].(time.Time)
-	if !ok {
-		return fmt.Errorf("invalid timestamp")
-	}
-
 	data := &gossipsub.BeaconBlock{
 		Slot:          wrapperspb.UInt64(uint64(slot)),
 		Block:         wrapperspb.String(fmt.Sprintf("0x%x", blockRoot)),
@@ -50,7 +44,7 @@ func (m *Mimicry) handleGossipBeaconBlock(ctx context.Context,
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubBeaconBlockData(ctx, payload, slot)
+	additionalData, err := m.createAdditionalGossipSubBeaconBlockData(ctx, payload, slot, event)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -62,7 +56,7 @@ func (m *Mimicry) handleGossipBeaconBlock(ctx context.Context,
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK,
-			DateTime: timestamppb.New(timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -79,6 +73,7 @@ func (m *Mimicry) handleGossipBeaconBlock(ctx context.Context,
 func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(ctx context.Context,
 	payload map[string]any,
 	slotNumber primitives.Slot,
+	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData, error) {
 	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().Now()
 	if err != nil {
@@ -96,13 +91,8 @@ func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(ctx context.Context,
 		},
 	}
 
-	timestamp, ok := payload["Timestamp"].(time.Time)
-	if !ok {
-		return nil, fmt.Errorf("invalid timestamp")
-	}
-
 	// Add Clock Drift
-	timestampAdjusted := timestamp.Add(m.clockDrift)
+	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
 
 	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
 	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))

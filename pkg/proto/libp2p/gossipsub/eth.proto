@@ -12,3 +12,8 @@ message BeaconBlock {
     google.protobuf.UInt64Value proposer_index = 3 [json_name = "proposer_index"];
 }
 
+message BlobSidecar {
+    google.protobuf.UInt64Value index = 1 [json_name = "index"];
+    google.protobuf.UInt64Value slot = 2 [json_name = "slot"];
+    google.protobuf.UInt64Value proposer_index = 3 [json_name = "proposer_index"];
+}

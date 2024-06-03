@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/probe-lab/hermes/host"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
@@ -445,7 +447,8 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 		return errors.New("missing topic in HandleMessage event")
 	}
 
-	if strings.Contains(topic, "beacon_attestation") {
+	switch {
+	case strings.Contains(topic, p2p.GossipAttestationMessage):
 		if !m.Config.Events.GossipSubAttestationEnabled {
 			return nil
 		}
@@ -453,11 +456,7 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 		if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
 		}
-
-		return nil
-	}
-
-	if strings.Contains(topic, "beacon_block") {
+	case strings.Contains(topic, p2p.GossipBlockMessage):
 		if !m.Config.Events.GossipSubBeaconBlockEnabled {
 			return nil
 		}
@@ -465,11 +464,17 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
 		}
+	case strings.Contains(topic, p2p.GossipBlobSidecarMessage):
+		if !m.Config.Events.GossipSubBlobSidecarEnabled {
+			return nil
+		}
 
-		return nil
-	} else {
+		if err := m.handleGossipBlobSidecar(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub blob sidecar")
+		}
+	default:
 		m.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
-
-		return nil
 	}
+
+	return nil
 }

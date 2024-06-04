@@ -835,6 +835,8 @@ transforms:
       .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
       .proposer_index = .data.proposer_index
       .blob_index = .data.index
+      .state_root = .data.state_root
+      .parent_root = .data.parent_root
 
       peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
       if err != null {

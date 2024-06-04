@@ -67,10 +67,8 @@ jobs:
         run: |
           echo "Waiting for Xatu services to start..."
         wait-on: |
-          http://localhost:${{ env.API_PORT }}
-          http-get://localhost:2121
-          tcp:localhost:3232
-          file://very-important-secrets.txt
+          tcp:localhost:9001
+          tcp:localhost:9000
 
     - name: Add all xatu-sentry containers to the xatu network
       run: |

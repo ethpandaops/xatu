@@ -20,7 +20,7 @@ jobs:
         echo "Xatu image is built."
     - name: Create Kurtosis config file
       run: |
-        cat <<EOF > ~/network_params.yaml
+        cat <<EOF > /tmp/network_params.yaml
           participants:
             - el_type: geth
               cl_type: teku
@@ -56,9 +56,10 @@ jobs:
       run: |
         docker compose up --detach --quiet-pull &
     - name: Setup kurtosis testnet and run assertoor tests
+      id: kurtosis-setup
       uses: ethpandaops/kurtosis-assertoor-github-action@v1
       with:
-        ethereum_package_args: ~/network_params.yaml
+        ethereum_package_args: /tmp/network_params.yaml
         await_assertoor_tests: false
         enclave_name: xatu
     - uses: JarvusInnovations/background-action@v1
@@ -69,7 +70,11 @@ jobs:
         wait-on: |
           tcp:localhost:9001
           tcp:localhost:9000
-
+    - name: Show all kurtosis containers
+      env:
+        SERVICES: ${{ steps.kurtosis-setup.outputs.services }}
+      run: |
+        echo $SERVICES
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done

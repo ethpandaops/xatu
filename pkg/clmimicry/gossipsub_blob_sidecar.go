@@ -38,10 +38,22 @@ func (m *Mimicry) handleGossipBlobSidecar(
 		return fmt.Errorf("invalid proposer index")
 	}
 
+	stateRoot, ok := payload["StateRoot"].(string)
+	if !ok {
+		return fmt.Errorf("invalid state root")
+	}
+
+	parentRoot, ok := payload["ParentRoot"].(string)
+	if !ok {
+		return fmt.Errorf("invalid parent root")
+	}
+
 	data := &gossipsub.BlobSidecar{
 		Index:         wrapperspb.UInt64(blobIndex),
 		Slot:          wrapperspb.UInt64(uint64(slot)),
 		ProposerIndex: wrapperspb.UInt64(uint64(proposerIndex)),
+		StateRoot:     wrapperspb.String(stateRoot),
+		ParentRoot:    wrapperspb.String(parentRoot),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)

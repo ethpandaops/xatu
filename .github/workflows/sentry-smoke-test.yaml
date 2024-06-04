@@ -118,7 +118,7 @@ jobs:
         # Check for any data in the tables before digging in to the individual sentries
         for table in "${tables[@]}"; do
             pretty_print "Checking $table table..." "none"
-            data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+            data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
             if [[ $data_count -gt 0 ]]; then
                 pretty_print "$table table has $data_count entries" "green"
             else
@@ -134,7 +134,7 @@ jobs:
             for sentry in "${all_sentries[@]}"; do
                 pretty_print "Checking $table table for $sentry..." "none"
                 while true; do
-                    data_count=$(docker exec clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
+                    data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
                         pretty_print "$table has $data_count entries from $sentry" "green"
                         break

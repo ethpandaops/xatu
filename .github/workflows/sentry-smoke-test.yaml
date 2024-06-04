@@ -18,18 +18,12 @@ jobs:
       run: |
         docker build -t ethpandaops/xatu:local .
         echo "Xatu image is built."
-    - name: Install Kurtosis
-      run: |
-        echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-        sudo apt update
-        sudo apt install kurtosis-cli
     - name: Create Kurtosis config file
       run: |
-        cat <<EOF > network_params.yaml
+        cat <<EOF > ~/network_params.yaml
           participants:
             - el_type: geth
               cl_type: teku
-              cl_image: ethpandaops/teku:master-16c4354
             - el_type: nethermind
               cl_type: prysm
             - el_type: erigon
@@ -56,38 +50,28 @@ jobs:
             - voluntary_exit
             - contribution_and_proof
         <<EOF
-
-    - name: Start Ethereum network with Kurtosis and Run Xatu stack in parallel
-      timeout-minutes: 20
+    - name: Run Xatu stack
+      timeout-minutes: 10
       shell: bash
       run: |
-        echo "Starting Kurtosis..."
-        kurtosis run --enclave xatu github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml & 
-        KURTOSIS_PID=$!
-
-        echo "Starting Xatu stack..."
         docker compose up --detach --quiet-pull &
-        XATU_STACK_PID=$!
+    - name: Setup kurtosis testnet and run assertoor tests
+      uses: ethpandaops/kurtosis-assertoor-github-action@v1
+      with:
+        ethereum_package_args: ~/network_params.yaml
+        await_assertoor_tests: false
+        enclave_name: xatu
+    - uses: JarvusInnovations/background-action@v1
+      name: Wait for Xatu stack to start
+      with:
+        run: |
+          echo "Waiting for Xatu services to start..."
+        wait-on: |
+          http://localhost:${{ env.API_PORT }}
+          http-get://localhost:2121
+          tcp:localhost:3232
+          file://very-important-secrets.txt
 
-        echo "Waiting for Kurtosis to start..."
-        wait $KURTOSIS_PID
-        KURTOSIS_EXIT_CODE=$?
-
-        if [ $KURTOSIS_EXIT_CODE -ne 0 ]; then
-          echo "Kurtosis failed to start."
-          exit $KURTOSIS_EXIT_CODE
-        fi
-
-        echo "Waiting for Xatu stack to start..."
-        wait $XATU_STACK_PID
-        XATU_STACK_EXIT_CODE=$?
-
-        if [ $XATU_STACK_EXIT_CODE -ne 0 ]; then
-          echo "Xatu stack failed to start."
-          exit $XATU_STACK_EXIT_CODE
-        fi
-
-        echo "Kurtosis and Xatu stack have started successfully."
     - name: Add all xatu-sentry containers to the xatu network
       run: |
         for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done

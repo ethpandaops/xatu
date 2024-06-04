@@ -62,14 +62,6 @@ jobs:
         ethereum_package_args: /tmp/network_params.yaml
         await_assertoor_tests: false
         enclave_name: xatu
-    - uses: JarvusInnovations/background-action@v1
-      name: Wait for Xatu stack to start
-      with:
-        run: |
-          echo "Waiting for Xatu services to start..."
-        wait-on: |
-          tcp:localhost:9001
-          tcp:localhost:9000
     - name: Show all kurtosis containers
       env:
         SERVICES: ${{ steps.kurtosis-setup.outputs.services }}

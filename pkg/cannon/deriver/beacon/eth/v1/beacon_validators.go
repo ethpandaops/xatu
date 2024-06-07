@@ -238,11 +238,10 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 		return nil, errors.Wrap(err, "failed to fetch validator states")
 	}
 
-	allEvents := []*xatu.DecoratedEvent{}
 	validatorsMap := validatorsResponse.Data
 
-	// Chunk the validators per 10000
-	chunkSize := 10000
+	// Chunk the validators per 1000
+	chunkSize := 1000
 
 	var validatorChunks [][]*apiv1.Validator
 
@@ -260,6 +259,8 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 	if len(currentChunk) > 0 {
 		validatorChunks = append(validatorChunks, currentChunk)
 	}
+
+	allEvents := []*xatu.DecoratedEvent{}
 
 	for chunkNum, chunk := range validatorChunks {
 		event, err := b.createEventFromValidators(ctx, chunk, epoch)

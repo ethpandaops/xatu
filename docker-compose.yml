@@ -265,6 +265,7 @@ services:
           "libp2p-trace-gossipsub-beacon-block"
           "libp2p-trace-gossipsub-beacon-attestation"
           "libp2p-trace-gossipsub-blob-sidecar"
+          "beacon-api-eth-v1-beacon-validators"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

@@ -123,16 +123,20 @@ jobs:
 
         # Check for any data in the tables before digging in to the individual sentries
         for table in "${tables[@]}"; do
-            pretty_print "Checking $table table..." "none"
-            data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
-            if [[ $data_count -gt 0 ]]; then
-                pretty_print "$table table has $data_count entries" "green"
-            else
-                pretty_print "$table table has no entries." "bright_red"
+          while true; do
+              pretty_print "Checking $table table..." "none"
+              data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+              if [[ $data_count -gt 0 ]]; then
+                  pretty_print "$table table has $data_count entries" "green"
+                  break
+              else
+                  pretty_print "$table table has no entries." "bright_red"
 
-                print_logs xatu-xatu-server
-                print_logs xatu-cannon
-            fi
+                  print_logs xatu-xatu-server
+                  print_logs xatu-cannon
+                  sleep 1
+              fi
+          done
         done
 
     - name: Collect docker logs on failure

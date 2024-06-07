@@ -1,0 +1,169 @@
+name: Sentry Smoke Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cannon-smoke-test:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Build xatu image
+      run: |
+        docker build -t ethpandaops/xatu:local .
+        echo "Xatu image is built."
+    - name: Run Xatu stack
+      timeout-minutes: 10
+      shell: bash
+      run: |
+        docker compose up --build --detach --quiet-pull &
+    - name: Create Xatu Cannon config
+      run: |
+        cat <<EOF > /tmp/cannon_config.yaml
+          name: cannon-smoke-test
+          
+          labels:
+            ethpandaops: rocks
+          
+          derivers:
+            attesterSlashing:
+              enabled: true
+            blsToExecutionChange:
+              enabled: true
+            deposit:
+              enabled: true
+            withdrawal:
+              enabled: true
+            executionTransaction:
+              enabled: true
+            proposerSlashing:
+              enabled: true
+            voluntaryExit:
+              enabled: true
+            beaconBlock:
+              enabled: true
+            beaconBlobSidecar:
+              enabled: true
+            proposerDuty:
+              enabled: true
+
+          ntpServer: time.google.com
+          
+          ethereum:
+            beaconNodeAddress: https://lighthouse.sepolia.ethpandaops.io
+            beaconNodeHeaders:
+              CF-Access-Client-Id: {{ secrets.SEPOLIA_CF_ACCESS_CLIENT_ID }}
+              CF-Access-Client-Secret: {{ secrets.SEPOLIA_CF_ACCESS_CLIENT_SECRET }}
+          coordinator:
+            address: xatu-server:8080
+          
+          outputs:
+            - name: log
+              type: stdout
+            - name: xatu
+              type: xatu
+              config:
+                address: xatu-server:8080
+                tls: false
+                maxQueueSize: 51200
+                batchTimeout: 5s
+                exportTimeout: 30s
+                maxExportBatchSize: 512
+          EOF
+    - name: Start Xatu cannon
+      run: |
+        docker run -d --network --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
+    - name: Verify Clickhouse has data from all sentries
+      timeout-minutes: 10
+      run: |
+        echo "Checking Clickhouse for data from all sentries"
+
+        tables=(
+            "canonical_beacon_block"
+            "canonical_beacon_block_execution_transaction"
+        )
+
+        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
+        pretty_print() {
+            local message=$1
+            local color=$2
+            local no_color='\033[0m'
+            local green='\033[0;32m'
+            local red='\033[0;31m'
+            local bright_red='\033[1;31m'
+
+            # Choose color based on the type of message
+            if [ "$color" == "green" ]; then
+                color=$green
+            elif [ "$color" == "red" ]; then
+                color=$red
+            elif [ "$color" == "bright_red" ]; then
+                color=$bright_red
+            else
+                color=$no_color
+            fi
+
+            echo -e "${color}######################${no_color}"
+            echo -e "${color}      $message      ${no_color}"
+            echo -e "${color}######################${no_color}"
+        }
+
+        print_logs() {
+            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
+                echo "Logs for $container:\n\n"
+                docker logs --tail 5 $container
+            done
+        }
+
+        # Check for any data in the tables before digging in to the individual sentries
+        for table in "${tables[@]}"; do
+            pretty_print "Checking $table table..." "none"
+            data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+            if [[ $data_count -gt 0 ]]; then
+                pretty_print "$table table has $data_count entries" "green"
+            else
+                pretty_print "$table table has no entries." "bright_red"
+
+                print_logs xatu-server
+                print_logs vector
+                print_logs xatu-cannon
+            fi
+        done
+
+        for table in "${tables[@]}"; do
+              pretty_print "Checking $table table..." "none"
+              while true; do
+                  data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+                  if [[ $data_count -gt 0 ]]; then
+                      pretty_print "$table has $data_count entries" "green"
+                      break
+                  else
+                      pretty_print "$table has no entries." "bright_red"
+
+                      print_logs xatu-cannon
+
+                      sleep 5
+                  fi
+              done  
+        done
+
+    - name: Collect docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v2
+      with:
+        dest: './logs'
+    - name: Tar logs
+      if: failure()
+      run: tar cvzf ./logs.tgz ./logs
+    - name: Upload logs to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: logs.tgz
+        path: ./logs.tgz

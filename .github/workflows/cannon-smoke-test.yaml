@@ -131,6 +131,7 @@ jobs:
                   break
               else
                   pretty_print "$table table has no entries." "bright_red"
+                  docker ps -a
 
                   print_logs xatu-xatu-server
                   print_logs xatu-cannon

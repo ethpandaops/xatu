@@ -82,4 +82,4 @@ COMMENT COLUMN meta_consensus_implementation 'Ethereum consensus client implemen
 COMMENT COLUMN meta_labels 'Labels associated with the event';
 
 CREATE TABLE canonical_beacon_validators on cluster '{cluster}' AS canonical_beacon_validators_local
-ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_local, seahash('epoch_start_date_time', 'index', 'meta_network_name'));
+ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_local, cityHash64('epoch_start_date_time', 'index', 'meta_network_name'));

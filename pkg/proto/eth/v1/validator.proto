@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/wrappers.proto";
+
+message ValidatorData {
+    google.protobuf.StringValue pubkey = 1;
+    google.protobuf.StringValue withdrawal_credentials = 2 [ json_name = "withdrawal_credentials" ];
+    google.protobuf.UInt64Value effective_balance = 3 [ json_name = "effective_balance" ];
+    google.protobuf.BoolValue slashed = 4;
+    google.protobuf.UInt64Value activation_eligibility_epoch = 5 [ json_name = "activation_eligibility_epoch" ];
+    google.protobuf.UInt64Value activation_epoch = 6 [ json_name = "activation_epoch" ];
+    google.protobuf.UInt64Value exit_epoch = 7 [ json_name = "exit_epoch" ];
+    google.protobuf.UInt64Value withdrawable_epoch = 8 [ json_name = "withdrawable_epoch" ];
+}
+
+message Validator {
+    ValidatorData data = 1;
+    google.protobuf.UInt64Value index = 2;
+    google.protobuf.UInt64Value balance = 3;
+    google.protobuf.StringValue status = 4;
+}
+

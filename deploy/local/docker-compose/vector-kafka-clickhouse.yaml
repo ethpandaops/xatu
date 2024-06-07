@@ -109,6 +109,18 @@ sources:
       - "^beacon-api-eth-v1-proposer-.+"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  beacon_api_eth_v1_beacon_validators_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    auto_offset_reset: earliest
+    group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-beacon-validators
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "beacon-api-eth-v1-beacon-validators"
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -122,6 +134,7 @@ transforms:
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_p2p_events_kafka
       - beacon_api_eth_v1_proposer_kafka
+      - beacon_api_eth_v1_beacon_validators_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -312,6 +325,7 @@ transforms:
       canonical_beacon_block_execution_transaction: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
       canonical_beacon_block_proposer_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
       canonical_beacon_block_voluntary_exit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
+      canonical_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
       canonical_beacon_block_withdrawal: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
       canonical_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_V2" && .meta.client.additional_data.finalized_when_requested == true
       canonical_beacon_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "finalized"
@@ -343,6 +357,7 @@ transforms:
       - xatu_server_events_router.beacon_p2p_attestation
       - xatu_server_events_router.blockprint_block_classification
       - xatu_server_events_router.canonical_beacon_blob_sidecar
+      - xatu_server_events_router.canonical_beacon_validators
       - xatu_server_events_router.canonical_beacon_block
       - xatu_server_events_router.canonical_beacon_block_attester_slashing
       - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
@@ -1409,6 +1424,56 @@ transforms:
     type: remap
     inputs:
       - xatu_server_events_router.canonical_beacon_blob_sidecar
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .slot = .meta.client.additional_data.slot.number
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .block_root = .data.block_root
+      .block_parent_root = .data.block_parent_root
+      .versioned_hash = .meta.client.additional_data.versioned_hash
+      .kzg_commitment = .data.kzg_commitment
+      .kzg_proof = .data.kzg_proof
+      .proposer_index = .data.proposer_index
+      .blob_index = .data.index
+      .blob_size = .meta.client.additional_data.data_size
+      .blob_empty_size = .meta.client.additional_data.data_empty_size
+      key, err = .block_root + .versioned_hash + .blob_index
+      if err != null {
+        .error = err
+        .error_description = "failed to generate unique key"
+      }
+      .unique_key = seahash(key)
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  canonical_beacon_validators_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_validators
     source: |-
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {

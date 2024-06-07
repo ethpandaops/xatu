@@ -33,3 +33,4 @@ var _ EventDeriver = &blockprint.BlockClassificationDeriver{}
 var _ EventDeriver = &v2.ElaboratedAttestationDeriver{}
 var _ EventDeriver = &v1.ProposerDutyDeriver{}
 var _ EventDeriver = &v1.BeaconBlobDeriver{}
+var _ EventDeriver = &v1.BeaconValidatorsDeriver{}

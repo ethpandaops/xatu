@@ -114,11 +114,9 @@ jobs:
             echo -e "${color}######################${no_color}"
         }
 
-        print_logs() {
-            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
-                echo "Logs for $container:\n\n"
-                docker logs --tail 5 $container
-            done
+        print_logs() {]
+            echo "Logs for $container:\n\n"
+            docker logs --tail 5 $container
         }
 
         # Check for any data in the tables before digging in to the individual sentries

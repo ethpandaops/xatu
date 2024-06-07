@@ -1,4 +1,4 @@
-name: Sentry Smoke Test
+name: Cannon Smoke Test
 
 on:
   pull_request:

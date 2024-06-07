@@ -79,10 +79,10 @@ jobs:
     - name: Start Xatu cannon
       run: |
         docker run -d --network xatu_xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
-    - name: Verify Clickhouse has data from all sentries
+    - name: Verify Clickhouse has data
       timeout-minutes: 10
       run: |
-        echo "Checking Clickhouse for data from all sentries"
+        echo "Checking Clickhouse for data"
 
         tables=(
             "canonical_beacon_block"
@@ -130,27 +130,9 @@ jobs:
             else
                 pretty_print "$table table has no entries." "bright_red"
 
-                print_logs xatu-server
-                print_logs vector
+                print_logs xatu-xatu-server
                 print_logs xatu-cannon
             fi
-        done
-
-        for table in "${tables[@]}"; do
-              pretty_print "Checking $table table..." "none"
-              while true; do
-                  data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
-                  if [[ $data_count -gt 0 ]]; then
-                      pretty_print "$table has $data_count entries" "green"
-                      break
-                  else
-                      pretty_print "$table has no entries." "bright_red"
-
-                      print_logs xatu-cannon
-
-                      sleep 5
-                  fi
-              done  
         done
 
     - name: Collect docker logs on failure

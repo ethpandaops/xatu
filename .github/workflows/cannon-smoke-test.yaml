@@ -78,7 +78,7 @@ jobs:
           EOF
     - name: Start Xatu cannon
       run: |
-        docker run -d --network --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
+        docker run -d --network xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
     - name: Verify Clickhouse has data from all sentries
       timeout-minutes: 10
       run: |

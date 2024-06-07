@@ -22,7 +22,7 @@ jobs:
       timeout-minutes: 10
       shell: bash
       run: |
-        docker compose up --build --detach --quiet-pull &
+        docker compose up --build --detach --quiet-pull
     - name: Create Xatu Cannon config
       run: |
         cat <<EOF > /tmp/cannon_config.yaml

@@ -1481,6 +1481,7 @@ transforms:
       } else {
           .error = err
           .error_description = "failed to parse event date time"
+          log(., level: "error", rate_limit_secs: 60)
       }
 
       epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
@@ -1489,65 +1490,36 @@ transforms:
       } else {
           .error = err
           .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
       }
 
-      rootEvent = {
-          "event_name": .event.name,
-          "key": .event.id,
-          "event_date_time": .event_date_time,
-          "updated_date_time": .updated_date_time,
-          "meta_client_name": .meta_client_name,
-          "meta_client_id": .meta_client_id,
-          "meta_client_version": .meta_client_version,
-          "meta_client_implementation": .meta_client_implementation,
-          "meta_client_os": .meta_client_os,
-          "meta_client_ip": .meta_client_ip,
-          "meta_network_id": .meta_network_id,
-          "meta_network_name": .meta_network_name,
-          "meta_client_geo_city": .meta_client_geo_city,
-          "meta_client_geo_country": .meta_client_geo_country,
-          "meta_client_geo_country_code": .meta_client_geo_country_code,
-          "meta_client_geo_continent_code": .meta_client_geo_continent_code,
-          "meta_client_geo_longitude": .meta_client_geo_longitude,
-          "meta_client_geo_latitude": .meta_client_geo_latitude,
-          "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
-          "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization
-      }
       events = []
-      for_each(array!(.data.validators)) -> |_index, validator| {
-          key, err = rootEvent.event.id + "-" + to_string(_index)
-          if err != null {
-              errDebug = {
-                  "root_event_key": rootEvent.key,
-                  "index": _index,
-              }
-              error = err
-              errorMsg = "failed to generate unique key for validator"
-          }
 
-          unique_key = seahash(key)
+      .updated_date_time = to_unix_timestamp(now())
+
+      for_each(array!(.data.validators)) -> |_index, validator| {
           events = push(events, {
-              "unique_key": unique_key,
-              "updated_date_time": rootEvent.updated_date_time,
-              "event_date_time": rootEvent.event_date_time,
-              "meta_client_name": rootEvent.meta_client_name,
-              "meta_client_id": rootEvent.meta_client_id,
-              "meta_client_version": rootEvent.meta_client_version,
-              "meta_client_implementation": rootEvent.meta_client_implementation,
-              "meta_client_os": rootEvent.meta_client_os,
-              "meta_client_ip": rootEvent.meta_client_ip,
-              "meta_network_id": rootEvent.meta_network_id,
-              "meta_network_name": rootEvent.meta_network_name,
-              "meta_client_geo_city": rootEvent.meta_client_geo_city,
-              "meta_client_geo_country": rootEvent.meta_client_geo_country,
-              "meta_client_geo_country_code": rootEvent.meta_client_geo_country_code,
-              "meta_client_geo_continent_code": rootEvent.meta_client_geo_continent_code,
-              "meta_client_geo_longitude": rootEvent.meta_client_geo_longitude,
-              "meta_client_geo_latitude": rootEvent.meta_client_geo_latitude,
-              "meta_client_geo_autonomous_system_number": rootEvent.meta_client_geo_autonomous_system_number,
-              "meta_client_geo_autonomous_system_organization": rootEvent.meta_client_geo_autonomous_system_organization,
+              "key": .event.id,
+              "event_date_time": .event_date_time,
+              "updated_date_time": .updated_date_time,
+              "meta_client_name": .meta_client_name,
+              "meta_client_id": .meta_client_id,
+              "meta_client_version": .meta_client_version,
+              "meta_client_implementation": .meta_client_implementation,
+              "meta_client_os": .meta_client_os,
+              "meta_client_ip": .meta_client_ip,
+              "meta_network_id": .meta_network_id,
+              "meta_network_name": .meta_network_name,
+              "meta_client_geo_city": .meta_client_geo_city,
+              "meta_client_geo_country": .meta_client_geo_country,
+              "meta_client_geo_country_code": .meta_client_geo_country_code,
+              "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+              "meta_client_geo_longitude": .meta_client_geo_longitude,
+              "meta_client_geo_latitude": .meta_client_geo_latitude,
+              "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+              "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
               "epoch": .meta.client.additional_data.epoch.number,
-              "epoch_start_date_time": epoch_start_date_time,
+              "epoch_start_date_time": .epoch_start_date_time,
               "index": validator.index,
               "balance": validator.balance,
               "status": validator.status,
@@ -1561,10 +1533,6 @@ transforms:
               "withdrawal_credentials": validator.data.withdrawal_credentials
           })
       }
-      del(.event)
-      del(.meta)
-      del(.data)
-
       . = events
   blockprint_block_classification_formatted:
     type: remap

@@ -31,7 +31,8 @@ const (
 )
 
 type BeaconValidatorsDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool `yaml:"enabled" default:"true"`
+	ChunkSize int  `yaml:"chunkSize" default:"100"`
 }
 
 type BeaconValidatorsDeriver struct {
@@ -240,8 +241,8 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 
 	validatorsMap := validatorsResponse.Data
 
-	// Chunk the validators per 1000
-	chunkSize := 1000
+	// Chunk the validators per the configured chunk size
+	chunkSize := b.cfg.ChunkSize
 
 	var validatorChunks [][]*apiv1.Validator
 

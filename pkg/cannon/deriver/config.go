@@ -21,7 +21,6 @@ type Config struct {
 	ProposerDutyConfig          v1.ProposerDutyDeriverConfig                `yaml:"proposerDuty"`
 	ElaboratedAttestationConfig v2.ElaboratedAttestationDeriverConfig       `yaml:"elaboratedAttestation"`
 	BeaconValidatorsConfig      v1.BeaconValidatorsDeriverConfig            `yaml:"beaconValidators"`
-	ChunkSize                   int                                         `yaml:"chunkSize" default:"100"`
 }
 
 func (c *Config) Validate() error {

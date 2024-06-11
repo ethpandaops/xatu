@@ -31,7 +31,7 @@ const (
 )
 
 type BeaconValidatorsDeriverConfig struct {
-	Enabled  bool `yaml:"enabled" default:"true"`
+	Enabled   bool `yaml:"enabled" default:"true"`
 	ChunkSize int  `yaml:"chunkSize" default:"100"`
 }
 
@@ -78,6 +78,7 @@ func (b *BeaconValidatorsDeriver) Start(ctx context.Context) error {
 
 	if !b.cfg.Enabled {
 		b.log.Info("Validator states deriver disabled")
+
 		return nil
 	}
 

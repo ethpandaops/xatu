@@ -9,7 +9,9 @@ jobs:
   goreleaser:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted-ghr
+      - size-l-x64
     steps:
       - name: Checkout
         uses: actions/checkout@v3

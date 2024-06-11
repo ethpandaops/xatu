@@ -71,9 +71,13 @@ func (b *BeaconValidatorsDeriver) OnEventsDerived(ctx context.Context, fn func(c
 }
 
 func (b *BeaconValidatorsDeriver) Start(ctx context.Context) error {
+	b.log.WithFields(logrus.Fields{
+		"chunk_size": b.cfg.ChunkSize,
+		"enabled":    b.cfg.Enabled,
+	}).Info("Starting BeaconValidatorsDeriver")
+
 	if !b.cfg.Enabled {
 		b.log.Info("Validator states deriver disabled")
-
 		return nil
 	}
 

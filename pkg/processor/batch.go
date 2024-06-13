@@ -1,14 +1,9 @@
-/*
- * This processor was adapted from the OpenTelemetry Collector's batch processor.
- *
- * Authors: OpenTelemetry
- * URL: https://github.com/open-telemetry/opentelemetry-go/blob/496c086ece129182662c14d6a023a2b2da09fe30/sdk/trace/batch_span_processor.go
- */
-
 package processor
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -91,6 +86,22 @@ type BatchItemProcessorOptions struct {
 	Workers int
 }
 
+func (o *BatchItemProcessorOptions) Validate() error {
+	if o.MaxExportBatchSize > o.MaxQueueSize {
+		return errors.New("max export batch size cannot be greater than max queue size")
+	}
+
+	if o.Workers == 0 {
+		return errors.New("workers must be greater than 0")
+	}
+
+	if o.MaxExportBatchSize < 1 {
+		return errors.New("max export batch size must be greater than 0")
+	}
+
+	return nil
+}
+
 // BatchItemProcessor is a buffer that batches asynchronously-received
 // items and sends them to a exporter when complete.
 type BatchItemProcessor[T any] struct {
@@ -105,8 +116,8 @@ type BatchItemProcessor[T any] struct {
 
 	metrics *Metrics
 
-	batches    chan []*T
-	batchReady chan bool
+	batches    chan batchWithErr[T]
+	batchReady chan struct{}
 
 	batch      []*T
 	batchMutex sync.Mutex
@@ -116,6 +127,12 @@ type BatchItemProcessor[T any] struct {
 	stopOnce      sync.Once
 	stopCh        chan struct{}
 	stopWorkersCh chan struct{}
+}
+
+type batchWithErr[T any] struct {
+	items       []*T
+	errCh       chan error
+	completedCh chan struct{}
 }
 
 // NewBatchItemProcessor creates a new ItemProcessor that will send completed
@@ -146,6 +163,10 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		opt(&o)
 	}
 
+	if err := o.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid batch item processor options: %w: %s", err, name)
+	}
+
 	metrics := DefaultMetrics
 
 	bvp := BatchItemProcessor[T]{
@@ -161,15 +182,14 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		stopWorkersCh: make(chan struct{}),
 	}
 
-	bvp.batches = make(chan []*T, o.Workers) // Buffer the channel to hold batches for each worker
-	bvp.batchReady = make(chan bool, 1)
+	bvp.batches = make(chan batchWithErr[T], o.Workers)
+	bvp.batchReady = make(chan struct{}, 1)
 
 	bvp.stopWait.Add(o.Workers)
 
 	for i := 0; i < o.Workers; i++ {
 		go func() {
 			defer bvp.stopWait.Done()
-
 			bvp.worker(context.Background())
 		}()
 	}
@@ -179,7 +199,6 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 	return &bvp, nil
 }
 
-// OnEnd method enqueues a item for later processing.
 func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
 	defer span.End()
@@ -187,14 +206,13 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 
 	if bvp.o.ShippingMethod == ShippingMethodSync {
-		return bvp.ImmediatelyExportItems(ctx, s)
+		return bvp.immediatelyExportItems(ctx, s)
 	}
 
 	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 
-	// Do not enqueue items if we are just going to drop them.
 	if bvp.e == nil {
-		return nil
+		return errors.New("exporter is nil")
 	}
 
 	for _, i := range s {
@@ -204,9 +222,9 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	return nil
 }
 
-// ImmediatelyExportItems immediately exports the items to the exporter.
+// immediatelyExportItems immediately exports the items to the exporter.
 // Useful for propagating errors from the exporter.
-func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, items []*T) error {
+func (bvp *BatchItemProcessor[T]) immediatelyExportItems(ctx context.Context, items []*T) error {
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.ImmediatelyExportItems")
 	defer span.End()
 
@@ -214,76 +232,63 @@ func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, it
 		return nil
 	}
 
-	countItemsToExport := len(items)
-
 	batchSize := bvp.o.MaxExportBatchSize
 	if batchSize == 0 {
-		batchSize = 1 // Ensure we can't divide by zero
+		batchSize = 1
 	}
 
-	batches := (countItemsToExport + batchSize - 1) / batchSize
+	errCh := make(chan error, bvp.o.Workers)
+	completedCh := make(chan struct{}, bvp.o.Workers)
+	pendingExports := 0
 
-	batchCh := make(chan []*T, batches)
-	errCh := make(chan error, 1)
-
-	defer close(errCh)
-
-	var wg sync.WaitGroup
-
-	cctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	for i := 0; i < countItemsToExport; i += batchSize {
+	for i := 0; i < len(items); i += batchSize {
 		end := i + batchSize
-		if end > countItemsToExport {
-			end = countItemsToExport
+		if end > len(items) {
+			end = len(items)
 		}
 
 		itemsBatch := items[i:end]
-		batchCh <- itemsBatch
-	}
-	close(batchCh) // Close the channel after all batches are sent
+		bvp.batches <- batchWithErr[T]{items: itemsBatch, errCh: errCh, completedCh: completedCh}
+		bvp.batchReady <- struct{}{}
 
-	bvp.log.
-		WithField("workers", bvp.o.Workers).
-		WithField("batches", batches).
-		Debug("Split items into batches for immediate export")
+		pendingExports++
 
-	for i := 0; i < bvp.o.Workers && i < batches; i++ {
-		wg.Add(1)
+		// Only create a new batch if there are already bvp.o.Workers pending exports.
+		// We do this so we don't bother queueing up any more batches if
+		// a previous batch has failed.
+		if pendingExports >= bvp.o.Workers {
+			select {
+			case batchErr := <-errCh:
+				pendingExports--
 
-		go func(workerID int) {
-			defer wg.Done()
-
-			for itemsBatch := range batchCh {
-				bvp.log.WithFields(logrus.Fields{
-					"count":  len(itemsBatch),
-					"worker": workerID,
-				}).Debug("Immediately exporting items")
-
-				err := bvp.exportWithTimeout(cctx, itemsBatch)
-				if err != nil {
-					select {
-					case errCh <- err:
-					default:
-					}
-
-					cancel() // Cancel the context to stop other workers
-
-					return
+				if batchErr != nil {
+					return batchErr
 				}
+			case <-completedCh:
+				pendingExports--
+			case <-ctx.Done():
+				return ctx.Err()
 			}
-		}(i)
+		}
 	}
 
-	wg.Wait()
+	// Wait for remaining pending exports to complete
+	for pendingExports > 0 {
+		select {
+		case batchErr := <-errCh:
+			pendingExports--
 
-	select {
-	case err := <-errCh:
-		return err
-	default:
-		return nil
+			if batchErr != nil {
+				return batchErr
+			}
+		case <-completedCh:
+			pendingExports--
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
+
+	return nil
 }
 
 // exportWithTimeout exports the items with a timeout.
@@ -317,7 +322,6 @@ func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 	bvp.stopOnce.Do(func() {
 		wait := make(chan struct{})
 		go func() {
-			// Stop accepting new items
 			close(bvp.stopCh)
 
 			// Drain the queue
@@ -410,17 +414,15 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 			return
 		case sd := <-bvp.queue:
 			bvp.batchMutex.Lock()
-
 			bvp.batch = append(bvp.batch, sd)
 
 			if len(bvp.batch) >= bvp.o.MaxExportBatchSize {
 				batchCopy := make([]*T, len(bvp.batch))
 				copy(batchCopy, bvp.batch)
-				bvp.batches <- batchCopy
+				bvp.batches <- batchWithErr[T]{items: batchCopy, errCh: make(chan error), completedCh: make(chan struct{})}
 				bvp.batch = bvp.batch[:0]
-				bvp.batchReady <- true
+				bvp.batchReady <- struct{}{}
 			}
-
 			bvp.batchMutex.Unlock()
 		case <-bvp.timer.C:
 			bvp.batchMutex.Lock()
@@ -428,9 +430,9 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 			if len(bvp.batch) > 0 {
 				batchCopy := make([]*T, len(bvp.batch))
 				copy(batchCopy, bvp.batch)
-				bvp.batches <- batchCopy
+				bvp.batches <- batchWithErr[T]{items: batchCopy, errCh: make(chan error), completedCh: make(chan struct{})}
 				bvp.batch = bvp.batch[:0]
-				bvp.batchReady <- true
+				bvp.batchReady <- struct{}{}
 			} else {
 				// Reset the timer if there are no items in the batch.
 				// If there are items in the batch, one of the workers will reset the timer.
@@ -452,11 +454,17 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context) {
 			return
 		case <-bvp.batchReady:
 			bvp.timer.Reset(bvp.o.BatchTimeout)
-
 			batch := <-bvp.batches
-			if err := bvp.exportWithTimeout(ctx, batch); err != nil {
+
+			if err := bvp.exportWithTimeout(ctx, batch.items); err != nil {
 				bvp.log.WithError(err).Error("failed to export items")
+
+				if batch.errCh != nil {
+					batch.errCh <- err
+				}
 			}
+
+			batch.completedCh <- struct{}{}
 		}
 	}
 }
@@ -471,7 +479,8 @@ func (bvp *BatchItemProcessor[T]) drainQueue() {
 
 	// Wait for the workers to finish processing all batches.
 	for len(bvp.batches) > 0 {
-		time.Sleep(10 * time.Millisecond)
+		batch := <-bvp.batches
+		<-batch.completedCh
 	}
 
 	// Close the batches channel since no more batches will be sent.

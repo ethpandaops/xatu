@@ -205,36 +205,85 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 }
 
 // ImmediatelyExportItems immediately exports the items to the exporter.
-// Useful for propogating errors from the exporter.
+// Useful for propagating errors from the exporter.
 func (bvp *BatchItemProcessor[T]) ImmediatelyExportItems(ctx context.Context, items []*T) error {
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.ImmediatelyExportItems")
 	defer span.End()
 
-	if l := len(items); l > 0 {
-		countItemsToExport := len(items)
-
-		// Split the items in to chunks of our max batch size
-		for i := 0; i < countItemsToExport; i += bvp.o.MaxExportBatchSize {
-			end := i + bvp.o.MaxExportBatchSize
-			if end > countItemsToExport {
-				end = countItemsToExport
-			}
-
-			itemsBatch := items[i:end]
-
-			bvp.log.WithFields(logrus.Fields{
-				"count": len(itemsBatch),
-			}).Debug("Immediately exporting items")
-
-			err := bvp.exportWithTimeout(ctx, itemsBatch)
-
-			if err != nil {
-				return err
-			}
-		}
+	if len(items) == 0 {
+		return nil
 	}
 
-	return nil
+	countItemsToExport := len(items)
+
+	batchSize := bvp.o.MaxExportBatchSize
+	if batchSize == 0 {
+		batchSize = 1 // Ensure we can't divide by zero
+	}
+
+	batches := (countItemsToExport + batchSize - 1) / batchSize
+
+	batchCh := make(chan []*T, batches)
+	errCh := make(chan error, 1)
+
+	defer close(errCh)
+
+	var wg sync.WaitGroup
+
+	cctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for i := 0; i < countItemsToExport; i += batchSize {
+		end := i + batchSize
+		if end > countItemsToExport {
+			end = countItemsToExport
+		}
+
+		itemsBatch := items[i:end]
+		batchCh <- itemsBatch
+	}
+	close(batchCh) // Close the channel after all batches are sent
+
+	bvp.log.
+		WithField("workers", bvp.o.Workers).
+		WithField("batches", batches).
+		Debug("Split items into batches for immediate export")
+
+	for i := 0; i < bvp.o.Workers && i < batches; i++ {
+		wg.Add(1)
+
+		go func(workerID int) {
+			defer wg.Done()
+
+			for itemsBatch := range batchCh {
+				bvp.log.WithFields(logrus.Fields{
+					"count":  len(itemsBatch),
+					"worker": workerID,
+				}).Debug("Immediately exporting items")
+
+				err := bvp.exportWithTimeout(cctx, itemsBatch)
+				if err != nil {
+					select {
+					case errCh <- err:
+					default:
+					}
+
+					cancel() // Cancel the context to stop other workers
+
+					return
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	select {
+	case err := <-errCh:
+		return err
+	default:
+		return nil
+	}
 }
 
 // exportWithTimeout exports the items with a timeout.

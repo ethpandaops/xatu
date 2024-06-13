@@ -276,7 +276,8 @@ func TestBatchItemProcessorShutdown(t *testing.T) {
 
 func TestBatchItemProcessorDrainQueue(t *testing.T) {
 	be := testBatchExporter[TestItem]{}
-	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(5), WithBatchTimeout(5*time.Minute), WithWorkers(5))
+	log := logrus.New()
+	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", log, WithMaxExportBatchSize(5), WithBatchTimeout(1*time.Second), WithWorkers(2), WithShippingMethod(ShippingMethodAsync))
 	require.NoError(t, err)
 
 	itemsToExport := 50

@@ -119,23 +119,26 @@ type testOption struct {
 	wantBatchCount int
 }
 
-func TestNewBatchItemProcessorWithOptions(t *testing.T) {
+func TestAsyncNewBatchItemProcessorWithOptions(t *testing.T) {
 	schDelay := 100 * time.Millisecond
 	options := []testOption{
 		{
 			name: "default",
 			o: []BatchItemProcessorOption{
-				WithShippingMethod(ShippingMethodSync),
+				WithShippingMethod(ShippingMethodAsync),
+				WithBatchTimeout(10 * time.Millisecond),
 			},
+			writeNumItems:  2048,
 			genNumItems:    2053,
-			wantNumItems:   2048,
-			wantBatchCount: 4,
+			wantNumItems:   2053,
+			wantBatchCount: 5,
 		},
 		{
 			name: "non-default BatchTimeout",
 			o: []BatchItemProcessorOption{
 				WithBatchTimeout(schDelay),
-				WithShippingMethod(ShippingMethodSync),
+				WithShippingMethod(ShippingMethodAsync),
+				WithMaxExportBatchSize(512),
 			},
 			writeNumItems:  2048,
 			genNumItems:    2053,
@@ -147,25 +150,13 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 			o: []BatchItemProcessorOption{
 				WithBatchTimeout(schDelay),
 				WithMaxQueueSize(200),
-				WithShippingMethod(ShippingMethodSync),
+				WithMaxExportBatchSize(200),
+				WithShippingMethod(ShippingMethodAsync),
 			},
 			writeNumItems:  200,
 			genNumItems:    205,
 			wantNumItems:   205,
-			wantBatchCount: 1,
-		},
-		{
-			name: "blocking option",
-			o: []BatchItemProcessorOption{
-				WithBatchTimeout(schDelay),
-				WithMaxQueueSize(200),
-				WithMaxExportBatchSize(20),
-				WithShippingMethod(ShippingMethodSync),
-			},
-			writeNumItems:  200,
-			genNumItems:    205,
-			wantNumItems:   205,
-			wantBatchCount: 11,
+			wantBatchCount: 2,
 		},
 	}
 
@@ -175,11 +166,11 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 			ssp, err := createAndRegisterBatchSP(option.o, &te)
 
 			if err != nil {
-				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
+				require.NoError(t, err)
 			}
 
 			if ssp == nil {
-				t.Fatalf("%s: Error creating new instance of BatchItemProcessor\n", option.name)
+				require.NoError(t, err)
 			}
 
 			for i := 0; i < option.genNumItems; i++ {
@@ -190,7 +181,7 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 				if err := ssp.Write(context.Background(), []*TestItem{{
 					name: "test",
 				}}); err != nil {
-					t.Errorf("%s: Error writing to BatchItemProcessor\n", option.name)
+					t.Errorf("%s: Error writing to BatchItemProcessor", option.name)
 				}
 			}
 
@@ -198,15 +189,15 @@ func TestNewBatchItemProcessorWithOptions(t *testing.T) {
 
 			gotNumOfItems := te.len()
 			if option.wantNumItems > 0 && option.wantNumItems != gotNumOfItems {
-				t.Errorf("number of exported items: got %+v, want %+v\n",
+				t.Errorf("number of exported items: got %v, want %v",
 					gotNumOfItems, option.wantNumItems)
 			}
 
 			gotBatchCount := te.getBatchCount()
 			if option.wantBatchCount > 0 && gotBatchCount != option.wantBatchCount {
-				t.Errorf("number batches: got %+v, want >= %+v\n",
+				t.Errorf("number batches: got %v, want %v",
 					gotBatchCount, option.wantBatchCount)
-				t.Errorf("Batches %v\n", te.sizes)
+				t.Errorf("Batches %v", te.sizes)
 			}
 		})
 	}
@@ -280,7 +271,7 @@ func TestBatchItemProcessorDrainQueue(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", log, WithMaxExportBatchSize(5), WithBatchTimeout(1*time.Second), WithWorkers(2), WithShippingMethod(ShippingMethodAsync))
 	require.NoError(t, err)
 
-	itemsToExport := 50
+	itemsToExport := 5000
 
 	for i := 0; i < itemsToExport; i++ {
 		if err := bsp.Write(context.Background(), []*TestItem{{
@@ -313,11 +304,10 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 	lenJustAfterShutdown := be.len()
 
 	for i := 0; i < 60; i++ {
-		if err := bsp.Write(context.Background(), []*TestItem{{
+		err := bsp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
-		}}); err != nil {
-			t.Errorf("Error writing to BatchItemProcessor\n")
-		}
+		}})
+		require.Error(t, err)
 	}
 
 	assert.Equal(t, lenJustAfterShutdown, be.len(), "Write should have no effect after Shutdown")
@@ -494,8 +484,8 @@ func (ErrorItemExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 }
 
 // TestBatchItemProcessorWithSyncErrorExporter tests a processor with ShippingMethod = sync and an exporter that only returns errors.
-func TestBatchItemProcessorWithAsyncErrorExporter(t *testing.T) {
-	bsp, err := NewBatchItemProcessor[TestItem](ErrorItemExporter[TestItem]{}, "processor", nullLogger(), WithShippingMethod(ShippingMethodSync))
+func TestBatchItemProcessorWithSyncErrorExporter(t *testing.T) {
+	bsp, err := NewBatchItemProcessor[TestItem](ErrorItemExporter[TestItem]{}, "processor", nullLogger(), WithShippingMethod(ShippingMethodSync), WithBatchTimeout(100*time.Millisecond))
 	if err != nil {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
@@ -510,14 +500,22 @@ func TestBatchItemProcessorSyncShipping(t *testing.T) {
 	// Define a range of values for workers, maxExportBatchSize, and itemsToExport
 	workerCounts := []int{1, 5, 10}
 	maxBatchSizes := []int{1, 5, 10, 20}
-	itemCounts := []int{0, 1, 25, 50}
+	itemCounts := []int{0, 1, 10, 25, 50}
 
 	for _, workers := range workerCounts {
 		for _, maxBatchSize := range maxBatchSizes {
 			for _, itemsToExport := range itemCounts {
 				t.Run(fmt.Sprintf("%d workers, batch size %d, %d items", workers, maxBatchSize, itemsToExport), func(t *testing.T) {
 					te := testBatchExporter[TestItem]{}
-					bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(maxBatchSize), WithWorkers(workers), WithShippingMethod(ShippingMethodSync))
+					bsp, err := NewBatchItemProcessor[TestItem](
+						&te,
+						"processor",
+						logrus.New(),
+						WithMaxExportBatchSize(maxBatchSize),
+						WithWorkers(workers),
+						WithShippingMethod(ShippingMethodSync),
+						WithBatchTimeout(100*time.Millisecond),
+					)
 					require.NoError(t, err)
 
 					items := make([]*TestItem, itemsToExport)

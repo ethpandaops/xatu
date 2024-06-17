@@ -649,3 +649,57 @@ func TestBatchItemProcessorWithBatchTimeout(t *testing.T) {
 	time.Sleep(2 * time.Second)
 	require.Equal(t, itemsToExport, te.len(), "Expected all items to be exported after batch timeout")
 }
+
+func TestBatchItemProcessorQueueSize(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	maxQueueSize := 5
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxQueueSize(maxQueueSize), WithMaxExportBatchSize(2), WithWorkers(1))
+	require.NoError(t, err)
+
+	itemsToExport := 10
+	items := make([]*TestItem, itemsToExport)
+
+	for i := 0; i < itemsToExport; i++ {
+		items[i] = &TestItem{name: strconv.Itoa(i)}
+	}
+
+	// Write items to the processor
+	for i := 0; i < itemsToExport; i++ {
+		err := bsp.Write(context.Background(), []*TestItem{items[i]})
+		if i < maxQueueSize {
+			require.NoError(t, err, "Expected no error for item %d", i)
+		} else {
+			require.Error(t, err, "Expected an error for item %d due to queue size limit", i)
+		}
+	}
+
+	// Ensure that the queue size is respected
+	require.Equal(t, maxQueueSize, len(bsp.queue), "Queue size should be equal to maxQueueSize")
+}
+
+func TestBatchItemProcessorDropEvents(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	maxQueueSize := 5
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxQueueSize(maxQueueSize), WithMaxExportBatchSize(2), WithWorkers(1))
+	require.NoError(t, err)
+
+	itemsToExport := 10
+	items := make([]*TestItem, itemsToExport)
+
+	for i := 0; i < itemsToExport; i++ {
+		items[i] = &TestItem{name: strconv.Itoa(i)}
+	}
+
+	// Write items to the processor
+	for i := 0; i < itemsToExport; i++ {
+		err := bsp.Write(context.Background(), []*TestItem{items[i]})
+		if i < maxQueueSize {
+			require.NoError(t, err, "Expected no error for item %d", i)
+		} else {
+			require.Error(t, err, "Expected an error for item %d due to queue size limit", i)
+		}
+	}
+
+	// Ensure that the dropped count is correct
+	require.Equal(t, uint32(itemsToExport-maxQueueSize), bsp.dropped, "Dropped count should be equal to the number of items that exceeded the queue size")
+}

@@ -117,7 +117,6 @@ CREATE TABLE default.canonical_beacon_validators_pubkeys_local on cluster '{clus
     meta_consensus_implementation LowCardinality(String),
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', `version`)
-PARTITION BY toStartOfMonth(epoch_start_date_time)
 ORDER BY (index, pubkey, meta_network_name);
 
 ALTER TABLE default.canonical_beacon_validators_pubkeys_local ON CLUSTER '{cluster}'
@@ -189,7 +188,6 @@ CREATE TABLE default.canonical_beacon_validators_withdrawal_credentials_local on
     meta_consensus_implementation LowCardinality(String),
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', `version`)
-PARTITION BY toStartOfMonth(epoch_start_date_time)
 ORDER BY (index, withdrawal_credentials, meta_network_name);
 
 ALTER TABLE default.canonical_beacon_validators_withdrawal_credentials_local ON CLUSTER '{cluster}'

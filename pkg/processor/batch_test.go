@@ -37,17 +37,6 @@ type testBatchExporter[T TestItem] struct {
 	err            error
 	failNextExport bool
 	delay          time.Duration
-	mu             sync.Mutex
-	items          []*T
-	sizes          []int
-	batchCount     int
-	shutdownCount  int
-	errors         []error
-	droppedCount   int
-	idx            int
-	err            error
-	failNextExport bool
-	delay          time.Duration
 }
 
 func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) error {

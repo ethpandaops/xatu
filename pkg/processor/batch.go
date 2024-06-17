@@ -280,10 +280,12 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 	for _, item := range itemsBatch {
 		if item.errCh != nil {
 			item.errCh <- err
+			close(item.errCh)
 		}
 
 		if item.completedCh != nil {
 			item.completedCh <- struct{}{}
+			close(item.completedCh)
 		}
 	}
 

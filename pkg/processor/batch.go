@@ -41,7 +41,7 @@ const (
 	DefaultExportTimeout      = 30000
 	DefaultMaxExportBatchSize = 512
 	DefaultShippingMethod     = ShippingMethodAsync
-	DefaultNumWorkers         = 1
+	DefaultNumWorkers         = 5
 )
 
 // ShippingMethod is the method of shipping items for export.
@@ -77,7 +77,7 @@ type BatchItemProcessorOptions struct {
 	// of ShippingMethod is "async".
 	ShippingMethod ShippingMethod
 	// Workers is the number of workers to process batches.
-	// The default value of Workers is 1.
+	// The default value of Workers is 5.
 	Workers int
 }
 

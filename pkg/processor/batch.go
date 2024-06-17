@@ -223,12 +223,18 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		}
 
 		prepared := []traceableItem[T]{}
+
 		for _, i := range s[start:end] {
-			prepared = append(prepared, traceableItem[T]{
-				item:        i,
-				errCh:       make(chan error, 1),
-				completedCh: make(chan struct{}, 1),
-			})
+			item := traceableItem[T]{
+				item: i,
+			}
+
+			if bvp.o.ShippingMethod == ShippingMethodSync {
+				item.errCh = make(chan error, 1)
+				item.completedCh = make(chan struct{}, 1)
+			}
+
+			prepared = append(prepared, item)
 		}
 
 		for _, i := range prepared {

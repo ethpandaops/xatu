@@ -232,8 +232,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		}
 
 		for _, i := range prepared {
-			if !bvp.enqueueOrDrop(ctx, i.item, i.errCh, i.completedCh) {
-				return errors.New("failed to enqueue item - queue is full")
+			if err := bvp.enqueueOrDrop(ctx, i); err != nil {
+				return err
 			}
 		}
 
@@ -458,24 +458,24 @@ func recoverSendOnClosedChan() {
 	panic(x)
 }
 
-func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, sd *T, errCh chan error, completedCh chan struct{}) bool {
+func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item traceableItem[T]) error {
 	// This ensures the bvp.queue<- below does not panic as the
 	// processor shuts down.
 	defer recoverSendOnClosedChan()
 
 	select {
 	case <-bvp.stopCh:
-		return false
+		return errors.New("processor is shutting down")
 	default:
 	}
 
 	select {
-	case bvp.queue <- traceableItem[T]{item: sd, errCh: errCh, completedCh: completedCh}:
-		return true
+	case bvp.queue <- item:
+		return nil
 	default:
 		atomic.AddUint32(&bvp.dropped, 1)
 		bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 	}
 
-	return false
+	return errors.New("queue is full")
 }

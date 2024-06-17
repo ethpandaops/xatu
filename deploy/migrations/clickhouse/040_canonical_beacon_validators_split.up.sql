@@ -87,9 +87,8 @@ CREATE TABLE default.canonical_beacon_validators_pubkeys_local on cluster '{clus
 (
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     -- ensure the first epoch the pubkey was seen is in this table
-    -- add the updated_date_time to make sure we can always overwrite the data
     -- 4294967295 = UInt32 max
-    `version` UInt32 DEFAULT 4294967295 + toUnixTimestamp(updated_date_time) - toUnixTimestamp(epoch_start_date_time) CODEC(DoubleDelta, ZSTD(1)),
+    `version` UInt32 DEFAULT 4294967295 - toUnixTimestamp(epoch_start_date_time) CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     epoch UInt32 CODEC(DoubleDelta, ZSTD(1)),
     epoch_start_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -154,15 +153,14 @@ COMMENT COLUMN meta_consensus_implementation 'Ethereum consensus client implemen
 COMMENT COLUMN meta_labels 'Labels associated with the event';
 
 CREATE TABLE canonical_beacon_validators_pubkeys on cluster '{cluster}' AS canonical_beacon_validators_pubkeys_local
-ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_pubkeys_local, cityHash64(epoch_start_date_time, `index`, meta_network_name));
+ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_pubkeys_local, cityHash64(`index`, meta_network_name));
 
 CREATE TABLE default.canonical_beacon_validators_withdrawal_credentials_local on cluster '{cluster}'
 (
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     -- ensure the first epoch the withdrawal_credentials was seen is in this table
-    -- add the updated_date_time to make sure we can always overwrite the data
     -- 4294967295 = UInt32 max
-    `version` UInt32 DEFAULT 4294967295 + toUnixTimestamp(updated_date_time) - toUnixTimestamp(epoch_start_date_time) CODEC(DoubleDelta, ZSTD(1)),
+    `version` UInt32 DEFAULT 4294967295 - toUnixTimestamp(epoch_start_date_time) CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     epoch UInt32 CODEC(DoubleDelta, ZSTD(1)),
     epoch_start_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -227,4 +225,4 @@ COMMENT COLUMN meta_consensus_implementation 'Ethereum consensus client implemen
 COMMENT COLUMN meta_labels 'Labels associated with the event';
 
 CREATE TABLE canonical_beacon_validators_withdrawal_credentials on cluster '{cluster}' AS canonical_beacon_validators_withdrawal_credentials_local
-ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_withdrawal_credentials_local, cityHash64(epoch_start_date_time, `index`, meta_network_name));
+ENGINE = Distributed('{cluster}', default, canonical_beacon_validators_withdrawal_credentials_local, cityHash64(`index`, meta_network_name));

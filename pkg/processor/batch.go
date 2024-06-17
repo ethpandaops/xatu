@@ -41,7 +41,7 @@ const (
 	DefaultExportTimeout      = 30000
 	DefaultMaxExportBatchSize = 512
 	DefaultShippingMethod     = ShippingMethodAsync
-	DefaultNumWorkers         = 1
+	DefaultNumWorkers         = 5
 )
 
 // ShippingMethod is the method of shipping items for export.
@@ -77,7 +77,7 @@ type BatchItemProcessorOptions struct {
 	// of ShippingMethod is "async".
 	ShippingMethod ShippingMethod
 	// Workers is the number of workers to process batches.
-	// The default value of Workers is 1.
+	// The default value of Workers is 5.
 	Workers int
 }
 
@@ -223,12 +223,18 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		}
 
 		prepared := []traceableItem[T]{}
+
 		for _, i := range s[start:end] {
-			prepared = append(prepared, traceableItem[T]{
-				item:        i,
-				errCh:       make(chan error, 1),
-				completedCh: make(chan struct{}, 1),
-			})
+			item := traceableItem[T]{
+				item: i,
+			}
+
+			if bvp.o.ShippingMethod == ShippingMethodSync {
+				item.errCh = make(chan error, 1)
+				item.completedCh = make(chan struct{}, 1)
+			}
+
+			prepared = append(prepared, item)
 		}
 
 		for _, i := range prepared {

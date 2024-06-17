@@ -15,7 +15,23 @@ import (
 
 // ItemExporter is an interface for exporting items.
 type ItemExporter[T any] interface {
+	// ExportItems exports a batch of items.
+	//
+	// This function is called synchronously, so there is no concurrency
+	// safety requirement. However, due to the synchronous calling pattern,
+	// it is critical that all timeouts and cancellations contained in the
+	// passed context must be honored.
+	//
+	// Any retry logic must be contained in this function. The SDK that
+	// calls this function will not implement any retry logic. All errors
+	// returned by this function are considered unrecoverable and will be
+	// reported to a configured error Handler.
 	ExportItems(ctx context.Context, items []*T) error
+
+	// Shutdown notifies the exporter of a pending halt to operations. The
+	// exporter is expected to preform any cleanup or synchronization it
+	// requires while honoring all timeouts and cancellations contained in
+	// the passed context.
 	Shutdown(ctx context.Context) error
 }
 
@@ -41,12 +57,28 @@ const (
 type BatchItemProcessorOption func(o *BatchItemProcessorOptions)
 
 type BatchItemProcessorOptions struct {
-	MaxQueueSize       int
-	BatchTimeout       time.Duration
-	ExportTimeout      time.Duration
+	// MaxQueueSize is the maximum queue size to buffer items for delayed processing. If the
+	// queue gets full it drops the items.
+	// The default value of MaxQueueSize is 51200.
+	MaxQueueSize int
+	// BatchTimeout is the maximum duration for constructing a batch. Processor
+	// forcefully sends available items when timeout is reached.
+	// The default value of BatchTimeout is 5000 msec.
+	BatchTimeout time.Duration
+
+	// ExportTimeout specifies the maximum duration for exporting items. If the timeout
+	// is reached, the export will be cancelled.
+	// The default value of ExportTimeout is 30000 msec.
+	ExportTimeout time.Duration
+	// MaxExportBatchSize is the maximum number of items to include in a batch.
+	// The default value of MaxExportBatchSize is 512.
 	MaxExportBatchSize int
-	ShippingMethod     ShippingMethod
-	Workers            int
+	// ShippingMethod is the method of shipping items for export. The default value
+	// of ShippingMethod is "async".
+	ShippingMethod ShippingMethod
+	// Workers is the number of workers to process batches.
+	// The default value of Workers is 1.
+	Workers int
 }
 
 func (o *BatchItemProcessorOptions) Validate() error {

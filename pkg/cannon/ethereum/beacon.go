@@ -382,7 +382,7 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 		span.AddEvent("Validators fetched from beacon node.")
 
 		// Add it to the cache.
-		b.validatorsCache.Set(identifier, validators, time.Hour)
+		b.validatorsCache.Set(identifier, validators, 5*time.Minute)
 
 		return validators, nil
 	})

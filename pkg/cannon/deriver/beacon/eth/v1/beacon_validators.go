@@ -6,7 +6,6 @@ import (
 	"time"
 
 	client "github.com/attestantio/go-eth2-client"
-	"github.com/attestantio/go-eth2-client/api"
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
@@ -155,13 +154,34 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 					return nil
 				}
 
-				events, err := b.processEpoch(ctx, phase0.Epoch(epochToProcess))
+				events, slot, err := b.processEpoch(ctx, phase0.Epoch(epochToProcess))
 				if err != nil {
 					b.log.WithError(err).WithField("epoch", epochToProcess).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
+				}
+
+				// Be a good citizen and clean up the validator cache for the current epoch
+				b.beacon.DeleteValidatorsFromCache(xatuethv1.SlotAsString(slot))
+
+				if !processingFinalizedEpoch {
+					// If we are backfilling we can prewarm the validator cache with the next epoch's validators
+					spec, err := b.beacon.Node().Spec()
+					if err != nil {
+						return errors.Wrap(err, "failed to fetch spec")
+					}
+
+					nextSlot := slot - spec.SlotsPerEpoch
+					if nextSlot > 0 {
+						b.log.WithFields(logrus.Fields{
+							"next_state_id":    nextSlot,
+							"current_state_id": slot,
+						}).Info("Prewarming validators cache")
+
+						b.beacon.LazyLoadValidators(xatuethv1.SlotAsString(nextSlot))
+					}
 				}
 
 				for _, fn := range b.onEventsCallbacks {
@@ -215,36 +235,24 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 	}
 }
 
-func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, phase0.Slot, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BeaconValidatorsDeriver.processEpoch",
 		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
 	)
 	defer span.End()
 
-	validatorStates, err := b.getValidatorsClient(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch validator states")
-	}
-
 	spec, err := b.beacon.Node().Spec()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch spec")
+		return nil, 0, errors.Wrap(err, "failed to fetch spec")
 	}
 
 	boundarySlot := phase0.Slot(uint64(epoch) * uint64(spec.SlotsPerEpoch))
 
-	validatorsResponse, err := validatorStates.Validators(ctx, &api.ValidatorsOpts{
-		State: xatuethv1.SlotAsString(boundarySlot),
-		Common: api.CommonOpts{
-			Timeout: 6 * time.Minute, // If we can't fetch 1 epoch of validators within 1 epoch we will never catch up.
-		},
-	})
+	validatorsMap, err := b.beacon.GetValidators(ctx, xatuethv1.SlotAsString(boundarySlot))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch validator states")
+		return nil, 0, errors.Wrap(err, "failed to fetch validator states")
 	}
-
-	validatorsMap := validatorsResponse.Data
 
 	// Chunk the validators per the configured chunk size
 	chunkSize := b.cfg.ChunkSize
@@ -278,13 +286,13 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 				WithField("epoch", epoch).
 				Error("Failed to create event from validator state")
 
-			return nil, err
+			return nil, 0, err
 		}
 
 		allEvents = append(allEvents, event)
 	}
 
-	return allEvents, nil
+	return allEvents, boundarySlot, nil
 }
 
 func (b *BeaconValidatorsDeriver) getValidatorsClient(ctx context.Context) (client.ValidatorsProvider, error) {

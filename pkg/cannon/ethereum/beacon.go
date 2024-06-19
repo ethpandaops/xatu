@@ -6,7 +6,11 @@ import (
 	"sync"
 	"time"
 
+	client "github.com/attestantio/go-eth2-client"
+	"github.com/attestantio/go-eth2-client/api"
+	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
@@ -36,6 +40,11 @@ type BeaconNode struct {
 	blockCache       *ttlcache.Cache[string, *spec.VersionedSignedBeaconBlock]
 	blockPreloadChan chan string
 	blockPreloadSem  chan struct{}
+
+	validatorsSfGroup     *singleflight.Group
+	validatorsCache       *ttlcache.Cache[string, map[phase0.ValidatorIndex]*apiv1.Validator]
+	validatorsPreloadChan chan string
+	validatorsPreloadSem  chan struct{}
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -72,20 +81,28 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 
 	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
 	sem := make(chan struct{}, config.BlockPreloadWorkers)
+	validatorsSem := make(chan struct{}, 1)
 
 	return &BeaconNode{
-		config:   config,
-		log:      log.WithField("module", "cannon/ethereum/beacon"),
-		beacon:   node,
-		services: svcs,
-		sfGroup:  &singleflight.Group{},
+		config:            config,
+		log:               log.WithField("module", "cannon/ethereum/beacon"),
+		beacon:            node,
+		services:          svcs,
+		sfGroup:           &singleflight.Group{},
+		validatorsSfGroup: &singleflight.Group{},
 		blockCache: ttlcache.New(
 			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheTTL.Duration),
 			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
 		),
 		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
 		blockPreloadSem:  sem,
-		metrics:          NewMetrics(namespace, name),
+		validatorsCache: ttlcache.New(
+			ttlcache.WithTTL[string, map[phase0.ValidatorIndex]*apiv1.Validator](5*time.Minute),
+			ttlcache.WithCapacity[string, map[phase0.ValidatorIndex]*apiv1.Validator](4),
+		),
+		validatorsPreloadChan: make(chan string, 2),
+		validatorsPreloadSem:  validatorsSem,
+		metrics:               NewMetrics(namespace, name),
 	}, nil
 }
 
@@ -154,6 +171,15 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			}
 		}()
 	}
+
+	go func() {
+		for identifier := range b.validatorsPreloadChan {
+			b.log.WithField("identifier", identifier).Trace("Preloading validators")
+
+			//nolint:errcheck // We don't care about errors here.
+			b.GetValidators(ctx, identifier)
+		}
+	}()
 
 	select {
 	case err := <-errs:
@@ -306,4 +332,87 @@ func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
 	}
 
 	b.blockPreloadChan <- identifier
+}
+
+// GetValidators returns a list of validators by its identifier. Validators can be cached internally.
+func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+	ctx, span := observability.Tracer().Start(ctx, "ethereum.beacon.GetValidators", trace.WithAttributes(attribute.String("identifier", identifier)))
+
+	defer span.End()
+
+	// Check the cache first.
+	if item := b.validatorsCache.Get(identifier); item != nil {
+		b.log.WithField("identifier", identifier).Debug("Validator cache hit")
+
+		span.SetAttributes(attribute.Bool("cached", true))
+
+		return item.Value(), nil
+	}
+
+	span.SetAttributes(attribute.Bool("cached", false))
+
+	// Use singleflight to ensure we only make one request for validators at a time.
+	x, err, shared := b.validatorsSfGroup.Do(identifier, func() (interface{}, error) {
+		span.AddEvent("Acquiring semaphore...")
+
+		// Acquire a semaphore before proceeding.
+		b.validatorsPreloadSem <- struct{}{}
+		defer func() { <-b.validatorsPreloadSem }()
+
+		span.AddEvent("Semaphore acquired. Fetching validators from beacon api...")
+
+		client, err := b.getValidatorsClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Not in the cache, so fetch it.
+		validatorsResponse, err := client.Validators(ctx, &api.ValidatorsOpts{
+			State: identifier,
+			Common: api.CommonOpts{
+				Timeout: 6 * time.Minute, // If we can't fetch 1 epoch of validators within 1 epoch we will never catch up.
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		validators := validatorsResponse.Data
+
+		span.AddEvent("Validators fetched from beacon node.")
+
+		// Add it to the cache.
+		b.validatorsCache.Set(identifier, validators, time.Hour)
+
+		return validators, nil
+	})
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
+		return nil, err
+	}
+
+	span.AddEvent("Validators fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
+
+	return x.(map[phase0.ValidatorIndex]*apiv1.Validator), nil
+}
+
+func (b *BeaconNode) LazyLoadValidators(stateID string) {
+	if item := b.validatorsCache.Get(stateID); item != nil {
+		return
+	}
+
+	b.validatorsPreloadChan <- stateID
+}
+
+func (b *BeaconNode) getValidatorsClient(ctx context.Context) (client.ValidatorsProvider, error) {
+	if provider, isProvider := b.beacon.Service().(client.ValidatorsProvider); isProvider {
+		return provider, nil
+	}
+
+	return nil, errors.New("validator states client not found")
+}
+
+func (b *BeaconNode) DeleteValidatorsFromCache(stateID string) {
+	b.validatorsCache.Delete(stateID)
 }

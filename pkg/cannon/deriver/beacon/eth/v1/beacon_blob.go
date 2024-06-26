@@ -37,13 +37,13 @@ type BeaconBlobDeriverConfig struct {
 type BeaconBlobDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *BeaconBlobDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewBeaconBlobDeriver(log logrus.FieldLogger, config *BeaconBlobDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlobDeriver {
+func NewBeaconBlobDeriver(log logrus.FieldLogger, config *BeaconBlobDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlobDeriver {
 	return &BeaconBlobDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v1/beacon_blob"),
 		cfg:        config,

@@ -2,6 +2,7 @@ package iterator
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -42,6 +43,87 @@ func NewBackfillingCheckpoint(log logrus.FieldLogger, networkName, networkID str
 		metrics:        metrics,
 		checkpointName: checkpoint,
 	}
+}
+
+func (c *BackfillingCheckpoint) Start(ctx context.Context) error {
+	return nil
+}
+
+func (c *BackfillingCheckpoint) migrateFromCheckpointIterator(ctx context.Context) error {
+	checkpointTypes := []xatu.CannonType{
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL,
+		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK,
+		xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
+	}
+
+	if !slices.Contains(checkpointTypes, c.cannonType) {
+		return nil
+	}
+
+	// If the cannon type is the checkpoint type, we need to migrate the cannon location to the backfilling checkpoint iterator.
+	// We'll need to get the current location, and then create a new checkpoint iterator with the current location as the 'head' point.
+	location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get cannon location")
+	}
+
+	// We need to get the epoch from the location
+	currentEpoch := phase0.Epoch(0)
+	var currentBackfill *xatu.BackfillingCheckpointMarker
+
+	switch location.Type {
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockAttesterSlashing().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockProposerSlashing().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockProposerSlashing().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockBlsToExecutionChange().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockExecutionTransaction().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockVoluntaryExit().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockDeposit().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockDeposit().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockWithdrawal().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlockWithdrawal().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
+		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch())
+		currentBackfill = location.GetEthV2BeaconBlock().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
+		currentEpoch = phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch())
+		currentBackfill = location.GetEthV1BeaconBlobSidecar().GetBackfillingCheckpointMarker()
+	default:
+		return errors.Errorf("unknown cannon type (%s) when migrating from checkpoint iterator", location.Type)
+	}
+
+	if currentEpoch == 0 && currentBackfill != nil {
+		// We've already migrated, so we don't need to do anything.
+		return nil
+	}
+
+	// Create a new location with the current epoch as the 'head' point.
+	newLocation, err := c.createLocationFromEpochNumber(currentEpoch, currentEpoch)
+	if err != nil {
+		return errors.Wrap(err, "failed to create location from epoch number")
+	}
+
+	c.log.WithField("new_location", newLocation).Info("Migrated cannon location to backfilling checkpoint iterator")
+
+	// Update the coordinator with the new location.
+	return c.coordinator.UpsertCannonLocationRequest(ctx, newLocation)
 }
 
 func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, location *xatu.CannonLocation) error {
@@ -167,6 +249,24 @@ func (c *BackfillingCheckpoint) getMarker(location *xatu.CannonLocation) (*xatu.
 		return location.GetEthV2BeaconBlockElaboratedAttestation().GetBackfillingCheckpointMarker(), nil
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_VALIDATORS:
 		return location.GetEthV1BeaconValidators().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
+		return location.GetEthV2BeaconBlockAttesterSlashing().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
+		return location.GetEthV2BeaconBlockProposerSlashing().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
+		return location.GetEthV2BeaconBlockBlsToExecutionChange().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
+		return location.GetEthV2BeaconBlockExecutionTransaction().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
+		return location.GetEthV2BeaconBlockVoluntaryExit().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
+		return location.GetEthV2BeaconBlockDeposit().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
+		return location.GetEthV2BeaconBlockWithdrawal().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
+		return location.GetEthV2BeaconBlock().GetBackfillingCheckpointMarker(), nil
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
+		return location.GetEthV1BeaconBlobSidecar().GetBackfillingCheckpointMarker(), nil
 	default:
 		return nil, errors.Errorf("unknown cannon type %s", location.Type)
 	}
@@ -178,32 +278,82 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 		Type:      c.cannonType,
 	}
 
+	marker := &xatu.BackfillingCheckpointMarker{
+		FinalizedEpoch: uint64(finalized),
+		BackfillEpoch:  int64(backfill),
+	}
+
 	switch c.cannonType {
 	case xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY:
 		location.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
 			EthV1BeaconProposerDuty: &xatu.CannonLocationEthV1BeaconProposerDuty{
-				BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-					FinalizedEpoch: uint64(finalized),
-					BackfillEpoch:  int64(backfill),
-				},
+				BackfillingCheckpointMarker: marker,
 			},
 		}
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION:
 		location.Data = &xatu.CannonLocation_EthV2BeaconBlockElaboratedAttestation{
 			EthV2BeaconBlockElaboratedAttestation: &xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation{
-				BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-					FinalizedEpoch: uint64(finalized),
-					BackfillEpoch:  int64(backfill),
-				},
+				BackfillingCheckpointMarker: marker,
 			},
 		}
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_VALIDATORS:
 		location.Data = &xatu.CannonLocation_EthV1BeaconValidators{
 			EthV1BeaconValidators: &xatu.CannonLocationEthV1BeaconValidators{
-				BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-					FinalizedEpoch: uint64(finalized),
-					BackfillEpoch:  int64(backfill),
-				},
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockAttesterSlashing{
+			EthV2BeaconBlockAttesterSlashing: &xatu.CannonLocationEthV2BeaconBlockAttesterSlashing{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockProposerSlashing{
+			EthV2BeaconBlockProposerSlashing: &xatu.CannonLocationEthV2BeaconBlockProposerSlashing{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockBlsToExecutionChange{
+			EthV2BeaconBlockBlsToExecutionChange: &xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionTransaction{
+			EthV2BeaconBlockExecutionTransaction: &xatu.CannonLocationEthV2BeaconBlockExecutionTransaction{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockVoluntaryExit{
+			EthV2BeaconBlockVoluntaryExit: &xatu.CannonLocationEthV2BeaconBlockVoluntaryExit{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockDeposit{
+			EthV2BeaconBlockDeposit: &xatu.CannonLocationEthV2BeaconBlockDeposit{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockWithdrawal{
+			EthV2BeaconBlockWithdrawal: &xatu.CannonLocationEthV2BeaconBlockWithdrawal{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlock{
+			EthV2BeaconBlock: &xatu.CannonLocationEthV2BeaconBlock{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
+		location.Data = &xatu.CannonLocation_EthV1BeaconBlobSidecar{
+			EthV1BeaconBlobSidecar: &xatu.CannonLocationEthV1BeaconBlobSidecar{
+				BackfillingCheckpointMarker: marker,
 			},
 		}
 	default:

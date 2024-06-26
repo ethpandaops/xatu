@@ -34,13 +34,13 @@ type VoluntaryExitDeriverConfig struct {
 type VoluntaryExitDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *VoluntaryExitDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewVoluntaryExitDeriver(log logrus.FieldLogger, config *VoluntaryExitDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
+func NewVoluntaryExitDeriver(log logrus.FieldLogger, config *VoluntaryExitDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
 	return &VoluntaryExitDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/voluntary_exit"),
 		cfg:        config,

@@ -34,13 +34,13 @@ type WithdrawalDeriverConfig struct {
 type WithdrawalDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *WithdrawalDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewWithdrawalDeriver(log logrus.FieldLogger, config *WithdrawalDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
+func NewWithdrawalDeriver(log logrus.FieldLogger, config *WithdrawalDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
 	return &WithdrawalDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/withdrawal"),
 		cfg:        config,

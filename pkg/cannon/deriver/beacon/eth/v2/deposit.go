@@ -34,13 +34,13 @@ type DepositDeriverConfig struct {
 type DepositDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *DepositDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
+func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
 	return &DepositDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/deposit"),
 		cfg:        config,

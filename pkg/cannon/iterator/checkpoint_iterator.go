@@ -44,6 +44,10 @@ func NewCheckpointIterator(log logrus.FieldLogger, networkName, networkID string
 	}
 }
 
+func (c *CheckpointIterator) Start(ctx context.Context) error {
+	return nil
+}
+
 func (c *CheckpointIterator) UpdateLocation(ctx context.Context, location *xatu.CannonLocation) error {
 	return c.coordinator.UpsertCannonLocationRequest(ctx, location)
 }

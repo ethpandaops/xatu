@@ -9,16 +9,12 @@ var (
 )
 
 type Metrics struct {
-	itemsQueued        *prometheus.GaugeVec
-	itemsDropped       *prometheus.CounterVec
-	itemsFailed        *prometheus.CounterVec
-	itemsExported      *prometheus.CounterVec
-	exportDuration     *prometheus.HistogramVec
-	itemsProcessed     *prometheus.CounterVec
-	batchesProcessed   *prometheus.CounterVec
-	processingDuration *prometheus.HistogramVec
-	queueWaitTime      *prometheus.HistogramVec
-	batchSize          *prometheus.HistogramVec
+	itemsQueued    *prometheus.GaugeVec
+	itemsDropped   *prometheus.CounterVec
+	itemsFailed    *prometheus.CounterVec
+	itemsExported  *prometheus.CounterVec
+	exportDuration *prometheus.HistogramVec
+	batchSize      *prometheus.HistogramVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -55,28 +51,11 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Duration of export operations in seconds",
 			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
 		}, []string{"processor"}),
-
-		itemsProcessed: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name:      "items_processed_total",
-			Namespace: namespace,
-			Help:      "Number of items processed",
-		}, []string{"processor"}),
-		batchesProcessed: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name:      "batches_processed_total",
-			Namespace: namespace,
-			Help:      "Number of batches processed",
-		}, []string{"processor"}),
-		queueWaitTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name:      "queue_wait_time_seconds",
-			Namespace: namespace,
-			Help:      "Time items spend waiting in the queue in seconds",
-			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
-		}, []string{"processor"}),
 		batchSize: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:      "batch_size",
 			Namespace: namespace,
 			Help:      "Size of processed batches",
-			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+			Buckets:   prometheus.ExponentialBucketsRange(1, 50000, 10),
 		}, []string{"processor"}),
 	}
 
@@ -85,9 +64,6 @@ func NewMetrics(namespace string) *Metrics {
 	prometheus.MustRegister(m.itemsFailed)
 	prometheus.MustRegister(m.itemsExported)
 	prometheus.MustRegister(m.exportDuration)
-	prometheus.MustRegister(m.itemsProcessed)
-	prometheus.MustRegister(m.batchesProcessed)
-	prometheus.MustRegister(m.queueWaitTime)
 	prometheus.MustRegister(m.batchSize)
 
 	return m
@@ -111,18 +87,6 @@ func (m *Metrics) IncItemsFailedBy(name string, count float64) {
 
 func (m *Metrics) ObserveExportDuration(name string, duration float64) {
 	m.exportDuration.WithLabelValues(name).Observe(duration)
-}
-
-func (m *Metrics) IncItemsProcessedBy(name string, count float64) {
-	m.itemsProcessed.WithLabelValues(name).Add(count)
-}
-
-func (m *Metrics) IncBatchesProcessedBy(name string, count float64) {
-	m.batchesProcessed.WithLabelValues(name).Add(count)
-}
-
-func (m *Metrics) ObserveQueueWaitTime(name string, duration float64) {
-	m.queueWaitTime.WithLabelValues(name).Observe(duration)
 }
 
 func (m *Metrics) ObserveBatchSize(name string, size float64) {

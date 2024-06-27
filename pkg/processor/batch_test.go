@@ -108,6 +108,8 @@ func TestNewBatchItemProcessorWithNilExporter(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](nil, "processor", nullLogger())
 	require.NoError(t, err)
 
+	bsp.Start(context.Background())
+
 	err = bsp.Write(context.Background(), []*TestItem{{
 		name: "test",
 	}})
@@ -237,6 +239,8 @@ func TestBatchItemProcessorExportTimeout(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	bvp.Start(context.Background())
+
 	if err := bvp.Write(context.Background(), []*TestItem{{
 		name: "test",
 	}}); err != nil {
@@ -251,13 +255,22 @@ func TestBatchItemProcessorExportTimeout(t *testing.T) {
 }
 
 func createAndRegisterBatchSP[T TestItem](options []BatchItemProcessorOption, te *testBatchExporter[T]) (*BatchItemProcessor[T], error) {
-	return NewBatchItemProcessor[T](te, "processor", nullLogger(), options...)
+	bvp, err := NewBatchItemProcessor[T](te, "processor", nullLogger(), options...)
+	if err != nil {
+		return nil, err
+	}
+
+	bvp.Start(context.Background())
+
+	return bvp, nil
 }
 
 func TestBatchItemProcessorShutdown(t *testing.T) {
 	var bp testBatchExporter[TestItem]
 	bvp, err := NewBatchItemProcessor[TestItem](&bp, "processor", nullLogger())
 	require.NoError(t, err)
+
+	bvp.Start(context.Background())
 
 	err = bvp.Shutdown(context.Background())
 	if err != nil {
@@ -281,6 +294,8 @@ func TestBatchItemProcessorDrainQueue(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", log, WithMaxExportBatchSize(5), WithBatchTimeout(1*time.Second), WithWorkers(2), WithShippingMethod(ShippingMethodAsync))
 	require.NoError(t, err)
 
+	bsp.Start(context.Background())
+
 	itemsToExport := 5000
 
 	for i := 0; i < itemsToExport; i++ {
@@ -300,6 +315,8 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 	be := testBatchExporter[TestItem]{}
 	bsp, err := NewBatchItemProcessor[TestItem](&be, "processor", nullLogger(), WithMaxExportBatchSize(50), WithBatchTimeout(5*time.Millisecond))
 	require.NoError(t, err)
+
+	bsp.Start(context.Background())
 
 	for i := 0; i < 60; i++ {
 		if err := bsp.Write(context.Background(), []*TestItem{{
@@ -343,6 +360,8 @@ func TestMultipleWorkersConsumeConcurrently(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithBatchTimeout(5*time.Minute), WithWorkers(20))
 	require.NoError(t, err)
 
+	bsp.Start(context.Background())
+
 	itemsToExport := 100
 
 	for i := 0; i < itemsToExport; i++ {
@@ -362,6 +381,8 @@ func TestWorkersProcessBatches(t *testing.T) {
 	te := testBatchExporter[TestItem]{}
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5))
 	require.NoError(t, err)
+
+	bsp.Start(context.Background())
 
 	itemsToExport := 50
 
@@ -387,6 +408,8 @@ func TestDrainQueueWithMultipleWorkers(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5))
 	require.NoError(t, err)
 
+	bsp.Start(context.Background())
+
 	itemsToExport := 100
 
 	for i := 0; i < itemsToExport; i++ {
@@ -409,6 +432,8 @@ func TestBatchItemProcessorTimerFunctionality(t *testing.T) {
 	batchTimeout := 500 * time.Millisecond
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(50), WithBatchTimeout(batchTimeout), WithWorkers(5))
 	require.NoError(t, err)
+
+	bsp.Start(context.Background())
 
 	// Add items less than the max batch size
 	itemsToExport := 25
@@ -453,6 +478,8 @@ func TestBatchItemProcessorTimeout(t *testing.T) {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
 
+	bsp.Start(context.Background())
+
 	if got, want := bsp.Write(ctx, []*TestItem{{}}), context.DeadlineExceeded; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
 	}
@@ -471,6 +498,8 @@ func TestBatchItemProcessorCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
+
+	bsp.Start(context.Background())
 
 	if got, want := bsp.Write(ctx, []*TestItem{{}}), context.Canceled; !errors.Is(got, want) {
 		t.Errorf("expected %q error, got %v", want, got)
@@ -500,6 +529,8 @@ func TestBatchItemProcessorWithSyncErrorExporter(t *testing.T) {
 		t.Fatalf("failed to create batch processor: %v", err)
 	}
 
+	bsp.Start(context.Background())
+
 	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
 	if err == nil {
 		t.Errorf("Expected write to fail")
@@ -527,6 +558,8 @@ func TestBatchItemProcessorSyncShipping(t *testing.T) {
 						WithBatchTimeout(100*time.Millisecond),
 					)
 					require.NoError(t, err)
+
+					bsp.Start(context.Background())
 
 					items := make([]*TestItem, itemsToExport)
 					for i := 0; i < itemsToExport; i++ {
@@ -565,6 +598,8 @@ func TestBatchItemProcessorExportCancellationOnFailure(t *testing.T) {
 		}
 		bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(maxBatchSize), WithWorkers(workers), WithShippingMethod(ShippingMethodSync))
 		require.NoError(t, err)
+
+		bsp.Start(context.Background())
 
 		items := make([]*TestItem, itemsToExport)
 		for i := 0; i < itemsToExport; i++ {
@@ -627,6 +662,8 @@ func TestBatchItemProcessorExportWithTimeout(t *testing.T) {
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5), WithExportTimeout(1*time.Second), WithShippingMethod(ShippingMethodSync))
 	require.NoError(t, err)
 
+	bsp.Start(context.Background())
+
 	itemsToExport := 10
 	items := make([]*TestItem, itemsToExport)
 
@@ -643,6 +680,8 @@ func TestBatchItemProcessorWithBatchTimeout(t *testing.T) {
 	te := testBatchExporter[TestItem]{}
 	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5), WithBatchTimeout(1*time.Second))
 	require.NoError(t, err)
+
+	bsp.Start(context.Background())
 
 	itemsToExport := 5
 	items := make([]*TestItem, itemsToExport)
@@ -662,11 +701,25 @@ func TestBatchItemProcessorWithBatchTimeout(t *testing.T) {
 
 func TestBatchItemProcessorQueueSize(t *testing.T) {
 	te := indefiniteExporter[TestItem]{}
+
+	metrics := NewMetrics("test")
 	maxQueueSize := 5
-	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithBatchTimeout(10*time.Minute), WithMaxQueueSize(maxQueueSize), WithMaxExportBatchSize(maxQueueSize), WithWorkers(1), WithShippingMethod(ShippingMethodAsync))
+	bsp, err := NewBatchItemProcessor[TestItem](
+		&te,
+		"processor",
+		nullLogger(),
+		WithBatchTimeout(10*time.Minute),
+		WithMaxQueueSize(maxQueueSize),
+		WithMaxExportBatchSize(maxQueueSize),
+		WithWorkers(1),
+		WithShippingMethod(ShippingMethodSync),
+		WithMetrics(metrics),
+	)
 	require.NoError(t, err)
 
-	itemsToExport := 10
+	bsp.Start(context.Background())
+
+	itemsToExport := 5
 	items := make([]*TestItem, itemsToExport)
 
 	for i := 0; i < itemsToExport; i++ {

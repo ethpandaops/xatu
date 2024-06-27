@@ -79,6 +79,8 @@ type BatchItemProcessorOptions struct {
 	// Workers is the number of workers to process batches.
 	// The default value of Workers is 5.
 	Workers int
+	// Metrics is the metrics instance to use.
+	Metrics *Metrics
 }
 
 func (o *BatchItemProcessorOptions) Validate() error {
@@ -104,8 +106,8 @@ type BatchItemProcessor[T any] struct {
 
 	log logrus.FieldLogger
 
-	queue   chan traceableItem[T]
-	batchCh chan []traceableItem[T]
+	queue   chan *TraceableItem[T]
+	batchCh chan []*TraceableItem[T]
 	name    string
 
 	timer         *time.Timer
@@ -118,12 +120,10 @@ type BatchItemProcessor[T any] struct {
 	metrics *Metrics
 }
 
-type traceableItem[T any] struct {
+type TraceableItem[T any] struct {
 	item        *T
 	errCh       chan error
 	completedCh chan struct{}
-	//nolint:containedctx // we need to pass the context to the workers
-	ctx context.Context
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -155,7 +155,10 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		return nil, fmt.Errorf("invalid batch item processor options: %w: %s", err, name)
 	}
 
-	metrics := DefaultMetrics
+	metrics := o.Metrics
+	if metrics == nil {
+		metrics = DefaultMetrics
+	}
 
 	bvp := BatchItemProcessor[T]{
 		e:             exporter,
@@ -164,8 +167,8 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		name:          name,
 		metrics:       metrics,
 		timer:         time.NewTimer(o.BatchTimeout),
-		queue:         make(chan traceableItem[T], o.MaxQueueSize),
-		batchCh:       make(chan []traceableItem[T], o.Workers),
+		queue:         make(chan *TraceableItem[T], o.MaxQueueSize),
+		batchCh:       make(chan []*TraceableItem[T], o.Workers),
 		stopCh:        make(chan struct{}),
 		stopWorkersCh: make(chan struct{}),
 	}
@@ -224,12 +227,11 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			end = len(s)
 		}
 
-		prepared := []traceableItem[T]{}
+		prepared := []*TraceableItem[T]{}
 
 		for _, i := range s[start:end] {
-			item := traceableItem[T]{
+			item := &TraceableItem[T]{
 				item: i,
-				ctx:  ctx,
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -257,7 +259,11 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 }
 
 // exportWithTimeout exports items with a timeout.
-func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []traceableItem[T]) error {
+func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []*TraceableItem[T]) error {
+	if len(itemsBatch) == 0 {
+		return nil
+	}
+
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
 	defer span.End()
 
@@ -379,7 +385,13 @@ func WithWorkers(workers int) BatchItemProcessorOption {
 	}
 }
 
-func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, items []traceableItem[T]) error {
+func WithMetrics(metrics *Metrics) BatchItemProcessorOption {
+	return func(o *BatchItemProcessorOptions) {
+		o.Metrics = metrics
+	}
+}
+
+func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, items []*TraceableItem[T]) error {
 	for _, item := range items {
 		select {
 		case err := <-item.errCh:
@@ -399,7 +411,7 @@ func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, it
 func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	log := bvp.log.WithField("module", "batch_builder")
 
-	var batch []traceableItem[T]
+	var batch []*TraceableItem[T]
 
 	for {
 		select {
@@ -413,19 +425,19 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 			if len(batch) >= bvp.o.MaxExportBatchSize {
 				bvp.sendBatch(batch, "max_export_batch_size")
 
-				batch = []traceableItem[T]{}
+				batch = []*TraceableItem[T]{}
 			}
 		case <-bvp.timer.C:
 			if len(batch) > 0 {
 				bvp.sendBatch(batch, "timer")
-				batch = []traceableItem[T]{}
+				batch = []*TraceableItem[T]{}
 			} else {
 				bvp.timer.Reset(bvp.o.BatchTimeout)
 			}
 		}
 	}
 }
-func (bvp *BatchItemProcessor[T]) sendBatch(batch []traceableItem[T], reason string) {
+func (bvp *BatchItemProcessor[T]) sendBatch(batch []*TraceableItem[T], reason string) {
 	log := bvp.log.WithField("reason", reason)
 	log.Tracef("Creating a batch of %d items", len(batch))
 
@@ -488,7 +500,7 @@ func recoverSendOnClosedChan() {
 	panic(x)
 }
 
-func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item traceableItem[T]) error {
+func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *TraceableItem[T]) error {
 	// This ensures the bvp.queue<- below does not panic as the
 	// processor shuts down.
 	defer recoverSendOnClosedChan()

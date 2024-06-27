@@ -66,6 +66,8 @@ func (h *StdOut) Type() string {
 }
 
 func (h *StdOut) Start(ctx context.Context) error {
+	h.proc.Start(ctx)
+
 	return nil
 }
 

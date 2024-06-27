@@ -33,6 +33,7 @@ import (
 	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Cannon struct {
@@ -108,9 +109,14 @@ func (c *Cannon) Start(ctx context.Context) error {
 			return perrors.Wrap(err, "failed to create tracing resource")
 		}
 
+		opts := []trace.TracerProviderOption{
+			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(c.Config.Tracing.Sampling.Rate))),
+		}
+
 		tracer, err := observability.NewHTTPTraceProvider(ctx,
 			res,
-			c.Config.Tracing.AsOTelOpts()...,
+			c.Config.Tracing.AsOTelOpts(),
+			opts...,
 		)
 		if err != nil {
 			return perrors.Wrap(err, "failed to create tracing provider")

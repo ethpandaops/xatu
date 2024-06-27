@@ -45,5 +45,5 @@ services:
         batchTimeout: 3s
         exportTimeout: 30s
         maxExportBatchSize: 5000
-        compression: none
+        compression: zstd
         keepAlive: true

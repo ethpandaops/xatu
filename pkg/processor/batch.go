@@ -8,9 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // ItemExporter is an interface for exporting items.
@@ -123,8 +121,6 @@ type traceableItem[T any] struct {
 	errCh       chan error
 	completedCh chan struct{}
 	queuedAt    time.Time
-	//nolint:containedctx // we need to pass the context to the workers
-	ctx context.Context
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -232,7 +228,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			item := traceableItem[T]{
 				item:     i,
 				queuedAt: time.Now(),
-				ctx:      ctx,
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -270,12 +265,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 // exportWithTimeout exports items with a timeout.
 func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []traceableItem[T]) error {
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
-	defer span.End()
-
-	span.SetAttributes(attribute.String("processor", bvp.name))
-	span.SetAttributes(attribute.Int("batch_size", len(itemsBatch)))
-
 	if bvp.o.ExportTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)

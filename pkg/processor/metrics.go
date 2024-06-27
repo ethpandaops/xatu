@@ -1,16 +1,20 @@
 package processor
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 var (
 	DefaultMetrics = NewMetrics("xatu")
 )
 
 type Metrics struct {
-	itemsQueued   *prometheus.GaugeVec
-	itemsDropped  *prometheus.CounterVec
-	itemsFailed   *prometheus.CounterVec
-	itemsExported *prometheus.CounterVec
+	itemsQueued    *prometheus.GaugeVec
+	itemsDropped   *prometheus.CounterVec
+	itemsFailed    *prometheus.CounterVec
+	itemsExported  *prometheus.CounterVec
+	exportDuration *prometheus.HistogramVec
+	batchSize      *prometheus.HistogramVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -41,12 +45,26 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Help:      "Number of items exported",
 		}, []string{"processor"}),
+		exportDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:      "export_duration_seconds",
+			Namespace: namespace,
+			Help:      "Duration of export operations in seconds",
+			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+		}, []string{"processor"}),
+		batchSize: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:      "batch_size",
+			Namespace: namespace,
+			Help:      "Size of processed batches",
+			Buckets:   prometheus.ExponentialBucketsRange(1, 50000, 10),
+		}, []string{"processor"}),
 	}
 
 	prometheus.MustRegister(m.itemsQueued)
 	prometheus.MustRegister(m.itemsDropped)
 	prometheus.MustRegister(m.itemsFailed)
 	prometheus.MustRegister(m.itemsExported)
+	prometheus.MustRegister(m.exportDuration)
+	prometheus.MustRegister(m.batchSize)
 
 	return m
 }
@@ -65,4 +83,12 @@ func (m *Metrics) IncItemsExportedBy(name string, count float64) {
 
 func (m *Metrics) IncItemsFailedBy(name string, count float64) {
 	m.itemsFailed.WithLabelValues(name).Add(count)
+}
+
+func (m *Metrics) ObserveExportDuration(name string, duration float64) {
+	m.exportDuration.WithLabelValues(name).Observe(duration)
+}
+
+func (m *Metrics) ObserveBatchSize(name string, size float64) {
+	m.batchSize.WithLabelValues(name).Observe(size)
 }

@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -673,7 +675,7 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 
 	// Write items to the processor
 	for i := 0; i < itemsToExport; i++ {
-		err := bsp.Write(context.Background(), []*TestItem{items[i]})
+		err = bsp.Write(context.Background(), []*TestItem{items[i]})
 		if i < maxQueueSize {
 			require.NoError(t, err, "Expected no error for item %d", i)
 		} else {
@@ -683,6 +685,15 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 
 	// Ensure that the queue size is respected
 	require.Equal(t, maxQueueSize, len(bsp.queue), "Queue size should be equal to maxQueueSize")
+
 	// Ensure that the dropped count is correct
-	require.Equal(t, uint32(itemsToExport-maxQueueSize), bsp.dropped, "Dropped count should be equal to the number of items that exceeded the queue size")
+	counter, err := bsp.metrics.itemsDropped.GetMetricWith(prometheus.Labels{"processor": "processor"})
+	require.NoError(t, err)
+
+	metric := &dto.Metric{}
+
+	err = counter.Write(metric)
+	require.NoError(t, err)
+
+	require.Equal(t, float64(itemsToExport-maxQueueSize), *metric.Counter.Value, "Dropped count should be equal to the number of items that exceeded the queue size")
 }

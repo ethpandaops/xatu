@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -106,16 +105,16 @@ type BatchItemProcessor[T any] struct {
 
 	queue   chan traceableItem[T]
 	batchCh chan []traceableItem[T]
-	dropped uint32
 	name    string
-
-	metrics *Metrics
 
 	timer         *time.Timer
 	stopWait      sync.WaitGroup
 	stopOnce      sync.Once
 	stopCh        chan struct{}
 	stopWorkersCh chan struct{}
+
+	// Metrics
+	metrics *Metrics
 }
 
 type traceableItem[T any] struct {
@@ -205,8 +204,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
 	defer span.End()
 
-	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
-
 	if bvp.e == nil {
 		return errors.New("exporter is nil")
 	}
@@ -244,17 +241,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		}
 
 		if bvp.o.ShippingMethod == ShippingMethodSync {
-			for _, item := range prepared {
-				select {
-				case err := <-item.errCh:
-					if err != nil {
-						return err
-					}
-				case <-item.completedCh:
-					continue
-				case <-ctx.Done():
-					return ctx.Err()
-				}
+			if err := bvp.waitForBatchCompletion(ctx, prepared); err != nil {
+				return err
 			}
 		}
 	}
@@ -276,11 +264,19 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		items[i] = item.item
 	}
 
+	startTime := time.Now()
+
 	err := bvp.e.ExportItems(ctx, items)
+
+	duration := time.Since(startTime)
+
+	bvp.metrics.ObserveExportDuration(bvp.name, duration.Seconds())
+
 	if err != nil {
 		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(itemsBatch)))
 	} else {
 		bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
+		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(itemsBatch)))
 	}
 
 	for _, item := range itemsBatch {
@@ -371,6 +367,23 @@ func WithWorkers(workers int) BatchItemProcessorOption {
 	}
 }
 
+func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, items []traceableItem[T]) error {
+	for _, item := range items {
+		select {
+		case err := <-item.errCh:
+			if err != nil {
+				return err
+			}
+		case <-item.completedCh:
+			continue
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	return nil
+}
+
 func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	log := bvp.log.WithField("module", "batch_builder")
 
@@ -404,12 +417,9 @@ func (bvp *BatchItemProcessor[T]) sendBatch(batch []traceableItem[T], reason str
 	log := bvp.log.WithField("reason", reason)
 	log.Tracef("Creating a batch of %d items", len(batch))
 
-	batchCopy := make([]traceableItem[T], len(batch))
-	copy(batchCopy, batch)
-
 	log.Tracef("Batch items copied")
 
-	bvp.batchCh <- batchCopy
+	bvp.batchCh <- batch
 
 	log.Tracef("Batch sent to batch channel")
 }
@@ -429,6 +439,8 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
 			if err := bvp.exportWithTimeout(ctx, batch); err != nil {
 				bvp.log.WithError(err).Error("failed to export items")
 			}
+
+			bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 		}
 	}
 }
@@ -477,9 +489,10 @@ func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item tracea
 
 	select {
 	case bvp.queue <- item:
+		bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
+
 		return nil
 	default:
-		atomic.AddUint32(&bvp.dropped, 1)
 		bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 	}
 

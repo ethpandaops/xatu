@@ -66,6 +66,8 @@ func (h *Kafka) Type() string {
 }
 
 func (h *Kafka) Start(ctx context.Context) error {
+	h.proc.Start(ctx)
+
 	return nil
 }
 

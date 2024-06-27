@@ -66,6 +66,8 @@ func (h *HTTP) Type() string {
 }
 
 func (h *HTTP) Start(ctx context.Context) error {
+	h.proc.Start(ctx)
+
 	return nil
 }
 

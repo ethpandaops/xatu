@@ -122,7 +122,6 @@ type traceableItem[T any] struct {
 	item        *T
 	errCh       chan error
 	completedCh chan struct{}
-	queuedAt    time.Time
 	//nolint:containedctx // we need to pass the context to the workers
 	ctx context.Context
 }
@@ -182,21 +181,23 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 		},
 	).Info("Batch item processor initialized")
 
-	bvp.stopWait.Add(o.Workers)
+	return &bvp, nil
+}
 
-	for i := 0; i < o.Workers; i++ {
+func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
+	bvp.stopWait.Add(bvp.o.Workers)
+
+	for i := 0; i < bvp.o.Workers; i++ {
 		go func(num int) {
 			defer bvp.stopWait.Done()
-			bvp.worker(context.Background(), num)
+			bvp.worker(ctx, num)
 		}(i)
 	}
 
 	go func() {
-		bvp.batchBuilder(context.Background())
+		bvp.batchBuilder(ctx)
 		bvp.log.Info("Batch builder exited")
 	}()
-
-	return &bvp, nil
 }
 
 // Write writes items to the queue. If the Processor is configured to use
@@ -227,9 +228,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 		for _, i := range s[start:end] {
 			item := traceableItem[T]{
-				item:     i,
-				queuedAt: time.Now(),
-				ctx:      ctx,
+				item: i,
+				ctx:  ctx,
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -258,13 +258,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 // exportWithTimeout exports items with a timeout.
 func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []traceableItem[T]) error {
-	contexts := make([]context.Context, len(itemsBatch))
-	for i, item := range itemsBatch {
-		contexts[i] = item.ctx
-	}
-
-	ctx = observability.MergeContexts(ctx, contexts...)
-
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
 	defer span.End()
 

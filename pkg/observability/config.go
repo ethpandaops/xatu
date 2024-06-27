@@ -7,6 +7,10 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
 
+type SamplingConfig struct {
+	Rate float64 `yaml:"rate" default:"0.01"`
+}
+
 type TracingConfig struct {
 	Enabled     bool                       `yaml:"enabled" default:"false"`
 	Endpoint    string                     `yaml:"endpoint" default:""`
@@ -17,6 +21,7 @@ type TracingConfig struct {
 	Insecure    bool                       `yaml:"insecure" default:"false"`
 	Retry       *otlptracehttp.RetryConfig `yaml:"retry"`
 	TLS         *tls.Config                `yaml:"tls"`
+	Sampling    SamplingConfig             `yaml:"sampling"`
 }
 
 func (t *TracingConfig) Validate() error {

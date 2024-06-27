@@ -1,4 +1,4 @@
-logging: "info" # panic,fatal,warn,info,debug,trace
+logging: "debug" # panic,fatal,warn,info,debug,trace
 addr: ":8080"
 metricsAddr: ":9090"
 # pprofAddr: ":6060" # optional. if supplied it enables pprof server
@@ -26,6 +26,13 @@ store:
 geoip:
   enabled: false
 
+tracing:
+  enabled: true
+  endpoint: tempo:4318
+  insecure: true
+  sampling:
+    rate: 0.1
+
 services:
   coordinator:
     enabled: true # requires persistence to be enabled
@@ -44,6 +51,7 @@ services:
         maxQueueSize: 102400
         batchTimeout: 3s
         exportTimeout: 30s
-        maxExportBatchSize: 5000
+        maxExportBatchSize: 512
         compression: none
         keepAlive: true
+        workers: 50

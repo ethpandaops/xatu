@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/human"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -43,6 +44,9 @@ type Config struct {
 
 	// ProposerDuty configuration
 	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
+
+	// Tracing configuration
+	Tracing *observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -62,6 +66,10 @@ func (c *Config) Validate() error {
 
 	if err := c.ForkChoice.Validate(); err != nil {
 		return fmt.Errorf("invalid forkChoice config: %w", err)
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

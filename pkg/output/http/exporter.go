@@ -83,7 +83,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 
 	buf := bytes.NewBufferString(body)
 	if e.config.Compression == CompressionStrategyGzip {
-		compressed, err := e.gzip(buf)
+		compressed, err := e.gzip(ctx, buf)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,10 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 	return nil
 }
 
-func (e *ItemExporter) gzip(in *bytes.Buffer) (*bytes.Buffer, error) {
+func (e *ItemExporter) gzip(ctx context.Context, in *bytes.Buffer) (*bytes.Buffer, error) {
+	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.gzip")
+	defer span.End()
+
 	out := &bytes.Buffer{}
 	g := gzip.NewWriter(out)
 

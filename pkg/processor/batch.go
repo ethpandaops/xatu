@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ItemExporter is an interface for exporting items.
@@ -106,22 +106,25 @@ type BatchItemProcessor[T any] struct {
 
 	queue   chan traceableItem[T]
 	batchCh chan []traceableItem[T]
-	dropped uint32
 	name    string
-
-	metrics *Metrics
 
 	timer         *time.Timer
 	stopWait      sync.WaitGroup
 	stopOnce      sync.Once
 	stopCh        chan struct{}
 	stopWorkersCh chan struct{}
+
+	// Metrics
+	metrics *Metrics
 }
 
 type traceableItem[T any] struct {
 	item        *T
 	errCh       chan error
 	completedCh chan struct{}
+	queuedAt    time.Time
+	//nolint:containedctx // we need to pass the context to the workers
+	ctx context.Context
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -202,10 +205,11 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 // configured to use the async shipping method, the items will be written to
 // the queue and this function will return immediately.
 func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
-	defer span.End()
-
 	bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
+
+	defer func() {
+		bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
+	}()
 
 	if bvp.e == nil {
 		return errors.New("exporter is nil")
@@ -226,7 +230,9 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 		for _, i := range s[start:end] {
 			item := traceableItem[T]{
-				item: i,
+				item:     i,
+				queuedAt: time.Now(),
+				ctx:      ctx,
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -264,6 +270,19 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 // exportWithTimeout exports items with a timeout.
 func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []traceableItem[T]) error {
+	contexts := make([]context.Context, len(itemsBatch))
+	for i, item := range itemsBatch {
+		contexts[i] = item.ctx
+	}
+
+	ctx = observability.MergeContexts(ctx, contexts...)
+
+	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("processor", bvp.name))
+	span.SetAttributes(attribute.Int("batch_size", len(itemsBatch)))
+
 	if bvp.o.ExportTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)
@@ -276,14 +295,26 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		items[i] = item.item
 	}
 
+	startTime := time.Now()
+
 	err := bvp.e.ExportItems(ctx, items)
+
+	duration := time.Since(startTime)
+
+	bvp.metrics.ObserveExportDuration(bvp.name, duration.Seconds())
+
 	if err != nil {
 		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(itemsBatch)))
 	} else {
 		bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
+		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(itemsBatch)))
+		bvp.metrics.ObserveProcessingDuration(bvp.name, duration.Seconds())
 	}
 
 	for _, item := range itemsBatch {
+		waitTime := startTime.Sub(item.queuedAt)
+		bvp.metrics.ObserveQueueWaitTime(bvp.name, waitTime.Seconds())
+
 		if item.errCh != nil {
 			item.errCh <- err
 			close(item.errCh)
@@ -479,7 +510,6 @@ func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item tracea
 	case bvp.queue <- item:
 		return nil
 	default:
-		atomic.AddUint32(&bvp.dropped, 1)
 		bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 	}
 

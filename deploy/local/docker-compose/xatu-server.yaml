@@ -51,7 +51,7 @@ services:
         maxQueueSize: 102400
         batchTimeout: 3s
         exportTimeout: 30s
-        maxExportBatchSize: 512
-        compression: none
+        maxExportBatchSize: 5000
+        compression: zstd
         keepAlive: true
         workers: 50

@@ -22,7 +22,6 @@ import (
 	"github.com/go-co-op/gocron"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -270,7 +269,13 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	mb100 := 1024 * 1024 * 100
 
-	grpc_prometheus.EnableHandlingTimeHistogram(grpc_prometheus.WithHistogramBuckets(prometheus.ExponentialBucketsRange(0.1, 30, 10)))
+	grpc_prometheus.EnableHandlingTimeHistogram(
+		grpc_prometheus.WithHistogramBuckets(
+			[]float64{
+				0.01, 0.03, 0.1, 0.3, 1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33,
+			},
+		),
+	)
 
 	opts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(mb100),

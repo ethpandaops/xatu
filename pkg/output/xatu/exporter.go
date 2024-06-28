@@ -33,6 +33,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 	opts := []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor, retry.UnaryClientInterceptor()),
 		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
+		grpc.WithTimeout(config.ExportTimeout),
 	}
 
 	if config.TLS {

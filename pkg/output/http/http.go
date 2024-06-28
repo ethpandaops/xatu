@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -106,5 +107,17 @@ func (h *HTTP) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 		}
 	}
 
-	return h.proc.Write(ctx, filtered)
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	shippingMethod := processor.ShippingMethodSync
+
+	if strings.Contains(filtered[0].Meta.Client.Name, "sentry") || strings.Contains(filtered[0].Meta.Client.Name, "cl-mimicry") {
+		shippingMethod = processor.ShippingMethodAsync
+	}
+
+	return h.proc.Write(ctx, filtered, processor.WriteOptions{
+		OverrideShippingMethod: &shippingMethod,
+	})
 }

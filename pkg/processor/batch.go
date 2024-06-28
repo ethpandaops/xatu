@@ -205,17 +205,26 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 	}()
 }
 
+type WriteOptions struct {
+	OverrideShippingMethod *ShippingMethod
+}
+
 // Write writes items to the queue. If the Processor is configured to use
 // the sync shipping method, the items will be written to the queue and this
 // function will return when all items have been processed. If the Processor is
 // configured to use the async shipping method, the items will be written to
 // the queue and this function will return immediately.
-func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
+func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T, opts ...WriteOptions) error {
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
 	defer span.End()
 
 	if bvp.e == nil {
 		return errors.New("exporter is nil")
+	}
+
+	shippingMethod := bvp.o.ShippingMethod
+	if len(opts) > 0 {
+		shippingMethod = *opts[0].OverrideShippingMethod
 	}
 
 	// Break our items up in to chunks that can be processed at
@@ -236,7 +245,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 				item: i,
 			}
 
-			if bvp.o.ShippingMethod == ShippingMethodSync {
+			if shippingMethod == ShippingMethodSync {
 				item.errCh = make(chan error, 1)
 				item.completedCh = make(chan struct{}, 1)
 			}
@@ -250,7 +259,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 		}
 
-		if bvp.o.ShippingMethod == ShippingMethodSync {
+		if shippingMethod == ShippingMethodSync {
 			if err := bvp.waitForBatchCompletion(ctx, prepared); err != nil {
 				return err
 			}

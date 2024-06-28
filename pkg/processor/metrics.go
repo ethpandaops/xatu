@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -9,12 +11,14 @@ var (
 )
 
 type Metrics struct {
-	itemsQueued    *prometheus.GaugeVec
-	itemsDropped   *prometheus.CounterVec
-	itemsFailed    *prometheus.CounterVec
-	itemsExported  *prometheus.CounterVec
-	exportDuration *prometheus.HistogramVec
-	batchSize      *prometheus.HistogramVec
+	itemsQueued            *prometheus.GaugeVec
+	itemsDropped           *prometheus.CounterVec
+	itemsFailed            *prometheus.CounterVec
+	itemsExported          *prometheus.CounterVec
+	exportDuration         *prometheus.HistogramVec
+	batchSize              *prometheus.HistogramVec
+	workerCount            *prometheus.GaugeVec
+	workerExportInProgress *prometheus.GaugeVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -57,6 +61,16 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Size of processed batches",
 			Buckets:   prometheus.ExponentialBucketsRange(1, 50000, 10),
 		}, []string{"processor"}),
+		workerCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "worker_count",
+			Namespace: namespace,
+			Help:      "Number of active workers",
+		}, []string{"processor"}),
+		workerExportInProgress: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "worker_export_in_progress",
+			Namespace: namespace,
+			Help:      "Number of workers currently exporting",
+		}, []string{"processor"}),
 	}
 
 	prometheus.MustRegister(m.itemsQueued)
@@ -65,6 +79,8 @@ func NewMetrics(namespace string) *Metrics {
 	prometheus.MustRegister(m.itemsExported)
 	prometheus.MustRegister(m.exportDuration)
 	prometheus.MustRegister(m.batchSize)
+	prometheus.MustRegister(m.workerCount)
+	prometheus.MustRegister(m.workerExportInProgress)
 
 	return m
 }
@@ -85,10 +101,22 @@ func (m *Metrics) IncItemsFailedBy(name string, count float64) {
 	m.itemsFailed.WithLabelValues(name).Add(count)
 }
 
-func (m *Metrics) ObserveExportDuration(name string, duration float64) {
-	m.exportDuration.WithLabelValues(name).Observe(duration)
+func (m *Metrics) ObserveExportDuration(name string, duration time.Duration) {
+	m.exportDuration.WithLabelValues(name).Observe(duration.Seconds())
 }
 
 func (m *Metrics) ObserveBatchSize(name string, size float64) {
 	m.batchSize.WithLabelValues(name).Observe(size)
+}
+
+func (m *Metrics) SetWorkerCount(name string, count float64) {
+	m.workerCount.WithLabelValues(name).Set(count)
+}
+
+func (m *Metrics) IncWorkerExportInProgress(name string) {
+	m.workerExportInProgress.WithLabelValues(name).Inc()
+}
+
+func (m *Metrics) DecWorkerExportInProgress(name string) {
+	m.workerExportInProgress.WithLabelValues(name).Dec()
 }

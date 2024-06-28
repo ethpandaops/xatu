@@ -190,6 +190,8 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 	bvp.stopWait.Add(bvp.o.Workers)
 
+	bvp.metrics.SetWorkerCount(bvp.name, float64(bvp.o.Workers))
+
 	for i := 0; i < bvp.o.Workers; i++ {
 		go func(num int) {
 			defer bvp.stopWait.Done()
@@ -264,6 +266,9 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		return nil
 	}
 
+	bvp.metrics.IncWorkerExportInProgress(bvp.name)
+	defer bvp.metrics.DecWorkerExportInProgress(bvp.name)
+
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
 	defer span.End()
 
@@ -288,7 +293,7 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 
 	duration := time.Since(startTime)
 
-	bvp.metrics.ObserveExportDuration(bvp.name, duration.Seconds())
+	bvp.metrics.ObserveExportDuration(bvp.name, duration)
 
 	if err != nil {
 		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(itemsBatch)))

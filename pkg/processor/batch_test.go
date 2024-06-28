@@ -699,6 +699,40 @@ func TestBatchItemProcessorWithBatchTimeout(t *testing.T) {
 	require.Equal(t, itemsToExport, te.len(), "Expected all items to be exported after batch timeout")
 }
 
+func TestBatchItemProcessorDrainOnShutdownAfterContextCancellation(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithMaxExportBatchSize(10), WithWorkers(5), WithBatchTimeout(1*time.Second))
+	require.NoError(t, err)
+
+	// Create a cancellable context for Start
+	ctx, cancel := context.WithCancel(context.Background())
+	bsp.Start(ctx)
+
+	itemsToExport := 50
+	items := make([]*TestItem, itemsToExport)
+
+	for i := 0; i < itemsToExport; i++ {
+		items[i] = &TestItem{name: strconv.Itoa(i)}
+	}
+
+	// Write items to the processor
+	err = bsp.Write(context.Background(), items)
+	require.NoError(t, err)
+
+	// Cancel the context immediately after writing
+	cancel()
+
+	// Allow some time for the cancellation to propagate
+	time.Sleep(100 * time.Millisecond)
+
+	// Shutdown the processor
+	err = bsp.Shutdown(context.Background())
+	require.NoError(t, err)
+
+	// Check if any items were exported
+	require.Greater(t, itemsToExport, 0, "No items should have been exported on shutdown")
+}
+
 func TestBatchItemProcessorQueueSize(t *testing.T) {
 	te := indefiniteExporter[TestItem]{}
 

@@ -281,7 +281,7 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		grpc.MaxRecvMsgSize(mb100),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     5 * time.Minute,
-			MaxConnectionAge:      10 * time.Minute,
+			MaxConnectionAge:      1 * time.Minute,
 			MaxConnectionAgeGrace: 2 * time.Minute,
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,

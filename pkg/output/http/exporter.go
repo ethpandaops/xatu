@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -18,10 +17,10 @@ import (
 )
 
 type ItemExporter struct {
-	config *Config
-	log    logrus.FieldLogger
-
-	client *http.Client
+	config     *Config
+	log        logrus.FieldLogger
+	compressor *Compressor
+	client     *http.Client
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
@@ -43,6 +42,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 			Transport: t,
 			Timeout:   config.ExportTimeout,
 		},
+		compressor: &Compressor{Strategy: config.Compression},
 	}, nil
 }
 
@@ -87,14 +87,13 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 	}
 
 	buf := bytes.NewBufferString(body)
-	if e.config.Compression == CompressionStrategyGzip {
-		compressed, err := e.gzip(ctx, buf)
-		if err != nil {
-			return err
-		}
 
-		buf = compressed
+	compressed, err := e.compressor.Compress(buf)
+	if err != nil {
+		return err
 	}
+
+	buf = compressed
 
 	// TODO: check that this also handles processor timeout
 	req, err := http.NewRequestWithContext(ctx, httpMethod, e.config.Address, buf)
@@ -108,9 +107,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 
 	req.Header.Set("Content-Type", "application/x-ndjson")
 
-	if e.config.Compression == CompressionStrategyGzip {
-		req.Header.Set("Content-Encoding", "gzip")
-	}
+	e.compressor.AddHeaders(req)
 
 	rsp, err = e.client.Do(req)
 	if err != nil {
@@ -129,23 +126,4 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 	}
 
 	return nil
-}
-
-func (e *ItemExporter) gzip(ctx context.Context, in *bytes.Buffer) (*bytes.Buffer, error) {
-	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.gzip")
-	defer span.End()
-
-	out := &bytes.Buffer{}
-	g := gzip.NewWriter(out)
-
-	_, err := g.Write(in.Bytes())
-	if err != nil {
-		return out, err
-	}
-
-	if err := g.Close(); err != nil {
-		return out, err
-	}
-
-	return out, nil
 }

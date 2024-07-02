@@ -66,6 +66,8 @@ func (h *HTTP) Type() string {
 }
 
 func (h *HTTP) Start(ctx context.Context) error {
+	h.proc.Start(ctx)
+
 	return nil
 }
 
@@ -102,6 +104,10 @@ func (h *HTTP) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 		if !shouldBeDropped {
 			filtered = append(filtered, event)
 		}
+	}
+
+	if len(filtered) == 0 {
+		return nil
 	}
 
 	return h.proc.Write(ctx, filtered)

@@ -45,6 +45,8 @@ func (r *Record) Start(ctx context.Context) error {
 		return err
 	}
 
+	r.proc.Start(ctx)
+
 	return nil
 }
 

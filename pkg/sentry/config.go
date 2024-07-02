@@ -46,7 +46,7 @@ type Config struct {
 	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
 
 	// Tracing configuration
-	Tracing *observability.TracingConfig `yaml:"tracing"`
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {

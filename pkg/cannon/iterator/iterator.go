@@ -16,7 +16,6 @@ type Iterator interface {
 }
 
 // Ensure that derivers implements the EventDeriver interface
-var _ Iterator = &CheckpointIterator{}
 var _ Iterator = &BackfillingCheckpoint{}
 
 var (

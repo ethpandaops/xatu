@@ -215,7 +215,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (next *xatu.CannonLoca
 }
 
 func (c *BackfillingCheckpoint) getLookAheads(ctx context.Context, location *xatu.CannonLocation) []*xatu.CannonLocation {
-	// Not supported
+	// Not supported in backfilling checkpoint iterator. Consumers must calculate this themselves.
 	return []*xatu.CannonLocation{}
 }
 

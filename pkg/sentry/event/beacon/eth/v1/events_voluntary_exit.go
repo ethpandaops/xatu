@@ -102,7 +102,7 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 func (e *EventsVoluntaryExit) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
 
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Message.Epoch))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Message.Epoch))
 
 	extra.Epoch = &xatu.EpochV2{
 		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},

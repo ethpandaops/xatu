@@ -290,10 +290,13 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		grpc.ChainUnaryInterceptor(
 			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+				start := time.Now()
+
 				resp, err := handler(ctx, req)
 				if err != nil {
 					x.log.
 						WithField("method", info.FullMethod).
+						WithField("duration", time.Since(start)).
 						WithError(err).
 						Error("RPC Error")
 				}

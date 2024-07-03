@@ -31,3 +31,10 @@ datasources:
       tlsSkipVerify: true
       postgresVersion: 1500
       database: xatu
+  - name: Tempo
+    type: tempo
+    access: proxy
+    uid: EbPG8fYoz
+    url: http://tempo:3200
+    jsonData:
+      httpMethod: GET

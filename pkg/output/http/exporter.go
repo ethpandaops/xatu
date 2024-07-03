@@ -24,14 +24,19 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+	log = log.WithField("output_name", name).WithField("output_type", SinkType)
+
 	t := http.DefaultTransport.(*http.Transport).Clone()
+
 	if config.KeepAlive != nil && !*config.KeepAlive {
+		log.WithField("keep_alive", *config.KeepAlive).Warn("Disabling keep-alives")
+
 		t.DisableKeepAlives = true
 	}
 
 	return ItemExporter{
 		config: config,
-		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
+		log:    log,
 
 		client: &http.Client{
 			Transport: t,

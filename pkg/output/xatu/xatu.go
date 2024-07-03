@@ -70,6 +70,8 @@ func (h *Xatu) Name() string {
 }
 
 func (h *Xatu) Start(ctx context.Context) error {
+	h.proc.Start(ctx)
+
 	return nil
 }
 

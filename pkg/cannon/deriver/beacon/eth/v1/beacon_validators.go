@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	client "github.com/attestantio/go-eth2-client"
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
@@ -293,14 +292,6 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 	}
 
 	return allEvents, boundarySlot, nil
-}
-
-func (b *BeaconValidatorsDeriver) getValidatorsClient(ctx context.Context) (client.ValidatorsProvider, error) {
-	if provider, isProvider := b.beacon.Node().Service().(client.ValidatorsProvider); isProvider {
-		return provider, nil
-	}
-
-	return nil, errors.New("validator states client not found")
 }
 
 func (b *BeaconValidatorsDeriver) createEventFromValidators(ctx context.Context, validators []*apiv1.Validator, epoch phase0.Epoch) (*xatu.DecoratedEvent, error) {

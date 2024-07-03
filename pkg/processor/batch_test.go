@@ -746,7 +746,7 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 		WithMaxQueueSize(maxQueueSize),
 		WithMaxExportBatchSize(maxQueueSize),
 		WithWorkers(1),
-		WithShippingMethod(ShippingMethodSync),
+		WithShippingMethod(ShippingMethodAsync),
 		WithMetrics(metrics),
 	)
 	require.NoError(t, err)

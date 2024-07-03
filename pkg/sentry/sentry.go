@@ -124,6 +124,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 		if err != nil {
 			return perrors.Wrap(err, "failed to create tracing resource")
 		}
+
 		opts := []trace.TracerProviderOption{
 			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(s.Config.Tracing.Sampling.Rate))),
 		}

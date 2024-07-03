@@ -48,8 +48,6 @@ type Xatu struct {
 
 	clockDrift *time.Duration
 
-	tracer *trace.TracerProvider
-
 	shutdownFuncs []func(ctx context.Context) error
 }
 

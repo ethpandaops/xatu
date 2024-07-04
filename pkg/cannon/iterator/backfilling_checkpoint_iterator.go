@@ -2,7 +2,6 @@ package iterator
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -72,96 +71,6 @@ func NewBackfillingCheckpoint(
 
 func (c *BackfillingCheckpoint) Start(ctx context.Context) error {
 	return nil
-}
-
-func (c *BackfillingCheckpoint) checkAndMigrateFromCheckpointIterator(ctx context.Context, location *xatu.CannonLocation) (bool, error) {
-	// If the cannon type is the checkpoint type, we need to migrate the cannon location to the backfilling checkpoint iterator.
-	// We check if the location is a checkpoint type, and if it is, we can migrate it by setting the finalized epoch to the
-	// current epoch of the checkpoint iterator.
-
-	if location == nil {
-		return false, nil
-	}
-
-	checkpointTypes := []xatu.CannonType{
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL,
-		xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK,
-		xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
-	}
-
-	if !slices.Contains(checkpointTypes, c.cannonType) {
-		return false, nil
-	}
-
-	// We need to get the epoch from the location
-	currentEpoch := phase0.Epoch(0)
-
-	var currentBackfill *xatu.BackfillingCheckpointMarker
-
-	switch location.Type {
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockAttesterSlashing().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockProposerSlashing().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockProposerSlashing().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockBlsToExecutionChange().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockBlsToExecutionChange().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockExecutionTransaction().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockVoluntaryExit().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockVoluntaryExit().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockDeposit().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockDeposit().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlockWithdrawal().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlockWithdrawal().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
-		currentEpoch = phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch())
-		currentBackfill = location.GetEthV2BeaconBlock().GetBackfillingCheckpointMarker()
-	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
-		currentEpoch = phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch())
-		currentBackfill = location.GetEthV1BeaconBlobSidecar().GetBackfillingCheckpointMarker()
-	default:
-		return false, errors.Errorf("unknown cannon type (%s) when migrating from checkpoint iterator", location.Type)
-	}
-
-	if currentEpoch == 0 || currentBackfill != nil {
-		// We've already migrated, so we don't need to do anything.
-		return false, nil
-	}
-
-	c.log.
-		WithField("current_epoch", currentEpoch).
-		WithField("backfill_epoch", currentBackfill).
-		Info("Migrating cannon location to backfilling checkpoint iterator")
-
-	// Create a new location with the current epoch as the 'head' point.
-	newLocation, err := c.createLocationFromEpochNumber(currentEpoch, currentEpoch)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create location from epoch number")
-	}
-
-	c.log.WithField("new_location", newLocation).Info("Migrating cannon location to backfilling checkpoint iterator...")
-
-	// Update the coordinator with the new location.
-	if err := c.coordinator.UpsertCannonLocationRequest(ctx, newLocation); err != nil {
-		return false, errors.Wrap(err, "failed to upsert cannon location")
-	}
-
-	c.log.WithField("new_location", newLocation).Info("Migrated cannon location to backfilling checkpoint iterator!")
-
-	return true, nil
 }
 
 func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0.Epoch, direction BackfillingCheckpointDirection) error {
@@ -287,18 +196,6 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			continue
 		}
 
-		// Check if we need to migrate from the checkpoint iterator
-		migrated, err := c.checkAndMigrateFromCheckpointIterator(ctx, location)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check and migrate from checkpoint iterator")
-		}
-
-		// We just migrated to the backfilling checkpoint iterator, so lets restart from the top to
-		// get our new location.
-		if migrated {
-			continue
-		}
-
 		if location == nil {
 			// If the location is empty, we haven't started yet, so we should return the current checkpoint epoch.
 			return &BackFillingCheckpointNextResponse{
@@ -312,9 +209,6 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get marker from location")
 		}
-
-		c.metrics.SetBackfillEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.BackfillEpoch))
-		c.metrics.SetFinalizedEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.FinalizedEpoch))
 
 		if marker.FinalizedEpoch == 0 {
 			// If the marker is empty, we haven't started yet, so we should return the current checkpoint.

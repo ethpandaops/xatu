@@ -78,6 +78,10 @@ func (b *BeaconBlobDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Beacon blob deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -118,18 +122,16 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 
 				span.AddEvent("Grabbing next location")
 
-				// Get the next slot
-				location, _, err := b.iterator.Next(ctx)
+				// Get the next position.
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				span.AddEvent("Obtained next location. Processing epoch...", trace.WithAttributes(attribute.Int64("location", int64(location.GetEthV1BeaconBlobSidecar().GetEpoch()))))
-
 				// Process the epoch
-				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV1BeaconBlobSidecar().GetEpoch()))
+				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
 					b.log.WithError(err).Error("Failed to process epoch")
 
@@ -137,8 +139,6 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 
 					return err
 				}
-
-				span.AddEvent("Epoch processing complete. Sending events...")
 
 				// Send the events
 				for _, fn := range b.onEventsCallbacks {
@@ -149,16 +149,12 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 					}
 				}
 
-				span.AddEvent("Events sent. Updating location...")
-
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
-
-				span.AddEvent("Location updated. Done.")
 
 				bo.Reset()
 

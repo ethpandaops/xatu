@@ -80,6 +80,10 @@ func (b *ExecutionTransactionDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Execution transaction deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -112,22 +116,22 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 					return err
 				}
 
-				// Get the next slot
-				location, lookAhead, err := b.iterator.Next(ctx)
+				// Get the next position
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
 
-				// Look ahead
-				b.lookAheadAtLocation(ctx, lookAhead)
-
 				// Process the epoch
-				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch()))
+				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
 					b.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
+
+				// Look ahead
+				b.lookAhead(ctx, position.LookAheads)
 
 				// Send the events
 				for _, fn := range b.onEventsCallbacks {
@@ -137,7 +141,7 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					return err
 				}
 
@@ -183,24 +187,21 @@ func (b *ExecutionTransactionDeriver) processEpoch(ctx context.Context, epoch ph
 	return allEvents, nil
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
-func (b *ExecutionTransactionDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+// lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
+func (b *ExecutionTransactionDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	_, span := observability.Tracer().Start(ctx,
-		"ExecutionTransactionDeriver.lookAheadAtLocations",
+		"ExecutionTransactionDeriver.lookAhead",
 	)
 	defer span.End()
 
-	for _, location := range locations {
-		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV2BeaconBlockExecutionTransaction().GetEpoch())
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).Warn("Failed to look ahead at epoch")
 
-		sp, err := b.beacon.Node().Spec()
-		if err != nil {
-			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+		return
+	}
 
-			return
-		}
-
+	for _, epoch := range epochs {
 		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 

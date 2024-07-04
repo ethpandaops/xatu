@@ -82,6 +82,10 @@ func (b *BeaconValidatorsDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Validator states deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -118,70 +122,27 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 					return err
 				}
 
-				// Get the next location.
-				location, _, err := b.iterator.Next(ctx)
+				// Get the next position.
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				finality, err := b.beacon.Node().Finality()
+				events, slot, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-
-					return errors.Wrap(err, "failed to get finality")
-				}
-
-				if finality == nil {
-					span.SetStatus(codes.Error, "finality is nil")
-
-					return errors.New("finality is nil")
-				}
-
-				checkpoint := finality.Finalized
-
-				processingFinalizedEpoch := false
-				epochToProcess := location.GetEthV1BeaconValidators().GetBackfillingCheckpointMarker().GetBackfillEpoch() - 1
-
-				if checkpoint.Epoch > phase0.Epoch(location.GetEthV1BeaconValidators().BackfillingCheckpointMarker.FinalizedEpoch) {
-					processingFinalizedEpoch = true
-					epochToProcess = int64(location.GetEthV1BeaconValidators().BackfillingCheckpointMarker.FinalizedEpoch) + 1
-				}
-
-				if !processingFinalizedEpoch && epochToProcess == -1 {
-					return nil
-				}
-
-				events, slot, err := b.processEpoch(ctx, phase0.Epoch(epochToProcess))
-				if err != nil {
-					b.log.WithError(err).WithField("epoch", epochToProcess).Error("Failed to process epoch")
+					b.log.WithError(err).WithField("epoch", position.Next).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
+
+				b.lookAhead(ctx, position.LookAheads)
 
 				// Be a good citizen and clean up the validator cache for the current epoch
 				b.beacon.DeleteValidatorsFromCache(xatuethv1.SlotAsString(slot))
-
-				if !processingFinalizedEpoch {
-					// If we are backfilling we can prewarm the validator cache with the next epoch's validators
-					spec, err := b.beacon.Node().Spec()
-					if err != nil {
-						return errors.Wrap(err, "failed to fetch spec")
-					}
-
-					nextSlot := slot - spec.SlotsPerEpoch
-					if nextSlot > 0 {
-						b.log.WithFields(logrus.Fields{
-							"next_state_id":    nextSlot,
-							"current_state_id": slot,
-						}).Info("Prewarming validators cache")
-
-						b.beacon.LazyLoadValidators(xatuethv1.SlotAsString(nextSlot))
-					}
-				}
 
 				for _, fn := range b.onEventsCallbacks {
 					if err := fn(ctx, events); err != nil {
@@ -191,30 +152,7 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 					}
 				}
 
-				if processingFinalizedEpoch {
-					location.Data = &xatu.CannonLocation_EthV1BeaconValidators{
-						EthV1BeaconValidators: &xatu.CannonLocationEthV1BeaconValidators{
-							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-								BackfillEpoch:  location.GetEthV1BeaconValidators().GetBackfillingCheckpointMarker().GetBackfillEpoch(),
-								FinalizedEpoch: uint64(epochToProcess),
-							},
-						},
-					}
-				} else {
-					location.Data = &xatu.CannonLocation_EthV1BeaconValidators{
-						EthV1BeaconValidators: &xatu.CannonLocationEthV1BeaconValidators{
-							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-								BackfillEpoch:  epochToProcess,
-								FinalizedEpoch: location.GetEthV1BeaconValidators().GetBackfillingCheckpointMarker().GetFinalizedEpoch(),
-							},
-						},
-					}
-				}
-
-				span.SetAttributes(attribute.Int64("epoch", epochToProcess))
-				span.SetAttributes(attribute.Bool("is_backfill", !processingFinalizedEpoch))
-
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
@@ -230,6 +168,30 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 			}); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
+		}
+	}
+}
+
+// lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
+func (b *BeaconValidatorsDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
+	_, span := observability.Tracer().Start(ctx,
+		"BeaconValidatorsDeriver.lookAhead",
+	)
+	defer span.End()
+
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+
+		return
+	}
+
+	for _, epoch := range epochs {
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
+			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+
+			// Add the state to the preload queue so it's available when we need it
+			b.beacon.LazyLoadValidators(xatuethv1.SlotAsString(slot))
 		}
 	}
 }

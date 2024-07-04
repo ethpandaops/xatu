@@ -80,6 +80,10 @@ func (b *BeaconBlockDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Beacon block deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -110,33 +114,25 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 
 				time.Sleep(100 * time.Millisecond)
 
-				span.AddEvent("Checking if beacon node is synced")
-
 				if err := b.beacon.Synced(ctx); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				span.AddEvent("Grabbing next location")
-
 				// Get the next slot
-				location, lookAhead, err := b.iterator.Next(ctx)
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				span.AddEvent("Obtained next location, looking ahead...", trace.WithAttributes(attribute.Int64("location", int64(location.GetEthV2BeaconBlock().GetEpoch()))))
-
 				// Look ahead
-				b.lookAheadAtLocation(ctx, lookAhead)
-
-				span.AddEvent("Look ahead complete. Processing epoch...")
+				b.lookAhead(ctx, position.LookAheads)
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch()))
+				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
 					b.log.WithError(err).Error("Failed to process epoch")
 
@@ -159,7 +155,7 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 				span.AddEvent("Events sent. Updating location...")
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
@@ -172,35 +168,30 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 				return nil
 			}
 
-			if err := backoff.Retry(operation, bo); err != nil {
-				b.log.WithError(err).Error("Failed to process location")
+			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
+				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+			}); err != nil {
+				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
 	}
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
-func (b *BeaconBlockDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+// lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
+func (b *BeaconBlockDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	_, span := observability.Tracer().Start(ctx,
-		"BeaconBlockDeriver.lookAheadAtLocations",
+		"BeaconBlockDeriver.lookAhead",
 	)
 	defer span.End()
 
-	if locations == nil {
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+
 		return
 	}
 
-	for _, location := range locations {
-		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV2BeaconBlock().GetEpoch())
-
-		sp, err := b.beacon.Node().Spec()
-		if err != nil {
-			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
-
-			return
-		}
-
+	for _, epoch := range epochs {
 		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 

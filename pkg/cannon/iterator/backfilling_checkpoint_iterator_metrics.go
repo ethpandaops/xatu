@@ -3,8 +3,9 @@ package iterator
 import "github.com/prometheus/client_golang/prometheus"
 
 type BackfillingCheckpointMetrics struct {
-	BackfillEpoch  *prometheus.GaugeVec
-	FinalizedEpoch *prometheus.GaugeVec
+	BackfillEpoch            *prometheus.GaugeVec
+	FinalizedEpoch           *prometheus.GaugeVec
+	FinalizedCheckpointEpoch *prometheus.GaugeVec
 }
 
 func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetrics {
@@ -21,10 +22,16 @@ func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetr
 			Name:      "finalized_epoch",
 			Help:      "The current position of the finalized epoch",
 		}, []string{"cannon_type", "network", "checkpoint"}),
+		FinalizedCheckpointEpoch: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "finalized_checkpoint_epoch",
+			Help:      "The finalized checkpoint epoch of the network",
+		}, []string{"network"}),
 	}
 
 	prometheus.MustRegister(s.BackfillEpoch)
 	prometheus.MustRegister(s.FinalizedEpoch)
+	prometheus.MustRegister(s.FinalizedCheckpointEpoch)
 
 	return s
 }
@@ -35,4 +42,8 @@ func (s *BackfillingCheckpointMetrics) SetBackfillEpoch(cannonType, network, che
 
 func (s *BackfillingCheckpointMetrics) SetFinalizedEpoch(cannonType, network, checkpoint string, epoch float64) {
 	s.FinalizedEpoch.WithLabelValues(cannonType, network, checkpoint).Set(epoch)
+}
+
+func (s *BackfillingCheckpointMetrics) SetFinalizedCheckpointEpoch(network string, epoch float64) {
+	s.FinalizedCheckpointEpoch.WithLabelValues(network).Set(epoch)
 }

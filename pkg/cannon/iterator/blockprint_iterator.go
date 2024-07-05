@@ -47,7 +47,7 @@ func (c *BlockprintIterator) UpdateLocation(ctx context.Context, location *xatu.
 	return c.coordinator.UpsertCannonLocationRequest(ctx, location)
 }
 
-func (c *BlockprintIterator) Next(ctx context.Context) (next *xatu.CannonLocation, lookAhead []*xatu.CannonLocation, err error) {
+func (c *BlockprintIterator) Next(ctx context.Context) (next *xatu.CannonLocation, err error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockprintIterator.Next",
 		trace.WithAttributes(
@@ -77,16 +77,16 @@ func (c *BlockprintIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		// Check where we are at from the coordinator
 		location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
 		if err != nil {
-			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to get cannon location")
+			return nil, errors.Wrap(err, "failed to get cannon location")
 		}
 
 		status, err := c.blockprintClient.SyncStatus(ctx)
 		if err != nil {
-			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to fetch sync status")
+			return nil, errors.Wrap(err, "failed to fetch sync status")
 		}
 
 		if !status.Synced {
-			return nil, []*xatu.CannonLocation{}, errors.New("blockprint is not synced")
+			return nil, errors.New("blockprint is not synced")
 		}
 
 		// If location is empty we haven't started yet. This means we should set our `target_end_slot` to the latest synced slot.
@@ -94,15 +94,15 @@ func (c *BlockprintIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 		if location == nil {
 			next, errr := c.createLocation(0, phase0.Slot(status.GreatestBlockSlot))
 			if errr != nil {
-				return nil, []*xatu.CannonLocation{}, errors.Wrap(errr, "failed to create location")
+				return nil, errors.Wrap(errr, "failed to create location")
 			}
 
-			return next, c.getLookAheads(ctx, next), nil
+			return next, nil
 		}
 
 		slot, _, err := c.getSlotsFromLocation(location)
 		if err != nil {
-			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to get slots from location")
+			return nil, errors.Wrap(err, "failed to get slots from location")
 		}
 
 		if slot >= phase0.Slot(status.GreatestBlockSlot) {
@@ -114,16 +114,11 @@ func (c *BlockprintIterator) Next(ctx context.Context) (next *xatu.CannonLocatio
 
 		next, err := c.createLocation(slot, phase0.Slot(status.GreatestBlockSlot))
 		if err != nil {
-			return nil, []*xatu.CannonLocation{}, errors.Wrap(err, "failed to create location")
+			return nil, errors.Wrap(err, "failed to create location")
 		}
 
-		return next, c.getLookAheads(ctx, next), nil
+		return next, nil
 	}
-}
-
-func (c *BlockprintIterator) getLookAheads(ctx context.Context, location *xatu.CannonLocation) []*xatu.CannonLocation {
-	// Not supported for blockprint
-	return []*xatu.CannonLocation{}
 }
 
 func (c *BlockprintIterator) getSlotsFromLocation(location *xatu.CannonLocation) (slot, target phase0.Slot, err error) {

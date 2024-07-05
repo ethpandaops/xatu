@@ -210,6 +210,9 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			return nil, errors.Wrap(err, "failed to get marker from location")
 		}
 
+		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionHead, float64(checkpoint.Epoch-phase0.Epoch(marker.FinalizedEpoch)))
+		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionBackfill, float64(phase0.Epoch(marker.BackfillEpoch)-earliestEpoch))
+
 		if marker.FinalizedEpoch == 0 {
 			// If the marker is empty, we haven't started yet, so we should return the current checkpoint.
 			return &BackFillingCheckpointNextResponse{

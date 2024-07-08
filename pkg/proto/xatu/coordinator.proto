@@ -109,42 +109,42 @@ message BackfillingCheckpointMarker {
 }
 
 message CannonLocationEthV2BeaconBlockVoluntaryExit {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockProposerSlashing{
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockDeposit {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockAttesterSlashing {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockBlsToExecutionChange {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockExecutionTransaction {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlockWithdrawal {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
 message CannonLocationEthV2BeaconBlock {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
@@ -154,7 +154,7 @@ message CannonLocationBlockprintBlockClassification {
 }
 
 message CannonLocationEthV1BeaconBlobSidecar {
-  uint64 epoch = 1; // Marked for deprecation
+  reserved 1;
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 

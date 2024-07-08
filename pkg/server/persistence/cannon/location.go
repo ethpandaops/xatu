@@ -1,6 +1,7 @@
 package cannon
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -23,6 +24,11 @@ type Location struct {
 	Value string `json:"value" db:"value"`
 }
 
+var (
+	ErrFailedToMarshal   = errors.New("failed to marshal location")
+	ErrFailedToUnmarshal = errors.New("failed to unmarshal location")
+)
+
 // MarshalValueFromProto marshals a proto message into the Value field.
 func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 	l.NetworkID = msg.NetworkId
@@ -35,7 +41,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -46,7 +52,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -57,7 +63,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -68,7 +74,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -80,7 +86,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -92,7 +98,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -103,7 +109,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -115,7 +121,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -127,7 +133,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -139,7 +145,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -150,7 +156,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -161,7 +167,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -172,7 +178,7 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 		b, err := protojson.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
 		}
 
 		l.Value = string(b)
@@ -196,7 +202,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockVoluntaryExit{
@@ -209,7 +215,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockProposerSlashing{
@@ -222,7 +228,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockDeposit{
@@ -235,7 +241,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockAttesterSlashing{
@@ -249,7 +255,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionTransaction{
@@ -263,7 +269,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockBlsToExecutionChange{
@@ -277,7 +283,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockWithdrawal{
@@ -290,7 +296,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlock{
@@ -303,7 +309,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_BlockprintBlockClassification{
@@ -316,7 +322,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconBlobSidecar{
@@ -329,7 +335,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconProposerDuty{
@@ -342,7 +348,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockElaboratedAttestation{
@@ -355,7 +361,7 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		err := protojson.Unmarshal([]byte(l.Value), data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconValidators{

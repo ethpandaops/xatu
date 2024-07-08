@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	perrors "github.com/pkg/errors"
+
 	"github.com/ethpandaops/xatu/pkg/server/persistence/cannon"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -41,7 +43,7 @@ func (c *Client) GetCannonLocationByID(ctx context.Context, id int64) (*cannon.L
 
 	rows, err := c.db.QueryContext(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, perrors.Wrap(err, "db query failed")
 	}
 
 	defer rows.Close()
@@ -53,7 +55,7 @@ func (c *Client) GetCannonLocationByID(ctx context.Context, id int64) (*cannon.L
 
 		err = rows.Scan(cannonLocationStruct.Addr(&location)...)
 		if err != nil {
-			return nil, err
+			return nil, perrors.Wrap(err, "db scan failed")
 		}
 
 		locations = append(locations, &location)
@@ -76,7 +78,7 @@ func (c *Client) GetCannonLocationByNetworkIDAndType(ctx context.Context, networ
 
 	rows, err := c.db.QueryContext(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, perrors.Wrap(err, "db query failed")
 	}
 
 	defer rows.Close()
@@ -88,7 +90,7 @@ func (c *Client) GetCannonLocationByNetworkIDAndType(ctx context.Context, networ
 
 		err = rows.Scan(cannonLocationStruct.Addr(&location)...)
 		if err != nil {
-			return nil, err
+			return nil, perrors.Wrap(err, "db scan failed")
 		}
 
 		locations = append(locations, &location)

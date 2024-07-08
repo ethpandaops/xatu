@@ -133,7 +133,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				"next_epoch":  rsp.Next,
 				"direction":   rsp.Direction,
 				"look_aheads": rsp.LookAheads,
-			}).Info("Returning next epoch")
+			}).Debug("Returning next epoch")
 
 			span.SetAttributes(attribute.Int64("next_epoch", int64(rsp.Next)))
 			span.SetAttributes(attribute.String("direction", string(rsp.Direction)))

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	perrors "github.com/pkg/errors"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
@@ -68,7 +70,7 @@ func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
 	xatu.RegisterCoordinatorServer(grpcServer, c)
 
 	if err := c.nodeRecord.Start(ctx); err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, perrors.Wrap(err, "failed to start node record processor").Error())
 	}
 
 	return nil
@@ -93,7 +95,7 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 
 		pRecord, err := node.Parse(record)
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+			return nil, status.Error(codes.InvalidArgument, perrors.Wrap(err, "failed to parse node record").Error())
 		}
 
 		if c.geoipProvider != nil {
@@ -142,7 +144,7 @@ func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.
 
 	nodeRecords, err := c.persistence.CheckoutStalledExecutionNodeRecords(ctx, pageSize)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get stalled execution node records from db").Error())
 	}
 
 	response := &xatu.ListStalledExecutionNodeRecordsResponse{
@@ -194,7 +196,7 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 
 	err := c.persistence.InsertNodeRecordExecution(ctx, &st)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to insert node record execution").Error())
 	}
 
 	result = "success"
@@ -207,7 +209,7 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 
 	err = c.persistence.UpdateNodeRecord(ctx, nodeRecord)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to update node record").Error())
 	}
 
 	return &xatu.CreateExecutionNodeRecordStatusResponse{}, nil
@@ -254,7 +256,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	if limit > 0 {
 		newNodeRecords, err := c.persistence.ListAvailableExecutionNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, req.ForkIdHashes, req.Capabilities, int(limit))
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get available execution node records from db").Error())
 		}
 
 		for _, record := range newNodeRecords {
@@ -273,7 +275,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	if len(activities) != 0 {
 		err := c.persistence.UpsertNodeRecordActivities(ctx, activities)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to upsert node record activities to db").Error())
 		}
 	}
 
@@ -286,7 +288,7 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
 	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get discovery node records from db").Error())
 	}
 
 	if len(records) == 0 {
@@ -304,7 +306,7 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocationRequest) (*xatu.GetCannonLocationResponse, error) {
 	location, err := c.persistence.GetCannonLocationByNetworkIDAndType(ctx, req.NetworkId, req.Type.Enum().String())
 	if err != nil && err != persistence.ErrCannonLocationNotFound {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get cannon location from db").Error())
 	}
 
 	rsp := &xatu.GetCannonLocationResponse{}
@@ -315,7 +317,7 @@ func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocat
 
 	protoLoc, err := location.Unmarshal()
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to unmarshal cannon location").Error())
 	}
 
 	return &xatu.GetCannonLocationResponse{
@@ -328,12 +330,12 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 
 	err := newLocation.Marshal(req.Location)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, perrors.Wrap(err, "failed to marshal cannon location").Error())
 	}
 
 	err = c.persistence.UpsertCannonLocation(ctx, newLocation)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to upsert cannon location to db").Error())
 	}
 
 	return &xatu.UpsertCannonLocationResponse{}, nil

@@ -39,10 +39,10 @@ func (m *Mimicry) handleGossipDataColumnSidecar(ctx context.Context,
 		return errors.New("invalid sidecar kzg commitments")
 	}
 
-	kzgCommitments := []string{}
+	kzgCommitments := []*wrapperspb.StringValue{}
 
 	for _, bytes := range eSidecar.KzgCommitments {
-		kzgCommitments = append(kzgCommitments, fmt.Sprintf("0x%x", bytes))
+		kzgCommitments = append(kzgCommitments, wrapperspb.String(fmt.Sprintf("0x%x", bytes)))
 	}
 
 	if len(eSidecar.KzgProof) == 0 {
@@ -63,13 +63,17 @@ func (m *Mimicry) handleGossipDataColumnSidecar(ctx context.Context,
 		Signature: fmt.Sprintf("%x", eSidecar.SignedBlockHeader.Signature),
 	}
 
+	for _, bytes := range eSidecar.KzgCommitments {
+		kzgCommitments = append(kzgCommitments, wrapperspb.String(fmt.Sprintf("0x%x", bytes)))
+	}
+
 	sidecar := &gossipsub.DataColumnSidecar{
 		ColumnIndex:                  wrapperspb.UInt64(eSidecar.ColumnIndex),
-		DataColumn:                   fmt.Sprintf("0x%x", dataColumn),
+		DataColumn:                   wrapperspb.String(dataColumn),
 		KzgCommitments:               kzgCommitments,
-		KzgProof:                     fmt.Sprintf("0x%x", kzgProof),
+		KzgProof:                     wrapperspb.String(fmt.Sprintf("0x%x", kzgProof)),
 		SignedBlockHeader:            signedBlockHeader,
-		KzgCommitmentsInclusionProof: fmt.Sprintf("0x%x", kzgCommitmentsInclusionProof),
+		KzgCommitmentsInclusionProof: wrapperspb.String(fmt.Sprintf("0x%x", kzgCommitmentsInclusionProof)),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)

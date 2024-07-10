@@ -34,13 +34,13 @@ type AttesterSlashingDeriverConfig struct {
 type AttesterSlashingDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *AttesterSlashingDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
+func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
 	return &AttesterSlashingDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/attester_slashing"),
 		cfg:        config,
@@ -74,6 +74,10 @@ func (a *AttesterSlashingDeriver) Start(ctx context.Context) error {
 	}
 
 	a.log.Info("Attester slashing deriver enabled")
+
+	if err := a.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
 
 	// Start our main loop
 	go a.run(ctx)
@@ -109,21 +113,21 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				}
 
 				// Get the next slot
-				location, lookAhead, err := a.iterator.Next(ctx)
+				position, err := a.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
 
-				// Look ahead
-				a.lookAheadAtLocations(ctx, lookAhead)
-
 				// Process the epoch
-				events, err := a.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch()))
+				events, err := a.processEpoch(ctx, position.Next)
 				if err != nil {
 					a.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
+
+				// Look ahead
+				a.lookAhead(ctx, position.LookAheads)
 
 				// Send the events
 				for _, fn := range a.onEventsCallbacks {
@@ -133,7 +137,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := a.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := a.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					return err
 				}
 
@@ -151,28 +155,21 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 	}
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
-func (a *AttesterSlashingDeriver) lookAheadAtLocations(ctx context.Context, locations []*xatu.CannonLocation) {
+// lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
+func (a *AttesterSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	_, span := observability.Tracer().Start(ctx,
-		"AttesterSlashingDeriver.lookAheadAtLocations",
+		"AttesterSlashingDeriver.lookAhead",
 	)
 	defer span.End()
 
-	if locations == nil {
+	sp, err := a.beacon.Node().Spec()
+	if err != nil {
+		a.log.WithError(err).Warn("Failed to look ahead at epoch")
+
 		return
 	}
 
-	for _, location := range locations {
-		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV2BeaconBlockAttesterSlashing().GetEpoch())
-
-		sp, err := a.beacon.Node().Spec()
-		if err != nil {
-			a.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
-
-			return
-		}
-
+	for _, epoch := range epochs {
 		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 

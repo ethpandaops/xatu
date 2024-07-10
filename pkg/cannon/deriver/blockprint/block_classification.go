@@ -117,7 +117,7 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 				time.Sleep(1000 * time.Millisecond)
 
 				// Get the next slot
-				location, _, err := b.iterator.Next(ctx)
+				location, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}

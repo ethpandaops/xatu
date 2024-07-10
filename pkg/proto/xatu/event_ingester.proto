@@ -17,6 +17,7 @@ import "pkg/proto/eth/v2/withdrawals.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
+import "pkg/proto/eth/v1/validator.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
@@ -107,6 +108,10 @@ message DebugForkChoiceReorgV2 {
   xatu.eth.v1.ForkChoiceV2 before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoiceV2 after = 2 [ json_name = "after" ];
   xatu.eth.v1.EventChainReorgV2 event = 3;
+}
+
+message Validators {
+  repeated xatu.eth.v1.Validator validators = 1;
 }
 
 message BlockIdentifier {
@@ -894,6 +899,39 @@ message ClientMeta {
     google.protobuf.StringValue message_id = 12 [ json_name = "message_id" ];
   }
 
+  message AdditionalLibP2PTraceGossipSubBlobSidecarData {
+    // Epoch contains the epoch information for the blob sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the blob sidecar.
+    SlotV2 slot = 2;
+
+    // WallclockEpoch contains the epoch information for the blob sidecar in the wall clock time.
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the blob sidecar in the wall clock time.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // Propagation contains information about the propagation of the blob sidecar.
+    PropagationV2 propagation = 5;
+
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+
+    // Topic is the gossip sub topic the blob sidecar was received on.
+    google.protobuf.StringValue topic = 7;
+
+    // MessageSize is the size of the blob sidecar message in bytes.
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+
+    // MessageID is a unique identifier for the blob sidecar message.
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
+  // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
+  message AdditionalEthV1ValidatorsData {
+    EpochV2 epoch = 1;
+  }
 
   message AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarSourceData {
     // Epoch contains the epoch information for the source.
@@ -1115,8 +1153,12 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubBeaconBlockData libp2p_trace_gossipsub_beacon_block = 57 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
     // AdditionalLibP2PTraceGossipSubBeaconAttestationData contains additional data about the gossip sub beacon attestation event.
     AdditionalLibP2PTraceGossipSubBeaconAttestationData libp2p_trace_gossipsub_beacon_attestation = 58 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
+    // AdditionalLibP2PTraceGossipSubBlobSidecarData contains additional data about the gossip sub blob sidecar event.
+    AdditionalLibP2PTraceGossipSubBlobSidecarData libp2p_trace_gossipsub_blob_sidecar = 59 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
+    // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
+    AdditionalEthV1ValidatorsData eth_v1_validators = 60 [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
     // AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData contains additional data about the gossip sub beacon data column sidecar event.
-    AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData libp2p_trace_gossipsub_beacon_data_column_sidecar = 59 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR" ];
+    AdditionalLibP2PTraceGossipSubBeaconDataColumnSidecarData libp2p_trace_gossipsub_beacon_data_column_sidecar = 61 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR" ];
   }
 }
 
@@ -1258,7 +1300,9 @@ message Event {
     LIBP2P_TRACE_HANDLE_STATUS = 48;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK = 49;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION = 50;
-    LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR = 51;
+    LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR = 51;
+    BEACON_API_ETH_V1_BEACON_VALIDATORS = 52;
+    LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR = 53;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1390,7 +1434,11 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
     xatu.eth.v1.Attestation libp2p_trace_gossipsub_beacon_attestation = 50
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
-    xatu.libp2p.gossipsub.eth.DataColumnSidecar libp2p_trace_gossipsub_beacon_data_column_sidecar = 51
+    xatu.libp2p.gossipsub.eth.BlobSidecar libp2p_trace_gossipsub_blob_sidecar = 51
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
+    Validators eth_v1_validators = 52
+        [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
+    xatu.libp2p.gossipsub.eth.DataColumnSidecar libp2p_trace_gossipsub_beacon_data_column_sidecar = 53
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR" ];
   };
 }

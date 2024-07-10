@@ -215,6 +215,7 @@ transforms:
       libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
       libp2p_trace_gossipsub_beacon_block: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
       libp2p_trace_gossipsub_beacon_attestation: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION"
+      libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_beacon_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR"
   xatu_server_events_router_matched:
     type: log_to_metric
@@ -230,6 +231,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_handle_status
       - xatu_server_events_router.libp2p_trace_gossipsub_beacon_block
       - xatu_server_events_router.libp2p_trace_gossipsub_beacon_attestation
+      - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_beacon_data_column_sidecar
     metrics:
       - type: counter
@@ -654,7 +656,6 @@ transforms:
 
       .message_size = .meta.client.additional_data.message_size
       .message_id = .meta.client.additional_data.message_id
-      
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -868,13 +869,108 @@ transforms:
 
       .message_size = .meta.client.additional_data.message_size
       .message_id = .meta.client.additional_data.message_id
-      
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
       del(.meta)
       del(.data)
       del(.path)
+
+  libp2p_trace_gossipsub_blob_sidecar_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
+    source: |-
+      .unique_key = seahash(.event.id)
+      .updated_date_time = to_unix_timestamp(now())
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
+      .proposer_index = .data.proposer_index
+      .blob_index = .data.index
+      .state_root = .data.state_root
+      .parent_root = .data.parent_root
+
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .message_id = .meta.client.additional_data.message_id
+      .message_size = .meta.client.additional_data.message_size
+
+      topicParts, err = split(.meta.client.additional_data.topic, "/")
+      if err != null {
+          .error = err
+          .error_description = "failed to split topic"
+      } else {
+        if length(topicParts) != 5 {
+            .errDebug = {
+                "topic": .meta.client.additional_data.topic,
+            }
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      .topic_layer = topicParts[1]
+      .topic_fork_digest_value = topicParts[2]
+      .topic_name = topicParts[3]
+      .topic_encoding = topicParts[4]
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
   libp2p_trace_rpc_exploder:
     type: remap
     inputs:
@@ -895,7 +991,6 @@ transforms:
 
       # Emit the main RPC event record
       events = []
-      
       peer_id_key, err = .data.meta.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1443,9 +1538,8 @@ transforms:
         .error_description = "failed to convert latency to millseconds"
         log(., level: "error", rate_limit_secs: 60)
       }
-      
-      .protocol = .data.protocol_id
 
+      .protocol = .data.protocol_id
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -1479,7 +1573,7 @@ sinks:
       max_events: 200000
     healthcheck:
       enabled: true
-    skip_unknown_fields: false 
+    skip_unknown_fields: false
   libp2p_trace_connected_clickhouse:
     type: clickhouse
     inputs:
@@ -1499,7 +1593,7 @@ sinks:
       max_events: 200000
     healthcheck:
       enabled: true
-    skip_unknown_fields: false  
+    skip_unknown_fields: false
   libp2p_trace_disconnected_clickhouse:
     type: clickhouse
     inputs:
@@ -1820,6 +1914,27 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
+  libp2p_trace_gossipsub_blob_sidecar_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_gossipsub_blob_sidecar_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_gossipsub_blob_sidecar
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+
   libp2p_trace_gossipsub_beacon_data_column_sidecar_clickhouse:
     type: clickhouse
     inputs:

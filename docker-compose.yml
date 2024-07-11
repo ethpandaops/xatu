@@ -204,7 +204,7 @@ services:
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
-      - ./deploy/local/docker-compose/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./deploy/local/docker-compose/nginx.conf:/etc/nginx/nginx.conf
       - nginx-auth:/etc/nginx:ro
     networks:
       - xatu-net

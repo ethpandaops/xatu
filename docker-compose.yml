@@ -178,39 +178,6 @@ services:
     networks:
       - xatu-net
 
-  xatu-nginx-init:
-    profiles:
-      - ""
-      - nginx
-    image: alpine:latest
-    container_name: xatu-nginx-init
-    environment:
-      - NGINX_XATU_SERVER_AUTH_USER=${NGINX_XATU_SERVER_AUTH_USER:-admin}
-      - NGINX_XATU_SERVER_AUTH_PASS=${NGINX_XATU_SERVER_AUTH_PASS:-password}
-    command: >
-      sh -c "apk add --no-cache apache2-utils &&
-             htpasswd -bc /tmp/.htpasswd $${NGINX_XATU_SERVER_AUTH_USER} $${NGINX_XATU_SERVER_AUTH_PASS}"
-    volumes:
-      - nginx-auth:/tmp
-
-  xatu-nginx:
-    profiles:
-      - ""
-      - nginx
-    image: nginx:latest
-    container_name: xatu-nginx
-    ports:
-      - "${NGINX_ADDRESS:-0.0.0.0}:${NGINX_PORT:-80}:8080"
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
-    volumes:
-      - ./deploy/local/docker-compose/nginx.conf:/etc/nginx/nginx.conf
-      - nginx-auth:/etc/nginx:ro
-    networks:
-      - xatu-net
-    depends_on:
-      - xatu-nginx-init
-
   xatu-grafana:
     profiles:
       - ""

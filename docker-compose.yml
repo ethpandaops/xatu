@@ -15,8 +15,8 @@ services:
       - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
       - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
-      - "127.0.0.1:8123:8123"
-      - "127.0.0.1:9000:9000"
+      - "${CLICKHOUSE_01_HTTP_ADDRESS:-127.0.0.1}:${CLICKHOUSE_01_HTTP_PORT:-8123}:8123"
+      - "${CLICKHOUSE_01_NATIVE_ADDRESS:-127.0.0.1}:${CLICKHOUSE_01_NATIVE_PORT:-9000}:9000"
     depends_on:
       xatu-clickhouse-zookeeper-01:
         condition: service_healthy
@@ -50,8 +50,8 @@ services:
       - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
       - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
-      - "127.0.0.1:8124:8123"
-      - "127.0.0.1:9001:9000"
+      - "${CLICKHOUSE_02_HTTP_ADDRESS:-127.0.0.1}:${CLICKHOUSE_02_HTTP_PORT:-8124}:8123"
+      - "${CLICKHOUSE_02_NATIVE_ADDRESS:-127.0.0.1}:${CLICKHOUSE_02_NATIVE_PORT:-9001}:9000"
     depends_on:
       xatu-clickhouse-zookeeper-01:
         condition: service_healthy
@@ -151,7 +151,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${XATU_SERVER_ADDRESS:-127.0.0.1}:${XATU_SERVER_PORT:-8080}:8080"
     volumes:
       - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config.yaml
     networks:
@@ -185,11 +185,11 @@ services:
     image: alpine:latest
     container_name: xatu-nginx-init
     environment:
-      - NGINX_AUTH_USER=${NGINX_AUTH_USER:-admin}
-      - NGINX_AUTH_PASS=${NGINX_AUTH_PASS:-password}
+      - NGINX_XATU_SERVER_AUTH_USER=${NGINX_XATU_SERVER_AUTH_USER:-admin}
+      - NGINX_XATU_SERVER_AUTH_PASS=${NGINX_XATU_SERVER_AUTH_PASS:-password}
     command: >
       sh -c "apk add --no-cache apache2-utils &&
-             htpasswd -bc /tmp/.htpasswd $${NGINX_AUTH_USER} $${NGINX_AUTH_PASS}"
+             htpasswd -bc /tmp/.htpasswd $${NGINX_XATU_SERVER_AUTH_USER} $${NGINX_XATU_SERVER_AUTH_PASS}"
     volumes:
       - nginx-auth:/tmp
 
@@ -200,7 +200,7 @@ services:
     image: nginx:latest
     container_name: xatu-nginx
     ports:
-      - "0.0.0.0:80:8080"
+      - "${NGINX_ADDRESS:-0.0.0.0}:${NGINX_PORT:-80}:8080"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
@@ -217,7 +217,7 @@ services:
     image: grafana/grafana:latest
     container_name: xatu-grafana
     ports:
-      - "127.0.0.1:3000:3000"
+      - "${GRAFANA_ADDRESS:-127.0.0.1}:${GRAFANA_PORT:-3000}:3000"
     networks:
       - xatu-net
     environment:
@@ -235,7 +235,7 @@ services:
       - ""
     image: prom/prometheus:latest
     ports:
-      - "127.0.0.1:9090:9090"
+      - "${PROMETHEUS_ADDRESS:-127.0.0.1}:${PROMETHEUS_PORT:-9090}:9090"
     networks:
       - xatu-net
     volumes:
@@ -333,9 +333,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG4J_LOGGERS: "kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR"
-    ports:
-      - "127.0.0.1:29092:29092"
-      - "127.0.0.1:9092:9092"
     networks:
       - xatu-net
     volumes:
@@ -518,12 +515,12 @@ services:
       - ./deploy/local/docker-compose/tempo.yaml:/etc/tempo.yaml
       - tempo-data:/var/tempo
     ports:
-      - "127.0.0.1:14268:14268"  # jaeger ingest
-      - "127.0.0.1:3200:3200"   # tempo
-      - "127.0.0.1:9095:9095" # tempo grpc
-      - "127.0.0.1:4317:4317"  # otlp grpc
-      - "127.0.0.1:4318:4318"  # otlp http
-      - "127.0.0.1:9411:9411"   # zipkin
+      - "${TEMPO_JAEGER_ADDRESS:-127.0.0.1}:${TEMPO_JAEGER_PORT:-14268}:14268"  # jaeger ingest
+      - "${TEMPO_HTTP_ADDRESS:-127.0.0.1}:${TEMPO_HTTP_PORT:-3200}:3200"   # tempo
+      - "${TEMPO_GRPC_ADDRESS:-127.0.0.1}:${TEMPO_GRPC_PORT:-9095}:9095" # tempo grpc
+      - "${TEMPO_OTLP_GRPC_ADDRESS:-127.0.0.1}:${TEMPO_OTLP_GRPC_PORT:-4317}:4317"  # otlp grpc
+      - "${TEMPO_OTLP_HTTP_ADDRESS:-127.0.0.1}:${TEMPO_OTLP_HTTP_PORT:-4318}:4318"  # otlp http
+      - "${TEMPO_ZIPKIN_ADDRESS:-127.0.0.1}:${TEMPO_ZIPKIN_PORT:-9411}:9411"   # zipkin
     networks:
       - xatu-net
     depends_on:

@@ -567,3 +567,5 @@ volumes:
     driver: local
   tempo-data:
     driver: local
+  nginx-auth:
+    driver: local

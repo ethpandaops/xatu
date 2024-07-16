@@ -1438,24 +1438,24 @@ transforms:
               event = merge(event, {"balance": validator.balance})
           }
 
-          if exists(validator.effective_balance) && validator.effective_balance != "0" {
-              event = merge(event, {"effective_balance": validator.effective_balance})
+          if exists(validator.data.effective_balance) && validator.data.effective_balance != "0" {
+              event = merge(event, {"effective_balance": validator.data.effective_balance})
           }
 
-          if exists(validator.activation_epoch) && validator.activation_epoch != "0" {
-              event = merge(event, {"activation_epoch": validator.activation_epoch})
+          if exists(validator.data.activation_epoch) && validator.data.activation_epoch != "0" && validator.data.activation_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_epoch": validator.data.activation_epoch})
           }
 
-          if exists(validator.activation_eligibility_epoch) && validator.activation_eligibility_epoch != "0" {
-              event = merge(event, {"activation_eligibility_epoch": validator.activation_eligibility_epoch})
+          if exists(validator.data.activation_eligibility_epoch) && validator.data.activation_eligibility_epoch != "0" && validator.data.activation_eligibility_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_eligibility_epoch": validator.data.activation_eligibility_epoch})
           }
 
-          if exists(validator.exit_epoch) && validator.exit_epoch != "0" && validator.exit_epoch != "18446744073709551615" {
-              event = merge(event, {"exit_epoch": validator.exit_epoch})
+          if exists(validator.data.exit_epoch) && validator.data.exit_epoch != "0" && validator.data.exit_epoch != "18446744073709551615" {
+              event = merge(event, {"exit_epoch": validator.data.exit_epoch})
           }
 
-          if exists(validator.withdrawable_epoch) && validator.withdrawable_epoch != "0" {
-              event = merge(event, {"withdrawable_epoch": validator.withdrawable_epoch})
+          if exists(validator.data.withdrawable_epoch) && validator.data.withdrawable_epoch != "0" && validator.data.withdrawable_epoch != "18446744073709551615" {
+              event = merge(event, {"withdrawable_epoch": validator.data.withdrawable_epoch})
           }
 
           events = push(events, event)

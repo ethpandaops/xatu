@@ -1408,7 +1408,7 @@ transforms:
       .updated_date_time = to_unix_timestamp(now())
 
       for_each(array!(.data.validators)) -> |_index, validator| {
-          events = push(events, {
+          event = {
               "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
@@ -1427,18 +1427,44 @@ transforms:
               "meta_client_geo_latitude": .meta_client_geo_latitude,
               "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
               "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
               "epoch": .meta.client.additional_data.epoch.number,
               "epoch_start_date_time": .epoch_start_date_time,
               "index": validator.index,
-              "balance": validator.balance,
               "status": validator.status,
-              "activation_eligibility_epoch": validator.data.activation_eligibility_epoch,
-              "activation_epoch": validator.data.activation_epoch,
-              "effective_balance": validator.data.effective_balance,
-              "exit_epoch": validator.data.exit_epoch,
-              "slashed": validator.data.slashed,
-              "withdrawable_epoch": validator.data.withdrawable_epoch
-          })
+              "slashed": validator.data.slashed
+          }
+
+          if exists(validator.balance) && validator.balance != "0" {
+              event = merge(event, {"balance": validator.balance})
+          }
+
+          if exists(validator.data.effective_balance) && validator.data.effective_balance != "0" {
+              event = merge(event, {"effective_balance": validator.data.effective_balance})
+          }
+
+          if exists(validator.data.activation_epoch) && validator.data.activation_epoch != "0" && validator.data.activation_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_epoch": validator.data.activation_epoch})
+          }
+
+          if exists(validator.data.activation_eligibility_epoch) && validator.data.activation_eligibility_epoch != "0" && validator.data.activation_eligibility_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_eligibility_epoch": validator.data.activation_eligibility_epoch})
+          }
+
+          if exists(validator.data.exit_epoch) && validator.data.exit_epoch != "0" && validator.data.exit_epoch != "18446744073709551615" {
+              event = merge(event, {"exit_epoch": validator.data.exit_epoch})
+          }
+
+          if exists(validator.data.withdrawable_epoch) && validator.data.withdrawable_epoch != "0" && validator.data.withdrawable_epoch != "18446744073709551615" {
+              event = merge(event, {"withdrawable_epoch": validator.data.withdrawable_epoch})
+          }
+
+          events = push(events, event)
       }
       . = events
   canonical_beacon_validators_pubkeys_formatted:
@@ -1488,6 +1514,12 @@ transforms:
               "meta_client_geo_latitude": .meta_client_geo_latitude,
               "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
               "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
               "epoch": .meta.client.additional_data.epoch.number,
               "epoch_start_date_time": .epoch_start_date_time,
               "index": validator.index,
@@ -1542,6 +1574,12 @@ transforms:
               "meta_client_geo_latitude": .meta_client_geo_latitude,
               "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
               "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
               "epoch": .meta.client.additional_data.epoch.number,
               "epoch_start_date_time": .epoch_start_date_time,
               "index": validator.index,

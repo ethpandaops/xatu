@@ -2,6 +2,10 @@ DROP TABLE IF EXISTS default.canonical_beacon_validators on cluster '{cluster}' 
 
 DROP TABLE IF EXISTS default.canonical_beacon_validators_local on cluster '{cluster}' SYNC;
 
+TRUNCATE TABLE canonical_beacon_validators_pubkeys_local ON CLUSTER '{cluster}';
+
+TRUNCATE TABLE canonical_beacon_validators_withdrawal_credentials_local ON CLUSTER '{cluster}';
+
 CREATE TABLE default.canonical_beacon_validators_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'When this row was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `event_date_time` DateTime64(3) COMMENT 'When the client fetched the beacon block from a beacon node' CODEC(DoubleDelta, ZSTD(1)),

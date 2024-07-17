@@ -187,12 +187,8 @@ func (b *BeaconValidatorsDeriver) lookAhead(ctx context.Context, epochs []phase0
 	}
 
 	for _, epoch := range epochs {
-		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
-			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
-
-			// Add the state to the preload queue so it's available when we need it
-			b.beacon.LazyLoadValidators(xatuethv1.SlotAsString(slot))
-		}
+		// Add the state to the preload queue so it's available when we need it
+		b.beacon.LazyLoadValidators(xatuethv1.SlotAsString(phase0.Slot(uint64(epoch) * uint64(sp.SlotsPerEpoch))))
 	}
 }
 

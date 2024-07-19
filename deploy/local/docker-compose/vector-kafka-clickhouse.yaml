@@ -709,6 +709,24 @@ transforms:
         .error_description = "failed to parse epoch start date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
       .validator_index = .data.message.validator_index
       .signature = .data.signature
       .updated_date_time = to_unix_timestamp(now())

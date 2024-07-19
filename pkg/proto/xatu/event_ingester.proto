@@ -294,6 +294,12 @@ message ClientMeta {
   message AdditionalEthV1EventsVoluntaryExitV2Data {
     // Epoch contains the epoch information for the voluntary exit.
     EpochV2 epoch = 1;
+
+    // WallclockEpoch contains the epoch information for the voluntary exit in the wall clock time.
+    EpochV2 wallclock_epoch = 2 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the voluntary exit in the wall clock time.
+    SlotV2 wallclock_slot = 3 [ json_name = "wallclock_slot" ];
   }
 
   message AdditionalEthV1EventsFinalizedCheckpointData {

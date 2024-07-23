@@ -2,7 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.22.0
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240527060557-ae23464cdc41
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240617105441-1fe47e94de4a
 
 require (
 	github.com/IBM/sarama v1.43.0

@@ -317,7 +317,8 @@ transforms:
       canonical_beacon_block_withdrawal: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
       canonical_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_V2" && .meta.client.additional_data.finalized_when_requested == true
       canonical_beacon_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "finalized"
-      eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE"
+      canonical_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE" && .meta.client.additional_data.state_id == "finalized"
+      eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE" && .meta.client.additional_data.state_id != "finalized"
       eth_v1_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "head"
       eth_v1_events_attestation_v2: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"
       eth_v1_events_attestation: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION"
@@ -355,6 +356,7 @@ transforms:
       - xatu_server_events_router.canonical_beacon_block_voluntary_exit
       - xatu_server_events_router.canonical_beacon_block_withdrawal
       - xatu_server_events_router.canonical_beacon_proposer_duty
+      - xatu_server_events_router.canonical_beacon_committee
       - xatu_server_events_router.eth_v1_beacon_committee
       - xatu_server_events_router.eth_v1_proposer_duty
       - xatu_server_events_router.eth_v1_events_attestation
@@ -1818,6 +1820,44 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  canonical_beacon_committee_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_committee
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .validators = .data.validators
+      .committee_index = .data.index
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2063,6 +2103,26 @@ sinks:
       timeout_secs: 1
     buffer:
       max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_committee_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_committee_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_committee
+    batch:
+      max_bytes: 52428800
+      max_events: 1000000
+      timeout_secs: 1
+    buffer:
+      max_events: 1000000
     healthcheck:
       enabled: true
     skip_unknown_fields: false

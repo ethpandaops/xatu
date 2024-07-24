@@ -248,7 +248,7 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 
 	m.log.WithField("epoch", epoch).WithField("override_cache", overrideCache).Debug("Fetching beacon committee")
 
-	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", epoch)
+	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", &epoch)
 	if err != nil {
 		m.log.WithError(err).Error("Failed to fetch beacon committees")
 

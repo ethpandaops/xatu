@@ -123,7 +123,7 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, stateID string
 
 	m.log.WithField("epoch", epoch).Debug("Fetching beacon committee")
 
-	committees, err := m.beacon.FetchBeaconCommittees(ctx, xatuethv1.EpochAsString(epoch), nil)
+	committees, err := m.beacon.FetchBeaconCommittees(ctx, xatuethv1.StateIDFinalized, &epoch)
 	if err != nil {
 		m.log.WithError(err).Error("Failed to fetch beacon committees")
 

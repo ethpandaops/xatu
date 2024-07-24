@@ -101,6 +101,7 @@ enum CannonType {
   BEACON_API_ETH_V1_PROPOSER_DUTY = 10;
   BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION = 11;
   BEACON_API_ETH_V1_BEACON_VALIDATORS = 12;
+  BEACON_API_ETH_V1_BEACON_COMMITTEE = 13;
 }
 
 message BackfillingCheckpointMarker {
@@ -170,6 +171,10 @@ message CannonLocationEthV1BeaconValidators {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationEthV1BeaconCommittee {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -208,6 +213,8 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
     CannonLocationEthV1BeaconValidators eth_v1_beacon_validators = 15
         [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
+    CannonLocationEthV1BeaconCommittee eth_v1_beacon_committee = 16
+        [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
   }
 }
 

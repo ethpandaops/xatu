@@ -1348,7 +1348,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           event = {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,
@@ -1426,7 +1425,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           events = push(events, {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,
@@ -1477,7 +1475,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           events = push(events, {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,

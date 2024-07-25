@@ -19,6 +19,7 @@ type CustomNetwork struct {
 	ConfigURL               string `yaml:"configUrl"`
 	BootnodeENRURL          string `yaml:"bootnodeEnrUrl"`
 	DepositContractBlockURL string `yaml:"depositContractBlockUrl"`
+	GenesisSSZURL           string `yaml:"genesisSSZUrl"`
 }
 
 func (c *CustomNetwork) Validate() error {
@@ -32,6 +33,10 @@ func (c *CustomNetwork) Validate() error {
 
 	if c.DepositContractBlockURL == "" {
 		return errors.New("depositContractBlockUrl is required")
+	}
+
+	if c.GenesisSSZURL == "" {
+		return errors.New("genesisSSZUrl is required")
 	}
 
 	return nil

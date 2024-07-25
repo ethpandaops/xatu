@@ -99,68 +99,43 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 	return mimicry, nil
 }
 
-func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.GenesisConfig, *params.NetworkConfig, *params.BeaconChainConfig, error) {
+func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.NetworkConfig, error) {
 	if m.Config.Ethereum.CustomNetwork == nil {
-		return eth.GetConfigsByNetworkName(m.Config.Ethereum.Network)
+		return eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
 	}
 
 	m.log.WithField("network", m.Config.Ethereum.Network).Info("Using a custom Ethereum network")
 
-	genesis := m.ethereum.Metadata().Genesis
-
-	genesisConfig := &eth.GenesisConfig{
-		GenesisValidatorRoot: genesis.GenesisValidatorsRoot[:],
-		GenesisTime:          genesis.GenesisTime,
-	}
-
-	beaconChainConfig, err := m.FetchConfigFromURL(ctx, m.Config.Ethereum.CustomNetwork.ConfigURL)
+	conf, err := eth.DeriveDevnetConfig(ctx, eth.DevnetOptions{
+		ConfigURL:               m.Config.Ethereum.CustomNetwork.ConfigURL,
+		BootnodesURL:            m.Config.Ethereum.CustomNetwork.BootnodeENRURL,
+		DepositContractBlockURL: m.Config.Ethereum.CustomNetwork.DepositContractBlockURL,
+		GenesisSSZURL:           m.Config.Ethereum.CustomNetwork.GenesisSSZURL,
+	})
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network config.yaml: %w", err)
+		return nil, fmt.Errorf("failed to derive devnet config: %w", err)
 	}
 
-	if err := params.SetActive(beaconChainConfig); err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to set active network config: %w", err)
-	}
-
-	params.OverrideBeaconConfig(beaconChainConfig)
-
-	networkConfig := params.BeaconNetworkConfig() // TODO: Support others
-
-	bootnodes, err := FetchBootnodeENRsFromURL(ctx, m.Config.Ethereum.CustomNetwork.BootnodeENRURL)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network bootnodes.yaml: %w", err)
-	}
-
-	depositContractBlock, err := FetchDepositContractBlockFromURL(ctx, m.Config.Ethereum.CustomNetwork.DepositContractBlockURL)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to fetch custom Ethereum network deposit contract block.yaml: %w", err)
-	}
-
-	networkConfig.BootstrapNodes = bootnodes
-	networkConfig.ContractDeploymentBlock = depositContractBlock
-
-	params.OverrideBeaconNetworkConfig(networkConfig)
-
-	return genesisConfig, networkConfig, beaconChainConfig, nil
+	return conf, nil
 }
 
 func (m *Mimicry) startHermes(ctx context.Context) error {
-	genConfig, netConfig, beaConfig, err := m.deriveNetworkConfig(ctx)
+	networkConfig, err := m.deriveNetworkConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to derive network config for %s: %w", m.Config.Ethereum.Network, err)
 	}
 
-	m.networkConfig = netConfig
-	m.beaconConfig = beaConfig
+	m.networkConfig = networkConfig.Network
+	m.beaconConfig = networkConfig.Beacon
 
-	genesisRoot := genConfig.GenesisValidatorRoot
-	genesisTime := genConfig.GenesisTime
+	genesisRoot := networkConfig.Genesis.GenesisValidatorRoot
+	genesisTime := networkConfig.Genesis.GenesisTime
 
 	// compute fork version and fork digest
 	currentSlot := slots.Since(genesisTime)
 	currentEpoch := slots.ToEpoch(currentSlot)
 
-	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, beaConfig)
+	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, m.beaconConfig)
 	if err != nil {
 		return fmt.Errorf("compute fork version for epoch %d: %w", currentEpoch, err)
 	}
@@ -172,14 +147,14 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 
 	// Overriding configuration so that functions like ComputForkDigest take the
 	// correct input data from the global configuration.
-	params.OverrideBeaconConfig(beaConfig)
-	params.OverrideBeaconNetworkConfig(netConfig)
+	params.OverrideBeaconConfig(m.beaconConfig)
+	params.OverrideBeaconNetworkConfig(m.networkConfig)
 
 	nodeConfig := m.Config.Node.AsHermesConfig()
 
-	nodeConfig.GenesisConfig = genConfig
-	nodeConfig.NetworkConfig = netConfig
-	nodeConfig.BeaconConfig = beaConfig
+	nodeConfig.GenesisConfig = networkConfig.Genesis
+	nodeConfig.NetworkConfig = m.networkConfig
+	nodeConfig.BeaconConfig = m.beaconConfig
 	nodeConfig.ForkDigest = forkDigest
 	nodeConfig.ForkVersion = currentForkVersion
 	nodeConfig.PubSubSubscriptionRequestLimit = 200

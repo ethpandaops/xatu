@@ -2,11 +2,7 @@ module github.com/ethpandaops/xatu
 
 go 1.22.0
 
-<<<<<<< HEAD
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240513080348-eafb396a7027
-=======
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-20240527060557-ae23464cdc41
->>>>>>> master
 
 require (
 	github.com/IBM/sarama v1.43.0
@@ -16,13 +12,8 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
-<<<<<<< HEAD
-	github.com/ethereum/go-ethereum v1.13.14
-	github.com/ethpandaops/beacon v0.36.0
-=======
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/ethpandaops/beacon v0.38.0
->>>>>>> master
 	github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756
 	github.com/ethpandaops/ethwallclock v0.3.0
 	github.com/go-co-op/gocron v1.27.1
@@ -41,12 +32,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/probe-lab/hermes v0.0.0-20240327153144-a2528356b4f7
 	github.com/prometheus/client_golang v1.19.0
-<<<<<<< HEAD
-	github.com/prysmaticlabs/prysm/v5 v5.0.4-0.20240510074809-a76de4f79a99
-=======
 	github.com/prometheus/client_model v0.6.0
-	github.com/prysmaticlabs/prysm/v5 v5.0.2
->>>>>>> master
+	github.com/prysmaticlabs/prysm/v5 v5.0.4-0.20240510074809-a76de4f79a99
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3

@@ -10,6 +10,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -122,7 +123,7 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, stateID string
 
 	m.log.WithField("epoch", epoch).Debug("Fetching beacon committee")
 
-	committees, err := m.beacon.FetchBeaconCommittees(ctx, stateID, epoch)
+	committees, err := m.beacon.FetchBeaconCommittees(ctx, xatuethv1.StateIDFinalized, &epoch)
 	if err != nil {
 		m.log.WithError(err).Error("Failed to fetch beacon committees")
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
@@ -36,6 +37,9 @@ type Config struct {
 
 	// Services is the list of services to run.
 	Services service.Config `yaml:"services"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -52,6 +56,10 @@ func (c *Config) Validate() error {
 	}
 
 	if err := c.GeoIP.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
 		return err
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -29,8 +30,10 @@ import (
 	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
+	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Sentry struct {
@@ -54,6 +57,8 @@ type Sentry struct {
 
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
+
+	shutdownFuncs []func(context.Context) error
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
@@ -90,6 +95,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		scheduler:          gocron.NewScheduler(time.Local),
 		latestForkChoice:   nil,
 		latestForkChoiceMu: sync.RWMutex{},
+		shutdownFuncs:      []func(context.Context) error{},
 	}, nil
 }
 
@@ -109,6 +115,36 @@ func (s *Sentry) Start(ctx context.Context) error {
 		WithField("version", xatu.Full()).
 		WithField("id", s.id.String()).
 		Info("Starting Xatu in sentry mode")
+
+	// Start tracing if enabled
+	if s.Config.Tracing.Enabled {
+		s.log.Info("Tracing enabled")
+
+		res, err := observability.NewResource(xatu.WithMode(xatu.ModeSentry), xatu.Short())
+		if err != nil {
+			return perrors.Wrap(err, "failed to create tracing resource")
+		}
+
+		opts := []trace.TracerProviderOption{
+			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(s.Config.Tracing.Sampling.Rate))),
+		}
+
+		tracer, err := observability.NewHTTPTraceProvider(ctx,
+			res,
+			s.Config.Tracing.AsOTelOpts(),
+			opts...,
+		)
+		if err != nil {
+			return perrors.Wrap(err, "failed to create tracing provider")
+		}
+
+		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
+		if err != nil {
+			return perrors.Wrap(err, "failed to setup tracing SDK")
+		}
+
+		s.shutdownFuncs = append(s.shutdownFuncs, shutdown)
+	}
 
 	if err := s.startBeaconCommitteesWatcher(ctx); err != nil {
 		return err
@@ -435,6 +471,12 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 	for _, sink := range s.sinks {
 		if err := sink.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range s.shutdownFuncs {
+		if err := f(ctx); err != nil {
 			return err
 		}
 	}

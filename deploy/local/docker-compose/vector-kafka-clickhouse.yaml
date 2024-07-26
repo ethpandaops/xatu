@@ -986,14 +986,6 @@ transforms:
         }
       }
 
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .data.message.slot
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1038,14 +1030,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_proposer_slashing
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1087,14 +1071,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_attester_slashing
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1142,14 +1118,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_bls_to_execution_change
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1183,14 +1151,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_execution_transaction
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1238,14 +1198,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_voluntary_exit
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1278,14 +1230,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_deposit
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1320,14 +1264,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_withdrawal
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1361,14 +1297,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_blob_sidecar
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1405,15 +1333,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_validators
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-          .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-          .error = err
-          .error_description = "failed to parse event date time"
-          log(., level: "error", rate_limit_secs: 60)
-      }
-
       epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
       if err == null {
           .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
@@ -1429,7 +1348,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           event = {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,
@@ -1492,15 +1410,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_validators
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-          .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-          .error = err
-          .error_description = "failed to parse event date time"
-          log(., level: "error", rate_limit_secs: 60)
-      }
-
       epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
       if err == null {
           .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
@@ -1516,7 +1425,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           events = push(events, {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,
@@ -1552,15 +1460,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_validators
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-          .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-          .error = err
-          .error_description = "failed to parse event date time"
-          log(., level: "error", rate_limit_secs: 60)
-      }
-
       epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
       if err == null {
           .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
@@ -1576,7 +1475,6 @@ transforms:
 
       for_each(array!(.data.validators)) -> |_index, validator| {
           events = push(events, {
-              "event_date_time": .event_date_time,
               "updated_date_time": .updated_date_time,
               "meta_client_name": .meta_client_name,
               "meta_client_id": .meta_client_id,
@@ -1671,14 +1569,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_proposer_duty
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1708,14 +1598,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .block_slot = .meta.client.additional_data.block.slot.number
       block_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1825,14 +1707,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_committee
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .data.slot
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {

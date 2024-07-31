@@ -66,6 +66,7 @@ transforms:
       libp2p_trace_gossipsub_beacon_attestation: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       beacon_api_eth_v1_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
+      libp2p_trace_gossipsub_beacon_data_column_sidecar : .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_DATA_COLUMN_SIDECAR"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -868,6 +869,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-beacon-validators
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_gossipsub_beacon_data_column_sidecar_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_beacon_data_column_sidecar
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-gossipsub-beacon-data-column-sidecar
     compression: snappy
     healthcheck:
       enabled: true

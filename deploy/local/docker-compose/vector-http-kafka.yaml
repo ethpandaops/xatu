@@ -17,7 +17,6 @@ transforms:
     inputs:
       - xatu_server_events_http
     route:
-      beacon_p2p_attestation: .event.name == "BEACON_P2P_ATTESTATION"
       blockprint_block_classification: .event.name == "BLOCKPRINT_BLOCK_CLASSIFICATION"
       eth_v1_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
       eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE"
@@ -66,6 +65,7 @@ transforms:
       libp2p_trace_gossipsub_beacon_block: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
       libp2p_trace_gossipsub_beacon_attestation: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
+      beacon_api_eth_v1_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -633,22 +633,6 @@ sinks:
       codec: json
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
-  beacon_p2p_attestation_kafka:
-    type: kafka
-    buffer:
-      max_events: 500000
-    batch:
-      timeout_secs: 0.5
-    inputs:
-      - xatu_server_events_router.beacon_p2p_attestation
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    key_field: "event.id"
-    topic: beacon-p2p-attestation
-    compression: snappy
-    healthcheck:
-      enabled: true
-    encoding:
-      codec: json
   beacon_api_eth_v1_proposer_duty_kafka:
     type: kafka
     buffer:
@@ -868,6 +852,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-gossipsub-blob-sidecar
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  beacon_api_eth_v1_beacon_validators_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.beacon_api_eth_v1_beacon_validators
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v1-beacon-validators
     compression: snappy
     healthcheck:
       enabled: true

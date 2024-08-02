@@ -51,6 +51,12 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 
 	xatu.RegisterEventIngesterServer(grpcServer, e)
 
+	for _, sink := range e.sinks {
+		if err := sink.Start(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

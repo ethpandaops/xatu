@@ -87,16 +87,6 @@ sources:
       - "beacon-api-eth-v1-beacon-blob-sidecar"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
-  beacon_p2p_events_kafka:
-    type: kafka
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    group_id: xatu-vector-kafka-clickhouse-beacon-p2p-events
-    key_field: "event.id"
-    auto_offset_reset: earliest
-    decoding:
-      codec: json
-    topics:
-      - "^beacon-p2p.+"
   beacon_api_eth_v1_proposer_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -107,6 +97,18 @@ sources:
     auto_offset_reset: earliest
     topics:
       - "^beacon-api-eth-v1-proposer-.+"
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
+  beacon_api_eth_v1_beacon_validators_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    auto_offset_reset: earliest
+    group_id: xatu-vector-kafka-clickhouse-beacon-api-eth-v1-beacon-validators
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "beacon-api-eth-v1-beacon-validators"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
 transforms:
@@ -120,8 +122,8 @@ transforms:
       - beacon_api_eth_v2_beacon_block_events_kafka
       - blockprint_block_classification_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
-      - beacon_p2p_events_kafka
       - beacon_api_eth_v1_proposer_kafka
+      - beacon_api_eth_v1_beacon_validators_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -302,7 +304,6 @@ transforms:
     inputs:
       - xatu_server_events_meta
     route:
-      beacon_p2p_attestation: .event.name == "BEACON_P2P_ATTESTATION"
       blockprint_block_classification: .event.name == "BLOCKPRINT_BLOCK_CLASSIFICATION"
       canonical_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
       canonical_beacon_block_attester_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
@@ -312,10 +313,12 @@ transforms:
       canonical_beacon_block_execution_transaction: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
       canonical_beacon_block_proposer_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
       canonical_beacon_block_voluntary_exit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
+      canonical_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
       canonical_beacon_block_withdrawal: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
       canonical_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_V2" && .meta.client.additional_data.finalized_when_requested == true
       canonical_beacon_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "finalized"
-      eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE"
+      canonical_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE" && .meta.client.additional_data.state_id == "finalized"
+      eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE" && .meta.client.additional_data.state_id != "finalized"
       eth_v1_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "head"
       eth_v1_events_attestation_v2: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"
       eth_v1_events_attestation: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION"
@@ -340,9 +343,9 @@ transforms:
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
-      - xatu_server_events_router.beacon_p2p_attestation
       - xatu_server_events_router.blockprint_block_classification
       - xatu_server_events_router.canonical_beacon_blob_sidecar
+      - xatu_server_events_router.canonical_beacon_validators
       - xatu_server_events_router.canonical_beacon_block
       - xatu_server_events_router.canonical_beacon_block_attester_slashing
       - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
@@ -353,6 +356,7 @@ transforms:
       - xatu_server_events_router.canonical_beacon_block_voluntary_exit
       - xatu_server_events_router.canonical_beacon_block_withdrawal
       - xatu_server_events_router.canonical_beacon_proposer_duty
+      - xatu_server_events_router.canonical_beacon_committee
       - xatu_server_events_router.eth_v1_beacon_committee
       - xatu_server_events_router.eth_v1_proposer_duty
       - xatu_server_events_router.eth_v1_events_attestation
@@ -428,7 +432,6 @@ transforms:
         .error_description = "failed to parse epoch start date time"
         log(., level: "error", rate_limit_secs: 60)
       }
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -472,7 +475,6 @@ transforms:
       .execution_optimistic = .data.execution_optimistic
       .previous_duty_dependent_root = .data.previous_duty_dependent_root
       .current_duty_dependent_root = .data.current_duty_dependent_root
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -513,7 +515,6 @@ transforms:
       .blob_index = .data.index
       .kzg_commitment = .data.kzg_commitment
       .versioned_hash = .data.versioned_hash
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -553,7 +554,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -684,7 +684,6 @@ transforms:
       }
       .request_duration = .meta.client.additional_data.snapshot.request_duration_ms
       .request_slot_start_diff = .meta.client.additional_data.snapshot.requested_at_slot_start_diff_ms
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -712,9 +711,26 @@ transforms:
         .error_description = "failed to parse epoch start date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
       .validator_index = .data.message.validator_index
       .signature = .data.signature
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -745,7 +761,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -789,7 +804,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .execution_optimistic = .data.execution_optimistic
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -834,7 +848,6 @@ transforms:
       }
       .selection_proof = .data.message.selection_proof
       .signature = .data.signature
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -943,7 +956,6 @@ transforms:
       .execution_payload_transactions_count = .meta.client.additional_data.transactions_count
       .execution_payload_transactions_total_bytes = .meta.client.additional_data.transactions_total_bytes
       .execution_payload_transactions_total_bytes_compressed = .meta.client.additional_data.transactions_total_bytes_compressed
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -974,14 +986,6 @@ transforms:
         }
       }
 
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .data.message.slot
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1026,14 +1030,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_proposer_slashing
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1066,12 +1062,6 @@ transforms:
       .signed_header_2_message_parent_root = .data.signed_header_2.message.parent_root
       .signed_header_2_message_state_root = .data.signed_header_2.message.state_root
       .signed_header_2_signature = .data.signed_header_2.signature
-      key, err = .block_root + .signed_header_1_message_slot + .signed_header_2_message_slot + .signed_header_1_message_proposer_index + .signed_header_2_message_proposer_index + .signed_header_1_message_body_root + .signed_header_2_message_body_root
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1081,14 +1071,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_attester_slashing
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1127,24 +1109,6 @@ transforms:
       .attestation_2_data_source_root = .data.attestation_2.data.source.root
       .attestation_2_data_target_epoch = .data.attestation_2.data.target.epoch
       .attestation_2_data_target_root = .data.attestation_2.data.target.root
-      indices1, err = join(.attestation_1_attesting_indices)
-      if err != null {
-        .error = err
-        .error_description = "failed to join attestation_1_attesting_indices"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      indices2, err = join(.attestation_2_attesting_indices)
-      if err != null {
-        .error = err
-        .error_description = "failed to join attestation_2_attesting_indices"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      key, err = .block_root + indices1 + indices2 + .attestation_1_data_slot + .attestation_2_data_slot + .attestation_1_data_beacon_block_root + .attestation_2_data_beacon_block_root
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1154,14 +1118,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_bls_to_execution_change
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1186,12 +1142,6 @@ transforms:
       .exchanging_message_from_bls_pubkey = .data.message.from_bls_pubkey
       .exchanging_message_to_execution_address = .data.message.to_execution_address
       .exchanging_signature = .data.signature
-      key, err = .block_root + .exchanging_message_validator_index + .exchanging_message_from_bls_pubkey + .exchanging_message_to_execution_address
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1201,14 +1151,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_execution_transaction
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1247,13 +1189,6 @@ transforms:
       .call_data_size = .meta.client.additional_data.call_data_size
       .blob_sidecars_size = .meta.client.additional_data.blob_sidecars_size
       .blob_sidecars_empty_size = .meta.client.additional_data.blob_sidecars_empty_size
-
-      key, err = .block_root + .position + .hash + .nonce
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1263,14 +1198,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_voluntary_exit
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1294,12 +1221,6 @@ transforms:
       .voluntary_exit_message_epoch = .data.message.epoch
       .voluntary_exit_message_validator_index = .data.message.validator_index
       .voluntary_exit_signature = .data.signature
-      key, err = .block_root + .voluntary_exit_message_epoch + .voluntary_exit_message_validator_index
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1309,14 +1230,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_deposit
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1342,18 +1255,6 @@ transforms:
       .deposit_data_withdrawal_credentials = .data.data.withdrawal_credentials
       .deposit_data_amount = .data.data.amount
       .deposit_data_signature = .data.data.signature
-      proof, err = join(.deposit_proof)
-      if err != null {
-        .error = err
-        .error_description = "failed to join deposit_proof"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      key, err = .block_root + .deposit_data_pubkey + .proof
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1363,14 +1264,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_withdrawal
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.block.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1395,12 +1288,6 @@ transforms:
       .withdrawal_validator_index = .data.validator_index
       .withdrawal_address = .data.address
       .withdrawal_amount = .data.amount
-      key, err = .block_root + .withdrawal_index + .withdrawal_validator_index
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1410,14 +1297,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_blob_sidecar
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1445,16 +1324,187 @@ transforms:
       .blob_index = .data.index
       .blob_size = .meta.client.additional_data.data_size
       .blob_empty_size = .meta.client.additional_data.data_empty_size
-      key, err = .block_root + .versioned_hash + .blob_index
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
       del(.data)
+  canonical_beacon_validators_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_validators
+    source: |-
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+          .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+          .error = err
+          .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+      }
+
+      events = []
+
+      .updated_date_time = to_unix_timestamp(now())
+
+      for_each(array!(.data.validators)) -> |_index, validator| {
+          event = {
+              "updated_date_time": .updated_date_time,
+              "meta_client_name": .meta_client_name,
+              "meta_client_id": .meta_client_id,
+              "meta_client_version": .meta_client_version,
+              "meta_client_implementation": .meta_client_implementation,
+              "meta_client_os": .meta_client_os,
+              "meta_client_ip": .meta_client_ip,
+              "meta_network_id": .meta_network_id,
+              "meta_network_name": .meta_network_name,
+              "meta_client_geo_city": .meta_client_geo_city,
+              "meta_client_geo_country": .meta_client_geo_country,
+              "meta_client_geo_country_code": .meta_client_geo_country_code,
+              "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+              "meta_client_geo_longitude": .meta_client_geo_longitude,
+              "meta_client_geo_latitude": .meta_client_geo_latitude,
+              "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+              "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
+              "epoch": .meta.client.additional_data.epoch.number,
+              "epoch_start_date_time": .epoch_start_date_time,
+              "index": validator.index,
+              "status": validator.status,
+              "slashed": validator.data.slashed
+          }
+
+          if exists(validator.balance) && validator.balance != "0" {
+              event = merge(event, {"balance": validator.balance})
+          }
+
+          if exists(validator.data.effective_balance) && validator.data.effective_balance != "0" {
+              event = merge(event, {"effective_balance": validator.data.effective_balance})
+          }
+
+          if exists(validator.data.activation_epoch) && validator.data.activation_epoch != "0" && validator.data.activation_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_epoch": validator.data.activation_epoch})
+          }
+
+          if exists(validator.data.activation_eligibility_epoch) && validator.data.activation_eligibility_epoch != "0" && validator.data.activation_eligibility_epoch != "18446744073709551615" {
+              event = merge(event, {"activation_eligibility_epoch": validator.data.activation_eligibility_epoch})
+          }
+
+          if exists(validator.data.exit_epoch) && validator.data.exit_epoch != "0" && validator.data.exit_epoch != "18446744073709551615" {
+              event = merge(event, {"exit_epoch": validator.data.exit_epoch})
+          }
+
+          if exists(validator.data.withdrawable_epoch) && validator.data.withdrawable_epoch != "0" && validator.data.withdrawable_epoch != "18446744073709551615" {
+              event = merge(event, {"withdrawable_epoch": validator.data.withdrawable_epoch})
+          }
+
+          events = push(events, event)
+      }
+      . = events
+  canonical_beacon_validators_pubkeys_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_validators
+    source: |-
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+          .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+          .error = err
+          .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+      }
+
+      events = []
+
+      .updated_date_time = to_unix_timestamp(now())
+
+      for_each(array!(.data.validators)) -> |_index, validator| {
+          events = push(events, {
+              "updated_date_time": .updated_date_time,
+              "meta_client_name": .meta_client_name,
+              "meta_client_id": .meta_client_id,
+              "meta_client_version": .meta_client_version,
+              "meta_client_implementation": .meta_client_implementation,
+              "meta_client_os": .meta_client_os,
+              "meta_client_ip": .meta_client_ip,
+              "meta_network_id": .meta_network_id,
+              "meta_network_name": .meta_network_name,
+              "meta_client_geo_city": .meta_client_geo_city,
+              "meta_client_geo_country": .meta_client_geo_country,
+              "meta_client_geo_country_code": .meta_client_geo_country_code,
+              "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+              "meta_client_geo_longitude": .meta_client_geo_longitude,
+              "meta_client_geo_latitude": .meta_client_geo_latitude,
+              "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+              "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
+              "epoch": .meta.client.additional_data.epoch.number,
+              "epoch_start_date_time": .epoch_start_date_time,
+              "index": validator.index,
+              "pubkey": validator.data.pubkey
+          })
+      }
+      . = events
+  canonical_beacon_validators_withdrawal_credentials_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_validators
+    source: |-
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+          .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+          .error = err
+          .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+      }
+
+      events = []
+
+      .updated_date_time = to_unix_timestamp(now())
+
+      for_each(array!(.data.validators)) -> |_index, validator| {
+          events = push(events, {
+              "updated_date_time": .updated_date_time,
+              "meta_client_name": .meta_client_name,
+              "meta_client_id": .meta_client_id,
+              "meta_client_version": .meta_client_version,
+              "meta_client_implementation": .meta_client_implementation,
+              "meta_client_os": .meta_client_os,
+              "meta_client_ip": .meta_client_ip,
+              "meta_network_id": .meta_network_id,
+              "meta_network_name": .meta_network_name,
+              "meta_client_geo_city": .meta_client_geo_city,
+              "meta_client_geo_country": .meta_client_geo_country,
+              "meta_client_geo_country_code": .meta_client_geo_country_code,
+              "meta_client_geo_continent_code": .meta_client_geo_continent_code,
+              "meta_client_geo_longitude": .meta_client_geo_longitude,
+              "meta_client_geo_latitude": .meta_client_geo_latitude,
+              "meta_client_geo_autonomous_system_number": .meta_client_geo_autonomous_system_number,
+              "meta_client_geo_autonomous_system_organization": .meta_client_geo_autonomous_system_organization,
+              "meta_consensus_version": .meta_consensus_version,
+              "meta_consensus_version_major": .meta_consensus_version_major,
+              "meta_consensus_version_minor": .meta_consensus_version_minor,
+              "meta_consensus_version_patch": .meta_consensus_version_patch,
+              "meta_consensus_implementation": .meta_consensus_implementation,
+              "meta_labels": .meta_labels,
+              "epoch": .meta.client.additional_data.epoch.number,
+              "epoch_start_date_time": .epoch_start_date_time,
+              "index": validator.index,
+              "withdrawal_credentials": validator.data.withdrawal_credentials
+          })
+      }
+      . = events
   blockprint_block_classification_formatted:
     type: remap
     inputs:
@@ -1514,93 +1564,11 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
-  beacon_p2p_attestation_formatted:
-    type: remap
-    inputs:
-      - xatu_server_events_router.beacon_p2p_attestation
-    source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .slot = .data.data.slot
-      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
-      if err == null {
-        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse slot start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
-      .committee_index = .data.data.index
-      if exists(.meta.client.additional_data.attesting_validator) {
-        .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
-        .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
-      }
-      .aggregation_bits = .data.aggregation_bits
-      .beacon_block_root = .data.data.beacon_block_root
-      .epoch = .meta.client.additional_data.epoch.number
-      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
-      if err == null {
-        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse epoch start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .source_epoch = .data.data.source.epoch
-      source_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.source.epoch.start_date_time, format: "%+");
-      if err == null {
-        .source_epoch_start_date_time = to_unix_timestamp(source_epoch_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse source epoch start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .source_root = .data.data.source.root
-      .target_epoch = .data.data.target.epoch
-      target_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.target.epoch.start_date_time, format: "%+");
-      if err == null {
-        .target_epoch_start_date_time = to_unix_timestamp(target_epoch_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse target epoch start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .target_root = .data.data.target.root
-      .attestation_subnet = .meta.client.additional_data.subnet
-      .validated = .meta.client.additional_data.validated
-      .peer_id = .meta.client.additional_data.peer.id
-      .peer_ip = .meta.client.additional_data.peer.ip
-      .peer_latency = .meta.client.additional_data.peer.latency
-      key, err = .meta_client_name + .peer_id + .beacon_block_root + .slot + .committee_index + .attesting_validator_index + .attesting_validator_committee_index + .source_root + .target_root
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
-      .updated_date_time = to_unix_timestamp(now())
-      del(.event)
-      del(.meta)
-      del(.data)
   canonical_beacon_proposer_duty_formatted:
     type: remap
     inputs:
       - xatu_server_events_router.canonical_beacon_proposer_duty
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .slot = .meta.client.additional_data.slot.number
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1621,12 +1589,6 @@ transforms:
       }
       .proposer_validator_index = .data.validator_index
       .proposer_pubkey = .data.pubkey
-      key, err = .slot + .proposer_validator_index + .proposer_pubkey
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1636,14 +1598,6 @@ transforms:
     inputs:
       - xatu_server_events_router.canonical_beacon_block_elaborated_attestation
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
       .block_slot = .meta.client.additional_data.block.slot.number
       block_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
       if err == null {
@@ -1707,12 +1661,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .target_root = .data.data.target.root
-      key, err = .block_root + .block_slot + .position_in_block + .beacon_block_root + .slot + .committee_index + .source_root + .target_root
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -1750,13 +1698,37 @@ transforms:
       }
       .proposer_validator_index = .data.validator_index
       .proposer_pubkey = .data.pubkey
-      key, err = .slot + .proposer_validator_index + .proposer_pubkey + .meta.client.name
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-      }
-      .unique_key = seahash(key)
       .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  canonical_beacon_committee_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_committee
+    source: |-
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .validators = .data.validators
+      .committee_index = .data.index
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .updated_date_time = to_unix_timestamp(now())
+
       del(.event)
       del(.meta)
       del(.data)
@@ -2008,6 +1980,26 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
+  canonical_beacon_committee_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_committee_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_committee
+    batch:
+      max_bytes: 52428800
+      max_events: 1000000
+      timeout_secs: 1
+    buffer:
+      max_events: 1000000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
   canonical_beacon_block_clickhouse:
     type: clickhouse
     inputs:
@@ -2208,26 +2200,6 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-  beacon_p2p_attestation_clickhouse:
-    type: clickhouse
-    inputs:
-      - beacon_p2p_attestation_formatted
-    database: default
-    endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: beacon_p2p_attestation
-    auth:
-      strategy: basic
-      user: "${CLICKHOUSE_USER}"
-      password: "${CLICKHOUSE_PASSWORD}"
-    batch:
-      max_bytes: 52428800
-      max_events: 1000000
-      timeout_secs: 1
-    buffer:
-      max_events: 1000000
-    healthcheck:
-      enabled: true
-    skip_unknown_fields: false
   canonical_beacon_proposer_duty_clickhouse:
     type: clickhouse
     inputs:
@@ -2275,6 +2247,66 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_elaborated_attestation
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_validators_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_validators_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_validators
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_validators_pubkeys_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_validators_pubkeys_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_validators_pubkeys
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_validators_withdrawal_credentials_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_validators_withdrawal_credentials_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_validators_withdrawal_credentials
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

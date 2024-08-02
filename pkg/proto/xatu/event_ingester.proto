@@ -17,6 +17,7 @@ import "pkg/proto/eth/v2/withdrawals.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
+import "pkg/proto/eth/v1/validator.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
@@ -107,6 +108,10 @@ message DebugForkChoiceReorgV2 {
   xatu.eth.v1.ForkChoiceV2 before = 1 [ json_name = "before" ];
   xatu.eth.v1.ForkChoiceV2 after = 2 [ json_name = "after" ];
   xatu.eth.v1.EventChainReorgV2 event = 3;
+}
+
+message Validators {
+  repeated xatu.eth.v1.Validator validators = 1;
 }
 
 message BlockIdentifier {
@@ -289,6 +294,12 @@ message ClientMeta {
   message AdditionalEthV1EventsVoluntaryExitV2Data {
     // Epoch contains the epoch information for the voluntary exit.
     EpochV2 epoch = 1;
+
+    // WallclockEpoch contains the epoch information for the voluntary exit in the wall clock time.
+    EpochV2 wallclock_epoch = 2 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the voluntary exit in the wall clock time.
+    SlotV2 wallclock_slot = 3 [ json_name = "wallclock_slot" ];
   }
 
   message AdditionalEthV1EventsFinalizedCheckpointData {
@@ -427,6 +438,11 @@ message ClientMeta {
 
     // Slot contains the slot information for the beacon committee.
     SlotV2 slot = 2;
+
+    // StateID is the state ID when the proposer duty was requested.
+    // This can be used to determine if the proposer duty was canonical
+    // by checking if the state_id is 'finalized'.
+    string state_id = 3 [ json_name = "state_id" ];
   }
 
   message AdditionalMempoolTransactionData {
@@ -922,7 +938,12 @@ message ClientMeta {
     // MessageID is a unique identifier for the blob sidecar message.
     google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
   }
-  
+
+  // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
+  message AdditionalEthV1ValidatorsData {
+    EpochV2 epoch = 1;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1106,6 +1127,8 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubBeaconAttestationData libp2p_trace_gossipsub_beacon_attestation = 58 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
     // AdditionalLibP2PTraceGossipSubBlobSidecarData contains additional data about the gossip sub blob sidecar event.
     AdditionalLibP2PTraceGossipSubBlobSidecarData libp2p_trace_gossipsub_blob_sidecar = 59 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
+    // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
+    AdditionalEthV1ValidatorsData eth_v1_validators = 60 [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
   }
 }
 
@@ -1248,6 +1271,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK = 49;
     LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION = 50;
     LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR = 51;
+    BEACON_API_ETH_V1_BEACON_VALIDATORS = 52;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1381,5 +1405,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION" ];
     xatu.libp2p.gossipsub.eth.BlobSidecar libp2p_trace_gossipsub_blob_sidecar = 51
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
+    Validators eth_v1_validators = 52
+        [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
   };
 }

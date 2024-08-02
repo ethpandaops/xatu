@@ -54,18 +54,20 @@ func NewResource(serviceName, serviceVersion string) (*resource.Resource, error)
 	)
 }
 
-func NewHTTPTraceProvider(ctx context.Context, res *resource.Resource, opts ...otlptracehttp.Option) (*trace.TracerProvider, error) {
-	client := otlptracehttp.NewClient(opts...)
+func NewHTTPTraceProvider(ctx context.Context, res *resource.Resource, httpOpts []otlptracehttp.Option, opts ...trace.TracerProviderOption) (*trace.TracerProvider, error) {
+	client := otlptracehttp.NewClient(httpOpts...)
 
 	exporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("creating OTLP trace exporter: %w", err)
 	}
 
-	traceProvider := trace.NewTracerProvider(
+	options := append([]trace.TracerProviderOption{
 		trace.WithBatcher(exporter),
 		trace.WithResource(res),
-	)
+	}, opts...)
+
+	traceProvider := trace.NewTracerProvider(options...)
 
 	return traceProvider, nil
 }

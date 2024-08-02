@@ -13,14 +13,18 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/go-co-op/gocron"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
@@ -43,6 +47,8 @@ type Xatu struct {
 	geoipProvider geoip.Provider
 
 	clockDrift *time.Duration
+
+	shutdownFuncs []func(ctx context.Context) error
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
@@ -89,12 +95,43 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		geoipProvider: g,
 		services:      services,
 		clockDrift:    &clockDrift,
+		shutdownFuncs: []func(ctx context.Context) error{},
 	}, nil
 }
 
 func (x *Xatu) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	// Start tracing if enabled
+	if x.config.Tracing.Enabled {
+		x.log.Info("Tracing enabled")
+
+		res, err := observability.NewResource(xatu.WithMode(xatu.ModeServer), xatu.Short())
+		if err != nil {
+			return errors.Wrap(err, "failed to create tracing resource")
+		}
+
+		opts := []trace.TracerProviderOption{
+			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(x.config.Tracing.Sampling.Rate))),
+		}
+
+		tracer, err := observability.NewHTTPTraceProvider(ctx,
+			res,
+			x.config.Tracing.AsOTelOpts(),
+			opts...,
+		)
+		if err != nil {
+			return errors.Wrap(err, "failed to create tracing provider")
+		}
+
+		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
+		if err != nil {
+			return errors.Wrap(err, "failed to setup tracing SDK")
+		}
+
+		x.shutdownFuncs = append(x.shutdownFuncs, shutdown)
+	}
 
 	if err := x.startCrons(ctx); err != nil {
 		x.log.WithError(err).Fatal("Failed to start crons")
@@ -199,6 +236,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 		}
 	}
 
+	for _, f := range x.shutdownFuncs {
+		if err := f(ctx); err != nil {
+			return err
+		}
+	}
+
 	if x.pprofServer != nil {
 		if err := x.pprofServer.Shutdown(ctx); err != nil {
 			return err
@@ -224,7 +267,13 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	mb100 := 1024 * 1024 * 100
 
-	grpc_prometheus.EnableHandlingTimeHistogram()
+	grpc_prometheus.EnableHandlingTimeHistogram(
+		grpc_prometheus.WithHistogramBuckets(
+			[]float64{
+				0.01, 0.03, 0.1, 0.3, 1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33,
+			},
+		),
+	)
 
 	opts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(mb100),
@@ -241,10 +290,13 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		grpc.ChainUnaryInterceptor(
 			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+				start := time.Now()
+
 				resp, err := handler(ctx, req)
 				if err != nil {
 					x.log.
 						WithField("method", info.FullMethod).
+						WithField("duration", time.Since(start)).
 						WithError(err).
 						Error("RPC Error")
 				}

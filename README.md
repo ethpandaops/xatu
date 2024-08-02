@@ -2,6 +2,10 @@
 
 Ethereum network monitoring with collection clients and a centralized server for data pipelining.
 
+
+> [!IMPORTANT]  
+> EthPandaOps publishes all the data we collect with Xatu. Check it out [here](https://github.com/ethpandaops/xatu-data)
+
 ## Overview
 
 Xatu can run in multiple modes. Each mode can be run independently. The following diagram shows the different modes and how they interact with each other and other services.

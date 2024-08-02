@@ -101,12 +101,26 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 
 func (e *EventsVoluntaryExit) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
-
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Message.Epoch))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Message.Epoch))
 
 	extra.Epoch = &xatu.EpochV2{
 		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
 		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	wallclockSlot, wallclockEpoch, err := e.beacon.Metadata().Wallclock().Now()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
+	}
+
+	extra.WallclockSlot = &xatu.SlotV2{
+		Number:        &wrapperspb.UInt64Value{Value: wallclockSlot.Number()},
+		StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
+	}
+
+	extra.WallclockEpoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: wallclockEpoch.Number()},
+		StartDateTime: timestamppb.New(wallclockEpoch.TimeWindow().Start()),
 	}
 
 	return extra, nil

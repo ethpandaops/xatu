@@ -76,6 +76,10 @@ func (b *ElaboratedAttestationDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Elaborated attestation deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -112,54 +116,16 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 					return err
 				}
 
-				// Get the next location.
-				location, _, err := b.iterator.Next(ctx)
+				// Get the next position.
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
 				}
 
-				/*
-				   Because we are using a backfilling-checkpoint iterator we will
-				   be responsible for deciding which epoch to process, and will update the
-				   location after-the-fact accordingly.
-
-				   If the beacon node tells us our finalized_epoch is behind, we'll
-				   process the finalized_epoch. Otherwise we'll process the backfill_epoch
-				   until we are at epoch 0.
-				*/
-
-				finality, err := b.beacon.Node().Finality()
-				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-
-					return errors.Wrap(err, "failed to get finality")
-				}
-
-				if finality == nil {
-					span.SetStatus(codes.Error, "finality is nil")
-
-					return errors.New("finality is nil")
-				}
-
-				checkpoint := finality.Finalized
-
-				processingFinalizedEpoch := false
-				epochToProcess := location.GetEthV2BeaconBlockElaboratedAttestation().GetBackfillingCheckpointMarker().GetBackfillEpoch() - 1
-
-				if checkpoint.Epoch > phase0.Epoch(location.GetEthV2BeaconBlockElaboratedAttestation().BackfillingCheckpointMarker.FinalizedEpoch) {
-					processingFinalizedEpoch = true
-					epochToProcess = int64(location.GetEthV2BeaconBlockElaboratedAttestation().BackfillingCheckpointMarker.FinalizedEpoch) + 1
-				}
-
-				if !processingFinalizedEpoch && epochToProcess == -1 {
-					// We're up to date! We can safely return here and let the iterator sleep us until it thinks we're ready to process again.
-					return nil
-				}
-
 				// Process the epoch
-				events, err := b.processEpoch(ctx, phase0.Epoch(epochToProcess))
+				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
 					b.log.WithError(err).Error("Failed to process epoch")
 
@@ -167,6 +133,9 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 
 					return err
 				}
+
+				// Look ahead
+				b.lookAhead(ctx, position.LookAheads)
 
 				// Send the events
 				for _, fn := range b.onEventsCallbacks {
@@ -177,31 +146,8 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 					}
 				}
 
-				if processingFinalizedEpoch {
-					location.Data = &xatu.CannonLocation_EthV2BeaconBlockElaboratedAttestation{
-						EthV2BeaconBlockElaboratedAttestation: &xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation{
-							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-								BackfillEpoch:  location.GetEthV2BeaconBlockElaboratedAttestation().GetBackfillingCheckpointMarker().GetBackfillEpoch(),
-								FinalizedEpoch: uint64(epochToProcess),
-							},
-						},
-					}
-				} else {
-					location.Data = &xatu.CannonLocation_EthV2BeaconBlockElaboratedAttestation{
-						EthV2BeaconBlockElaboratedAttestation: &xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation{
-							BackfillingCheckpointMarker: &xatu.BackfillingCheckpointMarker{
-								BackfillEpoch:  epochToProcess,
-								FinalizedEpoch: location.GetEthV2BeaconBlockElaboratedAttestation().GetBackfillingCheckpointMarker().GetFinalizedEpoch(),
-							},
-						},
-					}
-				}
-
-				span.SetAttributes(attribute.Int64("epoch", epochToProcess))
-				span.SetAttributes(attribute.Bool("is_backfill", !processingFinalizedEpoch))
-
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return err
@@ -274,6 +220,30 @@ func (b *ElaboratedAttestationDeriver) processSlot(ctx context.Context, slot pha
 	}
 
 	return events, nil
+}
+
+// lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
+func (b *ElaboratedAttestationDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
+	_, span := observability.Tracer().Start(ctx,
+		"ElaboratedAttestationDeriver.lookAhead",
+	)
+	defer span.End()
+
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+
+		return
+	}
+
+	for _, epoch := range epochs {
+		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
+			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+
+			// Add the block to the preload queue so it's available when we need it
+			b.beacon.LazyLoadBeaconBlock(xatuethv1.SlotAsString(slot))
+		}
+	}
 }
 
 func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatu.DecoratedEvent, error) {

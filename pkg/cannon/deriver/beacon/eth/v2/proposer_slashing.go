@@ -34,13 +34,13 @@ type ProposerSlashingDeriverConfig struct {
 type ProposerSlashingDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *ProposerSlashingDeriverConfig
-	iterator          *iterator.CheckpointIterator
+	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.CheckpointIterator, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
+func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
 		log:        log.WithField("module", "cannon/event/beacon/eth/v2/proposer_slashing"),
 		cfg:        config,
@@ -75,6 +75,10 @@ func (b *ProposerSlashingDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Proposer slashing deriver enabled")
 
+	if err := b.iterator.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to start iterator")
+	}
+
 	// Start our main loop
 	b.run(ctx)
 
@@ -107,22 +111,22 @@ func (b *ProposerSlashingDeriver) run(rctx context.Context) {
 					return err
 				}
 
-				// Get the next slot
-				location, lookAhead, err := b.iterator.Next(ctx)
+				// Get the next position
+				position, err := b.iterator.Next(ctx)
 				if err != nil {
 					return err
 				}
 
-				// Look ahead
-				b.lookAheadAtLocation(ctx, lookAhead)
-
 				// Process the epoch
-				events, err := b.processEpoch(ctx, phase0.Epoch(location.GetEthV2BeaconBlockProposerSlashing().GetEpoch()))
+				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
 					b.log.WithError(err).Error("Failed to process epoch")
 
 					return err
 				}
+
+				// Look ahead
+				b.lookAhead(ctx, position.LookAheads)
 
 				// Send the events
 				for _, fn := range b.onEventsCallbacks {
@@ -132,7 +136,7 @@ func (b *ProposerSlashingDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					return err
 				}
 
@@ -257,28 +261,25 @@ func (b *ProposerSlashingDeriver) getProposerSlashings(ctx context.Context, bloc
 	return slashings, nil
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
-func (b *ProposerSlashingDeriver) lookAheadAtLocation(ctx context.Context, locations []*xatu.CannonLocation) {
+// lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
+func (b *ProposerSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	_, span := observability.Tracer().Start(ctx,
-		"ProposerSlashingDeriver.lookAheadAtLocations",
+		"ProposerSlashingDeriver.lookAhead",
 	)
 	defer span.End()
 
-	if locations == nil {
+	if epochs == nil {
 		return
 	}
 
-	for _, location := range locations {
-		// Get the next look ahead epoch
-		epoch := phase0.Epoch(location.GetEthV2BeaconBlockProposerSlashing().GetEpoch())
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		b.log.WithError(err).Warn("Failed to look ahead at epoch")
 
-		sp, err := b.beacon.Node().Spec()
-		if err != nil {
-			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+		return
+	}
 
-			return
-		}
-
+	for _, epoch := range epochs {
 		for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
 			slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
 

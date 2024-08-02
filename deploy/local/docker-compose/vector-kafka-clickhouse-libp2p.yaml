@@ -365,7 +365,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .transient = .data.transient
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -466,7 +465,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .transient = .data.transient
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -492,7 +490,6 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
       .protocol = .data.protocol
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -518,7 +515,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -560,7 +556,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -588,7 +583,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
-      .unique_key = seahash(.event.id)
 
       .proposer_index = .data.proposer_index
 
@@ -681,7 +675,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
-      .unique_key = seahash(.event.id)
 
       .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
       .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
@@ -782,7 +775,6 @@ transforms:
     inputs:
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
     source: |-
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
@@ -1366,7 +1358,6 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
-      .unique_key = seahash(.event.id)
 
       if .data.error != null {
         .error = .data.error

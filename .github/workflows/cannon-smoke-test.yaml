@@ -28,16 +28,6 @@ jobs:
         docker compose up --build --detach --quiet-pull
     - name: Create Xatu Cannon config
       run: |
-        declare -A nodes
-        nodes["holesky"]=(
-          "https://bn-holesky-nimbus-besu-001.utility.production.platform.ethpandaops.io"
-        )
-        nodes["mainnet"]=(
-          "https://bn-mainnet-nimbus-besu-001.utility.production.platform.ethpandaops.io"
-        )
-        nodes["sepolia"]=(
-          "https://bn-sepolia-nimbus-besu-001.utility.production.platform.ethpandaops.io"
-        )
         cat <<EOF > /tmp/cannon_config.yaml
           name: cannon-smoke-test
           
@@ -69,7 +59,7 @@ jobs:
           ntpServer: time.google.com
           
           ethereum:
-            beaconNodeAddress: ${nodes["holesky"]}
+            beaconNodeAddress: "https://bn-holesky-nimbus-besu-001.utility.production.platform.ethpandaops.io"
             beaconNodeHeaders:
               Authorization: "{{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}"
           coordinator:

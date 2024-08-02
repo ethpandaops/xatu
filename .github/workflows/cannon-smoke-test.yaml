@@ -48,16 +48,15 @@ jobs:
         SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh .github/cannon/seeding.yaml)
         
         echo "Seeding data prepared."
+
+        echo "SEEDING_COMMANDS: $SEEDING_COMMANDS"
         
-        # Execute each seeding command individually
-        echo "$SEEDING_COMMANDS" | while read -r command; do
-          if [ -n "$command" ]; then
-            echo "Executing command: $command"
-            docker exec xatu-postgres psql -U user -d xatu -c "$command"
-          fi
-        done
+        docker exec xatu-postgres psql -U user -d xatu -c "$SEEDING_COMMANDS"
         
         echo "Seeding completed successfully."
+    - name: Show the state of the database
+      run: |
+        docker exec xatu-postgres psql -U user -d xatu -c "SELECT * FROM cannon_location;"
     - name: Create Xatu Cannon config
       run: |
         cat <<EOF > /tmp/cannon_config.yaml
@@ -86,6 +85,8 @@ jobs:
             beaconBlobSidecar:
               enabled: true
             proposerDuty:
+              enabled: true
+            beaconCommittee:
               enabled: true
 
           ntpServer: time.google.com

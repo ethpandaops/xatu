@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Read the seeding.yaml file
-yaml_content=$(cat ./seeding.yaml)
+# Check if the location argument is provided
+if [ $# -eq 0 ]; then
+    echo "Error: Please provide the location of seeding.yaml as an argument."
+    exit 1
+fi
+
+# Read the seeding.yaml file from the provided location
+yaml_content=$(cat "$1")
 
 while IFS= read -r line; do
     if [[ $line =~ ^[[:space:]]*-[[:space:]]*id:[[:space:]]*([0-9]+) ]]; then

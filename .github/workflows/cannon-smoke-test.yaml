@@ -28,6 +28,7 @@ jobs:
         docker compose up --build --detach --quiet-pull
     - name: Seed Postgres with cannon data
       run: |
+        set -e;
         # Wait for Postgres to be ready
         echo "Waiting for Postgres to be ready..."
         docker exec xatu-postgres sh -c 'while ! pg_isready; do sleep 1; done'
@@ -44,7 +45,7 @@ jobs:
         echo "cannon_location table is now available."
         # Generate seeding commands
         echo "Generating seeding commands..."
-        SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh)
+        SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh .github/cannon/seeding.yaml)
         
         echo "Seeding data prepared."
         

@@ -14,6 +14,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+    - name: Pull docker compose images in the background
+      run: |
+        docker compose pull &
     - name: Build xatu image
       run: |
         docker build -t ethpandaops/xatu:local .
@@ -66,7 +69,7 @@ jobs:
           ntpServer: time.google.com
           
           ethereum:
-            beaconNodeAddress: ${nodes[holesky]}
+            beaconNodeAddress: ${nodes["holesky"]}
             beaconNodeHeaders:
               Authorization: "{{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}"
           coordinator:
@@ -81,7 +84,7 @@ jobs:
                 address: xatu-server:8080
                 tls: false
                 maxQueueSize: 51200
-                batchTimeout: 5s
+                batchTimeout: 1s
                 exportTimeout: 30s
                 maxExportBatchSize: 512
           EOF

@@ -60,57 +60,59 @@ jobs:
     - name: Create Xatu Cannon config
       run: |
         cat <<EOF > /tmp/cannon_config.yaml
-          name: cannon-smoke-test
-          
-          labels:
-            ethpandaops: rocks
-          
-          derivers:
-            attesterSlashing:
-              enabled: true
-            blsToExecutionChange:
-              enabled: true
-            deposit:
-              enabled: true
-            withdrawal:
-              enabled: true
-            executionTransaction:
-              enabled: true
-            proposerSlashing:
-              enabled: true
-            voluntaryExit:
-              enabled: true
-            beaconBlock:
-              enabled: true
-            beaconBlobSidecar:
-              enabled: true
-            proposerDuty:
-              enabled: true
-            beaconCommittee:
-              enabled: true
+        name: cannon-smoke-test
+        labels:
+          ethpandaops: rocks
 
-          ntpServer: time.google.com
-          
-          ethereum:
-            beaconNodeAddress: "https://bn-holesky-nimbus-besu-001.utility.production.platform.ethpandaops.io"
-            beaconNodeHeaders:
-              Authorization: "{{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}"
-          coordinator:
-            address: xatu-server:8080
-          
-          outputs:
-            - name: log
-              type: stdout
-            - name: xatu
-              type: xatu
-              config:
-                address: xatu-server:8080
-                tls: false
-                maxQueueSize: 51200
-                batchTimeout: 1s
-                exportTimeout: 30s
-                maxExportBatchSize: 512
+        derivers:
+          attesterSlashing:
+            enabled: true
+          blsToExecutionChange:
+            enabled: true
+          deposit:
+            enabled: true
+          withdrawal:
+            enabled: true
+          executionTransaction:
+            enabled: true
+          proposerSlashing:
+            enabled: true
+          voluntaryExit:
+            enabled: true
+          beaconBlock:
+            enabled: true
+          beaconBlobSidecar:
+            enabled: true
+          proposerDuty:
+            enabled: true
+          beaconCommittee:
+            enabled: true
+
+        ntpServer: time.google.com
+
+        ethereum:
+          beaconNodeAddress: "https://bn-holesky-nimbus-besu-001.utility.production.platform.ethpandaops.io"
+          beaconNodeHeaders:
+            Authorization: "AUTH_HEADER"
+        coordinator:
+          address: xatu-server:8080
+
+        outputs:
+          - name: log
+            type: stdout
+          - name: xatu
+            type: xatu
+            config:
+              address: xatu-server:8080
+              tls: false
+              maxQueueSize: 51200
+              batchTimeout: 1s
+              exportTimeout: 30s
+              maxExportBatchSize: 512
           EOF
+    - name: Set authorization header
+      run: |
+        sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}/' /tmp/cannon_config.yaml
     - name: Start Xatu cannon
       run: |
         docker run -d --network xatu_xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml

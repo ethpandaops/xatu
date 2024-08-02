@@ -1,0 +1,20 @@
+# Cannon database seeding configuration for skipping types per network to epochs with known data.
+# Useful for CI for events that are very rare, e.g. Proposer Slashingings.
+#
+# Note: Due to the way cannon progresses, we need to offset these epochs by 1.
+# FinalizedEpoch will be processed until it is up to head ascendingly.
+# Therefore, if we have data in epoch 100 for a specific type we 
+# should set the finalizedEpoch to 99.
+networks:
+  - id: 17000  # Holesky
+    types:
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
+        finalizedEpoch: 69410
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
+        finalizedEpoch: 69022
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
+        finalizedEpoch: 69463
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
+        finalizedEpoch: 69463
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
+        finalizedEpoch: 69449

@@ -81,6 +81,10 @@ jobs:
     - name: Start Xatu cannon
       run: |
         docker run -d --network xatu_xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
+    - name: Wait for Xatu cannon to start
+      run: |
+        sleep 5
+        docker logs xatu-cannon
     - name: Verify Clickhouse has data
       timeout-minutes: 10
       run: |

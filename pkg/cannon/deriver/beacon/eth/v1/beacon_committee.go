@@ -174,7 +174,7 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 	defer span.End()
 
 	// Get the beacon committees for this epoch
-	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, xatuethv1.StateIDFinalized, &epoch)
+	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, fmt.Sprintf("%d", epoch), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch beacon committees")
 	}

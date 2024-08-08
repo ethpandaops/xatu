@@ -247,7 +247,7 @@ func NewEventBlockFromDeneb(block *spec.VersionedSignedBeaconBlock) *v2.EventBlo
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Deneb.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: fmt.Sprintf("0x%x", block.Deneb.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
+						BaseFeePerGas: block.Deneb.Message.Body.ExecutionPayload.BaseFeePerGas.String(),
 						BlockHash:     block.Deneb.Message.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Deneb.Message.Body.ExecutionPayload.Transactions),
 						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Deneb.Message.Body.ExecutionPayload.Withdrawals),

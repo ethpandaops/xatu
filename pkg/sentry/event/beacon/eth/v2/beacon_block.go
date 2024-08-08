@@ -188,6 +188,13 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.Event
 		}
 
 		addTxData(capellaTxs)
+	case spec.DataVersionDeneb:
+		denebTxs := make([][]byte, len(e.event.Deneb.Message.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Deneb.Message.Body.ExecutionPayload.Transactions {
+			denebTxs[i] = tx
+		}
+
+		addTxData(denebTxs)
 	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)

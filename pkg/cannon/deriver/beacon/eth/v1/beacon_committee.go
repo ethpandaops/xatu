@@ -173,15 +173,42 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 	)
 	defer span.End()
 
+	spec, err := b.beacon.Node().Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get beacon spec")
+	}
+
 	// Get the beacon committees for this epoch
-	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, xatuethv1.StateIDFinalized, &epoch)
+	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, fmt.Sprintf("%d", phase0.Slot(epoch)*spec.SlotsPerEpoch), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch beacon committees")
 	}
 
 	allEvents := []*xatu.DecoratedEvent{}
+	uniqueEpochs := make(map[phase0.Epoch]struct{})
+	uniqueSlots := make(map[phase0.Slot]struct{})
+	uniqueCommittees := make(map[phase0.CommitteeIndex]struct{})
 
 	for _, committee := range beaconCommittees {
+		uniqueEpochs[epoch] = struct{}{}
+		uniqueSlots[committee.Slot] = struct{}{}
+		uniqueCommittees[committee.Index] = struct{}{}
+	}
+
+	if len(uniqueEpochs) > 1 {
+		b.log.WithField("epochs", uniqueEpochs).Warn("Multiple epochs found")
+
+		return nil, errors.New("multiple epochs found")
+	}
+
+	minSlot := phase0.Slot(epoch) * spec.SlotsPerEpoch
+	maxSlot := (phase0.Slot(epoch) * spec.SlotsPerEpoch) + spec.SlotsPerEpoch - 1
+
+	for _, committee := range beaconCommittees {
+		if committee.Slot < minSlot || committee.Slot > maxSlot {
+			return nil, fmt.Errorf("beacon committee slot outside of epoch. (epoch: %d, slot: %d, min: %d, max: %d)", epoch, committee.Slot, minSlot, maxSlot)
+		}
+
 		event, err := b.createEventFromBeaconCommittee(ctx, committee)
 		if err != nil {
 			b.log.

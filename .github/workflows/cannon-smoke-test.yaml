@@ -91,7 +91,7 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://bn-holesky-nimbus-besu-001.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://bn-holesky-lighthouse-erigon-001.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
         coordinator:
@@ -110,6 +110,9 @@ jobs:
               exportTimeout: 30s
               maxExportBatchSize: 512
           EOF
+    - name: Show config
+      run: |
+        cat /tmp/cannon_config.yaml
     - name: Set authorization header
       run: |
         sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}/' /tmp/cannon_config.yaml
@@ -123,61 +126,7 @@ jobs:
     - name: Verify Clickhouse has data
       timeout-minutes: 10
       run: |
-        echo "Checking Clickhouse for data"
-
-        tables=(
-            "canonical_beacon_block"
-            "canonical_beacon_block_execution_transaction"
-        )
-
-        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
-        pretty_print() {
-            local message=$1
-            local color=$2
-            local no_color='\033[0m'
-            local green='\033[0;32m'
-            local red='\033[0;31m'
-            local bright_red='\033[1;31m'
-
-            # Choose color based on the type of message
-            if [ "$color" == "green" ]; then
-                color=$green
-            elif [ "$color" == "red" ]; then
-                color=$red
-            elif [ "$color" == "bright_red" ]; then
-                color=$bright_red
-            else
-                color=$no_color
-            fi
-
-            echo -e "${color}######################${no_color}"
-            echo -e "${color}      $message      ${no_color}"
-            echo -e "${color}######################${no_color}"
-        }
-
-        print_logs() {
-            echo "Logs for $container:\n\n"
-            docker logs --tail 5 $container
-        }
-
-        # Check for any data in the tables before digging in to the individual sentries
-        for table in "${tables[@]}"; do
-          while true; do
-              pretty_print "Checking $table table..." "none"
-              data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
-              if [[ $data_count -gt 0 ]]; then
-                  pretty_print "$table table has $data_count entries" "green"
-                  break
-              else
-                  pretty_print "$table table has no entries." "bright_red"
-                  docker ps -a
-
-                  print_logs xatu-xatu-server
-                  print_logs xatu-cannon
-                  sleep 1
-              fi
-          done
-        done
+        .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
 
     - name: Collect docker logs on failure
       if: failure()

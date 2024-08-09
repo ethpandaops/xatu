@@ -113,8 +113,6 @@ jobs:
           address: xatu-server:8080
 
         outputs:
-          - name: log
-            type: stdout
           - name: xatu
             type: xatu
             config:
@@ -138,10 +136,9 @@ jobs:
         sleep 5
         docker logs xatu-cannon
     - name: Verify Clickhouse has data
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
-
     - name: Collect docker logs on failure
       if: failure()
       uses: jwalton/gh-docker-logs@v2

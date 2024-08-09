@@ -17,7 +17,12 @@ CLICKHOUSE_DB=${CLICKHOUSE_DB:-"default"}
 
 # Function to execute ClickHouse query
 execute_query() {
-    clickhouse client -h "$CLICKHOUSE_HOST" --port "$CLICKHOUSE_PORT" -u "$CLICKHOUSE_USER" --password "$CLICKHOUSE_PASSWORD" -d "$CLICKHOUSE_DB" -q "$1"
+    # Check if clickhouse-client is available
+    if command -v clickhouse-client &> /dev/null; then
+        clickhouse-client -h "$CLICKHOUSE_HOST" --port "$CLICKHOUSE_PORT" -u "$CLICKHOUSE_USER" --password "$CLICKHOUSE_PASSWORD" -d "$CLICKHOUSE_DB" -q "$1"
+    else        
+        clickhouse client -h "$CLICKHOUSE_HOST" --port "$CLICKHOUSE_PORT" -u "$CLICKHOUSE_USER" --password "$CLICKHOUSE_PASSWORD" -d "$CLICKHOUSE_DB" -q "$1"
+    fi
 }
 
 # Check if the seeding.yaml file exists

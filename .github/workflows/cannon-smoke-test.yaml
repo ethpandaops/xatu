@@ -1,0 +1,155 @@
+name: Cannon Smoke Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cannon-smoke-test:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   with:
+    #     limit-access-to-actor: true
+    #     detached: true
+    - name: Install clickhouse client
+      run: |
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+        curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | sudo gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
+
+        echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | sudo tee \
+        /etc/apt/sources.list.d/clickhouse.list
+        sudo apt-get update
+        sudo apt-get install -y clickhouse-client
+        clickhouse-client --version
+    - name: Pull docker compose images in the background
+      run: |
+        docker compose pull &
+    - name: Build xatu image
+      run: |
+        docker build -t ethpandaops/xatu:local .
+        echo "Xatu image is built."
+    - name: Run Xatu stack
+      timeout-minutes: 10
+      shell: bash
+      run: |
+        docker compose up --build --detach --quiet-pull
+    - name: Seed Postgres with cannon data
+      run: |
+        set -e;
+        # Wait for Postgres to be ready
+        echo "Waiting for Postgres to be ready..."
+        docker exec xatu-postgres sh -c 'while ! pg_isready; do sleep 1; done'
+        echo "Postgres is ready."
+
+        # Wait for the cannon_location table to be created
+        echo "Waiting for cannon_location table to be created..."
+        until docker exec xatu-postgres psql -U user -d xatu -c "SELECT 1 FROM cannon_location LIMIT 1" &> /dev/null
+        do
+          echo "Table not ready yet. Waiting 5 seconds..."
+          sleep 5
+        done
+
+        echo "cannon_location table is now available."
+        # Generate seeding commands
+        echo "Generating seeding commands..."
+        SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh .github/cannon/seeding.yaml)
+        
+        echo "Seeding data prepared."
+
+        echo "SEEDING_COMMANDS: $SEEDING_COMMANDS"
+        
+        docker exec xatu-postgres psql -U user -d xatu -c "$SEEDING_COMMANDS"
+        
+        echo "Seeding completed successfully."
+    - name: Show the state of the database
+      run: |
+        docker exec xatu-postgres psql -U user -d xatu -c "SELECT * FROM cannon_location;"
+    - name: Create Xatu Cannon config
+      run: |
+        cat <<EOF > /tmp/cannon_config.yaml
+        name: cannon-smoke-test
+        labels:
+          ethpandaops: rocks
+
+        derivers:
+          attesterSlashing:
+            enabled: true
+          blsToExecutionChange:
+            enabled: true
+          deposit:
+            enabled: true
+          withdrawal:
+            enabled: true
+          executionTransaction:
+            enabled: true
+          proposerSlashing:
+            enabled: true
+          voluntaryExit:
+            enabled: true
+          beaconBlock:
+            enabled: true
+          beaconBlobSidecar:
+            enabled: true
+          proposerDuty:
+            enabled: true
+          beaconCommittee:
+            enabled: true
+
+        ntpServer: time.google.com
+
+        ethereum:
+          beaconNodeAddress: "https://bn-holesky-lighthouse-erigon-001.utility.production.platform.ethpandaops.io"
+          beaconNodeHeaders:
+            Authorization: "AUTH_HEADER"
+        coordinator:
+          address: xatu-server:8080
+
+        outputs:
+          - name: xatu
+            type: xatu
+            config:
+              address: xatu-server:8080
+              tls: false
+              maxQueueSize: 51200
+              batchTimeout: 1s
+              exportTimeout: 30s
+              maxExportBatchSize: 512
+    - name: Show config
+      run: |
+        cat /tmp/cannon_config.yaml
+    - name: Set authorization header
+      run: |
+        sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}/' /tmp/cannon_config.yaml
+    - name: Start Xatu cannon
+      run: |
+        docker run -d --network xatu_xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml
+    - name: Wait for Xatu cannon to start
+      run: |
+        sleep 5
+        docker logs xatu-cannon
+    - name: Verify Clickhouse has data
+      timeout-minutes: 15
+      run: |
+        .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    - name: Collect docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v2
+      with:
+        dest: './logs'
+    - name: Tar logs
+      if: failure()
+      run: tar cvzf ./logs.tgz ./logs
+    - name: Upload logs to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: logs.tgz
+        path: ./logs.tgz

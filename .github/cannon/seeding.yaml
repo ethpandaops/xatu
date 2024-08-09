@@ -1,0 +1,251 @@
+# Cannon database seeding configuration for skipping types per network to epochs with known data.
+# Useful for CI for events that are very rare, e.g. Proposer Slashing.
+#
+# Note: Due to the way cannon progresses, we need to offset these epochs by 1.
+# FinalizedEpoch will be processed until it is up to head ascendingly.
+# Therefore, if we have data in epoch 100 for a specific type we 
+# should set the finalizedEpoch to 99.
+networks:
+  - id: 17000  # Holesky
+    types:
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
+        finalizedEpoch: 69410
+        assert:
+          query: "SELECT COUNT(*)
+            FROM canonical_beacon_block_deposit FINAL
+            WHERE epoch = 69411 AND
+              block_root = '0x50ae6c14a7868ce28455d1cdc170e6d993aae86396036f64f42607c5b259e0b2' AND
+              block_version = 'deneb' AND
+              deposit_data_pubkey = '0x96a54404be0164059556ea2447a8fefca5f04482b6e97b7fb1c0cc924171dcffb986c73e8991e47cd9693eee3c4e7cc4' AND
+              deposit_data_withdrawal_credentials = '0x01000000000000000000000027aabee07e0dbc8b0de20f42b1a1980871314ef5' AND
+              deposit_data_amount = 32000000000 AND
+              deposit_data_signature = '0xa9ac89d73f43b2f6eae61fc3217ba6ce1c9a3a9cfdcc11b498c8dcf3093aad108fbf50a259ef74b379e735cef7fb892402a7b07300177231c2f35de8ae9d5d3bb0f4158b2fc14528a91f4bcd542091a2188a9652c94e05a0a6e4fc991beda24d';
+          "
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
+        finalizedEpoch: 69022
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_block_bls_to_execution_change FINAL
+          WHERE 
+            epoch = 69023
+            AND slot = 2208761
+            AND block_root = '0x88b969e23aaeb906eec59fad6f33be071f0e73870bbfa6f781632337c221ba84'
+            AND block_version = 'deneb'
+            AND exchanging_message_validator_index = 1754707
+            AND exchanging_message_from_bls_pubkey = '0x8bc000fedf7df347e68fcf72ae74f0516cd6051fdb426853744cfee3ff4d171f63c574483acfd4c756c29ee4bcec8ea9'
+            AND exchanging_message_to_execution_address = '0x1c0A59Ecd75e0B2D5dc9788F028e7643AF1dc547'
+            AND exchanging_signature = '0x90c746541b567f7228623ba8991949098fef1f23b23d773c4c021b13989fad811f5fba2bad5ccd4f46e73d16b20066a6057603f0c7433c8075e17efb20380a0400e0dce6671ba6237a2807aeb218e77394c32053ea4c8475ad973f7214b34bdb'
+          "
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
+        finalizedEpoch: 67271
+        assert:
+          query: "SELECT COUNT(*) as cnt
+            FROM canonical_beacon_block_attester_slashing FINAL 
+            WHERE
+              epoch = 67272
+              AND block_root = '0xdba4fcca638f678a0576117f9709e77e889d816cca14e06a207c1945f0ed3447'
+              AND block_version = 'deneb'
+              AND has(attestation_1_attesting_indices, 1726414)
+              AND attestation_1_signature = '0xaadb1a17a200d4a8703ee2316969df1fa62959ebca53262d37134d245002b0be07927feb998aca280b5c250195af768c02ff9e1048d7e858cce39c264bcc0549fbcb1214f69e16b4c57ac54682635930793973f162b4f786442767a1c326d06e'
+              AND attestation_1_data_beacon_block_root = '0xcd45e27eb9855fb4195a82baa97f9fdce3b442d74c2ca9c5b8410347207c33e0'
+              AND attestation_1_data_slot = 2152725
+              AND attestation_1_data_index = 46
+              AND attestation_1_data_source_epoch = 67271
+              AND attestation_1_data_source_root = '0x0dd676fb6fbed7362e55c0400367fb4d46cf8ae266b8270dada8d8f3b57054b8'
+              AND attestation_1_data_target_epoch = 67272
+              AND attestation_1_data_target_root = '0x9737bb5720eaa73775300e4403cbeecffca9c202afacf6e92dfee6298c1180e0'
+              AND has(attestation_2_attesting_indices, 1726414)
+              AND attestation_2_signature = '0xae331ac2daac8f17fdcc57f29f5abc75b459456e3fe518d89c74ce126551a93914c7782e6e2df48b6baa57f01116104614d3fac6ec4bbf6a34fc8652aa433cd0f4ed0f7d598ae113668a6a71d240e4d56b843a5fbf9b192a6303fb9ef83e94e4'
+              AND attestation_2_data_beacon_block_root = '0x030b490805227553adabf9e7210422c705c0e30381aa647fb61efb3e23c407f4'
+              AND attestation_2_data_slot = 2152725
+              AND attestation_2_data_index = 46
+              AND attestation_2_data_source_epoch = 67271
+              AND attestation_2_data_source_root = '0x0dd676fb6fbed7362e55c0400367fb4d46cf8ae266b8270dada8d8f3b57054b8'
+              AND attestation_2_data_target_epoch = 67272
+              AND attestation_2_data_target_root = '0x9737bb5720eaa73775300e4403cbeecffca9c202afacf6e92dfee6298c1180e0'
+          "
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
+        finalizedEpoch: 57600
+        assert:
+          query: "SELECT COUNT(*) as cnt 
+          FROM canonical_beacon_block_proposer_slashing FINAL
+          WHERE 
+            epoch = 57601
+            AND block_root = '0x3c42bf130d6c86c8e57829355b550a58ee0b0de1397e1a81a7ab8e17a7c829ab'
+            AND block_version = 'deneb'
+            AND signed_header_1_message_slot = 1843233
+            AND signed_header_1_message_proposer_index = '356870'
+            AND signed_header_1_message_body_root = '0xc9544d722e81285b989c0de9d8eaab28001518ece10c0256ad62bc5478e52723'
+            AND signed_header_1_message_parent_root = '0xbd83d108fe8bf4f9d08bbf89b8ca3bbd103673b5efd7bfeae6155eae283903d8'
+            AND signed_header_1_message_state_root = '0xccc6dd1f9de4d215deca9f3f6c0c2a8b37756e26f9c935970119d8003fff8f4a'
+            AND signed_header_1_signature = '0x88cb94b1e76d1fc68d1941446d5c78d6e4516636499cb96be14ee0b5d740f38a32991ebbe52dd09404ede2fd18c828ea13ecc7f49f7bacc3845af1e10dfc7cc7403dfa479b90ef4356e4ff1c6e3f3fc8abee8b1cb098cbd64f64390cbaf2070a'
+            AND signed_header_2_message_slot = 1843233
+            AND signed_header_2_message_proposer_index = 356870
+            AND signed_header_2_message_body_root = '0x9f3d4ca2aefc1b3f161574a6705e13b928d64505e45ca16e87037f39b7dd9495'
+            AND signed_header_2_message_parent_root = '0xf8b753905c00f11b81a5ed0932b747f2fa991bc62e425d6e54cbc10ff6deda80'
+            AND signed_header_2_message_state_root = '0x17e721ab0fe80976d8d01365f83039d3eb8b840e8cd8cce2fe9e4d9ad9bd4bd9'
+            AND signed_header_2_signature = '0xa8d677fbe5eaf0a46d08e1f6bd23d071606321b82e1b9bb84c40792439c6b7630cf80f2a3d702ebf7a36c9338f702cb2147b47651b7871fbfb3cff3a301e0b99f6f23527aa8927d11231156e9addb4d15a01329f5a47ccf6219d067e5aef22e5'
+          "
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
+        finalizedEpoch: 70807
+        assert:
+          query: "SELECT COUNT(*)
+            FROM canonical_beacon_block_voluntary_exit FINAL
+            WHERE 
+              epoch = 70808 
+              AND block_root = '0x682d244580d3838dd6757cbd5bec3f16fc235869589617dd0cacacb92b167f15' 
+              AND block_version = 'deneb' 
+              AND voluntary_exit_signature = '0xa72f5852964e265714eb8c9ff56542e4dd5c8c82f43f8ad5a33da5489dd7a620e15d831f0b4b728ace4af56adb0ff9050033a85a4cc386acac89be0651503a7043d544803c4d77559a1917645957f65308a7352ff1daaeaf6556f01bf149d4ba' 
+              AND voluntary_exit_message_validator_index = 1771272 
+              AND voluntary_exit_message_epoch = 70808
+          "
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK
+        finalizedEpoch: 71009
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_block FINAL
+          WHERE 
+            slot = 2272320
+            AND slot_start_date_time = '2024-08-09 02:24:00'
+            AND epoch = 71010
+            AND epoch_start_date_time = '2024-08-09 02:24:00'
+            AND block_root = '0xff8e97fdf4033e499681ff0eb056cf5f2877a8f9b16f14e2db3956b75190b9e7'
+            AND block_version = 'deneb'
+            AND block_total_bytes = 204103
+            AND block_total_bytes_compressed = 95454
+            AND parent_root = '0x54264e13e97a137bed2cc1a52cf76a94bb5e385507d34ff3902d18672f4ef79e'
+            AND state_root = '0x3598ed522160cb6dd0aab216f03b26d61b32d87854c3d38754897017a66004f5'
+            AND proposer_index = 416934
+            AND eth1_data_block_hash = '0xa80ebe78370b22214b15898701c10c9c49fc77809ac72548aba918e389a95f28'
+            AND eth1_data_deposit_root = '0x50bfebb571f79b3d094192b0187145cb2773a2d0a16968fad7a9ea054ce2fdb4'
+            AND execution_payload_block_hash = '0x1ba818c4f3509131eb0c513410b7de01632b8ca54042f8a48b5cda1e6ae7151b'
+            AND execution_payload_block_number = 2095983
+            AND execution_payload_fee_recipient = '0x9baA3244565d51D9C7897c0EB6679eD4890e536E'
+            AND execution_payload_state_root = '0x86e8dcd6e429b1ead94b17eabbb5de3c42c19217ab57a16f7f6a857d078e2eff'
+            AND execution_payload_parent_hash = '0x8d8d8266b756c27205a15a38b914b971f12ec6c1759f5a5643697cf394068ad1'
+            AND execution_payload_transactions_count = 67
+            AND execution_payload_transactions_total_bytes = 49669
+            AND execution_payload_transactions_total_bytes_compressed = 27703"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_PROPOSER_DUTY
+        finalizedEpoch: 71002
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_proposer_duty FINAL
+          WHERE 
+            slot = 2272098
+            AND slot_start_date_time = '2024-08-09 01:39:36'
+            AND epoch = 71003
+            AND epoch_start_date_time = '2024-08-09 01:39:12'
+            AND proposer_validator_index = 1337851
+            AND proposer_pubkey = '0xb69cc87f9610eeaff816b2c0182e3320fd04c8be572a3adba2b40d7f11a6d84dadeb24cf2829d10eda0d611b46da0907'"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
+        finalizedEpoch: 71010
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_blob_sidecar FINAL
+          WHERE 
+            slot = 2272356
+            AND slot_start_date_time = '2024-08-09 02:31:12'
+            AND epoch = 71011
+            AND epoch_start_date_time = '2024-08-09 02:30:24'
+            AND block_root = '0x1e02ff0da1811c5609acafd4597543878cb6216fe519587da1ab0aeb3296ac75'
+            AND block_parent_root = '0x0e81a2325869e04919bffc5bbf745ecafd22c7005ac717ee5122f1a3f51ea24a'
+            AND versioned_hash = '0x0100d3b0b63aefd96e6b2c7aa84c1a0cdd6fe8366128cebf032fc64846c6608c'
+            AND kzg_commitment = '0xb1b3ca5607286f6b221fa38321a80980cfe10946e9e33e07b74e13a93e385ddb99ca727a1f617e6f0c088f68f1da63b5'
+            AND kzg_proof = '0x8bdca97a0c6c7baf0a94d25bfa70024319f2ebb36442865333f6d41d8d5f141283f337da24dc7f3b72151098ddf60571'
+            AND proposer_index = 1744957
+            AND blob_index = 2
+            AND blob_size = 131072
+            AND blob_empty_size = 56206"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+        finalizedEpoch: 71005
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_validators FINAL
+          WHERE 
+            epoch = 71006
+            AND epoch_start_date_time = '2024-08-09 01:58:24'
+            AND `index` = 0
+            AND balance = '32005471610'
+            AND status = 'active_ongoing'
+            AND effective_balance = '32000000000'
+            AND slashed = false"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+        finalizedEpoch: 71005
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_validators_pubkeys FINAL
+          WHERE 
+           `index` = 0
+            AND pubkey = '0x8c87f7a01e54215ac177fb706d78e9edf762f15f34ba81103094da450f1683ced257d4270fc030a9a803aaa060edf16a'"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+        finalizedEpoch: 71005
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_validators_withdrawal_credentials FINAL
+          WHERE 
+           `index` = 0
+            AND withdrawal_credentials = '0x0100000000000000000000000e5dda855eb1de2a212cd1f62b2a3ee49d20c444'"
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
+        finalizedEpoch: 71010
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_block_execution_transaction FINAL
+          WHERE 
+            slot = 2272352
+            AND slot_start_date_time = '2024-08-09 02:30:24'
+            AND epoch = 71011
+            AND epoch_start_date_time = '2024-08-09 02:30:24'
+            AND block_root = '0x92818da049f530f531878aead240dd43ca95b87fde0ee3bc65ae1f334a172457'
+            AND block_version = 'deneb'
+            AND position = 0
+            AND hash = '0x50ba44917e11e686f74aa02874694e4c11216e789a8e98914e397d3cdd874a63'
+            AND `from` = '0xc227C08d62cBedF89B1B605Ef03868838E9ABf1e'
+            AND `to` = '0x39C2A9c40c6bd507563648b5175F9aF712808A69'
+            AND nonce = '1'
+            AND gas_price = '10000000000'
+            AND gas = '21000'
+            AND gas_tip_cap = '10000000000'
+            AND gas_fee_cap = '10000000000'
+            AND value = '3059301224999739320'
+            AND type = 0
+            AND size = 112
+            AND call_data_size = 0
+            AND blob_gas IS NULL
+            AND blob_gas_fee_cap IS NULL
+            AND blob_hashes = []
+            AND blob_sidecars_size = 0
+            AND blob_sidecars_empty_size = 0"
+          expected: "1"
+      - name: BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
+        finalizedEpoch: 71010
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_block_withdrawal FINAL
+          WHERE 
+            slot = 2272352
+            AND slot_start_date_time = '2024-08-09 02:30:24'
+            AND epoch = 71011
+            AND epoch_start_date_time = '2024-08-09 02:30:24'
+            AND block_root = '0x92818da049f530f531878aead240dd43ca95b87fde0ee3bc65ae1f334a172457'
+            AND block_version = 'deneb'
+            AND withdrawal_index = 33356747
+            AND withdrawal_validator_index = 1501755
+            AND withdrawal_address = '0x428614Fb30e3007e5d628D09e8BDB0CE9720FAdB'
+            AND withdrawal_amount = '7498159'"
+          expected: "1"
+      - name: BEACON_API_ETH_V1_BEACON_COMMITTEE
+        finalizedEpoch: 71016
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_committee FINAL
+          WHERE 
+            slot = 2272557
+            AND slot_start_date_time = '2024-08-09 03:11:24'
+            AND committee_index = '21'
+            AND epoch = 71017
+            AND epoch_start_date_time = '2024-08-09 03:08:48'
+            AND has(validators, 1119923)
+          "
+          expected: "1"

@@ -102,6 +102,8 @@ jobs:
 
         ethereum:
           beaconNodeAddress: "https://bn-holesky-lighthouse-erigon-001.utility.production.platform.ethpandaops.io"
+          beaconNodeHeaders:
+            Authorization: "AUTH_HEADER"
         coordinator:
           address: xatu-server:8080
 
@@ -117,7 +119,6 @@ jobs:
               batchTimeout: 1s
               exportTimeout: 30s
               maxExportBatchSize: 512
-          EOF
     - name: Show config
       run: |
         cat /tmp/cannon_config.yaml

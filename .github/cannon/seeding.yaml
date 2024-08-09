@@ -1,5 +1,5 @@
 # Cannon database seeding configuration for skipping types per network to epochs with known data.
-# Useful for CI for events that are very rare, e.g. Proposer Slashingings.
+# Useful for CI for events that are very rare, e.g. Proposer Slashing.
 #
 # Note: Due to the way cannon progresses, we need to offset these epochs by 1.
 # FinalizedEpoch will be processed until it is up to head ascendingly.
@@ -10,11 +10,97 @@ networks:
     types:
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
         finalizedEpoch: 69410
+        assert:
+          query: "SELECT COUNT(*)
+            FROM canonical_beacon_block_deposit FINAL
+            WHERE epoch = 69411 AND
+              block_root = '0x50ae6c14a7868ce28455d1cdc170e6d993aae86396036f64f42607c5b259e0b2' AND
+              block_version = 'deneb' AND
+              deposit_data_pubkey = '0x96a54404be0164059556ea2447a8fefca5f04482b6e97b7fb1c0cc924171dcffb986c73e8991e47cd9693eee3c4e7cc4' AND
+              deposit_data_withdrawal_credentials = '0x01000000000000000000000027aabee07e0dbc8b0de20f42b1a1980871314ef5' AND
+              deposit_data_amount = 32000000000 AND
+              deposit_data_signature = '0xa9ac89d73f43b2f6eae61fc3217ba6ce1c9a3a9cfdcc11b498c8dcf3093aad108fbf50a259ef74b379e735cef7fb892402a7b07300177231c2f35de8ae9d5d3bb0f4158b2fc14528a91f4bcd542091a2188a9652c94e05a0a6e4fc991beda24d';
+          "
+          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
         finalizedEpoch: 69022
+        assert:
+          query: "SELECT COUNT(*) FROM canonical_beacon_block_bls_to_execution_change FINAL
+          WHERE 
+            epoch = 69023
+            AND slot = 2208761
+            AND block_root = '0x88b969e23aaeb906eec59fad6f33be071f0e73870bbfa6f78163237c221ba84'
+            AND block_version = 'deneb'
+            AND exchanging_message_validator_index = 1754707
+            AND exchanging_message_from_bls_pubkey = '0x8bc000fedf7df347e68fcf72ae74f0516cd6051fdb426853744cfee3ff4d171f63c574483acfd4c756c29ee4bcec8ea9'
+            AND exchanging_message_to_execution_address = '0x1c0A59Ecd75e0B2D5dc9788F028e7643AF1dc547'
+            AND exchanging_signature = '0x90c746541b567f7228623ba8991949098fef1f23b23d773c4c021b13989fad811f5fba2bad5ccd4f46e73d16b20066a6057603f0c7433c8075e17efb20380a0400e0dce6671ba6237a2807aeb218e77394c32053ea4c8475ad973f7214b34bdb'
+          "
+          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
-        finalizedEpoch: 69463
+        finalizedEpoch: 67271
+        assert:
+          query: "SELECT COUNT(*) as cnt
+            FROM canonical_beacon_block_attester_slashing FINAL 
+            WHERE
+              epoch = 67272
+              AND block_root = '0xdba4fcca638f678a0576117f9709e77e889d816cca14e06a207c1945f0ed3447'
+              AND block_version = 'deneb'
+              AND has(attestation_1_attesting_indices, 1726414)
+              AND attestation_1_signature = '0xaadb1a17a200d4a8703ee2316969df1fa62959ebca53262d37134d245002b0be07927feb998aca280b5c250195af768c02ff9e1048d7e858cce39c264bcc0549fbcb1214f69e16b4c57ac54682635930793973f162b4f786442767a1c326d06e'
+              AND attestation_1_data_beacon_block_root = '0xcd45e27eb9855fb4195a82baa97f9fdce3b442d74c2ca9c5b8410347207c33e0'
+              AND attestation_1_data_slot = 2152725
+              AND attestation_1_data_index = 46
+              AND attestation_1_data_source_epoch = 67271
+              AND attestation_1_data_source_root = '0x0dd676fb6fbed7362e55c0400367fb4d46cf8ae266b8270dada8d8f3b57054b8'
+              AND attestation_1_data_target_epoch = 67272
+              AND attestation_1_data_target_root = '0x9737bb5720eaa73775300e4403cbeecffca9c202afacf6e92dfee6298c1180e0'
+              AND has(attestation_2_attesting_indices, 1726414)
+              AND attestation_2_signature = '0xae331ac2daac8f17fdcc57f29f5abc75b459456e3fe518d89c74ce126551a93914c7782e6e2df48b6baa57f01116104614d3fac6ec4bbf6a34fc8652aa433cd0f4ed0f7d598ae113668a6a71d240e4d56b843a5fbf9b192a6303fb9ef83e94e4'
+              AND attestation_2_data_beacon_block_root = '0x030b490805227553adabf9e7210422c705c0e30381aa647fb61efb3e23c407f4'
+              AND attestation_2_data_slot = 2152725
+              AND attestation_2_data_index = 46
+              AND attestation_2_data_source_epoch = 67271
+              AND attestation_2_data_source_root = '0x0dd676fb6fbed7362e55c0400367fb4d46cf8ae266b8270dada8d8f3b57054b8'
+              AND attestation_2_data_target_epoch = 67272
+              AND attestation_2_data_target_root = '0x9737bb5720eaa73775300e4403cbeecffca9c202afacf6e92dfee6298c1180e0'
+          "
+          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
-        finalizedEpoch: 69463
+        finalizedEpoch: 57600
+        assert:
+          query: "SELECT COUNT(*) as cnt 
+          FROM canonical_beacon_block_proposer_slashing FINAL
+          WHERE 
+            epoch = 57601
+            AND block_root = '0x3c42bf130d6c86c8e57829355b550a58ee0b0de1397e1a81a7ab8e17a7c829ab'
+            AND block_version = 'deneb'
+            AND signed_header_1_message_slot = 1843233
+            AND signed_header_1_message_proposer_index = '356870'
+            AND signed_header_1_message_body_root = '0xc9544d722e81285b989c0de9d8eaab28001518ece10c0256ad62bc5478e52723'
+            AND signed_header_1_message_parent_root = '0xbd83d108fe8bf4f9d08bbf89b8ca3bbd103673b5efd7bfeae6155eae283903d8'
+            AND signed_header_1_message_state_root = '0xccc6dd1f9de4d215deca9f3f6c0c2a8b37756e26f9c935970119d8003fff8f4a'
+            AND signed_header_1_signature = '0x88cb94b1e76d1fc68d1941446d5c78d6e4516636499cb96be14ee0b5d740f38a32991ebbe52dd09404ede2fd18c828ea13ecc7f49f7bacc3845af1e10dfc7cc7403dfa479b90ef4356e4ff1c6e3f3fc8abee8b1cb098cbd64f64390cbaf2070a'
+            AND signed_header_2_message_slot = 1843233
+            AND signed_header_2_message_proposer_index = 356870
+            AND signed_header_2_message_body_root = '0x9f3d4ca2aefc1b3f161574a6705e13b928d64505e45ca16e87037f39b7dd9495'
+            AND signed_header_2_message_parent_root = '0xf8b753905c00f11b81a5ed0932b747f2fa991bc62e425d6e54cbc10ff6deda80'
+            AND signed_header_2_message_state_root = '0x17e721ab0fe80976d8d01365f83039d3eb8b840e8cd8cce2fe9e4d9ad9bd4bd9'
+            AND signed_header_2_signature = '0xa8d677fbe5eaf0a46d08e1f6bd23d071606321b82e1b9bb84c40792439c6b7630cf80f2a3d702ebf7a36c9338f702cb2147b47651b7871fbfb3cff3a301e0b99f6f23527aa8927d11231156e9addb4d15a01329f5a47ccf6219d067e5aef22e5'
+          "
+          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
-        finalizedEpoch: 69449
+        finalizedEpoch: 70807
+        assert:
+          query: "
+            SELECT COUNT(*)
+            FROM canonical_beacon_block_voluntary_exit FINAL
+            WHERE 
+              epoch = 70808 AND
+              block_root = '0x682d244580d3838dd6757cbd5bec3f16fc235869589617dd0cacacb92b167f15' AND
+              block_version = 'deneb' AND
+              voluntary_exit_signature = '0xa72f5852964e265714eb8c9ff56542e4dd5c8c82f43f8ad5a33da5489dd7a620e15d831f0b4b728ace4af56adb0ff9050033a85a4cc386acac89be0651503a7043d544803c4d77559a1917645957f65308a7352ff1daaeaf6556f01bf149d4ba' AND
+              voluntary_exit_validator_exit = 1771272 AND
+              voluntary_exit_message_epoch = 70808
+          "
+          expected: "1"

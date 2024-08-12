@@ -1018,19 +1018,21 @@ transforms:
       .proposer_index = .data.message.proposer_index
       .eth1_data_block_hash = .data.message.body.eth1_data.block_hash
       .eth1_data_deposit_root = .data.message.body.eth1_data.deposit_root
-      .execution_payload_block_hash = .data.message.body.execution_payload.block_hash
-      .execution_payload_block_number = .data.message.body.execution_payload.block_number
-      .execution_payload_fee_recipient = .data.message.body.execution_payload.fee_recipient
-      .execution_payload_base_fee_per_gas = .data.message.body.execution_payload.base_fee_per_gas
-      .execution_payload_blob_gas_used = .data.message.body.execution_payload.blob_gas_used
-      .execution_payload_excess_blob_gas = .data.message.body.execution_payload.excess_blob_gas
-      .execution_payload_gas_limit = .data.message.body.execution_payload.gas_limit
-      .execution_payload_gas_used = .data.message.body.execution_payload.gas_used
-      .execution_payload_state_root = .data.message.body.execution_payload.state_root
-      .execution_payload_parent_hash = .data.message.body.execution_payload.parent_hash
-      .execution_payload_transactions_count = .meta.client.additional_data.transactions_count
-      .execution_payload_transactions_total_bytes = .meta.client.additional_data.transactions_total_bytes
-      .execution_payload_transactions_total_bytes_compressed = .meta.client.additional_data.transactions_total_bytes_compressed
+      if exists(.data.message.body.execution_payload) && .data.message.body.execution_payload.block_hash != "" {
+        .execution_payload_block_hash = .data.message.body.execution_payload.block_hash
+        .execution_payload_block_number = .data.message.body.execution_payload.block_number
+        .execution_payload_fee_recipient = .data.message.body.execution_payload.fee_recipient
+        .execution_payload_base_fee_per_gas = .data.message.body.execution_payload.base_fee_per_gas
+        .execution_payload_blob_gas_used = .data.message.body.execution_payload.blob_gas_used
+        .execution_payload_excess_blob_gas = .data.message.body.execution_payload.excess_blob_gas
+        .execution_payload_gas_limit = .data.message.body.execution_payload.gas_limit
+        .execution_payload_gas_used = .data.message.body.execution_payload.gas_used
+        .execution_payload_state_root = .data.message.body.execution_payload.state_root
+        .execution_payload_parent_hash = .data.message.body.execution_payload.parent_hash
+        .execution_payload_transactions_count = .meta.client.additional_data.transactions_count
+        .execution_payload_transactions_total_bytes = .meta.client.additional_data.transactions_total_bytes
+        .execution_payload_transactions_total_bytes_compressed = .meta.client.additional_data.transactions_total_bytes_compressed
+      }
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)

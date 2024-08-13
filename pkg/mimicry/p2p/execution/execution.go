@@ -124,6 +124,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil, err
 	}
 
+	p.txProc.Start(ctx)
+
 	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
 		// setup client implementation and version info
 		split := strings.SplitN(hello.Name, "/", 2)

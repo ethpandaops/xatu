@@ -161,7 +161,7 @@ services:
   xatu-postgres:
     profiles:
       - ""
-    image: postgres:15
+    image: postgres:16
     container_name: xatu-postgres
     hostname: xatu-postgres
     volumes:

@@ -88,6 +88,8 @@ func (c *Client) Type() string {
 }
 
 func (c *Client) Start(ctx context.Context) error {
+	c.proc.Start(ctx)
+
 	return nil
 }
 

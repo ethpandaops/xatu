@@ -113,7 +113,7 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 	}
 }
 
-func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, stateID string, epoch phase0.Epoch) ([]*v1.BeaconCommittee, error) {
+func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch) ([]*v1.BeaconCommittee, error) {
 	if duties := m.beaconCommittees.Get(epoch); duties != nil {
 		return duties.Value(), nil
 	}
@@ -138,7 +138,7 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, stateID string
 }
 
 func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
-	if _, err := m.FetchBeaconCommittee(context.Background(), "head", epoch); err != nil {
+	if _, err := m.FetchBeaconCommittee(context.Background(), epoch); err != nil {
 		return 0, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch, err)
 	}
 
@@ -165,7 +165,7 @@ func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, 
 func (m *DutiesService) GetLastCommitteeIndex(ctx context.Context, slot phase0.Slot) (*phase0.CommitteeIndex, error) {
 	epoch := m.metadata.Wallclock().Epochs().FromSlot(uint64(slot))
 
-	_, err := m.FetchBeaconCommittee(ctx, "head", phase0.Epoch(epoch.Number()))
+	_, err := m.FetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()))
 	if err != nil {
 		return nil, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch.Number(), err)
 	}

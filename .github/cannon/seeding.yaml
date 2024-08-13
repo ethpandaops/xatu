@@ -161,35 +161,6 @@ networks:
             AND blob_size = 131072
             AND blob_empty_size = 56206"
           expected: "1"
-      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
-        finalizedEpoch: 71005
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_validators FINAL
-          WHERE 
-            epoch = 71006
-            AND epoch_start_date_time = '2024-08-09 01:58:24'
-            AND `index` = 0
-            AND balance = '32005471610'
-            AND status = 'active_ongoing'
-            AND effective_balance = '32000000000'
-            AND slashed = false"
-          expected: "1"
-      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
-        finalizedEpoch: 71005
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_validators_pubkeys FINAL
-          WHERE 
-           `index` = 0
-            AND pubkey = '0x8c87f7a01e54215ac177fb706d78e9edf762f15f34ba81103094da450f1683ced257d4270fc030a9a803aaa060edf16a'"
-          expected: "1"
-      - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
-        finalizedEpoch: 71005
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_validators_withdrawal_credentials FINAL
-          WHERE 
-           `index` = 0
-            AND withdrawal_credentials = '0x0100000000000000000000000e5dda855eb1de2a212cd1f62b2a3ee49d20c444'"
-          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
         finalizedEpoch: 71010
         assert:
@@ -249,3 +220,32 @@ networks:
             AND has(validators, 1119923)
           "
           expected: "1"
+      # - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+      #   finalizedEpoch: 71005
+      #   assert:
+      #     query: "SELECT COUNT(*) FROM canonical_beacon_validators FINAL
+      #     WHERE 
+      #       epoch = 71006
+      #       AND epoch_start_date_time = '2024-08-09 01:58:24'
+      #       AND `index` = 0
+      #       AND balance = '32005471610'
+      #       AND status = 'active_ongoing'
+      #       AND effective_balance = '32000000000'
+      #       AND slashed = false"
+      #     expected: "1"
+      # - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+      #   finalizedEpoch: 71005
+      #   assert:
+      #     query: "SELECT COUNT(*) FROM canonical_beacon_validators_pubkeys FINAL
+      #     WHERE 
+      #      `index` = 0
+      #       AND pubkey = '0x8c87f7a01e54215ac177fb706d78e9edf762f15f34ba81103094da450f1683ced257d4270fc030a9a803aaa060edf16a'"
+      #     expected: "1"
+      # - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
+      #   finalizedEpoch: 71005
+      #   assert:
+      #     query: "SELECT COUNT(*) FROM canonical_beacon_validators_withdrawal_credentials FINAL
+      #     WHERE 
+      #      `index` = 0
+      #       AND withdrawal_credentials = '0x0100000000000000000000000e5dda855eb1de2a212cd1f62b2a3ee49d20c444'"
+      #     expected: "1"

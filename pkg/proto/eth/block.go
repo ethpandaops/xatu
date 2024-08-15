@@ -2,6 +2,7 @@ package eth
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/bellatrix"
@@ -141,7 +142,7 @@ func NewEventBlockFromBellatrix(block *spec.VersionedSignedBeaconBlock) *v2.Even
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Bellatrix.Message.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Bellatrix.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Bellatrix.Message.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: fmt.Sprintf("0x%x", block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
+						BaseFeePerGas: new(big.Int).SetBytes(block.Capella.Message.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
 						BlockHash:     block.Bellatrix.Message.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Bellatrix.Message.Body.ExecutionPayload.Transactions),
 					},
@@ -190,7 +191,7 @@ func NewEventBlockFromCapella(block *spec.VersionedSignedBeaconBlock) *v2.EventB
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Capella.Message.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Capella.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Capella.Message.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: fmt.Sprintf("0x%x", block.Capella.Message.Body.ExecutionPayload.BaseFeePerGas[:]),
+						BaseFeePerGas: new(big.Int).SetBytes(block.Capella.Message.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
 						BlockHash:     block.Capella.Message.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Capella.Message.Body.ExecutionPayload.Transactions),
 						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Capella.Message.Body.ExecutionPayload.Withdrawals),

@@ -142,7 +142,7 @@ func NewEventBlockFromBellatrix(block *spec.VersionedSignedBeaconBlock) *v2.Even
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Bellatrix.Message.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Bellatrix.Message.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Bellatrix.Message.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: new(big.Int).SetBytes(block.Capella.Message.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
+						BaseFeePerGas: new(big.Int).SetBytes(block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
 						BlockHash:     block.Bellatrix.Message.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Bellatrix.Message.Body.ExecutionPayload.Transactions),
 					},

@@ -99,23 +99,43 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 	return mimicry, nil
 }
 
-func (m *Mimicry) startHermes(ctx context.Context) error {
-	genConfig, netConfig, beaConfig, err := eth.GetConfigsByNetworkName(m.Config.Ethereum.Network)
-	if err != nil {
-		return fmt.Errorf("get config for %s: %w", m.Config.Ethereum.Network, err)
+func (m *Mimicry) deriveNetworkConfig(ctx context.Context) (*eth.NetworkConfig, error) {
+	if m.Config.Ethereum.CustomNetwork == nil {
+		return eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
 	}
 
-	m.networkConfig = netConfig
-	m.beaconConfig = beaConfig
+	m.log.WithField("network", m.Config.Ethereum.Network).Info("Using a custom Ethereum network")
 
-	genesisRoot := genConfig.GenesisValidatorRoot
-	genesisTime := genConfig.GenesisTime
+	conf, err := eth.DeriveDevnetConfig(ctx, eth.DevnetOptions{
+		ConfigURL:               m.Config.Ethereum.CustomNetwork.ConfigURL,
+		BootnodesURL:            m.Config.Ethereum.CustomNetwork.BootnodeENRURL,
+		DepositContractBlockURL: m.Config.Ethereum.CustomNetwork.DepositContractBlockURL,
+		GenesisSSZURL:           m.Config.Ethereum.CustomNetwork.GenesisSSZURL,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive devnet config: %w", err)
+	}
+
+	return conf, nil
+}
+
+func (m *Mimicry) startHermes(ctx context.Context) error {
+	networkConfig, err := m.deriveNetworkConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to derive network config for %s: %w", m.Config.Ethereum.Network, err)
+	}
+
+	m.networkConfig = networkConfig.Network
+	m.beaconConfig = networkConfig.Beacon
+
+	genesisRoot := networkConfig.Genesis.GenesisValidatorRoot
+	genesisTime := networkConfig.Genesis.GenesisTime
 
 	// compute fork version and fork digest
 	currentSlot := slots.Since(genesisTime)
 	currentEpoch := slots.ToEpoch(currentSlot)
 
-	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, beaConfig)
+	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, m.beaconConfig)
 	if err != nil {
 		return fmt.Errorf("compute fork version for epoch %d: %w", currentEpoch, err)
 	}
@@ -127,14 +147,14 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 
 	// Overriding configuration so that functions like ComputForkDigest take the
 	// correct input data from the global configuration.
-	params.OverrideBeaconConfig(beaConfig)
-	params.OverrideBeaconNetworkConfig(netConfig)
+	params.OverrideBeaconConfig(m.beaconConfig)
+	params.OverrideBeaconNetworkConfig(m.networkConfig)
 
 	nodeConfig := m.Config.Node.AsHermesConfig()
 
-	nodeConfig.GenesisConfig = genConfig
-	nodeConfig.NetworkConfig = netConfig
-	nodeConfig.BeaconConfig = beaConfig
+	nodeConfig.GenesisConfig = networkConfig.Genesis
+	nodeConfig.NetworkConfig = m.networkConfig
+	nodeConfig.BeaconConfig = m.beaconConfig
 	nodeConfig.ForkDigest = forkDigest
 	nodeConfig.ForkVersion = currentForkVersion
 	nodeConfig.PubSubSubscriptionRequestLimit = 200
@@ -210,7 +230,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		m.log.Info("Ethereum client is ready. Starting Hermes..")
 
 		if err := m.startHermes(ctx); err != nil {
-			m.log.Fatal("failed to start hermes: %w", err)
+			m.log.Fatalf("failed to start hermes: %s", err.Error())
 		}
 
 		return nil

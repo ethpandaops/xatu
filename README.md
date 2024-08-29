@@ -53,7 +53,6 @@ Follow the links for more information on each mode.
 - [**Discovery**](./docs/discovery.md) - Client that uses the [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discovery nodes on the network. Also attempts to connect to execution layer nodes and collect meta data from them.
 - [**Mimicry**](./docs/mimicry.md) - Client that collects data from the execution layer P2P network.
 - [**Cannon**](./docs/cannon.md) - Client that runs along side a [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects canonical finalized data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). _You must run your own consensus client_ and this projects cannon client will connect to it via the consensus client's http server.
-- [**Sage**](./docs/sage.md) - Client that connects to an [Armiarma](https://github.com/migalabs/armiarma) instance (which itself connects to an Ethereum Beacon Chain P2P network) and creates events from the events Armiarma emits.
 
 ## Getting Started
 
@@ -92,7 +91,7 @@ helm install xatu ethereum-helm-charts/xatu -f your_values.yaml
 docker compose up --detach
 ```
 
-This will setup a pipeline to import events from Xatu server into a clickhouse instance. This will **not** run `sentry`/`discovery`/`mimicry`/`cannon`/`sage` clients but allow you run them locally and connect to the server.
+This will setup a pipeline to import events from Xatu server into a clickhouse instance. This will **not** run `sentry`/`discovery`/`mimicry`/`cannon` clients but allow you run them locally and connect to the server.
 
 There is also a grafana instance running with dashboards that can be used to visualize the data.
 

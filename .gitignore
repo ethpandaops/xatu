@@ -14,3 +14,4 @@ __debug_bin*
 sage.yaml
 .goreleaser.yaml.new
 .aider*
+relay-monitor.yaml

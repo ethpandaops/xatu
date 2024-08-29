@@ -111,6 +111,18 @@ sources:
       - "beacon-api-eth-v1-beacon-validators"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  mev_relay_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    auto_offset_reset: earliest
+    group_id: xatu-vector-kafka-clickhouse-beacon-mev-relay
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "^mev-relay-.+"
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -124,6 +136,7 @@ transforms:
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
       - beacon_api_eth_v1_beacon_validators_kafka
+      - mev_relay_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -340,6 +353,7 @@ transforms:
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
+      mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -379,6 +393,7 @@ transforms:
       - xatu_server_events_router.eth_v2_beacon_block_v2
       - xatu_server_events_router.mempool_transaction
       - xatu_server_events_router.mempool_transaction_v2
+      - xatu_server_events_router.mev_relay_bid_trace_builder_block_submission
     metrics:
       - type: counter
         field: event.name
@@ -1744,6 +1759,96 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  mev_relay_bid_trace_builder_block_submission_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.mev_relay_bid_trace_builder_block_submission
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .slot = .data.slot
+      .block_number = .data.block_number
+      
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_request_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_request_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_request_slot_start_date_time = to_unix_timestamp(wallclock_request_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock request slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_request_epoch = .meta.client.additional_data.wallclock_epoch.number
+      wallclock_request_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+      .wallclock_request_epoch_start_date_time = to_unix_timestamp(wallclock_request_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock request epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .requested_at_slot_time = .meta.client.additional_data.requested_at_slot_time
+      .response_at_slot_time = .meta.client.additional_data.response_at_slot_time
+      .relay_name = .meta.client.additional_data.relay.name
+      .parent_hash = .data.parent_hash
+      .block_hash = .data.block_hash
+      .builder_pubkey = .data.builder_pubkey
+      .proposer_pubkey = .data.proposer_pubkey
+      .proposer_fee_recipient = .data.proposer_fee_recipient
+      .gas_limit = .data.gas_limit
+      .gas_used = .data.gas_used
+      .value = .data.value
+      .num_tx = .data.num_tx
+      .timestamp = .data.timestamp
+      .timestamp_ms = .data.timestamp_ms
+      .optimistic_submission = .data.optimistic_submission
+
+      key, err = .meta.client.name + .meta.network + .data.slot + .data.block_hash + .data.builder_pubkey + .data.proposer_pubkey
+      if err != null {
+        .error = err
+        .error_description = "failed to generate unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .unique_key = seahash(key)
+
+      .updated_date_time = to_unix_timestamp(now())
+
+
+      del(.meta_consensus_implementation)
+      del(.meta_network_id)
+      
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2332,3 +2437,23 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
+  mev_relay_bid_trace_builder_block_submission_clickhouse:
+    type: clickhouse
+    inputs:
+      - mev_relay_bid_trace_builder_block_submission_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: mev_relay_bid_trace
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: true

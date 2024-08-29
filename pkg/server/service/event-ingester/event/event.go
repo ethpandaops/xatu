@@ -14,6 +14,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/blockprint"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 )
 
@@ -71,6 +72,7 @@ var (
 	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
 	TypeLibP2PTraceGossipSubBlobSidecar         Type = Type(libp2p.TraceGossipSubBlobSidecarType)
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
+	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
 )
 
 type Event interface {
@@ -187,6 +189,8 @@ func New(eventType Type, log logrus.FieldLogger, event *xatu.DecoratedEvent, cac
 		return libp2p.NewTraceGossipSubBeaconBlock(log, event), nil
 	case TypeLibP2PTraceGossipSubBlobSidecar:
 		return libp2p.NewTraceGossipSubBlobSidecar(log, event), nil
+	case TypeMEVRelayBidTraceBuilderBlockSubmission:
+		return mevrelay.NewBidTraceBuilderBlockSubmission(log, event), nil
 	default:
 		return nil, fmt.Errorf("event type %s is unknown", eventType)
 	}

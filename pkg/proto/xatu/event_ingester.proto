@@ -21,6 +21,9 @@ import "pkg/proto/eth/v1/validator.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
+import "pkg/proto/mevrelay/bids.proto";
+import "pkg/proto/mevrelay/relay.proto";
+
 import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
@@ -944,6 +947,24 @@ message ClientMeta {
     EpochV2 epoch = 1;
   }
 
+  // AdditionalMevRelayBidTraceBuilderBlockSubmissionData contains additional data about the mev relay bid trace event.
+  message AdditionalMevRelayBidTraceBuilderBlockSubmissionData {
+    // Relay is the relay that the bid trace is from.
+    xatu.mevrelay.Relay relay = 1; 
+    // Slot is the slot the bid trace is for.
+    SlotV2 slot = 2;
+    // WallclockSlot contains the slot information of when the bid trace was requested.
+    SlotV2 wallclock_slot = 3 [ json_name = "wallclock_slot" ];
+    // Epoch is the epoch the bid trace is for.
+    EpochV2 epoch = 4;
+    // WallclockEpoch contains the epoch information of when the bid trace was requested.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
+    // RequestedAtSlotTime is the time in the slot when the bid trace was requested.
+    google.protobuf.UInt64Value requested_at_slot_time = 6 [ json_name = "requested_at_slot_time" ];
+    // ResponseAtSlotTime is the time in the slot when the bid trace was responded to.
+    google.protobuf.UInt64Value response_at_slot_time = 7 [ json_name = "response_at_slot_time" ];
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1129,6 +1150,8 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubBlobSidecarData libp2p_trace_gossipsub_blob_sidecar = 59 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
     // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
     AdditionalEthV1ValidatorsData eth_v1_validators = 60 [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
+    // AdditionalMevRelayBidTraceBuilderBlockSubmissionData contains additional data about the mev relay bid trace builder block submission event.
+    AdditionalMevRelayBidTraceBuilderBlockSubmissionData mev_relay_bid_trace_builder_block_submission = 61 [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
   }
 }
 
@@ -1272,6 +1295,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION = 50;
     LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR = 51;
     BEACON_API_ETH_V1_BEACON_VALIDATORS = 52;
+    MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION = 53;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1407,5 +1431,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR" ];
     Validators eth_v1_validators = 52
         [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
+    xatu.mevrelay.BidTrace mev_relay_bid_trace_builder_block_submission = 53
+        [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
   };
 }

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package xatu.mevrelay;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/mevrelay";
+
+import "google/protobuf/wrappers.proto";
+
+message Relay {
+    google.protobuf.StringValue name = 1;
+    google.protobuf.StringValue url = 2;
+}

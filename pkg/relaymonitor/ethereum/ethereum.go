@@ -98,7 +98,7 @@ func (b *BeaconNetwork) fetchNetworkConfig(ctx context.Context) (*NetworkConfig,
 
 // FetchGenesisTime fetches the genesis time from a given URL.
 func (b *BeaconNetwork) fetchGenesisTime(ctx context.Context) (uint64, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", b.config.GenesisSSZURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", b.config.GenesisSSZURL, http.NoBody)
 	if err != nil {
 		return 0, err
 	}

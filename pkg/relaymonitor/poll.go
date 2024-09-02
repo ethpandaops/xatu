@@ -74,7 +74,6 @@ func (r *RelayMonitor) fetchBidTraces(ctx context.Context, client *relay.Client,
 	}
 
 	return nil
-
 }
 
 func (r *RelayMonitor) createNewDecoratedEvent(

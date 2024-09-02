@@ -14,12 +14,12 @@ import (
 )
 
 type Config struct {
-	Url  string `yaml:"url"`
+	URL  string `yaml:"url"`
 	Name string `yaml:"name"`
 }
 
 func (c *Config) Validate() error {
-	if c.Url == "" {
+	if c.URL == "" {
 		return fmt.Errorf("url is required")
 	}
 
@@ -40,13 +40,13 @@ type Client struct {
 
 // NewClient creates a new relay client
 func NewClient(namespace string, config Config, networkName string) (*Client, error) {
-	_, err := url.Parse(config.Url)
+	_, err := url.Parse(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
 
 	return &Client{
-		baseURL: config.Url,
+		baseURL: config.URL,
 		name:    config.Name,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,

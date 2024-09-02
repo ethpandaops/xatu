@@ -2,8 +2,6 @@ CREATE TABLE default.mev_relay_bid_trace_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `event_date_time` DateTime64(3) COMMENT 'When the bid was fetched' CODEC(DoubleDelta, ZSTD(1)),
 
-    `unique_key` Int64 COMMENT 'Unique identifier for each record. Will typically be a seahash of meta_client_name, network, slot, block_hash, builder_pubkey, proposer_pubkey' CODEC(DoubleDelta, ZSTD(1)),
-
     `slot` UInt32 COMMENT 'Slot number within the block bid' CODEC(DoubleDelta, ZSTD(1)),
     `slot_start_date_time` DateTime COMMENT 'The start time for the slot that the bid is for' CODEC(DoubleDelta, ZSTD(1)),
     `epoch` UInt32 COMMENT 'Epoch number derived from the slot that the bid is for' CODEC(DoubleDelta, ZSTD(1)),
@@ -58,7 +56,11 @@ ORDER BY
     (
         slot_start_date_time,
         meta_network_name,
-        unique_key
+        slot,
+        block_hash,
+        meta_client_name,
+        builder_pubkey,
+        proposer_pubkey
     ) COMMENT 'Contains MEV relay block bids data.';
 
 CREATE TABLE default.mev_relay_bid_trace ON CLUSTER '{cluster}' AS default.mev_relay_bid_trace_local ENGINE = Distributed(

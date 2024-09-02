@@ -1831,15 +1831,6 @@ transforms:
       .timestamp_ms = .data.timestamp_ms
       .optimistic_submission = .data.optimistic_submission
 
-      key, err = .meta.client.name + .meta.network + .data.slot + .data.block_hash + .data.builder_pubkey + .data.proposer_pubkey
-      if err != null {
-        .error = err
-        .error_description = "failed to generate unique key"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-
-      .unique_key = seahash(key)
-
       .updated_date_time = to_unix_timestamp(now())
 
 

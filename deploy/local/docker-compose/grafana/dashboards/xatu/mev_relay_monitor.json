@@ -1,1119 +1,1118 @@
 {
-    "annotations": {
-      "list": [
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "dark-red",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": true,
+          "tags": [],
+          "type": "tags"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "red",
+        "name": "Slot annotations",
+        "target": {
+          "limit": 2000,
+          "matchAny": true,
+          "refId": "Anno",
+          "tags": [
+            "slot",
+            "xatu"
+          ],
+          "type": "tags"
+        }
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 28,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 30,
+      "interval": "$interval",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
         {
-          "builtIn": 1,
           "datasource": {
-            "type": "datasource",
-            "uid": "grafana"
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
           },
-          "enable": true,
-          "hide": true,
-          "iconColor": "dark-red",
-          "name": "Annotations & Alerts",
-          "target": {
-            "limit": 100,
-            "matchAny": true,
-            "tags": [],
-            "type": "tags"
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "alias": "",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_client_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${client_name}"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "meta_network_name",
+                  "operator": "IN",
+                  "type": "LowCardinality(String)",
+                  "value": [
+                    "${network_name}"
+                  ]
+                }
+              ],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
           },
-          "type": "dashboard"
+          "pluginVersion": "4.3.2",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  count(DISTINCT(meta_client_name))\nFROM default.mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from:date:seconds})\n  AND slot_start_date_time <= (toDateTime(${__to:date:seconds}) - INTERVAL 1 MINUTE)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Active instances",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 34,
+      "interval": "$interval",
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "field": "count",
+                  "fixed": 5,
+                  "max": 5,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "A"
+            },
+            "location": {
+              "geohash": "meta_client_geo_city",
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lat": 5.747627,
+          "lon": 22,
+          "zoom": 1
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "count",
+                  "column": "meta_client_name"
+                }
+              ],
+              "columns": [
+                {
+                  "name": "meta_client_geo_longitude"
+                },
+                {
+                  "name": "meta_client_geo_latitude"
+                },
+                {
+                  "name": "meta_client_geo_city"
+                },
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [],
+              "groupBy": [
+                "meta_client_geo_longitude",
+                "meta_client_geo_latitude",
+                "meta_client_geo_city"
+              ],
+              "mode": "aggregate",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_block"
+            }
+          },
+          "pluginVersion": "4.3.2",
+          "queryType": "table",
+          "rawSql": "SELECT\n    meta_client_geo_latitude as latitude,\n    meta_client_geo_longitude as longitude,\n    meta_client_geo_city as city,\n    count(DISTINCT meta_client_name) as `count`\n    \nFROM \n    mev_relay_bid_trace\nWHERE\n    slot_start_date_time >= now() - toIntervalMinute(2)\n    AND slot_start_date_time <= now() - toIntervalMinute(1)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\nGROUP BY\n    slot_start_date_time,\n    meta_client_geo_longitude,\n    meta_client_geo_latitude,\n    meta_client_geo_city\nORDER BY slot_start_date_time DESC\nLIMIT 1 by latitude, longitude\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Relay Monitors",
+      "type": "geomap"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 17,
+      "panels": [],
+      "title": "Block bids",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 197,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.3.2",
+          "queryType": "table",
+          "rawSql": "SELECT\n    slot_start_date_time,\n    uniqExact(CONCAT(\n        toString(slot_start_date_time),\n        toString(meta_network_name),\n        toString(slot),\n        toString(block_hash),\n        toString(meta_client_name),\n        toString(builder_pubkey),\n        toString(proposer_pubkey)\n    )) AS unique_bid_count\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time\nORDER BY\n    slot_start_date_time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Total unique bids",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 45,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bids"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 196,
+      "interval": "$interval_tight",
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.66,
+        "fullHighlight": true,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.3.2",
+          "queryType": "table",
+          "rawSql": "SELECT\n    slot_start_date_time as \"time\",\n    relay_name,\n    uniqExact(CONCAT(\n        toString(slot_start_date_time),\n        toString(meta_network_name),\n        toString(slot),\n        toString(block_hash),\n        toString(meta_client_name),\n        toString(builder_pubkey),\n        toString(proposer_pubkey)\n    )) AS unique_bid_count\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time,\n    relay_name\nORDER BY\n    slot_start_date_time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Total bids per relay",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "relay_name"
+            ],
+            "keepFields": false
+          }
         },
         {
-          "datasource": {
-            "type": "datasource",
-            "uid": "grafana"
-          },
-          "enable": true,
-          "expr": "",
-          "iconColor": "red",
-          "name": "Slot annotations",
-          "target": {
-            "limit": 2000,
-            "matchAny": true,
-            "refId": "Anno",
-            "tags": [
-              "slot",
-              "xatu"
-            ],
-            "type": "tags"
+          "id": "renameByRegex",
+          "options": {
+            "regex": "unique_bid_count {name=\"A\", relay_name=.*}",
+            "renamePattern": "$1"
           }
         }
-      ]
+      ],
+      "type": "barchart"
     },
-    "description": "",
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 1,
-    "id": 5,
-    "links": [],
-    "liveNow": false,
-    "panels": [
-      {
-        "collapsed": false,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "id": 28,
-        "panels": [],
-        "title": "Summary",
-        "type": "row"
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
       },
-      {
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "P5C0FA5C61C0F8586"
-        },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 54,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "blue",
-                  "value": null
-                }
-              ]
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "overrides": []
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ETH"
         },
-        "gridPos": {
-          "h": 5,
-          "w": 4,
-          "x": 0,
-          "y": 1
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 198,
+      "interval": "$interval_tight",
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.51,
+        "fullHighlight": true,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "id": 30,
-        "interval": "$interval",
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "avg",
+                  "alias": "average",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "max",
+                  "alias": "max",
+                  "column": "propagation_slot_start_diff"
+                },
+                {
+                  "aggregateType": "min",
+                  "alias": "min",
+                  "column": "propagation_slot_start_diff"
+                }
+              ],
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "slot_start_date_time",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "propagation_slot_start_diff",
+                  "operator": "<",
+                  "type": "UInt32",
+                  "value": 30000
+                }
+              ],
+              "groupBy": [],
+              "limit": 100,
+              "mode": "trend",
+              "orderBy": [],
+              "queryType": "timeseries",
+              "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
+            }
+          },
+          "pluginVersion": "4.3.2",
+          "queryType": "table",
+          "rawSql": "SELECT\n    slot_start_date_time AS \"time\",\n    relay_name,\n    MAX(toFloat64(value) / 1e18) AS max_value_eth\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time,\n    relay_name\nORDER BY\n    slot_start_date_time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Max bid per relay",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "relay_name"
             ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "10.4.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "grafana-clickhouse-datasource",
-              "uid": "P5C0FA5C61C0F8586"
-            },
-            "editorType": "sql",
-            "format": 0,
-            "meta": {
-              "builderOptions": {
-                "aggregates": [
-                  {
-                    "aggregateType": "count",
-                    "alias": "",
-                    "column": "meta_client_name"
-                  }
-                ],
-                "columns": [
-                  {
-                    "hint": "time",
-                    "name": "slot_start_date_time",
-                    "type": "DateTime"
-                  }
-                ],
-                "database": "default",
-                "filters": [
-                  {
-                    "condition": "AND",
-                    "filterType": "custom",
-                    "key": "meta_client_name",
-                    "operator": "IN",
-                    "type": "LowCardinality(String)",
-                    "value": [
-                      "${client_name}"
-                    ]
-                  },
-                  {
-                    "condition": "AND",
-                    "filterType": "custom",
-                    "key": "meta_network_name",
-                    "operator": "IN",
-                    "type": "LowCardinality(String)",
-                    "value": [
-                      "${network_name}"
-                    ]
-                  }
-                ],
-                "limit": 100,
-                "mode": "trend",
-                "orderBy": [],
-                "queryType": "timeseries",
-                "table": "${table_prefix}beacon_api_eth_v1_events_block"
-              }
-            },
-            "pluginVersion": "4.3.2",
-            "queryType": "timeseries",
-            "rawSql": "SELECT\n  $__timeInterval(slot_start_date_time) as time,\n  count(DISTINCT(meta_client_name))\nFROM default.mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from:date:seconds})\n  AND slot_start_date_time <= (toDateTime(${__to:date:seconds}) - INTERVAL 1 MINUTE)\n  AND meta_client_name IN (${client_name})\n  AND meta_network_name IN (${network_name})\nGROUP BY time\nORDER BY time\nLIMIT 1000",
-            "refId": "A"
+            "keepFields": false
           }
-        ],
-        "title": "Active instances",
-        "type": "stat"
-      },
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*relay.*",
+            "renamePattern": "$0"
+          }
+        }
+      ],
+      "type": "barchart"
+    }
+  ],
+  "refresh": "10s",
+  "revision": 1,
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
       {
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "P5C0FA5C61C0F8586"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "custom": {
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 5,
-          "w": 4,
-          "x": 4,
-          "y": 1
-        },
-        "id": 34,
-        "interval": "$interval",
-        "options": {
-          "basemap": {
-            "config": {},
-            "name": "Layer 0",
-            "type": "default"
-          },
-          "controls": {
-            "mouseWheelZoom": true,
-            "showAttribution": true,
-            "showDebug": false,
-            "showMeasure": false,
-            "showScale": false,
-            "showZoom": true
-          },
-          "layers": [
-            {
-              "config": {
-                "showLegend": false,
-                "style": {
-                  "color": {
-                    "fixed": "dark-green"
-                  },
-                  "opacity": 0.4,
-                  "rotation": {
-                    "fixed": 0,
-                    "max": 360,
-                    "min": -360,
-                    "mode": "mod"
-                  },
-                  "size": {
-                    "field": "count",
-                    "fixed": 5,
-                    "max": 5,
-                    "min": 2
-                  },
-                  "symbol": {
-                    "fixed": "img/icons/marker/circle.svg",
-                    "mode": "fixed"
-                  },
-                  "text": {
-                    "fixed": "",
-                    "mode": "field"
-                  },
-                  "textConfig": {
-                    "fontSize": 12,
-                    "offsetX": 0,
-                    "offsetY": 0,
-                    "textAlign": "center",
-                    "textBaseline": "middle"
-                  }
-                }
-              },
-              "filterData": {
-                "id": "byRefId",
-                "options": "A"
-              },
-              "location": {
-                "geohash": "meta_client_geo_city",
-                "latitude": "latitude",
-                "longitude": "longitude",
-                "mode": "coords"
-              },
-              "name": "Layer 1",
-              "tooltip": true,
-              "type": "markers"
-            }
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
           ],
-          "tooltip": {
-            "mode": "details"
-          },
-          "view": {
-            "allLayers": true,
-            "id": "coords",
-            "lat": 5.747627,
-            "lon": 22,
-            "zoom": 1
-          }
+          "value": [
+            "$__all"
+          ]
         },
-        "pluginVersion": "10.4.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "grafana-clickhouse-datasource",
-              "uid": "P5C0FA5C61C0F8586"
-            },
-            "editorType": "sql",
-            "format": 1,
-            "meta": {
-              "builderOptions": {
-                "aggregates": [
-                  {
-                    "aggregateType": "count",
-                    "column": "meta_client_name"
-                  }
-                ],
-                "columns": [
-                  {
-                    "name": "meta_client_geo_longitude"
-                  },
-                  {
-                    "name": "meta_client_geo_latitude"
-                  },
-                  {
-                    "name": "meta_client_geo_city"
-                  },
-                  {
-                    "hint": "time",
-                    "name": "slot_start_date_time",
-                    "type": "DateTime"
-                  }
-                ],
-                "database": "default",
-                "filters": [],
-                "groupBy": [
-                  "meta_client_geo_longitude",
-                  "meta_client_geo_latitude",
-                  "meta_client_geo_city"
-                ],
-                "mode": "aggregate",
-                "orderBy": [],
-                "queryType": "timeseries",
-                "table": "${table_prefix}beacon_api_eth_v1_events_block"
-              }
-            },
-            "pluginVersion": "4.3.2",
-            "queryType": "table",
-            "rawSql": "SELECT\n    meta_client_geo_latitude as latitude,\n    meta_client_geo_longitude as longitude,\n    meta_client_geo_city as city,\n    count(DISTINCT meta_client_name) as `count`\n    \nFROM \n    mev_relay_bid_trace\nWHERE\n    slot_start_date_time >= now() - toIntervalMinute(2)\n    AND slot_start_date_time <= now() - toIntervalMinute(1)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\nGROUP BY\n    slot_start_date_time,\n    meta_client_geo_longitude,\n    meta_client_geo_latitude,\n    meta_client_geo_city\nORDER BY slot_start_date_time DESC\nLIMIT 1 by latitude, longitude\n",
-            "refId": "A"
-          }
-        ],
-        "title": "Active Relay Monitors",
-        "type": "geomap"
-      },
-      {
-        "collapsed": false,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 6
-        },
-        "id": 17,
-        "panels": [],
-        "title": "Block bids",
-        "type": "row"
-      },
-      {
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "P5C0FA5C61C0F8586"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 24,
-          "x": 0,
-          "y": 7
-        },
-        "id": 197,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "grafana-clickhouse-datasource",
-              "uid": "P5C0FA5C61C0F8586"
-            },
-            "editorType": "sql",
-            "format": 1,
-            "meta": {
-              "builderOptions": {
-                "columns": [],
-                "database": "",
-                "limit": 1000,
-                "mode": "list",
-                "queryType": "table",
-                "table": ""
-              }
-            },
-            "pluginVersion": "4.3.2",
-            "queryType": "table",
-            "rawSql": "SELECT\n    slot_start_date_time,\n    uniqExact(unique_key) AS unique_bid_count\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time\nORDER BY\n    slot_start_date_time ASC\n",
-            "refId": "A"
-          }
-        ],
-        "title": "Total unique bids",
-        "type": "timeseries"
+        "definition": "SELECT meta_network_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Network",
+        "multi": true,
+        "name": "network_name",
+        "options": [],
+        "query": "SELECT meta_network_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       },
       {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "P5C0FA5C61C0F8586"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "blue",
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "fillOpacity": 45,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineWidth": 1,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "bids"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 9,
-          "w": 24,
-          "x": 0,
-          "y": 15
-        },
-        "id": 196,
-        "interval": "$interval_tight",
-        "options": {
-          "barRadius": 0,
-          "barWidth": 0.66,
-          "fullHighlight": true,
-          "groupWidth": 0.7,
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "orientation": "auto",
-          "showValue": "auto",
-          "stacking": "none",
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          },
-          "xTickLabelRotation": 0,
-          "xTickLabelSpacing": 0
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "grafana-clickhouse-datasource",
-              "uid": "P5C0FA5C61C0F8586"
-            },
-            "editorType": "sql",
-            "format": 1,
-            "meta": {
-              "builderOptions": {
-                "aggregates": [
-                  {
-                    "aggregateType": "avg",
-                    "alias": "average",
-                    "column": "propagation_slot_start_diff"
-                  },
-                  {
-                    "aggregateType": "max",
-                    "alias": "max",
-                    "column": "propagation_slot_start_diff"
-                  },
-                  {
-                    "aggregateType": "min",
-                    "alias": "min",
-                    "column": "propagation_slot_start_diff"
-                  }
-                ],
-                "columns": [
-                  {
-                    "hint": "time",
-                    "name": "slot_start_date_time",
-                    "type": "DateTime"
-                  }
-                ],
-                "database": "default",
-                "filters": [
-                  {
-                    "condition": "AND",
-                    "filterType": "custom",
-                    "key": "propagation_slot_start_diff",
-                    "operator": "<",
-                    "type": "UInt32",
-                    "value": 30000
-                  }
-                ],
-                "groupBy": [],
-                "limit": 100,
-                "mode": "trend",
-                "orderBy": [],
-                "queryType": "timeseries",
-                "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
-              }
-            },
-            "pluginVersion": "4.3.2",
-            "queryType": "table",
-            "rawSql": "SELECT\n    slot_start_date_time as \"time\",\n    relay_name,\n    uniqExact(unique_key) AS \"unique_bid_count\"\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time,\n    relay_name\nORDER BY\n    slot_start_date_time ASC\n",
-            "refId": "A"
-          }
-        ],
-        "title": "Total bids per relay",
-        "transformations": [
-          {
-            "id": "partitionByValues",
-            "options": {
-              "fields": [
-                "relay_name"
-              ],
-              "keepFields": false
-            }
-          },
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "unique_bid_count {name=\"A\", relay_name=.*}",
-              "renamePattern": "$1"
-            }
-          }
-        ],
-        "type": "barchart"
+        "definition": "SELECT meta_client_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Instance",
+        "multi": true,
+        "name": "client_name",
+        "options": [],
+        "query": "SELECT meta_client_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       },
       {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "P5C0FA5C61C0F8586"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "blue",
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "fillOpacity": 54,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineWidth": 1,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "ETH"
-          },
-          "overrides": []
+        "definition": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Continent",
+        "multi": true,
+        "name": "geo_continent_code",
+        "options": [],
+        "query": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "250",
+          "value": "250"
         },
-        "gridPos": {
-          "h": 9,
-          "w": 24,
-          "x": 0,
-          "y": 24
-        },
-        "id": 198,
-        "interval": "$interval_tight",
-        "options": {
-          "barRadius": 0,
-          "barWidth": 0.51,
-          "fullHighlight": true,
-          "groupWidth": 0.7,
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "orientation": "auto",
-          "showValue": "auto",
-          "stacking": "none",
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          },
-          "xTickLabelRotation": 0,
-          "xTickLabelSpacing": 0
-        },
-        "targets": [
+        "hide": 0,
+        "includeAll": false,
+        "label": "Heatmap interval (MS)",
+        "multi": false,
+        "name": "heatmap_interval",
+        "options": [
           {
-            "datasource": {
-              "type": "grafana-clickhouse-datasource",
-              "uid": "P5C0FA5C61C0F8586"
-            },
-            "editorType": "sql",
-            "format": 1,
-            "meta": {
-              "builderOptions": {
-                "aggregates": [
-                  {
-                    "aggregateType": "avg",
-                    "alias": "average",
-                    "column": "propagation_slot_start_diff"
-                  },
-                  {
-                    "aggregateType": "max",
-                    "alias": "max",
-                    "column": "propagation_slot_start_diff"
-                  },
-                  {
-                    "aggregateType": "min",
-                    "alias": "min",
-                    "column": "propagation_slot_start_diff"
-                  }
-                ],
-                "columns": [
-                  {
-                    "hint": "time",
-                    "name": "slot_start_date_time",
-                    "type": "DateTime"
-                  }
-                ],
-                "database": "default",
-                "filters": [
-                  {
-                    "condition": "AND",
-                    "filterType": "custom",
-                    "key": "propagation_slot_start_diff",
-                    "operator": "<",
-                    "type": "UInt32",
-                    "value": 30000
-                  }
-                ],
-                "groupBy": [],
-                "limit": 100,
-                "mode": "trend",
-                "orderBy": [],
-                "queryType": "timeseries",
-                "table": "${table_prefix}beacon_api_eth_v1_events_attestation"
-              }
-            },
-            "pluginVersion": "4.3.2",
-            "queryType": "table",
-            "rawSql": "SELECT\n    slot_start_date_time AS \"time\",\n    relay_name,\n    MAX(toFloat64(value) / 1e18) AS max_value_eth\nFROM\n    default.mev_relay_bid_trace\nWHERE\n    $__timeFilter(slot_start_date_time)\n    AND meta_client_name IN (${client_name})\n    AND meta_network_name IN (${network_name})\n    AND relay_name IN (${relay})\nGROUP BY\n    slot_start_date_time,\n    relay_name\nORDER BY\n    slot_start_date_time ASC",
-            "refId": "A"
-          }
-        ],
-        "title": "Max bid per relay",
-        "transformations": [
-          {
-            "id": "partitionByValues",
-            "options": {
-              "fields": [
-                "relay_name"
-              ],
-              "keepFields": false
-            }
-          },
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": ".*relay.*",
-              "renamePattern": "$0"
-            }
-          }
-        ],
-        "type": "barchart"
-      }
-    ],
-    "refresh": "",
-    "revision": 1,
-    "schemaVersion": 39,
-    "tags": [],
-    "templating": {
-      "list": [
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "P5C0FA5C61C0F8586"
-          },
-          "definition": "SELECT meta_network_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
-          "hide": 0,
-          "includeAll": true,
-          "label": "Network",
-          "multi": true,
-          "name": "network_name",
-          "options": [],
-          "query": "SELECT meta_network_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        },
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "P5C0FA5C61C0F8586"
-          },
-          "definition": "SELECT meta_client_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
-          "hide": 0,
-          "includeAll": true,
-          "label": "Instance",
-          "multi": true,
-          "name": "client_name",
-          "options": [],
-          "query": "SELECT meta_client_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        },
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "P5C0FA5C61C0F8586"
-          },
-          "definition": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
-          "hide": 0,
-          "includeAll": true,
-          "label": "Continent",
-          "multi": true,
-          "name": "geo_continent_code",
-          "options": [],
-          "query": "SELECT meta_client_geo_continent_code\nFROM libp2p_gossipsub_beacon_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_geo_continent_code ",
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        },
-        {
-          "current": {
             "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
             "text": "250",
             "value": "250"
-          },
-          "hide": 0,
-          "includeAll": false,
-          "label": "Heatmap interval (MS)",
-          "multi": false,
-          "name": "heatmap_interval",
-          "options": [
-            {
-              "selected": false,
-              "text": "100",
-              "value": "100"
-            },
-            {
-              "selected": true,
-              "text": "250",
-              "value": "250"
-            }
-          ],
-          "query": "100,250",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
+          }
+        ],
+        "query": "100,250",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "auto": true,
+        "auto_count": 300,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval_tight"
         },
-        {
-          "auto": true,
-          "auto_count": 300,
-          "auto_min": "12s",
-          "current": {
-            "selected": false,
+        "hide": 2,
+        "name": "interval_tight",
+        "options": [
+          {
+            "selected": true,
             "text": "auto",
             "value": "$__auto_interval_interval_tight"
           },
-          "hide": 2,
-          "name": "interval_tight",
-          "options": [
-            {
-              "selected": true,
-              "text": "auto",
-              "value": "$__auto_interval_interval_tight"
-            },
-            {
-              "selected": false,
-              "text": "12s",
-              "value": "12s"
-            },
-            {
-              "selected": false,
-              "text": "60s",
-              "value": "60s"
-            },
-            {
-              "selected": false,
-              "text": "384s",
-              "value": "384s"
-            },
-            {
-              "selected": false,
-              "text": "3840s",
-              "value": "3840s"
-            },
-            {
-              "selected": false,
-              "text": "92160s",
-              "value": "92160s"
-            }
-          ],
-          "query": "12s,60s,384s,3840s,92160s",
-          "refresh": 2,
-          "skipUrlSync": false,
-          "type": "interval"
-        },
-        {
-          "auto": true,
-          "auto_count": 50,
-          "auto_min": "12s",
-          "current": {
+          {
             "selected": false,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 2,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
             "text": "auto",
             "value": "$__auto_interval_interval"
           },
-          "hide": 2,
-          "name": "interval",
-          "options": [
-            {
-              "selected": true,
-              "text": "auto",
-              "value": "$__auto_interval_interval"
-            },
-            {
-              "selected": false,
-              "text": "12s",
-              "value": "12s"
-            },
-            {
-              "selected": false,
-              "text": "60s",
-              "value": "60s"
-            },
-            {
-              "selected": false,
-              "text": "384s",
-              "value": "384s"
-            },
-            {
-              "selected": false,
-              "text": "3840s",
-              "value": "3840s"
-            },
-            {
-              "selected": false,
-              "text": "92160s",
-              "value": "92160s"
-            }
-          ],
-          "query": "12s,60s,384s,3840s,92160s",
-          "refresh": 2,
-          "skipUrlSync": false,
-          "type": "interval"
-        },
-        {
-          "auto": true,
-          "auto_count": 50,
-          "auto_min": "12s",
-          "current": {
+          {
             "selected": false,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval_loose"
+        },
+        "hide": 2,
+        "name": "interval_loose",
+        "options": [
+          {
+            "selected": true,
             "text": "auto",
             "value": "$__auto_interval_interval_loose"
           },
-          "hide": 2,
-          "name": "interval_loose",
-          "options": [
-            {
-              "selected": true,
-              "text": "auto",
-              "value": "$__auto_interval_interval_loose"
-            },
-            {
-              "selected": false,
-              "text": "384s",
-              "value": "384s"
-            },
-            {
-              "selected": false,
-              "text": "3840s",
-              "value": "3840s"
-            },
-            {
-              "selected": false,
-              "text": "92160s",
-              "value": "92160s"
-            }
-          ],
-          "query": "384s,3840s,92160s",
-          "refresh": 2,
-          "skipUrlSync": false,
-          "type": "interval"
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "384s,3840s,92160s",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
         },
-        {
-          "current": {
+        "description": "Table prefix",
+        "hide": 0,
+        "label": "Prefix",
+        "name": "table_prefix",
+        "options": [
+          {
             "selected": true,
             "text": "",
             "value": ""
-          },
-          "description": "Table prefix",
-          "hide": 0,
-          "label": "Prefix",
-          "name": "table_prefix",
-          "options": [
-            {
-              "selected": true,
-              "text": "",
-              "value": ""
-            }
-          ],
-          "query": "",
-          "skipUrlSync": false,
-          "type": "textbox"
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
         },
-        {
-          "current": {
+        "description": "Table prefix for attestations",
+        "hide": 0,
+        "label": "Attestation Prefix",
+        "name": "attestation_prefix",
+        "options": [
+          {
             "selected": true,
             "text": "",
             "value": ""
-          },
-          "description": "Table prefix for attestations",
-          "hide": 0,
-          "label": "Attestation Prefix",
-          "name": "attestation_prefix",
-          "options": [
-            {
-              "selected": true,
-              "text": "",
-              "value": ""
-            }
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
           ],
-          "query": "",
-          "skipUrlSync": false,
-          "type": "textbox"
+          "value": [
+            "$__all"
+          ]
         },
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "P5C0FA5C61C0F8586"
-          },
-          "definition": "SELECT relay_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY relay_name ",
-          "hide": 0,
-          "includeAll": true,
-          "label": "Relay",
-          "multi": true,
-          "name": "relay",
-          "options": [],
-          "query": "SELECT relay_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY relay_name ",
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        }
-      ]
-    },
-    "time": {
-      "from": "now-15m",
-      "to": "now"
-    },
-    "timepicker": {},
-    "timezone": "",
-    "title": "MEV Relays",
-    "uid": "125twegmwaq93aigmaowksgm",
-    "version": 4,
-    "weekStart": ""
-  }
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT relay_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY relay_name ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Relay",
+        "multi": true,
+        "name": "relay",
+        "options": [],
+        "query": "SELECT relay_name\nFROM mev_relay_bid_trace\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY relay_name ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "MEV Relays",
+  "uid": "125twegmwaq93aigmaowksgm",
+  "version": 1,
+  "weekStart": ""
+}

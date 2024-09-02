@@ -3,10 +3,10 @@ package ethereum
 import "errors"
 
 type Config struct {
-	Network          string `yaml:"network"`
-	NetworkConfigURL string `yaml:"networkConfigUrl"`
-	GenesisSSZURL    string `yaml:"genesisSszUrl"`
-	SlotsPerEpoch    uint64 `yaml:"slotsPerEpoch"`
+	Network             string  `yaml:"network"`
+	NetworkConfigURL    string  `yaml:"networkConfigUrl"`
+	SlotsPerEpoch       uint64  `yaml:"slotsPerEpoch"`
+	OverrideGenesisTime *uint64 `yaml:"overrideGenesisTime"`
 }
 
 func (c *Config) Validate() error {
@@ -16,10 +16,6 @@ func (c *Config) Validate() error {
 
 	if c.NetworkConfigURL == "" {
 		return errors.New("networkConfigUrl is required")
-	}
-
-	if c.GenesisSSZURL == "" {
-		return errors.New("genesisSSZUrl is required")
 	}
 
 	if c.SlotsPerEpoch == 0 {

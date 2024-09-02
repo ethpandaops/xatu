@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"context"
-	"encoding/binary"
 	"io"
 	"net/http"
 	"time"
@@ -22,6 +21,8 @@ type BeaconNetwork struct {
 //nolint:tagliatelle // At the mercy of the config spec.
 type NetworkConfig struct {
 	SecondsPerSlot uint64 `yaml:"SECONDS_PER_SLOT"`
+	MinGenesisTime uint64 `yaml:"MIN_GENESIS_TIME"`
+	GenesisDelay   uint64 `yaml:"GENESIS_DELAY"`
 }
 
 func NewBeaconNetwork(log logrus.FieldLogger, config *Config) (*BeaconNetwork, error) {
@@ -54,19 +55,33 @@ func (b *BeaconNetwork) Start(ctx context.Context) error {
 		return errors.New("invalid seconds_per_slot value found in network config: 0")
 	}
 
-	genesisTime, err := b.fetchGenesisTime(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch genesis time")
+	if networkConfig.MinGenesisTime == 0 {
+		return errors.New("invalid min_genesis_time value found in network config: 0")
 	}
 
+	if networkConfig.GenesisDelay == 0 {
+		return errors.New("invalid genesis_delay value found in network config: 0")
+	}
+
+	// Calculate the genesis time
+	// Convert the genesis time to a Unix timestamp
+	genesisTime := time.Unix(int64(networkConfig.MinGenesisTime), 0).Add(time.Duration(networkConfig.GenesisDelay) * time.Second)
+
+	if b.config.OverrideGenesisTime != nil {
+		b.log.WithField("override_genesis_time", *b.config.OverrideGenesisTime).Info("Using override genesis time")
+
+		genesisTime = time.Unix(int64(*b.config.OverrideGenesisTime), 0)
+	}
+
+	// Create a new EthereumBeaconChain with the calculated genesis time and network config
 	b.log.WithFields(logrus.Fields{
-		"genesis_time": genesisTime,
-		"human_time":   time.Unix(int64(genesisTime), 0).Format("2006-01-02 15:04:05"),
+		"genesis_time": genesisTime.Unix(),
+		"human_time":   genesisTime.Format("2006-01-02 15:04:05"),
 	}).Info("Fetched genesis time")
 
 	// Create a new EthereumBeaconChain with the fetched genesis time and network config
 	b.wallclock = ethwallclock.NewEthereumBeaconChain(
-		time.Unix(int64(genesisTime), 0),
+		genesisTime,
 		time.Duration(networkConfig.SecondsPerSlot)*time.Second,
 		b.config.SlotsPerEpoch,
 	)
@@ -94,30 +109,4 @@ func (b *BeaconNetwork) fetchNetworkConfig(ctx context.Context) (*NetworkConfig,
 	}
 
 	return &config, nil
-}
-
-// FetchGenesisTime fetches the genesis time from a given URL.
-func (b *BeaconNetwork) fetchGenesisTime(ctx context.Context) (uint64, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", b.config.GenesisSSZURL, http.NoBody)
-	if err != nil {
-		return 0, err
-	}
-
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer response.Body.Close()
-
-	// Read only the first 8 bytes for GenesisTime
-	data := make([]byte, 8)
-
-	_, err = io.ReadFull(response.Body, data)
-	if err != nil {
-		return 0, err
-	}
-
-	genesisTime := binary.LittleEndian.Uint64(data)
-
-	return genesisTime, nil
 }

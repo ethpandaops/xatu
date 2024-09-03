@@ -8,18 +8,20 @@ ethereum:
   ## Mainnet
   network: mainnet
   networkConfigUrl: https://raw.githubusercontent.com/eth-clients/mainnet/main/metadata/config.yaml
+  genesisJsonUrl: https://beaconstate-mainnet.chainsafe.io/eth/v1/beacon/genesis
   slotsPerEpoch: 32
 
   ## Holesky
   # network: holesky
   # networkConfigUrl: https://raw.githubusercontent.com/eth-clients/holesky/main/metadata/config.yaml
   # slotsPerEpoch: 32
+  # genesisJsonUrl: https://checkpoint-sync.holesky.ethpandaops.io/eth/v1/beacon/genesis
 
   ## Sepolia
   # network: sepolia
   # networkConfigUrl: https://raw.githubusercontent.com/eth-clients/sepolia/main/metadata/config.yaml
   # slotsPerEpoch: 32
-
+  # genesisJsonUrl: https://checkpoint-sync.sepolia.ethpandaops.io/eth/v1/beacon/genesis
 relays:
   ### Mainnet
   - name: flashbots-ofac

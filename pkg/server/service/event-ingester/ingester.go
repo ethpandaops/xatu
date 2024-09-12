@@ -2,6 +2,7 @@ package eventingester
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -12,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -77,6 +79,20 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 
 	// TODO(sam.calder-mason): Derive client id/name from the request jwt
 	clientID := "unknown"
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("failed to get metadata from context")
+	}
+
+	if e.config.AuthorizationSecret != "" {
+		authorization := md.Get("authorization")
+		if len(authorization) > 0 {
+			if authorization[0] != e.config.AuthorizationSecret {
+				return nil, status.Error(codes.Unauthenticated, "invalid authorization secret")
+			}
+		}
+	}
 
 	filteredEvents, err := e.handler.Events(ctx, clientID, req.Events)
 	if err != nil {

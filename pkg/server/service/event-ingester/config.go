@@ -10,6 +10,8 @@ type Config struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 	// Outputs is the list of sinks to use.
 	Outputs []output.Config `yaml:"outputs"`
+	// AuthorizationSecret is the secret to use for authorization.
+	AuthorizationSecret string `yaml:"authorizationSecret"`
 }
 
 func (c *Config) Validate() error {

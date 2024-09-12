@@ -100,6 +100,10 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	md := metadata.New(e.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
+	if e.config.AuthorizationSecret != "" {
+		md.Set("authorization", e.config.AuthorizationSecret)
+	}
+
 	var rsp *pb.CreateEventsResponse
 
 	var err error

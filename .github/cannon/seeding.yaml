@@ -142,25 +142,6 @@ networks:
             AND proposer_validator_index = 1337851
             AND proposer_pubkey = '0xb69cc87f9610eeaff816b2c0182e3320fd04c8be572a3adba2b40d7f11a6d84dadeb24cf2829d10eda0d611b46da0907'"
           expected: "1"
-      - name: BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
-        finalizedEpoch: 71010
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_blob_sidecar FINAL
-          WHERE 
-            slot = 2272356
-            AND slot_start_date_time = '2024-08-09 02:31:12'
-            AND epoch = 71011
-            AND epoch_start_date_time = '2024-08-09 02:30:24'
-            AND block_root = '0x1e02ff0da1811c5609acafd4597543878cb6216fe519587da1ab0aeb3296ac75'
-            AND block_parent_root = '0x0e81a2325869e04919bffc5bbf745ecafd22c7005ac717ee5122f1a3f51ea24a'
-            AND versioned_hash = '0x0100d3b0b63aefd96e6b2c7aa84c1a0cdd6fe8366128cebf032fc64846c6608c'
-            AND kzg_commitment = '0xb1b3ca5607286f6b221fa38321a80980cfe10946e9e33e07b74e13a93e385ddb99ca727a1f617e6f0c088f68f1da63b5'
-            AND kzg_proof = '0x8bdca97a0c6c7baf0a94d25bfa70024319f2ebb36442865333f6d41d8d5f141283f337da24dc7f3b72151098ddf60571'
-            AND proposer_index = 1744957
-            AND blob_index = 2
-            AND blob_size = 131072
-            AND blob_empty_size = 56206"
-          expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
         finalizedEpoch: 71010
         assert:

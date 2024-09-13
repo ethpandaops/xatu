@@ -265,6 +265,7 @@ func (c *Cannon) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Id:             c.id.String(),
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
+		ModuleName:     xatu.ModuleName_CANNON,
 		ClockDrift:     uint64(c.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network:   networkMeta,

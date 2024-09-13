@@ -10,9 +10,8 @@ enum ModuleName {
   SENTRY = 1;
   CANNON = 2;
   SERVER = 3;
-  MIMICRY = 4;
-  DISCOVERY = 5;
-  CL_MIMICRY = 6;
-  EL_MIMICRY = 7;
-  RELAY_MONITOR = 8;
+  DISCOVERY = 4;
+  CL_MIMICRY = 5;
+  EL_MIMICRY = 6;
+  RELAY_MONITOR = 7;
 }

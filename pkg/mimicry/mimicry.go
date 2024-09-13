@@ -207,6 +207,7 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 		Version:        xatu.Short(),
 		Id:             m.id.String(),
 		Implementation: xatu.Implementation,
+		ModuleName:     xatu.ModuleName_EL_MIMICRY,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(m.clockDrift.Milliseconds()),
 		Labels:         m.Config.Labels,

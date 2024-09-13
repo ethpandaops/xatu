@@ -542,6 +542,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Version:        xatu.Short(),
 		Id:             s.id.String(),
 		Implementation: xatu.Implementation,
+		ModuleName:     xatu.ModuleName_SENTRY,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(s.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{

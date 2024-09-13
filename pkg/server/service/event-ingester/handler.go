@@ -25,6 +25,8 @@ type Handler struct {
 	cache         store.Cache
 
 	metrics *Metrics
+
+	eventRouter *eventHandler.EventRouter
 }
 
 func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) *Handler {
@@ -34,6 +36,7 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 		geoipProvider: geoipProvider,
 		cache:         cache,
 		metrics:       NewMetrics("xatu_server_event_ingester"),
+		eventRouter:   eventHandler.NewEventRouter(log, cache, geoipProvider),
 	}
 }
 
@@ -122,7 +125,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 
 		eventName := event.Event.Name.String()
 
-		e, err := eventHandler.New(eventHandler.Type(eventName), h.log, event, h.cache, h.geoipProvider)
+		e, err := h.eventRouter.Route(eventHandler.Type(eventName), event)
 		if err != nil {
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
 

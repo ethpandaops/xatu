@@ -137,7 +137,7 @@ func TestEventFilter_FilterByModules(t *testing.T) {
 		},
 		Meta: &xatu.Meta{
 			Client: &xatu.ClientMeta{
-				Module: xatu.ModuleName_RELAY_MONITOR,
+				ModuleName: xatu.ModuleName_RELAY_MONITOR,
 			},
 		},
 	}
@@ -166,7 +166,7 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 		},
 		Meta: &xatu.Meta{
 			Client: &xatu.ClientMeta{
-				Module: xatu.ModuleName_RELAY_MONITOR,
+				ModuleName: xatu.ModuleName_RELAY_MONITOR,
 			},
 		},
 	}
@@ -189,7 +189,7 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 	assert.False(t, shouldBeDropped)
 
 	// Test with a different source
-	testEvent.Meta.Client.Module = xatu.ModuleName_MIMICRY
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_MIMICRY
 
 	shouldBeDropped, err = filter.ShouldBeDropped(testEvent)
 	if err != nil {
@@ -199,7 +199,7 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 	assert.True(t, shouldBeDropped)
 
 	// Test with a different event name
-	testEvent.Meta.Client.Module = xatu.ModuleName_MIMICRY
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_MIMICRY
 
 	testEvent.Event.Name = xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD
 

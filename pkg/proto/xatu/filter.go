@@ -126,11 +126,11 @@ func (f *eventFilter) shouldDropFromModules(event *DecoratedEvent) (bool, error)
 		return false, nil
 	}
 
-	if event.GetMeta().GetClient().GetModule() == 0 {
+	if event.GetMeta().GetClient().GetModuleName() == 0 {
 		return true, errors.New("event.meta.client.module is empty")
 	}
 
-	_, ok := f.modules[event.GetMeta().GetClient().GetModule().String()]
+	_, ok := f.modules[event.GetMeta().GetClient().GetModuleName().String()]
 
 	return !ok, nil
 }

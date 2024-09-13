@@ -1156,8 +1156,8 @@ message ClientMeta {
     AdditionalMevRelayBidTraceBuilderBlockSubmissionData mev_relay_bid_trace_builder_block_submission = 61 [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
   }
 
-  // Module contains additional data about the module.
-  ModuleName module = 62 [ json_name = "MODULE" ];
+  // ModuleName contains the name of the module that sent the event.
+  ModuleName module_name = 62 [ json_name = "module_name" ];
 }
 
 message ServerMeta {

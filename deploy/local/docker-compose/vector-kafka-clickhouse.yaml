@@ -123,18 +123,6 @@ sources:
       - "^mev-relay-.+"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
-  mev_relay_proposer_payload_delivered_kafka:
-    type: kafka
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    auto_offset_reset: earliest
-    group_id: xatu-vector-kafka-clickhouse-mev-relay-proposer-payload-delivered
-    key_field: "event.id"
-    decoding:
-      codec: json
-    topics:
-      - "^mev-relay-proposer-payload-delivered$"
-    librdkafka_options:
-      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -149,7 +137,6 @@ transforms:
       - beacon_api_eth_v1_proposer_kafka
       - beacon_api_eth_v1_beacon_validators_kafka
       - mev_relay_kafka
-      - mev_relay_proposer_payload_delivered_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -430,7 +417,7 @@ transforms:
           event: "{{event.name}}"
           source: "xatu-kafka-clickhouse"
 
- beacon_api_eth_v1_beacon_committee_formatted:
+  beacon_api_eth_v1_beacon_committee_formatted:
     type: remap
     inputs:
       - xatu_server_events_router.eth_v1_beacon_committee
@@ -1855,6 +1842,87 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  mev_relay_proposer_payload_delivered_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.mev_relay_proposer_payload_delivered
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .slot = .data.slot
+      .block_number = .data.block_number
+      .payload = .data.payload
+
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_epoch = .meta.client.additional_data.wallclock_epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+      .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .relay_name = .meta.client.additional_data.relay.name
+      .parent_hash = .data.parent_hash
+      .block_hash = .data.block_hash
+      .builder_pubkey = .data.builder_pubkey
+      .proposer_pubkey = .data.proposer_pubkey
+      .proposer_fee_recipient = .data.proposer_fee_recipient
+      .gas_limit = .data.gas_limit
+      .gas_used = .data.gas_used
+      .payload = .data.payload
+      .block_number = .data.block_number
+      .num_tx = .data.num_tx
+      .timestamp = .data.timestamp
+      .timestamp_ms = .data.timestamp_ms
+
+      .updated_date_time = to_unix_timestamp(now())
+
+
+      del(.meta_consensus_implementation)
+      del(.meta_network_id)
+      
+
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2366,7 +2434,7 @@ sinks:
   canonical_beacon_block_elaborated_attestation_clickhouse:
     type: clickhouse
     inputs:
-      - canonical_beacon_block_elatorated_attestation_formatted
+      - canonical_beacon_block_elaborated_attestation_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_elaborated_attestation

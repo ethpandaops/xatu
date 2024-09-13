@@ -122,6 +122,9 @@ func (r *RelayMonitor) createNewPayloadDeliveredDecoratedEvent(
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
+		Data: &xatu.DecoratedEvent_MevRelayPayloadDelivered{
+			MevRelayPayloadDelivered: payload,
+		},
 	}
 
 	return decoratedEvent, nil

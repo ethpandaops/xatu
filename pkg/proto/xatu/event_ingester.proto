@@ -23,6 +23,7 @@ import "pkg/proto/blockprint/block_classification.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
+import "pkg/proto/mevrelay/payloads.proto";
 
 import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
@@ -831,7 +832,7 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
-  // AdditionalLibP2PTraceHandleStreamData: Holds additional data for a the gossip sub handle stream event in LibP2P tracing.
+  // AdditionalLibP2PTraceGossipSubBeaconBlockData contains additional data about the gossip sub beacon block event.
   message AdditionalLibP2PTraceGossipSubBeaconBlockData {
     // Epoch contains the epoch information for the beacon block.
     EpochV2 epoch = 1;
@@ -962,6 +963,24 @@ message ClientMeta {
     // RequestedAtSlotTime is the time in the slot when the bid trace was requested.
     google.protobuf.UInt64Value requested_at_slot_time = 6 [ json_name = "requested_at_slot_time" ];
     // ResponseAtSlotTime is the time in the slot when the bid trace was responded to.
+    google.protobuf.UInt64Value response_at_slot_time = 7 [ json_name = "response_at_slot_time" ];
+  }
+
+  // AdditionalMevRelayPayloadDeliveredData contains additional data about the proposer payload delivered event.
+  message AdditionalMevRelayPayloadDeliveredData {
+    // Relay is the relay that delivered the payload.
+    xatu.mevrelay.Relay relay = 1; 
+    // Slot is the slot the payload was delivered for.
+    SlotV2 slot = 2;
+    // WallclockSlot contains the slot information of when the payload was delivered.
+    SlotV2 wallclock_slot = 3 [ json_name = "wallclock_slot" ];
+    // Epoch is the epoch the payload was delivered for.
+    EpochV2 epoch = 4;
+    // WallclockEpoch contains the epoch information of when the payload was delivered.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
+    // RequestedAtSlotTime is the time in the slot when the payload was requested.
+    google.protobuf.UInt64Value requested_at_slot_time = 6 [ json_name = "requested_at_slot_time" ];
+    // ResponseAtSlotTime is the time in the slot when the payload was delivered.
     google.protobuf.UInt64Value response_at_slot_time = 7 [ json_name = "response_at_slot_time" ];
   }
 
@@ -1152,6 +1171,8 @@ message ClientMeta {
     AdditionalEthV1ValidatorsData eth_v1_validators = 60 [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
     // AdditionalMevRelayBidTraceBuilderBlockSubmissionData contains additional data about the mev relay bid trace builder block submission event.
     AdditionalMevRelayBidTraceBuilderBlockSubmissionData mev_relay_bid_trace_builder_block_submission = 61 [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
+    // AdditionalMevRelayPayloadDeliveredData contains additional data about the proposer payload delivered event.
+    AdditionalMevRelayPayloadDeliveredData mev_relay_payload_delivered = 62 [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
   }
 }
 
@@ -1296,6 +1317,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR = 51;
     BEACON_API_ETH_V1_BEACON_VALIDATORS = 52;
     MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION = 53;
+    MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED = 54;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1433,5 +1455,7 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_VALIDATORS" ];
     xatu.mevrelay.BidTrace mev_relay_bid_trace_builder_block_submission = 53
         [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
+    xatu.mevrelay.ProposerPayloadDelivered mev_relay_payload_delivered = 54
+        [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
   };
 }

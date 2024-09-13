@@ -67,6 +67,7 @@ transforms:
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       beacon_api_eth_v1_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
+      mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -634,6 +635,22 @@ sinks:
       codec: json
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  mev_relay_proposer_payload_delivered_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.mev_relay_proposer_payload_delivered
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: mev-relay-proposer-payload-delivered
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
   beacon_api_eth_v1_proposer_duty_kafka:
     type: kafka
     buffer:

@@ -254,10 +254,14 @@ func (r *RelayMonitor) startCrons(ctx context.Context) error {
 
 	if r.Config.Schedule.AtSlotTimes != nil {
 		for _, timer := range r.Config.Schedule.AtSlotTimes {
-			for _, relay := range r.relays {
-				r.scheduleBidTraceFetchingAtSlotTime(ctx, timer.Duration, relay)
+			for _, relayClient := range r.relays {
+				r.scheduleBidTraceFetchingAtSlotTime(ctx, timer.Duration, relayClient)
 			}
 		}
+	}
+
+	for _, relayClient := range r.relays {
+		r.scheduleProposerPayloadDeliveredFetching(ctx, relayClient)
 	}
 
 	c.StartAsync()

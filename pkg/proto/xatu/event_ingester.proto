@@ -24,6 +24,8 @@ import "pkg/proto/blockprint/block_classification.proto";
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
 
+import "pkg/proto/xatu/module.proto";
+
 import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
@@ -1153,6 +1155,9 @@ message ClientMeta {
     // AdditionalMevRelayBidTraceBuilderBlockSubmissionData contains additional data about the mev relay bid trace builder block submission event.
     AdditionalMevRelayBidTraceBuilderBlockSubmissionData mev_relay_bid_trace_builder_block_submission = 61 [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
   }
+
+  // Module contains additional data about the module.
+  ModuleName module = 62 [ json_name = "MODULE" ];
 }
 
 message ServerMeta {

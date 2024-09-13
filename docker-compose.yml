@@ -513,7 +513,7 @@ services:
     image: nginx:1.27.1-bookworm
     container_name: xatu-nginx
     ports:
-      - "${NGINX_ADDRESS:-127.0.0.1}:${NGINX_PORT:-80}:80"
+      - "${NGINX_ADDRESS:-127.0.0.1}:${NGINX_PORT:-8044}:80"
     environment:
       - BASE_HOSTNAME=${BASE_HOSTNAME:-example.com}
     volumes:

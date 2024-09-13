@@ -189,7 +189,7 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 	assert.False(t, shouldBeDropped)
 
 	// Test with a different source
-	testEvent.Meta.Client.ModuleName = xatu.ModuleName_MIMICRY
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_EL_MIMICRY
 
 	shouldBeDropped, err = filter.ShouldBeDropped(testEvent)
 	if err != nil {
@@ -199,7 +199,7 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 	assert.True(t, shouldBeDropped)
 
 	// Test with a different event name
-	testEvent.Meta.Client.ModuleName = xatu.ModuleName_MIMICRY
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_EL_MIMICRY
 
 	testEvent.Event.Name = xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD
 

@@ -130,12 +130,13 @@ func (b *BeaconNetwork) fetchGenesisTime(ctx context.Context) (uint64, error) {
 
 	var data struct {
 		Data struct {
+			//nolint:tagliatelle // At the mercy of the config spec.
 			GenesisTime string `json:"genesis_time"`
 		} `json:"data"`
 	}
 
-	if err := json.Unmarshal(body, &data); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal response body: %w", err)
+	if errr := json.Unmarshal(body, &data); errr != nil {
+		return 0, fmt.Errorf("failed to unmarshal response body: %w", errr)
 	}
 
 	if data.Data.GenesisTime == "" {

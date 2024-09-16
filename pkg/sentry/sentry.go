@@ -120,7 +120,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 	if s.Config.Tracing.Enabled {
 		s.log.Info("Tracing enabled")
 
-		res, err := observability.NewResource(xatu.WithMode(xatu.ModeSentry), xatu.Short())
+		res, err := observability.NewResource(xatu.WithModule(xatu.ModuleName_SENTRY), xatu.Short())
 		if err != nil {
 			return perrors.Wrap(err, "failed to create tracing resource")
 		}

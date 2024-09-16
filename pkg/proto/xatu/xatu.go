@@ -16,12 +16,12 @@ func Full() string {
 	return fmt.Sprintf("%s/%s", Implementation, Short())
 }
 
-func FullWithMode(mode Mode) string {
-	return fmt.Sprintf("%s-%s/%s", Implementation, mode, Short())
+func FullWithModule(module ModuleName) string {
+	return fmt.Sprintf("%s-%s/%s", Implementation, module, Short())
 }
 
-func WithMode(mode Mode) string {
-	return fmt.Sprintf("%s-%s", Implementation, mode)
+func WithModule(module ModuleName) string {
+	return fmt.Sprintf("%s-%s", Implementation, module)
 }
 
 func Short() string {

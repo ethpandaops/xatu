@@ -66,12 +66,6 @@ func (r *RelayMonitor) fetchProposerPayloadDelivered(ctx context.Context, client
 	responseAt := time.Now()
 
 	for _, payload := range payloads {
-		if r.bidCache.Has(client.Name(), slot, payload.BlockHash.GetValue()) {
-			continue
-		}
-
-		r.bidCache.Set(client.Name(), slot, payload.BlockHash.GetValue())
-
 		event, err := r.createNewPayloadDeliveredDecoratedEvent(ctx, client, slot, payload, requestedAt, responseAt)
 		if err != nil {
 			return errors.Wrap(err, "failed to create new decorated event")

@@ -208,6 +208,8 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 	payloads := make([]*mevrelay.ProposerPayloadDelivered, len(rawPayloads))
 
 	for i, rawPayload := range rawPayloads {
+		c.metrics.IncProposerPayloadDelivered(c.name, c.networkName, 1)
+
 		slot, _ := strconv.ParseUint(rawPayload.Slot, 10, 64)
 		gasLimit, _ := strconv.ParseUint(rawPayload.GasLimit, 10, 64)
 		gasUsed, _ := strconv.ParseUint(rawPayload.GasUsed, 10, 64)

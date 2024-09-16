@@ -43,11 +43,11 @@ ORDER BY
     (
         slot_start_date_time,
         meta_network_name,
-        slot,
+        relay_name,
         block_hash,
         meta_client_name,
         builder_pubkey,
-        proposer_pubkey
+        proposer_pubkey,
     ) COMMENT 'Contains MEV relay proposer payload delivered data.';
 
 CREATE TABLE default.mev_relay_proposer_payload_delivered ON CLUSTER '{cluster}' AS default.mev_relay_proposer_payload_delivered_local ENGINE = Distributed(

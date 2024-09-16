@@ -76,7 +76,6 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*RelayMon
 	relays := make([]*relay.Client, 0, len(config.Relays))
 
 	for _, r := range config.Relays {
-		//
 		relayClient, err := relay.NewClient(namespace, r, config.Ethereum.Network)
 		if err != nil {
 			return nil, perrors.Wrap(err, "failed to create relay client")
@@ -260,8 +259,12 @@ func (r *RelayMonitor) startCrons(ctx context.Context) error {
 		}
 	}
 
-	for _, relayClient := range r.relays {
-		r.scheduleProposerPayloadDeliveredFetching(ctx, relayClient)
+	if !r.Config.FetchProposerPayloadDelivered {
+		r.log.Warn("Proposer payload delivered fetching is disabled")
+	} else {
+		for _, relayClient := range r.relays {
+			r.scheduleProposerPayloadDeliveredFetching(ctx, relayClient)
+		}
 	}
 
 	c.StartAsync()

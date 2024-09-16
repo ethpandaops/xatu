@@ -262,6 +262,12 @@ func (er *EventRouter) RegisterHandler(eventType Type, handler func(event *xatu.
 	er.routes[eventType] = handler
 }
 
+func (er *EventRouter) HasRoute(eventType Type) bool {
+	_, exists := er.routes[eventType]
+
+	return exists
+}
+
 func (er *EventRouter) Route(eventType Type, event *xatu.DecoratedEvent) (Event, error) {
 	if eventType == TypeUnknown {
 		return nil, errors.New("event type is required")

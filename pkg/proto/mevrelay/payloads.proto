@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package xatu.mevrelay;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/mevrelay";
+
+import "google/protobuf/wrappers.proto";
+
+message ProposerPayloadDelivered {
+  google.protobuf.UInt64Value slot = 1;
+  google.protobuf.StringValue parent_hash = 2 [json_name = "parent_hash"];
+  google.protobuf.StringValue block_hash = 3 [json_name = "block_hash"];
+  google.protobuf.StringValue builder_pubkey = 4 [json_name = "builder_pubkey"];
+  google.protobuf.StringValue proposer_pubkey = 5 [json_name = "proposer_pubkey"];
+  google.protobuf.StringValue proposer_fee_recipient = 6 [json_name = "proposer_fee_recipient"];
+  google.protobuf.UInt64Value gas_limit = 7 [json_name = "gas_limit"];
+  google.protobuf.UInt64Value gas_used = 8 [json_name = "gas_used"];
+  google.protobuf.StringValue value = 9;
+  google.protobuf.UInt64Value block_number = 10 [json_name = "block_number"];
+  google.protobuf.UInt64Value num_tx = 11 [json_name = "num_tx"];
+}

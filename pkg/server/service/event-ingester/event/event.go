@@ -73,6 +73,7 @@ var (
 	TypeLibP2PTraceGossipSubBlobSidecar         Type = Type(libp2p.TraceGossipSubBlobSidecarType)
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
 	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
+	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
 )
 
 type Event interface {
@@ -250,12 +251,21 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	router.RegisterHandler(TypeMEVRelayBidTraceBuilderBlockSubmission, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mevrelay.NewBidTraceBuilderBlockSubmission(router.log, event), nil
 	})
+	router.RegisterHandler(TypeMEVRelayProposerPayloadDelivered, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return mevrelay.NewProposerPayloadDelivered(router.log, event), nil
+	})
 
 	return router
 }
 
 func (er *EventRouter) RegisterHandler(eventType Type, handler func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error)) {
 	er.routes[eventType] = handler
+}
+
+func (er *EventRouter) HasRoute(eventType Type) bool {
+	_, exists := er.routes[eventType]
+
+	return exists
 }
 
 func (er *EventRouter) Route(eventType Type, event *xatu.DecoratedEvent) (Event, error) {

@@ -37,6 +37,8 @@ type Config struct {
 	Schedule Schedule `yaml:"schedule"`
 
 	Relays []relay.Config `yaml:"relays"`
+
+	FetchProposerPayloadDelivered bool `yaml:"fetchProposerPayloadDelivered" default:"true"`
 }
 
 func (c *Config) Validate() error {

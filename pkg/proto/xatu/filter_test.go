@@ -1,17 +1,19 @@
-package xatu
+package xatu_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestNewEventFilter(t *testing.T) {
-	testConfig := &EventFilterConfig{
+	testConfig := &xatu.EventFilterConfig{
 		EventNames: []string{},
 	}
 
-	filter, err := NewEventFilter(testConfig)
+	filter, err := xatu.NewEventFilter(testConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,40 +22,40 @@ func TestNewEventFilter(t *testing.T) {
 }
 
 func TestNewEventFilter_InvalidName(t *testing.T) {
-	testConfig := &EventFilterConfig{
+	testConfig := &xatu.EventFilterConfig{
 		EventNames: []string{"InvalidEventName"},
 	}
 
-	_, err := NewEventFilter(testConfig)
+	_, err := xatu.NewEventFilter(testConfig)
 
 	assert.Error(t, err)
 }
 
 func TestEventFilter_Apply(t *testing.T) {
-	testEvents := []*DecoratedEvent{{
-		Event: &Event{
-			Name: Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
+	testEvents := []*xatu.DecoratedEvent{{
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
 		},
 	}, {
-		Event: &Event{
-			Name: Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
 		},
 	}, {
-		Event: &Event{
-			Name: Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
 		},
 	}}
 
-	testConfig := &EventFilterConfig{
-		EventNames: []string{Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE.String()},
+	testConfig := &xatu.EventFilterConfig{
+		EventNames: []string{xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE.String()},
 	}
 
-	filter, err := NewEventFilter(testConfig)
+	filter, err := xatu.NewEventFilter(testConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	filteredEvents := []*DecoratedEvent{}
+	filteredEvents := []*xatu.DecoratedEvent{}
 
 	for _, event := range testEvents {
 		shouldBeDropped, err := filter.ShouldBeDropped(event)
@@ -71,16 +73,16 @@ func TestEventFilter_Apply(t *testing.T) {
 }
 
 func TestEventFilter_ShouldBeDropped(t *testing.T) {
-	testEvent := &DecoratedEvent{
-		Event: &Event{
-			Name: Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
+	testEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE,
 		},
 	}
 
-	testConfig := &EventFilterConfig{
-		EventNames: []string{Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT.String()},
+	testConfig := &xatu.EventFilterConfig{
+		EventNames: []string{xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT.String()},
 	}
-	filter, _ := NewEventFilter(testConfig)
+	filter, _ := xatu.NewEventFilter(testConfig)
 
 	shouldBeDropped, err := filter.ShouldBeDropped(testEvent)
 	if err != nil {
@@ -91,28 +93,28 @@ func TestEventFilter_ShouldBeDropped(t *testing.T) {
 }
 
 func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
-	events := []*DecoratedEvent{}
+	events := []*xatu.DecoratedEvent{}
 
-	for _, eventName := range Event_Name_value {
-		if eventName == int32(Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN) {
+	for _, eventName := range xatu.Event_Name_value {
+		if eventName == int32(xatu.Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN) {
 			continue
 		}
 
-		events = append(events, &DecoratedEvent{
-			Event: &Event{
-				Name: Event_Name(eventName),
+		events = append(events, &xatu.DecoratedEvent{
+			Event: &xatu.Event{
+				Name: xatu.Event_Name(eventName),
 			},
 		})
 	}
 
-	emptyConfig := &EventFilterConfig{}
+	emptyConfig := &xatu.EventFilterConfig{}
 
-	filter, err := NewEventFilter(emptyConfig)
+	filter, err := xatu.NewEventFilter(emptyConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	filteredEvents := []*DecoratedEvent{}
+	filteredEvents := []*xatu.DecoratedEvent{}
 
 	for _, event := range events {
 		shouldBeDropped, err := filter.ShouldBeDropped(event)
@@ -126,4 +128,85 @@ func TestEventFilter_AllowEverythingWhenEmpty(t *testing.T) {
 	}
 
 	assert.Equal(t, events, filteredEvents)
+}
+
+func TestEventFilter_FilterByModules(t *testing.T) {
+	testEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
+		},
+		Meta: &xatu.Meta{
+			Client: &xatu.ClientMeta{
+				ModuleName: xatu.ModuleName_RELAY_MONITOR,
+			},
+		},
+	}
+
+	testConfig := &xatu.EventFilterConfig{
+		Modules: []string{xatu.ModuleName_RELAY_MONITOR.String()},
+	}
+
+	filter, err := xatu.NewEventFilter(testConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	shouldBeDropped, err := filter.ShouldBeDropped(testEvent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.False(t, shouldBeDropped)
+}
+
+func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
+	testEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
+		},
+		Meta: &xatu.Meta{
+			Client: &xatu.ClientMeta{
+				ModuleName: xatu.ModuleName_RELAY_MONITOR,
+			},
+		},
+	}
+
+	testConfig := &xatu.EventFilterConfig{
+		EventNames: []string{xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT.String()},
+		Modules:    []string{xatu.ModuleName_RELAY_MONITOR.String()},
+	}
+
+	filter, err := xatu.NewEventFilter(testConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	shouldBeDropped, err := filter.ShouldBeDropped(testEvent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.False(t, shouldBeDropped)
+
+	// Test with a different source
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_EL_MIMICRY
+
+	shouldBeDropped, err = filter.ShouldBeDropped(testEvent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.True(t, shouldBeDropped)
+
+	// Test with a different event name
+	testEvent.Meta.Client.ModuleName = xatu.ModuleName_EL_MIMICRY
+
+	testEvent.Event.Name = xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD
+
+	shouldBeDropped, err = filter.ShouldBeDropped(testEvent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.True(t, shouldBeDropped)
 }

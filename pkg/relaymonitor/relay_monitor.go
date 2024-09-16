@@ -226,6 +226,7 @@ func (r *RelayMonitor) createNewClientMeta(ctx context.Context) (*xatu.ClientMet
 		Version:        xatu.Short(),
 		Id:             r.id.String(),
 		Implementation: xatu.Implementation,
+		ModuleName:     xatu.ModuleName_RELAY_MONITOR,
 		Os:             runtime.GOOS,
 		ClockDrift:     uint64(r.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{

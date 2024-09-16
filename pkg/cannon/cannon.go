@@ -104,7 +104,7 @@ func (c *Cannon) Start(ctx context.Context) error {
 	if c.Config.Tracing.Enabled {
 		c.log.Info("Tracing enabled")
 
-		res, err := observability.NewResource(xatu.WithMode(xatu.ModeCannon), xatu.Short())
+		res, err := observability.NewResource(xatu.WithModule(xatu.ModuleName_CANNON), xatu.Short())
 		if err != nil {
 			return perrors.Wrap(err, "failed to create tracing resource")
 		}
@@ -265,6 +265,7 @@ func (c *Cannon) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		Id:             c.id.String(),
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
+		ModuleName:     xatu.ModuleName_CANNON,
 		ClockDrift:     uint64(c.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network:   networkMeta,

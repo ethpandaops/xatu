@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package xatu;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+
+// ModuleName is the Xatu module.
+enum ModuleName {
+  UNSPECIFIED = 0;
+  SENTRY = 1;
+  CANNON = 2;
+  SERVER = 3;
+  DISCOVERY = 4;
+  CL_MIMICRY = 5;
+  EL_MIMICRY = 6;
+  RELAY_MONITOR = 7;
+}

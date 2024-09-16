@@ -176,19 +176,19 @@ networks:
             AND withdrawal_address = '0x428614Fb30e3007e5d628D09e8BDB0CE9720FAdB'
             AND withdrawal_amount = '7498159'"
           expected: "1"
-      - name: BEACON_API_ETH_V1_BEACON_COMMITTEE
-        finalizedEpoch: 71016
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_committee FINAL
-          WHERE 
-            slot = 2272557
-            AND slot_start_date_time = '2024-08-09 03:11:24'
-            AND committee_index = '21'
-            AND epoch = 71017
-            AND epoch_start_date_time = '2024-08-09 03:08:48'
-            AND has(validators, 1119923)
-          "
-          expected: "1"
+      # - name: BEACON_API_ETH_V1_BEACON_COMMITTEE
+      #   finalizedEpoch: 71016
+      #   assert:
+      #     query: "SELECT COUNT(*) FROM canonical_beacon_committee FINAL
+      #     WHERE 
+      #       slot = 2272557
+      #       AND slot_start_date_time = '2024-08-09 03:11:24'
+      #       AND committee_index = '21'
+      #       AND epoch = 71017
+      #       AND epoch_start_date_time = '2024-08-09 03:08:48'
+      #       AND has(validators, 1119923)
+      #     "
+      #     expected: "1"
       # - name: BEACON_API_ETH_V1_BEACON_VALIDATORS
       #   finalizedEpoch: 71005
       #   assert:

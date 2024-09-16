@@ -100,6 +100,10 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	md := metadata.New(e.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
+	if e.config.AuthorizationSecret != "" {
+		md.Set("authorization", e.config.AuthorizationSecret)
+	}
+
 	var rsp *pb.CreateEventsResponse
 
 	var err error
@@ -108,13 +112,21 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 		grpc.UseCompressor(gzip.Name),
 	}
 
+	startTime := time.Now()
+
 	if e.config.Retry.Enabled {
 		opts = append(opts,
 			retry.WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				duration := time.Since(startTime)
+
 				logCtx.
 					WithField("attempt", attempt).
 					WithError(err).
+					WithField("duration", duration).
 					Warn("Failed to export events. Retrying...")
+
+				// Reset the startTime to the current time
+				startTime = time.Now()
 			}),
 			retry.WithMax(uint(e.config.Retry.MaxAttempts)),
 			retry.WithBackoff(retry.BackoffExponential(e.config.Retry.Scalar)),

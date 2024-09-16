@@ -454,7 +454,7 @@ func (bvp *BatchItemProcessor[T]) sendBatch(batch []*TraceableItem[T], reason st
 }
 
 func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
-	bvp.log.Infof("Starting worker %d", number)
+	bvp.log.Infof("Starting worker %d for %s", number, bvp.name)
 
 	for {
 		select {

@@ -162,3 +162,74 @@ func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.Bi
 
 	return bidTraces, nil
 }
+
+func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Values) ([]*mevrelay.ProposerPayloadDelivered, error) {
+	reqURL, err := url.Parse(c.baseURL + "/relay/v1/data/bidtraces/proposer_payload_delivered")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse base URL: %w", err)
+	}
+
+	reqURL.RawQuery = params.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL.String(), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	//nolint:tagliatelle // Not our type
+	var rawPayloads []*struct {
+		Slot                 string `json:"slot"`
+		ParentHash           string `json:"parent_hash"`
+		BlockHash            string `json:"block_hash"`
+		BuilderPubkey        string `json:"builder_pubkey"`
+		ProposerPubkey       string `json:"proposer_pubkey"`
+		ProposerFeeRecipient string `json:"proposer_fee_recipient"`
+		GasLimit             string `json:"gas_limit"`
+		GasUsed              string `json:"gas_used"`
+		Value                string `json:"value"`
+		BlockNumber          string `json:"block_number"`
+		NumTx                string `json:"num_tx"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&rawPayloads); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	payloads := make([]*mevrelay.ProposerPayloadDelivered, len(rawPayloads))
+
+	for i, rawPayload := range rawPayloads {
+		c.metrics.IncProposerPayloadDelivered(c.name, c.networkName, 1)
+
+		slot, _ := strconv.ParseUint(rawPayload.Slot, 10, 64)
+		gasLimit, _ := strconv.ParseUint(rawPayload.GasLimit, 10, 64)
+		gasUsed, _ := strconv.ParseUint(rawPayload.GasUsed, 10, 64)
+		blockNumber, _ := strconv.ParseUint(rawPayload.BlockNumber, 10, 64)
+		numTx, _ := strconv.ParseUint(rawPayload.NumTx, 10, 64)
+
+		payloads[i] = &mevrelay.ProposerPayloadDelivered{
+			Slot:                 &wrapperspb.UInt64Value{Value: slot},
+			ParentHash:           &wrapperspb.StringValue{Value: rawPayload.ParentHash},
+			BlockHash:            &wrapperspb.StringValue{Value: rawPayload.BlockHash},
+			BuilderPubkey:        &wrapperspb.StringValue{Value: rawPayload.BuilderPubkey},
+			ProposerPubkey:       &wrapperspb.StringValue{Value: rawPayload.ProposerPubkey},
+			ProposerFeeRecipient: &wrapperspb.StringValue{Value: rawPayload.ProposerFeeRecipient},
+			GasLimit:             &wrapperspb.UInt64Value{Value: gasLimit},
+			GasUsed:              &wrapperspb.UInt64Value{Value: gasUsed},
+			Value:                &wrapperspb.StringValue{Value: rawPayload.Value},
+			BlockNumber:          &wrapperspb.UInt64Value{Value: blockNumber},
+			NumTx:                &wrapperspb.UInt64Value{Value: numTx},
+		}
+	}
+
+	return payloads, nil
+}

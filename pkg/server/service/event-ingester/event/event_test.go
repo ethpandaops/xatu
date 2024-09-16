@@ -1,15 +1,16 @@
-package event
+package event_test
 
 import (
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {
 	// Create a new EventRouter instance
-	router := NewEventRouter(nil, nil, nil)
+	router := event.NewEventRouter(nil, nil, nil)
 
 	// List of all event types from event_ingester.proto
 	eventTypes := xatu.Event_Name_name
@@ -28,7 +29,7 @@ func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {
 			continue
 		}
 
-		_, exists := router.routes[Type(eventType)]
+		exists := router.HasRoute(event.Type(eventType))
 
 		assert.True(t, exists, "Handler for event type %s does not exist", eventType)
 	}

@@ -42,6 +42,129 @@ func (r *RelayMonitor) scheduleBidTraceFetchingAtSlotTime(ctx context.Context, a
 	})
 }
 
+func (r *RelayMonitor) scheduleProposerPayloadDeliveredFetching(ctx context.Context, client *relay.Client) {
+	r.ethereum.Wallclock().OnSlotChanged(func(slot ethwallclock.Slot) {
+		time.Sleep(slot.TimeWindow().EndsIn())
+
+		err := r.fetchProposerPayloadDelivered(ctx, client, phase0.Slot(slot.Number()))
+		if err != nil {
+			r.log.WithError(err).Error("Failed to fetch proposer payload delivered")
+		}
+	})
+}
+
+func (r *RelayMonitor) fetchProposerPayloadDelivered(ctx context.Context, client *relay.Client, slot phase0.Slot) error {
+	requestedAt := time.Now()
+
+	payloads, err := client.GetProposerPayloadDelivered(ctx, url.Values{
+		"slot": {strconv.FormatUint(uint64(slot), 10)},
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get proposer payload delivered")
+	}
+
+	responseAt := time.Now()
+
+	for _, payload := range payloads {
+		event, err := r.createNewPayloadDeliveredDecoratedEvent(ctx, client, slot, payload, requestedAt, responseAt)
+		if err != nil {
+			return errors.Wrap(err, "failed to create new decorated event")
+		}
+
+		err = r.handleNewDecoratedEvent(ctx, event)
+		if err != nil {
+			r.log.WithError(err).Error("Failed to handle new decorated event")
+		}
+	}
+
+	return nil
+}
+
+func (r *RelayMonitor) createNewPayloadDeliveredDecoratedEvent(
+	ctx context.Context,
+	client *relay.Client,
+	slot phase0.Slot,
+	payload *mevrelay.ProposerPayloadDelivered,
+	requestedAt time.Time,
+	responseAt time.Time,
+) (*xatu.DecoratedEvent, error) {
+	clientMeta, err := r.createNewClientMeta(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get client meta")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	additionalData, err := r.createAdditionalMevRelayProposerPayloadDeliveredData(client, slot, requestedAt, responseAt)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create additional mev relay proposer payload delivered data")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_MevRelayPayloadDelivered{
+		MevRelayPayloadDelivered: additionalData,
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED,
+			DateTime: timestamppb.New(requestedAt.Add(r.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_MevRelayPayloadDelivered{
+			MevRelayPayloadDelivered: payload,
+		},
+	}
+
+	return decoratedEvent, nil
+}
+
+func (r *RelayMonitor) createAdditionalMevRelayProposerPayloadDeliveredData(
+	client *relay.Client,
+	slot phase0.Slot,
+	requestedAt time.Time,
+	responseAt time.Time,
+) (*xatu.ClientMeta_AdditionalMevRelayPayloadDeliveredData, error) {
+	slotInBid := r.ethereum.Wallclock().Slots().FromNumber(uint64(slot))
+	epochFromSlot := r.ethereum.Wallclock().Epochs().FromSlot(uint64(slot))
+
+	wallclockSlot := r.ethereum.Wallclock().Slots().FromTime(requestedAt)
+	wallclockEpoch := r.ethereum.Wallclock().Epochs().FromTime(requestedAt)
+
+	requestedAtDiff := uint64(requestedAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
+	responseAtDiff := uint64(responseAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
+
+	return &xatu.ClientMeta_AdditionalMevRelayPayloadDeliveredData{
+		Relay: &mevrelay.Relay{
+			Url:  wrapperspb.String(client.URL()),
+			Name: wrapperspb.String(client.Name()),
+		},
+		Slot: &xatu.SlotV2{
+			Number:        wrapperspb.UInt64(uint64(slot)),
+			StartDateTime: timestamppb.New(slotInBid.TimeWindow().Start()),
+		},
+		Epoch: &xatu.EpochV2{
+			Number:        wrapperspb.UInt64(epochFromSlot.Number()),
+			StartDateTime: timestamppb.New(epochFromSlot.TimeWindow().Start()),
+		},
+		WallclockSlot: &xatu.SlotV2{
+			Number:        wrapperspb.UInt64(wallclockSlot.Number()),
+			StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
+		},
+		WallclockEpoch: &xatu.EpochV2{
+			Number:        wrapperspb.UInt64(wallclockEpoch.Number()),
+			StartDateTime: timestamppb.New(wallclockEpoch.TimeWindow().Start()),
+		},
+		RequestedAtSlotTime: wrapperspb.UInt64(requestedAtDiff),
+		ResponseAtSlotTime:  wrapperspb.UInt64(responseAtDiff),
+	}, nil
+}
+
 func (r *RelayMonitor) fetchBidTraces(ctx context.Context, client *relay.Client, slot phase0.Slot) error {
 	requestedAt := time.Now()
 

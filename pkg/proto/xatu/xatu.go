@@ -17,11 +17,11 @@ func Full() string {
 }
 
 func FullWithModule(module ModuleName) string {
-	return fmt.Sprintf("%s-%s/%s", Implementation, module, Short())
+	return fmt.Sprintf("%s-%s/%s", Implementation, module.String(), Short())
 }
 
 func WithModule(module ModuleName) string {
-	return fmt.Sprintf("%s-%s", Implementation, module)
+	return fmt.Sprintf("%s-%s", Implementation, module.String())
 }
 
 func Short() string {

@@ -306,6 +306,7 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 		Id:             m.id.String(),
 		Implementation: xatu.Implementation,
 		Os:             runtime.GOOS,
+		ModuleName:     xatu.ModuleName_CL_MIMICRY,
 		ClockDrift:     uint64(m.clockDrift.Milliseconds()),
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{

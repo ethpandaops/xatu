@@ -25,6 +25,8 @@ import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
 import "pkg/proto/mevrelay/payloads.proto";
 
+import "pkg/proto/xatu/module.proto";
+
 import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
@@ -1174,6 +1176,9 @@ message ClientMeta {
     // AdditionalMevRelayPayloadDeliveredData contains additional data about the proposer payload delivered event.
     AdditionalMevRelayPayloadDeliveredData mev_relay_payload_delivered = 62 [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
   }
+
+  // ModuleName contains the name of the module that sent the event.
+  ModuleName module_name = 63 [ json_name = "module_name" ];
 }
 
 message ServerMeta {

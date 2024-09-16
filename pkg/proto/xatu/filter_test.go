@@ -80,7 +80,7 @@ func TestEventFilter_ShouldBeDropped(t *testing.T) {
 	}
 
 	testConfig := &xatu.EventFilterConfig{
-		EventNames: []string{xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE.String()},
+		EventNames: []string{xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT.String()},
 	}
 	filter, _ := xatu.NewEventFilter(testConfig)
 

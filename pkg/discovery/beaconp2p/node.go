@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/api"
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/go-co-op/gocron"
@@ -43,6 +44,8 @@ func NewNode(ctx context.Context, log logrus.FieldLogger, config *Config) (*Node
 	}
 
 	client := mimicry.NewClient(log, &config.Node, mimicry.Mode(mimicry.ModeDiscovery), "xatu")
+
+	// Disable discv4 = false
 
 	p2pDisc, err := NewNodeDiscoverer(config.Discovery.Type, config.Discovery.Config, log)
 	if err != nil {
@@ -111,6 +114,10 @@ func (p *Node) Start(ctx context.Context) error {
 		return nil
 	})
 
+	if err := p.beacon.Start(ctx); err != nil {
+		return perrors.Wrap(err, "failed to start beacon node")
+	}
+
 	return nil
 }
 
@@ -152,7 +159,9 @@ func (p *Node) fetchAndSetStatus(ctx context.Context) error {
 	status.FinalizedRoot = tree.Root(checkpoint.Finalized.Root)
 	status.FinalizedEpoch = common.Epoch(checkpoint.Finalized.Epoch)
 
-	headers, err := p.beacon.Node().FetchBeaconBlockHeader(ctx, nil)
+	headers, err := p.beacon.Node().FetchBeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{
+		Block: "head",
+	})
 	if err != nil {
 		return err
 	}
@@ -180,6 +189,11 @@ func (p *Node) fetchAndSetStatus(ctx context.Context) error {
 
 	if !p.statusSet {
 		p.statusSet = true
+
+		// Start the libp2p node.
+		if err := p.client.Start(ctx); err != nil {
+			p.log.WithError(err).Fatal("Failed to start libp2p node")
+		}
 
 		// We now have a valid status and can start feeding peers in to the mimicry node.
 		if err := p.startDiscovery(ctx); err != nil {

@@ -61,6 +61,9 @@ func NewNodeDiscoverer(
 			return nil, err
 		}
 
+		// Disable discv4
+		conf.DiscV4 = false
+
 		return static.New(conf, log)
 	default:
 		return nil, fmt.Errorf("beacon p2p type %s is unknown", p2pType)

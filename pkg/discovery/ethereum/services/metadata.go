@@ -39,7 +39,7 @@ type MetadataService struct {
 func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node, overrideNetworkName string) MetadataService {
 	return MetadataService{
 		beacon:              sbeacon,
-		log:                 log.WithField("module", "sentry/ethereum/metadata"),
+		log:                 log.WithField("module", "discovery/ethereum/metadata"),
 		Network:             &networks.Network{Name: networks.NetworkNameNone},
 		onReadyCallbacks:    []func(context.Context) error{},
 		mu:                  sync.Mutex{},

@@ -105,7 +105,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 	}
 
 	// Start the beacon node
-	if d.Config.BeaconP2P.Enabled != nil && *d.Config.BeaconP2P.Enabled {
+	if d.Config.BeaconP2P != nil && d.Config.BeaconP2P.Enabled != nil && *d.Config.BeaconP2P.Enabled {
 		d.log.Info("Starting beacon node")
 
 		if err := d.startBeaconNode(ctx); err != nil {

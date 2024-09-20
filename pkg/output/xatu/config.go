@@ -16,6 +16,13 @@ type Config struct {
 	Workers             int               `yaml:"workers" default:"1"`
 	Retry               RetryConfig       `yaml:"retry"`
 	AuthorizationSecret string            `yaml:"authorizationSecret"`
+	KeepAlive           KeepAliveConfig   `yaml:"keepAlive"`
+}
+
+type KeepAliveConfig struct {
+	Enabled *bool         `yaml:"enabled" default:"true"`
+	Time    time.Duration `yaml:"time" default:"10s"`
+	Timeout time.Duration `yaml:"timeout" default:"30s"`
 }
 
 func (c *Config) Validate() error {

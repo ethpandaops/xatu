@@ -54,7 +54,7 @@ func NewNode(ctx context.Context, log logrus.FieldLogger, config *Config) (*Node
 
 	p2pDisc.RegisterHandler(func(ctx context.Context, node *enode.Node, source string) error {
 		log.WithFields(logrus.Fields{
-			"enr":    node.String(),
+			"node":   node.String(),
 			"source": source,
 		}).Info("Enode received")
 

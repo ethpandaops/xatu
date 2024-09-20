@@ -39,7 +39,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
 	}
 
-	if config.KeepAlive.Enabled {
+	if config.KeepAlive.Enabled != nil && *config.KeepAlive.Enabled {
 		log.
 			WithField("keepalive_time", config.KeepAlive.Time).
 			WithField("keepalive_timeout", config.KeepAlive.Timeout).

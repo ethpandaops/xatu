@@ -32,14 +32,26 @@ type ItemExporter struct {
 }
 
 func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+	log = log.WithField("output_name", name).WithField("output_type", SinkType)
+
 	opts := []grpc.DialOption{
 		grpc.WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor, retry.UnaryClientInterceptor()),
 		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             30 * time.Second,
+	}
+
+	if config.KeepAlive.Enabled {
+		log.
+			WithField("keepalive_time", config.KeepAlive.Time).
+			WithField("keepalive_timeout", config.KeepAlive.Timeout).
+			Info("Enabling keepalive")
+
+		opts = append(opts, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                config.KeepAlive.Time,
+			Timeout:             config.KeepAlive.Timeout,
 			PermitWithoutStream: true,
-		}),
+		}))
+	} else {
+		log.Info("Disabling keepalive")
 	}
 
 	if config.TLS {
@@ -60,7 +72,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 
 	return ItemExporter{
 		config: config,
-		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
+		log:    log,
 		conn:   conn,
 		client: pb.NewEventIngesterClient(conn),
 	}, nil

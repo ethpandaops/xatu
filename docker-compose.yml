@@ -158,6 +158,21 @@ services:
       - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config.yaml
     networks:
       - xatu-net
+  xatu-cannon:
+    profiles:
+      - "cannon"
+    command: cannon --config /etc/xatu-cannon/config.yaml
+    container_name: xatu-cannon
+    hostname: xatu-cannon
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      EVENT_INGESTER_AUTHORIZATION_SECRET: ${EVENT_INGESTER_AUTHORIZATION_SECRET}
+    volumes:
+      - ./deploy/local/docker-compose/xatu-cannon.yaml:/etc/xatu-cannon/config.yaml
+    networks:
+      - xatu-net
 
   xatu-postgres:
     profiles:
@@ -356,7 +371,7 @@ services:
     environment:
       KAFKA_BROKERS: "xatu-kafka:29092"
     ports:
-      - "${VECTOR_HTTP_KAFKA_ADDRESS:-127.0.0.1}:${VECTOR_HTTP_KAFKA_PORT:-9005}:9005"
+      - "${VECTOR_HTTP_KAFKA_ADDRESS:-127.0.0.1}:${VECTOR_HTTP_KAFKA_PORT:-9055}:9005"
     networks:
       - xatu-net
     healthcheck:

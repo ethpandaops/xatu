@@ -72,7 +72,7 @@ func New(config *Config, log logrus.FieldLogger) (*Coordinator, error) {
 	}, nil
 }
 
-func (c *Coordinator) RegisterHandler(handler func(ctx context.Context, node *enode.Node, source string) error) {
+func (c *Coordinator) RegisterHandler(ctx context.Context, handler func(ctx context.Context, node *enode.Node, source string) error) {
 	c.handler = handler
 }
 

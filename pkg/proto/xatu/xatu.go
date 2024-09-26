@@ -17,7 +17,7 @@ func Full() string {
 }
 
 func FullWithModule(module ModuleName) string {
-	return fmt.Sprintf("%s-%s/%s", Implementation, module.String(), Short())
+	return fmt.Sprintf("%s-%s/%s", Implementation, strings.ToLower(module.String()), Short())
 }
 
 func WithModule(module ModuleName) string {

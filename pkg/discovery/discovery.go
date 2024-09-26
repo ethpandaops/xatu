@@ -17,8 +17,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/discovery/beaconp2p"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
-	"github.com/ethpandaops/xatu/pkg/discovery/crawler"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/ethpandaops/xatu/pkg/discovery/provider"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
@@ -32,7 +32,7 @@ type Discovery struct {
 
 	coordinator *coordinator.Client
 
-	p2p    crawler.EnodeProvider
+	p2p    provider.EnodeProvider
 	status *p2p.Status
 
 	log logrus.FieldLogger
@@ -142,7 +142,7 @@ func (d *Discovery) startExecutionNode(ctx context.Context) error {
 		return err
 	}
 
-	p2pDisc.RegisterHandler(d.handleNewExecutionNodeRecord)
+	p2pDisc.RegisterHandler(ctx, d.handleNewExecutionNodeRecord)
 
 	d.p2p = p2pDisc
 

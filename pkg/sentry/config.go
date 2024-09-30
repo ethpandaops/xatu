@@ -14,6 +14,9 @@ import (
 )
 
 type Config struct {
+	// Preset is the name of the preset to use
+	Preset string `yaml:"preset"`
+
 	LoggingLevel string  `yaml:"logging" default:"info"`
 	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
 	PProfAddr    *string `yaml:"pprofAddr"`

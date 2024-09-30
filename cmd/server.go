@@ -14,10 +14,6 @@ var (
 	serverCfgFile string
 )
 
-const (
-	eventIngesterAuthorizationSecretFlag = "event-ingester.authorization-secret"
-)
-
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -32,19 +28,6 @@ var serverCmd = &cobra.Command{
 		config, err := loadServerConfigFromFile(serverCfgFile)
 		if err != nil {
 			log.Fatal(err)
-		}
-
-		// If the event ingester authorization secret is set in the environment, override the one in the config
-		if os.Getenv("EVENT_INGESTER_AUTHORIZATION_SECRET") != "" {
-			log.Info("Overriding event ingester authorization secret from environment variable")
-
-			config.Services.EventIngester.AuthorizationSecret = os.Getenv("EVENT_INGESTER_AUTHORIZATION_SECRET")
-		}
-
-		if cmd.Flags().Changed(eventIngesterAuthorizationSecretFlag) {
-			log.Info("Overriding event ingester authorization secret from command line flag")
-
-			config.Services.EventIngester.AuthorizationSecret = cmd.Flags().Lookup(eventIngesterAuthorizationSecretFlag).Value.String()
 		}
 
 		log.Info("Config loaded")
@@ -73,7 +56,6 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	serverCmd.Flags().StringVar(&serverCfgFile, "config", "server.yaml", "config file (default is server.yaml)")
-	serverCmd.Flags().String(eventIngesterAuthorizationSecretFlag, "", `event ingester authorization secret (env: EVENT_INGESTER_AUTHORIZATION_SECRET). If set, overrides the secret in the config file, and requires all EventIngester requests to have the secret in the "Authorization" header.`)
 }
 
 func loadServerConfigFromFile(file string) (*server.Config, error) {

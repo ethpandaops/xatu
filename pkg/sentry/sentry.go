@@ -22,6 +22,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
+	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/cache"
@@ -34,6 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"gopkg.in/yaml.v2"
 )
 
 type Sentry struct {
@@ -61,9 +63,34 @@ type Sentry struct {
 	shutdownFuncs []func(context.Context) error
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Sentry, error) {
+	log = log.WithField("module", "sentry")
+
 	if config == nil {
 		return nil, errors.New("config is required")
+	}
+
+	// Merge preset if its set
+	if overrides.Preset.Enabled || config.Preset != "" {
+		var presetName string
+
+		if overrides.Preset.Enabled {
+			presetName = overrides.Preset.Value
+		} else {
+			presetName = config.Preset
+		}
+
+		preset, err := GetPreset(presetName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get preset: %w", err)
+		}
+
+		log.WithField("preset", presetName).Info("Applying preset")
+
+		// Merge the 2 yaml files
+		if err := yaml.Unmarshal(preset.Value, config); err != nil {
+			return nil, fmt.Errorf("failed to merge config and preset: %w", err)
+		}
 	}
 
 	if err := config.Validate(); err != nil {
@@ -75,6 +102,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		return nil, err
 	}
 
+	// If the beacon node override is set, use it
+	if overrides.BeaconNodeURL.Enabled {
+		log.Info("Overriding beacon node URL")
+
+		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
+	}
+
 	beacon, err := ethereum.NewBeaconNode(ctx, config.Name, &config.Ethereum, log)
 	if err != nil {
 		return nil, err
@@ -83,7 +117,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 	duplicateCache := cache.NewDuplicateCache()
 	duplicateCache.Start()
 
-	return &Sentry{
+	s := &Sentry{
 		Config:             config,
 		sinks:              sinks,
 		beacon:             beacon,
@@ -96,7 +130,25 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		latestForkChoice:   nil,
 		latestForkChoiceMu: sync.RWMutex{},
 		shutdownFuncs:      []func(context.Context) error{},
-	}, nil
+	}
+
+	// If the output authorization override is set, use it
+	if overrides.XatuOutputAuth.Enabled {
+		log.Info("Overriding output authorization")
+
+		for _, sink := range s.sinks {
+			if sink.Type() == string(output.SinkTypeXatu) {
+				xatuSink, ok := sink.(*oxatu.Xatu)
+				if !ok {
+					return nil, errors.New("failed to assert xatu sink")
+				}
+
+				xatuSink.SetAuthorization(overrides.XatuOutputAuth.Value)
+			}
+		}
+	}
+
+	return s, nil
 }
 
 //nolint:gocyclo // Needs refactoring

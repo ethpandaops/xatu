@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	eventHandler "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,29 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 	}
 }
 
-func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+	filteredEvents := []*xatu.DecoratedEvent{}
+
+	// Apply the user filter
+	if user != nil {
+		ev, err := user.ApplyFilter(events)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply user filter: %w", err)
+		}
+
+		filteredEvents = ev
+	}
+
+	// Apply the group filter
+	if group != nil {
+		ev, err := group.ApplyFilter(events)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group filter: %w", err)
+		}
+
+		filteredEvents = ev
+	}
+
 	now := time.Now()
 	if h.clockDrift != nil {
 		now = now.Add(*h.clockDrift)
@@ -112,8 +135,6 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 		}
 	}
 
-	filteredEvents := make([]*xatu.DecoratedEvent, 0, len(events))
-
 	for _, event := range events {
 		if event == nil || event.Event == nil {
 			continue
@@ -144,7 +165,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 			continue
 		}
 
-		h.metrics.AddDecoratedEventReceived(1, eventName, clientID)
+		h.metrics.AddDecoratedEventReceived(1, eventName, user.Username())
 
 		meta := xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{

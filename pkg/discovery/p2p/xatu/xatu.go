@@ -35,7 +35,7 @@ type Coordinator struct {
 	pb   xatu.CoordinatorClient
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
+func New(config *Config, log logrus.FieldLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -65,12 +65,15 @@ func New(config *Config, handler func(ctx context.Context, node *enode.Node, sou
 	pbClient := xatu.NewCoordinatorClient(conn)
 
 	return &Coordinator{
-		config:  config,
-		log:     log,
-		handler: handler,
-		conn:    conn,
-		pb:      pbClient,
+		config: config,
+		log:    log,
+		conn:   conn,
+		pb:     pbClient,
 	}, nil
+}
+
+func (c *Coordinator) RegisterHandler(handler func(ctx context.Context, node *enode.Node, source string) error) {
+	c.handler = handler
 }
 
 func (c *Coordinator) Type() string {

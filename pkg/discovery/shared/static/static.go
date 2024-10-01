@@ -21,7 +21,7 @@ type Static struct {
 	log logrus.FieldLogger
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Static, error) {
+func New(config *Config, log logrus.FieldLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -31,10 +31,13 @@ func New(config *Config, handler func(ctx context.Context, node *enode.Node, sou
 	}
 
 	return &Static{
-		config:  config,
-		log:     log,
-		handler: handler,
+		config: config,
+		log:    log,
 	}, nil
+}
+
+func (s *Static) RegisterHandler(handler func(ctx context.Context, node *enode.Node, source string) error) {
+	s.handler = handler
 }
 
 func (s *Static) Type() string {

@@ -139,6 +139,13 @@ transforms:
       - mev_relay_kafka
     source: |-
       .meta_client_name = .meta.client.name
+
+      if exists(.meta.server.client.group) {
+          combined, err = .meta.server.client.group + "/" + .meta.client.name
+          if err == null {
+              .meta_client_name = combined
+          }
+      }
       .meta_client_id = .meta.client.id
       .meta_client_version = .meta.client.version
       .meta_client_implementation = .meta.client.implementation

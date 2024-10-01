@@ -43,6 +43,19 @@ services:
       maxExportBatchSize: 512
   eventIngester:
     enabled: true
+    authorization:
+      enabled: true
+      groups:
+        default:
+          users:
+            user_a:
+              password: password
+            shane:
+              password: warne
+        restricted:
+          users:
+            user_b:
+              password: password
     outputs:
     - name: general
       type: http

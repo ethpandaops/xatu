@@ -60,6 +60,8 @@ type Sentry struct {
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
 
+	preset *Preset
+
 	shutdownFuncs []func(context.Context) error
 }
 
@@ -69,6 +71,8 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
+
+	var preset *Preset
 
 	// Merge preset if its set
 	if overrides.Preset.Enabled || config.Preset != "" {
@@ -80,10 +84,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 			presetName = config.Preset
 		}
 
-		preset, err := GetPreset(presetName)
+		p, err := GetPreset(presetName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get preset: %w", err)
 		}
+
+		preset = p
 
 		log.WithField("preset", presetName).Info("Applying preset")
 
@@ -130,6 +136,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		latestForkChoice:   nil,
 		latestForkChoiceMu: sync.RWMutex{},
 		shutdownFuncs:      []func(context.Context) error{},
+		preset:             preset,
 	}
 
 	// If the output authorization override is set, use it
@@ -589,8 +596,23 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		}
 	}
 
+	clientName := s.Config.Name
+	if clientName == "" {
+		hashed, err := s.beacon.Metadata().NodeIDHash()
+		if err != nil {
+			return nil, err
+		}
+
+		clientName = fmt.Sprintf("node-%s", hashed)
+	}
+
+	presetName := ""
+	if s.preset != nil {
+		presetName = s.preset.Name
+	}
+
 	return &xatu.ClientMeta{
-		Name:           s.Config.Name,
+		Name:           clientName,
 		Version:        xatu.Short(),
 		Id:             s.id.String(),
 		Implementation: xatu.Implementation,
@@ -605,7 +627,8 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 				Version:        s.beacon.Metadata().NodeVersion(ctx),
 			},
 		},
-		Labels: s.Config.Labels,
+		Labels:     s.Config.Labels,
+		PresetName: presetName,
 	}, nil
 }
 

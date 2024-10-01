@@ -53,10 +53,6 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if c.Name == "" {
-		return errors.New("name is required")
-	}
-
 	if err := c.Ethereum.Validate(); err != nil {
 		return err
 	}

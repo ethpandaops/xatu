@@ -2,11 +2,13 @@ package auth_test
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -55,7 +57,7 @@ func TestNewAuthorization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := auth.NewAuthorization(tt.config)
+			_, err := auth.NewAuthorization(logrus.New(), tt.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAuthorization() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -63,7 +65,7 @@ func TestNewAuthorization(t *testing.T) {
 	}
 }
 
-func TestAuthorization_IsAuthorized(t *testing.T) {
+func TestAuthorization_IsAuthorizedBasic(t *testing.T) {
 	authConfig := auth.AuthorizationConfig{
 		Enabled: true,
 		Groups: auth.GroupsConfig{
@@ -76,7 +78,7 @@ func TestAuthorization_IsAuthorized(t *testing.T) {
 		},
 	}
 
-	authorization, err := auth.NewAuthorization(authConfig)
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
 	if err != nil {
 		t.Fatalf("Failed to create Authorization: %v", err)
 	}
@@ -111,7 +113,87 @@ func TestAuthorization_IsAuthorized(t *testing.T) {
 		Enabled: false,
 	}
 
-	disabledAuth, err := auth.NewAuthorization(disabledAuthConfig)
+	disabledAuth, err := auth.NewAuthorization(logrus.New(), disabledAuthConfig)
+	if err != nil {
+		t.Fatalf("Failed to create disabled Authorization: %v", err)
+	}
+
+	if err := disabledAuth.Start(context.Background()); err != nil {
+		t.Fatalf("Failed to start disabled Authorization: %v", err)
+	}
+
+	t.Run("Authorization disabled - any credentials authorized", func(t *testing.T) {
+		got, err := disabledAuth.IsAuthorizedBasic("anyuser", "anypassword")
+		if err != nil {
+			t.Errorf("IsAuthorizedBasic with disabled auth unexpected error: %v", err)
+		}
+
+		if !got {
+			t.Errorf("IsAuthorized with disabled auth = %v, want true", got)
+		}
+	})
+}
+
+func TestAuthorization_IsAuthorized(t *testing.T) {
+	authConfig := auth.AuthorizationConfig{
+		Enabled: true,
+		Groups: auth.GroupsConfig{
+			"group1": {
+				Users: auth.UsersConfig{
+					"user1": {Password: "password1"},
+					"user2": {Password: "password2"},
+				},
+			},
+		},
+	}
+
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
+	if err != nil {
+		t.Fatalf("Failed to create Authorization: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		username    string
+		password    string
+		expectError bool
+	}{
+		{"Valid user1 credentials", "user1", "password1", false},
+		{"Valid user2 credentials", "user2", "password2", false},
+		{"Invalid password for user1", "user1", "wrongpassword", true},
+		{"Non-existent user", "user3", "password3", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Encode the username and password as a basic auth token
+			token := base64.StdEncoding.EncodeToString([]byte(tt.username + ":" + tt.password))
+
+			username, errr := authorization.IsAuthorized("Basic " + token)
+			if errr != nil {
+				if tt.expectError {
+					return
+				}
+
+				t.Errorf("IsAuthorizedBasic(%s, %s) unexpected error: %v", tt.username, tt.password, errr)
+			}
+
+			if errr != nil {
+				t.Errorf("IsAuthorizedBasic(%s, %s) unexpected error: %v", tt.username, tt.password, errr)
+			}
+
+			if username != tt.username {
+				t.Errorf("IsAuthorized(%s, %s) = %v, want %v", tt.username, tt.password, username, tt.username)
+			}
+		})
+	}
+
+	// Test with authorization disabled
+	disabledAuthConfig := auth.AuthorizationConfig{
+		Enabled: false,
+	}
+
+	disabledAuth, err := auth.NewAuthorization(logrus.New(), disabledAuthConfig)
 	if err != nil {
 		t.Fatalf("Failed to create disabled Authorization: %v", err)
 	}
@@ -150,7 +232,7 @@ func TestAuthorization_GetUserAndGroup(t *testing.T) {
 		},
 	}
 
-	authorization, err := auth.NewAuthorization(authConfig)
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
 	if err != nil {
 		t.Fatalf("Failed to create Authorization: %v", err)
 	}
@@ -347,7 +429,7 @@ func TestAuthorization_Start(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, errr := auth.NewAuthorization(tt.config)
+			a, errr := auth.NewAuthorization(logrus.New(), tt.config)
 			if errr != nil {
 				t.Fatalf("Failed to create Authorization: %v", errr)
 			}
@@ -415,7 +497,7 @@ func TestAuthorization_MultipleFilters(t *testing.T) {
 		},
 	}
 
-	authorization, err := auth.NewAuthorization(authConfig)
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
 	if err != nil {
 		t.Fatalf("Failed to create Authorization: %v", err)
 	}
@@ -502,7 +584,7 @@ func TestAuthorization_NoFilter(t *testing.T) {
 		},
 	}
 
-	authorization, err := auth.NewAuthorization(authConfig)
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
 	if err != nil {
 		t.Fatalf("Failed to create Authorization: %v", err)
 	}
@@ -613,7 +695,7 @@ func TestAuthorization_FilterAndRedactEvents(t *testing.T) {
 		},
 	}
 
-	authorization, err := auth.NewAuthorization(authConfig)
+	authorization, err := auth.NewAuthorization(logrus.New(), authConfig)
 	if err != nil {
 		t.Fatalf("Failed to create Authorization: %v", err)
 	}

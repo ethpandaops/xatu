@@ -143,6 +143,10 @@ func (g *Group) ApplyFilter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEve
 }
 
 func (g *Group) ApplyRedacter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+	if g.redacter == nil {
+		return events, nil
+	}
+
 	for _, event := range events {
 		fields := g.redacter.Apply(event)
 

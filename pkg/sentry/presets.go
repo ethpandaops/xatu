@@ -50,7 +50,7 @@ outputs:
     workers: 10
     maxQueueSize: 20000
     headers:
-      Authorization: "Bearer $MUST_BE_SET_BY_USER"
+      Authorization: "Basic $MUST_BE_SET_BY_USER"
     eventFilter:
       eventNames:
       - BEACON_API_ETH_V2_BEACON_BLOCK_V2
@@ -59,6 +59,30 @@ outputs:
       - BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2
       - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2
       - BEACON_API_ETH_V1_EVENTS_HEAD_V2
+`,
+			),
+		},
+		{
+			Name:    "docker-compose",
+			Aliases: []string{},
+			Value: []byte(`
+preset: docker-compose
+outputs:
+- name: ethpandaops
+  type: xatu
+  config:
+    address: localhost:8080
+    tls: false
+    retry:
+      enabled: true
+      scalar: 1s
+      maxAttempts: 5
+    maxExportBatchSize: 64
+    batchTimeout: 10s
+    workers: 10
+    maxQueueSize: 20000
+    headers:
+      Authorization: "Basic c2hhbmU6d2FybmU="
 `,
 			),
 		},

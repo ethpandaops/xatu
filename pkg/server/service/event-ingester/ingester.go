@@ -34,7 +34,7 @@ type Ingester struct {
 }
 
 func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) (*Ingester, error) {
-	a, err := auth.NewAuthorization(conf.Authorization)
+	a, err := auth.NewAuthorization(log, conf.Authorization)
 	if err != nil {
 		return nil, err
 	}
@@ -94,30 +94,30 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		return nil, errors.New("failed to get metadata from context")
 	}
 
-	authorization := md.Get("authorization")
-
-	if e.config.Authorization.Enabled {
-		if len(authorization) == 0 {
-			return nil, status.Error(codes.Unauthenticated, "no authorization header provided")
-		}
-
-		allowed, err := e.auth.IsAuthorized(authorization[0])
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
-		}
-
-		if !allowed {
-			return nil, status.Error(codes.Unauthenticated, "unauthorized")
-		}
-	}
-
 	var user *auth.User
 
 	var group *auth.Group
 
-	user, group, err := e.auth.GetUserAndGroup(authorization[0])
-	if err != nil && e.config.Authorization.Enabled {
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+	if e.config.Authorization.Enabled {
+		authorization := md.Get("authorization")
+
+		if len(authorization) == 0 {
+			return nil, status.Error(codes.Unauthenticated, "no authorization header provided")
+		}
+
+		username, err := e.auth.IsAuthorized(authorization[0])
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "failed to authorize user")
+		}
+
+		if username == "" {
+			return nil, status.Error(codes.Unauthenticated, "unauthorized")
+		}
+
+		user, group, err = e.auth.GetUserAndGroup(username)
+		if err != nil && e.config.Authorization.Enabled {
+			return nil, status.Error(codes.Unauthenticated, err.Error())
+		}
 	}
 
 	filteredEvents, err := e.handler.Events(ctx, req.GetEvents(), user, group)

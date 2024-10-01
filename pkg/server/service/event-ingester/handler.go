@@ -42,26 +42,19 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 }
 
 func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
-	filteredEvents := []*xatu.DecoratedEvent{}
-
-	// Apply the user filter
-	if user != nil {
-		ev, err := user.ApplyFilter(events)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply user filter: %w", err)
-		}
-
-		filteredEvents = ev
+	filteredEvents, err := h.filterEvents(ctx, events, user, group)
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter events: %w", err)
 	}
 
-	// Apply the group filter
+	// Redact the events. Redacting is done before and after the event is processed to ensure that the field is not leaked by processing such as geoip lookups.
 	if group != nil {
-		ev, err := group.ApplyFilter(events)
+		redactedEvents, err := group.ApplyRedacter(filteredEvents)
 		if err != nil {
-			return nil, fmt.Errorf("failed to apply group filter: %w", err)
+			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
 		}
 
-		filteredEvents = ev
+		filteredEvents = redactedEvents
 	}
 
 	now := time.Now()
@@ -165,7 +158,12 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			continue
 		}
 
-		h.metrics.AddDecoratedEventReceived(1, eventName, user.Username())
+		username := "unknown"
+		if user != nil {
+			username = user.Username()
+		}
+
+		h.metrics.AddDecoratedEventReceived(1, eventName, username)
 
 		meta := xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{
@@ -177,9 +175,53 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			},
 		}
 
+		if group != nil {
+			meta.Client.Group = group.Name()
+		}
+
+		if user != nil {
+			meta.Client.User = username
+		}
+
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
 		filteredEvents = append(filteredEvents, event)
+	}
+
+	// Redact the events again
+	if group != nil {
+		redactedEvents, err := group.ApplyRedacter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
+		}
+
+		filteredEvents = redactedEvents
+	}
+
+	return filteredEvents, nil
+}
+
+func (h *Handler) filterEvents(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+	filteredEvents := events
+
+	// Apply the user filter
+	if user != nil {
+		ev, err := user.ApplyFilter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply user filter: %w", err)
+		}
+
+		filteredEvents = ev
+	}
+
+	// Apply the group filter
+	if group != nil {
+		ev, err := group.ApplyFilter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group filter: %w", err)
+		}
+
+		filteredEvents = ev
 	}
 
 	return filteredEvents, nil

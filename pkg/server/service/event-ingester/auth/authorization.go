@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/sirupsen/logrus"
 )
 
 type AuthorizationConfig struct {
@@ -19,9 +20,10 @@ type AuthorizationConfig struct {
 type Authorization struct {
 	enabled bool
 	groups  Groups
+	log     logrus.FieldLogger
 }
 
-func NewAuthorization(config AuthorizationConfig) (*Authorization, error) {
+func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Authorization, error) {
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid authorization config: %w", err)
 	}
@@ -40,6 +42,7 @@ func NewAuthorization(config AuthorizationConfig) (*Authorization, error) {
 	return &Authorization{
 		enabled: config.Enabled,
 		groups:  groups,
+		log:     log.WithField("server/module", "event-ingester/auth"),
 	}, nil
 }
 
@@ -55,6 +58,9 @@ func (a *Authorization) Start(ctx context.Context) error {
 
 			userNames[user] = true
 		}
+
+		a.log.WithField("group", group).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
+
 	}
 
 	return nil
@@ -78,10 +84,10 @@ func (a *AuthorizationConfig) Validate() error {
 	return nil
 }
 
-func (a *Authorization) IsAuthorized(token string) (bool, error) {
+func (a *Authorization) IsAuthorized(token string) (string, error) {
 	parts := strings.SplitN(token, " ", 2)
 	if len(parts) != 2 {
-		return false, fmt.Errorf("invalid token format")
+		return "", fmt.Errorf("invalid token format")
 	}
 
 	typ, value := parts[0], parts[1]
@@ -90,21 +96,30 @@ func (a *Authorization) IsAuthorized(token string) (bool, error) {
 	case "Basic":
 		decodedBytes, err := base64.StdEncoding.DecodeString(value)
 		if err != nil {
-			return false, fmt.Errorf("failed to decode basic auth token: %w", err)
+			return "", fmt.Errorf("failed to decode basic auth token: %w", err)
 		}
 
 		credentials := strings.SplitN(string(decodedBytes), ":", 2)
 		if len(credentials) != 2 {
-			return false, fmt.Errorf("invalid basic auth format")
+			return "", fmt.Errorf("invalid basic auth format")
 		}
 
 		username, password := credentials[0], credentials[1]
 
-		return a.IsAuthorizedBasic(username, password)
+		authorized, err := a.IsAuthorizedBasic(username, password)
+		if err != nil {
+			return "", fmt.Errorf("failed to authorize user %s: %w", username, err)
+		}
+
+		if authorized {
+			return username, nil
+		}
+
+		return "", fmt.Errorf("user %s not authorized", username)
 	case "Bearer":
-		return false, errors.New("bearer token not supported")
+		return "", errors.New("bearer token not supported")
 	default:
-		return false, fmt.Errorf("unsupported token type: %s", typ)
+		return "", fmt.Errorf("unsupported token type: %s", typ)
 	}
 }
 

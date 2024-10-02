@@ -37,7 +37,7 @@ services:
   coordinator:
     enabled: true # requires persistence to be enabled
     auth:
-      enabled: true
+      enabled: false
       secret: "super-secret-token"
     nodeRecord:
       maxQueueSize: 51200

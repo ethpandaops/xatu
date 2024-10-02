@@ -43,10 +43,12 @@ services:
       maxExportBatchSize: 512
   eventIngester:
     enabled: true
+    clientNameSalt: "example_salt"
     authorization:
       enabled: true
       groups:
         default:
+          obscureClientNames: true
           users:
             user_a:
               password: password

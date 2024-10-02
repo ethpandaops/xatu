@@ -20,24 +20,25 @@ import (
 )
 
 type Handler struct {
-	log           logrus.FieldLogger
-	clockDrift    *time.Duration
-	geoipProvider geoip.Provider
-	cache         store.Cache
-
-	metrics *Metrics
+	log            logrus.FieldLogger
+	clockDrift     *time.Duration
+	geoipProvider  geoip.Provider
+	cache          store.Cache
+	clientNameSalt string
+	metrics        *Metrics
 
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) *Handler {
+func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
 	return &Handler{
-		log:           log,
-		clockDrift:    clockDrift,
-		geoipProvider: geoipProvider,
-		cache:         cache,
-		metrics:       NewMetrics("xatu_server_event_ingester"),
-		eventRouter:   eventHandler.NewEventRouter(log, cache, geoipProvider),
+		log:            log,
+		clockDrift:     clockDrift,
+		geoipProvider:  geoipProvider,
+		cache:          cache,
+		metrics:        NewMetrics("xatu_server_event_ingester"),
+		eventRouter:    eventHandler.NewEventRouter(log, cache, geoipProvider),
+		clientNameSalt: clientNameSalt,
 	}
 }
 
@@ -128,6 +129,11 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 	}
 
+	username := "unknown"
+	if user != nil {
+		username = user.Username()
+	}
+
 	for _, event := range events {
 		if event == nil || event.Event == nil {
 			continue
@@ -158,11 +164,6 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			continue
 		}
 
-		username := "unknown"
-		if user != nil {
-			username = user.Username()
-		}
-
 		h.metrics.AddDecoratedEventReceived(1, eventName, username)
 
 		meta := xatu.ServerMeta{
@@ -177,6 +178,10 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		if group != nil {
 			meta.Client.Group = group.Name()
+
+			if user != nil {
+				event.Meta.Client.Name = group.ComputeClientName(username, h.clientNameSalt, event.GetMeta().GetClient().GetName())
+			}
 		}
 
 		if user != nil {
@@ -201,7 +206,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 	return filteredEvents, nil
 }
 
-func (h *Handler) filterEvents(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+func (h *Handler) filterEvents(_ context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
 	filteredEvents := events
 
 	// Apply the user filter

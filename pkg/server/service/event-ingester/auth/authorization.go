@@ -51,6 +51,8 @@ func (a *Authorization) Start(ctx context.Context) error {
 	userNames := make(map[string]bool)
 
 	for _, group := range a.groups {
+		group.Start(ctx)
+
 		for _, user := range group.Users().Usernames() {
 			if userNames[user] {
 				return fmt.Errorf("user %s already exists in multiple groups", user)
@@ -60,7 +62,6 @@ func (a *Authorization) Start(ctx context.Context) error {
 		}
 
 		a.log.WithField("group", group).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
-
 	}
 
 	return nil

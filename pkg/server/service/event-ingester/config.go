@@ -13,6 +13,8 @@ type Config struct {
 	Outputs []output.Config `yaml:"outputs"`
 	// Authorization is the authorization configuration.
 	Authorization auth.AuthorizationConfig `yaml:"authorization"`
+	// ClientNameSalt is the salt to use for computing client names
+	ClientNameSalt string `yaml:"clientNameSalt"`
 }
 
 func (c *Config) Validate() error {
@@ -26,6 +28,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization config is invalid: %w", err)
+	}
+
+	if c.ClientNameSalt == "" {
+		return fmt.Errorf("clientNameSalt is required")
 	}
 
 	return nil

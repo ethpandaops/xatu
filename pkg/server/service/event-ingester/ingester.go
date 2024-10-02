@@ -43,7 +43,7 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 		log:     log.WithField("server/module", ServiceType),
 		config:  conf,
 		auth:    a,
-		handler: NewHandler(log, clockDrift, geoipProvider, cache),
+		handler: NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),
 	}
 
 	sinks, err := e.CreateSinks()

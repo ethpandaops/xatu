@@ -603,7 +603,7 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 			return nil, err
 		}
 
-		clientName = fmt.Sprintf("node-%s", hashed)
+		clientName = hashed
 	}
 
 	presetName := ""
@@ -646,7 +646,7 @@ func (s *Sentry) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (s *Sentry) syncClockDrift(ctx context.Context) error {
+func (s *Sentry) syncClockDrift(_ context.Context) error {
 	response, err := ntp.Query(s.Config.NTPServer)
 	if err != nil {
 		return err

@@ -91,9 +91,11 @@ func (f *ForkChoice) GetAdditionalData(_ context.Context) *xatu.ClientMeta_Addit
 	extra := &xatu.ClientMeta_AdditionalEthV1DebugForkChoiceV2Data{
 		Snapshot: &xatu.ClientMeta_ForkChoiceSnapshotV2{
 			RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{
+				//nolint:gosec // not concerned in reality
 				Value: uint64(f.snapshot.RequestAt.Sub(slot.TimeWindow().Start()).Milliseconds()),
 			},
 			RequestDurationMs: &wrapperspb.UInt64Value{
+				//nolint:gosec // not concerned in reality
 				Value: uint64(f.snapshot.RequestDuration.Milliseconds()),
 			},
 			Timestamp: timestamppb.New(f.snapshot.RequestAt),

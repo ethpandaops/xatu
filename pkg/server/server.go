@@ -338,7 +338,7 @@ func (x *Xatu) startMetrics(ctx context.Context) error {
 	return x.metricsServer.ListenAndServe()
 }
 
-func (x *Xatu) startPProf(ctx context.Context) error {
+func (x *Xatu) startPProf(_ context.Context) error {
 	x.log.WithField("addr", x.config.PProfAddr).Info("Starting pprof server")
 
 	x.pprofServer = &http.Server{
@@ -365,7 +365,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (x *Xatu) syncClockDrift(ctx context.Context) error {
+func (x *Xatu) syncClockDrift(_ context.Context) error {
 	response, err := ntp.Query(x.config.NTPServer)
 	if err != nil {
 		return err

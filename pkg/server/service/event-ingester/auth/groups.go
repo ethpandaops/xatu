@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -9,19 +10,37 @@ import (
 type GroupsConfig map[string]GroupConfig
 
 type GroupConfig struct {
-	Users       UsersConfig
-	EventFilter *xatu.EventFilterConfig `yaml:"eventFilter"`
-	Redacter    *xatu.RedacterConfig    `yaml:"redacter"`
+	Users              UsersConfig
+	EventFilter        *xatu.EventFilterConfig `yaml:"eventFilter"`
+	Redacter           *xatu.RedacterConfig    `yaml:"redacter"`
+	ObscureClientNames bool                    `yaml:"obscureClientNames"`
 }
 
 type Groups map[string]*Group
 
 type Group struct {
-	users       *Users
-	name        string
-	eventFilter xatu.EventFilter
-	redacter    xatu.Redacter
-	metrics     *GroupMetrics
+	users              *Users
+	name               string
+	eventFilter        xatu.EventFilter
+	redacter           xatu.Redacter
+	metrics            *GroupMetrics
+	obscureClientNames bool
+	clientNames        *clientNameCache
+}
+
+func (g *Group) ComputeClientName(user, salt, clientName string) string {
+	if !g.obscureClientNames {
+		return fmt.Sprintf("%s/%s/%s", g.name, user, clientName)
+	}
+
+	if computedName, ok := g.clientNames.Get(clientName); ok {
+		return computedName
+	}
+
+	computedClientName := ComputeClientName(user, g.name, salt, clientName)
+	g.clientNames.Set(fmt.Sprintf("%s/%s/%s", g.name, user, clientName), computedClientName)
+
+	return computedClientName
 }
 
 func NewGroup(name string, c GroupConfig) (*Group, error) {
@@ -41,9 +60,11 @@ func NewGroup(name string, c GroupConfig) (*Group, error) {
 	}
 
 	g := &Group{
-		users:   &users,
-		name:    name,
-		metrics: DefaultGroupMetrics,
+		users:              &users,
+		name:               name,
+		metrics:            DefaultGroupMetrics,
+		obscureClientNames: c.ObscureClientNames,
+		clientNames:        newClientNameCache(3000),
 	}
 
 	if c.EventFilter != nil {
@@ -65,6 +86,10 @@ func NewGroup(name string, c GroupConfig) (*Group, error) {
 	}
 
 	return g, nil
+}
+
+func (g *Group) Start(ctx context.Context) {
+	g.clientNames.Start(ctx)
 }
 
 func (g *GroupConfig) Validate() error {
@@ -101,6 +126,10 @@ func (g *GroupConfig) Validate() error {
 	}
 
 	return nil
+}
+
+func (g *Group) ShouldObscureClientName() bool {
+	return g.obscureClientNames
 }
 
 func (g *Group) Name() string {

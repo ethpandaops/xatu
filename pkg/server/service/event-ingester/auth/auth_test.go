@@ -1,3 +1,4 @@
+//nolint:goconst // don't care about this in a test package
 package auth_test
 
 import (

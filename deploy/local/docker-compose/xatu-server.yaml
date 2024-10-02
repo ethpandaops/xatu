@@ -45,7 +45,7 @@ services:
     enabled: true
     clientNameSalt: "example_salt"
     authorization:
-      enabled: true
+      enabled: false
       groups:
         default:
           obscureClientNames: true

@@ -2,13 +2,16 @@ package services
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	"github.com/ethpandaops/beacon/pkg/beacon/api/types"
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/networks"
@@ -31,6 +34,10 @@ type MetadataService struct {
 	onReadyCallbacks []func(context.Context) error
 
 	overrideNetworkName string
+
+	nodeIdentity *types.Identity
+	nodeID       string
+	nodeIDHash   string
 
 	mu sync.Mutex
 }
@@ -117,6 +124,10 @@ func (m *MetadataService) Ready(ctx context.Context) error {
 		return errors.New("wallclock is not available")
 	}
 
+	if m.nodeIdentity == nil {
+		return errors.New("node identity is not available")
+	}
+
 	return nil
 }
 
@@ -127,6 +138,11 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 
 	if err := m.fetchGenesis(ctx); err != nil {
 		m.log.WithError(err).Warn("Failed to fetch genesis for refresh")
+	}
+
+	_, err := m.DeriveNodeIdentity(ctx)
+	if err != nil {
+		m.log.WithError(err).Warn("Failed to derive node identity")
 	}
 
 	if m.Genesis != nil && m.Spec != nil && m.wallclock == nil {
@@ -151,6 +167,35 @@ func (m *MetadataService) Wallclock() *ethwallclock.EthereumBeaconChain {
 	defer m.mu.Unlock()
 
 	return m.wallclock
+}
+
+func (m *MetadataService) DeriveNodeIdentity(ctx context.Context) (*types.Identity, error) {
+	if m.beacon == nil {
+		return nil, errors.New("beacon is not available")
+	}
+
+	if !m.beacon.Healthy() {
+		return nil, errors.New("beacon is not healthy")
+	}
+
+	identity, err := m.beacon.FetchNodeIdentity(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	m.nodeIdentity = identity
+
+	enr, err := identity.GetEnode()
+	if err != nil {
+		return nil, err
+	}
+
+	m.nodeID = enr.ID().String()
+
+	// Hash the node ID so we obfuscate the actual node ID, and trim it to 10 characters
+	m.nodeIDHash = fmt.Sprintf("%x", sha256.Sum256([]byte(m.nodeID)))[:10]
+
+	return identity, nil
 }
 
 func (m *MetadataService) DeriveNetwork(_ context.Context) error {
@@ -208,4 +253,28 @@ func (m *MetadataService) NodeVersion(_ context.Context) string {
 
 func (m *MetadataService) Client(ctx context.Context) string {
 	return string(ClientFromString(m.NodeVersion(ctx)))
+}
+
+func (m *MetadataService) NodeIdentity() (*types.Identity, error) {
+	if m.nodeIdentity == nil {
+		return nil, errors.New("node identity is not available")
+	}
+
+	return m.nodeIdentity, nil
+}
+
+func (m *MetadataService) NodeID() (string, error) {
+	if m.nodeID == "" {
+		return "", errors.New("node ID is not available")
+	}
+
+	return m.nodeID, nil
+}
+
+func (m *MetadataService) NodeIDHash() (string, error) {
+	if m.nodeIDHash == "" {
+		return "", errors.New("node ID hash is not available")
+	}
+
+	return m.nodeIDHash, nil
 }

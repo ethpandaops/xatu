@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	eventHandler "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
@@ -19,28 +20,44 @@ import (
 )
 
 type Handler struct {
-	log           logrus.FieldLogger
-	clockDrift    *time.Duration
-	geoipProvider geoip.Provider
-	cache         store.Cache
-
-	metrics *Metrics
+	log            logrus.FieldLogger
+	clockDrift     *time.Duration
+	geoipProvider  geoip.Provider
+	cache          store.Cache
+	clientNameSalt string
+	metrics        *Metrics
 
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) *Handler {
+func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
 	return &Handler{
-		log:           log,
-		clockDrift:    clockDrift,
-		geoipProvider: geoipProvider,
-		cache:         cache,
-		metrics:       NewMetrics("xatu_server_event_ingester"),
-		eventRouter:   eventHandler.NewEventRouter(log, cache, geoipProvider),
+		log:            log,
+		clockDrift:     clockDrift,
+		geoipProvider:  geoipProvider,
+		cache:          cache,
+		metrics:        NewMetrics("xatu_server_event_ingester"),
+		eventRouter:    eventHandler.NewEventRouter(log, cache, geoipProvider),
+		clientNameSalt: clientNameSalt,
 	}
 }
 
-func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+	filteredEvents, err := h.filterEvents(ctx, events, user, group)
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter events: %w", err)
+	}
+
+	// Redact the events. Redacting is done before and after the event is processed to ensure that the field is not leaked by processing such as geoip lookups.
+	if group != nil {
+		redactedEvents, err := group.ApplyRedacter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
+		}
+
+		filteredEvents = redactedEvents
+	}
+
 	now := time.Now()
 	if h.clockDrift != nil {
 		now = now.Add(*h.clockDrift)
@@ -112,7 +129,10 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 		}
 	}
 
-	filteredEvents := make([]*xatu.DecoratedEvent, 0, len(events))
+	username := "unknown"
+	if user != nil {
+		username = user.Username()
+	}
 
 	for _, event := range events {
 		if event == nil || event.Event == nil {
@@ -144,7 +164,7 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 			continue
 		}
 
-		h.metrics.AddDecoratedEventReceived(1, eventName, clientID)
+		h.metrics.AddDecoratedEventReceived(1, eventName, username)
 
 		meta := xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{
@@ -156,9 +176,57 @@ func (h *Handler) Events(ctx context.Context, clientID string, events []*xatu.De
 			},
 		}
 
+		if group != nil {
+			meta.Client.Group = group.Name()
+
+			if user != nil {
+				event.Meta.Client.Name = group.ComputeClientName(username, h.clientNameSalt, event.GetMeta().GetClient().GetName())
+			}
+		}
+
+		if user != nil {
+			meta.Client.User = username
+		}
+
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
 		filteredEvents = append(filteredEvents, event)
+	}
+
+	// Redact the events again
+	if group != nil {
+		redactedEvents, err := group.ApplyRedacter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
+		}
+
+		filteredEvents = redactedEvents
+	}
+
+	return filteredEvents, nil
+}
+
+func (h *Handler) filterEvents(_ context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+	filteredEvents := events
+
+	// Apply the user filter
+	if user != nil {
+		ev, err := user.ApplyFilter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply user filter: %w", err)
+		}
+
+		filteredEvents = ev
+	}
+
+	// Apply the group filter
+	if group != nil {
+		ev, err := group.ApplyFilter(filteredEvents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply group filter: %w", err)
+		}
+
+		filteredEvents = ev
 	}
 
 	return filteredEvents, nil

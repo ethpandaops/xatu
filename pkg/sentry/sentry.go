@@ -22,6 +22,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
+	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/cache"
@@ -34,6 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"gopkg.in/yaml.v2"
 )
 
 type Sentry struct {
@@ -58,12 +60,43 @@ type Sentry struct {
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
 
+	preset *Preset
+
 	shutdownFuncs []func(context.Context) error
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Sentry, error) {
+	log = log.WithField("module", "sentry")
+
 	if config == nil {
 		return nil, errors.New("config is required")
+	}
+
+	var preset *Preset
+
+	// Merge preset if its set
+	if overrides.Preset.Enabled || config.Preset != "" {
+		var presetName string
+
+		if overrides.Preset.Enabled {
+			presetName = overrides.Preset.Value
+		} else {
+			presetName = config.Preset
+		}
+
+		p, err := GetPreset(presetName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get preset: %w", err)
+		}
+
+		preset = p
+
+		log.WithField("preset", presetName).Info("Applying preset")
+
+		// Merge the 2 yaml files
+		if err := yaml.Unmarshal(preset.Value, config); err != nil {
+			return nil, fmt.Errorf("failed to merge config and preset: %w", err)
+		}
 	}
 
 	if err := config.Validate(); err != nil {
@@ -75,6 +108,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		return nil, err
 	}
 
+	// If the beacon node override is set, use it
+	if overrides.BeaconNodeURL.Enabled {
+		log.Info("Overriding beacon node URL")
+
+		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
+	}
+
 	beacon, err := ethereum.NewBeaconNode(ctx, config.Name, &config.Ethereum, log)
 	if err != nil {
 		return nil, err
@@ -83,7 +123,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 	duplicateCache := cache.NewDuplicateCache()
 	duplicateCache.Start()
 
-	return &Sentry{
+	s := &Sentry{
 		Config:             config,
 		sinks:              sinks,
 		beacon:             beacon,
@@ -96,7 +136,26 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Sentry, 
 		latestForkChoice:   nil,
 		latestForkChoiceMu: sync.RWMutex{},
 		shutdownFuncs:      []func(context.Context) error{},
-	}, nil
+		preset:             preset,
+	}
+
+	// If the output authorization override is set, use it
+	if overrides.XatuOutputAuth.Enabled {
+		log.Info("Overriding output authorization")
+
+		for _, sink := range s.sinks {
+			if sink.Type() == string(output.SinkTypeXatu) {
+				xatuSink, ok := sink.(*oxatu.Xatu)
+				if !ok {
+					return nil, errors.New("failed to assert xatu sink")
+				}
+
+				xatuSink.SetAuthorization(overrides.XatuOutputAuth.Value)
+			}
+		}
+	}
+
+	return s, nil
 }
 
 //nolint:gocyclo // Needs refactoring
@@ -537,8 +596,23 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 		}
 	}
 
+	clientName := s.Config.Name
+	if clientName == "" {
+		hashed, err := s.beacon.Metadata().NodeIDHash()
+		if err != nil {
+			return nil, err
+		}
+
+		clientName = hashed
+	}
+
+	presetName := ""
+	if s.preset != nil {
+		presetName = s.preset.Name
+	}
+
 	return &xatu.ClientMeta{
-		Name:           s.Config.Name,
+		Name:           clientName,
 		Version:        xatu.Short(),
 		Id:             s.id.String(),
 		Implementation: xatu.Implementation,
@@ -553,7 +627,8 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 				Version:        s.beacon.Metadata().NodeVersion(ctx),
 			},
 		},
-		Labels: s.Config.Labels,
+		Labels:     s.Config.Labels,
+		PresetName: presetName,
 	}, nil
 }
 
@@ -571,7 +646,7 @@ func (s *Sentry) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (s *Sentry) syncClockDrift(ctx context.Context) error {
+func (s *Sentry) syncClockDrift(_ context.Context) error {
 	response, err := ntp.Query(s.Config.NTPServer)
 	if err != nil {
 		return err

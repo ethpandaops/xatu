@@ -109,6 +109,7 @@ func (e *EventsChainReorg) getAdditionalData(_ context.Context) (*xatu.ClientMet
 
 	extra.Propagation = &xatu.PropagationV2{
 		SlotStartDiff: &wrapperspb.UInt64Value{
+			//nolint:gosec // not concerned in reality
 			Value: uint64(e.now.Sub(slot.TimeWindow().Start()).Milliseconds()),
 		},
 	}

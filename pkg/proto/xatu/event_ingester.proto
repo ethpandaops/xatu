@@ -1179,6 +1179,9 @@ message ClientMeta {
 
   // ModuleName contains the name of the module that sent the event.
   ModuleName module_name = 63 [ json_name = "module_name" ];
+
+  // PresetName contains the name of the preset that sent the event.
+  string preset_name = 64 [ json_name = "preset_name" ];
 }
 
 message ServerMeta {
@@ -1222,6 +1225,14 @@ message ServerMeta {
     // Geo contains geo information about the client as far as the server is
     // concerned.
     Geo geo = 2;
+
+    // Group contains the group name of the client as far as the server is
+    // concerned.
+    string Group = 3 [ json_name = "group" ];
+
+    // User contains the user name of the client as far as the server is
+    // concerned.
+    string User = 4 [ json_name = "user" ];
   }
 
   message Peer {

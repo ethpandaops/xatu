@@ -126,6 +126,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 	extra.Propagation = &xatu.PropagationV2{
 		SlotStartDiff: &wrapperspb.UInt64Value{
+			//nolint:gosec // not concerned in reality
 			Value: uint64(e.now.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
 		},
 	}
@@ -150,6 +151,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 	// If the attestation is unaggreated, we can append the validator position within the committee
 	if e.event.AggregationBits.Count() == 1 {
+		//nolint:gosec // not concerned in reality
 		position := uint64(e.event.AggregationBits.BitIndices()[0])
 
 		validatorIndex, err := e.beacon.Duties().GetValidatorIndex(

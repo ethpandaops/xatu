@@ -117,6 +117,7 @@ func (e *EventsBlobSidecar) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 	extra.Propagation = &xatu.PropagationV2{
 		SlotStartDiff: &wrapperspb.UInt64Value{
+			//nolint:gosec // not concerned in reality
 			Value: uint64(e.now.Sub(blobSlot.TimeWindow().Start()).Milliseconds()),
 		},
 	}

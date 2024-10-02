@@ -14,12 +14,12 @@ type Config struct {
 }
 
 type AuthConfig struct {
-	Enabled bool   `yaml:"enabled" default:"false"`
+	Enabled *bool  `yaml:"enabled" default:"false"`
 	Secret  string `yaml:"secret"`
 }
 
 func (c *AuthConfig) Validate() error {
-	if !c.Enabled {
+	if c.Enabled == nil || !*c.Enabled {
 		return nil
 	}
 

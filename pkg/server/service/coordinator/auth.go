@@ -10,7 +10,7 @@ import (
 )
 
 func (c *Client) validateAuth(ctx context.Context, md metadata.MD) error {
-	if !c.config.Auth.Enabled {
+	if c.config.Auth.Enabled == nil || !*c.config.Auth.Enabled {
 		return nil
 	}
 

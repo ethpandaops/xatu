@@ -90,7 +90,7 @@ func (c *Client) Stop(ctx context.Context) error {
 }
 
 func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeRecordsRequest) (*xatu.CreateNodeRecordsResponse, error) {
-	if c.config.Auth.Enabled {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
@@ -145,6 +145,17 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 }
 
 func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.ListStalledExecutionNodeRecordsRequest) (*xatu.ListStalledExecutionNodeRecordsResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	pageSize := int(req.PageSize)
 	if pageSize == 0 {
 		pageSize = 100
@@ -171,6 +182,17 @@ func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.
 }
 
 func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.CreateExecutionNodeRecordStatusRequest) (*xatu.CreateExecutionNodeRecordStatusResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	if req.Status == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "status is required")
 	}
@@ -228,6 +250,17 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 }
 
 func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	targetedNodes := []string{}
 	ignoredNodeRecords := []string{}
 	activities := []*node.Activity{}
@@ -298,6 +331,17 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 }
 
 func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
 	if err != nil {
 		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get discovery node records from db").Error())
@@ -316,6 +360,17 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 }
 
 func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocationRequest) (*xatu.GetCannonLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	location, err := c.persistence.GetCannonLocationByNetworkIDAndType(ctx, req.NetworkId, req.Type.Enum().String())
 	if err != nil && err != persistence.ErrCannonLocationNotFound {
 		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get cannon location from db").Error())
@@ -338,6 +393,17 @@ func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocat
 }
 
 func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCannonLocationRequest) (*xatu.UpsertCannonLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	newLocation := &cannon.Location{}
 
 	err := newLocation.Marshal(req.Location)

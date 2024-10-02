@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -89,6 +90,17 @@ func (c *Client) Stop(ctx context.Context) error {
 }
 
 func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeRecordsRequest) (*xatu.CreateNodeRecordsResponse, error) {
+	if c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
 	for _, record := range req.NodeRecords {
 		// TODO(sam.calder-mason): Derive client id/name from the request jwt
 		c.metrics.AddNodeRecordReceived(1, "unknown")

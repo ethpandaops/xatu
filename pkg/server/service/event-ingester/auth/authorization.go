@@ -61,7 +61,7 @@ func (a *Authorization) Start(ctx context.Context) error {
 			userNames[user] = true
 		}
 
-		a.log.WithField("group", group).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
+		a.log.WithField("group", group.Name()).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
 	}
 
 	return nil

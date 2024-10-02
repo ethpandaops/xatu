@@ -36,6 +36,9 @@ tracing:
 services:
   coordinator:
     enabled: true # requires persistence to be enabled
+    auth:
+      enabled: true
+      secret: "super-secret-token"
     nodeRecord:
       maxQueueSize: 51200
       batchTimeout: 5s

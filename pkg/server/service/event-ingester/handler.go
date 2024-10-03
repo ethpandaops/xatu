@@ -43,6 +43,18 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 }
 
 func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+	groupName := "unknown"
+	if group != nil {
+		groupName = group.Name()
+	}
+
+	username := "unknown"
+	if user != nil {
+		username = user.Username()
+	}
+
+	h.metrics.AddDecoratedEventFromUserReceived(len(events), username, groupName)
+
 	filteredEvents, err := h.filterEvents(ctx, events, user, group)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter events: %w", err)
@@ -129,11 +141,6 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 	}
 
-	username := "unknown"
-	if user != nil {
-		username = user.Username()
-	}
-
 	for _, event := range events {
 		if event == nil || event.Event == nil {
 			continue
@@ -164,7 +171,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			continue
 		}
 
-		h.metrics.AddDecoratedEventReceived(1, eventName, username)
+		h.metrics.AddDecoratedEventReceived(1, eventName, groupName)
 
 		meta := xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{

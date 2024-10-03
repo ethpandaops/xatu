@@ -3,7 +3,8 @@ package eventingester
 import "github.com/prometheus/client_golang/prometheus"
 
 type Metrics struct {
-	decoratedEventsTotal *prometheus.CounterVec
+	decoratedEventsTotal         *prometheus.CounterVec
+	decoratedEventsFromUserTotal *prometheus.CounterVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -12,7 +13,12 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "decorated_events_received_total",
 			Help:      "Total number of decorated events received",
-		}, []string{"event", "sentry_id"}),
+		}, []string{"event", "group"}),
+		decoratedEventsFromUserTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "decorated_events_from_user_total",
+			Help:      "Total number of decorated events from user",
+		}, []string{"user", "group"}),
 	}
 
 	prometheus.MustRegister(m.decoratedEventsTotal)
@@ -22,4 +28,8 @@ func NewMetrics(namespace string) *Metrics {
 
 func (m *Metrics) AddDecoratedEventReceived(count int, event, sentryID string) {
 	m.decoratedEventsTotal.WithLabelValues(event, sentryID).Add(float64(count))
+}
+
+func (m *Metrics) AddDecoratedEventFromUserReceived(count int, user, group string) {
+	m.decoratedEventsFromUserTotal.WithLabelValues(user, group).Add(float64(count))
 }

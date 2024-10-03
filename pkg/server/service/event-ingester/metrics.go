@@ -22,6 +22,7 @@ func NewMetrics(namespace string) *Metrics {
 	}
 
 	prometheus.MustRegister(m.decoratedEventsTotal)
+	prometheus.MustRegister(m.decoratedEventsFromUserTotal)
 
 	return m
 }

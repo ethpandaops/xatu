@@ -11,7 +11,7 @@ import (
 type GroupsConfig map[string]GroupConfig
 
 type GroupConfig struct {
-	Users              UsersConfig
+	Users              UsersConfig             `yaml:"users"`
 	EventFilter        *xatu.EventFilterConfig `yaml:"eventFilter"`
 	Redacter           *xatu.RedacterConfig    `yaml:"redacter"`
 	ObscureClientNames bool                    `yaml:"obscureClientNames"`

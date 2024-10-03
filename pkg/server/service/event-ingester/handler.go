@@ -42,6 +42,7 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 	}
 }
 
+//nolint:gocyclo // Needs refactor
 func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
 	groupName := "unknown"
 	if group != nil {
@@ -53,21 +54,21 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		username = user.Username()
 	}
 
-	h.metrics.AddDecoratedEventFromUserReceived(len(events), username, groupName)
-
 	filteredEvents, err := h.filterEvents(ctx, events, user, group)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter events: %w", err)
 	}
 
+	events = filteredEvents
+
 	// Redact the events. Redacting is done before and after the event is processed to ensure that the field is not leaked by processing such as geoip lookups.
 	if group != nil {
-		redactedEvents, err := group.ApplyRedacter(filteredEvents)
+		redactedEvents, err := group.ApplyRedacter(events)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
 		}
 
-		filteredEvents = redactedEvents
+		events = redactedEvents
 	}
 
 	now := time.Now()
@@ -172,6 +173,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 
 		h.metrics.AddDecoratedEventReceived(1, eventName, groupName)
+		h.metrics.AddDecoratedEventFromUserReceived(1, username, groupName)
 
 		meta := xatu.ServerMeta{
 			Event: &xatu.ServerMeta_Event{

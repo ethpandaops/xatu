@@ -192,6 +192,8 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 
 	bvp.metrics.SetWorkerCount(bvp.name, float64(bvp.o.Workers))
 
+	bvp.log.Infof("Starting %d workers for %s", bvp.o.Workers, bvp.name)
+
 	for i := 0; i < bvp.o.Workers; i++ {
 		go func(num int) {
 			defer bvp.stopWait.Done()
@@ -454,8 +456,6 @@ func (bvp *BatchItemProcessor[T]) sendBatch(batch []*TraceableItem[T], reason st
 }
 
 func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
-	bvp.log.Infof("Starting worker %d for %s", number, bvp.name)
-
 	for {
 		select {
 		case <-bvp.stopWorkersCh:

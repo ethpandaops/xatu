@@ -31,7 +31,7 @@ func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Auth
 	groups := make(Groups)
 
 	for groupName, group := range config.Groups {
-		g, err := NewGroup(groupName, group)
+		g, err := NewGroup(log, groupName, group)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create group %s: %w", groupName, err)
 		}

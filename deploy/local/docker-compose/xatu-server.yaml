@@ -72,6 +72,7 @@ services:
     outputs:
     - name: general
       type: http
+      shippingMethod: async
       config:
         address: http://xatu-vector-http-kafka:9005
         maxQueueSize: 102400
@@ -81,3 +82,4 @@ services:
         compression: zstd
         keepAlive: true
         workers: 50
+        

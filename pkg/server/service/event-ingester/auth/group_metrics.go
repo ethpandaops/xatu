@@ -3,7 +3,7 @@ package auth
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	DefaultGroupMetrics = NewGroupMetrics("xatu_event_ingester")
+	DefaultGroupMetrics = NewGroupMetrics("xatu_server_event_ingester")
 )
 
 type GroupMetrics struct {
@@ -24,6 +24,8 @@ func NewGroupMetrics(namespace string) *GroupMetrics {
 			Help:      "Number of fields redacted",
 		}, []string{"group", "path"}),
 	}
+
+	prometheus.MustRegister(m.fieldsRedacted)
 
 	return m
 }

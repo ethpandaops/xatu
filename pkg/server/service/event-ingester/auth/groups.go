@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/sirupsen/logrus"
 )
 
 type GroupsConfig map[string]GroupConfig
 
 type GroupConfig struct {
-	Users              UsersConfig
+	Users              UsersConfig             `yaml:"users"`
 	EventFilter        *xatu.EventFilterConfig `yaml:"eventFilter"`
 	Redacter           *xatu.RedacterConfig    `yaml:"redacter"`
 	ObscureClientNames bool                    `yaml:"obscureClientNames"`
@@ -19,6 +20,7 @@ type GroupConfig struct {
 type Groups map[string]*Group
 
 type Group struct {
+	log                logrus.FieldLogger
 	users              *Users
 	name               string
 	eventFilter        xatu.EventFilter
@@ -43,7 +45,7 @@ func (g *Group) ComputeClientName(user, salt, clientName string) string {
 	return computedClientName
 }
 
-func NewGroup(name string, c GroupConfig) (*Group, error) {
+func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("group config is invalid: %w", err)
 	}
@@ -60,6 +62,10 @@ func NewGroup(name string, c GroupConfig) (*Group, error) {
 	}
 
 	g := &Group{
+		log: log.WithFields(logrus.Fields{
+			"group":         name,
+			"server/module": "event-ingester/auth",
+		}),
 		users:              &users,
 		name:               name,
 		metrics:            DefaultGroupMetrics,
@@ -73,6 +79,11 @@ func NewGroup(name string, c GroupConfig) (*Group, error) {
 			return nil, fmt.Errorf("failed to create event filter: %w", err)
 		}
 
+		g.log.WithFields(logrus.Fields{
+			"event_names": c.EventFilter.EventNames,
+			"modules":     c.EventFilter.Modules,
+		}).Info("Created a new event filter")
+
 		g.eventFilter = filter
 	}
 
@@ -81,6 +92,10 @@ func NewGroup(name string, c GroupConfig) (*Group, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create redacter: %w", err)
 		}
+
+		g.log.WithFields(logrus.Fields{
+			"field_paths": c.Redacter.FieldPaths,
+		}).Info("Created a new redacter")
 
 		g.redacter = redacter
 	}

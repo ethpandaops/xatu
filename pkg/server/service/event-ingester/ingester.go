@@ -139,7 +139,7 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 
 	for i, out := range e.config.Outputs {
 		if out.ShippingMethod == nil {
-			shippingMethod := processor.ShippingMethodAsync
+			shippingMethod := processor.ShippingMethodSync
 			out.ShippingMethod = &shippingMethod
 		}
 

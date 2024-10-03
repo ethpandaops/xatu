@@ -69,29 +69,3 @@ func (r *redacter) setFieldToEmpty(msg proto.Message, fieldPath string) bool {
 
 	return false
 }
-
-func ShowAllFields(msg proto.Message) []string {
-	var fields []string
-
-	md := msg.ProtoReflect()
-
-	var traverse func(md protoreflect.Message, prefix string)
-	traverse = func(md protoreflect.Message, prefix string) {
-		md.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-			fieldName := string(fd.Name())
-			fullPath := prefix + fieldName
-
-			fields = append(fields, fullPath)
-
-			if fd.Kind() == protoreflect.MessageKind && !fd.IsMap() && !fd.IsList() {
-				traverse(v.Message(), fullPath+".")
-			}
-
-			return true
-		})
-	}
-
-	traverse(md, "")
-
-	return fields
-}

@@ -77,12 +77,18 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
+		if out.ShippingMethod == nil {
+			shippingMethod := processor.ShippingMethodSync
+
+			out.ShippingMethod = &shippingMethod
+		}
+
 		sink, err := output.NewSink(out.Name,
 			out.SinkType,
 			out.Config,
 			log,
 			out.FilterConfig,
-			processor.ShippingMethodSync,
+			*out.ShippingMethod,
 		)
 		if err != nil {
 			return nil, err

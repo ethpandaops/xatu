@@ -99,6 +99,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		}
 	}
 
+	// If the beacon node override is set, use it
+	if overrides.BeaconNodeURL.Enabled {
+		log.Info("Overriding beacon node URL")
+
+		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
+	}
+
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -106,13 +113,6 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	sinks, err := config.CreateSinks(log)
 	if err != nil {
 		return nil, err
-	}
-
-	// If the beacon node override is set, use it
-	if overrides.BeaconNodeURL.Enabled {
-		log.Info("Overriding beacon node URL")
-
-		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
 	}
 
 	beacon, err := ethereum.NewBeaconNode(ctx, config.Name, &config.Ethereum, log)

@@ -35,6 +35,14 @@ ethereum:
   - chain_reorg
   - finalized_checkpoint
   - head
+proposerDuty:
+  enabled: false
+attestationData:
+  enabled: false
+beaconCommittees:
+  enabled: false
+forkChoice:
+  enabled: false
 outputs:
 - name: ethpandaops
   type: xatu
@@ -75,10 +83,25 @@ ethereum:
   - chain_reorg
   - finalized_checkpoint
   - head
+proposerDuty:
+  enabled: false
+attestationData:
+  enabled: false
+beaconCommittees:
+  enabled: false
+forkChoice:
+  enabled: false
 outputs:
 - name: ethpandaops
   type: xatu
-
+  eventFilter:
+    eventNames:
+    - BEACON_API_ETH_V2_BEACON_BLOCK_V2
+    - BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR
+    - BEACON_API_ETH_V1_EVENTS_BLOCK_V2
+    - BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2
+    - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2
+    - BEACON_API_ETH_V1_EVENTS_HEAD_V2
   config:
     address: xatu.primary.staging.platform.ethpandaops.io:443
     tls: true

@@ -16,7 +16,7 @@ builds:
     goarch: 
     - amd64
     ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.release={{.Tag}} -X github.com/ethpandaops/xatu/cmd.commit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.platform={{.GOOS}}/{{.GOARCH}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
   - id: linux-arm64
@@ -30,7 +30,7 @@ builds:
     goarch: 
     - arm64
     ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.release={{.Tag}} -X github.com/ethpandaops/xatu/cmd.commit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.platform={{.GOOS}}/{{.GOARCH}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
   - id: windows-amd64
@@ -44,7 +44,7 @@ builds:
     goarch:
     - amd64
     ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.release={{.Tag}} -X github.com/ethpandaops/xatu/cmd.commit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.platform={{.GOOS}}/{{.GOARCH}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
   - id: darwin-amd64
@@ -58,7 +58,7 @@ builds:
     goarch:
     - amd64
     ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.release={{.Tag}} -X github.com/ethpandaops/xatu/cmd.commit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.platform={{.GOOS}}/{{.GOARCH}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
   - id: darwin-arm64
@@ -72,7 +72,7 @@ builds:
     goarch:
     - arm64
     ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}}
+      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.release={{.Tag}} -X github.com/ethpandaops/xatu/cmd.commit={{.ShortCommit}} -X github.com/ethpandaops/xatu/cmd.platform={{.GOOS}}/{{.GOARCH}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 checksum:
   name_template: 'checksums.txt'

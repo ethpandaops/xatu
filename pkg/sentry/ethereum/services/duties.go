@@ -79,12 +79,12 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		m.log.Info("Duties service is disabled")
 
 		if err := m.Ready(ctx); err != nil {
-			m.log.WithError(err).Error("Failed to fire on ready callback")
+			return fmt.Errorf("failed to fire on ready callback: %w", err)
 		}
 
 		for _, fn := range m.onReadyCallbacks {
 			if err := fn(ctx); err != nil {
-				m.log.WithError(err).Error("Failed to fire on ready callback")
+				return fmt.Errorf("failed to fire on ready callback: %w", err)
 			}
 		}
 

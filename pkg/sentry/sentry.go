@@ -19,6 +19,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/altair"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -115,7 +116,48 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, err
 	}
 
-	beacon, err := ethereum.NewBeaconNode(ctx, config.Name, &config.Ethereum, log)
+	beaconOpts := ethereum.Options{}
+
+	hasAttestationSubscription := false
+
+	attestationTopic := "attestation"
+
+	if config.Ethereum.BeaconSubscriptions != nil {
+		for _, topic := range *config.Ethereum.BeaconSubscriptions {
+			if topic == attestationTopic {
+				hasAttestationSubscription = true
+
+				break
+			}
+		}
+	} else if beacon.DefaultEnabledBeaconSubscriptionOptions().Enabled {
+		// If no subscriptions have been provided in config, we need to check if the default options have it enabled
+		for _, topic := range beacon.DefaultEnabledBeaconSubscriptionOptions().Topics {
+			if topic == attestationTopic {
+				hasAttestationSubscription = true
+
+				break
+			}
+		}
+	}
+
+	if hasAttestationSubscription {
+		log.Info("Enabling beacon committees as we are subscribed to attestation events")
+
+		beaconOpts.WithFetchBeaconCommittees(true)
+	}
+
+	if config.BeaconCommittees != nil && config.BeaconCommittees.Enabled {
+		log.Info("Enabling beacon committees as we need to fetch them on interval")
+		beaconOpts.WithFetchBeaconCommittees(true)
+	}
+
+	if config.ProposerDuty != nil && config.ProposerDuty.Enabled {
+		log.Info("Enabling proposer duties as we need to fetch them on interval")
+		beaconOpts.WithFetchProposerDuties(true)
+	}
+
+	b, err := ethereum.NewBeaconNode(ctx, config.Name, &config.Ethereum, log, &beaconOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +168,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	s := &Sentry{
 		Config:             config,
 		sinks:              sinks,
-		beacon:             beacon,
+		beacon:             b,
 		clockDrift:         time.Duration(0),
 		log:                log,
 		duplicateCache:     duplicateCache,

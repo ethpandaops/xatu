@@ -24,7 +24,7 @@ type BeaconNode struct {
 	onReadyCallbacks []func(ctx context.Context) error
 }
 
-func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
+func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger, opt *Options) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
 		DisablePrometheusMetrics()
@@ -48,7 +48,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	}, "xatu_sentry", opts)
 
 	metadata := services.NewMetadataService(log, node, config.OverrideNetworkName)
-	duties := services.NewDutiesService(log, node, &metadata)
+	duties := services.NewDutiesService(log, node, &metadata, opt.FetchProposerDuties, opt.FetchBeaconCommittees)
 
 	svcs := []services.Service{
 		&metadata,

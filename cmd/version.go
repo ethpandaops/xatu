@@ -12,7 +12,7 @@ var versionCmd = &cobra.Command{
 	Short: "Prints the version of Xatu.",
 	Long:  `Prints the version of Xatu.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("xatu version %s %s %s/%s\n", xatu.Release, xatu.GitCommit, xatu.GOOS, xatu.GOARCH)
+		fmt.Printf("%s\n", xatu.FullVWithPlatform())
 	},
 }
 

@@ -34,6 +34,10 @@ func FullVWithGOOS() string {
 	return fmt.Sprintf("%s/%s", Full(), GOOS)
 }
 
+func FullVWithPlatform() string {
+	return fmt.Sprintf("%s/%s/%s", Full(), GOOS, GOARCH)
+}
+
 func ImplementationLower() string {
 	return strings.ToLower(Implementation)
 }

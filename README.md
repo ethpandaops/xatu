@@ -64,6 +64,23 @@ Download the latest release from the [Releases page](https://github.com/ethpanda
 ./xatu <server|sentry|discovery|mimicry> --config your-config.yaml
 ```
 
+### Install via bash script
+
+View the install script [here](./installer.sh). You can run the following to install:
+```
+curl -sL https://raw.githubusercontent.com/ethpandaops/xatu/master/install.sh | bash
+```
+
+To change the install location of the binary you can run and change the `BASE_INSTALL_PATH` variable:
+```
+curl -sL https://raw.githubusercontent.com/ethpandaops/xatu/master/install.sh | BASE_INSTALL_PATH=~/.local/bin bash
+```
+
+To uninstall the binary you can run:
+```
+curl -sL https://raw.githubusercontent.com/ethpandaops/xatu/master/install.sh | bash -s uninstall
+```
+
 ### Docker
 
 Available as a docker image at [ethpandaops/xatu](https://hub.docker.com/r/ethpandaops/xatu/tags)

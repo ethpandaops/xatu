@@ -41,7 +41,11 @@ fetch_latest_tag() {
   info "Fetching the latest release information from GitHub..."
   LATEST_RELEASE_JSON=$(curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest") || error "Failed to fetch release information."
 
-  TAG=$(echo "$LATEST_RELEASE_JSON" | grep -oP '"tag_name":\s*"\K(.*)(?=")') || error "Failed to parse release tag."
+  if [ "$OS" = "darwin" ]; then
+    TAG=$(echo "$LATEST_RELEASE_JSON" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p') || error "Failed to parse release tag."
+  else
+    TAG=$(echo "$LATEST_RELEASE_JSON" | grep -oP '"tag_name":\s*"\K(.*)(?=")') || error "Failed to parse release tag."
+  fi
   [[ -z "$TAG" ]] && error "Release tag not found."
   info "Latest release tag: $TAG"
 }

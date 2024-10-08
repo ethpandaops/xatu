@@ -87,7 +87,7 @@ func (e *Ingester) Stop(ctx context.Context) error {
 }
 
 func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
-	e.log.WithField("events", len(req.Events)).Debug("Received batch of events")
+	e.log.WithField("events", len(req.Events)).Info("Received batch of events")
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -125,11 +125,21 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	e.log.WithFields(logrus.Fields{
+		"input_events":  len(req.Events),
+		"output_events": len(filteredEvents),
+	}).Info("Got events from event handler")
+
 	for _, sink := range e.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
+
+	e.log.WithFields(logrus.Fields{
+		"input_events":  len(req.Events),
+		"output_events": len(filteredEvents),
+	}).Info("Successfully processed batch of events")
 
 	return &xatu.CreateEventsResponse{}, nil
 }
@@ -138,17 +148,12 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
-		if out.ShippingMethod == nil {
-			shippingMethod := processor.ShippingMethodSync
-			out.ShippingMethod = &shippingMethod
-		}
-
 		sink, err := output.NewSink(out.Name,
 			out.SinkType,
 			out.Config,
 			e.log,
 			out.FilterConfig,
-			*out.ShippingMethod,
+			processor.ShippingMethodSync,
 		)
 		if err != nil {
 			return nil, err

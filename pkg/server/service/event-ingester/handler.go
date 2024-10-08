@@ -54,12 +54,16 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		username = user.Username()
 	}
 
+	h.log.WithField("input_events", len(events)).Info("Passing events to filterEvents")
+
 	filteredEvents, err := h.filterEvents(ctx, events, user, group)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter events: %w", err)
 	}
 
 	events = filteredEvents
+
+	h.log.WithField("output_events", len(events)).Info("Passing events to applyRedacter")
 
 	// Redact the events. Redacting is done before and after the event is processed to ensure that the field is not leaked by processing such as geoip lookups.
 	if group != nil {
@@ -70,6 +74,8 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		events = redactedEvents
 	}
+
+	h.log.WithField("output_events", len(events)).Info("Got events from redacted")
 
 	now := time.Now()
 	if h.clockDrift != nil {
@@ -142,6 +148,8 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 	}
 
+	handlerFilteredEvents := make([]*xatu.DecoratedEvent, 0)
+	// Route the events to the correct handler
 	for _, event := range events {
 		if event == nil || event.Event == nil {
 			continue
@@ -199,8 +207,12 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
-		filteredEvents = append(filteredEvents, event)
+		handlerFilteredEvents = append(handlerFilteredEvents, event)
 	}
+
+	h.log.WithField("output_events", len(handlerFilteredEvents)).Info("Got events from event handler")
+
+	filteredEvents = handlerFilteredEvents
 
 	// Redact the events again
 	if group != nil {
@@ -218,6 +230,8 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 func (h *Handler) filterEvents(_ context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
 	filteredEvents := events
 
+	h.log.WithField("input_events", len(events)).Info("Filtering events")
+
 	// Apply the user filter
 	if user != nil {
 		ev, err := user.ApplyFilter(filteredEvents)
@@ -226,6 +240,8 @@ func (h *Handler) filterEvents(_ context.Context, events []*xatu.DecoratedEvent,
 		}
 
 		filteredEvents = ev
+
+		h.log.WithField("events", len(filteredEvents)).Info("Filtered events for user")
 	}
 
 	// Apply the group filter
@@ -236,7 +252,11 @@ func (h *Handler) filterEvents(_ context.Context, events []*xatu.DecoratedEvent,
 		}
 
 		filteredEvents = ev
+
+		h.log.WithField("events", len(filteredEvents)).Info("Filtered events for group")
 	}
+
+	h.log.WithField("events", len(filteredEvents)).Info("Filtered events")
 
 	return filteredEvents, nil
 }

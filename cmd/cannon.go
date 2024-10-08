@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/cannon"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -24,21 +23,14 @@ var cannonCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", cannonCfgFile).Info("Loading config")
-
 		config, err := loadcannonConfigFromFile(cannonCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Info("Config loaded")
+		log = getLoggerWithOverride(config.LoggingLevel, "")
 
-		logLevel, err := logrus.ParseLevel(config.LoggingLevel)
-		if err != nil {
-			log.WithField("logLevel", config.LoggingLevel).Fatal("invalid logging level")
-		}
-
-		log.SetLevel(logLevel)
+		log.WithField("location", cannonCfgFile).Info("Loaded config")
 
 		cannon, err := cannon.New(cmd.Context(), log, config)
 		if err != nil {

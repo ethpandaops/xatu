@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/sentry"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -121,8 +120,6 @@ var sentryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", sentryCfgFile).Info("Loading config")
-
 		overrides := &sentry.Override{}
 		for _, o := range SentryOverrides {
 			if errr := o.Setter(cmd, overrides); errr != nil {
@@ -140,6 +137,8 @@ var sentryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		log = getLoggerWithOverride(config.LoggingLevel, "")
+
 		// If we have a valid preset configuration, use it to override the config
 		if cmd.Flags().Changed(presetFlag) {
 			log.Info("Overriding sentry configuration with preset")
@@ -148,13 +147,6 @@ var sentryCmd = &cobra.Command{
 		}
 
 		log.Info("Config loaded")
-
-		logLevel, err := logrus.ParseLevel(config.LoggingLevel)
-		if err != nil {
-			log.WithField("logLevel", config.LoggingLevel).Fatal("invalid logging level")
-		}
-
-		log.SetLevel(logLevel)
 
 		sentry, err := sentry.New(cmd.Context(), log, config, overrides)
 		if err != nil {

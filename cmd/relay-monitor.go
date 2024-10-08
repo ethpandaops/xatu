@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -24,21 +23,14 @@ var relayMonitorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", relayMonitorCfgFile).Info("Loading config")
-
 		config, err := loadRelayMonitorConfigFromFile(relayMonitorCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Info("Config loaded")
+		log = getLoggerWithOverride(config.LoggingLevel, "")
 
-		logLevel, err := logrus.ParseLevel(config.LoggingLevel)
-		if err != nil {
-			log.WithField("logLevel", config.LoggingLevel).Fatal("invalid logging level")
-		}
-
-		log.SetLevel(logLevel)
+		log.WithField("location", relayMonitorCfgFile).Info("Loaded config")
 
 		monitor, err := relaymonitor.New(cmd.Context(), log, config)
 		if err != nil {

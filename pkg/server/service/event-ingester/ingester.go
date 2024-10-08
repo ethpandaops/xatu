@@ -87,7 +87,7 @@ func (e *Ingester) Stop(ctx context.Context) error {
 }
 
 func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
-	e.log.WithField("events", len(req.Events)).Info("Received batch of events")
+	e.log.WithField("events", len(req.Events)).Debug("Received batch of events")
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -125,21 +125,11 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	e.log.WithFields(logrus.Fields{
-		"input_events":  len(req.Events),
-		"output_events": len(filteredEvents),
-	}).Info("Got events from event handler")
-
 	for _, sink := range e.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
-
-	e.log.WithFields(logrus.Fields{
-		"input_events":  len(req.Events),
-		"output_events": len(filteredEvents),
-	}).Info("Successfully processed batch of events")
 
 	return &xatu.CreateEventsResponse{}, nil
 }

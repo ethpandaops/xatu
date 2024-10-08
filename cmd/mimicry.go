@@ -28,7 +28,7 @@ var mimicryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log = getLoggerWithOverride(config.LoggingLevel, "")
+		log = getLogger(config.LoggingLevel, "")
 
 		log.WithField("location", mimicryCfgFile).Info("Loaded config")
 

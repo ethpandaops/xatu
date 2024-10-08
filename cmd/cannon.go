@@ -28,7 +28,7 @@ var cannonCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log = getLoggerWithOverride(config.LoggingLevel, "")
+		log = getLogger(config.LoggingLevel, "")
 
 		log.WithField("location", cannonCfgFile).Info("Loaded config")
 

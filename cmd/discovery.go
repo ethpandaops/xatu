@@ -28,7 +28,7 @@ var discoveryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log = getLoggerWithOverride(config.LoggingLevel, "")
+		log = getLogger(config.LoggingLevel, "")
 
 		log.WithField("location", discoveryCfgFile).Info("Loaded config")
 		discovery, err := discovery.New(cmd.Context(), log, config)

@@ -137,7 +137,7 @@ var sentryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log = getLoggerWithOverride(config.LoggingLevel, "")
+		log = getLogger(config.LoggingLevel, "")
 
 		// If we have a valid preset configuration, use it to override the config
 		if cmd.Flags().Changed(presetFlag) {

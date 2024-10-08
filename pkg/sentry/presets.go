@@ -125,7 +125,7 @@ outputs:
 			Value: []byte(`
 preset: docker-compose
 outputs:
-- name: ethpandaops
+- name: dockercompose
   type: xatu
   config:
     address: localhost:8080

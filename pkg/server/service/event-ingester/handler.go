@@ -142,6 +142,8 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 	}
 
+	handlerFilteredEvents := make([]*xatu.DecoratedEvent, 0)
+	// Route the events to the correct handler
 	for _, event := range events {
 		if event == nil || event.Event == nil {
 			continue
@@ -199,8 +201,10 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
-		filteredEvents = append(filteredEvents, event)
+		handlerFilteredEvents = append(handlerFilteredEvents, event)
 	}
+
+	filteredEvents = handlerFilteredEvents
 
 	// Redact the events again
 	if group != nil {

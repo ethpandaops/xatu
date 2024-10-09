@@ -711,7 +711,12 @@ func (s *Sentry) syncClockDrift(_ context.Context) error {
 	}
 
 	s.clockDrift = response.ClockOffset
-	s.log.WithField("drift", s.clockDrift).Info("Updated clock drift")
+
+	s.log.WithField("drift", s.clockDrift).Debug("Updated clock drift")
+
+	if s.clockDrift > 2*time.Second || s.clockDrift < -2*time.Second {
+		s.log.WithField("drift", s.clockDrift).Warn("Large clock drift detected, consider setting the NTPServer")
+	}
 
 	return err
 }

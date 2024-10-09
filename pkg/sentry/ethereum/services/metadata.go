@@ -67,9 +67,13 @@ func (m *MetadataService) Start(ctx context.Context) error {
 			return nil
 		}
 
-		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+		if err := backoff.RetryNotify(operation, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
+			m.log.WithError(err).Warnf("Failed to refresh metadata, retrying in %s", duration)
+		}); err != nil {
 			m.log.WithError(err).Warn("Failed to refresh metadata")
 		}
+
+		m.log.Info("Metadata service is ready")
 
 		for _, cb := range m.onReadyCallbacks {
 			if err := cb(ctx); err != nil {

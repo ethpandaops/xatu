@@ -64,6 +64,8 @@ type Sentry struct {
 	preset *Preset
 
 	shutdownFuncs []func(context.Context) error
+
+	summary *Summary
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Sentry, error) {
@@ -179,6 +181,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		latestForkChoiceMu: sync.RWMutex{},
 		shutdownFuncs:      []func(context.Context) error{},
 		preset:             preset,
+		summary:            NewSummary(log, time.Duration(60)*time.Second, b),
 	}
 
 	// If the output authorization override is set, use it
@@ -254,6 +257,12 @@ func (s *Sentry) Start(ctx context.Context) error {
 	if err := s.startProposerDutyWatcher(ctx); err != nil {
 		return err
 	}
+
+	s.beacon.Node().OnEvent(ctx, func(ctx context.Context, event *eth2v1.Event) error {
+		s.summary.AddEventStreamEvents(event.Topic, 1)
+
+		return nil
+	})
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
 		s.log.Info("Internal beacon node is ready, subscribing to events")
@@ -554,6 +563,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 	}
 
+	go s.summary.Start(ctx)
+
 	if s.Config.Ethereum.OverrideNetworkName != "" {
 		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).Info("Overriding network name")
 	}
@@ -723,6 +734,8 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	}
 
 	s.metrics.AddDecoratedEvent(1, eventType, networkStr)
+
+	s.summary.AddEventsExported(1)
 
 	for _, sink := range s.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {

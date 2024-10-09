@@ -67,13 +67,8 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	s := gocron.NewScheduler(time.Local)
 
 	errs := make(chan error, 1)
-	healthyFirstTime := make(chan struct{})
 
-	b.beacon.OnFirstTimeHealthy(ctx, func(ctx context.Context, event *beacon.FirstTimeHealthyEvent) error {
-		b.log.Info("Upstream beacon node is healthy")
-
-		close(healthyFirstTime)
-
+	go func() {
 		wg := sync.WaitGroup{}
 
 		for _, service := range b.services {
@@ -93,8 +88,6 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 				errs <- fmt.Errorf("failed to start service: %w", err)
 			}
 
-			b.log.WithField("service", service.Name()).Info("Waiting for service to be ready")
-
 			wg.Wait()
 		}
 
@@ -105,26 +98,14 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 				errs <- fmt.Errorf("failed to run on ready callback: %w", err)
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	s.StartAsync()
 
-	b.beacon.StartAsync(ctx)
-
-	select {
-	case err := <-errs:
+	if err := b.beacon.Start(ctx); err != nil {
 		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-healthyFirstTime:
-		// Beacon node is healthy, continue with normal operation
-	case <-time.After(10 * time.Minute):
-		return errors.New("upstream beacon node is not healthy. check your configuration.")
 	}
 
-	// Wait for any errors after the first healthy event
 	select {
 	case err := <-errs:
 		return err

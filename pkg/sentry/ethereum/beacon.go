@@ -120,7 +120,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 		return ctx.Err()
 	case <-healthyFirstTime:
 		// Beacon node is healthy, continue with normal operation
-	case <-time.After(5 * time.Minute):
+	case <-time.After(10 * time.Minute):
 		return errors.New("upstream beacon node is not healthy. check your configuration.")
 	}
 

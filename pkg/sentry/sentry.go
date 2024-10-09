@@ -715,7 +715,7 @@ func (s *Sentry) syncClockDrift(_ context.Context) error {
 	s.log.WithField("drift", s.clockDrift).Debug("Updated clock drift")
 
 	if s.clockDrift > 2*time.Second || s.clockDrift < -2*time.Second {
-		s.log.WithField("drift", s.clockDrift).Warn("Large clock drift detected, consider setting the NTPServer")
+		s.log.WithField("drift", s.clockDrift).Warn("Large clock drift detected, consider configuring an NTP server on your instance")
 	}
 
 	return err

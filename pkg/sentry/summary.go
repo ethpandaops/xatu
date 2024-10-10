@@ -119,7 +119,7 @@ func (s *Summary) GetEventStreamEvents() map[string]uint64 {
 	events := make(map[string]uint64)
 
 	s.eventStreamEvents.Range(func(key, value any) bool {
-		events[key.(string)] = value.(uint64)
+		events[key.(string)], _ = value.(uint64)
 
 		return true
 	})

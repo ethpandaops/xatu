@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -14,8 +13,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -280,7 +279,7 @@ func (b *BeaconBlockDeriver) createEventFromBlock(ctx context.Context, block *sp
 		},
 	}
 
-	additionalData, err := b.getAdditionalData(ctx, block, data)
+	additionalData, err := b.getAdditionalData(ctx, block)
 	if err != nil {
 		b.log.WithError(err).Error("Failed to get extra beacon block data")
 
@@ -294,7 +293,7 @@ func (b *BeaconBlockDeriver) createEventFromBlock(ctx context.Context, block *sp
 	return decoratedEvent, nil
 }
 
-func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.VersionedSignedBeaconBlock, data *xatuethv2.EventBlockV2) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
+func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.VersionedSignedBeaconBlock) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 
 	slotI, err := block.Slot()
@@ -332,13 +331,18 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 		}
 	}
 
-	dataAsJSON, err := json.Marshal(block)
+	blockMessage, err := getBlockMessage(block)
 	if err != nil {
 		return nil, err
 	}
 
-	dataSize := len(dataAsJSON)
-	compressedData := snappy.Encode(nil, dataAsJSON)
+	sszData, err := ssz.MarshalSSZ(blockMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	dataSize := len(sszData)
+	compressedData := snappy.Encode(nil, sszData)
 	compressedDataSize := len(compressedData)
 
 	blockRoot, err := block.Root()
@@ -386,4 +390,19 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 	extra.FinalizedWhenRequested = true
 
 	return extra, nil
+}
+
+func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, error) {
+	switch block.Version {
+	case spec.DataVersionAltair:
+		return block.Altair.Message, nil
+	case spec.DataVersionBellatrix:
+		return block.Bellatrix.Message, nil
+	case spec.DataVersionCapella:
+		return block.Capella.Message, nil
+	case spec.DataVersionDeneb:
+		return block.Deneb.Message, nil
+	default:
+		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
+	}
 }

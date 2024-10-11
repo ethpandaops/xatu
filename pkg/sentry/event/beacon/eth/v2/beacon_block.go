@@ -165,17 +165,20 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 
 	blockMessage, err := getBlockMessage(e.event)
 	if err != nil {
-		return nil, err
-	}
+		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")
+	} else {
+		sszData, err := ssz.MarshalSSZ(blockMessage)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to marshal (SSZ) block message to compute block size")
+		} else {
+			dataSize := len(sszData)
+			compressedData := snappy.Encode(nil, sszData)
+			compressedDataSize := len(compressedData)
 
-	sszData, err := ssz.MarshalSSZ(blockMessage)
-	if err != nil {
-		return nil, err
+			extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
+			extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
+		}
 	}
-
-	dataSize := len(sszData)
-	compressedData := snappy.Encode(nil, sszData)
-	compressedDataSize := len(compressedData)
 
 	switch e.event.Version {
 	case spec.DataVersionBellatrix:
@@ -204,8 +207,6 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
 	compressedTxSize := len(compressedTransactions)
 
-	extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
-	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
 	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(compressedTxSize))

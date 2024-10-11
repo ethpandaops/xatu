@@ -66,14 +66,6 @@ coordinator:
     Authorization: "Bearer SET_ME"
 
 outputs:
-  # - name: log
-  #   type: stdout
-    # filter:
-    #   eventNames:
-        # - BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
-  #       # - BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA
-  #       # - BEACON_API_ETH_V1_EVENTS_BLOCK_V2
-  #       # - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2
   - name: xatu
     type: xatu
     config:
@@ -86,17 +78,3 @@ outputs:
       workers: 50
       headers:
         Authorization: "Bearer SET_ME"
-  # - name: xatu
-  #   type: xatu
-  #   config:
-  #     address: server.xatu.pectra-devnet-3.ethpandaops.io:80
-  #     tls: false
-  #     maxQueueSize: 51200
-  #     batchTimeout: 0.5s
-  #     exportTimeout: 30s
-  #     maxExportBatchSize: 32
-  #     workers: 50
-  #     authorizationSecret: "ethpandaops-observability-rocks-lol"
-    # filter:
-    #   eventNames:
-    #     - BEACON_API_ETH_V2_BEACON_BLOCK_V2

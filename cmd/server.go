@@ -58,7 +58,7 @@ var ServerOverrides = []ServerOverride{
 		EnvName:     "SERVER_EVENT_INGESTER_BASIC_AUTH_USERNAME",
 		Description: "sets the basic auth username for the event ingester",
 		OverrideFunc: func(val string, overrides *server.Override) {
-			overrides.BasicAuth.Username = val
+			overrides.EventIngesterBasicAuth.Username = val
 		},
 	}),
 	createServerOverride(ServerOverrideConfig{
@@ -66,7 +66,7 @@ var ServerOverrides = []ServerOverride{
 		EnvName:     "SERVER_EVENT_INGESTER_BASIC_AUTH_PASSWORD",
 		Description: "sets the basic auth password for the event ingester",
 		OverrideFunc: func(val string, overrides *server.Override) {
-			overrides.BasicAuth.Password = val
+			overrides.EventIngesterBasicAuth.Password = val
 		},
 	}),
 	createServerOverride(ServerOverrideConfig{
@@ -74,7 +74,7 @@ var ServerOverrides = []ServerOverride{
 		EnvName:     "SERVER_COORDINATOR_AUTH_SECRET",
 		Description: "sets the auth secret for the coordinator",
 		OverrideFunc: func(val string, overrides *server.Override) {
-			overrides.Coordinator.AuthSecret = val
+			overrides.CoordinatorAuth.AuthSecret = val
 		},
 	}),
 }

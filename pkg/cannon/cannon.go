@@ -124,6 +124,8 @@ func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) erro
 					return perrors.New("failed to assert xatu sink")
 				}
 
+				c.log.WithField("sink_name", sink.Name()).Info("Overriding xatu output authorization")
+
 				xatuSink.SetAuthorization(c.overrides.XatuOutputAuth.Value)
 			}
 		}

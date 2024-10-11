@@ -99,3 +99,29 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 
 	return sinks, nil
 }
+
+func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.BeaconNodeURL.Enabled {
+		log.Info("Overriding beacon node URL")
+
+		c.Ethereum.BeaconNodeAddress = o.BeaconNodeURL.Value
+	}
+
+	if o.BeaconNodeAuthorizationHeader.Enabled {
+		log.Info("Overriding beacon node authorization header")
+
+		c.Ethereum.BeaconNodeHeaders["Authorization"] = o.BeaconNodeAuthorizationHeader.Value
+	}
+
+	if o.XatuCoordinatorAuth.Enabled {
+		log.Info("Overriding xatu coordinator authorization")
+
+		c.Coordinator.Headers["Authorization"] = o.XatuCoordinatorAuth.Value
+	}
+
+	return nil
+}

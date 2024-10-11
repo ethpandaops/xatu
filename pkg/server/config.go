@@ -1,11 +1,15 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	"github.com/ethpandaops/xatu/pkg/server/store"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -61,6 +65,50 @@ func (c *Config) Validate() error {
 
 	if err := c.Tracing.Validate(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.EventIngesterBasicAuth.Username != "" || o.EventIngesterBasicAuth.Password != "" {
+		log.Info("Enabling event ingester basic authentication via override")
+
+		if o.EventIngesterBasicAuth.Password == "" {
+			return fmt.Errorf("invalid basic auth override configuration: password is required")
+		}
+
+		if o.EventIngesterBasicAuth.Username == "" {
+			return fmt.Errorf("invalid basic auth override configuration: username is required")
+		}
+
+		// Event Ingester
+		c.Services.EventIngester.Authorization.Enabled = true
+
+		c.Services.EventIngester.Authorization.Groups = make(auth.GroupsConfig)
+		groupName := "simple"
+
+		c.Services.EventIngester.Authorization.Groups[groupName] = auth.GroupConfig{
+			Users: auth.UsersConfig{},
+		}
+
+		c.Services.EventIngester.Authorization.Groups[groupName].Users[o.EventIngesterBasicAuth.Username] = auth.UserConfig{
+			Password: o.EventIngesterBasicAuth.Password,
+		}
+	}
+
+	if o.CoordinatorAuth.Enabled {
+		log.Info("Enabling coordinator authentication via override")
+
+		// Coordinator
+		enabled := true
+		c.Services.Coordinator.Auth.Enabled = &enabled
+
+		c.Services.Coordinator.Auth.Secret = o.CoordinatorAuth.AuthSecret
 	}
 
 	return nil

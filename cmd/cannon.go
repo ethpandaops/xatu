@@ -14,6 +14,84 @@ var (
 	cannonCfgFile string
 )
 
+type CannonOverride struct {
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *cannon.Override) error
+}
+
+type CannonOverrideConfig struct {
+	FlagName     string
+	EnvName      string
+	Description  string
+	OverrideFunc func(val string, overrides *cannon.Override)
+}
+
+func createCannonOverride(config CannonOverrideConfig) CannonOverride {
+	return CannonOverride{
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(config.FlagName, "", config.Description+` (env: `+config.EnvName+`)`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *cannon.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(config.FlagName) {
+				val = cmd.Flags().Lookup(config.FlagName).Value.String()
+			}
+
+			if os.Getenv(config.EnvName) != "" {
+				val = os.Getenv(config.EnvName)
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			config.OverrideFunc(val, overrides)
+
+			return nil
+		},
+	}
+}
+
+var CannonOverrides = []CannonOverride{
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-xatu-output-authorization",
+		EnvName:     "CANNON_XATU_OUTPUT_AUTHORIZATION",
+		Description: "sets the authorization secret for all xatu outputs",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.XatuOutputAuth.Enabled = true
+			overrides.XatuOutputAuth.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-xatu-coordinator-authorization",
+		EnvName:     "CANNON_XATU_COORDINATOR_AUTHORIZATION",
+		Description: "sets the authorization secret for the xatu coordinator",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.XatuCoordinatorAuth.Enabled = true
+			overrides.XatuCoordinatorAuth.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-beacon-node-url",
+		EnvName:     "CANNON_BEACON_NODE_URL",
+		Description: "sets the beacon node url",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.BeaconNodeURL.Enabled = true
+			overrides.BeaconNodeURL.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-beacon-node-authorization-header",
+		EnvName:     "CANNON_BEACON_NODE_AUTHORIZATION_HEADER",
+		Description: "sets the beacon node authorization header",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.BeaconNodeAuthorizationHeader.Enabled = true
+			overrides.BeaconNodeAuthorizationHeader.Value = val
+		},
+	}),
+}
+
 // cannonCmd represents the cannon command
 var cannonCmd = &cobra.Command{
 	Use:   "cannon",
@@ -32,7 +110,15 @@ var cannonCmd = &cobra.Command{
 
 		log.WithField("location", cannonCfgFile).Info("Loaded config")
 
-		cannon, err := cannon.New(cmd.Context(), log, config)
+		overrides := &cannon.Override{}
+
+		for _, override := range CannonOverrides {
+			if errr := override.Setter(cmd, overrides); errr != nil {
+				log.Fatal(errr)
+			}
+		}
+
+		cannon, err := cannon.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -49,6 +135,10 @@ func init() {
 	rootCmd.AddCommand(cannonCmd)
 
 	cannonCmd.Flags().StringVar(&cannonCfgFile, "config", "cannon.yaml", "config file (default is cannon.yaml)")
+
+	for _, override := range CannonOverrides {
+		override.FlagHelper(cannonCmd)
+	}
 }
 
 func loadcannonConfigFromFile(file string) (*cannon.Config, error) {

@@ -48,12 +48,20 @@ type Xatu struct {
 
 	clockDrift *time.Duration
 
+	overrides *Override
+
 	shutdownFuncs []func(ctx context.Context) error
 }
 
-func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
+func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Override) (*Xatu, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
+	}
+
+	if o != nil {
+		if err := conf.ApplyOverrides(o, log); err != nil {
+			return nil, fmt.Errorf("failed to apply overrides: %w", err)
+		}
 	}
 
 	clockDrift := time.Duration(0)
@@ -96,6 +104,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		services:      services,
 		clockDrift:    &clockDrift,
 		shutdownFuncs: []func(ctx context.Context) error{},
+		overrides:     o,
 	}, nil
 }
 

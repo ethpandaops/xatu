@@ -262,6 +262,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		// If the backfill hasn't completed, we can return the next backfill epoch to process.
+		//nolint:gosec // marker.BackfillEpoch is an int64
 		if c.shouldBackfill(ctx) && phase0.Epoch(marker.BackfillEpoch) > backfillTargetEpoch {
 			next := phase0.Epoch(marker.BackfillEpoch - 1)
 

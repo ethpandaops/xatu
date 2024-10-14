@@ -238,6 +238,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionHead, float64(checkpoint.Epoch-phase0.Epoch(marker.FinalizedEpoch)))
+		//nolint:gosec // Only used for metrics
 		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionBackfill, float64(phase0.Epoch(marker.BackfillEpoch)-backfillTargetEpoch))
 
 		if marker.FinalizedEpoch == 0 {
@@ -261,7 +262,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		// If the backfill hasn't completed, we can return the next backfill epoch to process.
-		if c.shouldBackfill(ctx) && marker.BackfillEpoch > int64(backfillTargetEpoch) {
+		if c.shouldBackfill(ctx) && phase0.Epoch(marker.BackfillEpoch) > backfillTargetEpoch {
 			next := phase0.Epoch(marker.BackfillEpoch - 1)
 
 			c.log.WithFields(logrus.Fields{
@@ -313,11 +314,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 }
 
 func (c *BackfillingCheckpoint) shouldBackfill(ctx context.Context) bool {
-	if !c.config.Backfill.Enabled {
-		return false
-	}
-
-	return true
+	return c.config.Backfill.Enabled
 }
 
 func (c *BackfillingCheckpoint) fetchLatestCheckpoint(ctx context.Context) (*phase0.Checkpoint, error) {

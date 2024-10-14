@@ -28,7 +28,8 @@ const (
 )
 
 type DepositDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type DepositDeriver struct {

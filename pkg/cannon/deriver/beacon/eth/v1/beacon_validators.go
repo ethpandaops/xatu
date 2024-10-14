@@ -29,8 +29,9 @@ const (
 )
 
 type BeaconValidatorsDeriverConfig struct {
-	Enabled   bool `yaml:"enabled" default:"true"`
-	ChunkSize int  `yaml:"chunkSize" default:"100"`
+	Enabled   bool                                 `yaml:"enabled" default:"true"`
+	ChunkSize int                                  `yaml:"chunkSize" default:"100"`
+	Iterator  iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type BeaconValidatorsDeriver struct {

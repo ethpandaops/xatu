@@ -31,7 +31,8 @@ const (
 )
 
 type BeaconBlobDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type BeaconBlobDeriver struct {

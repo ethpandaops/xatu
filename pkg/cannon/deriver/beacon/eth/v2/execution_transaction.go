@@ -38,7 +38,8 @@ type ExecutionTransactionDeriver struct {
 }
 
 type ExecutionTransactionDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 const (

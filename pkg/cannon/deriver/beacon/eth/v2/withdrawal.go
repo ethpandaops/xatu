@@ -28,7 +28,8 @@ const (
 )
 
 type WithdrawalDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type WithdrawalDeriver struct {

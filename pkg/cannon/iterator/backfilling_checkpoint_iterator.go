@@ -254,6 +254,10 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		if marker.FinalizedEpoch < uint64(checkpoint.Epoch) {
 			next := phase0.Epoch(marker.FinalizedEpoch + 1)
 
+			c.log.WithFields(logrus.Fields{
+				"next_epoch": next,
+			}).Info("Derived next finalized epoch to process")
+
 			return &BackFillingCheckpointNextResponse{
 				Next:       next,
 				LookAheads: c.calculateFinalizedLookAheads(next, checkpoint.Epoch),

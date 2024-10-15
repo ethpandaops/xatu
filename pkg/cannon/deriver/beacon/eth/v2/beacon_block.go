@@ -413,6 +413,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Capella.Message, nil
 	case spec.DataVersionDeneb:
 		return block.Deneb.Message, nil
+	case spec.DataVersionElectra:
+		return block.Electra.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

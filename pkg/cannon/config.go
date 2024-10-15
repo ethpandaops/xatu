@@ -123,5 +123,11 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 		c.Coordinator.Headers["Authorization"] = o.XatuCoordinatorAuth.Value
 	}
 
+	if o.NetworkName.Enabled {
+		log.Info("Overriding network name")
+
+		c.Name = o.NetworkName.Value
+	}
+
 	return nil
 }

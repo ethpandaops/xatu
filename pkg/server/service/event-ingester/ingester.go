@@ -34,13 +34,15 @@ type Ingester struct {
 }
 
 func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) (*Ingester, error) {
+	log = log.WithField("server/module", ServiceType)
+
 	a, err := auth.NewAuthorization(log, conf.Authorization)
 	if err != nil {
 		return nil, err
 	}
 
 	e := &Ingester{
-		log:     log.WithField("server/module", ServiceType),
+		log:     log,
 		config:  conf,
 		auth:    a,
 		handler: NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),

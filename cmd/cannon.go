@@ -90,6 +90,15 @@ var CannonOverrides = []CannonOverride{
 			overrides.BeaconNodeAuthorizationHeader.Value = val
 		},
 	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-network-name",
+		EnvName:     "CANNON_NETWORK_NAME",
+		Description: "sets the network name",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.NetworkName.Enabled = true
+			overrides.NetworkName.Value = val
+		},
+	}),
 }
 
 // cannonCmd represents the cannon command

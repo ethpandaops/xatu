@@ -45,7 +45,10 @@ type BeaconValidatorsDeriver struct {
 
 func NewBeaconValidatorsDeriver(log logrus.FieldLogger, config *BeaconValidatorsDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconValidatorsDeriver {
 	return &BeaconValidatorsDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v1/validators"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v1/validators",
+			"type":   BeaconValidatorsDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

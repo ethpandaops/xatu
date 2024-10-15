@@ -43,7 +43,10 @@ type AttesterSlashingDeriver struct {
 
 func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
 	return &AttesterSlashingDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/attester_slashing"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/attester_slashing",
+			"type":   AttesterSlashingDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

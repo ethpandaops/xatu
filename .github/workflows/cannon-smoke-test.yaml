@@ -97,7 +97,7 @@ jobs:
           beaconBlock:
             enabled: true
           beaconBlobSidecar:
-            enabled: true
+            enabled: false
           proposerDuty:
             enabled: true
           beaconCommittee:

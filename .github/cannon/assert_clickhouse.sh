@@ -53,7 +53,7 @@ yq e '.networks[].types[] | [.name, .assert.query, .assert.expected] | @tsv' "$S
                     break
                 else
                     echo "Assertion failed for $name. Expected: $expected, Got: $result"
-                    docker logs xatu-cannon --tail 150 | grep "$name" | tail -n 10
+                    docker logs xatu-cannon --tail 150 2>&1 | grep -i "$name" | tail -n 10 || docker logs xatu-cannon --tail 10
                     sleep 2
                     continue
                 fi

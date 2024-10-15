@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/cannon"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -14,6 +13,84 @@ import (
 var (
 	cannonCfgFile string
 )
+
+type CannonOverride struct {
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *cannon.Override) error
+}
+
+type CannonOverrideConfig struct {
+	FlagName     string
+	EnvName      string
+	Description  string
+	OverrideFunc func(val string, overrides *cannon.Override)
+}
+
+func createCannonOverride(config CannonOverrideConfig) CannonOverride {
+	return CannonOverride{
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(config.FlagName, "", config.Description+` (env: `+config.EnvName+`)`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *cannon.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(config.FlagName) {
+				val = cmd.Flags().Lookup(config.FlagName).Value.String()
+			}
+
+			if os.Getenv(config.EnvName) != "" {
+				val = os.Getenv(config.EnvName)
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			config.OverrideFunc(val, overrides)
+
+			return nil
+		},
+	}
+}
+
+var CannonOverrides = []CannonOverride{
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-xatu-output-authorization",
+		EnvName:     "CANNON_XATU_OUTPUT_AUTHORIZATION",
+		Description: "sets the authorization secret for all xatu outputs",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.XatuOutputAuth.Enabled = true
+			overrides.XatuOutputAuth.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-xatu-coordinator-authorization",
+		EnvName:     "CANNON_XATU_COORDINATOR_AUTHORIZATION",
+		Description: "sets the authorization secret for the xatu coordinator",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.XatuCoordinatorAuth.Enabled = true
+			overrides.XatuCoordinatorAuth.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-beacon-node-url",
+		EnvName:     "CANNON_BEACON_NODE_URL",
+		Description: "sets the beacon node url",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.BeaconNodeURL.Enabled = true
+			overrides.BeaconNodeURL.Value = val
+		},
+	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "cannon-beacon-node-authorization-header",
+		EnvName:     "CANNON_BEACON_NODE_AUTHORIZATION_HEADER",
+		Description: "sets the beacon node authorization header",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.BeaconNodeAuthorizationHeader.Enabled = true
+			overrides.BeaconNodeAuthorizationHeader.Value = val
+		},
+	}),
+}
 
 // cannonCmd represents the cannon command
 var cannonCmd = &cobra.Command{
@@ -24,23 +101,24 @@ var cannonCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
 
-		log.WithField("location", cannonCfgFile).Info("Loading config")
-
 		config, err := loadcannonConfigFromFile(cannonCfgFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Info("Config loaded")
+		log = getLogger(config.LoggingLevel, "")
 
-		logLevel, err := logrus.ParseLevel(config.LoggingLevel)
-		if err != nil {
-			log.WithField("logLevel", config.LoggingLevel).Fatal("invalid logging level")
+		log.WithField("location", cannonCfgFile).Info("Loaded config")
+
+		overrides := &cannon.Override{}
+
+		for _, override := range CannonOverrides {
+			if errr := override.Setter(cmd, overrides); errr != nil {
+				log.Fatal(errr)
+			}
 		}
 
-		log.SetLevel(logLevel)
-
-		cannon, err := cannon.New(cmd.Context(), log, config)
+		cannon, err := cannon.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -57,6 +135,10 @@ func init() {
 	rootCmd.AddCommand(cannonCmd)
 
 	cannonCmd.Flags().StringVar(&cannonCfgFile, "config", "cannon.yaml", "config file (default is cannon.yaml)")
+
+	for _, override := range CannonOverrides {
+		override.FlagHelper(cannonCmd)
+	}
 }
 
 func loadcannonConfigFromFile(file string) (*cannon.Config, error) {

@@ -21,6 +21,8 @@ type Config struct {
 	Config *RawMessage `yaml:"config"`
 
 	FilterConfig pxatu.EventFilterConfig `yaml:"filter"`
+
+	ShippingMethod *processor.ShippingMethod `yaml:"shippingMethod"`
 }
 
 func (c *Config) Validate() error {

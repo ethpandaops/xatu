@@ -36,6 +36,9 @@ tracing:
 services:
   coordinator:
     enabled: true # requires persistence to be enabled
+    auth:
+      enabled: false
+      # secret: "super-secret-token"
     nodeRecord:
       maxQueueSize: 51200
       batchTimeout: 5s
@@ -43,9 +46,33 @@ services:
       maxExportBatchSize: 512
   eventIngester:
     enabled: true
+    clientNameSalt: "example_salt"
+    authorization:
+      # enabled: false
+      # groups:
+      #   default:
+      #     obscureClientNames: true
+      #     users:
+      #       user_a:
+      #         password: password
+      #       shane:
+      #         password: warne
+      #   restricted:
+      #     eventFilter:
+      #       eventNames:
+      #         - BEACON_API_ETH_V2_BEACON_BLOCK_V2
+      #         - BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR
+      #         - BEACON_API_ETH_V1_EVENTS_BLOCK_V2
+      #         - BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2
+      #         - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2
+      #         - BEACON_API_ETH_V1_EVENTS_HEAD_V2
+      #     users:
+      #       user_b:
+      #         password: password
     outputs:
     - name: general
       type: http
+      shippingMethod: async
       config:
         address: http://xatu-vector-http-kafka:9005
         maxQueueSize: 102400
@@ -55,3 +82,4 @@ services:
         compression: zstd
         keepAlive: true
         workers: 50
+        

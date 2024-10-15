@@ -1,0 +1,13 @@
+version: v2
+modules:
+  - path: .
+    name: github.com/ethpandaops/xatu
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - PACKAGE
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc/grpc

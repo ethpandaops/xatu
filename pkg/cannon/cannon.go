@@ -27,6 +27,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
+	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
@@ -58,15 +59,23 @@ type Cannon struct {
 	coordinatorClient *coordinator.Client
 
 	shutdownFuncs []func(ctx context.Context) error
+
+	overrides *Override
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Cannon, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
 
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+
+	if overrides != nil {
+		if err := config.ApplyOverrides(overrides, log); err != nil {
+			return nil, fmt.Errorf("failed to apply overrides: %w", err)
+		}
 	}
 
 	sinks, err := config.CreateSinks(log)
@@ -96,7 +105,33 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cannon, 
 		eventDerivers:     nil, // Derivers are created once the beacon node is ready
 		coordinatorClient: coordinatorClient,
 		shutdownFuncs:     []func(ctx context.Context) error{},
+		overrides:         overrides,
 	}, nil
+}
+
+func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) error {
+	if c.overrides == nil {
+		return nil
+	}
+
+	if c.overrides.XatuOutputAuth.Enabled {
+		c.log.Info("Overriding output authorization on xatu sinks")
+
+		for _, sink := range c.sinks {
+			if sink.Type() == string(output.SinkTypeXatu) {
+				xatuSink, ok := sink.(*oxatu.Xatu)
+				if !ok {
+					return perrors.New("failed to assert xatu sink")
+				}
+
+				c.log.WithField("sink_name", sink.Name()).Info("Overriding xatu output authorization")
+
+				xatuSink.SetAuthorization(c.overrides.XatuOutputAuth.Value)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *Cannon) Start(ctx context.Context) error {
@@ -157,6 +192,10 @@ func (c *Cannon) Start(ctx context.Context) error {
 		if err := sink.Start(ctx); err != nil {
 			return err
 		}
+	}
+
+	if err := c.ApplyOverrideBeforeStartAfterCreation(ctx); err != nil {
+		return fmt.Errorf("failed to apply overrides before start: %w", err)
 	}
 
 	if c.Config.Ethereum.OverrideNetworkName != "" {
@@ -364,6 +403,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.AttesterSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -382,6 +422,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ProposerSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -400,6 +441,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.VoluntaryExitConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -418,6 +460,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.DepositConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -436,6 +479,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BLSToExecutionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -454,6 +498,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ExecutionTransactionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -472,6 +517,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.WithdrawalConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -490,6 +536,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BeaconBlockConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -524,6 +571,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BeaconBlobSidecarConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -542,6 +590,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ProposerDutyConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -560,6 +609,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ElaboratedAttestationConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -578,6 +628,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
+					&c.Config.Derivers.BeaconValidatorsConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -596,6 +647,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
+					&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -621,7 +673,9 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 			go func() {
 				if err := c.startDeriverWhenReady(ctx, d); err != nil {
-					c.log.WithError(err).Error("Failed to start deriver")
+					c.log.
+						WithField("deriver", d.Name()).
+						WithError(err).Fatal("Failed to start deriver")
 				}
 			}()
 		}

@@ -10,6 +10,8 @@ var (
 	Release        = "dev"
 	GitCommit      = "dev"
 	Implementation = "Xatu"
+	GOOS           = runtime.GOOS
+	GOARCH         = runtime.GOARCH
 )
 
 func Full() string {
@@ -29,7 +31,11 @@ func Short() string {
 }
 
 func FullVWithGOOS() string {
-	return fmt.Sprintf("%s/%s", Full(), runtime.GOOS)
+	return fmt.Sprintf("%s/%s", Full(), GOOS)
+}
+
+func FullVWithPlatform() string {
+	return fmt.Sprintf("%s/%s/%s", Full(), GOOS, GOARCH)
 }
 
 func ImplementationLower() string {

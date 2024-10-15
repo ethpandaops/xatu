@@ -110,9 +110,15 @@ func (e *ValidatorAttestationData) getAdditionalData(_ context.Context) (*xatu.C
 	}
 
 	extra.Snapshot = &xatu.ClientMeta_AttestationDataSnapshot{
-		RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{Value: uint64(e.snapshot.RequestAt.Sub(attestionSlot.TimeWindow().Start()).Milliseconds())},
-		RequestDurationMs:          &wrapperspb.UInt64Value{Value: uint64(e.snapshot.RequestDuration.Milliseconds())},
-		Timestamp:                  timestamppb.New(e.snapshot.RequestAt),
+		RequestedAtSlotStartDiffMs: &wrapperspb.UInt64Value{
+			//nolint:gosec // not concerned in reality
+			Value: uint64(e.snapshot.RequestAt.Sub(attestionSlot.TimeWindow().Start()).Milliseconds()),
+		},
+		RequestDurationMs: &wrapperspb.UInt64Value{
+			//nolint:gosec // not concerned in reality
+			Value: uint64(e.snapshot.RequestDuration.Milliseconds()),
+		},
+		Timestamp: timestamppb.New(e.snapshot.RequestAt),
 	}
 
 	// Build out the target section

@@ -12,11 +12,12 @@ import (
 const SinkType = "xatu"
 
 type Xatu struct {
-	name   string
-	config *Config
-	log    logrus.FieldLogger
-	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
-	filter xatu.EventFilter
+	name     string
+	config   *Config
+	log      logrus.FieldLogger
+	proc     *processor.BatchItemProcessor[xatu.DecoratedEvent]
+	exporter *ItemExporter
+	filter   xatu.EventFilter
 }
 
 func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*Xatu, error) {
@@ -53,11 +54,12 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 	}
 
 	return &Xatu{
-		name:   name,
-		config: config,
-		log:    log,
-		proc:   proc,
-		filter: filter,
+		name:     name,
+		exporter: &exporter,
+		config:   config,
+		log:      log,
+		proc:     proc,
+		filter:   filter,
 	}, nil
 }
 
@@ -107,4 +109,16 @@ func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 	}
 
 	return h.proc.Write(ctx, filtered)
+}
+
+func (h *Xatu) SetAuthorization(val string) {
+	if h.exporter.headers == nil {
+		h.exporter.headers = make(map[string]string)
+	}
+
+	if h.exporter.headers["Authorization"] != "" {
+		delete(h.exporter.headers, "Authorization")
+	}
+
+	h.exporter.headers["Authorization"] = val
 }

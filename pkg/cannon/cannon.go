@@ -364,6 +364,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.AttesterSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -382,6 +383,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ProposerSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -400,6 +402,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.VoluntaryExitConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -418,6 +421,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.DepositConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -436,6 +440,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BLSToExecutionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -454,6 +459,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ExecutionTransactionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -472,6 +478,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.WithdrawalConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -490,6 +497,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BeaconBlockConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -524,6 +532,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.BeaconBlobSidecarConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -542,6 +551,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ProposerDutyConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -560,6 +570,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
+					&c.Config.Derivers.ElaboratedAttestationConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -578,6 +589,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
+					&c.Config.Derivers.BeaconValidatorsConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -596,6 +608,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
+					&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
@@ -621,7 +634,9 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 			go func() {
 				if err := c.startDeriverWhenReady(ctx, d); err != nil {
-					c.log.WithError(err).Error("Failed to start deriver")
+					c.log.
+						WithField("deriver", d.Name()).
+						WithError(err).Fatal("Failed to start deriver")
 				}
 			}()
 		}

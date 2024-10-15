@@ -38,7 +38,8 @@ type ExecutionTransactionDeriver struct {
 }
 
 type ExecutionTransactionDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 const (
@@ -47,7 +48,10 @@ const (
 
 func NewExecutionTransactionDeriver(log logrus.FieldLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
 	return &ExecutionTransactionDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/execution_transaction"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/execution_transaction",
+			"type":   ExecutionTransactionDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

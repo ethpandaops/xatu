@@ -114,8 +114,8 @@ networks:
             AND epoch_start_date_time = '2024-08-09 02:24:00'
             AND block_root = '0xff8e97fdf4033e499681ff0eb056cf5f2877a8f9b16f14e2db3956b75190b9e7'
             AND block_version = 'deneb'
-            AND block_total_bytes = 204103
-            AND block_total_bytes_compressed = 95454
+            AND block_total_bytes = 94749
+            AND block_total_bytes_compressed = 55636
             AND parent_root = '0x54264e13e97a137bed2cc1a52cf76a94bb5e385507d34ff3902d18672f4ef79e'
             AND state_root = '0x3598ed522160cb6dd0aab216f03b26d61b32d87854c3d38754897017a66004f5'
             AND proposer_index = 416934

@@ -27,6 +27,7 @@ type BackfillingCheckpoint struct {
 	beaconNode        *ethereum.BeaconNode
 	checkpointName    string
 	lookAheadDistance int
+	config            *BackfillingCheckpointConfig
 }
 
 type BackfillingCheckpointDirection string
@@ -52,6 +53,7 @@ func NewBackfillingCheckpoint(
 	beacon *ethereum.BeaconNode,
 	checkpoint string,
 	lookAheadDistance int,
+	config *BackfillingCheckpointConfig,
 ) *BackfillingCheckpoint {
 	return &BackfillingCheckpoint{
 		log: log.
@@ -66,10 +68,25 @@ func NewBackfillingCheckpoint(
 		metrics:           metrics,
 		checkpointName:    checkpoint,
 		lookAheadDistance: lookAheadDistance,
+		config:            config,
 	}
 }
 
 func (c *BackfillingCheckpoint) Start(ctx context.Context) error {
+	// Check the backfill epoch is ok
+	if c.shouldBackfill(ctx) {
+		epoch, err := c.getEarliestPossibleBackfillEpoch()
+		if err != nil {
+			return errors.Wrap(err, "failed to calculate target backfill epoch")
+		}
+
+		c.log.WithFields(logrus.Fields{
+			"backfill_target_epoch": epoch,
+		}).Info("Backfilling is enabled")
+	} else {
+		c.log.Info("Backfilling is disabled")
+	}
+
 	return nil
 }
 
@@ -105,10 +122,20 @@ func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0
 		return errors.Wrap(err, "failed to create location from epoch number")
 	}
 
+	c.log.WithFields(logrus.Fields{
+		"direction": direction,
+		"epoch":     epoch,
+	}).Debug("Updating cannon location")
+
 	err = c.coordinator.UpsertCannonLocationRequest(ctx, newLocation)
 	if err != nil {
 		return errors.Wrap(err, "failed to update cannon location")
 	}
+
+	c.log.WithFields(logrus.Fields{
+		"direction": direction,
+		"epoch":     epoch,
+	}).Debug("Updated cannon location")
 
 	c.metrics.SetBackfillEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.BackfillEpoch))
 	c.metrics.SetFinalizedEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.FinalizedEpoch))
@@ -170,22 +197,32 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			return nil, errors.Wrap(err, "failed to get cannon location")
 		}
 
-		earliestEpoch := GetStartingEpochLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType)
-
 		// If location is empty we haven't started yet, start at the network default for the type. If the network default
 		// is empty, we'll start at the checkpoint.
 
-		if checkpoint.Epoch < earliestEpoch {
+		// Default the backfill target epoch to the checkpoint epoch.
+		backfillTargetEpoch := checkpoint.Epoch
+
+		if c.shouldBackfill(ctx) {
+			backfillTargetEpoch, err = c.getEarliestPossibleBackfillEpoch()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get earliest possible backfill epoch")
+			}
+		}
+
+		forkEpochForType := GetStartingEpochLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType)
+
+		if checkpoint.Epoch < forkEpochForType {
 			// The current finalized checkpoint is before the activation of this cannon, so we should sleep until the next epoch.
 			epoch := c.wallclock.Epochs().Current()
 
 			sleepFor := time.Until(epoch.TimeWindow().End())
 
 			c.log.WithFields(logrus.Fields{
-				"current_epoch":    epoch.Number(),
-				"sleep_for":        sleepFor.String(),
-				"checkpoint_epoch": checkpoint.Epoch,
-				"earliest_epoch":   earliestEpoch,
+				"current_epoch":         epoch.Number(),
+				"sleep_for":             sleepFor.String(),
+				"checkpoint_epoch":      checkpoint.Epoch,
+				"backfill_target_epoch": backfillTargetEpoch,
 			}).Info("Sleeping until next epoch as the fork for the iterator is not yet active")
 
 			time.Sleep(sleepFor)
@@ -211,7 +248,8 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionHead, float64(checkpoint.Epoch-phase0.Epoch(marker.FinalizedEpoch)))
-		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionBackfill, float64(phase0.Epoch(marker.BackfillEpoch)-earliestEpoch))
+		//nolint:gosec // Only used for metrics
+		c.metrics.SetLag(c.cannonType.String(), c.networkName, BackfillingCheckpointDirectionBackfill, float64(phase0.Epoch(marker.BackfillEpoch)-backfillTargetEpoch))
 
 		if marker.FinalizedEpoch == 0 {
 			// If the marker is empty, we haven't started yet, so we should return the current checkpoint.
@@ -234,8 +272,14 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		// If the backfill hasn't completed, we can return the next backfill epoch to process.
-		if marker.BackfillEpoch != int64(earliestEpoch) {
+		//nolint:gosec // marker.BackfillEpoch is an int64
+		if c.shouldBackfill(ctx) && phase0.Epoch(marker.BackfillEpoch) > backfillTargetEpoch {
 			next := phase0.Epoch(marker.BackfillEpoch - 1)
+
+			c.log.WithFields(logrus.Fields{
+				"next_epoch":   next,
+				"target_epoch": backfillTargetEpoch,
+			}).Info("Derived next backfill epoch to process")
 
 			return &BackFillingCheckpointNextResponse{
 				Next:       next,
@@ -245,16 +289,19 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		}
 
 		// The backfill is done, and the finalized epoch is up to date - we can sleep until the next epoch.
-		if marker.BackfillEpoch == int64(earliestEpoch) && checkpoint.Epoch == phase0.Epoch(marker.FinalizedEpoch) {
+		if checkpoint.Epoch == phase0.Epoch(marker.FinalizedEpoch) {
 			// Sleep until the next epoch
 			epoch := c.wallclock.Epochs().Current()
 
 			sleepFor := time.Until(epoch.TimeWindow().End())
 
 			c.log.WithFields(logrus.Fields{
-				"current_epoch":    epoch.Number(),
-				"sleep_for":        sleepFor.String(),
-				"checkpoint_epoch": checkpoint.Epoch,
+				"wallclock_epoch":       epoch.Number(),
+				"sleep_for":             sleepFor.String(),
+				"finalized_epoch":       checkpoint.Epoch,
+				"backfill_epoch_marker": marker.BackfillEpoch,
+				"head_epoch_marker":     marker.FinalizedEpoch,
+				"backfill_epoch_target": backfillTargetEpoch,
 			}).Info("Sleeping until next epoch")
 
 			time.Sleep(sleepFor)
@@ -270,11 +317,15 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			"marker_finalized_epoch": marker.FinalizedEpoch,
 			"marker_backfill_epoch":  marker.BackfillEpoch,
 			"checkpoint_epoch":       checkpoint.Epoch,
-			"earliest_epoch":         earliestEpoch,
+			"backfill_target_epoch":  backfillTargetEpoch,
 		}).Info("Current state before returning unknown state")
 
 		return nil, errors.New("unknown state")
 	}
+}
+
+func (c *BackfillingCheckpoint) shouldBackfill(ctx context.Context) bool {
+	return c.config.Backfill.Enabled
 }
 
 func (c *BackfillingCheckpoint) fetchLatestCheckpoint(ctx context.Context) (*phase0.Checkpoint, error) {
@@ -371,6 +422,19 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 	}
 
 	return marker, nil
+}
+
+func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch, error) {
+	// earliestEpochForType is the earliest epoch for the type based on the fork epochs.
+	// For example, the blob_sidecar cannon type will have an earliest epoch of the DENEB fork.
+	earliestEpochForType := GetStartingEpochLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType)
+
+	if c.config.Backfill.ToEpoch == 0 {
+		// Use the default starting epoch for the type.
+		return earliestEpochForType, nil
+	}
+
+	return c.config.Backfill.ToEpoch, nil
 }
 
 func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfill phase0.Epoch) (*xatu.CannonLocation, error) {

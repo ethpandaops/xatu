@@ -30,7 +30,8 @@ const (
 )
 
 type ProposerDutyDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type ProposerDutyDeriver struct {
@@ -44,7 +45,10 @@ type ProposerDutyDeriver struct {
 
 func NewProposerDutyDeriver(log logrus.FieldLogger, config *ProposerDutyDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerDutyDeriver {
 	return &ProposerDutyDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v1/proposer_duty"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v1/proposer_duty",
+			"type":   ProposerDutyDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

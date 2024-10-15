@@ -32,7 +32,8 @@ const (
 )
 
 type BeaconBlockDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type BeaconBlockDeriver struct {
@@ -46,7 +47,10 @@ type BeaconBlockDeriver struct {
 
 func NewBeaconBlockDeriver(log logrus.FieldLogger, config *BeaconBlockDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlockDeriver {
 	return &BeaconBlockDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/beacon_block"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/beacon_block",
+			"type":   BeaconBlockDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

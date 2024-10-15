@@ -28,7 +28,8 @@ const (
 )
 
 type ProposerSlashingDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type ProposerSlashingDeriver struct {
@@ -42,7 +43,10 @@ type ProposerSlashingDeriver struct {
 
 func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/proposer_slashing"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/proposer_slashing",
+			"type":   ProposerSlashingDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

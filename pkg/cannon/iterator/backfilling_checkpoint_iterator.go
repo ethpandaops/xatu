@@ -122,10 +122,20 @@ func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0
 		return errors.Wrap(err, "failed to create location from epoch number")
 	}
 
+	c.log.WithFields(logrus.Fields{
+		"direction": direction,
+		"epoch":     epoch,
+	}).Debug("Updating cannon location")
+
 	err = c.coordinator.UpsertCannonLocationRequest(ctx, newLocation)
 	if err != nil {
 		return errors.Wrap(err, "failed to update cannon location")
 	}
+
+	c.log.WithFields(logrus.Fields{
+		"direction": direction,
+		"epoch":     epoch,
+	}).Debug("Updated cannon location")
 
 	c.metrics.SetBackfillEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.BackfillEpoch))
 	c.metrics.SetFinalizedEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.FinalizedEpoch))
@@ -253,10 +263,6 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		// If the head isn't up to date, we can return the next finalized epoch to process.
 		if marker.FinalizedEpoch < uint64(checkpoint.Epoch) {
 			next := phase0.Epoch(marker.FinalizedEpoch + 1)
-
-			c.log.WithFields(logrus.Fields{
-				"next_epoch": next,
-			}).Info("Derived next finalized epoch to process")
 
 			return &BackFillingCheckpointNextResponse{
 				Next:       next,

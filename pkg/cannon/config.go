@@ -124,9 +124,9 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 	}
 
 	if o.NetworkName.Enabled {
-		log.Info("Overriding network name")
+		log.WithField("network", o.NetworkName.Value).Info("Overriding network name")
 
-		c.Name = o.NetworkName.Value
+		c.Ethereum.OverrideNetworkName = o.NetworkName.Value
 	}
 
 	return nil

@@ -29,7 +29,8 @@ const (
 )
 
 type ElaboratedAttestationDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type ElaboratedAttestationDeriver struct {
@@ -43,7 +44,10 @@ type ElaboratedAttestationDeriver struct {
 
 func NewElaboratedAttestationDeriver(log logrus.FieldLogger, config *ElaboratedAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ElaboratedAttestationDeriver {
 	return &ElaboratedAttestationDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/elaborated_attestation"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/elaborated_attestation",
+			"type":   ElaboratedAttestationDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

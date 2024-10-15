@@ -17,4 +17,8 @@ type Override struct {
 		Enabled bool
 		Value   string
 	}
+	NetworkName struct {
+		Enabled bool
+		Value   string
+	}
 }

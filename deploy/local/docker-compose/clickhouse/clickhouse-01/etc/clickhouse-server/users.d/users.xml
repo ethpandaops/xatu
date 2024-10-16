@@ -7,6 +7,13 @@
             <load_balancing>in_order</load_balancing>
             <log_queries>1</log_queries>
         </default>
+        <readonly>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>in_order</load_balancing>
+            <readonly>1</readonly>
+            <log_queries>1</log_queries>
+        </readonly>
     </profiles>
     <users>
         <default>
@@ -16,11 +23,21 @@
                 <ip>::/0</ip>
             </networks>
             <quota>default</quota>
+            <password from_env="CLICKHOUSE_PASSWORD"></password>
             <access_management>1</access_management>
             <named_collection_control>1</named_collection_control>
             <show_named_collections>1</show_named_collections>
             <show_named_collections_secrets>1</show_named_collections_secrets>
         </default>
+        <readonly>
+            <access_management>0</access_management>
+            <profile>readonly</profile>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <password from_env="CLICKHOUSE_USER_READONLY_PASSWORD"></password>
+            <quota>default</quota>
+        </readonly>
     </users>
     <quotas>
         <default>

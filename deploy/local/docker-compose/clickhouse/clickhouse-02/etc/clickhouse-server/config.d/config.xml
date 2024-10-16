@@ -24,12 +24,14 @@
                 <replica>
                     <host>xatu-clickhouse-01</host>
                     <port>9000</port>
+                    <password from_env="CLICKHOUSE_PASSWORD"></password>
                 </replica>
             </shard>
             <shard>
                 <replica>
                     <host>xatu-clickhouse-02</host>
                     <port>9000</port>
+                    <password from_env="CLICKHOUSE_PASSWORD"></password>
                 </replica>
             </shard>
         </cluster_2S_1R>

@@ -13,24 +13,20 @@ datasources:
       port: 9000
       server: xatu-clickhouse-01
       tlsSkipVerify: true
+      username: readonly
+    user: readonly
+    secureJsonData:
+      password: $CLICKHOUSE_USER_READONLY_PASSWORD
 
   - name: ClickHouse-vert
     type: vertamedia-clickhouse-datasource
     access: proxy
     url: http://xatu-clickhouse-01:8123
-
-  - name: postgres
-    type: postgres
-    access: proxy
-    url: xatu-postgres:5432
-    user: user
-    secureJsonData:
-      password: password
+    user: readonly
     jsonData:
-      sslmode: disable
-      tlsSkipVerify: true
-      postgresVersion: 1500
-      database: xatu
+      user: readonly
+    secureJsonData:
+      password: $CLICKHOUSE_USER_READONLY_PASSWORD
   - name: Tempo
     type: tempo
     access: proxy

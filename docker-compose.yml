@@ -34,6 +34,11 @@ services:
       timeout: 10s
       retries: 15
       start_period: 15s
+    environment:
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-supersecret}
+      - CLICKHOUSE_USER_READONLY_PASSWORD=${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
   xatu-clickhouse-02:
     profiles:
       - clickhouse
@@ -69,6 +74,11 @@ services:
       timeout: 10s
       retries: 15
       start_period: 15s
+    environment:
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-supersecret}
+      - CLICKHOUSE_USER_READONLY_PASSWORD=${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
   xatu-clickhouse-zookeeper-01:
     profiles:
       - clickhouse
@@ -197,10 +207,16 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
+      CLICKHOUSE_USER_READONLY_PASSWORD: ${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
     volumes:
       - ./deploy/local/docker-compose/grafana/datasources:/etc/grafana/provisioning/datasources
       - ./deploy/local/docker-compose/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./deploy/local/docker-compose/grafana/dashboards:/var/lib/grafana/dashboards
+    command: >
+      bash -c "
+        sed -i 's/readonlypassword/'"$$CLICKHOUSE_USER_READONLY_PASSWORD"'/g' /etc/grafana/provisioning/datasources/datasources.yaml &&
+        /run.sh
+      "
   xatu-prometheus:
     profiles:
       - ""
@@ -386,8 +402,8 @@ services:
       - "${VECTOR_KAFKA_CLICKHOUSE_ADDRESS:-127.0.0.1}:${VECTOR_KAFKA_CLICKHOUSE_PORT:-8686}:8686"
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -416,8 +432,8 @@ services:
       - xatu-net
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -469,7 +485,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "clickhouse://xatu-clickhouse-01:9000?username=default&database=default&x-multi-statement=true",
+        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD:-supersecret}&database=default&x-multi-statement=true",
         "up",
       ]
     depends_on:

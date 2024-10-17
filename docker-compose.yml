@@ -485,7 +485,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&database=default&x-multi-statement=true",
+        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD}&database=default&x-multi-statement=true",
         "up",
       ]
     depends_on:

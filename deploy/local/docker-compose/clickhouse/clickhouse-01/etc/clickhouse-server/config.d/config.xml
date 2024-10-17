@@ -20,6 +20,7 @@
     </distributed_ddl>
     <remote_servers>
         <cluster_2S_1R>
+            <secret>supersecret</secret>
             <shard>
                 <replica>
                     <host>xatu-clickhouse-01</host>

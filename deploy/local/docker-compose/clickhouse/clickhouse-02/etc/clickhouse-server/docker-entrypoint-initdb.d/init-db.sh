@@ -10,7 +10,7 @@ cat <<EOT >> /etc/clickhouse-server/users.d/default.xml
       <networks>
         <ip>::/0</ip>
       </networks>
-      <password>${CLICKHOUSE_PASSWORD}</password>
+      $([ -n "${CLICKHOUSE_PASSWORD}" ] && echo "<password>${CLICKHOUSE_PASSWORD}</password>")
       <quota>default</quota>
     </${CLICKHOUSE_USER}>
     <readonly>
@@ -20,7 +20,7 @@ cat <<EOT >> /etc/clickhouse-server/users.d/default.xml
 </yandex>
 EOT
 
-PASSWORD=${CLICKHOUSE_PASSWORD:-supersecret}
+PASSWORD=${CLICKHOUSE_PASSWORD}
 
 clickhouse client --user default --password ${PASSWORD} -n <<-EOSQL
 CREATE TABLE default.schema_migrations_local ON CLUSTER '{cluster}'

@@ -37,7 +37,7 @@ services:
     environment:
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
       - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-supersecret}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
       - CLICKHOUSE_USER_READONLY_PASSWORD=${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
   xatu-clickhouse-02:
     profiles:
@@ -403,7 +403,7 @@ services:
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -433,7 +433,7 @@ services:
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -485,7 +485,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD:-supersecret}&database=default&x-multi-statement=true",
+        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD}&database=default&x-multi-statement=true",
         "up",
       ]
     depends_on:

@@ -485,12 +485,9 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "${CLICKHOUSE_PASSWORD:+clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&database=default&x-multi-statement=true}${CLICKHOUSE_PASSWORD:-clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER}&database=default&x-multi-statement=true}",
+        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&database=default&x-multi-statement=true",
         "up",
       ]
-    environment:
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     depends_on:
       xatu-clickhouse-01:
         condition: service_healthy

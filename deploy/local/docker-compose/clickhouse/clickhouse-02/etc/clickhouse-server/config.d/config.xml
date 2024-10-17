@@ -20,18 +20,17 @@
     </distributed_ddl>
     <remote_servers>
         <cluster_2S_1R>
+            <secret>supersecret</secret>
             <shard>
                 <replica>
                     <host>xatu-clickhouse-01</host>
                     <port>9000</port>
-                    <password from_env="CLICKHOUSE_PASSWORD" replace="replace"></password>
                 </replica>
             </shard>
             <shard>
                 <replica>
                     <host>xatu-clickhouse-02</host>
                     <port>9000</port>
-                    <password from_env="CLICKHOUSE_PASSWORD" replace="replace"></password>
                 </replica>
             </shard>
         </cluster_2S_1R>

@@ -134,7 +134,7 @@ jobs:
             for sentry in "${all_sentries[@]}"; do
                 pretty_print "Checking $table table for $sentry..." "none"
                 while true; do
-                    data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
+                    data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
                     if [[ $data_count -gt 0 ]]; then
                         pretty_print "$table has $data_count entries from $sentry" "green"
                         break

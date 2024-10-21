@@ -24,6 +24,7 @@
             </networks>
             <quota>default</quota>
             <access_management>1</access_management>
+            <password from_env="CLICKHOUSE_PASSWORD" replace="replace"></password>
             <named_collection_control>1</named_collection_control>
             <show_named_collections>1</show_named_collections>
             <show_named_collections_secrets>1</show_named_collections_secrets>

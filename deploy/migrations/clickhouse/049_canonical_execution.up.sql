@@ -62,7 +62,7 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash
     ) COMMENT 'Contains canonical execution transaction data.';
 
 CREATE TABLE default.canonical_execution_transaction ON CLUSTER '{cluster}' AS default.canonical_execution_transaction_local ENGINE = Distributed(
@@ -72,7 +72,7 @@ CREATE TABLE default.canonical_execution_transaction ON CLUSTER '{cluster}' AS d
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash
     )
 );
 
@@ -81,6 +81,7 @@ CREATE TABLE default.canonical_execution_balance_diffs_local ON CLUSTER '{cluste
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that caused the balance diff' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the balance diff within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address of the balance diff' CODEC(ZSTD(1)),
     `from_value` UInt256 COMMENT 'The from value of the balance diff' CODEC(ZSTD(1)),
     `to_value` UInt256 COMMENT 'The to value of the balance diff' CODEC(ZSTD(1)),
@@ -95,7 +96,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution balance diff data.';
 
 CREATE TABLE default.canonical_execution_balance_diffs ON CLUSTER '{cluster}' AS default.canonical_execution_balance_diffs_local ENGINE = Distributed(
@@ -105,7 +107,8 @@ CREATE TABLE default.canonical_execution_balance_diffs ON CLUSTER '{cluster}' AS
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -114,6 +117,7 @@ CREATE TABLE default.canonical_execution_balance_reads_local ON CLUSTER '{cluste
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that caused the balance read' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the balance read within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address of the balance read' CODEC(ZSTD(1)),
     `balance` UInt256 COMMENT 'The balance that was read' CODEC(ZSTD(1)),
     `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
@@ -127,7 +131,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution balance read data.';
 
 CREATE TABLE default.canonical_execution_balance_reads ON CLUSTER '{cluster}' AS default.canonical_execution_balance_reads_local ENGINE = Distributed(
@@ -137,7 +142,8 @@ CREATE TABLE default.canonical_execution_balance_reads ON CLUSTER '{cluster}' AS
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -160,7 +166,7 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash
     ) COMMENT 'Contains canonical execution four byte count data.';
 
 CREATE TABLE default.canonical_execution_four_byte_counts ON CLUSTER '{cluster}' AS default.canonical_execution_four_byte_counts_local ENGINE = Distributed(
@@ -170,7 +176,7 @@ CREATE TABLE default.canonical_execution_four_byte_counts ON CLUSTER '{cluster}'
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash
     )
 );
 
@@ -179,6 +185,7 @@ CREATE TABLE default.canonical_execution_erc20_transfers_local ON CLUSTER '{clus
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the transfer within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `log_index` UInt64 COMMENT 'The log index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `erc20` String COMMENT 'The erc20 address' CODEC(ZSTD(1)),
     `from_address` String COMMENT 'The from address' CODEC(ZSTD(1)),
@@ -195,8 +202,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index,
-        log_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution erc20 transfer data.';
 
 CREATE TABLE default.canonical_execution_erc20_transfers ON CLUSTER '{cluster}' AS default.canonical_execution_erc20_transfers_local ENGINE = Distributed(
@@ -206,8 +213,8 @@ CREATE TABLE default.canonical_execution_erc20_transfers ON CLUSTER '{cluster}' 
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index,
-        log_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -216,6 +223,7 @@ CREATE TABLE default.canonical_execution_erc721_transfers_local ON CLUSTER '{clu
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the transfer within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `log_index` UInt64 COMMENT 'The log index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `erc20` String COMMENT 'The erc20 address' CODEC(ZSTD(1)),
     `from_address` String COMMENT 'The from address' CODEC(ZSTD(1)),
@@ -232,8 +240,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index,
-        log_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution erc721 transfer data.';
 
 CREATE TABLE default.canonical_execution_erc721_transfers ON CLUSTER '{cluster}' AS default.canonical_execution_erc721_transfers_local ENGINE = Distributed(
@@ -243,8 +251,8 @@ CREATE TABLE default.canonical_execution_erc721_transfers ON CLUSTER '{cluster}'
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index,
-        log_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -253,6 +261,7 @@ CREATE TABLE default.canonical_execution_native_transfers_local ON CLUSTER '{clu
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the transfer within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `transfer_index` UInt64 COMMENT 'The transfer index' CODEC(DoubleDelta, ZSTD(1)),
     `from_address` String COMMENT 'The from address' CODEC(ZSTD(1)),
     `to_address` String COMMENT 'The to address' CODEC(ZSTD(1)),
@@ -268,8 +277,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index,
-        transfer_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution native transfer data.';
 
 CREATE TABLE default.canonical_execution_native_transfers ON CLUSTER '{cluster}' AS default.canonical_execution_native_transfers_local ENGINE = Distributed(
@@ -279,8 +288,8 @@ CREATE TABLE default.canonical_execution_native_transfers ON CLUSTER '{cluster}'
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index,
-        transfer_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -289,6 +298,7 @@ CREATE TABLE default.canonical_execution_nonce_diffs_local ON CLUSTER '{cluster}
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that caused the nonce diff' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the nonce diff within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address of the nonce diff' CODEC(ZSTD(1)),
     `from_value` UInt64 COMMENT 'The from value of the nonce diff' CODEC(ZSTD(1)),
     `to_value` UInt64 COMMENT 'The to value of the nonce diff' CODEC(ZSTD(1)),
@@ -303,7 +313,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution nonce diff data.';
 
 CREATE TABLE default.canonical_execution_nonce_diffs ON CLUSTER '{cluster}' AS default.canonical_execution_nonce_diffs_local ENGINE = Distributed(
@@ -313,7 +324,8 @@ CREATE TABLE default.canonical_execution_nonce_diffs ON CLUSTER '{cluster}' AS d
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -322,6 +334,7 @@ CREATE TABLE default.canonical_execution_nonce_reads_local ON CLUSTER '{cluster}
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt64 COMMENT 'The transaction index in the block' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that caused the nonce read' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the nonce read within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address of the nonce read' CODEC(ZSTD(1)),
     `nonce` UInt64 COMMENT 'The nonce that was read' CODEC(ZSTD(1)),
     `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
@@ -335,7 +348,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution nonce read data.';
 
 CREATE TABLE default.canonical_execution_nonce_reads ON CLUSTER '{cluster}' AS default.canonical_execution_nonce_reads_local ENGINE = Distributed(
@@ -345,7 +359,8 @@ CREATE TABLE default.canonical_execution_nonce_reads ON CLUSTER '{cluster}' AS d
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_index
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -353,6 +368,7 @@ CREATE TABLE default.canonical_execution_address_appearances_local ON CLUSTER '{
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that caused the address appearance' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the address appearance within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address of the address appearance' CODEC(ZSTD(1)),
     `relationship` LowCardinality(String) COMMENT 'The relationship of the address to the transaction',
     `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
@@ -366,7 +382,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution address appearance data.';
 
 CREATE TABLE default.canonical_execution_address_appearances ON CLUSTER '{cluster}' AS default.canonical_execution_address_appearances_local ENGINE = Distributed(
@@ -376,7 +393,8 @@ CREATE TABLE default.canonical_execution_address_appearances ON CLUSTER '{cluste
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -384,6 +402,7 @@ CREATE TABLE default.canonical_execution_contracts_local ON CLUSTER '{cluster}' 
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt32 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash that created the contract' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the contract creation within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `create_index` UInt32 COMMENT 'The create index' CODEC(DoubleDelta, ZSTD(1)),
     `contract_address` String COMMENT 'The contract address' CODEC(ZSTD(1)),
     `deployer` String COMMENT 'The address of the contract deployer' CODEC(ZSTD(1)),
@@ -405,7 +424,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution contract data.';
 
 CREATE TABLE default.canonical_execution_contracts ON CLUSTER '{cluster}' AS default.canonical_execution_contracts_local ENGINE = Distributed(
@@ -415,7 +435,8 @@ CREATE TABLE default.canonical_execution_contracts ON CLUSTER '{cluster}' AS def
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -424,6 +445,7 @@ CREATE TABLE default.canonical_execution_traces_local ON CLUSTER '{cluster}' (
     `block_number` UInt32 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt32 COMMENT 'The transaction index' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the trace within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `action_from` String COMMENT 'The from address of the action' CODEC(ZSTD(1)),
     `action_to` Nullable(String) COMMENT 'The to address of the action' CODEC(ZSTD(1)),
     `action_value` String COMMENT 'The value of the action' CODEC(ZSTD(1)),
@@ -451,7 +473,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution traces data.';
 
 CREATE TABLE default.canonical_execution_traces ON CLUSTER '{cluster}' AS default.canonical_execution_traces_local ENGINE = Distributed(
@@ -461,7 +484,8 @@ CREATE TABLE default.canonical_execution_traces ON CLUSTER '{cluster}' AS defaul
     cityHash64(
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     )
 );
 
@@ -470,6 +494,7 @@ CREATE TABLE default.canonical_execution_logs_local ON CLUSTER '{cluster}' (
     `block_number` UInt32 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt32 COMMENT 'The transaction index' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash associated with the log' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the log within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `log_index` UInt32 COMMENT 'The log index within the block' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address associated with the log' CODEC(ZSTD(1)),
     `topic0` String COMMENT 'The first topic of the log' CODEC(ZSTD(1)),
@@ -489,7 +514,7 @@ ORDER BY
         block_number,
         meta_network_name,
         transaction_hash,
-        log_index
+        internal_index
     ) COMMENT 'Contains canonical execution logs data.';
 
 CREATE TABLE default.canonical_execution_logs ON CLUSTER '{cluster}' AS default.canonical_execution_logs_local ENGINE = Distributed(
@@ -500,7 +525,7 @@ CREATE TABLE default.canonical_execution_logs ON CLUSTER '{cluster}' AS default.
         block_number,
         meta_network_name,
         transaction_hash,
-        log_index
+        internal_index
     )
 );
 
@@ -509,6 +534,7 @@ CREATE TABLE default.canonical_execution_storage_diffs_local ON CLUSTER '{cluste
     `block_number` UInt32 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt32 COMMENT 'The transaction index' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash associated with the storage diff' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the storage diff within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `address` String COMMENT 'The address associated with the storage diff' CODEC(ZSTD(1)),
     `slot` String COMMENT 'The storage slot key' CODEC(ZSTD(1)),
     `from_value` String COMMENT 'The original value before the storage diff' CODEC(ZSTD(1)),
@@ -524,7 +550,8 @@ ORDER BY
     (
         block_number,
         meta_network_name,
-        transaction_hash
+        transaction_hash,
+        internal_index
     ) COMMENT 'Contains canonical execution storage diffs data.';
 
 CREATE TABLE default.canonical_execution_storage_diffs ON CLUSTER '{cluster}' AS default.canonical_execution_storage_diffs_local ENGINE = Distributed(
@@ -535,8 +562,7 @@ CREATE TABLE default.canonical_execution_storage_diffs ON CLUSTER '{cluster}' AS
         block_number,
         meta_network_name,
         transaction_hash,
-        address,
-        slot
+        internal_index
     )
 );
 
@@ -545,6 +571,7 @@ CREATE TABLE default.canonical_execution_storage_reads_local ON CLUSTER '{cluste
     `block_number` UInt32 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_index` UInt32 COMMENT 'The transaction index' CODEC(DoubleDelta, ZSTD(1)),
     `transaction_hash` FixedString(66) COMMENT 'The transaction hash associated with the storage read' CODEC(ZSTD(1)),
+    `internal_index` UInt32 COMMENT 'The internal index of the storage read within the transaction' CODEC(DoubleDelta, ZSTD(1)),
     `contract_address` String COMMENT 'The contract address associated with the storage read' CODEC(ZSTD(1)),
     `slot` String COMMENT 'The storage slot key' CODEC(ZSTD(1)),
     `value` String COMMENT 'The value read from the storage slot' CODEC(ZSTD(1)),
@@ -560,8 +587,7 @@ ORDER BY
         block_number,
         meta_network_name,
         transaction_hash,
-        contract_address,
-        slot
+        internal_index
     ) COMMENT 'Contains canonical execution storage reads data.';
 
 CREATE TABLE default.canonical_execution_storage_reads ON CLUSTER '{cluster}' AS default.canonical_execution_storage_reads_local ENGINE = Distributed(
@@ -572,7 +598,6 @@ CREATE TABLE default.canonical_execution_storage_reads ON CLUSTER '{cluster}' AS
         block_number,
         meta_network_name,
         transaction_hash,
-        contract_address,
-        slot
+        internal_index
     )
 );

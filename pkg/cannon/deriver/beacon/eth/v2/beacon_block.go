@@ -398,6 +398,8 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 
 func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, error) {
 	switch block.Version {
+	case spec.DataVersionPhase0:
+		return block.Phase0.Message, nil
 	case spec.DataVersionAltair:
 		return block.Altair.Message, nil
 	case spec.DataVersionBellatrix:

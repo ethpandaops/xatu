@@ -216,6 +216,8 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 
 func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, error) {
 	switch block.Version {
+	case spec.DataVersionPhase0:
+		return block.Phase0.Message, nil
 	case spec.DataVersionAltair:
 		return block.Altair.Message, nil
 	case spec.DataVersionBellatrix:

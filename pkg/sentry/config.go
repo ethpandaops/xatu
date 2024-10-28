@@ -14,6 +14,9 @@ import (
 )
 
 type Config struct {
+	// Preset is the name of the preset to use
+	Preset string `yaml:"preset"`
+
 	LoggingLevel string  `yaml:"logging" default:"info"`
 	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
 	PProfAddr    *string `yaml:"pprofAddr"`
@@ -50,10 +53,6 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if c.Name == "" {
-		return errors.New("name is required")
-	}
-
 	if err := c.Ethereum.Validate(); err != nil {
 		return err
 	}
@@ -79,12 +78,17 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
+		if out.ShippingMethod == nil {
+			shippingMethod := processor.ShippingMethodAsync
+			out.ShippingMethod = &shippingMethod
+		}
+
 		sink, err := output.NewSink(out.Name,
 			out.SinkType,
 			out.Config,
 			log,
 			out.FilterConfig,
-			processor.ShippingMethodAsync,
+			*out.ShippingMethod,
 		)
 		if err != nil {
 			return nil, err

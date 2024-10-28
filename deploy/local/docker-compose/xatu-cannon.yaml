@@ -1,0 +1,80 @@
+logging: "info" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9097"
+pprofAddr: ":6061" # optional. if supplied it enables pprof server
+
+name: xatu-cannon
+
+# derivers:
+#   attesterSlashing:
+#     enabled: false
+#   blsToExecutionChange:
+#     enabled: false
+#   deposit:
+#     enabled: false
+#   withdrawal:
+#     enabled: false
+#   executionTransaction:
+#     enabled: false
+#   proposerSlashing:
+#     enabled: false
+#   voluntaryExit:
+#     enabled: false
+#   beaconBlock:
+#     enabled: true
+#   beaconBlobSidecar:
+#     enabled: false
+#   proposerDuty:
+#     enabled: true
+#   elaboratedAttestation:
+#     enabled: false
+#   beaconValidators:
+#     enabled: false
+#   elaboratedAttestation:
+#     enabled: false
+#   beaconCommittee:
+#     enabled: false
+  
+  # blockClassification:
+  #   enabled: false
+
+
+
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+tracing:
+  enabled: true
+  endpoint: tempo:4318
+  insecure: true
+  sampling:
+    rate: 0.1
+
+ethereum:
+  beaconNodeAddress: http://SET_ME:5052
+  # overrideNetworkName: mainnet
+  # blockCacheSize: 10000
+  # blockCacheTtl: 3h
+  # blockPreloadWorkers: 25
+
+coordinator:
+  address: xatu-server:8080
+  headers:
+    Authorization: "Bearer SET_ME"
+
+outputs:
+  - name: xatu
+    type: xatu
+    config:
+      address: xatu-server:8080
+      tls: false
+      maxQueueSize: 51200
+      batchTimeout: 0.5s
+      exportTimeout: 30s
+      maxExportBatchSize: 32
+      workers: 50
+      headers:
+        Authorization: "Bearer SET_ME"

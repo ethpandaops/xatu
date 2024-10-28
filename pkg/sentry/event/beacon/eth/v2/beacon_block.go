@@ -7,15 +7,14 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethpandaops/xatu/pkg/proto/eth"
-	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -66,7 +65,7 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 		},
 	}
 
-	additionalData, err := e.getAdditionalData(ctx, data)
+	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon block data")
 	} else {
@@ -123,7 +122,7 @@ func (e *BeaconBlock) ShouldIgnore(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.EventBlockV2) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
+func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 
 	slotI, err := e.event.Slot()
@@ -164,14 +163,22 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.Event
 		}
 	}
 
-	dataAsJSON, err := protojson.Marshal(data)
+	blockMessage, err := getBlockMessage(e.event)
 	if err != nil {
-		return nil, err
-	}
+		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")
+	} else {
+		sszData, err := ssz.MarshalSSZ(blockMessage)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to marshal (SSZ) block message to compute block size")
+		} else {
+			dataSize := len(sszData)
+			compressedData := snappy.Encode(nil, sszData)
+			compressedDataSize := len(compressedData)
 
-	dataSize := len(dataAsJSON)
-	compressedData := snappy.Encode(nil, dataAsJSON)
-	compressedDataSize := len(compressedData)
+			extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
+			extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
+		}
+	}
 
 	switch e.event.Version {
 	case spec.DataVersionBellatrix:
@@ -200,11 +207,26 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context, data *xatuethv2.Event
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
 	compressedTxSize := len(compressedTransactions)
 
-	extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
-	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
 	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(compressedTxSize))
 
 	return extra, nil
+}
+
+func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, error) {
+	switch block.Version {
+	case spec.DataVersionPhase0:
+		return block.Phase0.Message, nil
+	case spec.DataVersionAltair:
+		return block.Altair.Message, nil
+	case spec.DataVersionBellatrix:
+		return block.Bellatrix.Message, nil
+	case spec.DataVersionCapella:
+		return block.Capella.Message, nil
+	case spec.DataVersionDeneb:
+		return block.Deneb.Message, nil
+	default:
+		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
+	}
 }

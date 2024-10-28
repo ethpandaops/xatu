@@ -24,8 +24,9 @@ import (
 )
 
 type ItemExporter struct {
-	config *Config
-	log    logrus.FieldLogger
+	config  *Config
+	log     logrus.FieldLogger
+	headers map[string]string
 
 	client pb.EventIngesterClient
 	conn   *grpc.ClientConn
@@ -71,10 +72,11 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 	}
 
 	return ItemExporter{
-		config: config,
-		log:    log,
-		conn:   conn,
-		client: pb.NewEventIngesterClient(conn),
+		config:  config,
+		headers: config.Headers,
+		log:     log,
+		conn:    conn,
+		client:  pb.NewEventIngesterClient(conn),
 	}, nil
 }
 
@@ -112,8 +114,8 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	md := metadata.New(e.config.Headers)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	if e.config.AuthorizationSecret != "" {
-		md.Set("authorization", e.config.AuthorizationSecret)
+	for key, value := range e.headers {
+		md.Set(key, value)
 	}
 
 	var rsp *pb.CreateEventsResponse
@@ -147,7 +149,6 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 				grpc_codes.Internal,
 				grpc_codes.ResourceExhausted,
 				grpc_codes.Unknown,
-				grpc_codes.Unauthenticated,
 				grpc_codes.Canceled,
 			),
 		)

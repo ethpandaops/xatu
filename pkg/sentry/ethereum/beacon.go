@@ -24,7 +24,7 @@ type BeaconNode struct {
 	onReadyCallbacks []func(ctx context.Context) error
 }
 
-func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
+func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger, opt *Options) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
 		DisablePrometheusMetrics()
@@ -48,7 +48,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 	}, "xatu_sentry", opts)
 
 	metadata := services.NewMetadataService(log, node, config.OverrideNetworkName)
-	duties := services.NewDutiesService(log, node, &metadata)
+	duties := services.NewDutiesService(log, node, &metadata, opt.FetchProposerDuties, opt.FetchBeaconCommittees)
 
 	svcs := []services.Service{
 		&metadata,
@@ -67,8 +67,13 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	s := gocron.NewScheduler(time.Local)
 
 	errs := make(chan error, 1)
+	healthyFirstTime := make(chan struct{})
 
-	go func() {
+	b.beacon.OnFirstTimeHealthy(ctx, func(ctx context.Context, event *beacon.FirstTimeHealthyEvent) error {
+		b.log.Info("Upstream beacon node is healthy")
+
+		close(healthyFirstTime)
+
 		wg := sync.WaitGroup{}
 
 		for _, service := range b.services {
@@ -88,6 +93,8 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 				errs <- fmt.Errorf("failed to start service: %w", err)
 			}
 
+			b.log.WithField("service", service.Name()).Info("Waiting for service to be ready")
+
 			wg.Wait()
 		}
 
@@ -98,14 +105,26 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 				errs <- fmt.Errorf("failed to run on ready callback: %w", err)
 			}
 		}
-	}()
+
+		return nil
+	})
 
 	s.StartAsync()
 
-	if err := b.beacon.Start(ctx); err != nil {
+	b.beacon.StartAsync(ctx)
+
+	select {
+	case err := <-errs:
 		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-healthyFirstTime:
+		// Beacon node is healthy, continue with normal operation
+	case <-time.After(10 * time.Minute):
+		return errors.New("upstream beacon node is not healthy. check your configuration.")
 	}
 
+	// Wait for any errors after the first healthy event
 	select {
 	case err := <-errs:
 		return err

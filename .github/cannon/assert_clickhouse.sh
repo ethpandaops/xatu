@@ -12,7 +12,7 @@ SEEDING_YAML="$1"
 CLICKHOUSE_HOST=${CLICKHOUSE_HOST:-"localhost"}
 CLICKHOUSE_PORT=${CLICKHOUSE_PORT:-"9000"}
 CLICKHOUSE_USER=${CLICKHOUSE_USER:-"default"}
-CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-""}
+CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
 CLICKHOUSE_DB=${CLICKHOUSE_DB:-"default"}
 
 # Function to execute ClickHouse query
@@ -53,6 +53,7 @@ yq e '.networks[].types[] | [.name, .assert.query, .assert.expected] | @tsv' "$S
                     break
                 else
                     echo "Assertion failed for $name. Expected: $expected, Got: $result"
+                    docker logs xatu-cannon 2>&1 | grep -i "$name " | tail -n 10 || docker logs xatu-cannon --tail 10
                     sleep 2
                     continue
                 fi

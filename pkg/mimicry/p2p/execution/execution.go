@@ -190,8 +190,6 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		switch p.network.Name {
 		case networks.NetworkNameMainnet:
 			p.chainConfig = params.MainnetChainConfig
-		case networks.NetworkNameGoerli:
-			p.chainConfig = params.GoerliChainConfig
 		case networks.NetworkNameHolesky:
 			p.chainConfig = params.HoleskyChainConfig
 		case networks.NetworkNameSepolia:

@@ -28,7 +28,8 @@ const (
 )
 
 type DepositDeriverConfig struct {
-	Enabled bool `yaml:"enabled" default:"true"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
 type DepositDeriver struct {
@@ -42,7 +43,10 @@ type DepositDeriver struct {
 
 func NewDepositDeriver(log logrus.FieldLogger, config *DepositDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
 	return &DepositDeriver{
-		log:        log.WithField("module", "cannon/event/beacon/eth/v2/deposit"),
+		log: log.WithFields(logrus.Fields{
+			"module": "cannon/event/beacon/eth/v2/deposit",
+			"type":   DepositDeriverName.String(),
+		}),
 		cfg:        config,
 		iterator:   iter,
 		beacon:     beacon,

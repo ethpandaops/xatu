@@ -48,12 +48,20 @@ type Xatu struct {
 
 	clockDrift *time.Duration
 
+	overrides *Override
+
 	shutdownFuncs []func(ctx context.Context) error
 }
 
-func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, error) {
+func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Override) (*Xatu, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
+	}
+
+	if o != nil {
+		if err := conf.ApplyOverrides(o, log); err != nil {
+			return nil, fmt.Errorf("failed to apply overrides: %w", err)
+		}
 	}
 
 	clockDrift := time.Duration(0)
@@ -96,6 +104,7 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Xatu, 
 		services:      services,
 		clockDrift:    &clockDrift,
 		shutdownFuncs: []func(ctx context.Context) error{},
+		overrides:     o,
 	}, nil
 }
 
@@ -338,7 +347,7 @@ func (x *Xatu) startMetrics(ctx context.Context) error {
 	return x.metricsServer.ListenAndServe()
 }
 
-func (x *Xatu) startPProf(ctx context.Context) error {
+func (x *Xatu) startPProf(_ context.Context) error {
 	x.log.WithField("addr", x.config.PProfAddr).Info("Starting pprof server")
 
 	x.pprofServer = &http.Server{
@@ -365,7 +374,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 	return nil
 }
 
-func (x *Xatu) syncClockDrift(ctx context.Context) error {
+func (x *Xatu) syncClockDrift(_ context.Context) error {
 	response, err := ntp.Query(x.config.NTPServer)
 	if err != nil {
 		return err

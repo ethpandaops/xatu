@@ -37,7 +37,10 @@ service EventIngester {
 
 message CreateEventsRequest { repeated DecoratedEvent events = 1; }
 
-message CreateEventsResponse {}
+message CreateEventsResponse {
+  // EventsIngested is the number of events ingested.
+  google.protobuf.UInt64Value events_ingested = 1 [ json_name = "events_ingested" ];
+}
 
 message Epoch {
   // Number is the epoch number.
@@ -953,7 +956,7 @@ message ClientMeta {
   // AdditionalMevRelayBidTraceBuilderBlockSubmissionData contains additional data about the mev relay bid trace event.
   message AdditionalMevRelayBidTraceBuilderBlockSubmissionData {
     // Relay is the relay that the bid trace is from.
-    xatu.mevrelay.Relay relay = 1; 
+    xatu.mevrelay.Relay relay = 1;
     // Slot is the slot the bid trace is for.
     SlotV2 slot = 2;
     // WallclockSlot contains the slot information of when the bid trace was requested.
@@ -971,7 +974,7 @@ message ClientMeta {
   // AdditionalMevRelayPayloadDeliveredData contains additional data about the proposer payload delivered event.
   message AdditionalMevRelayPayloadDeliveredData {
     // Relay is the relay that delivered the payload.
-    xatu.mevrelay.Relay relay = 1; 
+    xatu.mevrelay.Relay relay = 1;
     // Slot is the slot the payload was delivered for.
     SlotV2 slot = 2;
     // WallclockSlot contains the slot information of when the payload was delivered.
@@ -1151,7 +1154,7 @@ message ClientMeta {
     AdditionalEthV2BeaconBlockElaboratedAttestationData
         eth_v2_beacon_block_elaborated_attestation = 47
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION" ];
-    
+
     // AdditionalLibP2PTraceData contains additional data about libp2p traces.
     AdditionalLibP2PTraceAddPeerData libp2p_trace_add_peer = 48 [ json_name = "LIBP2P_TRACE_ADD_PEER" ];
     AdditionalLibP2PTraceRemovePeerData libp2p_trace_remove_peer = 49 [ json_name = "LIBP2P_TRACE_REMOVE_PEER" ];

@@ -159,7 +159,10 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 		return err
 	}
 
-	logCtx.WithField("response", rsp).Debug("Received response from Xatu sink")
+	logCtx.WithFields(logrus.Fields{
+		"events_ingested": rsp.GetEventsIngested().GetValue(),
+		"events_sent":     len(items),
+	}).Debug("Received response from Xatu sink")
 
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -133,7 +134,11 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		}
 	}
 
-	return &xatu.CreateEventsResponse{}, nil
+	return &xatu.CreateEventsResponse{
+		EventsIngested: &wrapperspb.UInt64Value{
+			Value: uint64(len(filteredEvents)),
+		},
+	}, nil
 }
 
 func (e *Ingester) CreateSinks() ([]output.Sink, error) {

@@ -48,8 +48,8 @@ type Config struct {
 	// ProposerDuty configuration
 	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
 
-	// ValidatorsBeaconBlock configuration
-	ValidatorsBeaconBlock *ValidatorsBeaconBlockConfig `yaml:"validatorsBeaconBlock" default:"{'enabled': false}"`
+	// ProposedValidatorBlock configuration
+	ProposedValidatorBlock *ProposedValidatorBlockConfig `yaml:"proposedValidatorBlock" default:"{'enabled': false}"`
 
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
@@ -169,7 +169,7 @@ func (f *AttestationDataConfig) Validate() error {
 	return nil
 }
 
-type ValidatorsBeaconBlockConfig struct {
+type ProposedValidatorBlockConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 
 	Interval struct {
@@ -183,7 +183,7 @@ type ValidatorsBeaconBlockConfig struct {
 	} `yaml:"at"`
 }
 
-func (f *ValidatorsBeaconBlockConfig) Validate() error {
+func (f *ProposedValidatorBlockConfig) Validate() error {
 	if f.At.Enabled {
 		if len(f.At.SlotTimes) == 0 {
 			return errors.New("at.slotTimes must be provided when at.enabled is true")

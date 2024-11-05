@@ -547,7 +547,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 
-		if err := s.startValidatorsBeaconBlockSchedule(ctx); err != nil {
+		if err := s.startProposedValidatorBlockSchedule(ctx); err != nil {
 			return err
 		}
 

@@ -33,7 +33,13 @@ type ProposedValidatorBlockDataSnapshot struct {
 	RequestDuration time.Duration
 }
 
-func NewProposedValidatorBlock(log logrus.FieldLogger, event *api.VersionedProposal, snapshot *ProposedValidatorBlockDataSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposedValidatorBlock {
+func NewProposedValidatorBlock(
+	log logrus.FieldLogger,
+	event *api.VersionedProposal,
+	snapshot *ProposedValidatorBlockDataSnapshot,
+	beacon *ethereum.BeaconNode,
+	clientMeta *xatu.ClientMeta,
+) *ProposedValidatorBlock {
 	return &ProposedValidatorBlock{
 		log:        log.WithField("event", "BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK"),
 		event:      event,
@@ -80,7 +86,10 @@ func (e *ProposedValidatorBlock) ShouldIgnore(_ context.Context) (bool, error) {
 	return e.event == nil, nil
 }
 
-func (e *ProposedValidatorBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData, error) {
+func (e *ProposedValidatorBlock) getAdditionalData(_ context.Context) (
+	*xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData,
+	error,
+) {
 	proposalSlot, err := e.event.Slot()
 	if err != nil {
 		return nil, err

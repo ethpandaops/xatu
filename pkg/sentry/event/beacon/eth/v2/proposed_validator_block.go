@@ -19,23 +19,23 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-type ValidatorBeaconBlock struct {
+type ProposedValidatorBlock struct {
 	log        logrus.FieldLogger
-	snapshot   *ValidatorBeaconBlockDataSnapshot
+	snapshot   *ProposedValidatorBlockDataSnapshot
 	event      *api.VersionedProposal
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
 	id         uuid.UUID
 }
 
-type ValidatorBeaconBlockDataSnapshot struct {
+type ProposedValidatorBlockDataSnapshot struct {
 	RequestAt       time.Time
 	RequestDuration time.Duration
 }
 
-func NewValidatorBeaconBlock(log logrus.FieldLogger, event *api.VersionedProposal, snapshot *ValidatorBeaconBlockDataSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorBeaconBlock {
-	return &ValidatorBeaconBlock{
-		log:        log.WithField("event", "BEACON_API_ETH_V3_VALIDATOR_BEACON_BLOCK"),
+func NewProposedValidatorBlock(log logrus.FieldLogger, event *api.VersionedProposal, snapshot *ProposedValidatorBlockDataSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposedValidatorBlock {
+	return &ProposedValidatorBlock{
+		log:        log.WithField("event", "BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK"),
 		event:      event,
 		snapshot:   snapshot,
 		beacon:     beacon,
@@ -44,23 +44,23 @@ func NewValidatorBeaconBlock(log logrus.FieldLogger, event *api.VersionedProposa
 	}
 }
 
-func (e *ValidatorBeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	data, err := eth.NewEventBlockV2FromVersionSignedBeaconBlock(e.event)
+func (e *ProposedValidatorBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
+	data, err := eth.NewEventBlockV2FromVersionProposedBeaconBlock(e.event)
 	if err != nil {
 		return nil, err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V3_VALIDATOR_BEACON_BLOCK,
+			Name:     xatu.Event_BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK,
 			DateTime: timestamppb.New(e.snapshot.RequestAt),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV3ValidatorBeaconBlock{
-			EthV3ValidatorBeaconBlock: data,
+		Data: &xatu.DecoratedEvent_EthV3ProposedValidatorBlock{
+			EthV3ProposedValidatorBlock: data,
 		},
 	}
 
@@ -68,50 +68,48 @@ func (e *ValidatorBeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEve
 	if err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon block data")
 	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV3ValidatorBeaconBlock{
-			EthV3ValidatorBeaconBlock: additionalData,
+		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV3ProposedValidatorBlock{
+			EthV3ProposedValidatorBlock: additionalData,
 		}
 	}
 
 	return decoratedEvent, nil
 }
 
-func (e *ValidatorBeaconBlock) ShouldIgnore(_ context.Context) (bool, error) {
-	if e.event == nil {
-		return true, nil
-	}
-
-	// @TODO(matty): Many other ingesters will ignore blocks >16 slots old. Needed for validator beacon block event?
-
-	return false, nil
+func (e *ProposedValidatorBlock) ShouldIgnore(_ context.Context) (bool, error) {
+	return e.event == nil, nil
 }
 
-func (e *ValidatorBeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV3ValidatorBeaconBlockData, error) {
-	extra := &xatu.ClientMeta_AdditionalEthV3ValidatorBeaconBlockData{}
-
-	slotI, err := e.event.Slot()
+func (e *ProposedValidatorBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData, error) {
+	proposalSlot, err := e.event.Slot()
 	if err != nil {
 		return nil, err
 	}
 
-	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(slotI))
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(slotI))
+	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(proposalSlot))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(proposalSlot))
 
-	extra.Slot = &xatu.SlotV2{
-		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
-		Number:        &wrapperspb.UInt64Value{Value: uint64(slotI)},
+	root, err := e.event.Root()
+	if err != nil {
+		e.log.WithError(err).Warn("Failed to get block root")
 	}
 
-	extra.Epoch = &xatu.EpochV2{
-		Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
-		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	extra := &xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData{
+		Version:     e.event.Version.String(),
+		RequestedAt: timestamppb.New(e.snapshot.RequestAt),
+		RequestDurationMs: &wrapperspb.UInt64Value{
+			Value: safeUint64FromInt64(e.snapshot.RequestDuration.Milliseconds()),
+		},
+		BlockRoot: root.String(),
+		Slot: &xatu.SlotV2{
+			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+			Number:        &wrapperspb.UInt64Value{Value: uint64(proposalSlot)},
+		},
+		Epoch: &xatu.EpochV2{
+			Number:        &wrapperspb.UInt64Value{Value: epoch.Number()},
+			StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+		},
 	}
-
-	extra.Version = e.event.Version.String()
-	extra.RequestedAt = timestamppb.New(e.snapshot.RequestAt)
-	extra.RequestDurationMs = &wrapperspb.UInt64Value{Value: uint64(e.snapshot.RequestDuration.Milliseconds())}
-
-	// extra.BlockRoot = e.blockRoot @TODO(matty): Ask Sammo about this, as its proposed, not sure.
 
 	var (
 		txCount, txSize                  int
@@ -181,8 +179,8 @@ func (e *ValidatorBeaconBlock) getAdditionalData(_ context.Context) (*xatu.Clien
 
 	extra.TotalBytes = wrapperspb.UInt64(totalBytes)
 	extra.TotalBytesCompressed = wrapperspb.UInt64(totalBytesCompressed)
-	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
-	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
+	extra.TransactionsCount = wrapperspb.UInt64(safeUint64FromInt64(int64(txCount)))
+	extra.TransactionsTotalBytes = wrapperspb.UInt64(safeUint64FromInt64(int64(txSize)))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, transactionsBytes))))
 	extra.ExecutionValue = new(big.Int).SetUint64(e.event.ExecutionValue.Uint64()).String()
 	extra.ConsensusValue = new(big.Int).SetUint64(e.event.ConsensusValue.Uint64()).String()
@@ -190,14 +188,22 @@ func (e *ValidatorBeaconBlock) getAdditionalData(_ context.Context) (*xatu.Clien
 	return extra, nil
 }
 
-func computeBlockSize(body ssz.Marshaler) (uint64, uint64, error) {
+func computeBlockSize(body ssz.Marshaler) (size, compressed uint64, err error) {
 	sszData, err := ssz.MarshalSSZ(body)
 	if err != nil {
-		return 0, 0, errors.New("Failed to marshal (SSZ) block message")
+		return size, compressed, errors.New("Failed to marshal (SSZ) block message")
 	}
 
-	dataSize := len(sszData)
-	compressedDataSize := len(snappy.Encode(nil, sszData))
+	size = uint64(len(sszData))
+	compressed = uint64(len(snappy.Encode(nil, sszData)))
 
-	return uint64(dataSize), uint64(compressedDataSize), nil
+	return size, compressed, nil
+}
+
+func safeUint64FromInt64(value int64) uint64 {
+	if value < 0 {
+		return 0
+	}
+
+	return uint64(value)
 }

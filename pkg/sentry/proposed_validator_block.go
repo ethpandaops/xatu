@@ -61,10 +61,8 @@ func (s *Sentry) scheduleValidatorBeaconBlockFetchingAtSlotTime(ctx context.Cont
 	})
 }
 
-func (s *Sentry) fetchValidatorBeaconBlock(ctx context.Context) (*v2.ValidatorBeaconBlock, error) {
-	snapshot := &v2.ValidatorBeaconBlockDataSnapshot{
-		RequestAt: time.Now(),
-	}
+func (s *Sentry) fetchValidatorBeaconBlock(ctx context.Context) (*v2.ProposedValidatorBlock, error) {
+	snapshot := &v2.ProposedValidatorBlockDataSnapshot{RequestAt: time.Now()}
 
 	slot, _, err := s.beacon.Metadata().Wallclock().Now()
 	if err != nil {
@@ -75,7 +73,7 @@ func (s *Sentry) fetchValidatorBeaconBlock(ctx context.Context) (*v2.ValidatorBe
 	if !ok {
 		s.log.Error("Beacon node service client is not ProposalProvider")
 
-		return nil, nil
+		return nil, fmt.Errorf("unexpected service client type, expected: eth2client.ProposalProvider, got %T", s.beacon.Node().Service())
 	}
 
 	// RandaoReveal must be set to the point at infinity (0xc0..00) if we're skipping Randao verification.
@@ -109,7 +107,7 @@ func (s *Sentry) fetchValidatorBeaconBlock(ctx context.Context) (*v2.ValidatorBe
 
 	snapshot.RequestDuration = time.Since(snapshot.RequestAt)
 
-	return v2.NewValidatorBeaconBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
+	return v2.NewProposedValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
 }
 
 func (s *Sentry) fetchDecoratedValidatorBeaconBlock(ctx context.Context) error {
@@ -140,5 +138,6 @@ func getVersionedProposalData[T any](response *api.Response[T]) (*api.VersionedP
 	if !ok {
 		return nil, fmt.Errorf("unexpected type for response data, expected *api.VersionedProposal, got %T", response.Data)
 	}
+
 	return data, nil
 }

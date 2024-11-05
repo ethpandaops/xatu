@@ -74,6 +74,7 @@ var (
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
 	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
+	TypeBeaconETHV3ValidatorBeaconBlock         Type = v2.ValidatorBeaconBlockType
 )
 
 type Event interface {
@@ -253,6 +254,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeMEVRelayProposerPayloadDelivered, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mevrelay.NewProposerPayloadDelivered(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV3ValidatorBeaconBlock, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewValidatorBeaconBlock(router.log, event), nil
 	})
 
 	return router

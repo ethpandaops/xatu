@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
 	"syscall"
 	"time"
-
-	//nolint:gosec // only exposed if pprofAddr config is set
-	_ "net/http/pprof"
 
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/altair"
@@ -545,6 +544,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 
 		if err := s.startAttestationDataSchedule(ctx); err != nil {
+			return err
+		}
+
+		if err := s.startValidatorBlockSchedule(ctx); err != nil {
 			return err
 		}
 

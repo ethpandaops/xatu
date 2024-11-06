@@ -19,29 +19,29 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-type ProposedValidatorBlock struct {
+type ValidatorBlock struct {
 	log        logrus.FieldLogger
-	snapshot   *ProposedValidatorBlockDataSnapshot
+	snapshot   *ValidatorBlockDataSnapshot
 	event      *api.VersionedProposal
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
 	id         uuid.UUID
 }
 
-type ProposedValidatorBlockDataSnapshot struct {
+type ValidatorBlockDataSnapshot struct {
 	RequestAt       time.Time
 	RequestDuration time.Duration
 }
 
-func NewProposedValidatorBlock(
+func NewValidatorBlock(
 	log logrus.FieldLogger,
 	event *api.VersionedProposal,
-	snapshot *ProposedValidatorBlockDataSnapshot,
+	snapshot *ValidatorBlockDataSnapshot,
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,
-) *ProposedValidatorBlock {
-	return &ProposedValidatorBlock{
-		log:        log.WithField("event", "BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK"),
+) *ValidatorBlock {
+	return &ValidatorBlock{
+		log:        log.WithField("event", "BEACON_API_ETH_V3_VALIDATOR_BLOCK"),
 		event:      event,
 		snapshot:   snapshot,
 		beacon:     beacon,
@@ -50,46 +50,51 @@ func NewProposedValidatorBlock(
 	}
 }
 
-func (e *ProposedValidatorBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
-	data, err := eth.NewEventBlockV2FromVersionProposedBeaconBlock(e.event)
+func (e *ValidatorBlock) Decorate(_ context.Context) (*xatu.DecoratedEvent, error) {
+	data, err := eth.NewEventBlockV2FromVersionedProposal(e.event)
 	if err != nil {
 		return nil, err
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK,
+			Name:     xatu.Event_BEACON_API_ETH_V3_VALIDATOR_BLOCK,
 			DateTime: timestamppb.New(e.snapshot.RequestAt),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_EthV3ProposedValidatorBlock{
-			EthV3ProposedValidatorBlock: data,
+		Data: &xatu.DecoratedEvent_EthV3ValidatorBlock{
+			EthV3ValidatorBlock: data,
 		},
 	}
 
-	additionalData, err := e.getAdditionalData(ctx)
-	if err != nil {
+	if err := e.addAdditionalData(decoratedEvent); err != nil {
 		e.log.WithError(err).Error("Failed to get extra beacon block data")
-	} else {
-		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV3ProposedValidatorBlock{
-			EthV3ProposedValidatorBlock: additionalData,
-		}
 	}
 
 	return decoratedEvent, nil
 }
 
-func (e *ProposedValidatorBlock) ShouldIgnore(_ context.Context) (bool, error) {
+func (e *ValidatorBlock) ShouldIgnore(_ context.Context) (bool, error) {
 	return e.event == nil, nil
 }
 
-func (e *ProposedValidatorBlock) getAdditionalData(_ context.Context) (
-	*xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData,
-	error,
-) {
+func (e *ValidatorBlock) addAdditionalData(decoratedEvent *xatu.DecoratedEvent) error {
+	additionalData, err := e.getAdditionalData()
+	if err != nil {
+		return err
+	}
+
+	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV3ValidatorBlock{
+		EthV3ValidatorBlock: additionalData,
+	}
+
+	return nil
+}
+
+func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3ValidatorBlockData, error) {
 	proposalSlot, err := e.event.Slot()
 	if err != nil {
 		return nil, err
@@ -98,18 +103,12 @@ func (e *ProposedValidatorBlock) getAdditionalData(_ context.Context) (
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(proposalSlot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(proposalSlot))
 
-	root, err := e.event.Root()
-	if err != nil {
-		e.log.WithError(err).Warn("Failed to get block root")
-	}
-
-	extra := &xatu.ClientMeta_AdditionalEthV3ProposedValidatorBlockData{
+	extra := &xatu.ClientMeta_AdditionalEthV3ValidatorBlockData{
 		Version:     e.event.Version.String(),
 		RequestedAt: timestamppb.New(e.snapshot.RequestAt),
 		RequestDurationMs: &wrapperspb.UInt64Value{
 			Value: safeUint64FromInt64(e.snapshot.RequestDuration.Milliseconds()),
 		},
-		BlockRoot: root.String(),
 		Slot: &xatu.SlotV2{
 			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 			Number:        &wrapperspb.UInt64Value{Value: uint64(proposalSlot)},

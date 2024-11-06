@@ -12,18 +12,18 @@ import (
 	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
 )
 
-func (s *Sentry) startProposedValidatorBlockSchedule(ctx context.Context) error {
-	if !s.Config.ProposedValidatorBlock.Enabled {
+func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
+	if !s.Config.ValidatorBlock.Enabled {
 		return nil
 	}
 
-	if s.Config.ProposedValidatorBlock.Interval.Enabled {
-		logCtx := s.log.WithField("proccer", "interval").WithField("interval", s.Config.ProposedValidatorBlock.Interval.Every.String())
+	if s.Config.ValidatorBlock.Interval.Enabled {
+		logCtx := s.log.WithField("proccer", "interval").WithField("interval", s.Config.ValidatorBlock.Interval.Every.String())
 
-		if _, err := s.scheduler.Every(s.Config.ProposedValidatorBlock.Interval.Every.Duration).Do(func() {
+		if _, err := s.scheduler.Every(s.Config.ValidatorBlock.Interval.Every.Duration).Do(func() {
 			logCtx.Debug("Fetching validator beacon block")
 
-			if err := s.fetchDecoratedProposedValidatorBlock(ctx); err != nil {
+			if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
 				logCtx.WithError(err).Error("Failed to fetch validator beacon block")
 			}
 		}); err != nil {
@@ -31,16 +31,16 @@ func (s *Sentry) startProposedValidatorBlockSchedule(ctx context.Context) error 
 		}
 	}
 
-	if s.Config.ProposedValidatorBlock.At.Enabled {
-		for _, slotTime := range s.Config.ProposedValidatorBlock.At.SlotTimes {
-			s.scheduleProposedValidatorBlockFetchingAtSlotTime(ctx, slotTime.Duration)
+	if s.Config.ValidatorBlock.At.Enabled {
+		for _, slotTime := range s.Config.ValidatorBlock.At.SlotTimes {
+			s.scheduleValidatorBlockFetchingAtSlotTime(ctx, slotTime.Duration)
 		}
 	}
 
 	return nil
 }
 
-func (s *Sentry) scheduleProposedValidatorBlockFetchingAtSlotTime(ctx context.Context, at time.Duration) {
+func (s *Sentry) scheduleValidatorBlockFetchingAtSlotTime(ctx context.Context, at time.Duration) {
 	offset := at
 
 	logCtx := s.log.
@@ -54,14 +54,14 @@ func (s *Sentry) scheduleProposedValidatorBlockFetchingAtSlotTime(ctx context.Co
 
 		logCtx.WithField("slot", slot.Number()).Debug("Fetching validator beacon block")
 
-		if err := s.fetchDecoratedProposedValidatorBlock(ctx); err != nil {
+		if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
 			logCtx.WithField("slot_time", offset.String()).WithError(err).Error("Failed to fetch validator beacon block")
 		}
 	})
 }
 
-func (s *Sentry) fetchProposedValidatorBlock(ctx context.Context) (*v2.ProposedValidatorBlock, error) {
-	snapshot := &v2.ProposedValidatorBlockDataSnapshot{RequestAt: time.Now()}
+func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v2.ValidatorBlock, error) {
+	snapshot := &v2.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
 
 	slot, _, err := s.beacon.Metadata().Wallclock().Now()
 	if err != nil {
@@ -106,11 +106,11 @@ func (s *Sentry) fetchProposedValidatorBlock(ctx context.Context) (*v2.ProposedV
 
 	snapshot.RequestDuration = time.Since(snapshot.RequestAt)
 
-	return v2.NewProposedValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
+	return v2.NewValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
 }
 
-func (s *Sentry) fetchDecoratedProposedValidatorBlock(ctx context.Context) error {
-	fc, err := s.fetchProposedValidatorBlock(ctx)
+func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context) error {
+	fc, err := s.fetchValidatorBlock(ctx)
 	if err != nil {
 		return err
 	}

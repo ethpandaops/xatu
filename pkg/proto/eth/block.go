@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-func NewEventBlockV2FromVersionProposedBeaconBlock(proposal *api.VersionedProposal) (*v2.EventBlockV2, error) {
+func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.EventBlockV2, error) {
 	var data *v2.EventBlockV2
 
 	switch proposal.Version {

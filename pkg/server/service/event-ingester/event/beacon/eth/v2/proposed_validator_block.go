@@ -11,49 +11,49 @@ import (
 )
 
 const (
-	ProposedValidatorBlockType = "BEACON_API_ETH_V3_PROPOSED_VALIDATOR_BLOCK"
+	ValidatorBlockType = "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
 )
 
-type ProposedValidatorBlock struct {
+type ValidatorBlock struct {
 	log   logrus.FieldLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewProposedValidatorBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ProposedValidatorBlock {
-	return &ProposedValidatorBlock{
-		log:   log.WithField("event", ProposedValidatorBlockType),
+func NewValidatorBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ValidatorBlock {
+	return &ValidatorBlock{
+		log:   log.WithField("event", ValidatorBlockType),
 		event: event,
 	}
 }
 
-func (b *ProposedValidatorBlock) Type() string {
-	return ProposedValidatorBlockType
+func (b *ValidatorBlock) Type() string {
+	return ValidatorBlockType
 }
 
-func (b *ProposedValidatorBlock) Validate(_ context.Context) error {
-	if _, ok := b.event.Data.(*xatu.DecoratedEvent_EthV3ProposedValidatorBlock); !ok {
+func (b *ValidatorBlock) Validate(_ context.Context) error {
+	if _, ok := b.event.Data.(*xatu.DecoratedEvent_EthV3ValidatorBlock); !ok {
 		return errors.New("failed to cast event data")
 	}
 
 	return nil
 }
 
-func (b *ProposedValidatorBlock) Filter(_ context.Context) bool {
-	data, ok := b.event.Data.(*xatu.DecoratedEvent_EthV3ProposedValidatorBlock)
+func (b *ValidatorBlock) Filter(_ context.Context) bool {
+	data, ok := b.event.Data.(*xatu.DecoratedEvent_EthV3ValidatorBlock)
 	if !ok {
 		b.log.Error("failed to cast event data")
 
 		return true
 	}
 
-	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_EthV3ProposedValidatorBlock)
+	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_EthV3ValidatorBlock)
 	if !ok {
 		b.log.Error("failed to cast client additional data")
 
 		return true
 	}
 
-	version := additionalData.EthV3ProposedValidatorBlock.GetVersion()
+	version := additionalData.EthV3ValidatorBlock.GetVersion()
 	if version == "" {
 		b.log.Error("failed to get version")
 
@@ -64,15 +64,15 @@ func (b *ProposedValidatorBlock) Filter(_ context.Context) bool {
 
 	switch version {
 	case "phase0":
-		hash = data.EthV3ProposedValidatorBlock.Message.(*v2.EventBlockV2_Phase0Block).Phase0Block.StateRoot
+		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_Phase0Block).Phase0Block.StateRoot
 	case "altair":
-		hash = data.EthV3ProposedValidatorBlock.Message.(*v2.EventBlockV2_AltairBlock).AltairBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_AltairBlock).AltairBlock.StateRoot
 	case "bellatrix":
-		hash = data.EthV3ProposedValidatorBlock.Message.(*v2.EventBlockV2_BellatrixBlock).BellatrixBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_BellatrixBlock).BellatrixBlock.StateRoot
 	case "capella":
-		hash = data.EthV3ProposedValidatorBlock.Message.(*v2.EventBlockV2_CapellaBlock).CapellaBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_CapellaBlock).CapellaBlock.StateRoot
 	case "deneb":
-		hash = data.EthV3ProposedValidatorBlock.Message.(*v2.EventBlockV2_DenebBlock).DenebBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_DenebBlock).DenebBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 
@@ -88,6 +88,6 @@ func (b *ProposedValidatorBlock) Filter(_ context.Context) bool {
 	return false
 }
 
-func (b *ProposedValidatorBlock) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+func (b *ValidatorBlock) AppendServerMeta(_ context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
 	return meta
 }

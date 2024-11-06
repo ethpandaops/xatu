@@ -9,7 +9,7 @@ import (
 	"github.com/attestantio/go-eth2-client/api"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/ethwallclock"
-	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
+	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
 )
 
 func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
@@ -60,8 +60,8 @@ func (s *Sentry) scheduleValidatorBlockFetchingAtSlotTime(ctx context.Context, a
 	})
 }
 
-func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v2.ValidatorBlock, error) {
-	snapshot := &v2.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
+func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v3.ValidatorBlock, error) {
+	snapshot := &v3.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
 
 	slot, _, err := s.beacon.Metadata().Wallclock().Now()
 	if err != nil {
@@ -112,7 +112,7 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v2.ValidatorBlock, e
 
 	snapshot.RequestDuration = time.Since(snapshot.RequestAt)
 
-	return v2.NewValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
+	return v3.NewValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
 }
 
 func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context) error {

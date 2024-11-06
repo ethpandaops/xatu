@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
+	v3 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v3"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/blockprint"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
@@ -74,7 +75,7 @@ var (
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
 	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
-	TypeBeaconETHV3ValidatorBlock               Type = v2.ValidatorBlockType
+	TypeBeaconETHV3ValidatorBlock               Type = v3.ValidatorBlockType
 )
 
 type Event interface {
@@ -256,7 +257,7 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 		return mevrelay.NewProposerPayloadDelivered(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV3ValidatorBlock, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
-		return v2.NewValidatorBlock(router.log, event), nil
+		return v3.NewValidatorBlock(router.log, event), nil
 	})
 
 	return router

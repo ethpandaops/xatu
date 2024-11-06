@@ -43,7 +43,7 @@ CREATE TABLE default.beacon_api_eth_v3_validator_block_local ON CLUSTER '{cluste
     `meta_consensus_implementation` LowCardinality(String) COMMENT 'Ethereum consensus client implementation that generated the event',
     `meta_labels` Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
 ) ENGINE = ReplicatedReplacingMergeTree(
-    '/clickhouse/{installation}/{cluster}/default/tables/{table}/{shard}',
+    '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',
     '{replica}',
     updated_date_time
 ) PARTITION BY toStartOfMonth(slot_start_date_time)

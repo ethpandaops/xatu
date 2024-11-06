@@ -75,9 +75,14 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v2.ValidatorBlock, e
 		return nil, fmt.Errorf("unexpected service client type, expected: eth2client.ProposalProvider, got %T", s.beacon.Node().Service())
 	}
 
+	// Percentage multiplier to apply to the builder's payload value when choosing between a builder payload header
+	// and payload from the paired execution node.
+	// See https://ethereum.github.io/beacon-APIs/#/Validator/produceBlockV3
+	boostFactor := uint64(0)
+
 	// RandaoReveal must be set to the point at infinity (0xc0..00) if we're skipping Randao verification.
 	rsp, err := provider.Proposal(ctx, &api.ProposalOpts{
-		Slot: phase0.Slot(slot.Number()),
+		Slot: phase0.Slot(slot.Number() + 1),
 		RandaoReveal: phase0.BLSSignature{
 			0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -87,6 +92,7 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v2.ValidatorBlock, e
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		},
 		SkipRandaoVerification: true,
+		BuilderBoostFactor:     &boostFactor,
 	})
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get proposal")

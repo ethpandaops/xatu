@@ -44,13 +44,13 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 	case spec.DataVersionPhase0:
 		data = NewEventBlockFromPhase0(block.Phase0.Message, &block.Phase0.Signature)
 	case spec.DataVersionAltair:
-		data = NewEventBlockFromAltair(block.Altair.Message, &block.Phase0.Signature)
+		data = NewEventBlockFromAltair(block.Altair.Message, &block.Altair.Signature)
 	case spec.DataVersionBellatrix:
-		data = NewEventBlockFromBellatrix(block.Bellatrix.Message, &block.Phase0.Signature)
+		data = NewEventBlockFromBellatrix(block.Bellatrix.Message, &block.Bellatrix.Signature)
 	case spec.DataVersionCapella:
-		data = NewEventBlockFromCapella(block.Capella.Message, &block.Phase0.Signature)
+		data = NewEventBlockFromCapella(block.Capella.Message, &block.Capella.Signature)
 	case spec.DataVersionDeneb:
-		data = NewEventBlockFromDeneb(block.Deneb.Message, &block.Phase0.Signature)
+		data = NewEventBlockFromDeneb(block.Deneb.Message, &block.Deneb.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}

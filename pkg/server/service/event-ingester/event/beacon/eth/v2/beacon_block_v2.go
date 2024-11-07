@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -72,16 +73,18 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 	var hash string
 
 	switch version {
-	case "phase0":
+	case spec.DataVersionPhase0.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_Phase0Block).Phase0Block.StateRoot
-	case "altair":
+	case spec.DataVersionAltair.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_AltairBlock).AltairBlock.StateRoot
-	case "bellatrix":
+	case spec.DataVersionBellatrix.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_BellatrixBlock).BellatrixBlock.StateRoot
-	case "capella":
+	case spec.DataVersionCapella.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_CapellaBlock).CapellaBlock.StateRoot
-	case "deneb":
+	case spec.DataVersionDeneb.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_DenebBlock).DenebBlock.StateRoot
+	case spec.DataVersionElectra.String():
+		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_ElectraBlock).ElectraBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

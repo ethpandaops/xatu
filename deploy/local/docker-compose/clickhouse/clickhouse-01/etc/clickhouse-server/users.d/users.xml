@@ -11,8 +11,15 @@
             <max_memory_usage>10000000000</max_memory_usage>
             <use_uncompressed_cache>0</use_uncompressed_cache>
             <load_balancing>in_order</load_balancing>
-            <readonly>1</readonly>
+            <readonly>2</readonly>
             <log_queries>1</log_queries>
+            <constraints>
+                <max_execution_time>
+                <changeable_in_readonly/>
+                <min>0</min>
+                <max>180</max>
+                </max_execution_time>
+            </constraints>
         </readonly>
     </profiles>
     <users>
@@ -24,6 +31,7 @@
             </networks>
             <quota>default</quota>
             <access_management>1</access_management>
+            <password from_env="CLICKHOUSE_PASSWORD" replace="replace"></password>
             <named_collection_control>1</named_collection_control>
             <show_named_collections>1</show_named_collections>
             <show_named_collections_secrets>1</show_named_collections_secrets>

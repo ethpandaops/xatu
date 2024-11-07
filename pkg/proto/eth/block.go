@@ -25,6 +25,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromCapella(block)
 	case spec.DataVersionDeneb:
 		data = NewEventBlockFromDeneb(block)
+	case spec.DataVersionElectra:
+		data = NewEventBlockFromElectra(block)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -261,5 +263,65 @@ func NewEventBlockFromDeneb(block *spec.VersionedSignedBeaconBlock) *v2.EventBlo
 			},
 		},
 		Signature: block.Deneb.Signature.String(),
+	}
+}
+
+func NewEventBlockFromElectra(block *spec.VersionedSignedBeaconBlock) *v2.EventBlockV2 {
+	kzgCommitments := []string{}
+
+	for _, commitment := range block.Electra.Message.Body.BlobKZGCommitments {
+		kzgCommitments = append(kzgCommitments, commitment.String())
+	}
+
+	return &v2.EventBlockV2{
+		Version: v2.BlockVersion_ELECTRA,
+		Message: &v2.EventBlockV2_ElectraBlock{
+			ElectraBlock: &v2.BeaconBlockElectra{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Electra.Message.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.Electra.Message.ProposerIndex)},
+				ParentRoot:    block.Electra.Message.ParentRoot.String(),
+				StateRoot:     block.Electra.Message.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyElectra{
+					RandaoReveal: block.Electra.Message.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Electra.Message.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Electra.Message.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Electra.Message.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Electra.Message.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Electra.Message.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Electra.Message.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromElectra(block.Electra.Message.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Electra.Message.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Electra.Message.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Electra.Message.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Electra.Message.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					ExecutionPayload: &v1.ExecutionPayloadElectra{
+						ParentHash:    block.Electra.Message.Body.ExecutionPayload.ParentHash.String(),
+						FeeRecipient:  block.Electra.Message.Body.ExecutionPayload.FeeRecipient.String(),
+						StateRoot:     fmt.Sprintf("0x%x", block.Electra.Message.Body.ExecutionPayload.StateRoot[:]),
+						ReceiptsRoot:  fmt.Sprintf("0x%x", block.Electra.Message.Body.ExecutionPayload.ReceiptsRoot[:]),
+						LogsBloom:     fmt.Sprintf("0x%x", block.Electra.Message.Body.ExecutionPayload.LogsBloom[:]),
+						PrevRandao:    fmt.Sprintf("0x%x", block.Electra.Message.Body.ExecutionPayload.PrevRandao[:]),
+						BlockNumber:   &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.BlockNumber},
+						GasLimit:      &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.GasLimit},
+						GasUsed:       &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.GasUsed},
+						Timestamp:     &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.Timestamp},
+						ExtraData:     fmt.Sprintf("0x%x", block.Electra.Message.Body.ExecutionPayload.ExtraData),
+						BaseFeePerGas: block.Electra.Message.Body.ExecutionPayload.BaseFeePerGas.String(),
+						BlockHash:     block.Electra.Message.Body.ExecutionPayload.BlockHash.String(),
+						Transactions:  getTransactions(block.Electra.Message.Body.ExecutionPayload.Transactions),
+						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Electra.Message.Body.ExecutionPayload.Withdrawals),
+						BlobGasUsed:   &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.BlobGasUsed},
+						ExcessBlobGas: &wrapperspb.UInt64Value{Value: block.Electra.Message.Body.ExecutionPayload.ExcessBlobGas},
+					},
+					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Electra.Message.Body.BLSToExecutionChanges),
+					BlobKzgCommitments:    kzgCommitments,
+				},
+			},
+		},
+		Signature: block.Electra.Signature.String(),
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
+	ethcore "github.com/ethpandaops/ethcore/pkg/discovery"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/discovery"
 	"github.com/sirupsen/logrus"
 )
@@ -15,13 +16,13 @@ type Static struct {
 	config *Config
 
 	discV4  *discovery.DiscV4
-	discV5  *discovery.DiscV5
+	discV5  *ethcore.DiscV5
 	handler func(ctx context.Context, node *enode.Node, source string) error
-
-	log logrus.FieldLogger
+	filter  func(node *enode.Node) bool
+	log     logrus.FieldLogger
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Static, error) {
+func New(config *Config, log logrus.FieldLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -31,10 +32,13 @@ func New(config *Config, handler func(ctx context.Context, node *enode.Node, sou
 	}
 
 	return &Static{
-		config:  config,
-		log:     log,
-		handler: handler,
+		config: config,
+		log:    log,
 	}, nil
+}
+
+func (s *Static) RegisterHandler(ctx context.Context, handler func(ctx context.Context, node *enode.Node, source string) error) {
+	s.handler = handler
 }
 
 func (s *Static) Type() string {
@@ -59,7 +63,7 @@ func (s *Static) Start(ctx context.Context) error {
 	}
 
 	if s.config.DiscV5 {
-		s.discV5 = discovery.NewDiscV5(ctx, s.config.Restart, s.log)
+		s.discV5 = ethcore.NewDiscV5(ctx, s.config.Restart, s.log)
 
 		if err := s.discV5.UpdateBootNodes(s.config.BootNodes); err != nil {
 			return err

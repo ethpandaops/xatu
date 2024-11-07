@@ -13,6 +13,7 @@ type Config struct {
 	Restart      time.Duration     `yaml:"restart" default:"2m"`
 	NetworkIds   []uint64          `yaml:"networkIds"`
 	ForkIDHashes []string          `yaml:"forkIdHashes"`
+	Protocol     string            `yaml:"protocol" default:"execution"`
 }
 
 func (c *Config) Validate() error {

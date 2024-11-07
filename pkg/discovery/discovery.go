@@ -14,9 +14,11 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethpandaops/xatu/pkg/discovery/beaconp2p"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/ethpandaops/xatu/pkg/discovery/provider"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
@@ -30,7 +32,7 @@ type Discovery struct {
 
 	coordinator *coordinator.Client
 
-	p2p    p2p.P2P
+	p2p    provider.EnodeProvider
 	status *p2p.Status
 
 	log logrus.FieldLogger
@@ -93,27 +95,22 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return err
 	}
 
-	p2pDisc, err := p2p.NewP2P(d.Config.P2P.Type, d.Config.P2P.Config, d.handleNewNodeRecord, d.log)
-	if err != nil {
-		return err
+	// Start the execution node
+	if d.Config.P2P.Enabled != nil && *d.Config.P2P.Enabled {
+		d.log.Info("Starting execution node")
+
+		if err := d.startExecutionNode(ctx); err != nil {
+			return err
+		}
 	}
 
-	d.p2p = p2pDisc
+	// Start the beacon node
+	if d.Config.BeaconP2P != nil && d.Config.BeaconP2P.Enabled != nil && *d.Config.BeaconP2P.Enabled {
+		d.log.Info("Starting beacon node")
 
-	if errP := d.p2p.Start(ctx); errP != nil {
-		return errP
-	}
-
-	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
-
-	if errS := d.status.Start(ctx); errS != nil {
-		return errS
-	}
-
-	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
-
-	if err := d.startCrons(ctx); err != nil {
-		return err
+		if err := d.startBeaconNode(ctx); err != nil {
+			return err
+		}
 	}
 
 	cancel := make(chan os.Signal, 1)
@@ -133,6 +130,48 @@ func (d *Discovery) Start(ctx context.Context) error {
 	}
 
 	if err := d.coordinator.Stop(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Discovery) startExecutionNode(ctx context.Context) error {
+	p2pDisc, err := p2p.NewEnodeProvider(d.Config.P2P.Type, d.Config.P2P.Config, d.log)
+	if err != nil {
+		return err
+	}
+
+	p2pDisc.RegisterHandler(ctx, d.handleNewExecutionNodeRecord)
+
+	d.p2p = p2pDisc
+
+	if errP := d.p2p.Start(ctx); errP != nil {
+		return errP
+	}
+
+	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
+
+	if errS := d.status.Start(ctx); errS != nil {
+		return errS
+	}
+
+	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
+
+	if err := d.startExecutionCrons(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Discovery) startBeaconNode(ctx context.Context) error {
+	beaconNode, err := beaconp2p.NewNode(ctx, d.log, d.Config.BeaconP2P)
+	if err != nil {
+		return err
+	}
+
+	if err := beaconNode.Start(ctx); err != nil {
 		return err
 	}
 
@@ -177,7 +216,7 @@ func (d *Discovery) ServePProf(ctx context.Context) error {
 	return nil
 }
 
-func (d *Discovery) startCrons(ctx context.Context) error {
+func (d *Discovery) startExecutionCrons(ctx context.Context) error {
 	c := gocron.NewScheduler(time.Local)
 
 	if _, err := c.Every("5s").Do(func() {
@@ -210,7 +249,7 @@ func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.Exec
 	return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
 }
 
-func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, source string) error {
+func (d *Discovery) handleNewExecutionNodeRecord(ctx context.Context, node *enode.Node, source string) error {
 	d.log.Debug("Node received")
 
 	if node == nil {

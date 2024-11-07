@@ -100,16 +100,16 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 }
 
 func (m *Mimicry) startHermes(ctx context.Context) error {
-	c, err := eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
+	conf, err := eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
 	if err != nil {
 		return fmt.Errorf("get config for %s: %w", m.Config.Ethereum.Network, err)
 	}
 
-	m.networkConfig = c.Network
-	m.beaconConfig = c.Beacon
+	m.networkConfig = conf.Network
+	m.beaconConfig = conf.Beacon
 
-	genesisRoot := c.Genesis.GenesisValidatorRoot
-	genesisTime := c.Genesis.GenesisTime
+	genesisRoot := conf.Genesis.GenesisValidatorRoot
+	genesisTime := conf.Genesis.GenesisTime
 
 	// compute fork version and fork digest
 	currentSlot := slots.Since(genesisTime)
@@ -132,7 +132,7 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 
 	nodeConfig := m.Config.Node.AsHermesConfig()
 
-	nodeConfig.GenesisConfig = c.Genesis
+	nodeConfig.GenesisConfig = conf.Genesis
 	nodeConfig.NetworkConfig = m.networkConfig
 	nodeConfig.BeaconConfig = m.beaconConfig
 	nodeConfig.ForkDigest = forkDigest

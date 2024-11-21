@@ -58,6 +58,7 @@ func Init(config *Config) (*sarama.Config, error) {
 		}
 		tlsConfig := &tls.Config{
 			Certificates: []tls.Certificate{clientCertificate},
+			MinVersion:   tls.VersionTLS12,
 		}
 
 		certPool := x509.NewCertPool()

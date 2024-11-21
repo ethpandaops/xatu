@@ -989,6 +989,47 @@ message ClientMeta {
     google.protobuf.UInt64Value response_at_slot_time = 7 [ json_name = "response_at_slot_time" ];
   }
 
+  // AdditionalEthV3ValidatorBlockData contains additional data about the eth v3 validator block event.
+  message AdditionalEthV3ValidatorBlockData {
+    // Epoch contains the epoch information for the block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the block.
+    SlotV2 slot = 2;
+
+    // Version contains information about the version of the block.
+    string version = 3;
+
+    // TransactionsCount contains the number of transactions in the block
+    google.protobuf.UInt64Value transactions_count = 4 [ json_name = "transactions_count" ];
+
+    // TransactionsTotalBytes contains the total bytes size of transactions
+    google.protobuf.UInt64Value transactions_total_bytes = 5 [ json_name = "transactions_total_bytes" ];
+
+    // CompressedTotalBytesCompressed contains the total bytes size of
+    // transactions with snappy compression
+    google.protobuf.UInt64Value transactions_total_bytes_compressed = 6 [ json_name = "transactions_total_bytes_compressed" ];
+
+    // TotalBytes contains the total bytes size of block
+    google.protobuf.UInt64Value total_bytes = 7 [ json_name = "total_bytes" ];
+
+    // TotalBytesCompressed contains the total bytes size of block with snappy
+    // compression
+    google.protobuf.UInt64Value total_bytes_compressed = 8 [ json_name = "total_bytes_compressed" ];
+
+    // ExecutionValue contains the total execution payload value, in Wei.
+    string execution_value = 9 [ json_name = "execution_value" ];
+
+    // ConsensusValue represents the rewards paid to the proposer for this block, in Wei.
+    string consensus_value = 10 [ json_name = "consensus_value" ];
+
+    // RequestDurationMs is the duration of the produce block request (in milliseconds).
+    google.protobuf.UInt64Value request_duration_ms = 11 [ json_name = "request_duration_ms" ];
+
+    // RequestedAt is the time the call was made to produce the block.
+    google.protobuf.Timestamp requested_at = 12 [ json_name = "requested_at" ];
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1178,6 +1219,8 @@ message ClientMeta {
     AdditionalMevRelayBidTraceBuilderBlockSubmissionData mev_relay_bid_trace_builder_block_submission = 61 [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
     // AdditionalMevRelayPayloadDeliveredData contains additional data about the proposer payload delivered event.
     AdditionalMevRelayPayloadDeliveredData mev_relay_payload_delivered = 62 [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
+    // AdditionalEthV3ValidatorBlockData contains additional data about the eth v3 validator block event.
+    AdditionalEthV3ValidatorBlockData eth_v3_validator_block = 65 [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1337,6 +1380,7 @@ message Event {
     BEACON_API_ETH_V1_BEACON_VALIDATORS = 52;
     MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION = 53;
     MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED = 54;
+    BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1476,5 +1520,7 @@ message DecoratedEvent {
         [ json_name = "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION" ];
     xatu.mevrelay.ProposerPayloadDelivered mev_relay_payload_delivered = 54
         [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
+    xatu.eth.v2.EventBlockV2 eth_v3_validator_block = 55
+        [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
   };
 }

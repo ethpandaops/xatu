@@ -12,7 +12,8 @@ linters-settings:
       - performance
       - style
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   nolintlint:
     require-explanation: true
     require-specific: true
@@ -29,7 +30,7 @@ linters:
     - durationcheck
     - errcheck
     - errname
-    - exportloopref
+    - copyloopvar
     - goconst
     - gocritic
     - gocyclo

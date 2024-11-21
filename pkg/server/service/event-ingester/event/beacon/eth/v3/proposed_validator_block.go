@@ -64,15 +64,15 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 
 	switch version {
 	case "phase0":
-		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_Phase0Block).Phase0Block.StateRoot
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_Phase0Block).Phase0Block.GetStateRoot()
 	case "altair":
-		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_AltairBlock).AltairBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_AltairBlock).AltairBlock.GetStateRoot()
 	case "bellatrix":
-		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_BellatrixBlock).BellatrixBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_BellatrixBlock).BellatrixBlock.GetStateRoot()
 	case "capella":
-		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_CapellaBlock).CapellaBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_CapellaBlock).CapellaBlock.GetStateRoot()
 	case "deneb":
-		hash = data.EthV3ValidatorBlock.Message.(*v2.EventBlockV2_DenebBlock).DenebBlock.StateRoot
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_DenebBlock).DenebBlock.GetStateRoot()
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

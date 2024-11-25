@@ -56,6 +56,7 @@ func Init(config *Config) (*sarama.Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read client certificate: %w", err)
 		}
+
 		tlsConfig := &tls.Config{
 			Certificates: []tls.Certificate{clientCertificate},
 			MinVersion:   tls.VersionTLS12,

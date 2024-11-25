@@ -51,7 +51,8 @@ ORDER BY
 (
     slot_start_date_time,
     meta_network_name,
-    meta_client_name
+    meta_client_name,
+    event_date_time
 )
 COMMENT 'Contains beacon API /eth/v3/validator/blocks/{slot} data from each sentry client attached to a beacon node.';
 
@@ -63,6 +64,7 @@ CREATE TABLE default.beacon_api_eth_v3_validator_block ON CLUSTER '{cluster}' AS
     cityHash64(
         slot_start_date_time,
         meta_network_name,
-        meta_client_name
+        meta_client_name,
+        event_date_time
     )
 );

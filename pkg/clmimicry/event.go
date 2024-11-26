@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p"
 	"google.golang.org/protobuf/proto"
@@ -432,18 +433,15 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
+func (m *Mimicry) handleHandleMessageEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
+	event *host.TraceEvent,
+) error {
 	// We route based on the topic of the message
-	payload, ok := event.Payload.(map[string]any)
-	if !ok {
-		return errors.New("invalid payload type for HandleMessage event")
-	}
-
-	topic, ok := payload["Topic"].(string)
-	if !ok {
+	topic := event.Topic
+	if topic == "" {
 		return errors.New("missing topic in HandleMessage event")
 	}
 
@@ -453,6 +451,13 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 			return nil
 		}
 
+		payload, ok := event.Payload.(*eth.TraceEventAttestation)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		fmt.Printf("attes!!!!!!!!!!!")
+
 		if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
 		}
@@ -461,12 +466,19 @@ func (m *Mimicry) handleHandleMessageEvent(ctx context.Context,
 			return nil
 		}
 
-		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, payload); err != nil {
+		fmt.Printf("blockkkkyyyy!!!!!!!!!!!")
+
+		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
 		}
 	case strings.Contains(topic, p2p.GossipBlobSidecarMessage):
 		if !m.Config.Events.GossipSubBlobSidecarEnabled {
 			return nil
+		}
+
+		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
 		}
 
 		if err := m.handleGossipBlobSidecar(ctx, clientMeta, event, payload); err != nil {

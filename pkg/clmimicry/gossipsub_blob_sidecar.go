@@ -2,12 +2,13 @@ package clmimicry
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
-	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -21,39 +22,18 @@ func (m *Mimicry) handleGossipBlobSidecar(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload map[string]any,
+	payload *eth.TraceEventBlobSidecar,
 ) error {
-	slot, ok := payload["Slot"].(primitives.Slot)
-	if !ok {
-		return fmt.Errorf("invalid slot")
-	}
-
-	blobIndex, ok := payload["index"].(uint64)
-	if !ok {
-		return fmt.Errorf("invalid blob index")
-	}
-
-	proposerIndex, ok := payload["ValIdx"].(primitives.ValidatorIndex)
-	if !ok {
-		return fmt.Errorf("invalid proposer index")
-	}
-
-	stateRoot, ok := payload["StateRoot"].(string)
-	if !ok {
-		return fmt.Errorf("invalid state root")
-	}
-
-	parentRoot, ok := payload["ParentRoot"].(string)
-	if !ok {
-		return fmt.Errorf("invalid parent root")
+	if payload.BlobSidecar == nil {
+		return fmt.Errorf("handleGossipBlobSidecar() called with nil blob sidecar")
 	}
 
 	data := &gossipsub.BlobSidecar{
-		Index:         wrapperspb.UInt64(blobIndex),
-		Slot:          wrapperspb.UInt64(uint64(slot)),
-		ProposerIndex: wrapperspb.UInt64(uint64(proposerIndex)),
-		StateRoot:     wrapperspb.String(stateRoot),
-		ParentRoot:    wrapperspb.String(parentRoot),
+		Index:         wrapperspb.UInt64(payload.BlobSidecar.GetIndex()),
+		Slot:          wrapperspb.UInt64(uint64(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetSlot())),
+		ProposerIndex: wrapperspb.UInt64(uint64(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetProposerIndex())),
+		StateRoot:     wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetStateRoot())),
+		ParentRoot:    wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetParentRoot())),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -61,7 +41,7 @@ func (m *Mimicry) handleGossipBlobSidecar(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubBlobSidecarData(ctx, payload, event.Timestamp, slot)
+	additionalData, err := m.createAdditionalGossipSubBlobSidecarData(payload, event.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -87,42 +67,22 @@ func (m *Mimicry) handleGossipBlobSidecar(
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
+//nolint:gosec // int -> uint32 common conversion pattern in xatu.
 func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
-	ctx context.Context,
-	payload map[string]any,
+	payload *eth.TraceEventBlobSidecar,
 	timestamp time.Time,
-	slotNumber primitives.Slot,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData, error) {
 	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().Now()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
+	slotNumber := payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetSlot()
 	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
 	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))
 	timestampAdjusted := timestamp.Add(m.clockDrift)
 
-	peerID, ok := payload["PeerID"].(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid peer ID")
-	}
-
-	topic, ok := payload["Topic"].(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid topic")
-	}
-
-	msgID, ok := payload["MsgID"].(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid message ID")
-	}
-
-	msgSize, ok := payload["MsgSize"].(int)
-	if !ok {
-		return nil, fmt.Errorf("invalid message size")
-	}
-
-	data := &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{
+	return &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{
 		WallclockSlot: &xatu.SlotV2{
 			Number:        wrapperspb.UInt64(wallclockSlot.Number()),
 			StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
@@ -144,13 +104,9 @@ func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
 				Value: uint64(timestampAdjusted.Sub(slot.TimeWindow().Start()).Milliseconds()),
 			},
 		},
-		Metadata: &libp2p.TraceEventMetadata{
-			PeerId: wrapperspb.String(peerID),
-		},
-		Topic:       wrapperspb.String(topic),
-		MessageSize: wrapperspb.UInt32(uint32(msgSize)),
-		MessageId:   wrapperspb.String(msgID),
-	}
-
-	return data, nil
+		Metadata:    &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(payload.PeerID)},
+		Topic:       wrapperspb.String(payload.Topic),
+		MessageSize: wrapperspb.UInt32(uint32(payload.MsgSize)),
+		MessageId:   wrapperspb.String(payload.MsgID),
+	}, nil
 }

@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
-
-	//nolint:gosec // only exposed if pprofAddr config is set
-	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
@@ -100,7 +99,25 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry,
 }
 
 func (m *Mimicry) startHermes(ctx context.Context) error {
-	c, err := eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
+	var (
+		err error
+		c   *eth.NetworkConfig
+	)
+
+	m.log.Info("Deriving network config:", "chain", m.Config.Ethereum.Network)
+
+	switch m.Config.Ethereum.Network {
+	case params.DevnetName:
+		c, err = eth.DeriveDevnetConfig(ctx, eth.DevnetOptions{
+			ConfigURL:               m.Config.Ethereum.Devnet.ConfigURL,
+			BootnodesURL:            m.Config.Ethereum.Devnet.BootnodesURL,
+			DepositContractBlockURL: m.Config.Ethereum.Devnet.DepositContractBlockURL,
+			GenesisSSZURL:           m.Config.Ethereum.Devnet.GenesisSSZURL,
+		})
+	default:
+		c, err = eth.DeriveKnownNetworkConfig(ctx, m.Config.Ethereum.Network)
+	}
+
 	if err != nil {
 		return fmt.Errorf("get config for %s: %w", m.Config.Ethereum.Network, err)
 	}

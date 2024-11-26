@@ -456,8 +456,6 @@ func (m *Mimicry) handleHandleMessageEvent(
 			return errors.New("invalid payload type for HandleMessage event")
 		}
 
-		fmt.Printf("attes!!!!!!!!!!!")
-
 		if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
 		}
@@ -465,8 +463,6 @@ func (m *Mimicry) handleHandleMessageEvent(
 		if !m.Config.Events.GossipSubBeaconBlockEnabled {
 			return nil
 		}
-
-		fmt.Printf("blockkkkyyyy!!!!!!!!!!!")
 
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")

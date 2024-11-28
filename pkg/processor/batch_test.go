@@ -190,9 +190,11 @@ func TestAsyncNewBatchItemProcessorWithOptions(t *testing.T) {
 					time.Sleep(10 * time.Millisecond)
 				}
 
-				if err := ssp.Write(context.Background(), []*TestItem{{
-					name: "test",
-				}}); err != nil {
+				item := TestItem{
+					name: "test" + strconv.Itoa(i),
+				}
+
+				if err := ssp.Write(context.Background(), []*TestItem{&item}); err != nil {
 					t.Errorf("%s: Error writing to BatchItemProcessor", option.name)
 				}
 			}
@@ -788,7 +790,6 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 func TestBatchItemProcessorNilItem(t *testing.T) {
 	te := testBatchExporter[TestItem]{}
 
-	metrics := NewMetrics("test")
 	bsp, err := NewBatchItemProcessor[TestItem](
 		&te,
 		"processor",
@@ -798,7 +799,6 @@ func TestBatchItemProcessorNilItem(t *testing.T) {
 		WithMaxExportBatchSize(5),
 		WithWorkers(1),
 		WithShippingMethod(ShippingMethodSync),
-		WithMetrics(metrics),
 	)
 	require.NoError(t, err)
 
@@ -821,7 +821,6 @@ func TestBatchItemProcessorNilItem(t *testing.T) {
 }
 
 func TestBatchItemProcessorNilExporter(t *testing.T) {
-	metrics := NewMetrics("test")
 	bsp, err := NewBatchItemProcessor[TestItem](
 		nil,
 		"processor",
@@ -831,7 +830,6 @@ func TestBatchItemProcessorNilExporter(t *testing.T) {
 		WithMaxExportBatchSize(5),
 		WithWorkers(1),
 		WithShippingMethod(ShippingMethodSync),
-		WithMetrics(metrics),
 	)
 	require.NoError(t, err)
 
@@ -843,7 +841,6 @@ func TestBatchItemProcessorNilExporter(t *testing.T) {
 }
 
 func TestBatchItemProcessorNilExporterAfterProcessing(t *testing.T) {
-	metrics := NewMetrics("test")
 	exporter := &testBatchExporter[TestItem]{}
 	bsp, err := NewBatchItemProcessor[TestItem](
 		exporter,
@@ -854,7 +851,6 @@ func TestBatchItemProcessorNilExporterAfterProcessing(t *testing.T) {
 		WithMaxExportBatchSize(5),
 		WithWorkers(1),
 		WithShippingMethod(ShippingMethodAsync),
-		WithMetrics(metrics),
 	)
 	require.NoError(t, err)
 
@@ -882,7 +878,6 @@ func TestBatchItemProcessorNilExporterAfterProcessing(t *testing.T) {
 }
 
 func TestBatchItemProcessorNilItemAfterQueue(t *testing.T) {
-	metrics := NewMetrics("test")
 	exporter := &testBatchExporter[TestItem]{}
 	bsp, err := NewBatchItemProcessor[TestItem](
 		exporter,
@@ -893,7 +888,6 @@ func TestBatchItemProcessorNilItemAfterQueue(t *testing.T) {
 		WithMaxExportBatchSize(5),
 		WithWorkers(1),
 		WithShippingMethod(ShippingMethodAsync),
-		WithMetrics(metrics),
 	)
 	require.NoError(t, err)
 

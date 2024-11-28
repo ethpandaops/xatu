@@ -164,6 +164,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 			if item == nil {
 				continue
 			}
+
 			exists := p.sharedCache.Transaction.Get(item.Hash.String())
 			if exists == nil {
 				hashes = append(hashes, item.Hash)

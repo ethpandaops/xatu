@@ -35,7 +35,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.13.0
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkg/errors v0.9.1
-	github.com/probe-lab/hermes v0.0.0-20241004074424-3623e704496a
+	github.com/probe-lab/hermes v0.0.0-20241128085322-a39cba499cb1
 	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/client_model v0.6.1
 	github.com/prysmaticlabs/prysm/v5 v5.1.0
@@ -114,7 +114,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect

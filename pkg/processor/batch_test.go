@@ -44,6 +44,9 @@ type testBatchExporter[T TestItem] struct {
 func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) error {
 	time.Sleep(t.delay)
 
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if t.failNextExport {
 		t.failNextExport = false
 
@@ -57,9 +60,6 @@ func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) erro
 
 		return errors.New("export failure")
 	}
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
 
 	if t.idx < len(t.errors) {
 		t.droppedCount += len(items)
@@ -203,14 +203,14 @@ func TestAsyncNewBatchItemProcessorWithOptions(t *testing.T) {
 
 			gotNumOfItems := te.len()
 			if option.wantNumItems > 0 && option.wantNumItems != gotNumOfItems {
-				t.Errorf("number of exported items: got %v, want %v",
-					gotNumOfItems, option.wantNumItems)
+				t.Errorf("%s: number of exported items: got %v, want %v",
+					option.name, gotNumOfItems, option.wantNumItems)
 			}
 
 			gotBatchCount := te.getBatchCount()
 			if option.wantBatchCount > 0 && gotBatchCount != option.wantBatchCount {
-				t.Errorf("number batches: got %v, want %v",
-					gotBatchCount, option.wantBatchCount)
+				t.Errorf("%s: number batches: got %v, want %v",
+					option.name, gotBatchCount, option.wantBatchCount)
 				t.Errorf("Batches %v", te.sizes)
 			}
 		})
@@ -224,9 +224,19 @@ type stuckExporter[T TestItem] struct {
 // ExportItems waits for ctx to expire and returns that error.
 func (e *stuckExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 	<-ctx.Done()
+
+	e.mu.Lock() // Use the existing mutex to protect `err`
 	e.err = ctx.Err()
+	e.mu.Unlock()
 
 	return ctx.Err()
+}
+
+// Thread-safe getter for `err`.
+func (e *stuckExporter[T]) GetError() error {
+	e.mu.Lock() // Use the existing mutex
+	defer e.mu.Unlock()
+	return e.err
 }
 
 func TestBatchItemProcessorExportTimeout(t *testing.T) {
@@ -251,7 +261,7 @@ func TestBatchItemProcessorExportTimeout(t *testing.T) {
 
 	time.Sleep(1 * time.Millisecond)
 
-	if exp.err != context.DeadlineExceeded {
+	if !errors.Is(exp.GetError(), context.DeadlineExceeded) {
 		t.Errorf("context deadline error not returned: got %+v", exp.err)
 	}
 }
@@ -343,18 +353,31 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 }
 
 type slowExporter[T TestItem] struct {
+	// itemsExported field is read within our tests while simultaneously being incremented or modified by one
+	// or more worker goroutines in the slowExporter.ExportItems.
 	itemsExported int
+	mu            sync.Mutex
 }
 
 func (slowExporter[T]) Shutdown(context.Context) error { return nil }
+
 func (t *slowExporter[T]) ExportItems(ctx context.Context, items []*T) error {
 	time.Sleep(100 * time.Millisecond)
 
+	t.mu.Lock() // Protect concurrent access
 	t.itemsExported += len(items)
+	t.mu.Unlock()
 
 	<-ctx.Done()
 
 	return ctx.Err()
+}
+
+// GetItemsExported is a thread-safe getter for itemsExported used
+func (e *slowExporter[T]) GetItemsExported() int {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.itemsExported
 }
 
 func TestMultipleWorkersConsumeConcurrently(t *testing.T) {
@@ -374,7 +397,7 @@ func TestMultipleWorkersConsumeConcurrently(t *testing.T) {
 
 	time.Sleep(1 * time.Second) // give some time for workers to process
 
-	if te.itemsExported != itemsToExport {
+	if te.GetItemsExported() != itemsToExport {
 		t.Errorf("Expected all items to be exported, got: %v", te.itemsExported)
 	}
 }

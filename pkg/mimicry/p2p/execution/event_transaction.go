@@ -152,16 +152,27 @@ func (t TransactionExporter) Shutdown(ctx context.Context) error {
 }
 
 func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashItem) error {
-	go func() {
-		hashes := make([]common.Hash, len(items))
-		seenMap := map[common.Hash]time.Time{}
+	if len(items) == 0 {
+		return nil
+	}
 
-		for i, item := range items {
+	go func() {
+		var hashes []common.Hash
+		seenMap := make(map[common.Hash]time.Time, len(items))
+
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
 			exists := p.sharedCache.Transaction.Get(item.Hash.String())
 			if exists == nil {
-				hashes[i] = item.Hash
+				hashes = append(hashes, item.Hash)
 				seenMap[item.Hash] = item.Seen
 			}
+		}
+
+		if len(hashes) == 0 {
+			return
 		}
 
 		txs, err := p.client.GetPooledTransactions(ctx, hashes)

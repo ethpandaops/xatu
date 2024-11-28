@@ -784,3 +784,142 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 
 	require.Equal(t, float64(itemsToExport-maxQueueSize), *metric.Counter.Value, "Dropped count should be equal to the number of items that exceeded the queue size")
 }
+
+func TestBatchItemProcessorNilItem(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+
+	metrics := NewMetrics("test")
+	bsp, err := NewBatchItemProcessor[TestItem](
+		&te,
+		"processor",
+		nullLogger(),
+		WithBatchTimeout(10*time.Millisecond),
+		WithMaxQueueSize(5),
+		WithMaxExportBatchSize(5),
+		WithWorkers(1),
+		WithShippingMethod(ShippingMethodSync),
+		WithMetrics(metrics),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	// Write nil item to processor
+	err = bsp.Write(context.Background(), []*TestItem{nil})
+	require.NoError(t, err)
+
+	// Write invalid items to processor
+	err = bsp.Write(context.Background(), nil)
+	require.NoError(t, err)
+
+	// Give processor time to process the nil item
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify processor is still running by writing a valid item
+	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
+	require.NoError(t, err)
+}
+
+func TestBatchItemProcessorNilExporter(t *testing.T) {
+	metrics := NewMetrics("test")
+	bsp, err := NewBatchItemProcessor[TestItem](
+		nil,
+		"processor",
+		nullLogger(),
+		WithBatchTimeout(10*time.Millisecond),
+		WithMaxQueueSize(5),
+		WithMaxExportBatchSize(5),
+		WithWorkers(1),
+		WithShippingMethod(ShippingMethodSync),
+		WithMetrics(metrics),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	// Write an item to processor
+	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
+	require.Error(t, err)
+}
+
+func TestBatchItemProcessorNilExporterAfterProcessing(t *testing.T) {
+	metrics := NewMetrics("test")
+	exporter := &testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](
+		exporter,
+		"processor",
+		nullLogger(),
+		WithBatchTimeout(500*time.Millisecond),
+		WithMaxQueueSize(5),
+		WithMaxExportBatchSize(5),
+		WithWorkers(1),
+		WithShippingMethod(ShippingMethodAsync),
+		WithMetrics(metrics),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	// Write an item to processor with valid exporter
+	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
+	require.NoError(t, err)
+
+	// Give processor time to process the item
+	time.Sleep(1000 * time.Millisecond)
+
+	// Nil the exporter
+	bsp.e = nil
+
+	// Write an item to processor with nil exporter
+	err = bsp.Write(context.Background(), []*TestItem{{name: "test"}})
+	require.Error(t, err)
+
+	// Verify we can still shutdown without panic
+	require.NotPanics(t, func() {
+		err := bsp.Shutdown(context.Background())
+		require.NoError(t, err)
+	})
+}
+
+func TestBatchItemProcessorNilItemAfterQueue(t *testing.T) {
+	metrics := NewMetrics("test")
+	exporter := &testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](
+		exporter,
+		"processor",
+		nullLogger(),
+		WithBatchTimeout(500*time.Millisecond),
+		WithMaxQueueSize(5),
+		WithMaxExportBatchSize(5),
+		WithWorkers(1),
+		WithShippingMethod(ShippingMethodAsync),
+		WithMetrics(metrics),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	// Write a valid item first
+	item := &TestItem{name: "test"}
+	err = bsp.Write(context.Background(), []*TestItem{item})
+	require.NoError(t, err)
+
+	// Inject nil directly into the processor's queue
+	bsp.queue <- nil
+
+	// Write a valid item to ensure the processor is still running
+	err = bsp.Write(context.Background(), []*TestItem{item})
+	require.NoError(t, err)
+
+	// Give processor time to handle the nil item
+	time.Sleep(1000 * time.Millisecond)
+
+	// Ensure no panic during shutdown
+	require.NotPanics(t, func() {
+		err := bsp.Shutdown(context.Background())
+		require.NoError(t, err)
+	})
+
+	// Verify that valid items were still exported
+	require.Equal(t, 2, exporter.len())
+}

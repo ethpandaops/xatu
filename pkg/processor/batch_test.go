@@ -85,6 +85,9 @@ func (t *testBatchExporter[T]) ExportItems(ctx context.Context, items []*T) erro
 }
 
 func (t *testBatchExporter[T]) Shutdown(context.Context) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	t.shutdownCount++
 
 	return nil
@@ -138,7 +141,10 @@ func TestAsyncNewBatchItemProcessorWithOptions(t *testing.T) {
 			name: "default",
 			o: []BatchItemProcessorOption{
 				WithShippingMethod(ShippingMethodAsync),
-				WithBatchTimeout(10 * time.Millisecond),
+				// Don't set this too low. If the items aren't written fast enough, smaller batches may be created,
+				// increasing the total batch count and ultimately failing the test (flakey). In production, this
+				// defaults to 5000ms.
+				WithBatchTimeout(schDelay / 2),
 			},
 			writeNumItems:  2048,
 			genNumItems:    2053,
@@ -236,6 +242,7 @@ func (e *stuckExporter[T]) ExportItems(ctx context.Context, _ []*T) error {
 func (e *stuckExporter[T]) GetError() error {
 	e.mu.Lock() // Use the existing mutex
 	defer e.mu.Unlock()
+
 	return e.err
 }
 
@@ -377,6 +384,7 @@ func (t *slowExporter[T]) ExportItems(ctx context.Context, items []*T) error {
 func (e *slowExporter[T]) GetItemsExported() int {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
 	return e.itemsExported
 }
 
@@ -758,8 +766,23 @@ func TestBatchItemProcessorDrainOnShutdownAfterContextCancellation(t *testing.T)
 	require.Greater(t, itemsToExport, 0, "No items should have been exported on shutdown")
 }
 
+type blockingExporter[T TestItem] struct {
+	blockCh <-chan struct{}
+}
+
+func (be *blockingExporter[T]) ExportItems(ctx context.Context, items []*T) error {
+	<-be.blockCh // Block until channel is closed
+
+	return nil
+}
+
+func (be *blockingExporter[T]) Shutdown(ctx context.Context) error {
+	return nil
+}
+
 func TestBatchItemProcessorQueueSize(t *testing.T) {
-	te := indefiniteExporter[TestItem]{}
+	blockCh := make(chan struct{}) // This should block the worker. We can unblock once we've filled the queue to test.
+	te := blockingExporter[TestItem]{blockCh: blockCh}
 
 	metrics := NewMetrics("test")
 	maxQueueSize := 5
@@ -798,12 +821,14 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 	// Ensure that the queue size is respected
 	require.Equal(t, maxQueueSize, len(bsp.queue), "Queue size should be equal to maxQueueSize")
 
+	// Unblock the worker to allow processing to proceed
+	close(blockCh)
+
 	// Ensure that the dropped count is correct
 	counter, err := bsp.metrics.itemsDropped.GetMetricWith(prometheus.Labels{"processor": "processor"})
 	require.NoError(t, err)
 
 	metric := &dto.Metric{}
-
 	err = counter.Write(metric)
 	require.NoError(t, err)
 

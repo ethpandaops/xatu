@@ -158,6 +158,7 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 	go func() {
 		var hashes []common.Hash
+
 		seenMap := make(map[common.Hash]time.Time, len(items))
 
 		for _, item := range items {

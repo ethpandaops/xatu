@@ -234,6 +234,14 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		prepared := []*TraceableItem[T]{}
 
 		for _, i := range s[start:end] {
+			if i == nil {
+				bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
+
+				bvp.log.Warnf("Attempted to write a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+
+				continue
+			}
+
 			item := &TraceableItem[T]{
 				item: i,
 			}
@@ -284,8 +292,18 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
+	// Since the batch processor filters out nil items upstream,
+	// we can optimize by pre-allocating the full slice size.
+	// Worst case is a few wasted allocations if any nil items slip through.
 	items := make([]*T, len(itemsBatch))
+
 	for i, item := range itemsBatch {
+		if item == nil {
+			bvp.log.Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+
+			continue
+		}
+
 		items[i] = item.item
 	}
 
@@ -298,10 +316,10 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 	bvp.metrics.ObserveExportDuration(bvp.name, duration)
 
 	if err != nil {
-		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(itemsBatch)))
+		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(items)))
 	} else {
-		bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(itemsBatch)))
-		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(itemsBatch)))
+		bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(items)))
+		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(items)))
 	}
 
 	for _, item := range itemsBatch {
@@ -427,6 +445,14 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 
 			return
 		case item := <-bvp.queue:
+			if item == nil {
+				bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
+
+				bvp.log.Warnf("Attempted to build a batch with a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+
+				continue
+			}
+
 			batch = append(batch, item)
 
 			if len(batch) >= bvp.o.MaxExportBatchSize {

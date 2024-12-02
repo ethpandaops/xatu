@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 	"os"
@@ -106,6 +107,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		log.Info("Overriding beacon node URL")
 
 		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
+	}
+
+	// If the metrics address override is set, use it
+	if overrides.MetricsAddr.Enabled {
+		log.WithField("address", overrides.MetricsAddr.Value).Info("Overriding metrics address")
+
+		config.MetricsAddr = overrides.MetricsAddr.Value
 	}
 
 	if err := config.Validate(); err != nil {

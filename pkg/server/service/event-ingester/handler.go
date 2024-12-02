@@ -155,7 +155,6 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		"EventIngester.routeEvents",
 		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
 	)
-	defer span.End()
 
 	handlerFilteredEvents := make([]*xatu.DecoratedEvent, 0)
 	// Route the events to the correct handler
@@ -172,12 +171,18 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		e, err := h.eventRouter.Route(eventHandler.Type(eventName), event)
 		if err != nil {
+			span.SetStatus(ocodes.Error, err.Error())
+			span.End()
+
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
 
 			return nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
 		}
 
 		if err := e.Validate(ctx); err != nil {
+			span.SetStatus(ocodes.Error, err.Error())
+			span.End()
+
 			h.log.WithError(err).WithField("event", eventName).Warn("failed to validate event")
 
 			return nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
@@ -218,6 +223,9 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		handlerFilteredEvents = append(handlerFilteredEvents, event)
 	}
+
+	// End the routeEvents span
+	span.End()
 
 	filteredEvents = handlerFilteredEvents
 

@@ -1,10 +1,14 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type UserConfig struct {
@@ -84,10 +88,16 @@ func (u *Users) GetUser(username string) (*User, bool) {
 	return user, ok
 }
 
-func (u *User) ApplyFilter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (u *User) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if u.eventFilter == nil {
 		return events, nil
 	}
+
+	ctx, span := observability.Tracer().Start(ctx,
+		"User.ApplyFilter",
+		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
+	)
+	defer span.End()
 
 	filteredEvents := make([]*xatu.DecoratedEvent, 0)
 

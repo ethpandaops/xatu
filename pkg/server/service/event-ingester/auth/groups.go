@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type GroupsConfig map[string]GroupConfig
@@ -163,10 +166,16 @@ func (g *Group) EventFilter() xatu.EventFilter {
 	return g.eventFilter
 }
 
-func (g *Group) ApplyFilter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (g *Group) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if g.eventFilter == nil {
 		return events, nil
 	}
+
+	ctx, span := observability.Tracer().Start(ctx,
+		"Auth/Group.ApplyFilter",
+		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
+	)
+	defer span.End()
 
 	filteredEvents := make([]*xatu.DecoratedEvent, 0)
 
@@ -186,7 +195,13 @@ func (g *Group) ApplyFilter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEve
 	return filteredEvents, nil
 }
 
-func (g *Group) ApplyRedacter(events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (g *Group) ApplyRedacter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"Auth/Group.ApplyRedacter",
+		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
+	)
+	defer span.End()
+
 	if g.redacter == nil {
 		return events, nil
 	}

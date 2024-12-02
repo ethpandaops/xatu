@@ -6,6 +6,7 @@ import (
 	"time"
 
 	hermes "github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/host"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
@@ -118,6 +119,9 @@ type NodeConfig struct {
 	// to establish a connection to a peer. However, we limit the concurrency to
 	// this DialConcurrency value.
 	DialConcurrency int `yaml:"dialConcurrency" default:"16"`
+
+	// DataStreamType is the type of data stream to use for the node (e.g. kinesis, callback, etc).
+	DataStreamType string `yaml:"dataStreamType" default:"callback"`
 }
 
 func (h *NodeConfig) AsHermesConfig() *hermes.NodeConfig {
@@ -133,6 +137,7 @@ func (h *NodeConfig) AsHermesConfig() *hermes.NodeConfig {
 		PrysmPortGRPC:   h.PrysmPortGRPC,
 		MaxPeers:        h.MaxPeers,
 		DialConcurrency: h.DialConcurrency,
+		DataStreamType:  host.DataStreamtypeFromStr(h.DataStreamType),
 	}
 }
 

@@ -713,7 +713,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
+			if !fork.Active(phase0.Epoch(slot.Number())) {
 				// Sleep until the next epochl and then retrty
 				currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 

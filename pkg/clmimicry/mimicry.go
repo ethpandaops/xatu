@@ -54,13 +54,19 @@ type Mimicry struct {
 	ethereum *ethereum.BeaconNode
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config) (*Mimicry, error) {
+func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Mimicry, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
 
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+
+	if overrides != nil {
+		if err := config.ApplyOverrides(overrides, log); err != nil {
+			return nil, fmt.Errorf("failed to apply overrides: %w", err)
+		}
 	}
 
 	sinks, err := config.CreateSinks(log)

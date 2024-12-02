@@ -15,6 +15,8 @@ var (
 
 	defaultLogLevel  = "info"
 	defaultLogFormat = "text"
+
+	metricsAddrFlag = "metrics-addr"
 )
 
 // rootCmd represents the base command when called without any subcommands

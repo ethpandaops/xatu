@@ -80,3 +80,18 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 
 	return sinks, nil
 }
+
+// ApplyOverrides applies any overrides to the config.
+func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.MetricsAddr.Enabled {
+		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
+
+		c.MetricsAddr = o.MetricsAddr.Value
+	}
+
+	return nil
+}

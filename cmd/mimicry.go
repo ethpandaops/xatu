@@ -14,6 +14,43 @@ var (
 	mimicryCfgFile string
 )
 
+type MimicryOverride struct {
+	EnvVar     string
+	Flag       string
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *mimicry.Override) error
+}
+
+var MimicryOverrides = []MimicryOverride{
+	{
+		EnvVar: "METRICS_ADDR",
+		Flag:   "metrics-addr",
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(metricsAddrFlag, "", `metrics address (env: METRICS_ADDR). If set, overrides the metrics address in the config file.`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *mimicry.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(metricsAddrFlag) {
+				val = cmd.Flags().Lookup(metricsAddrFlag).Value.String()
+			}
+
+			if os.Getenv("METRICS_ADDR") != "" {
+				val = os.Getenv("METRICS_ADDR")
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+
+			return nil
+		},
+	},
+}
+
 // mimicryCmd represents the mimicry command
 var mimicryCmd = &cobra.Command{
 	Use:   "mimicry",
@@ -32,7 +69,14 @@ var mimicryCmd = &cobra.Command{
 
 		log.WithField("location", mimicryCfgFile).Info("Loaded config")
 
-		mimicry, err := mimicry.New(cmd.Context(), log, config)
+		overrides := &mimicry.Override{}
+		for _, o := range MimicryOverrides {
+			if e := o.Setter(cmd, overrides); e != nil {
+				log.Fatal(e)
+			}
+		}
+
+		mimicry, err := mimicry.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -49,6 +93,10 @@ func init() {
 	rootCmd.AddCommand(mimicryCmd)
 
 	mimicryCmd.Flags().StringVar(&mimicryCfgFile, "config", "mimicry.yaml", "config file (default is mimicry.yaml)")
+
+	for _, o := range MimicryOverrides {
+		o.FlagHelper(mimicryCmd)
+	}
 }
 
 func loadMimicryConfigFromFile(file string) (*mimicry.Config, error) {

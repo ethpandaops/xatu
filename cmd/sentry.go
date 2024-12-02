@@ -109,6 +109,33 @@ var SentryOverrides = []SentryOverride{
 			return nil
 		},
 	},
+	{
+		EnvVar: "METRICS_ADDR",
+		Flag:   "metrics-addr",
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(metricsAddrFlag, "", `metrics address (env: METRICS_ADDR). If set, overrides the metrics address in the config file.`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *sentry.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(metricsAddrFlag) {
+				val = cmd.Flags().Lookup(metricsAddrFlag).Value.String()
+			}
+
+			if os.Getenv("METRICS_ADDR") != "" {
+				val = os.Getenv("METRICS_ADDR")
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+
+			return nil
+		},
+	},
 }
 
 // sentryCmd represents the sentry command
@@ -119,13 +146,6 @@ var sentryCmd = &cobra.Command{
 	an Ethereum beacon node and forward the data on to the configured sinks.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		initCommon()
-
-		overrides := &sentry.Override{}
-		for _, o := range SentryOverrides {
-			if errr := o.Setter(cmd, overrides); errr != nil {
-				log.Fatal(errr)
-			}
-		}
 
 		allowEmptyConfig := false
 		if cmd.Flags().Changed(presetFlag) {
@@ -147,6 +167,13 @@ var sentryCmd = &cobra.Command{
 		}
 
 		log.Info("Config loaded")
+
+		overrides := &sentry.Override{}
+		for _, o := range SentryOverrides {
+			if errr := o.Setter(cmd, overrides); errr != nil {
+				log.Fatal(errr)
+			}
+		}
 
 		sentry, err := sentry.New(cmd.Context(), log, config, overrides)
 		if err != nil {

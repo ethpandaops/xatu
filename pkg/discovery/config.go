@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -26,6 +27,21 @@ func (c *Config) Validate() error {
 
 	if err := c.Coordinator.Validate(); err != nil {
 		return fmt.Errorf("coordinator config error: %w", err)
+	}
+
+	return nil
+}
+
+// ApplyOverrides applies any overrides to the config.
+func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.MetricsAddr.Enabled {
+		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
+
+		c.MetricsAddr = o.MetricsAddr.Value
 	}
 
 	return nil

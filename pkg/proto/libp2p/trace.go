@@ -9,8 +9,8 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Helper function to convert a Hermes TraceEvent to a libp2p AddPeer
@@ -242,7 +242,7 @@ func TraceEventToConnected(event *host.TraceEvent) (*Connected, error) {
 		AgentVersion string
 		Direction    string
 		Opened       time.Time
-		Transient    bool
+		Limited      bool
 	})
 	if !ok {
 		return nil, fmt.Errorf("invalid payload type for Connected")
@@ -254,7 +254,7 @@ func TraceEventToConnected(event *host.TraceEvent) (*Connected, error) {
 		AgentVersion: wrapperspb.String(payload.AgentVersion),
 		Direction:    wrapperspb.String(payload.Direction),
 		Opened:       timestamppb.New(payload.Opened),
-		Transient:    wrapperspb.Bool(payload.Transient),
+		Limited:      wrapperspb.Bool(payload.Limited),
 	}, nil
 }
 
@@ -265,7 +265,7 @@ func TraceEventToDisconnected(event *host.TraceEvent) (*Disconnected, error) {
 		AgentVersion string
 		Direction    string
 		Opened       time.Time
-		Transient    bool
+		Limited      bool
 	})
 	if !ok {
 		return nil, fmt.Errorf("invalid payload type for Disconnected")
@@ -277,7 +277,7 @@ func TraceEventToDisconnected(event *host.TraceEvent) (*Disconnected, error) {
 		AgentVersion: wrapperspb.String(payload.AgentVersion),
 		Direction:    wrapperspb.String(payload.Direction),
 		Opened:       timestamppb.New(payload.Opened),
-		Transient:    wrapperspb.Bool(payload.Transient),
+		Limited:      wrapperspb.Bool(payload.Limited),
 	}, nil
 }
 

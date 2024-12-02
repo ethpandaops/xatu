@@ -93,7 +93,7 @@ func (u *User) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) (
 		return events, nil
 	}
 
-	ctx, span := observability.Tracer().Start(ctx,
+	_, span := observability.Tracer().Start(ctx,
 		"User.ApplyFilter",
 		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
 	)

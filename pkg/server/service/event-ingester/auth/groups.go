@@ -171,7 +171,7 @@ func (g *Group) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) 
 		return events, nil
 	}
 
-	ctx, span := observability.Tracer().Start(ctx,
+	_, span := observability.Tracer().Start(ctx,
 		"Auth/Group.ApplyFilter",
 		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
 	)
@@ -196,7 +196,7 @@ func (g *Group) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) 
 }
 
 func (g *Group) ApplyRedacter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
-	ctx, span := observability.Tracer().Start(ctx,
+	_, span := observability.Tracer().Start(ctx,
 		"Auth/Group.ApplyRedacter",
 		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
 	)

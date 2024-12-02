@@ -102,7 +102,7 @@ message Connected {
   google.protobuf.StringValue direction = 4 [json_name = "direction"];
   google.protobuf.Timestamp opened = 5 [ json_name = "opened" ];
   // See: https://github.com/probe-lab/hermes/commit/614e34ed0db780ee08c3bc333925a62409096166
-  google.protobuf.BoolValue transient = 6 [json_name = "transient"];
+  google.protobuf.BoolValue transient = 6 [json_name = "transient", deprecated = true];
   google.protobuf.BoolValue limited = 7 [json_name = "limited"];
 }
 

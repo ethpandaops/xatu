@@ -255,6 +255,7 @@ func TraceEventToConnected(event *host.TraceEvent) (*Connected, error) {
 		Direction:    wrapperspb.String(payload.Direction),
 		Opened:       timestamppb.New(payload.Opened),
 		Limited:      wrapperspb.Bool(payload.Limited),
+		Transient:    wrapperspb.Bool(payload.Limited),
 	}, nil
 }
 
@@ -278,6 +279,7 @@ func TraceEventToDisconnected(event *host.TraceEvent) (*Disconnected, error) {
 		Direction:    wrapperspb.String(payload.Direction),
 		Opened:       timestamppb.New(payload.Opened),
 		Limited:      wrapperspb.Bool(payload.Limited),
+		Transient:    wrapperspb.Bool(payload.Limited),
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
@@ -67,8 +68,8 @@ func (b *BlockClassificationDeriver) CannonType() xatu.CannonType {
 	return BlockClassificationName
 }
 
-func (b *BlockClassificationDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *BlockClassificationDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *BlockClassificationDeriver) Name() string {

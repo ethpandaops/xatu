@@ -62,8 +62,8 @@ func (b *ProposerSlashingDeriver) Name() string {
 	return ProposerSlashingDeriverName.String()
 }
 
-func (b *ProposerSlashingDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *ProposerSlashingDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {

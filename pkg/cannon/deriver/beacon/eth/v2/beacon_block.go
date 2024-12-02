@@ -62,8 +62,8 @@ func (b *BeaconBlockDeriver) CannonType() xatu.CannonType {
 	return BeaconBlockDeriverName
 }
 
-func (b *BeaconBlockDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *BeaconBlockDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *BeaconBlockDeriver) Name() string {

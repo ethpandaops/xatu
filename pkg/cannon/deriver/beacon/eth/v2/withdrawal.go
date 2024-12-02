@@ -62,8 +62,8 @@ func (b *WithdrawalDeriver) Name() string {
 	return WithdrawalDeriverName.String()
 }
 
-func (b *WithdrawalDeriver) ActivationFork() string {
-	return ethereum.ForkNameCapella
+func (b *WithdrawalDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionCapella
 }
 
 func (b *WithdrawalDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {

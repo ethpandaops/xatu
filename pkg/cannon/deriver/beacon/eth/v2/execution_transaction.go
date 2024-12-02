@@ -63,8 +63,8 @@ func (b *ExecutionTransactionDeriver) CannonType() xatu.CannonType {
 	return ExecutionTransactionDeriverName
 }
 
-func (b *ExecutionTransactionDeriver) ActivationFork() string {
-	return ethereum.ForkNameBellatrix
+func (b *ExecutionTransactionDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionBellatrix
 }
 
 func (b *ExecutionTransactionDeriver) Name() string {

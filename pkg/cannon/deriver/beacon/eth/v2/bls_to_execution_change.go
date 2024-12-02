@@ -68,8 +68,8 @@ func (b *BLSToExecutionChangeDeriver) OnEventsDerived(ctx context.Context, fn fu
 	b.onEventsCallbacks = append(b.onEventsCallbacks, fn)
 }
 
-func (b *BLSToExecutionChangeDeriver) ActivationFork() string {
-	return ethereum.ForkNameCapella
+func (b *BLSToExecutionChangeDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionCapella
 }
 
 func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {

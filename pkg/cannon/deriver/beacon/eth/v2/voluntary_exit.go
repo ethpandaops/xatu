@@ -58,8 +58,8 @@ func (b *VoluntaryExitDeriver) CannonType() xatu.CannonType {
 	return VoluntaryExitDeriverName
 }
 
-func (b *VoluntaryExitDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *VoluntaryExitDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *VoluntaryExitDeriver) Name() string {

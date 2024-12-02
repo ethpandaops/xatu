@@ -3,6 +3,7 @@ package deriver
 import (
 	"context"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
@@ -17,7 +18,7 @@ type EventDeriver interface {
 	// Callbacks
 	OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error)
 	// ActivationFork is the fork at which the deriver should start deriving events
-	ActivationFork() string
+	ActivationFork() spec.DataVersion
 }
 
 // Ensure that derivers implements the EventDeriver interface

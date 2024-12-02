@@ -58,8 +58,8 @@ func (a *AttesterSlashingDeriver) CannonType() xatu.CannonType {
 	return AttesterSlashingDeriverName
 }
 
-func (a *AttesterSlashingDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (a *AttesterSlashingDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (a *AttesterSlashingDeriver) Name() string {

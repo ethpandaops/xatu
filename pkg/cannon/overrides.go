@@ -1,6 +1,10 @@
 package cannon
 
 type Override struct {
+	MetricsAddr struct {
+		Enabled bool
+		Value   string
+	}
 	BeaconNodeURL struct {
 		Enabled bool
 		Value   string

@@ -1,6 +1,11 @@
 package server
 
 type Override struct {
+	// MetricsAddr configures the metrics address.
+	MetricsAddr struct {
+		Enabled bool
+		Value   string
+	}
 	// EventIngesterBasicAuth configures basic authentication for the event ingester.
 	EventIngesterBasicAuth struct {
 		Username string

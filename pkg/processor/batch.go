@@ -213,6 +213,10 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 // configured to use the async shipping method, the items will be written to
 // the queue and this function will return immediately.
 func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
+	if len(s) == 0 {
+		return nil
+	}
+
 	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
 	defer span.End()
 

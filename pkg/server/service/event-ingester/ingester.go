@@ -193,12 +193,18 @@ func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
+		if out.ShippingMethod == nil {
+			shippingMethod := processor.ShippingMethodSync
+
+			out.ShippingMethod = &shippingMethod
+		}
+
 		sink, err := output.NewSink(out.Name,
 			out.SinkType,
 			out.Config,
 			e.log,
 			out.FilterConfig,
-			processor.ShippingMethodSync,
+			*out.ShippingMethod,
 		)
 		if err != nil {
 			return nil, err

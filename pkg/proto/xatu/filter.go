@@ -127,7 +127,11 @@ func (f *eventFilter) shouldDropFromModules(event *DecoratedEvent) (bool, error)
 	}
 
 	if event.GetMeta().GetClient().GetModuleName() == 0 {
-		return true, errors.New("event.meta.client.module is empty")
+		clientName := event.GetMeta().GetClient().GetName()
+
+		clientVersion := event.GetMeta().GetClient().GetVersion()
+
+		return true, fmt.Errorf("event.meta.client.module is empty for client: %s, version: %s", clientName, clientVersion)
 	}
 
 	_, ok := f.modules[event.GetMeta().GetClient().GetModuleName().String()]

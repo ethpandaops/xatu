@@ -14,6 +14,43 @@ var (
 	clMimicryCfgFile string
 )
 
+type CLMimicryOverride struct {
+	EnvVar     string
+	Flag       string
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *clmimicry.Override) error
+}
+
+var CLMimicryOverrides = []CLMimicryOverride{
+	{
+		EnvVar: "METRICS_ADDR",
+		Flag:   "metrics-addr",
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(metricsAddrFlag, "", `metrics address (env: METRICS_ADDR). If set, overrides the metrics address in the config file.`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *clmimicry.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(metricsAddrFlag) {
+				val = cmd.Flags().Lookup(metricsAddrFlag).Value.String()
+			}
+
+			if os.Getenv("METRICS_ADDR") != "" {
+				val = os.Getenv("METRICS_ADDR")
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+
+			return nil
+		},
+	},
+}
+
 // clMimicryCmd represents the consensus layer mimicry command
 var clMimicryCmd = &cobra.Command{
 	Use:   "cl-mimicry",
@@ -32,7 +69,14 @@ var clMimicryCmd = &cobra.Command{
 
 		log.WithField("location", clMimicryCfgFile).Info("Loaded config")
 
-		mimicry, err := clmimicry.New(cmd.Context(), log, config)
+		overrides := &clmimicry.Override{}
+		for _, o := range CLMimicryOverrides {
+			if e := o.Setter(cmd, overrides); e != nil {
+				log.Fatal(e)
+			}
+		}
+
+		mimicry, err := clmimicry.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -49,6 +93,10 @@ func init() {
 	rootCmd.AddCommand(clMimicryCmd)
 
 	clMimicryCmd.Flags().StringVar(&clMimicryCfgFile, "config", "cl-mimicry.yaml", "config file (default is cl-mimicry.yaml)")
+
+	for _, o := range CLMimicryOverrides {
+		o.FlagHelper(clMimicryCmd)
+	}
 }
 
 func loadCLMimicryConfigFromFile(file string) (*clmimicry.Config, error) {

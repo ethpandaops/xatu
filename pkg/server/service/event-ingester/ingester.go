@@ -174,6 +174,7 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 			errMsg := fmt.Errorf("failed to handle new decorated events: %w", err)
 
 			span.SetStatus(ocodes.Error, errMsg.Error())
+			span.End()
 
 			return nil, status.Error(codes.Internal, errMsg.Error())
 		}

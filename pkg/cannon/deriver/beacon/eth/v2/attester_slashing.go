@@ -79,7 +79,7 @@ func (a *AttesterSlashingDeriver) Start(ctx context.Context) error {
 
 	a.log.Info("Attester slashing deriver enabled")
 
-	if err := a.iterator.Start(ctx); err != nil {
+	if err := a.iterator.Start(ctx, a.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

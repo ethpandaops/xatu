@@ -214,9 +214,9 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			}
 		}
 
-		forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
-		if forkEpoch == nil {
-			return nil, errors.Errorf("beacon node for activation fork %s", c.activationFork)
+		forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+		if errr != nil {
+			return nil, errors.Wrap(errr, "failed to get fork epoch")
 		}
 
 		if checkpoint.Epoch < forkEpoch.Epoch {

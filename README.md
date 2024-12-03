@@ -1,4 +1,4 @@
-# Xatu
+# <img src="./assets/xatu.png" height="40" alt="Xatu Logo"> Xatu
 
 Ethereum network monitoring with collection clients and a centralized server for data pipelining.
 

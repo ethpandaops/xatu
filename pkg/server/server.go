@@ -284,12 +284,14 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		),
 	)
 
+	// MaxConnectionAge/MaxConnectionAgeGrace should exceed NGINX's grpc_read_timeout and grpc_send_timeout to
+	// prevent NGINX from terminating connections before the server's age limit is reached.
 	opts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(mb100),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     5 * time.Minute,
-			MaxConnectionAge:      10 * time.Minute,
-			MaxConnectionAgeGrace: 2 * time.Minute,
+			MaxConnectionAge:      12 * time.Minute,
+			MaxConnectionAgeGrace: 3 * time.Minute,
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,
 		}),

@@ -439,21 +439,27 @@ func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, it
 
 func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	log := bvp.log.WithField("module", "batch_builder")
-
 	var batch []*TraceableItem[T]
 
 	for {
 		select {
 		case <-bvp.stopWorkersCh:
 			log.Info("Stopping batch builder")
-
 			return
-		case item := <-bvp.queue:
+		case item, ok := <-bvp.queue:
+			if !ok {
+				// Channel is closed, send any remaining items in the batch for processing
+				// before shutting down.
+				if len(batch) > 0 {
+					bvp.sendBatch(batch, "shutdown")
+				}
+
+				return
+			}
+
 			if item == nil {
 				bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
-
 				bvp.log.Warnf("Attempted to build a batch with a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
-
 				continue
 			}
 
@@ -505,19 +511,21 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
 }
 
 func (bvp *BatchItemProcessor[T]) drainQueue() {
-	bvp.log.Info("Draining queue: waiting for the batch builder to pull all the items from the queue")
+	bvp.log.Info("Draining queue: waiting for the batch builder to process remaining items")
 
+	// First wait for queue to be processed
 	for len(bvp.queue) > 0 {
 		time.Sleep(10 * time.Millisecond)
 	}
 
 	bvp.log.Info("Draining queue: waiting for workers to finish processing batches")
 
-	for len(bvp.queue) > 0 {
-		<-bvp.queue
+	// Then wait for any in-flight batches
+	for len(bvp.batchCh) > 0 {
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	bvp.log.Info("Draining queue: all batches finished")
+	bvp.log.Info("Draining queue: all items processed")
 
 	close(bvp.queue)
 }

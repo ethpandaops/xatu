@@ -2,6 +2,7 @@ package iterator
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
@@ -214,7 +215,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			}
 		}
 
-		forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+		forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(strings.ToUpper(c.activationFork.String()))
 		if errr != nil {
 			return nil, errors.Wrap(errr, "failed to get fork epoch")
 		}
@@ -434,7 +435,7 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch, error) {
 	// earliestEpochForType is the earliest epoch for the type based on the fork epochs.
 	// For example, the blob_sidecar cannon type will have an earliest epoch of the DENEB fork.
-	forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+	forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(strings.ToUpper(c.activationFork.String()))
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get fork epoch")
 	}

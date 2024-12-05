@@ -213,18 +213,58 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
-	x.log.WithField("pre_stop_sleep_seconds", x.config.PreStopSleepSeconds).Info("Stopping server")
+	x.log.Info("Beginning server shutdown sequence")
 
-	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 
 	if x.grpcServer != nil {
-		x.grpcServer.GracefulStop()
+		x.log.Info("Starting gRPC server shutdown")
+
+		// First notify all services to start draining.
+		for _, s := range x.services {
+			if drainable, ok := s.(interface{ StartDrain() }); ok {
+				drainable.StartDrain()
+			}
+		}
+
+		drainCtx, drainCancel := context.WithTimeout(ctx, 5*time.Second)
+		defer drainCancel()
+
+		x.log.Info("Waiting for drain delay")
+
+		select {
+		case <-drainCtx.Done():
+			x.log.Info("Drain delay completed")
+		case <-ctx.Done():
+			x.log.Warn("Context cancelled during drain delay")
+
+			return ctx.Err()
+		}
+
+		x.log.Info("Stopping gRPC server")
+
+		stopped := make(chan struct{})
+
+		go func() {
+			x.grpcServer.GracefulStop()
+
+			close(stopped)
+		}()
+
+		// Wait for graceful stop with timeout.
+		select {
+		case <-stopped:
+			x.log.Info("gRPC server stopped gracefully")
+		case <-time.After(3 * time.Second):
+			x.log.Warn("gRPC server graceful stop timed out, forcing stop")
+
+			x.grpcServer.Stop()
+		}
 	}
 
-	for _, s := range x.services {
-		if err := s.Stop(ctx); err != nil {
-			return err
-		}
+	if e := service.ShutdownServices(ctx, x.services); e != nil {
+		return e
 	}
 
 	if x.config.Persistence.Enabled && x.persistence != nil {
@@ -239,7 +279,7 @@ func (x *Xatu) stop(ctx context.Context) error {
 		}
 	}
 
-	if x.config.GeoIP.Enabled {
+	if x.config.GeoIP.Enabled && x.geoipProvider != nil {
 		if err := x.geoipProvider.Stop(ctx); err != nil {
 			return err
 		}
@@ -263,8 +303,7 @@ func (x *Xatu) stop(ctx context.Context) error {
 		}
 	}
 
-	x.log.Info("Server stopped")
-
+	x.log.Info("Server shutdown completed")
 	return nil
 }
 
@@ -295,11 +334,30 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			Time:                  1 * time.Minute,
 			Timeout:               15 * time.Second,
 		}),
+		grpc.ConnectionTimeout(5 * time.Second),
+		// grpc.MaxConcurrentStreams(50000), // TODO(@matty): Check with Sammo/Steve wtf to do here. Default I think is math.MaxUint32.
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             1 * time.Minute,
+			PermitWithoutStream: true,
+		}),
 		grpc.ChainStreamInterceptor(
-			grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor),
+			grpc_prometheus.StreamServerInterceptor,
+			func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+				start := time.Now()
+
+				if e := handler(srv, ss); e != nil {
+					x.log.
+						WithField("method", info.FullMethod).
+						WithField("duration", time.Since(start)).
+						WithError(e).
+						Error("Streaming RPC Error")
+				}
+
+				return nil
+			},
 		),
 		grpc.ChainUnaryInterceptor(
-			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
+			grpc_prometheus.UnaryServerInterceptor,
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 				start := time.Now()
 
@@ -309,7 +367,7 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 						WithField("method", info.FullMethod).
 						WithField("duration", time.Since(start)).
 						WithError(err).
-						Error("RPC Error")
+						Error("UnaryRPC Error")
 				}
 
 				return resp, err
@@ -328,7 +386,12 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server")
 
-	return x.grpcServer.Serve(lis)
+	err = x.grpcServer.Serve(lis)
+	if err != nil && !errors.Is(err, net.ErrClosed) {
+		return err
+	}
+
+	return nil
 }
 
 func (x *Xatu) startMetrics(ctx context.Context) error {

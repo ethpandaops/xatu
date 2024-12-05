@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	Name               string            `yaml:"name"`
 	Address            string            `yaml:"address"`
 	Headers            map[string]string `yaml:"headers"`
 	TLS                bool              `yaml:"tls" default:"false"`
@@ -16,6 +17,7 @@ type Config struct {
 	Workers            int               `yaml:"workers" default:"1"`
 	Retry              RetryConfig       `yaml:"retry"`
 	KeepAlive          KeepAliveConfig   `yaml:"keepAlive"`
+	Streaming          StreamingConfig   `yaml:"streaming"`
 }
 
 type KeepAliveConfig struct {
@@ -36,4 +38,8 @@ type RetryConfig struct {
 	Enabled     bool          `yaml:"enabled" default:"true"`
 	Scalar      time.Duration `yaml:"scalar" default:"0.5s"`
 	MaxAttempts int           `yaml:"maxAttempts" default:"3"`
+}
+
+type StreamingConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
 }

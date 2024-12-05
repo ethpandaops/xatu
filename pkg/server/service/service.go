@@ -11,6 +11,7 @@ import (
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -59,4 +60,27 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 	}
 
 	return services, nil
+}
+
+// Add this new function to coordinate shutdown across all services.
+func ShutdownServices(ctx context.Context, services []GRPCService) error {
+	// Create a timeout context for the entire shutdown sequence.
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	// Use errgroup to handle multiple service shutdowns.
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, service := range services {
+		svc := service
+
+		g.Go(func() error {
+			shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+
+			return svc.Stop(shutdownCtx)
+		})
+	}
+
+	return g.Wait()
 }

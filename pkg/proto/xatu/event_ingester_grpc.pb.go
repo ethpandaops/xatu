@@ -27,8 +27,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventIngesterClient interface {
+	// CreateEvents is a unary endpoint for creating events.
 	CreateEvents(ctx context.Context, in *CreateEventsRequest, opts ...grpc.CallOption) (*CreateEventsResponse, error)
-	// Add streaming endpoint
+	// CreateEventsStream is a streaming endpoint for creating events.
 	CreateEventsStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CreateEventsRequest, CreateEventsResponse], error)
 }
 
@@ -67,8 +68,9 @@ type EventIngester_CreateEventsStreamClient = grpc.BidiStreamingClient[CreateEve
 // All implementations must embed UnimplementedEventIngesterServer
 // for forward compatibility.
 type EventIngesterServer interface {
+	// CreateEvents is a unary endpoint for creating events.
 	CreateEvents(context.Context, *CreateEventsRequest) (*CreateEventsResponse, error)
-	// Add streaming endpoint
+	// CreateEventsStream is a streaming endpoint for creating events.
 	CreateEventsStream(grpc.BidiStreamingServer[CreateEventsRequest, CreateEventsResponse]) error
 	mustEmbedUnimplementedEventIngesterServer()
 }

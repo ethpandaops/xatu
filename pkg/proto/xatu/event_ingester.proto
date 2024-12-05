@@ -32,8 +32,9 @@ import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
 
 service EventIngester {
+  // CreateEvents is a unary endpoint for creating events.
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
-  // Add streaming endpoint
+  // CreateEventsStream is a streaming endpoint for creating events.
   rpc CreateEventsStream(stream CreateEventsRequest) returns (stream CreateEventsResponse) {}
 }
 

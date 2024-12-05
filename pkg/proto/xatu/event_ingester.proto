@@ -33,6 +33,8 @@ import "pkg/proto/libp2p/gossipsub/eth.proto";
 
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
+  // Add streaming endpoint
+  rpc CreateEventsStream(stream CreateEventsRequest) returns (stream CreateEventsResponse) {}
 }
 
 message CreateEventsRequest { repeated DecoratedEvent events = 1; }

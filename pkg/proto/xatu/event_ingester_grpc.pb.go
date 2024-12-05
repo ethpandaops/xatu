@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EventIngester_CreateEvents_FullMethodName = "/xatu.EventIngester/CreateEvents"
+	EventIngester_CreateEvents_FullMethodName       = "/xatu.EventIngester/CreateEvents"
+	EventIngester_CreateEventsStream_FullMethodName = "/xatu.EventIngester/CreateEventsStream"
 )
 
 // EventIngesterClient is the client API for EventIngester service.
@@ -27,6 +28,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventIngesterClient interface {
 	CreateEvents(ctx context.Context, in *CreateEventsRequest, opts ...grpc.CallOption) (*CreateEventsResponse, error)
+	// Add streaming endpoint
+	CreateEventsStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CreateEventsRequest, CreateEventsResponse], error)
 }
 
 type eventIngesterClient struct {
@@ -47,11 +50,26 @@ func (c *eventIngesterClient) CreateEvents(ctx context.Context, in *CreateEvents
 	return out, nil
 }
 
+func (c *eventIngesterClient) CreateEventsStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CreateEventsRequest, CreateEventsResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EventIngester_ServiceDesc.Streams[0], EventIngester_CreateEventsStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[CreateEventsRequest, CreateEventsResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventIngester_CreateEventsStreamClient = grpc.BidiStreamingClient[CreateEventsRequest, CreateEventsResponse]
+
 // EventIngesterServer is the server API for EventIngester service.
 // All implementations must embed UnimplementedEventIngesterServer
 // for forward compatibility.
 type EventIngesterServer interface {
 	CreateEvents(context.Context, *CreateEventsRequest) (*CreateEventsResponse, error)
+	// Add streaming endpoint
+	CreateEventsStream(grpc.BidiStreamingServer[CreateEventsRequest, CreateEventsResponse]) error
 	mustEmbedUnimplementedEventIngesterServer()
 }
 
@@ -64,6 +82,9 @@ type UnimplementedEventIngesterServer struct{}
 
 func (UnimplementedEventIngesterServer) CreateEvents(context.Context, *CreateEventsRequest) (*CreateEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEvents not implemented")
+}
+func (UnimplementedEventIngesterServer) CreateEventsStream(grpc.BidiStreamingServer[CreateEventsRequest, CreateEventsResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method CreateEventsStream not implemented")
 }
 func (UnimplementedEventIngesterServer) mustEmbedUnimplementedEventIngesterServer() {}
 func (UnimplementedEventIngesterServer) testEmbeddedByValue()                       {}
@@ -104,6 +125,13 @@ func _EventIngester_CreateEvents_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EventIngester_CreateEventsStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EventIngesterServer).CreateEventsStream(&grpc.GenericServerStream[CreateEventsRequest, CreateEventsResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventIngester_CreateEventsStreamServer = grpc.BidiStreamingServer[CreateEventsRequest, CreateEventsResponse]
+
 // EventIngester_ServiceDesc is the grpc.ServiceDesc for EventIngester service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -116,6 +144,13 @@ var EventIngester_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EventIngester_CreateEvents_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "CreateEventsStream",
+			Handler:       _EventIngester_CreateEventsStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "pkg/proto/xatu/event_ingester.proto",
 }

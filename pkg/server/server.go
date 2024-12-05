@@ -213,7 +213,11 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
-	x.log.Info("Beginning server shutdown sequence")
+	x.log.WithFields(logrus.Fields{
+		"pre_stop_sleep_seconds": x.config.PreStopSleepSeconds,
+	}).Info("Beginning server shutdown sequence")
+
+	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
 
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -386,6 +390,9 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server")
 
+	// Upon shutdown, the listener will be closed by (grpcServer).GracefulStop(). This
+	// will trigger a net.ErrClosed error (normal behavior), and we can return nil.
+	// Think of net.ErrClosed as 'listener was closed intentionally'.
 	err = x.grpcServer.Serve(lis)
 	if err != nil && !errors.Is(err, net.ErrClosed) {
 		return err

@@ -79,7 +79,7 @@ func (b *WithdrawalDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Withdrawal deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

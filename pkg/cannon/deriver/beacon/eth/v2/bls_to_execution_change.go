@@ -81,7 +81,7 @@ func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("BLS to execution change deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

@@ -20,7 +20,7 @@ type Config struct {
 
 type KeepAliveConfig struct {
 	Enabled *bool         `yaml:"enabled" default:"true"`
-	Time    time.Duration `yaml:"time" default:"10s"`
+	Time    time.Duration `yaml:"time" default:"150s"`
 	Timeout time.Duration `yaml:"timeout" default:"30s"`
 }
 

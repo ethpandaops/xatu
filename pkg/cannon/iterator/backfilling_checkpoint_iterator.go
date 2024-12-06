@@ -215,12 +215,18 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			}
 		}
 
-		forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
-		if errr != nil {
-			return nil, errors.Wrap(errr, fmt.Sprintf("failed to get epoch for fork: %s", c.activationFork))
+		targetEpoch := phase0.Epoch(0)
+
+		if c.activationFork != spec.DataVersionPhase0 {
+			forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+			if errr != nil {
+				return nil, errors.Wrap(errr, fmt.Sprintf("failed to get epoch for fork: %s", c.activationFork))
+			}
+
+			targetEpoch = forkEpoch.Epoch
 		}
 
-		if checkpoint.Epoch < forkEpoch.Epoch {
+		if checkpoint.Epoch < targetEpoch {
 			// The current finalized checkpoint is before the activation of this cannon, so we should sleep until the next epoch.
 			epoch := c.wallclock.Epochs().Current()
 

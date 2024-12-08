@@ -23,7 +23,7 @@ type ItemExporter struct {
 	client     *http.Client
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (*ItemExporter, error) {
 	log = log.WithField("output_name", name).WithField("output_type", SinkType)
 
 	t := http.DefaultTransport.(*http.Transport).Clone()
@@ -34,10 +34,9 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 		t.DisableKeepAlives = true
 	}
 
-	return ItemExporter{
+	return &ItemExporter{
 		config: config,
 		log:    log,
-
 		client: &http.Client{
 			Transport: t,
 			Timeout:   config.ExportTimeout,
@@ -46,7 +45,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 	}, nil
 }
 
-func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
@@ -66,7 +65,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	return nil
 }
 
-func (e ItemExporter) Shutdown(ctx context.Context) error {
+func (e *ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 

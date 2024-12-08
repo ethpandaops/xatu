@@ -16,14 +16,14 @@ type ItemExporter struct {
 	log    logrus.FieldLogger
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
-	return ItemExporter{
+func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (*ItemExporter, error) {
+	return &ItemExporter{
 		config: config,
 		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
 	}, nil
 }
 
-func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	_, span := observability.Tracer().Start(ctx, "StdOutItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
@@ -41,7 +41,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	return nil
 }
 
-func (e ItemExporter) Shutdown(ctx context.Context) error {
+func (e *ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 

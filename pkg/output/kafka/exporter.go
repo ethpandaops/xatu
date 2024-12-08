@@ -20,7 +20,7 @@ type ItemExporter struct {
 	client sarama.SyncProducer
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (*ItemExporter, error) {
 	producer, err := NewSyncProducer(config)
 
 	if err != nil {
@@ -30,16 +30,16 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 			WithField("output_type", SinkType).
 			Error("Error while creating the Kafka Client")
 
-		return ItemExporter{}, err
+		return nil, err
 	}
 
-	return ItemExporter{
+	return &ItemExporter{
 		config: config,
 		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
 		client: producer,
 	}, nil
 }
-func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	_, span := observability.Tracer().Start(ctx, "KafkaItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
@@ -59,7 +59,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	return nil
 }
 
-func (e ItemExporter) Shutdown(ctx context.Context) error {
+func (e *ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 

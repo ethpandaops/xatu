@@ -19,6 +19,8 @@ linters-settings:
     require-specific: true
 
 linters:
+  skip-files:
+    - "*_test.go"
   disable-all: true
   enable:
     - asasalint

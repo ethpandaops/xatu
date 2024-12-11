@@ -3,10 +3,9 @@ package ethereum
 import "errors"
 
 type Config struct {
-	Network          string `yaml:"network"`
-	NetworkConfigURL string `yaml:"networkConfigUrl"`
-	GenesisJSONURL   string `yaml:"genesisJsonUrl"`
-	SlotsPerEpoch    uint64 `yaml:"slotsPerEpoch"`
+	Network           string            `yaml:"network"`
+	BeaconNodeURL     string            `yaml:"beaconNodeUrl"`
+	BeaconNodeHeaders map[string]string `yaml:"beaconNodeHeaders"`
 }
 
 func (c *Config) Validate() error {
@@ -14,16 +13,8 @@ func (c *Config) Validate() error {
 		return errors.New("network is required")
 	}
 
-	if c.NetworkConfigURL == "" {
-		return errors.New("networkConfigUrl is required")
-	}
-
-	if c.GenesisJSONURL == "" {
-		return errors.New("genesisJsonUrl is required")
-	}
-
-	if c.SlotsPerEpoch == 0 {
-		return errors.New("slotsPerEpoch is required")
+	if c.BeaconNodeURL == "" {
+		return errors.New("beaconNodeUrl is required")
 	}
 
 	return nil

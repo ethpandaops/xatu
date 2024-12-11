@@ -10,3 +10,15 @@ message Relay {
     google.protobuf.StringValue name = 1;
     google.protobuf.StringValue url = 2;
 }
+
+message ValidatorRegistrationMessage {
+    google.protobuf.StringValue fee_recipient = 1 [json_name = "fee_recipient"];
+    google.protobuf.UInt64Value gas_limit = 2 [json_name = "gas_limit"];
+    google.protobuf.UInt64Value timestamp = 3;
+    google.protobuf.StringValue pubkey = 4;
+}
+
+message ValidatorRegistration {
+    ValidatorRegistrationMessage message = 1;
+    google.protobuf.StringValue signature = 2;
+}

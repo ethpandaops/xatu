@@ -69,6 +69,7 @@ transforms:
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       beacon_api_eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
+      mev_relay_validator_registration: .event.name == "MEV_RELAY_VALIDATOR_REGISTRATION"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -919,6 +920,24 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v3-validator-block
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
+  mev_relay_validator_registration_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.mev_relay_validator_registration
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: mev-relay-validator-registration
     compression: snappy
     healthcheck:
       enabled: true

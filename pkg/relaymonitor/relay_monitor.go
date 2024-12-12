@@ -150,6 +150,16 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 		r.log.WithError(err).Warn("Failed to sync clock drift")
 	}
 
+	if r.clockDrift != 0 {
+		r.log.WithField("drift", r.clockDrift).Info("Clock drift detected")
+
+		maxDrift := time.Second * 60 * 5
+
+		if r.clockDrift > maxDrift || r.clockDrift < -maxDrift {
+			r.log.WithField("drift", r.clockDrift).Fatal("Clock drift is too high, exiting")
+		}
+	}
+
 	for _, sink := range r.sinks {
 		if err := sink.Start(ctx); err != nil {
 			return err
@@ -336,7 +346,7 @@ func (r *RelayMonitor) handleNewDecoratedEvent(ctx context.Context, event *xatu.
 	return nil
 }
 
-func (r *RelayMonitor) handleValidatorRegistrationEvents(ctx context.Context) error {
+func (r *RelayMonitor) handleValidatorRegistrationEvents(ctx context.Context) {
 	for {
 		select {
 		case event := <-r.regestationEventsCh:
@@ -355,7 +365,7 @@ func (r *RelayMonitor) handleValidatorRegistrationEvents(ctx context.Context) er
 				r.log.WithError(err).Error("Failed to handle new decorated event")
 			}
 		case <-ctx.Done():
-			return nil
+			return
 		}
 	}
 }
@@ -453,7 +463,7 @@ func (r *RelayMonitor) createValidatorRegistrationEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_MEV_RELAY_VALIDATOR_REGISTRATION,
-			DateTime: timestamppb.New(now),
+			DateTime: timestamppb.New(now.Add(r.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{

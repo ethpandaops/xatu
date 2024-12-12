@@ -105,13 +105,13 @@ func TestValidatorSetWalker(t *testing.T) {
 
 		walker.Update(validators)
 
-		min := walker.Min()
-		max := walker.Max()
-		if min != 75 {
-			t.Errorf("Expected min 75, got %d", min)
+		mi := walker.Min()
+		ma := walker.Max()
+		if mi != 75 {
+			t.Errorf("Expected min 75, got %d", mi)
 		}
-		if max != 102 { // Should include remainder
-			t.Errorf("Expected max 102, got %d", max)
+		if ma != 102 { // Should include remainder
+			t.Errorf("Expected max 102, got %d", ma)
 		}
 	})
 

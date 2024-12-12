@@ -27,13 +27,13 @@ func TestValidatorSetWalker(t *testing.T) {
 		walker.Update(validators)
 
 		// Check shard bounds
-		min := walker.Min()
-		max := walker.Max()
-		if min != 25 { // 100/4 * 1
-			t.Errorf("Expected min 25, got %d", min)
+		mi := walker.Min()
+		ma := walker.Max()
+		if mi != 25 { // 100/4 * 1
+			t.Errorf("Expected min 25, got %d", mi)
 		}
-		if max != 50 { // 100/4 * 2
-			t.Errorf("Expected max 50, got %d", max)
+		if ma != 50 { // 100/4 * 2
+			t.Errorf("Expected max 50, got %d", ma)
 		}
 
 		// Test walking through validators
@@ -44,8 +44,8 @@ func TestValidatorSetWalker(t *testing.T) {
 				t.Errorf("Error getting next validator index: %v", err)
 			}
 
-			if idx < min || idx >= max {
-				t.Errorf("Validator index %d outside shard bounds [%d,%d)", idx, min, max)
+			if idx < mi || idx >= ma {
+				t.Errorf("Validator index %d outside shard bounds [%d,%d)", idx, mi, ma)
 			}
 			seen[idx] = true
 		}

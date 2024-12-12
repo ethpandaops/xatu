@@ -379,7 +379,6 @@ func (r *RelayMonitor) createValidatorRegistrationAdditionalData(
 ) (*xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData, error) {
 	// Calculate slot and epoch from registration timestamp
 	// Convert timestamp to time.Time
-
 	data := &xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData{
 		Relay: &mevrelay.Relay{
 			Url:  wrapperspb.String(re.URL()),

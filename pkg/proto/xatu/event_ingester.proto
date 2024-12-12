@@ -1030,6 +1030,22 @@ message ClientMeta {
     google.protobuf.Timestamp requested_at = 12 [ json_name = "requested_at" ];
   }
 
+  // AdditionalMevRelayValidatorRegistrationData contains additional data about the mev relay validator registration event.
+  message AdditionalMevRelayValidatorRegistrationData {
+    // Relay is the relay that received the validator registration.
+    xatu.mevrelay.Relay relay = 1;
+    // Slot is the slot the validator registration was received for. This is derived from the validator registration `timestamp` field.
+    SlotV2 slot = 2;
+    // WallclockSlot contains the slot information of when the validator registration was received from the relay.
+    SlotV2 wallclock_slot = 3 [ json_name = "wallclock_slot" ];
+    // Epoch is the epoch the validator registration was received for. This is derived from the validator registration `timestamp` field.
+    EpochV2 epoch = 4;
+    // WallclockEpoch contains the epoch information of when the validator registration was requested from the relay.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
+    // ValidatorIndex is the index of the validator that was registered.
+    google.protobuf.UInt64Value validator_index = 6 [ json_name = "validator_index" ];
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1221,6 +1237,8 @@ message ClientMeta {
     AdditionalMevRelayPayloadDeliveredData mev_relay_payload_delivered = 62 [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
     // AdditionalEthV3ValidatorBlockData contains additional data about the eth v3 validator block event.
     AdditionalEthV3ValidatorBlockData eth_v3_validator_block = 65 [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
+    // AdditionalMevRelayValidatorRegistrationData contains additional data about the mev relay validator registration event.
+    AdditionalMevRelayValidatorRegistrationData mev_relay_validator_registration = 66 [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1381,6 +1399,7 @@ message Event {
     MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION = 53;
     MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED = 54;
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
+    MEV_RELAY_VALIDATOR_REGISTRATION = 56;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1522,5 +1541,8 @@ message DecoratedEvent {
         [ json_name = "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED" ];
     xatu.eth.v2.EventBlockV2 eth_v3_validator_block = 55
         [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
+    xatu.mevrelay.ValidatorRegistration mev_relay_validator_registration = 56
+        [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
   };
 }
+

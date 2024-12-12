@@ -17,7 +17,14 @@ linters-settings:
   nolintlint:
     require-explanation: true
     require-specific: true
-
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gocritic
+        - gosec
+        - wsl
 linters:
   disable-all: true
   enable:

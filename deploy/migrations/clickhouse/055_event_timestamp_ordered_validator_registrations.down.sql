@@ -46,11 +46,11 @@ ORDER BY
         timestamp
     ) COMMENT 'Contains MEV relay validator registrations data.';
 
--- Copy data from current table to temporary table
-INSERT INTO tmp.mev_relay_validator_registration_local SELECT * FROM default.mev_relay_validator_registration_local;
-
 -- Drop distributed table
 DROP TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}';
+
+-- Copy data from current table to temporary table
+INSERT INTO tmp.mev_relay_validator_registration_local SELECT * FROM default.mev_relay_validator_registration_local;
 
 -- Rename current table to old
 RENAME TABLE default.mev_relay_validator_registration_local TO tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';

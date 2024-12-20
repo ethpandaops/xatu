@@ -46,6 +46,9 @@ ORDER BY
         timestamp
     ) COMMENT 'Contains MEV relay validator registrations data.';
 
+-- Delete the old distributed table
+DROP TABLE IF EXISTS default.mev_relay_validator_registration ON CLUSTER '{cluster}';
+
 -- Copy data from old table to new table. This doesn't seem to work on all shards even with ON CLUSTER. Needs to be done manually.
 INSERT INTO tmp.mev_relay_validator_registration_local SELECT * FROM default.mev_relay_validator_registration_local;
 

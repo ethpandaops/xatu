@@ -106,7 +106,7 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 
 func (e *EventsContributionAndProof) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data, error) {
 	slot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(e.event.Message.Contribution.Slot))
-	epoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(e.event.Message.Contribution.Slot))
+	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(e.event.Message.Contribution.Slot))
 
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data{
 		Contribution: &xatu.ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data{

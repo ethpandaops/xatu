@@ -1,8 +1,8 @@
 module github.com/ethpandaops/xatu
 
-go 1.22.0
+go 1.23
 
-toolchain go1.22.1
+toolchain go1.23.4
 
 replace github.com/prysmaticlabs/prysm/v5 => github.com/ethpandaops/prysm/v5 v5.1.4
 
@@ -12,6 +12,7 @@ require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/beevik/ntp v1.3.1
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/cenkalti/backoff/v5 v5.0.0
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.7.0
 	github.com/ethereum/go-ethereum v1.14.10
@@ -48,6 +49,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.29.0
 	go.opentelemetry.io/otel/sdk v1.29.0
 	go.opentelemetry.io/otel/trace v1.29.0
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/sync v0.8.0
 	google.golang.org/grpc v1.67.0
 	google.golang.org/protobuf v1.34.2
@@ -261,7 +263,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect

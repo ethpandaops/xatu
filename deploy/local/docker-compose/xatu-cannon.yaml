@@ -19,10 +19,17 @@ name: xatu-cannon
 #     enabled: false
 #   voluntaryExit:
 #     enabled: false
-#   beaconBlock:
-#     enabled: true
-#   beaconBlobSidecar:
-#     enabled: false
+  beaconBlock:
+    enabled: true
+    iterator:
+      backfill:
+        enabled: true
+  beaconBlobSidecar:
+    enabled: true
+    iterator:
+      backfill:
+        enabled: true
+
 #   proposerDuty:
 #     enabled: true
 #   elaboratedAttestation:

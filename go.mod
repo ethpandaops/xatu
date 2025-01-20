@@ -8,9 +8,11 @@ replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.0-2024
 
 replace github.com/attestantio/go-eth2-client => github.com/attestantio/go-eth2-client v0.23.1-0.20250114113159-1691823b93ca
 
+replace github.com/ethpandaops/beacon => github.com/ethpandaops/beacon v0.45.1-0.20250120040750-494d93735802
+
 require (
 	github.com/IBM/sarama v1.43.0
-	github.com/attestantio/go-eth2-client v0.21.9
+	github.com/attestantio/go-eth2-client v0.23.0
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/beevik/ntp v1.3.1
 	github.com/cenkalti/backoff/v4 v4.2.1

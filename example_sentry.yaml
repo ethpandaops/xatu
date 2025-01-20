@@ -52,6 +52,18 @@ attestationData:
 beaconCommittees:
   enabled: true
 
+validatorBlock:
+  enabled: false
+
+  interval:
+    enabled: false
+    every: 30s
+
+  at:
+    enabled: false
+    slotTimes:
+      - 4s
+
 outputs:
 - name: http-sink
   type: http

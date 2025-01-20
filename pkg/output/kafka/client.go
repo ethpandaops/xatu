@@ -1,6 +1,9 @@
 package kafka
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
 	"strings"
 
 	"github.com/IBM/sarama"
@@ -32,18 +35,40 @@ var (
 )
 
 func NewSyncProducer(config *Config) (sarama.SyncProducer, error) {
-	producerConfig := Init(config)
+	producerConfig, err := Init(config)
+	if err != nil {
+		return nil, err
+	}
 	brokersList := strings.Split(config.Brokers, ",")
 
 	return sarama.NewSyncProducer(brokersList, producerConfig)
 }
-func Init(config *Config) *sarama.Config {
+func Init(config *Config) (*sarama.Config, error) {
 	c := sarama.NewConfig()
 	c.Producer.Flush.Bytes = config.FlushBytes
 	c.Producer.Flush.Messages = config.FlushMessages
 	c.Producer.Flush.Frequency = config.FlushFrequency
 	c.Producer.Retry.Max = config.MaxRetries
 	c.Producer.Return.Successes = true
+
+	if config.TLSClientConfig.CertificatePath != "" {
+		clientCertificate, err := tls.LoadX509KeyPair(config.TLSClientConfig.CertificatePath, config.TLSClientConfig.KeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read client certificate: %w", err)
+		}
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{clientCertificate},
+			MinVersion:   tls.VersionTLS12,
+		}
+
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM([]byte(config.TLSClientConfig.CACertificate))
+		tlsConfig.RootCAs = certPool
+
+		c.Net.TLS.Enable = true
+		c.Net.TLS.Config = tlsConfig
+	}
 
 	switch config.RequiredAcks {
 	case RequiredAcksNone:
@@ -74,5 +99,5 @@ func Init(config *Config) *sarama.Config {
 		c.Producer.Partitioner = sarama.NewRandomPartitioner
 	}
 
-	return c
+	return c, nil
 }

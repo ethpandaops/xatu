@@ -99,6 +99,15 @@ var CannonOverrides = []CannonOverride{
 			overrides.NetworkName.Value = val
 		},
 	}),
+	createCannonOverride(CannonOverrideConfig{
+		FlagName:    "metrics-addr",
+		EnvName:     "METRICS_ADDR",
+		Description: "sets the metrics address",
+		OverrideFunc: func(val string, overrides *cannon.Override) {
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+		},
+	}),
 }
 
 // cannonCmd represents the cannon command
@@ -120,7 +129,6 @@ var cannonCmd = &cobra.Command{
 		log.WithField("location", cannonCfgFile).Info("Loaded config")
 
 		overrides := &cannon.Override{}
-
 		for _, override := range CannonOverrides {
 			if errr := override.Setter(cmd, overrides); errr != nil {
 				log.Fatal(errr)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -13,10 +14,14 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	ocodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -89,6 +94,12 @@ func (e *Ingester) Stop(ctx context.Context) error {
 }
 
 func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsRequest) (*xatu.CreateEventsResponse, error) {
+	ctx, span := observability.Tracer().Start(ctx,
+		"EventIngester.CreateEvents",
+		trace.WithAttributes(attribute.Int64("events", int64(len(req.GetEvents())))),
+	)
+	defer span.End()
+
 	e.log.WithField("events", len(req.Events)).Debug("Received batch of events")
 
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -104,48 +115,96 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		authorization := md.Get("authorization")
 
 		if len(authorization) == 0 {
-			return nil, status.Error(codes.Unauthenticated, "no authorization header provided")
+			errMsg := errors.New("no authorization header provided")
+
+			span.SetStatus(ocodes.Error, errMsg.Error())
+
+			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
 
 		username, err := e.auth.IsAuthorized(authorization[0])
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "failed to authorize user")
+			errMsg := fmt.Errorf("failed to authorize user: %w", err)
+
+			span.SetStatus(ocodes.Error, errMsg.Error())
+
+			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
 
 		if username == "" {
-			return nil, status.Error(codes.Unauthenticated, "unauthorized")
+			errMsg := errors.New("unauthorized")
+
+			span.SetStatus(ocodes.Error, errMsg.Error())
+
+			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
 
 		user, group, err = e.auth.GetUserAndGroup(username)
 		if err != nil && e.config.Authorization.Enabled {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+			errMsg := fmt.Errorf("failed to get user and group: %w", err)
+
+			span.SetStatus(ocodes.Error, errMsg.Error())
+
+			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
+
+		span.SetAttributes(attribute.String("user", username))
+		span.SetAttributes(attribute.String("group", group.Name()))
 	}
 
 	filteredEvents, err := e.handler.Events(ctx, req.GetEvents(), user, group)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		errMsg := fmt.Errorf("failed to filter events: %w", err)
+
+		span.SetStatus(ocodes.Error, errMsg.Error())
+
+		return nil, status.Error(codes.Internal, errMsg.Error())
 	}
 
 	for _, sink := range e.sinks {
+		_, span := observability.Tracer().Start(ctx,
+			"EventIngester.CreateEvents.SendEventsToSink",
+			trace.WithAttributes(
+				attribute.String("sink", sink.Name()),
+				attribute.Int64("events", int64(len(filteredEvents))),
+			),
+		)
+
 		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			errMsg := fmt.Errorf("failed to handle new decorated events: %w", err)
+
+			span.SetStatus(ocodes.Error, errMsg.Error())
+			span.End()
+
+			return nil, status.Error(codes.Internal, errMsg.Error())
 		}
+
+		span.End()
 	}
 
-	return &xatu.CreateEventsResponse{}, nil
+	return &xatu.CreateEventsResponse{
+		EventsIngested: &wrapperspb.UInt64Value{
+			Value: uint64(len(filteredEvents)),
+		},
+	}, nil
 }
 
 func (e *Ingester) CreateSinks() ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(e.config.Outputs))
 
 	for i, out := range e.config.Outputs {
+		if out.ShippingMethod == nil {
+			shippingMethod := processor.ShippingMethodSync
+
+			out.ShippingMethod = &shippingMethod
+		}
+
 		sink, err := output.NewSink(out.Name,
 			out.SinkType,
 			out.Config,
 			e.log,
 			out.FilterConfig,
-			processor.ShippingMethodSync,
+			*out.ShippingMethod,
 		)
 		if err != nil {
 			return nil, err

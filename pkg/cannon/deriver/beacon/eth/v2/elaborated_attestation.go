@@ -63,8 +63,8 @@ func (b *ElaboratedAttestationDeriver) Name() string {
 	return ElaboratedAttestationDeriverName.String()
 }
 
-func (b *ElaboratedAttestationDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *ElaboratedAttestationDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *ElaboratedAttestationDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
@@ -80,7 +80,7 @@ func (b *ElaboratedAttestationDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Elaborated attestation deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

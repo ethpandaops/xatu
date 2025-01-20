@@ -119,6 +119,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		// I think we can get away with much higher as long as it doesn't go above the
 		// max client message size.
 		processor.WithMaxExportBatchSize(50000),
+		processor.WithWorkers(1),
 	)
 	if err != nil {
 		return nil, err

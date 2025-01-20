@@ -6,6 +6,7 @@ import (
 	"time"
 
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -60,8 +61,8 @@ func (b *BeaconValidatorsDeriver) CannonType() xatu.CannonType {
 	return BeaconValidatorsDeriverName
 }
 
-func (b *BeaconValidatorsDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *BeaconValidatorsDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *BeaconValidatorsDeriver) Name() string {
@@ -86,7 +87,7 @@ func (b *BeaconValidatorsDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Validator states deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

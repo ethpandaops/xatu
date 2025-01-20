@@ -62,8 +62,8 @@ func (b *ProposerSlashingDeriver) Name() string {
 	return ProposerSlashingDeriverName.String()
 }
 
-func (b *ProposerSlashingDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *ProposerSlashingDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
@@ -79,7 +79,7 @@ func (b *ProposerSlashingDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Proposer slashing deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

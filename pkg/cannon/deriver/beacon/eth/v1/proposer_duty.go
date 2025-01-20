@@ -7,6 +7,7 @@ import (
 	"time"
 
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -60,8 +61,8 @@ func (b *ProposerDutyDeriver) CannonType() xatu.CannonType {
 	return ProposerDutyDeriverName
 }
 
-func (b *ProposerDutyDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *ProposerDutyDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *ProposerDutyDeriver) Name() string {
@@ -81,7 +82,7 @@ func (b *ProposerDutyDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Proposer duty deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

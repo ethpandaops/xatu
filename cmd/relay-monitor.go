@@ -14,6 +14,43 @@ var (
 	relayMonitorCfgFile string
 )
 
+type RelayMonitorOverride struct {
+	EnvVar     string
+	Flag       string
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *relaymonitor.Override) error
+}
+
+var RelayMonitorOverrides = []RelayMonitorOverride{
+	{
+		EnvVar: "METRICS_ADDR",
+		Flag:   "metrics-addr",
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(metricsAddrFlag, "", `metrics address (env: METRICS_ADDR). If set, overrides the metrics address in the config file.`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *relaymonitor.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(metricsAddrFlag) {
+				val = cmd.Flags().Lookup(metricsAddrFlag).Value.String()
+			}
+
+			if os.Getenv("METRICS_ADDR") != "" {
+				val = os.Getenv("METRICS_ADDR")
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+
+			return nil
+		},
+	},
+}
+
 // relayMonitorCmd represents the relay monitor command
 var relayMonitorCmd = &cobra.Command{
 	Use:   "relay-monitor",
@@ -32,7 +69,14 @@ var relayMonitorCmd = &cobra.Command{
 
 		log.WithField("location", relayMonitorCfgFile).Info("Loaded config")
 
-		monitor, err := relaymonitor.New(cmd.Context(), log, config)
+		overrides := &relaymonitor.Override{}
+		for _, o := range RelayMonitorOverrides {
+			if e := o.Setter(cmd, overrides); e != nil {
+				log.Fatal(e)
+			}
+		}
+
+		monitor, err := relaymonitor.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -49,6 +93,10 @@ func init() {
 	rootCmd.AddCommand(relayMonitorCmd)
 
 	relayMonitorCmd.Flags().StringVar(&relayMonitorCfgFile, "config", "relay-monitor.yaml", "config file (default is relay-monitor.yaml)")
+
+	for _, o := range RelayMonitorOverrides {
+		o.FlagHelper(relayMonitorCmd)
+	}
 }
 
 func loadRelayMonitorConfigFromFile(file string) (*relaymonitor.Config, error) {

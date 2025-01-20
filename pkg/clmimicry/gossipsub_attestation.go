@@ -9,66 +9,40 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
+	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
-	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	ethtypes "github.com/prysmaticlabs/prysm/v5/proto/prysm/v1alpha1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-func (m *Mimicry) handleGossipAttestation(ctx context.Context,
+func (m *Mimicry) handleGossipAttestation(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent, payload map[string]any) error {
-	// Extract attestation data
-	eAttestation := &ethtypes.Attestation{
-		Data: &ethtypes.AttestationData{},
+	event *host.TraceEvent,
+	payload *eth.TraceEventAttestation,
+) error {
+	if payload.Attestation == nil || payload.Attestation.GetData() == nil {
+		return fmt.Errorf("handleGossipAttestation() called with nil attestation")
 	}
 
-	if slot, ok := payload["Slot"].(primitives.Slot); ok {
-		eAttestation.Data.Slot = slot
-	} else {
-		return fmt.Errorf("invalid slot")
-	}
-
-	if committeeIndex, ok := payload["CommIdx"].(primitives.CommitteeIndex); ok {
-		eAttestation.Data.CommitteeIndex = committeeIndex
-	} else {
-		return fmt.Errorf("invalid committee index")
-	}
-
-	if beaconBlockRoot, ok := payload["BeaconBlockRoot"].([]byte); ok {
-		eAttestation.Data.BeaconBlockRoot = beaconBlockRoot
-	} else {
-		return fmt.Errorf("invalid beacon block root")
-	}
-
-	if source, ok := payload["Source"].(*ethtypes.Checkpoint); ok {
-		eAttestation.Data.Source = source
-	} else {
-		return fmt.Errorf("invalid source")
-	}
-
-	if target, ok := payload["Target"].(*ethtypes.Checkpoint); ok {
-		eAttestation.Data.Target = target
-	} else {
-		return fmt.Errorf("invalid target")
-	}
+	attestationData := payload.Attestation.GetData()
 
 	attestation := &v1.Attestation{
 		AggregationBits: string(""),
 		Data: &v1.AttestationData{
-			Slot:            uint64(eAttestation.Data.Slot),
-			BeaconBlockRoot: fmt.Sprintf("0x%x", eAttestation.Data.BeaconBlockRoot),
+			Slot:            uint64(attestationData.GetSlot()),
+			BeaconBlockRoot: fmt.Sprintf("0x%x", attestationData.GetBeaconBlockRoot()),
 			Source: &v1.Checkpoint{
-				Epoch: uint64(eAttestation.Data.Source.Epoch),
-				Root:  fmt.Sprintf("0x%x", eAttestation.Data.Source.Root),
+				Epoch: uint64(attestationData.GetSource().GetEpoch()),
+				Root:  fmt.Sprintf("0x%x", attestationData.GetSource().GetRoot()),
 			},
 			Target: &v1.Checkpoint{
-				Epoch: uint64(eAttestation.Data.Target.Epoch),
-				Root:  fmt.Sprintf("0x%x", eAttestation.Data.Target.Root),
+				Epoch: uint64(attestationData.GetTarget().GetEpoch()),
+				Root:  fmt.Sprintf("0x%x", attestationData.GetTarget().GetRoot()),
 			},
-			Index: uint64(eAttestation.Data.CommitteeIndex),
+			Index: uint64(attestationData.GetCommitteeIndex()),
 		},
 	}
 
@@ -77,7 +51,7 @@ func (m *Mimicry) handleGossipAttestation(ctx context.Context,
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubAttestationData(ctx, payload, eAttestation, event)
+	additionalData, err := m.createAdditionalGossipSubAttestationData(payload, attestationData, event)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -103,9 +77,10 @@ func (m *Mimicry) handleGossipAttestation(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) createAdditionalGossipSubAttestationData(ctx context.Context,
-	payload map[string]any,
-	attestation *ethtypes.Attestation,
+//nolint:gosec // int -> uint32 common conversion pattern in xatu.
+func (m *Mimicry) createAdditionalGossipSubAttestationData(
+	payload *eth.TraceEventAttestation,
+	attestationData *ethtypes.AttestationData,
 	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData, error) {
 	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().Now()
@@ -116,8 +91,8 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(ctx context.Context,
 	// Add Clock Drift
 	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
 
-	attestionSlot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(attestation.Data.Slot))
-	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(attestation.Data.Slot))
+	attestionSlot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(attestationData.GetSlot()))
+	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.GetSlot()))
 
 	extra := &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{
 		WallclockSlot: &xatu.SlotV2{
@@ -143,7 +118,7 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(ctx context.Context,
 		},
 	}
 
-	targetEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestation.Data.Target.Epoch))
+	targetEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestationData.GetTarget().GetEpoch()))
 	extra.Target = &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
@@ -151,7 +126,7 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(ctx context.Context,
 		},
 	}
 
-	sourceEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestation.Data.Source.Epoch))
+	sourceEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestationData.GetSource().GetEpoch()))
 	extra.Source = &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
@@ -159,40 +134,22 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(ctx context.Context,
 		},
 	}
 
-	peerID, ok := payload["PeerID"].(string)
-	if ok {
-		extra.Metadata = &libp2p.TraceEventMetadata{
-			PeerId: wrapperspb.String(peerID),
-		}
-	}
+	extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(payload.PeerID)}
+	extra.Topic = wrapperspb.String(payload.Topic)
+	extra.MessageId = wrapperspb.String(payload.MsgID)
+	extra.MessageSize = wrapperspb.UInt32(uint32(payload.MsgSize))
 
-	topic, ok := payload["Topic"].(string)
-	if ok {
-		extra.Topic = wrapperspb.String(topic)
-	}
-
-	msgID, ok := payload["MsgID"].(string)
-	if ok {
-		extra.MessageId = wrapperspb.String(msgID)
-	}
-
-	msgSize, ok := payload["MsgSize"].(int)
-	if ok {
-		extra.MessageSize = wrapperspb.UInt32(uint32(msgSize))
-	}
-
-	// If the attestation is unaggreated, we can append the validator position within the committee
-	position, ok := payload["AggregatePos"].(int)
-	if ok {
+	// If the attestation is not aggregated, we can append the validator position within the committee.
+	if payload.Attestation.GetAggregationBits().Count() == 1 {
 		validatorIndex, err := m.ethereum.Duties().GetValidatorIndex(
 			phase0.Epoch(epoch.Number()),
-			phase0.Slot(attestation.Data.Slot),
-			phase0.CommitteeIndex(attestation.Data.CommitteeIndex),
-			uint64(position),
+			phase0.Slot(attestationData.GetSlot()),
+			phase0.CommitteeIndex(attestationData.GetCommitteeIndex()),
+			uint64(payload.Attestation.GetAggregationBits().BitIndices()[0]),
 		)
 		if err == nil {
 			extra.AttestingValidator = &xatu.AttestingValidatorV2{
-				CommitteeIndex: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.CommitteeIndex)},
+				CommitteeIndex: &wrapperspb.UInt64Value{Value: uint64(attestationData.GetCommitteeIndex())},
 				Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
 			}
 		}

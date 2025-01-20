@@ -14,6 +14,7 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/ethwallclock"
@@ -690,7 +691,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 	for {
 		// Handle derivers that require phase0, since its not actually a fork it'll never appear
 		// in the spec.
-		if d.ActivationFork() != ethereum.ForkNamePhase0 {
+		if d.ActivationFork() != spec.DataVersionPhase0 {
 			spec, err := c.beacon.Node().Spec()
 			if err != nil {
 				c.log.WithError(err).Error("Failed to get spec")
@@ -700,7 +701,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork())
+			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork().String())
 			if err != nil {
 				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
 
@@ -711,10 +712,10 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			// Sleep until the next epochl and then retrty
 			currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 
 			if !fork.Active(phase0.Epoch(currentEpoch.Number())) {
+				// Sleep until the next epochl and then retrty
 				activationForkEpoch := c.beacon.Node().Wallclock().Epochs().FromNumber(uint64(fork.Epoch))
 
 				sleepFor := time.Until(activationForkEpoch.TimeWindow().End())

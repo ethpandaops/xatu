@@ -2,8 +2,10 @@ package iterator
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
@@ -28,6 +30,7 @@ type BackfillingCheckpoint struct {
 	checkpointName    string
 	lookAheadDistance int
 	config            *BackfillingCheckpointConfig
+	activationFork    spec.DataVersion
 }
 
 type BackfillingCheckpointDirection string
@@ -72,7 +75,9 @@ func NewBackfillingCheckpoint(
 	}
 }
 
-func (c *BackfillingCheckpoint) Start(ctx context.Context) error {
+func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.DataVersion) error {
+	c.activationFork = activationFork
+
 	// Check the backfill epoch is ok
 	if c.shouldBackfill(ctx) {
 		epoch, err := c.getEarliestPossibleBackfillEpoch()
@@ -210,9 +215,18 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			}
 		}
 
-		forkEpochForType := GetStartingEpochLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType)
+		targetEpoch := phase0.Epoch(0)
 
-		if checkpoint.Epoch < forkEpochForType {
+		if c.activationFork != spec.DataVersionPhase0 {
+			forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+			if errr != nil {
+				return nil, errors.Wrap(errr, fmt.Sprintf("failed to get epoch for fork: %s", c.activationFork))
+			}
+
+			targetEpoch = forkEpoch.Epoch
+		}
+
+		if checkpoint.Epoch < targetEpoch {
 			// The current finalized checkpoint is before the activation of this cannon, so we should sleep until the next epoch.
 			epoch := c.wallclock.Epochs().Current()
 
@@ -427,11 +441,18 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch, error) {
 	// earliestEpochForType is the earliest epoch for the type based on the fork epochs.
 	// For example, the blob_sidecar cannon type will have an earliest epoch of the DENEB fork.
-	earliestEpochForType := GetStartingEpochLocation(c.beaconNode.Metadata().Spec.ForkEpochs, c.cannonType)
+	if c.activationFork == spec.DataVersionPhase0 {
+		return 0, nil
+	}
+
+	forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get fork epoch")
+	}
 
 	if c.config.Backfill.ToEpoch == 0 {
 		// Use the default starting epoch for the type.
-		return earliestEpochForType, nil
+		return forkEpoch.Epoch, nil
 	}
 
 	return c.config.Backfill.ToEpoch, nil

@@ -12,11 +12,19 @@ linters-settings:
       - performance
       - style
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   nolintlint:
     require-explanation: true
     require-specific: true
-
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gocritic
+        - gosec
+        - wsl
 linters:
   disable-all: true
   enable:
@@ -29,7 +37,7 @@ linters:
     - durationcheck
     - errcheck
     - errname
-    - exportloopref
+    - copyloopvar
     - goconst
     - gocritic
     - gocyclo

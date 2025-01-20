@@ -510,7 +510,7 @@ func TestAuthorization_MultipleFilters(t *testing.T) {
 				t.Fatalf("Failed to get user and group: %v", err)
 			}
 
-			got, err := authorization.FilterEvents(user, group, tt.input)
+			got, err := authorization.FilterEvents(context.Background(), user, group, tt.input)
 			if err != nil {
 				t.Fatalf("Failed to filter events: %v", err)
 			}
@@ -597,7 +597,7 @@ func TestAuthorization_NoFilter(t *testing.T) {
 				t.Fatalf("Failed to get user and group: %v", err)
 			}
 
-			got, err := authorization.FilterEvents(user, group, tt.input)
+			got, err := authorization.FilterEvents(context.Background(), user, group, tt.input)
 			if err != nil {
 				t.Fatalf("Failed to filter events: %v", err)
 			}
@@ -721,7 +721,7 @@ func TestAuthorization_FilterAndRedactEvents(t *testing.T) {
 				t.Fatalf("Failed to get user and group: %v", err)
 			}
 
-			got, err := authorization.FilterAndRedactEvents(user, group, tt.input)
+			got, err := authorization.FilterAndRedactEvents(context.Background(), user, group, tt.input)
 			if err != nil {
 				t.Fatalf("Failed to filter events: %v", err)
 			}

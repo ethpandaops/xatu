@@ -77,6 +77,15 @@ var ServerOverrides = []ServerOverride{
 			overrides.CoordinatorAuth.AuthSecret = val
 		},
 	}),
+	createServerOverride(ServerOverrideConfig{
+		FlagName:    "metrics-addr",
+		EnvName:     "METRICS_ADDR",
+		Description: "sets the metrics address",
+		OverrideFunc: func(val string, overrides *server.Override) {
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+		},
+	}),
 }
 
 // serverCmd represents the server command

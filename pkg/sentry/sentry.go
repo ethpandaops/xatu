@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
 	"syscall"
 	"time"
-
-	//nolint:gosec // only exposed if pprofAddr config is set
-	_ "net/http/pprof"
 
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/altair"
@@ -107,6 +107,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		log.Info("Overriding beacon node URL")
 
 		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
+	}
+
+	// If the metrics address override is set, use it
+	if overrides.MetricsAddr.Enabled {
+		log.WithField("address", overrides.MetricsAddr.Value).Info("Overriding metrics address")
+
+		config.MetricsAddr = overrides.MetricsAddr.Value
 	}
 
 	if err := config.Validate(); err != nil {
@@ -545,6 +552,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 
 		if err := s.startAttestationDataSchedule(ctx); err != nil {
+			return err
+		}
+
+		if err := s.startValidatorBlockSchedule(ctx); err != nil {
 			return err
 		}
 

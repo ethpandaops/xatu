@@ -5,7 +5,12 @@ pprofAddr: ":6065" # optional. if supplied it enables pprof server
 name: example-instance
 
 ethereum:
-  network: mainnet # mainnet, sepolia, holesky
+  network: mainnet # mainnet, sepolia, holesky, devnet.
+  devnet:
+    configUrl: ""
+    bootnodesUrl: ""
+    depositContractBlockUrl: ""
+    genesisSszUrl: ""
 node:
   privateKeyStr: ""
   dialTimeout: "5s"
@@ -18,7 +23,8 @@ node:
   prysmPortGrpc: 4000
   maxPeers: 30
   dialConcurrency: 16
+  dataStreamType: "callback"
 
 outputs:
-- name: log 
+- name: log
   type: stdout

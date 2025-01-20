@@ -62,8 +62,8 @@ func (b *DepositDeriver) Name() string {
 	return DepositDeriverName.String()
 }
 
-func (b *DepositDeriver) ActivationFork() string {
-	return ethereum.ForkNamePhase0
+func (b *DepositDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionPhase0
 }
 
 func (b *DepositDeriver) OnEventsDerived(ctx context.Context, fn func(ctx context.Context, events []*xatu.DecoratedEvent) error) {
@@ -79,7 +79,7 @@ func (b *DepositDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Deposit deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

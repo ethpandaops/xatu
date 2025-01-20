@@ -10,6 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
 )
 
@@ -39,6 +40,8 @@ type Config struct {
 	Relays []relay.Config `yaml:"relays"`
 
 	FetchProposerPayloadDelivered bool `yaml:"fetchProposerPayloadDelivered" default:"true"`
+
+	ValidatorRegistrations registrations.Config `yaml:"validatorRegistrations"`
 }
 
 func (c *Config) Validate() error {
@@ -64,6 +67,10 @@ func (c *Config) Validate() error {
 		if err := relay.Validate(); err != nil {
 			return fmt.Errorf("invalid relay config %s: %w", relay.Name, err)
 		}
+	}
+
+	if err := c.ValidatorRegistrations.Validate(); err != nil {
+		return fmt.Errorf("invalid validator registrations config: %w", err)
 	}
 
 	return nil
@@ -106,4 +113,19 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	}
 
 	return sinks, nil
+}
+
+// ApplyOverrides applies any overrides to the config.
+func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+	if o == nil {
+		return nil
+	}
+
+	if o.MetricsAddr.Enabled {
+		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
+
+		c.MetricsAddr = o.MetricsAddr.Value
+	}
+
+	return nil
 }

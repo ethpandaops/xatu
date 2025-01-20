@@ -293,6 +293,8 @@ services:
           "beacon-api-eth-v1-beacon-validators"
           "mev-relay-bid-trace-builder-block-submission"
           "mev-relay-proposer-payload-delivered"
+          "beacon-api-eth-v3-validator-block"
+          "mev-relay-validator-registration"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";
@@ -566,7 +568,7 @@ services:
       - ./deploy/local/docker-compose/xatu-cannon.yaml:/etc/cannon/config.yaml
     networks:
       - xatu-net
-    
+
 networks:
   xatu-net:
     driver: bridge

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/attestantio/go-eth2-client/api"
+	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v4"
@@ -61,8 +62,8 @@ func (b *BeaconBlobDeriver) CannonType() xatu.CannonType {
 	return BeaconBlobDeriverName
 }
 
-func (b *BeaconBlobDeriver) ActivationFork() string {
-	return ethereum.ForkNameDeneb
+func (b *BeaconBlobDeriver) ActivationFork() spec.DataVersion {
+	return spec.DataVersionDeneb
 }
 
 func (b *BeaconBlobDeriver) Name() string {
@@ -82,7 +83,7 @@ func (b *BeaconBlobDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Beacon blob deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

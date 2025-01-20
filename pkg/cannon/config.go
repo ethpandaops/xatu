@@ -129,5 +129,11 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 		c.Ethereum.OverrideNetworkName = o.NetworkName.Value
 	}
 
+	if o.MetricsAddr.Enabled {
+		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
+
+		c.MetricsAddr = o.MetricsAddr.Value
+	}
+
 	return nil
 }

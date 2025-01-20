@@ -48,6 +48,9 @@ type Config struct {
 	// ProposerDuty configuration
 	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
 
+	// ValidatorBlock configuration
+	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{'enabled': false}"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -151,6 +154,36 @@ type AttestationDataConfig struct {
 }
 
 func (f *AttestationDataConfig) Validate() error {
+	if f.At.Enabled {
+		if len(f.At.SlotTimes) == 0 {
+			return errors.New("at.slotTimes must be provided when at.enabled is true")
+		}
+
+		for _, slotTime := range f.At.SlotTimes {
+			if slotTime.Duration > 12*time.Second {
+				return errors.New("at.slotTimes must be less than 12s")
+			}
+		}
+	}
+
+	return nil
+}
+
+type ValidatorBlockConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	Interval struct {
+		Enabled bool           `yaml:"enabled" default:"false"`
+		Every   human.Duration `yaml:"every" default:"12s"`
+	} `yaml:"interval"`
+
+	At struct {
+		Enabled   bool             `yaml:"enabled" default:"false"`
+		SlotTimes []human.Duration `yaml:"slotTimes"`
+	} `yaml:"at"`
+}
+
+func (f *ValidatorBlockConfig) Validate() error {
 	if f.At.Enabled {
 		if len(f.At.SlotTimes) == 0 {
 			return errors.New("at.slotTimes must be provided when at.enabled is true")

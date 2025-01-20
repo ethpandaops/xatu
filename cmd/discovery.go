@@ -14,6 +14,43 @@ var (
 	discoveryCfgFile string
 )
 
+type DiscoveryOverride struct {
+	EnvVar     string
+	Flag       string
+	FlagHelper func(cmd *cobra.Command)
+	Setter     func(cmd *cobra.Command, overrides *discovery.Override) error
+}
+
+var DiscoveryOverrides = []DiscoveryOverride{
+	{
+		EnvVar: "METRICS_ADDR",
+		Flag:   "metrics-addr",
+		FlagHelper: func(cmd *cobra.Command) {
+			cmd.Flags().String(metricsAddrFlag, "", `metrics address (env: METRICS_ADDR). If set, overrides the metrics address in the config file.`)
+		},
+		Setter: func(cmd *cobra.Command, overrides *discovery.Override) error {
+			val := ""
+
+			if cmd.Flags().Changed(metricsAddrFlag) {
+				val = cmd.Flags().Lookup(metricsAddrFlag).Value.String()
+			}
+
+			if os.Getenv("METRICS_ADDR") != "" {
+				val = os.Getenv("METRICS_ADDR")
+			}
+
+			if val == "" {
+				return nil
+			}
+
+			overrides.MetricsAddr.Enabled = true
+			overrides.MetricsAddr.Value = val
+
+			return nil
+		},
+	},
+}
+
 // discoveryCmd represents the discovery command
 var discoveryCmd = &cobra.Command{
 	Use:   "discovery",
@@ -31,7 +68,15 @@ var discoveryCmd = &cobra.Command{
 		log = getLogger(config.LoggingLevel, "")
 
 		log.WithField("location", discoveryCfgFile).Info("Loaded config")
-		discovery, err := discovery.New(cmd.Context(), log, config)
+
+		overrides := &discovery.Override{}
+		for _, o := range DiscoveryOverrides {
+			if e := o.Setter(cmd, overrides); e != nil {
+				log.Fatal(e)
+			}
+		}
+
+		discovery, err := discovery.New(cmd.Context(), log, config, overrides)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -48,6 +93,10 @@ func init() {
 	rootCmd.AddCommand(discoveryCmd)
 
 	discoveryCmd.Flags().StringVar(&discoveryCfgFile, "config", "discovery.yaml", "config file (default is discovery.yaml)")
+
+	for _, o := range DiscoveryOverrides {
+		o.FlagHelper(discoveryCmd)
+	}
 }
 
 func loadDiscoveryConfigFromFile(file string) (*discovery.Config, error) {

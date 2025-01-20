@@ -327,7 +327,7 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 		kzgCommitments = append(kzgCommitments, commitment.String())
 	}
 
-	return &v2.EventBlockV2{
+	event := &v2.EventBlockV2{
 		Version: v2.BlockVersion_ELECTRA,
 		Message: &v2.EventBlockV2_ElectraBlock{
 			ElectraBlock: &v2.BeaconBlockElectra{
@@ -376,6 +376,11 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 				},
 			},
 		},
-		Signature: signature.String(),
 	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
 }

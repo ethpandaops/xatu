@@ -6,9 +6,9 @@ toolchain go1.22.1
 
 replace github.com/prysmaticlabs/prysm/v5 => github.com/ethpandaops/prysm/v5 v5.1.4
 
-replace github.com/attestantio/go-eth2-client => github.com/attestantio/go-eth2-client v0.23.1-0.20250114113159-1691823b93ca
+replace github.com/attestantio/go-eth2-client => github.com/attestantio/go-eth2-client v0.23.1-0.20250116194652-2157b429c0f7
 
-replace github.com/ethpandaops/beacon => github.com/ethpandaops/beacon v0.45.1-0.20250120040750-494d93735802
+replace github.com/ethpandaops/beacon => github.com/ethpandaops/beacon v0.45.1-0.20250120085245-c11c1ec64ea7
 
 require (
 	github.com/IBM/sarama v1.43.0

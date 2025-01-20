@@ -700,8 +700,6 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			slot := c.beacon.Node().Wallclock().Slots().Current()
-
 			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork())
 			if err != nil {
 				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
@@ -713,10 +711,10 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			if !fork.Active(phase0.Slot(slot.Number()), spec.SlotsPerEpoch) {
-				// Sleep until the next epochl and then retrty
-				currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
+			// Sleep until the next epochl and then retrty
+			currentEpoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 
+			if !fork.Active(phase0.Epoch(currentEpoch.Number())) {
 				activationForkEpoch := c.beacon.Node().Wallclock().Epochs().FromNumber(uint64(fork.Epoch))
 
 				sleepFor := time.Until(activationForkEpoch.TimeWindow().End())

@@ -4,7 +4,7 @@ pprofAddr: ":6061" # optional. if supplied it enables pprof server
 
 name: xatu-cannon
 
-# derivers:
+derivers:
 #   attesterSlashing:
 #     enabled: false
 #   blsToExecutionChange:

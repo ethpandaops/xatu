@@ -311,7 +311,7 @@ services:
   xatu-kafka:
     profiles:
       - ""
-    image: confluentinc/cp-kafka:latest
+    image: docker.ethquokkaops.io/dh/confluentinc/cp-kafka:latest
     hostname: xatu-kafka
     container_name: xatu-kafka
     environment:
@@ -348,7 +348,7 @@ services:
   xatu-kafka-zookeeper:
     profiles:
       - ""
-    image: zookeeper
+    image: docker.ethquokkaops.io/dh/zookeeper
     container_name: xatu-kafka-zookeeper
     environment:
       ZOO_LOG4J_PROP: "ERROR,CONSOLE"
@@ -369,7 +369,7 @@ services:
   xatu-vector-http-kafka:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.34.1-alpine
     container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
@@ -394,7 +394,7 @@ services:
   xatu-vector-kafka-clickhouse:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.37.1-alpine
     container_name: xatu-vector-kafka-clickhouse
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
@@ -427,7 +427,7 @@ services:
   xatu-vector-kafka-clickhouse-libp2p:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.37.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
     networks:
@@ -498,7 +498,7 @@ services:
     networks:
       - xatu-net
   tempo-init:
-    image: &tempoImage grafana/tempo:latest
+    image: &tempoImage docker.ethquokkaops.io/dh/grafana/tempo:latest
     user: root
     entrypoint:
       - "chown"
@@ -532,7 +532,7 @@ services:
   xatu-nginx:
     profiles:
       - ""
-    image: nginx:1.27.1-bookworm
+    image: docker.ethquokkaops.io/dh/nginx:1.27.1-bookworm
     container_name: xatu-nginx
     ports:
       - "${NGINX_ADDRESS:-127.0.0.1}:${NGINX_PORT:-8044}:80"

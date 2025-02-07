@@ -323,3 +323,39 @@ func NewWithdrawalsFromCapella(data []*capella.Withdrawal) []*WithdrawalV2 {
 
 	return withdrawals
 }
+
+func NewElectraExecutionRequestsFromElectra(data *electra.ExecutionRequests) *ElectraExecutionRequests {
+	requests := &ElectraExecutionRequests{}
+
+	if data == nil {
+		return requests
+	}
+
+	for _, consolidation := range data.Consolidations {
+		requests.Consolidations = append(requests.Consolidations, &ElectraExecutionRequestConsolidation{
+			SourceAddress: &wrapperspb.StringValue{Value: consolidation.SourceAddress.String()},
+			SourcePubkey:  &wrapperspb.StringValue{Value: consolidation.SourcePubkey.String()},
+			TargetPubkey:  &wrapperspb.StringValue{Value: consolidation.TargetPubkey.String()},
+		})
+	}
+
+	for _, deposit := range data.Deposits {
+		requests.Deposits = append(requests.Deposits, &ElectraExecutionRequestDeposit{
+			Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
+			WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
+			Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
+			Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
+			Index:                 &wrapperspb.UInt64Value{Value: deposit.Index},
+		})
+	}
+
+	for _, withdrawal := range data.Withdrawals {
+		requests.Withdrawals = append(requests.Withdrawals, &ElectraExecutionRequestWithdrawal{
+			SourceAddress:   &wrapperspb.StringValue{Value: withdrawal.SourceAddress.String()},
+			ValidatorPubkey: &wrapperspb.StringValue{Value: withdrawal.ValidatorPubkey.String()},
+			Amount:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
+		})
+	}
+
+	return requests
+}

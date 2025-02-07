@@ -13,7 +13,7 @@ import "pkg/proto/eth/v1/attestation.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
 import "pkg/proto/eth/v2/withdrawals.proto";
-
+import "pkg/proto/eth/v1/execution_requests.proto";
 
 message SignedBeaconBlockBellatrix {
   BeaconBlockBellatrix message = 1;
@@ -463,7 +463,7 @@ message BeaconBlockBodyElectra {
   repeated string blob_kzg_commitments = 12 
       [ json_name = "blob_kzg_commitments" ];
   
-  // TODO: ADD OTHER FIELDS
+  v1.ElectraExecutionRequests execution_requests = 13 [ json_name = "execution_requests" ];
 }
 
 message BlindedBeaconBlockBodyCapella {

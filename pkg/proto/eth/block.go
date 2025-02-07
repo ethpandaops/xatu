@@ -373,6 +373,7 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 					},
 					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					BlobKzgCommitments:    kzgCommitments,
+					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
 				},
 			},
 		},

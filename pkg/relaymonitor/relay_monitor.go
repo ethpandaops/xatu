@@ -12,14 +12,20 @@ import (
 	"time"
 
 	perrors "github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
@@ -40,11 +46,15 @@ type RelayMonitor struct {
 
 	metrics *Metrics
 
-	ethereum *ethereum.BeaconNetwork
+	ethereum *ethereum.BeaconNode
 
 	relays []*relay.Client
 
 	bidCache *DuplicateBidCache
+
+	validatorRegistrationMonitor *registrations.ValidatorMonitor
+
+	regestationEventsCh chan *registrations.ValidatorRegistrationEvent
 }
 
 const (
@@ -71,7 +81,8 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, err
 	}
 
-	client, err := ethereum.NewBeaconNetwork(
+	client, err := ethereum.NewBeaconNode(
+		config.Name,
 		log,
 		&config.Ethereum,
 	)
@@ -90,16 +101,20 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		relays = append(relays, relayClient)
 	}
 
+	regestationEventsCh := make(chan *registrations.ValidatorRegistrationEvent, 10000)
+
 	relayMonitor := &RelayMonitor{
-		Config:     config,
-		sinks:      sinks,
-		clockDrift: time.Duration(0),
-		log:        log,
-		id:         uuid.New(),
-		metrics:    NewMetrics(namespace, config.Ethereum.Network),
-		ethereum:   client,
-		relays:     relays,
-		bidCache:   NewDuplicateBidCache(time.Minute * 13),
+		Config:                       config,
+		sinks:                        sinks,
+		clockDrift:                   time.Duration(0),
+		log:                          log,
+		id:                           uuid.New(),
+		metrics:                      NewMetrics(namespace, config.Ethereum.Network),
+		ethereum:                     client,
+		relays:                       relays,
+		bidCache:                     NewDuplicateBidCache(time.Minute * 13),
+		regestationEventsCh:          regestationEventsCh,
+		validatorRegistrationMonitor: registrations.NewValidatorMonitor(log, &config.ValidatorRegistrations, relays, client, regestationEventsCh),
 	}
 
 	return relayMonitor, nil
@@ -122,6 +137,8 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 		}
 	}
 
+	go r.handleValidatorRegistrationEvents(ctx)
+
 	r.log.
 		WithField("version", xatu.Full()).
 		WithField("id", r.id.String()).
@@ -133,6 +150,16 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 		r.log.WithError(err).Warn("Failed to sync clock drift")
 	}
 
+	if r.clockDrift != 0 {
+		r.log.WithField("drift", r.clockDrift).Info("Clock drift detected")
+
+		maxDrift := time.Second * 60 * 5
+
+		if r.clockDrift > maxDrift || r.clockDrift < -maxDrift {
+			r.log.WithField("drift", r.clockDrift).Fatal("Clock drift is too high, exiting")
+		}
+	}
+
 	for _, sink := range r.sinks {
 		if err := sink.Start(ctx); err != nil {
 			return err
@@ -140,11 +167,17 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 	}
 
 	if err := r.ethereum.Start(ctx); err != nil {
-		return err
+		return errors.Join(err, fmt.Errorf("failed to start ethereum beacon node client"))
 	}
 
 	if err := r.startCrons(ctx); err != nil {
 		r.log.WithError(err).Fatal("Failed to start crons")
+	}
+
+	if r.Config.ValidatorRegistrations.Enabled != nil && *r.Config.ValidatorRegistrations.Enabled {
+		if err := r.validatorRegistrationMonitor.Start(ctx); err != nil {
+			return errors.Join(err, fmt.Errorf("failed to start validator registration"))
+		}
 	}
 
 	cancel := make(chan os.Signal, 1)
@@ -311,4 +344,137 @@ func (r *RelayMonitor) handleNewDecoratedEvent(ctx context.Context, event *xatu.
 	}
 
 	return nil
+}
+
+func (r *RelayMonitor) handleValidatorRegistrationEvents(ctx context.Context) {
+	for {
+		select {
+		case event := <-r.regestationEventsCh:
+			if event == nil {
+				continue
+			}
+
+			ev, err := r.createValidatorRegistrationEvent(ctx, event.Validator, event.Relay, event.Registration)
+			if err != nil {
+				r.log.WithError(err).Error("Failed to create validator registration event")
+
+				continue
+			}
+
+			if err := r.handleNewDecoratedEvent(ctx, ev); err != nil {
+				r.log.WithError(err).Error("Failed to handle new decorated event")
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (r *RelayMonitor) createValidatorRegistrationAdditionalData(
+	_ context.Context,
+	now time.Time,
+	validator *apiv1.Validator,
+	re *relay.Client,
+	registration *mevrelay.ValidatorRegistration,
+) (*xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData, error) {
+	// Calculate slot and epoch from registration timestamp
+	// Convert timestamp to time.Time
+	data := &xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData{
+		Relay: &mevrelay.Relay{
+			Url:  wrapperspb.String(re.URL()),
+			Name: wrapperspb.String(re.Name()),
+		},
+		ValidatorIndex: &wrapperspb.UInt64Value{
+			Value: uint64(validator.Index),
+		},
+	}
+
+	//nolint:gosec // Not a concern - heat death of universe stuff
+	timestamp := time.Unix(int64(registration.GetMessage().GetTimestamp().GetValue()), 0).UTC()
+
+	slot, epoch, err := r.ethereum.Wallclock().FromTime(timestamp)
+	if err != nil {
+		r.log.WithError(err).Error("Failed to get slot and epoch from timestamp when creating validator registration event")
+	} else {
+		data.Slot = &xatu.SlotV2{
+			Number: &wrapperspb.UInt64Value{
+				Value: slot.Number(),
+			},
+			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+		}
+		data.Epoch = &xatu.EpochV2{
+			Number: &wrapperspb.UInt64Value{
+				Value: epoch.Number(),
+			},
+			StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+		}
+	}
+
+	slot, epoch, err = r.ethereum.Wallclock().FromTime(now)
+	if err != nil {
+		r.log.WithError(err).Error("Failed to get slot and epoch from wallclock when creating validator registration event")
+	} else {
+		data.WallclockSlot = &xatu.SlotV2{
+			Number: &wrapperspb.UInt64Value{
+				Value: slot.Number(),
+			},
+			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+		}
+
+		data.WallclockEpoch = &xatu.EpochV2{
+			Number: &wrapperspb.UInt64Value{
+				Value: epoch.Number(),
+			},
+			StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+		}
+	}
+
+	return data, nil
+}
+
+func (r *RelayMonitor) createValidatorRegistrationEvent(
+	ctx context.Context,
+	validator *apiv1.Validator,
+	re *relay.Client,
+	registration *mevrelay.ValidatorRegistration,
+) (*xatu.DecoratedEvent, error) {
+	now := time.Now()
+
+	clientMeta, err := r.createNewClientMeta(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	additionalData, err := r.createValidatorRegistrationAdditionalData(ctx, now, validator, re, registration)
+	if err == nil {
+		metadata.AdditionalData = &xatu.ClientMeta_MevRelayValidatorRegistration{
+			MevRelayValidatorRegistration: additionalData,
+		}
+	} else {
+		r.log.WithError(err).Error("Failed to create validator registration additional data")
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_MEV_RELAY_VALIDATOR_REGISTRATION,
+			DateTime: timestamppb.New(now.Add(r.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_MevRelayValidatorRegistration{
+			MevRelayValidatorRegistration: &mevrelay.ValidatorRegistration{
+				Message:   registration.Message,
+				Signature: nil, // Signature is not needed for the event - lets save the bytes
+			},
+		},
+	}
+
+	return decoratedEvent, nil
 }

@@ -83,7 +83,7 @@ func (b *BeaconBlockDeriver) Start(ctx context.Context) error {
 
 	b.log.Info("Beacon block deriver enabled")
 
-	if err := b.iterator.Start(ctx); err != nil {
+	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 
@@ -379,6 +379,13 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 		}
 
 		addTxData(denebTxs)
+	case spec.DataVersionElectra:
+		electraTxs := make([][]byte, len(block.Electra.Message.Body.ExecutionPayload.Transactions))
+		for i, tx := range block.Electra.Message.Body.ExecutionPayload.Transactions {
+			electraTxs[i] = tx
+		}
+
+		addTxData(electraTxs)
 	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
@@ -408,6 +415,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Capella.Message, nil
 	case spec.DataVersionDeneb:
 		return block.Deneb.Message, nil
+	case spec.DataVersionElectra:
+		return block.Electra.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

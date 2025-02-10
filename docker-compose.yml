@@ -294,6 +294,7 @@ services:
           "mev-relay-bid-trace-builder-block-submission"
           "mev-relay-proposer-payload-delivered"
           "beacon-api-eth-v3-validator-block"
+          "mev-relay-validator-registration"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";
@@ -375,7 +376,7 @@ services:
     environment:
       KAFKA_BROKERS: "xatu-kafka:29092"
     ports:
-      - "${VECTOR_HTTP_KAFKA_ADDRESS:-127.0.0.1}:${VECTOR_HTTP_KAFKA_PORT:-9005}:9005"
+      - "${VECTOR_HTTP_KAFKA_ADDRESS:-127.0.0.1}:${VECTOR_HTTP_KAFKA_PORT:-9055}:9005"
     networks:
       - xatu-net
     healthcheck:
@@ -562,6 +563,7 @@ services:
       CANNON_XATU_OUTPUT_AUTHORIZATION: ${CANNON_XATU_OUTPUT_AUTHORIZATION:-Basic eGF0dTpleGFtcGxl}
       # Default of http://localhost:5052
       CANNON_BEACON_NODE_URL: ${CANNON_BEACON_NODE_URL:-http://localhost:5052}
+      CANNON_NETWORK_NAME: ${CANNON_NETWORK_NAME}
     volumes:
       - ./deploy/local/docker-compose/xatu-cannon.yaml:/etc/cannon/config.yaml
     networks:

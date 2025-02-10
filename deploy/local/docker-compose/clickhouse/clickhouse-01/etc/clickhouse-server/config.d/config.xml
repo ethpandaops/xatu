@@ -55,4 +55,7 @@
         <shard>01</shard>
         <replica>01</replica>
     </macros>
+    <access_control_improvements>
+        <settings_constraints_replace_previous>true</settings_constraints_replace_previous>
+    </access_control_improvements>
 </clickhouse>

@@ -3,10 +3,13 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
@@ -17,6 +20,10 @@ type Config struct {
 	URL  string `yaml:"url"`
 	Name string `yaml:"name"`
 }
+
+var ErrValidatorNotRegistered = errors.New("validator not registered")
+
+var ErrRateLimited = errors.New("rate limited")
 
 func (c *Config) Validate() error {
 	if c.URL == "" {
@@ -232,4 +239,80 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 	}
 
 	return payloads, nil
+}
+
+func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (*mevrelay.ValidatorRegistration, error) {
+	reqURL, err := url.Parse(c.baseURL + "/relay/v1/data/validator_registration")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse base URL: %w", err)
+	}
+
+	reqURL.RawQuery = url.Values{"pubkey": []string{pubkey}}.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL.String(), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			return nil, ErrRateLimited
+		}
+
+		// Check for "no registration found"
+		bodyBytes, errr := io.ReadAll(resp.Body)
+		if errr != nil {
+			return nil, fmt.Errorf("failed to read response body for non-200 status code: %w", errr)
+		}
+
+		if strings.Contains(string(bodyBytes), "no registration found") {
+			return nil, ErrValidatorNotRegistered
+		}
+
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var rawRegistrations struct {
+		Message struct {
+			//nolint:tagliatelle // Not our type
+			FeeRecipient string `json:"fee_recipient"`
+			//nolint:tagliatelle // Not our type
+			GasLimit  string `json:"gas_limit"`
+			Timestamp string `json:"timestamp"`
+			Pubkey    string `json:"pubkey"`
+		} `json:"message"`
+		Signature string `json:"signature"`
+	}
+
+	if errr := json.NewDecoder(resp.Body).Decode(&rawRegistrations); errr != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", errr)
+	}
+
+	gasLimit, err := strconv.ParseUint(rawRegistrations.Message.GasLimit, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse gas limit: %w", err)
+	}
+
+	timestamp, err := strconv.ParseUint(rawRegistrations.Message.Timestamp, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp: %w", err)
+	}
+
+	registration := &mevrelay.ValidatorRegistration{
+		Message: &mevrelay.ValidatorRegistrationMessage{
+			FeeRecipient: &wrapperspb.StringValue{Value: rawRegistrations.Message.FeeRecipient},
+			GasLimit:     &wrapperspb.UInt64Value{Value: gasLimit},
+			Timestamp:    &wrapperspb.UInt64Value{Value: timestamp},
+			Pubkey:       &wrapperspb.StringValue{Value: rawRegistrations.Message.Pubkey},
+		},
+		Signature: &wrapperspb.StringValue{Value: rawRegistrations.Signature},
+	}
+
+	return registration, nil
 }

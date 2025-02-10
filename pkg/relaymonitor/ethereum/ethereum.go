@@ -2,75 +2,91 @@ package ethereum
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"strconv"
+	"sync"
 	"time"
 
+	eth2client "github.com/attestantio/go-eth2-client"
+	"github.com/attestantio/go-eth2-client/api"
+	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
-type BeaconNetwork struct {
+type BeaconNode struct {
 	log       logrus.FieldLogger
 	config    *Config
+	node      beacon.Node
 	wallclock *ethwallclock.EthereumBeaconChain
 }
 
-//nolint:tagliatelle // At the mercy of the config spec.
-type NetworkConfig struct {
-	SecondsPerSlot uint64 `yaml:"SECONDS_PER_SLOT"`
-}
-
-func NewBeaconNetwork(log logrus.FieldLogger, config *Config) (*BeaconNetwork, error) {
+func NewBeaconNode(name string, log logrus.FieldLogger, config *Config) (*BeaconNode, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
-	return &BeaconNetwork{
-		log:    log.WithField("component", "ethereum/beacon_network"),
+	opts := *beacon.
+		DefaultOptions().
+		DisableEmptySlotDetection().
+		DisablePrometheusMetrics()
+
+	opts.HealthCheck.Interval.Duration = time.Second * 3
+	opts.HealthCheck.SuccessfulResponses = 1
+
+	opts.BeaconSubscription.Enabled = false
+
+	node := beacon.NewNode(log, &beacon.Config{
+		Name:    name,
+		Addr:    config.BeaconNodeURL,
+		Headers: config.BeaconNodeHeaders,
+	}, "xatu_relaymonitor", opts)
+
+	return &BeaconNode{
+		log:    log.WithField("component", "relaymonitor/ethereum/beacon"),
 		config: config,
+		node:   node,
 	}, nil
 }
 
-func (b *BeaconNetwork) Wallclock() *ethwallclock.EthereumBeaconChain {
+func (b *BeaconNode) Wallclock() *ethwallclock.EthereumBeaconChain {
 	return b.wallclock
 }
 
-func (b *BeaconNetwork) Start(ctx context.Context) error {
-	// Fetch the network config from the URL
-	networkConfig, err := b.fetchNetworkConfig(ctx)
+func (b *BeaconNode) Start(ctx context.Context) error {
+	// Start a 5min deadling timer to wait for the beacon node to be ready
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	b.node.OnReady(ctx, func(ctx context.Context, event *beacon.ReadyEvent) error {
+		wg.Done()
+
+		return nil
+	})
+
+	b.node.StartAsync(ctx)
+
+	wg.Wait()
+
+	spec, err := b.node.Spec()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch network config")
+		return errors.Wrap(err, "failed to get spec")
 	}
 
-	b.log.WithFields(logrus.Fields{
-		"seconds_per_slot": networkConfig.SecondsPerSlot,
-	}).Info("Fetched network config")
-
-	if networkConfig.SecondsPerSlot == 0 {
-		return errors.New("invalid seconds_per_slot value found in network config: 0")
-	}
-
-	genesisTime, err := b.fetchGenesisTime(ctx)
+	genesis, err := b.node.FetchGenesis(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch genesis time")
+		return errors.Wrap(err, "failed to fetch genesis")
 	}
-
-	b.log.WithFields(logrus.Fields{
-		"genesis_time": genesisTime,
-		"human_time":   time.Unix(int64(genesisTime), 0).Format("2006-01-02 15:04:05"),
-	}).Info("Fetched genesis time")
 
 	// Create a new EthereumBeaconChain with the fetched genesis time and network config
 	b.wallclock = ethwallclock.NewEthereumBeaconChain(
-		time.Unix(int64(genesisTime), 0),
-		time.Duration(networkConfig.SecondsPerSlot)*time.Second,
-		b.config.SlotsPerEpoch,
+		genesis.GenesisTime,
+		time.Duration(spec.SecondsPerSlot),
+		uint64(spec.SlotsPerEpoch),
 	)
 
 	slot, epoch, err := b.wallclock.Now()
@@ -86,67 +102,24 @@ func (b *BeaconNetwork) Start(ctx context.Context) error {
 	return nil
 }
 
-func (b *BeaconNetwork) fetchNetworkConfig(ctx context.Context) (*NetworkConfig, error) {
-	resp, err := http.Get(b.config.NetworkConfigURL)
+func (b *BeaconNode) GetActiveValidators(ctx context.Context) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+	provider, isProvider := b.node.Service().(eth2client.ValidatorsProvider)
+	if !isProvider {
+		return nil, errors.New("node service is not a validators provider")
+	}
+
+	resp, err := provider.Validators(ctx, &api.ValidatorsOpts{
+		ValidatorStates: []apiv1.ValidatorState{apiv1.ValidatorStateActiveOngoing},
+		State:           "head",
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get active validators")
 	}
 
-	var config NetworkConfig
-
-	err = yaml.Unmarshal(body, &config)
-	if err != nil {
-		return nil, err
+	validators := make(map[phase0.ValidatorIndex]*apiv1.Validator, 0)
+	for _, v := range resp.Data {
+		validators[v.Index] = v
 	}
 
-	return &config, nil
-}
-
-// FetchGenesisTime fetches the genesis time from a given URL.
-func (b *BeaconNetwork) fetchGenesisTime(ctx context.Context) (uint64, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", b.config.GenesisJSONURL, http.NoBody)
-	if err != nil {
-		return 0, err
-	}
-
-	req.Header.Set("Accept", "application/json")
-
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return 0, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var data struct {
-		Data struct {
-			//nolint:tagliatelle // At the mercy of the config spec.
-			GenesisTime string `json:"genesis_time"`
-		} `json:"data"`
-	}
-
-	if errr := json.Unmarshal(body, &data); errr != nil {
-		return 0, fmt.Errorf("failed to unmarshal response body: %w", errr)
-	}
-
-	if data.Data.GenesisTime == "" {
-		return 0, errors.New("genesis time not found in response")
-	}
-
-	genesisTime, err := strconv.ParseUint(data.Data.GenesisTime, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return genesisTime, nil
+	return validators, nil
 }

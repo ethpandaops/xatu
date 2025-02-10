@@ -1,4 +1,4 @@
-# Xatu
+# <img src="./assets/xatu.png" height="40" alt="Xatu Logo"> Xatu
 
 Ethereum network monitoring with collection clients and a centralized server for data pipelining.
 
@@ -66,7 +66,7 @@ Download the latest release from the [Releases page](https://github.com/ethpanda
 
 ### Install via bash script
 
-View the install script [here](./installer.sh). You can run the following to install:
+View the install script [here](./install.sh). You can run the following to install:
 ```
 curl -sL https://raw.githubusercontent.com/ethpandaops/xatu/master/install.sh | bash
 ```

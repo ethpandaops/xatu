@@ -6,11 +6,13 @@ import (
 
 	"github.com/attestantio/go-eth2-client/api"
 	apiv1deneb "github.com/attestantio/go-eth2-client/api/v1/deneb"
+	apiv1electra "github.com/attestantio/go-eth2-client/api/v1/electra"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/altair"
 	"github.com/attestantio/go-eth2-client/spec/bellatrix"
 	"github.com/attestantio/go-eth2-client/spec/capella"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
+	"github.com/attestantio/go-eth2-client/spec/electra"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/holiman/uint256"
@@ -76,6 +78,17 @@ func TestNewEventBlockV2FromVersionedProposal(t *testing.T) {
 			},
 			expectedError:   false,
 			expectedVersion: v2.BlockVersion_DENEB,
+		},
+		{
+			name: "electra proposal",
+			proposal: &api.VersionedProposal{
+				Version: spec.DataVersionElectra,
+				Electra: &apiv1electra.BlockContents{
+					Block: mockElectraBlock(),
+				},
+			},
+			expectedError:   false,
+			expectedVersion: v2.BlockVersion_ELECTRA,
 		},
 	}
 
@@ -322,6 +335,42 @@ func mockDenebBlock() *deneb.BeaconBlock {
 			},
 			BLSToExecutionChanges: []*capella.SignedBLSToExecutionChange{},
 			BlobKZGCommitments:    []deneb.KZGCommitment{},
+		},
+	}
+}
+
+func mockElectraBlock() *electra.BeaconBlock {
+	return &electra.BeaconBlock{
+		Slot:          phase0.Slot(1),
+		ProposerIndex: phase0.ValidatorIndex(1),
+		ParentRoot:    [32]byte{},
+		StateRoot:     [32]byte{},
+		Body: &electra.BeaconBlockBody{
+			RANDAOReveal: [96]byte{},
+			ETH1Data: &phase0.ETH1Data{
+				DepositRoot:  [32]byte{},
+				DepositCount: 1,
+				BlockHash:    []byte{},
+			},
+			Graffiti:          [32]byte{},
+			ProposerSlashings: []*phase0.ProposerSlashing{},
+			AttesterSlashings: []*electra.AttesterSlashing{},
+			Attestations:      []*electra.Attestation{},
+			Deposits:          []*phase0.Deposit{},
+			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
+			SyncAggregate: &altair.SyncAggregate{
+				SyncCommitteeBits: []byte{},
+			},
+			ExecutionPayload: &deneb.ExecutionPayload{
+				BaseFeePerGas: uint256.NewInt(1),
+			},
+			BLSToExecutionChanges: []*capella.SignedBLSToExecutionChange{},
+			BlobKZGCommitments:    []deneb.KZGCommitment{},
+			ExecutionRequests: &electra.ExecutionRequests{
+				Deposits:       []*electra.DepositRequest{},
+				Withdrawals:    []*electra.WithdrawalRequest{},
+				Consolidations: []*electra.ConsolidationRequest{},
+			},
 		},
 	}
 }

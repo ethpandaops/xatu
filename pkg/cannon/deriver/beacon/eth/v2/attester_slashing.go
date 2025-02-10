@@ -263,39 +263,74 @@ func (a *AttesterSlashingDeriver) getAttesterSlashings(ctx context.Context, bloc
 	}
 
 	for _, slashing := range attesterSlashings {
+		att1, err := slashing.Attestation1()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation 1")
+		}
+
+		indexedAttestation1, err := convertIndexedAttestation(att1)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert indexed attestation 1")
+		}
+
+		att2, err := slashing.Attestation2()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation 2")
+		}
+
+		indexedAttestation2, err := convertIndexedAttestation(att2)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert indexed attestation 2")
+		}
+
 		slashings = append(slashings, &xatuethv1.AttesterSlashingV2{
-			Attestation_1: convertIndexedAttestation(slashing.Attestation1),
-			Attestation_2: convertIndexedAttestation(slashing.Attestation2),
+			Attestation_1: indexedAttestation1,
+			Attestation_2: indexedAttestation2,
 		})
 	}
 
 	return slashings, nil
 }
 
-func convertIndexedAttestation(attestation *phase0.IndexedAttestation) *xatuethv1.IndexedAttestationV2 {
+func convertIndexedAttestation(attestation *spec.VersionedIndexedAttestation) (*xatuethv1.IndexedAttestationV2, error) {
 	indicies := []*wrapperspb.UInt64Value{}
 
-	for _, index := range attestation.AttestingIndices {
+	atIndicies, err := attestation.AttestingIndices()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attesting indices")
+	}
+
+	for _, index := range atIndicies {
 		indicies = append(indicies, &wrapperspb.UInt64Value{Value: index})
+	}
+
+	data, err := attestation.Data()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation data")
+	}
+
+	sig, err := attestation.Signature()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation signature")
 	}
 
 	return &xatuethv1.IndexedAttestationV2{
 		AttestingIndices: indicies,
 		Data: &xatuethv1.AttestationDataV2{
-			Slot:            &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Slot)},
-			Index:           &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Index)},
-			BeaconBlockRoot: attestation.Data.BeaconBlockRoot.String(),
+			Slot:            &wrapperspb.UInt64Value{Value: uint64(data.Slot)},
+			Index:           &wrapperspb.UInt64Value{Value: uint64(data.Index)},
+			BeaconBlockRoot: data.BeaconBlockRoot.String(),
 			Source: &xatuethv1.CheckpointV2{
-				Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Source.Epoch)},
-				Root:  attestation.Data.Source.Root.String(),
+				Epoch: &wrapperspb.UInt64Value{Value: uint64(data.Source.Epoch)},
+				Root:  data.Source.Root.String(),
 			},
 			Target: &xatuethv1.CheckpointV2{
-				Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Target.Epoch)},
-				Root:  attestation.Data.Target.Root.String(),
+				Epoch: &wrapperspb.UInt64Value{Value: uint64(data.Target.Epoch)},
+				Root:  data.Target.Root.String(),
 			},
 		},
-		Signature: attestation.Signature.String(),
-	}
+		Signature: sig.String(),
+	}, nil
 }
 
 func (a *AttesterSlashingDeriver) createEvent(ctx context.Context, slashing *xatuethv1.AttesterSlashingV2, identifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {

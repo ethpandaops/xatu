@@ -136,6 +136,28 @@ message ExecutionPayloadDeneb {
       [ json_name = "excess_blob_gas" ];
 }
 
+message ExecutionPayloadElectra {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  repeated string transactions = 14;
+  repeated WithdrawalV2 withdrawals = 15;
+  google.protobuf.UInt64Value blob_gas_used = 16
+      [ json_name = "blob_gas_used" ];
+  google.protobuf.UInt64Value excess_blob_gas = 17
+      [ json_name = "excess_blob_gas" ];
+}
+
 message Withdrawal {
   uint64 index = 1;
 

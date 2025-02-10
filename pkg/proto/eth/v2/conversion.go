@@ -1,6 +1,8 @@
 package v2
 
-import "github.com/attestantio/go-eth2-client/spec/capella"
+import (
+	"github.com/attestantio/go-eth2-client/spec/capella"
+)
 
 func NewBLSToExecutionChangesFromCapella(data []*capella.SignedBLSToExecutionChange) []*SignedBLSToExecutionChange {
 	changes := []*SignedBLSToExecutionChange{}

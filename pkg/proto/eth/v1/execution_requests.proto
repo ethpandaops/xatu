@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+message ElectraExecutionRequests {
+  repeated ElectraExecutionRequestDeposit deposits = 1;
+  repeated ElectraExecutionRequestWithdrawal withdrawals = 2;
+  repeated ElectraExecutionRequestConsolidation consolidations = 3;
+}
+
+message ElectraExecutionRequestDeposit {
+    google.protobuf.StringValue pubkey = 1;
+    google.protobuf.StringValue withdrawal_credentials = 2 [json_name = "withdrawal_credentials"];
+    google.protobuf.UInt64Value amount = 3;
+    google.protobuf.StringValue signature = 4;
+    google.protobuf.UInt64Value index = 5 ;
+}
+
+message ElectraExecutionRequestWithdrawal {
+    google.protobuf.StringValue source_address = 1 [json_name = "source_address"];
+    google.protobuf.StringValue validator_pubkey = 2 [json_name = "validator_pubkey"];
+    google.protobuf.UInt64Value amount = 3;
+}
+
+message ElectraExecutionRequestConsolidation {
+    google.protobuf.StringValue source_address = 1 [json_name = "source_address"];
+    google.protobuf.StringValue source_pubkey = 2 [json_name = "source_pubkey"];
+    google.protobuf.StringValue target_pubkey = 3 [json_name = "target_pubkey"];
+}

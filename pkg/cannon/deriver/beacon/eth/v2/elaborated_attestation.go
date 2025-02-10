@@ -264,16 +264,26 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	events := []*xatu.DecoratedEvent{}
 
 	for positionInBlock, attestation := range blockAttestations {
-		epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestation.Data.Slot))
+		attestationData, err := attestation.Data()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation data")
+		}
+
+		epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
 
 		// Get all the validator indexes of those who signed the attestation
 		indexes := []*wrapperspb.UInt64Value{}
 
-		for _, position := range attestation.AggregationBits.BitIndices() {
+		bitIndices, err := attestation.AggregationBits()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
+		}
+
+		for _, position := range bitIndices.BitIndices() {
 			validatorIndex, err := b.beacon.Duties().GetValidatorIndex(
 				phase0.Epoch(epoch.Number()),
-				attestation.Data.Slot,
-				attestation.Data.Index,
+				attestationData.Slot,
+				attestationData.Index,
 				uint64(position),
 			)
 			if err != nil {
@@ -283,19 +293,24 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
 		}
 
+		signature, err := attestation.Signature()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation signature")
+		}
+
 		elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
-			Signature: attestation.Signature.String(),
+			Signature: signature.String(),
 			Data: &xatuethv1.AttestationDataV2{
-				Slot:            &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Slot)},
-				Index:           &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Index)},
-				BeaconBlockRoot: xatuethv1.RootAsString(attestation.Data.BeaconBlockRoot),
+				Slot:            &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
+				Index:           &wrapperspb.UInt64Value{Value: uint64(attestationData.Index)},
+				BeaconBlockRoot: xatuethv1.RootAsString(attestationData.BeaconBlockRoot),
 				Source: &xatuethv1.CheckpointV2{
-					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Source.Epoch)},
-					Root:  xatuethv1.RootAsString(attestation.Data.Source.Root),
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Source.Epoch)},
+					Root:  xatuethv1.RootAsString(attestationData.Source.Root),
 				},
 				Target: &xatuethv1.CheckpointV2{
-					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Target.Epoch)},
-					Root:  xatuethv1.RootAsString(attestation.Data.Target.Root),
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Target.Epoch)},
+					Root:  xatuethv1.RootAsString(attestationData.Target.Root),
 				},
 			},
 			ValidatorIndexes: indexes,

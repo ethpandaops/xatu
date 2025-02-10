@@ -9,6 +9,7 @@ import (
 	client "github.com/attestantio/go-eth2-client"
 	"github.com/attestantio/go-eth2-client/api"
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
+	ehttp "github.com/attestantio/go-eth2-client/http"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
@@ -54,6 +55,10 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		DefaultOptions().
 		DisableEmptySlotDetection().
 		DisablePrometheusMetrics()
+
+	opts.GoEth2ClientParams = []ehttp.Parameter{
+		ehttp.WithEnforceJSON(true),
+	}
 
 	opts.HealthCheck.Interval.Duration = time.Second * 3
 	opts.HealthCheck.SuccessfulResponses = 1

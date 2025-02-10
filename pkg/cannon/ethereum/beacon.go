@@ -57,6 +57,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		DisablePrometheusMetrics()
 
 	opts.GoEth2ClientParams = []ehttp.Parameter{
+		// Default JSON until https://github.com/attestantio/go-eth2-client/pull/198 is merged.
 		ehttp.WithEnforceJSON(true),
 	}
 

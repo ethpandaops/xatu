@@ -532,7 +532,7 @@ services:
   xatu-nginx:
     profiles:
       - ""
-    image: nginx:1.27.1-bookworm
+    image: nginx:1.27.4-bookworm
     container_name: xatu-nginx
     ports:
       - "${NGINX_ADDRESS:-127.0.0.1}:${NGINX_PORT:-8044}:80"

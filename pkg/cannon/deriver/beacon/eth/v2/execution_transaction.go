@@ -428,6 +428,8 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 		case spec.DataVersionElectra:
 			executionPayload := block.Electra.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		default:
+			return nil, fmt.Errorf("unknown block version: %d", block.Version)
 		}
 
 		// Calculate Effective Gas Price: min(max_fee_per_gas, base_fee + max_priority_fee_per_gas)

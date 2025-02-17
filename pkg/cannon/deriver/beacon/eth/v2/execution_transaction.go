@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -274,7 +275,11 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			return nil, fmt.Errorf("failed to get transaction sender: %v", err)
 		}
 
-		gasPrice := transaction.GasPrice()
+		gasPrice, err := GetGasPrice(block, transaction)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get transaction gas price: %v", err)
+		}
+
 		if gasPrice == nil {
 			return nil, fmt.Errorf("failed to get transaction gas price")
 		}
@@ -298,7 +303,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		tx := &xatuethv1.Transaction{
 			Nonce:     wrapperspb.UInt64(transaction.Nonce()),
 			Gas:       wrapperspb.UInt64(transaction.Gas()),
-			GasPrice:  transaction.GasPrice().String(),
+			GasPrice:  gasPrice.String(),
 			GasTipCap: transaction.GasTipCap().String(),
 			GasFeeCap: transaction.GasFeeCap().String(),
 			To:        to,
@@ -404,4 +409,35 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 	}
 
 	return decoratedEvent, nil
+}
+
+func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Transaction) (*big.Int, error) {
+	if transaction.Type() == 0 || transaction.Type() == 1 {
+		return transaction.GasPrice(), nil
+	}
+
+	if transaction.Type() == 2 || transaction.Type() == 3 { // EIP-1559 or Blob transactions
+		baseFee := new(big.Int)
+
+		switch block.Version {
+		case spec.DataVersionBellatrix:
+			baseFee = new(big.Int).SetBytes(block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGas[:])
+		case spec.DataVersionDeneb:
+			executionPayload := block.Deneb.Message.Body.ExecutionPayload
+			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		case spec.DataVersionElectra:
+			executionPayload := block.Electra.Message.Body.ExecutionPayload
+			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		}
+
+		// Calculate Effective Gas Price: min(max_fee_per_gas, base_fee + max_priority_fee_per_gas)
+		gasPrice := new(big.Int).Add(baseFee, transaction.GasTipCap())
+		if gasPrice.Cmp(transaction.GasFeeCap()) > 0 {
+			gasPrice = transaction.GasFeeCap()
+		}
+
+		return gasPrice, nil
+	}
+
+	return nil, fmt.Errorf("unknown transaction type: %d", transaction.Type())
 }

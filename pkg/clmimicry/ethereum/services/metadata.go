@@ -7,7 +7,7 @@ import (
 	"time"
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
-	backoff "github.com/cenkalti/backoff/v4"
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/ethwallclock"
@@ -49,19 +49,26 @@ func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node, overrideNet
 
 func (m *MetadataService) Start(ctx context.Context) error {
 	go func() {
-		operation := func() error {
+		operation := func() (string, error) {
 			if err := m.RefreshAll(ctx); err != nil {
-				return err
+				return "", err
 			}
 
 			if err := m.Ready(ctx); err != nil {
-				return err
+				return "", err
 			}
 
-			return nil
+			return "", nil
 		}
 
-		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+		retryOpts := []backoff.RetryOption{
+			backoff.WithBackOff(backoff.NewExponentialBackOff()),
+			backoff.WithNotify(func(err error, timer time.Duration) {
+				m.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to refresh metadata")
+			}),
+		}
+
+		if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
 			m.log.WithError(err).Warn("Failed to refresh metadata")
 		}
 

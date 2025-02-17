@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v4"
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
@@ -58,15 +58,22 @@ func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *Met
 
 func (m *DutiesService) Start(ctx context.Context) error {
 	go func() {
-		operation := func() error {
+		operation := func() (string, error) {
 			if err := m.Ready(ctx); err != nil {
-				return err
+				return "", err
 			}
 
-			return nil
+			return "", nil
 		}
 
-		if err := backoff.Retry(operation, backoff.NewExponentialBackOff()); err != nil {
+		retryOpts := []backoff.RetryOption{
+			backoff.WithBackOff(backoff.NewExponentialBackOff()),
+			backoff.WithNotify(func(err error, timer time.Duration) {
+				m.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to fetch epoch duties")
+			}),
+		}
+
+		if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
 			m.log.WithError(err).Warn("Failed to fetch epoch duties")
 		}
 

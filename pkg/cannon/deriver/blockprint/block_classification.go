@@ -7,7 +7,7 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v4"
+	backoff "github.com/cenkalti/backoff/v5"
 	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
@@ -108,7 +108,7 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 		case <-rctx.Done():
 			return
 		default:
-			operation := func() error {
+			operation := func() (string, error) {
 				ctx, span := observability.Tracer().Start(rctx, fmt.Sprintf("Derive %s", b.Name()),
 					trace.WithAttributes(
 						attribute.String("network", string(b.beacon.Metadata().Network.Name))),
@@ -120,7 +120,7 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 				// Get the next slot
 				location, err := b.iterator.Next(ctx)
 				if err != nil {
-					return err
+					return "", err
 				}
 
 				// Process the location
@@ -136,17 +136,17 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 				}
 
 				if currentSlot >= end {
-					return errors.New("current slot is equal or larger than end slot")
+					return "", errors.New("current slot is equal or larger than end slot")
 				}
 
 				events, err := b.processLocation(ctx, currentSlot, end)
 				if err != nil {
-					return errors.Wrapf(err, "failed to process location start_slot: %d end_slot: %d", currentSlot, end)
+					return "", errors.Wrapf(err, "failed to process location start_slot: %d end_slot: %d", currentSlot, end)
 				}
 
 				for _, fn := range b.onEventsCallbacks {
 					if errr := fn(ctx, events); errr != nil {
-						return errors.Wrapf(errr, "failed to send events")
+						return "", errors.Wrapf(errr, "failed to send events")
 					}
 				}
 
@@ -159,7 +159,7 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 
 				// Update our location
 				if err := b.iterator.UpdateLocation(ctx, location); err != nil {
-					return err
+					return "", err
 				}
 
 				// Sleep if everything went well to avoid hammering the API
@@ -167,12 +167,17 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 
 				bo.Reset()
 
-				return nil
+				return "", nil
 			}
 
-			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
-				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
-			}); err != nil {
+			retryOpts := []backoff.RetryOption{
+				backoff.WithBackOff(bo),
+				backoff.WithNotify(func(err error, timer time.Duration) {
+					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+				}),
+			}
+
+			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}

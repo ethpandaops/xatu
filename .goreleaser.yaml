@@ -33,21 +33,6 @@ builds:
       - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=linux -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=arm64
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-  - id: windows-amd64
-    env:
-      - CGO_ENABLED=1
-      - CC=x86_64-w64-mingw32-gcc
-      - CXX=x86_64-w64-mingw32-g++
-      - CGO_CXXFLAGS="-std=c++11"
-    binary: xatu-{{.Version}}
-    goos:
-    - windows
-    goarch:
-    - amd64
-    ldflags:
-      - -s -w -extldflags "-static" -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=windows -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=amd64
-    mod_timestamp: "{{ .CommitTimestamp }}"
-
   - id: darwin-amd64
     env:
       - CGO_ENABLED=1

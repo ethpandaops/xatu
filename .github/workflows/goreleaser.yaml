@@ -38,7 +38,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version: '1.23'
       - uses: actions/setup-node@v3
         name: Set up Node
         with:
@@ -86,4 +86,4 @@ jobs:
             -e DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
-            goreleaser/goreleaser-cross:v1.22.2 release --clean --config .goreleaser.yaml.new
+            goreleaser/goreleaser-cross:v1.23.6 release --clean --config .goreleaser.yaml.new

@@ -16,7 +16,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version: '1.23'
       - uses: actions/setup-node@v3
         name: Set up Node
         with:
@@ -25,6 +25,8 @@ jobs:
         run: sudo apt-get update
       - name: Install cross-compiler for linux/arm64
         run: sudo apt-get -y install gcc-aarch64-linux-gnu
+      - name: Install Windows cross-compiler dependencies
+        run: sudo apt-get -y install mingw-w64-x86-64-dev gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
       - name: Install make
         run: sudo apt-get -y install make
       - name: Set up QEMU
@@ -46,4 +48,4 @@ jobs:
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX="test" \
-            goreleaser/goreleaser-cross:v1.22.2 release --clean --config .goreleaser.yaml --skip=publish --skip=validate
+            goreleaser/goreleaser-cross:v1.23.6 release --clean --config .goreleaser.yaml --skip=publish --skip=validate

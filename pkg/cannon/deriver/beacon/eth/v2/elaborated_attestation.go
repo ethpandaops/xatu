@@ -7,7 +7,7 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v4"
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -105,7 +105,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 		case <-rctx.Done():
 			return
 		default:
-			operation := func() error {
+			operation := func() (string, error) {
 				ctx, span := tracer.Start(rctx, fmt.Sprintf("Derive %s", b.Name()),
 					trace.WithAttributes(
 						attribute.String("network", string(b.beacon.Metadata().Network.Name))),
@@ -117,7 +117,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				if err := b.beacon.Synced(ctx); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
-					return err
+					return "", err
 				}
 
 				// Get the next position.
@@ -125,7 +125,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
-					return err
+					return "", err
 				}
 
 				// Process the epoch
@@ -135,7 +135,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 
 					span.SetStatus(codes.Error, err.Error())
 
-					return err
+					return "", err
 				}
 
 				// Look ahead
@@ -146,7 +146,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 					if err := fn(ctx, events); err != nil {
 						span.SetStatus(codes.Error, err.Error())
 
-						return errors.Wrap(err, "failed to send events")
+						return "", errors.Wrap(err, "failed to send events")
 					}
 				}
 
@@ -154,17 +154,22 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
-					return err
+					return "", err
 				}
 
 				bo.Reset()
 
-				return nil
+				return "", nil
 			}
 
-			if err := backoff.RetryNotify(operation, bo, func(err error, timer time.Duration) {
-				b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
-			}); err != nil {
+			retryOpts := []backoff.RetryOption{
+				backoff.WithBackOff(bo),
+				backoff.WithNotify(func(err error, timer time.Duration) {
+					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+				}),
+			}
+
+			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}

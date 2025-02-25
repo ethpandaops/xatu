@@ -50,6 +50,10 @@ func (m *Mimicry) handleGossipBeaconBlock(
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
+	case *eth.TraceEventElectraBlock:
+		root, err = evt.Block.GetBlock().HashTreeRoot()
+		slot = evt.Block.GetBlock().GetSlot()
+		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
 	default:
 		return fmt.Errorf("handleGossipBeaconBlock(): called with unknown block type")
 	}
@@ -161,6 +165,11 @@ func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
 	case *eth.TraceEventDenebBlock:
+		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
+		extra.Topic = wrapperspb.String(evt.Topic)
+		extra.MessageId = wrapperspb.String(evt.MsgID)
+		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
+	case *eth.TraceEventElectraBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)

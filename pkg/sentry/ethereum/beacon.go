@@ -177,24 +177,9 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 		return errors.New("missing beacon status")
 	}
 
-	syncState := status.SyncState()
-	if syncState == nil {
-		return errors.New("missing beacon node status sync state")
-	}
-
-	if syncState.SyncDistance > 3 {
-		return errors.New("beacon node is not synced")
-	}
-
 	wallclock := b.Metadata().Wallclock()
 	if wallclock == nil {
 		return errors.New("missing wallclock")
-	}
-
-	currentSlot := wallclock.Slots().Current()
-
-	if currentSlot.Number()-uint64(syncState.HeadSlot) > 32 {
-		return fmt.Errorf("beacon node is too far behind head, head slot is %d, current slot is %d", syncState.HeadSlot, currentSlot.Number())
 	}
 
 	for _, service := range b.services {

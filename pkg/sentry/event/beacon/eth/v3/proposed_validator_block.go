@@ -181,6 +181,13 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 		}
 
 		addTxData(denebTxs)
+	case spec.DataVersionElectra:
+		electraTxs := make([][]byte, len(e.event.Electra.Block.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Electra.Block.Body.ExecutionPayload.Transactions {
+			electraTxs[i] = tx
+		}
+
+		addTxData(electraTxs)
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")
 	}

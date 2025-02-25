@@ -4,6 +4,8 @@ go 1.23.5
 
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.3-0.20250224103242-ac07eb24a0b6
 
+replace github.com/ethpandaops/beacon => ../beacon
+
 require (
 	github.com/IBM/sarama v1.45.0
 	github.com/attestantio/go-eth2-client v0.24.0

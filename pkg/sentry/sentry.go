@@ -278,7 +278,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			s.log.Fatal("Unable to determine Ethereum network. Provide an override network name via ethereum.overrideNetworkName")
 		}
 
-		s.beacon.Node().OnAttestation(ctx, func(ctx context.Context, attestation *phase0.Attestation) error {
+		s.beacon.Node().OnAttestation(ctx, func(ctx context.Context, ev *beacon.VersionedAttestation) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)
@@ -286,7 +286,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			event := v1.NewEventsAttestation(s.log, attestation, now, s.beacon, s.duplicateCache.BeaconETHV1EventsAttestation, meta)
+			event := v1.NewEventsAttestation(s.log, ev, now, s.beacon, s.duplicateCache.BeaconETHV1EventsAttestation, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {

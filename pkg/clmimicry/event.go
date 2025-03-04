@@ -451,13 +451,17 @@ func (m *Mimicry) handleHandleMessageEvent(
 			return nil
 		}
 
-		payload, ok := event.Payload.(*eth.TraceEventAttestation)
-		if !ok {
-			return errors.New("invalid payload type for HandleMessage event")
-		}
-
-		if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
-			return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
+		switch payload := event.Payload.(type) {
+		case *eth.TraceEventAttestation:
+			if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
+				return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
+			}
+		case *eth.TraceEventSingleAttestation:
+			if err := m.handleGossipSingleAttestation(ctx, clientMeta, event, payload); err != nil {
+				return errors.Wrap(err, "failed to handle gossipsub single beacon attestation")
+			}
+		default:
+			return fmt.Errorf("invalid payload type for HandleMessage event: %T", event.Payload)
 		}
 	case strings.Contains(topic, p2p.GossipBlockMessage):
 		if !m.Config.Events.GossipSubBeaconBlockEnabled {

@@ -33,33 +33,33 @@ builds:
       - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=linux -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=arm64
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-  - id: darwin-amd64
-    env:
-      - CGO_ENABLED=1
-      - CC=o64-clang
-      - CXX=o64-clang++
-    binary: xatu-{{.Version}}
-    goos:
-    - darwin
-    goarch:
-    - amd64
-    ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=darwin -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=amd64
-    mod_timestamp: "{{ .CommitTimestamp }}"
+  # - id: darwin-amd64
+  #   env:
+  #     - CGO_ENABLED=1
+  #     - CC=o64-clang
+  #     - CXX=o64-clang++
+  #   binary: xatu-{{.Version}}
+  #   goos:
+  #   - darwin
+  #   goarch:
+  #   - amd64
+  #   ldflags:
+  #     - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=darwin -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=amd64
+  #   mod_timestamp: "{{ .CommitTimestamp }}"
 
-  - id: darwin-arm64
-    env:
-      - CGO_ENABLED=1
-      - CC=o64-clang
-      - CXX=o64-clang++
-    binary: xatu-{{.Version}}
-    goos:
-    - darwin
-    goarch:
-    - arm64
-    ldflags:
-      - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=darwin -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=arm64
-    mod_timestamp: "{{ .CommitTimestamp }}"
+  # - id: darwin-arm64
+  #   env:
+  #     - CGO_ENABLED=1
+  #     - CC=o64-clang
+  #     - CXX=o64-clang++
+  #   binary: xatu-{{.Version}}
+  #   goos:
+  #   - darwin
+  #   goarch:
+  #   - arm64
+  #   ldflags:
+  #     - -s -w -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release={{.Tag}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit={{.ShortCommit}} -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOOS=darwin -X github.com/ethpandaops/xatu/pkg/proto/xatu.GOARCH=arm64
+  #   mod_timestamp: "{{ .CommitTimestamp }}"
 checksum:
   name_template: 'checksums.txt'
 snapshot:

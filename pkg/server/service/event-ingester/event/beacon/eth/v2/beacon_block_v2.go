@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"

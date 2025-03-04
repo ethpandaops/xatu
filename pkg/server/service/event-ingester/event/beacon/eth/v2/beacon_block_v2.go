@@ -97,21 +97,6 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 		return true
 	}
 
-	// check if block wasn't finalized when requested and filter if already in cache
-	if !additionalData.EthV2BeaconBlockV2.GetFinalizedWhenRequested() {
-		key := "beacon_block" + ":" + hash
-
-		_, retrieved, err := b.nonFinalizedCache.GetOrSet(ctx, key, version, time.Minute*30)
-		if err != nil {
-			b.log.WithError(err).Error("failed to retrieve from cache")
-
-			return true
-		}
-
-		// If the block is already in the cache, filter it out
-		return retrieved
-	}
-
 	return false
 }
 

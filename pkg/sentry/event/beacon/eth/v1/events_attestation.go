@@ -23,12 +23,11 @@ type EventsAttestation struct {
 
 	now time.Time
 
-	event           *spec.VersionedAttestation
-	attestationData *phase0.AttestationData
-	beacon          *ethereum.BeaconNode
-	duplicateCache  *ttlcache.Cache[string, time.Time]
-	clientMeta      *xatu.ClientMeta
-	id              uuid.UUID
+	event          *spec.VersionedAttestation
+	beacon         *ethereum.BeaconNode
+	duplicateCache *ttlcache.Cache[string, time.Time]
+	clientMeta     *xatu.ClientMeta
+	id             uuid.UUID
 }
 
 func NewEventsAttestation(log logrus.FieldLogger, event *spec.VersionedAttestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) (*EventsAttestation, error) {
@@ -36,21 +35,24 @@ func NewEventsAttestation(log logrus.FieldLogger, event *spec.VersionedAttestati
 		return nil, fmt.Errorf("event is nil")
 	}
 
-	data, err := event.Data()
+	return &EventsAttestation{
+		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"),
+		now:            now,
+		event:          event,
+		beacon:         beacon,
+		duplicateCache: duplicateCache,
+		clientMeta:     clientMeta,
+		id:             uuid.New(),
+	}, nil
+}
+
+func (e *EventsAttestation) AttestationData() (*phase0.AttestationData, error) {
+	data, err := e.event.Data()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get attestation data: %w", err)
 	}
 
-	return &EventsAttestation{
-		log:             log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"),
-		now:             now,
-		event:           event,
-		attestationData: data,
-		beacon:          beacon,
-		duplicateCache:  duplicateCache,
-		clientMeta:      clientMeta,
-		id:              uuid.New(),
-	}, nil
+	return data, nil
 }
 
 func (e *EventsAttestation) getData() (*xatuethv1.AttestationV2, error) {
@@ -163,7 +165,12 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data{}
 
-	slot := e.attestationData.Slot
+	attestationData, err := e.AttestationData()
+	if err != nil {
+		return nil, err
+	}
+
+	slot := attestationData.Slot
 
 	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(slot))
@@ -185,7 +192,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		},
 	}
 
-	target := e.attestationData.Target
+	target := attestationData.Target
 
 	// Build out the target section
 	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(target.Epoch))
@@ -196,7 +203,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		},
 	}
 
-	source := e.attestationData.Source
+	source := attestationData.Source
 
 	// Build out the source section
 	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(source.Epoch))
@@ -220,8 +227,8 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 		validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
 			phase0.Epoch(epoch.Number()),
-			e.attestationData.Slot,
-			e.attestationData.Index,
+			attestationData.Slot,
+			attestationData.Index,
 			position,
 		)
 		if err == nil {

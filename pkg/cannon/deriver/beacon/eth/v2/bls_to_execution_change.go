@@ -165,7 +165,7 @@ func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 	}
 }
 
-// lookAheadAtLocation takes the upcoming locations and looks ahead to do any pre-processing that might be required.
+// lookAhead takes the upcoming locations and looks ahead to do any pre-processing that might be required.
 func (b *BLSToExecutionChangeDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	_, span := observability.Tracer().Start(ctx,
 		"BLSToExecutionChangeDeriver.lookAhead",

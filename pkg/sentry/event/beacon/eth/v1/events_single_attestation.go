@@ -51,7 +51,6 @@ func (e *EventsSingleAttestation) AttestationData() *phase0.AttestationData {
 }
 
 func (e *EventsSingleAttestation) getData() (*xatuethv1.AttestationV2, error) {
-
 	attestation := e.event
 	if attestation == nil {
 		return nil, fmt.Errorf("electra attestation is nil")

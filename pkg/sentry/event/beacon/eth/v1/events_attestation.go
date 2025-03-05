@@ -220,8 +220,8 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 
 		validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
 			phase0.Epoch(epoch.Number()),
-			e.event.Phase0.Data.Slot,
-			e.event.Phase0.Data.Index,
+			e.attestationData.Slot,
+			e.attestationData.Index,
 			position,
 		)
 		if err == nil {

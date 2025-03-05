@@ -18,6 +18,7 @@ import (
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/altair"
+	"github.com/attestantio/go-eth2-client/spec/electra"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/beacon/pkg/beacon"
@@ -278,6 +279,36 @@ func (s *Sentry) Start(ctx context.Context) error {
 		if s.beacon.Metadata().Network.Name == networks.NetworkNameUnknown {
 			s.log.Fatal("Unable to determine Ethereum network. Provide an override network name via ethereum.overrideNetworkName")
 		}
+
+		s.beacon.Node().OnSingleAttestation(ctx, func(ctx context.Context, ev *electra.SingleAttestation) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event, err := v1.NewEventsSingleAttestation(s.log, ev, now, s.beacon, s.duplicateCache.BeaconETHV1EventsAttestation, meta)
+			if err != nil {
+				return err
+			}
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
 
 		s.beacon.Node().OnAttestation(ctx, func(ctx context.Context, ev *spec.VersionedAttestation) error {
 			now := time.Now().Add(s.clockDrift)

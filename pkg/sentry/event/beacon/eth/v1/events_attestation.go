@@ -7,7 +7,6 @@ import (
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/beacon/pkg/beacon"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -24,23 +23,34 @@ type EventsAttestation struct {
 
 	now time.Time
 
-	event          *beacon.VersionedAttestation
-	beacon         *ethereum.BeaconNode
-	duplicateCache *ttlcache.Cache[string, time.Time]
-	clientMeta     *xatu.ClientMeta
-	id             uuid.UUID
+	event           *spec.VersionedAttestation
+	attestationData *phase0.AttestationData
+	beacon          *ethereum.BeaconNode
+	duplicateCache  *ttlcache.Cache[string, time.Time]
+	clientMeta      *xatu.ClientMeta
+	id              uuid.UUID
 }
 
-func NewEventsAttestation(log logrus.FieldLogger, event *beacon.VersionedAttestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsAttestation {
-	return &EventsAttestation{
-		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"),
-		now:            now,
-		event:          event,
-		beacon:         beacon,
-		duplicateCache: duplicateCache,
-		clientMeta:     clientMeta,
-		id:             uuid.New(),
+func NewEventsAttestation(log logrus.FieldLogger, event *spec.VersionedAttestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) (*EventsAttestation, error) {
+	if event == nil {
+		return nil, fmt.Errorf("event is nil")
 	}
+
+	data, err := event.Data()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get attestation data: %w", err)
+	}
+
+	return &EventsAttestation{
+		log:             log.WithField("event", "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"),
+		now:             now,
+		event:           event,
+		attestationData: data,
+		beacon:          beacon,
+		duplicateCache:  duplicateCache,
+		clientMeta:      clientMeta,
+		id:              uuid.New(),
+	}, nil
 }
 
 func (e *EventsAttestation) getData() (*xatuethv1.AttestationV2, error) {
@@ -153,10 +163,7 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1EventsAttestationV2Data{}
 
-	slot, err := e.event.Slot()
-	if err != nil {
-		return nil, err
-	}
+	slot := e.attestationData.Slot
 
 	attestionSlot := e.beacon.Metadata().Wallclock().Slots().FromNumber(uint64(slot))
 	epoch := e.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(slot))
@@ -178,10 +185,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		},
 	}
 
-	target, err := e.event.Target()
-	if err != nil {
-		return nil, err
-	}
+	target := e.attestationData.Target
 
 	// Build out the target section
 	targetEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(target.Epoch))
@@ -192,10 +196,7 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 		},
 	}
 
-	source, err := e.event.Source()
-	if err != nil {
-		return nil, err
-	}
+	source := e.attestationData.Source
 
 	// Build out the source section
 	sourceEpoch := e.beacon.Metadata().Wallclock().Epochs().FromNumber(uint64(source.Epoch))
@@ -207,41 +208,26 @@ func (e *EventsAttestation) getAdditionalData(_ context.Context) (*xatu.ClientMe
 	}
 
 	// If the attestation is unaggreated, we can append the validator position within the committee
-	switch e.event.Version {
-	case spec.DataVersionPhase0:
-		if e.event.Phase0.AggregationBits.Count() == 1 {
-			//nolint:gosec // not concerned in reality
-			position := uint64(e.event.Phase0.AggregationBits.BitIndices()[0])
+	aggregationBits, err := e.event.AggregationBits()
+	if err != nil {
+		return nil, err
+	}
 
-			validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
-				phase0.Epoch(epoch.Number()),
-				e.event.Phase0.Data.Slot,
-				e.event.Phase0.Data.Index,
-				position,
-			)
-			if err == nil {
-				extra.AttestingValidator = &xatu.AttestingValidatorV2{
-					CommitteeIndex: &wrapperspb.UInt64Value{Value: position},
-					Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
-				}
-			}
-		}
-	case spec.DataVersionElectra:
-		if e.event.Electra.AggregationBits.Count() == 1 {
-			//nolint:gosec // not concerned in reality
-			position := uint64(e.event.Electra.AggregationBits.BitIndices()[0])
+	// Append the validator index if the attestation is unaggreated
+	if aggregationBits.Count() == 1 {
+		//nolint:gosec // not concerned in reality
+		position := uint64(aggregationBits.BitIndices()[0])
 
-			validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
-				phase0.Epoch(epoch.Number()),
-				e.event.Electra.Data.Slot,
-				e.event.Electra.Data.Index,
-				position,
-			)
-			if err == nil {
-				extra.AttestingValidator = &xatu.AttestingValidatorV2{
-					CommitteeIndex: &wrapperspb.UInt64Value{Value: position},
-					Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
-				}
+		validatorIndex, err := e.beacon.Duties().GetValidatorIndex(
+			phase0.Epoch(epoch.Number()),
+			e.event.Phase0.Data.Slot,
+			e.event.Phase0.Data.Index,
+			position,
+		)
+		if err == nil {
+			extra.AttestingValidator = &xatu.AttestingValidatorV2{
+				CommitteeIndex: &wrapperspb.UInt64Value{Value: position},
+				Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
 			}
 		}
 	}

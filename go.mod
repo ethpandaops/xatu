@@ -8,7 +8,7 @@ replace github.com/ethpandaops/beacon => ../beacon
 
 require (
 	github.com/IBM/sarama v1.45.0
-	github.com/attestantio/go-eth2-client v0.24.0
+	github.com/attestantio/go-eth2-client v0.24.1-0.20250219090147-b41ce952806c
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.2

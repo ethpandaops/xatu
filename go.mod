@@ -6,14 +6,14 @@ replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.3-0.20
 
 require (
 	github.com/IBM/sarama v1.45.0
-	github.com/attestantio/go-eth2-client v0.24.0
+	github.com/attestantio/go-eth2-client v0.24.1-0.20250219090147-b41ce952806c
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.15.0
-	github.com/ethpandaops/beacon v0.47.0
+	github.com/ethpandaops/beacon v0.48.0
 	github.com/ethpandaops/ethcore v0.0.0-20240422023000-2a5727b18756
 	github.com/ethpandaops/ethwallclock v0.3.0
 	github.com/ferranbt/fastssz v0.1.4

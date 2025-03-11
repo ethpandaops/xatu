@@ -19,7 +19,7 @@ require (
 	github.com/ferranbt/fastssz v0.1.4
 	github.com/go-co-op/gocron v1.27.1
 	github.com/golang/protobuf v1.5.4
-	github.com/golang/snappy v0.0.5-0.20231225225746-43d5d4cd4e0e
+	github.com/golang/snappy v1.0.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0

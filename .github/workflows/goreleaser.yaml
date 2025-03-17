@@ -86,4 +86,4 @@ jobs:
             -e DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
-            goreleaser/goreleaser-cross:v1.23.6 release --clean --config .goreleaser.yaml.new
+            goreleaser/goreleaser-cross:v1.24.0 release --clean --config .goreleaser.yaml.new

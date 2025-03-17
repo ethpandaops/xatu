@@ -48,4 +48,4 @@ jobs:
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX="test" \
-            goreleaser/goreleaser-cross:v1.23.6 release --clean --config .goreleaser.yaml --skip=publish --skip=validate
+            goreleaser/goreleaser-cross:v1.24.0 release --clean --config .goreleaser.yaml --skip=publish --skip=validate

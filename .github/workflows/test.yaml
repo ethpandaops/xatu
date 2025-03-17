@@ -10,7 +10,7 @@ jobs:
   full_ci:
     strategy:
       matrix:
-        go_version: [ 1.23.x ]
+        go_version: [ 1.24.x ]
 
     runs-on: ubuntu-latest
 

@@ -142,7 +142,7 @@ jobs:
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
     - name: Collect docker logs on failure
       if: failure()
-      uses: jwalton/gh-docker-logs@eb53a99ccbbb34d4243439c2c3dac3ed78a926ed # eb53a99
+      uses: jwalton/gh-docker-logs@2741064ab9d7af54b0b1ffb6076cf64c16f0220e # v2.2.2
       with:
         dest: './logs'
     - name: Tar logs

@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@e5c7151931ca95bad1c6f4190c730ecf8c7dde48 # v3
+    #   uses: mxschmitt/action-tmate@e5c7151931ca95bad1c6f4190c730ecf8c7dde48 # v3.19
     #   with:
     #     limit-access-to-actor: true
     #     detached: true
@@ -142,7 +142,7 @@ jobs:
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
     - name: Collect docker logs on failure
       if: failure()
-      uses: jwalton/gh-docker-logs@eb53a99ccbbb34d4243439c2c3dac3ed78a926ed # v2
+      uses: jwalton/gh-docker-logs@eb53a99ccbbb34d4243439c2c3dac3ed78a926ed # eb53a99
       with:
         dest: './logs'
     - name: Tar logs
@@ -150,7 +150,7 @@ jobs:
       run: tar cvzf ./logs.tgz ./logs
     - name: Upload logs to GitHub
       if: failure()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: logs.tgz
         path: ./logs.tgz

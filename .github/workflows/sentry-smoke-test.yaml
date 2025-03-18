@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Build xatu image
       run: |
         docker build -t ethpandaops/xatu:local .
@@ -151,7 +151,7 @@ jobs:
 
     - name: Collect docker logs on failure
       if: failure()
-      uses: jwalton/gh-docker-logs@eb53a99ccbbb34d4243439c2c3dac3ed78a926ed # v2
+      uses: jwalton/gh-docker-logs@2741064ab9d7af54b0b1ffb6076cf64c16f0220e # v2.2.2
       with:
         dest: './logs'
     - name: Tar logs
@@ -159,7 +159,7 @@ jobs:
       run: tar cvzf ./logs.tgz ./logs
     - name: Upload logs to GitHub
       if: failure()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: logs.tgz
         path: ./logs.tgz

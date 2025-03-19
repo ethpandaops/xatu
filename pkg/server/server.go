@@ -19,7 +19,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -361,17 +361,26 @@ func (x *Xatu) startPProf(_ context.Context) error {
 }
 
 func (x *Xatu) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5m").Do(func() {
-		if err := x.syncClockDrift(ctx); err != nil {
-			x.log.WithError(err).Error("Failed to sync clock drift")
-		}
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				if err := x.syncClockDrift(ctx); err != nil {
+					x.log.WithError(err).Error("Failed to sync clock drift")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

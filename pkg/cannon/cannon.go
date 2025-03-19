@@ -30,7 +30,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -53,7 +53,7 @@ type Cannon struct {
 
 	metrics *Metrics
 
-	scheduler *gocron.Scheduler
+	scheduler gocron.Scheduler
 
 	eventDerivers []deriver.EventDeriver
 
@@ -94,6 +94,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, err
 	}
 
+	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Cannon{
 		Config:            config,
 		sinks:             sinks,
@@ -102,7 +107,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		log:               log,
 		id:                uuid.New(),
 		metrics:           NewMetrics("xatu_cannon"),
-		scheduler:         gocron.NewScheduler(time.Local),
+		scheduler:         scheduler,
 		eventDerivers:     nil, // Derivers are created once the beacon node is ready
 		coordinatorClient: coordinatorClient,
 		shutdownFuncs:     []func(ctx context.Context) error{},
@@ -235,7 +240,9 @@ func (c *Cannon) Shutdown(ctx context.Context) error {
 		}
 	}
 
-	c.scheduler.Stop()
+	if err := c.scheduler.Shutdown(); err != nil {
+		return err
+	}
 
 	for _, deriver := range c.eventDerivers {
 		if err := deriver.Stop(ctx); err != nil {
@@ -320,15 +327,20 @@ func (c *Cannon) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 }
 
 func (c *Cannon) startCrons(ctx context.Context) error {
-	if _, err := c.scheduler.Every("5m").Do(func() {
-		if err := c.syncClockDrift(ctx); err != nil {
-			c.log.WithError(err).Error("Failed to sync clock drift")
-		}
-	}); err != nil {
+	if _, err := c.scheduler.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func() {
+				if err := c.syncClockDrift(ctx); err != nil {
+					c.log.WithError(err).Error("Failed to sync clock drift")
+				}
+			},
+		),
+	); err != nil {
 		return err
 	}
 
-	c.scheduler.StartAsync()
+	c.scheduler.Start()
 
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
+	"github.com/go-co-op/gocron/v2"
 )
 
 func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
@@ -89,14 +90,20 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 	if s.Config.ForkChoice.Interval.Enabled {
 		logCtx := s.log.WithField("proccer", "interval").WithField("interval", s.Config.ForkChoice.Interval.Every.String())
 
-		if _, err := s.scheduler.Every(s.Config.ForkChoice.Interval.Every.Duration).Do(func() {
-			logCtx.Debug("Fetching debug fork choice")
+		if _, err := s.scheduler.NewJob(
+			gocron.DurationJob(s.Config.ForkChoice.Interval.Every.Duration),
+			gocron.NewTask(
+				func(ctx context.Context) {
+					logCtx.Debug("Fetching debug fork choice")
 
-			err := s.fetchDecoratedDebugForkChoice(ctx)
-			if err != nil {
-				logCtx.WithError(err).Error("Failed to fetch debug fork choice")
-			}
-		}); err != nil {
+					err := s.fetchDecoratedDebugForkChoice(ctx)
+					if err != nil {
+						logCtx.WithError(err).Error("Failed to fetch debug fork choice")
+					}
+				},
+				ctx,
+			),
+		); err != nil {
 			return err
 		}
 	}

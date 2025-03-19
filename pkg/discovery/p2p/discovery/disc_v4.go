@@ -118,7 +118,7 @@ func (d *DiscV4) startCrons(ctx context.Context) error {
 	}
 
 	if _, err := c.NewJob(
-		gocron.DurationJob(5*time.Second),
+		gocron.DurationJob(d.restart),
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := d.startListener(ctx); err != nil {

@@ -14,6 +14,7 @@ var (
 	NetworkNameGoerli  NetworkName = "goerli"
 	NetworkNameSepolia NetworkName = "sepolia"
 	NetworkNameHolesky NetworkName = "holesky"
+	NetworkNameHoodi   NetworkName = "hoodi"
 )
 
 var NetworkGenesisRoots = map[string]uint64{
@@ -21,6 +22,7 @@ var NetworkGenesisRoots = map[string]uint64{
 	"0x043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb": 5,
 	"0xd8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078": 11155111,
 	"0x9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1": 17000,
+	"0x212f13fc4df078b6cb7db228f1c8307566dcecf900867401a92023d7ba99cb5f": 560048,
 }
 
 var NetworkIds = map[uint64]NetworkName{
@@ -28,6 +30,7 @@ var NetworkIds = map[uint64]NetworkName{
 	5:        NetworkNameGoerli,
 	11155111: NetworkNameSepolia,
 	17000:    NetworkNameHolesky,
+	560048:   NetworkNameHoodi,
 }
 
 func DeriveFromGenesisRoot(genesisRoot string) *Network {

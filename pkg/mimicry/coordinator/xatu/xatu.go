@@ -90,7 +90,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 	}
 
 	if _, err := c.NewJob(
-		gocron.DurationJob(5*time.Minute),
+		gocron.DurationJob(5*time.Second),
 		gocron.NewTask(
 			func(ctx context.Context) {
 				x.mu.Lock()
@@ -115,7 +115,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 	}
 
 	if _, err := c.NewJob(
-		gocron.DurationJob(5*time.Second),
+		gocron.DurationJob(5*time.Minute),
 		gocron.NewTask(
 			func(ctx context.Context) {
 				x.mu.Lock()

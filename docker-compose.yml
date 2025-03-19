@@ -369,7 +369,7 @@ services:
   xatu-vector-http-kafka:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: timberio/vector:0.45.0-alpine
     container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
@@ -394,7 +394,7 @@ services:
   xatu-vector-kafka-clickhouse:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: timberio/vector:0.45.0-alpine
     container_name: xatu-vector-kafka-clickhouse
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
@@ -427,7 +427,7 @@ services:
   xatu-vector-kafka-clickhouse-libp2p:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: timberio/vector:0.45.0-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
     networks:

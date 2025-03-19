@@ -10,6 +10,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/ethwallclock"
 	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
+	"github.com/go-co-op/gocron/v2"
 )
 
 func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
@@ -20,13 +21,19 @@ func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
 	if s.Config.ValidatorBlock.Interval.Enabled {
 		logCtx := s.log.WithField("proccer", "interval").WithField("interval", s.Config.ValidatorBlock.Interval.Every.String())
 
-		if _, err := s.scheduler.Every(s.Config.ValidatorBlock.Interval.Every.Duration).Do(func() {
-			logCtx.Debug("Fetching validator beacon block")
+		if _, err := s.scheduler.NewJob(
+			gocron.DurationJob(s.Config.ValidatorBlock.Interval.Every.Duration),
+			gocron.NewTask(
+				func(ctx context.Context) {
+					logCtx.Debug("Fetching validator beacon block")
 
-			if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
-				logCtx.WithError(err).Error("Failed to fetch validator beacon block")
-			}
-		}); err != nil {
+					if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
+						logCtx.WithError(err).Error("Failed to fetch validator beacon block")
+					}
+				},
+				ctx,
+			),
+		); err != nil {
 			return err
 		}
 	}

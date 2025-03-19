@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/jellydator/ttlcache/v3"
 )
 
@@ -34,19 +34,28 @@ func (d *SharedCache) Start(ctx context.Context) error {
 }
 
 func (d *SharedCache) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5s").Do(func() {
-		transactionMetrics := d.Transaction.Metrics()
-		d.metrics.SetSharedInsertions(transactionMetrics.Insertions, "transaction")
-		d.metrics.SetSharedHits(transactionMetrics.Hits, "transaction")
-		d.metrics.SetSharedMisses(transactionMetrics.Misses, "transaction")
-		d.metrics.SetSharedEvictions(transactionMetrics.Evictions, "transaction")
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				transactionMetrics := d.Transaction.Metrics()
+				d.metrics.SetSharedInsertions(transactionMetrics.Insertions, "transaction")
+				d.metrics.SetSharedHits(transactionMetrics.Hits, "transaction")
+				d.metrics.SetSharedMisses(transactionMetrics.Misses, "transaction")
+				d.metrics.SetSharedEvictions(transactionMetrics.Evictions, "transaction")
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

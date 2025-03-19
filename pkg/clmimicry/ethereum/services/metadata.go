@@ -14,7 +14,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/ethereum"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -79,15 +79,24 @@ func (m *MetadataService) Start(ctx context.Context) error {
 		}
 	}()
 
-	s := gocron.NewScheduler(time.Local)
-
-	if _, err := s.Every("5m").Do(func() {
-		_ = m.RefreshAll(ctx)
-	}); err != nil {
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	s.StartAsync()
+	if _, err := s.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func() {
+				_ = m.RefreshAll(ctx)
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	s.Start()
 
 	return nil
 }

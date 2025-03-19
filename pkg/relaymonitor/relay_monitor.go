@@ -27,7 +27,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -281,13 +281,22 @@ func (r *RelayMonitor) createNewClientMeta(ctx context.Context) (*xatu.ClientMet
 }
 
 func (r *RelayMonitor) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return err
+	}
 
-	if _, err := c.Every("5m").Do(func() {
-		if err := r.syncClockDrift(ctx); err != nil {
-			r.log.WithError(err).Error("Failed to sync clock drift")
-		}
-	}); err != nil {
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				if err := r.syncClockDrift(ctx); err != nil {
+					r.log.WithError(err).Error("Failed to sync clock drift")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
 		return err
 	}
 
@@ -307,7 +316,7 @@ func (r *RelayMonitor) startCrons(ctx context.Context) error {
 		}
 	}
 
-	c.StartAsync()
+	c.Start()
 
 	return nil
 }

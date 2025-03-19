@@ -9,7 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -67,19 +67,26 @@ func (r *ValidatorMonitor) Start(ctx context.Context) error {
 		return errors.New("no relays found")
 	}
 
-	c := gocron.NewScheduler(time.Local)
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return err
+	}
 
 	r.log.
 		WithField("interval", r.config.ActiveValidatorsFetchInterval.String()).
 		Info("Scheduling active validators fetch job")
 
-	if _, err := c.Every(r.config.ActiveValidatorsFetchInterval.String()).
-		StartAt(time.Now().Add(r.config.ActiveValidatorsFetchInterval.Duration)).
-		Do(func() {
-			if err := r.updateActiveValidators(ctx); err != nil {
-				r.log.WithError(err).Error("Failed to update active validators")
-			}
-		}); err != nil {
+	if _, err := c.NewJob(
+		gocron.DurationJob(r.config.ActiveValidatorsFetchInterval.Duration),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				if err := r.updateActiveValidators(ctx); err != nil {
+					r.log.WithError(err).Error("Failed to update active validators")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
 		return err
 	}
 
@@ -111,7 +118,7 @@ func (r *ValidatorMonitor) Start(ctx context.Context) error {
 		r.relayScrapers[relay.Name()] = scraper
 	}
 
-	c.StartAsync()
+	c.Start()
 
 	r.startFeedingValidators(ctx)
 

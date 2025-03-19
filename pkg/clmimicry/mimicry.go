@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 	"os"
@@ -18,7 +19,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
@@ -345,17 +346,26 @@ func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, er
 }
 
 func (m *Mimicry) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5m").Do(func() {
-		if err := m.syncClockDrift(ctx); err != nil {
-			m.log.WithError(err).Error("Failed to sync clock drift")
-		}
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func() {
+				if err := m.syncClockDrift(ctx); err != nil {
+					m.log.WithError(err).Error("Failed to sync clock drift")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

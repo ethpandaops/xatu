@@ -10,7 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -114,24 +114,33 @@ func (s *Static) Stop(ctx context.Context) error {
 }
 
 func (s *Static) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5s").Do(func() {
-		s.peersMux.Lock()
-		connectedPeers := 0
-		for _, connected := range *s.peers {
-			if connected {
-				connectedPeers++
-			}
-		}
-		s.metrics.SetPeers(connectedPeers, "connected")
-		s.metrics.SetPeers(len(*s.peers)-connectedPeers, "disconnected")
-		s.peersMux.Unlock()
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				s.peersMux.Lock()
+				connectedPeers := 0
+				for _, connected := range *s.peers {
+					if connected {
+						connectedPeers++
+					}
+				}
+				s.metrics.SetPeers(connectedPeers, "connected")
+				s.metrics.SetPeers(len(*s.peers)-connectedPeers, "disconnected")
+				s.peersMux.Unlock()
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ type DiscV4 struct {
 
 	mu sync.Mutex
 
-	scheduler *gocron.Scheduler
+	scheduler gocron.Scheduler
 
 	started bool
 }
@@ -98,7 +98,9 @@ func (d *DiscV4) Stop(ctx context.Context) error {
 	}
 
 	if d.scheduler != nil {
-		d.scheduler.Stop()
+		if err := d.scheduler.Shutdown(); err != nil {
+			d.log.WithError(err).Error("Failed to shutdown p2p discovery scheduler")
+		}
 	}
 
 	d.mu.Lock()
@@ -110,17 +112,26 @@ func (d *DiscV4) Stop(ctx context.Context) error {
 }
 
 func (d *DiscV4) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every(d.restart).Do(func() {
-		if err := d.startListener(ctx); err != nil {
-			d.log.WithError(err).Error("Failed to restart new node discovery")
-		}
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				if err := d.startListener(ctx); err != nil {
+					d.log.WithError(err).Error("Failed to restart new node discovery")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	d.scheduler = c
 

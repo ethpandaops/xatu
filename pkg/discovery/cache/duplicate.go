@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/jellydator/ttlcache/v3"
 )
 
@@ -38,19 +38,28 @@ func (d *DuplicateCache) Stop() {
 }
 
 func (d *DuplicateCache) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5s").Do(func() {
-		nodeMetrics := d.Node.Metrics()
-		d.metrics.SetDuplicateInsertions(nodeMetrics.Insertions, "node")
-		d.metrics.SetDuplicateHits(nodeMetrics.Hits, "node")
-		d.metrics.SetDuplicateMisses(nodeMetrics.Misses, "node")
-		d.metrics.SetDuplicateEvictions(nodeMetrics.Evictions, "node")
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				nodeMetrics := d.Node.Metrics()
+				d.metrics.SetDuplicateInsertions(nodeMetrics.Insertions, "node")
+				d.metrics.SetDuplicateHits(nodeMetrics.Hits, "node")
+				d.metrics.SetDuplicateMisses(nodeMetrics.Misses, "node")
+				d.metrics.SetDuplicateEvictions(nodeMetrics.Evictions, "node")
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

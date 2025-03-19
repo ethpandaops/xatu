@@ -11,7 +11,7 @@ import (
 	xatuPeer "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/peer"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	xatupb "github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -84,85 +84,100 @@ func (x *Xatu) Stop(ctx context.Context) error {
 }
 
 func (x *Xatu) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5s").Do(func() {
-		x.mu.Lock()
-		defer x.mu.Unlock()
-
-		connectedPeers := 0
-		connectionAttempts := 0
-		for _, peer := range x.peers {
-			if peer.Record.Connected {
-				connectedPeers++
-			}
-			connectionAttempts += int(peer.Record.ConnectionAttempts)
-		}
-		x.metrics.SetPeers(connectedPeers, "connected")
-		x.metrics.SetPeers(len(x.peers)-connectedPeers, "disconnected")
-		x.metrics.SetPeerConnectionAttempts(connectionAttempts)
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	if _, err := c.Every("5m").Do(func() {
-		x.mu.Lock()
-		defer x.mu.Unlock()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				x.mu.Lock()
+				defer x.mu.Unlock()
 
-		var records []*xatupb.CoordinatedNodeRecord
-		for _, peer := range x.peers {
-			records = append(records, peer.Record)
-		}
-
-		res, err := x.coordinator.CoordinateExecutionNodeRecords(ctx, records)
-		if err != nil {
-			x.log.WithError(err).Error("failed to coordinate execution node records")
-
-			return
-		}
-
-		if res == nil {
-			x.log.Error("failed to coordinate execution node records: nil response")
-
-			return
-		}
-
-		retryDelay := time.Duration(res.RetryDelay) * time.Second
-
-		for i, peer := range x.peers {
-			found := false
-			for _, record := range res.NodeRecords {
-				if record == i {
-					found = true
-					peer.RetryDelay(retryDelay)
-
-					break
+				connectedPeers := 0
+				connectionAttempts := 0
+				for _, peer := range x.peers {
+					if peer.Record.Connected {
+						connectedPeers++
+					}
+					connectionAttempts += int(peer.Record.ConnectionAttempts)
 				}
-			}
-
-			// remove peer
-			if !found {
-				if err := peer.Stop(); err != nil {
-					x.log.WithError(err).Error("failed to stop peer")
-				}
-				delete(x.peers, i)
-			}
-		}
-
-		for _, record := range res.NodeRecords {
-			if _, ok := x.peers[record]; !ok {
-				x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay)
-				if err := x.peers[record].Start(ctx); err != nil {
-					x.log.WithError(err).Error("failed to start peer")
-					delete(x.peers, record)
-				}
-			}
-		}
-	}); err != nil {
+				x.metrics.SetPeers(connectedPeers, "connected")
+				x.metrics.SetPeers(len(x.peers)-connectedPeers, "disconnected")
+				x.metrics.SetPeerConnectionAttempts(connectionAttempts)
+			},
+			ctx,
+		),
+	); err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				x.mu.Lock()
+				defer x.mu.Unlock()
+
+				var records []*xatupb.CoordinatedNodeRecord
+				for _, peer := range x.peers {
+					records = append(records, peer.Record)
+				}
+
+				res, err := x.coordinator.CoordinateExecutionNodeRecords(ctx, records)
+				if err != nil {
+					x.log.WithError(err).Error("failed to coordinate execution node records")
+
+					return
+				}
+
+				if res == nil {
+					x.log.Error("failed to coordinate execution node records: nil response")
+
+					return
+				}
+
+				retryDelay := time.Duration(res.RetryDelay) * time.Second
+
+				for i, peer := range x.peers {
+					found := false
+					for _, record := range res.NodeRecords {
+						if record == i {
+							found = true
+							peer.RetryDelay(retryDelay)
+
+							break
+						}
+					}
+
+					// remove peer
+					if !found {
+						if err := peer.Stop(); err != nil {
+							x.log.WithError(err).Error("failed to stop peer")
+						}
+						delete(x.peers, i)
+					}
+				}
+
+				for _, record := range res.NodeRecords {
+					if _, ok := x.peers[record]; !ok {
+						x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay)
+						if err := x.peers[record].Start(ctx); err != nil {
+							x.log.WithError(err).Error("failed to start peer")
+							delete(x.peers, record)
+						}
+					}
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

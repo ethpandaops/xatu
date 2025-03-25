@@ -39,6 +39,7 @@ func NewSyncProducer(config *Config) (sarama.SyncProducer, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	brokersList := strings.Split(config.Brokers, ",")
 
 	return sarama.NewSyncProducer(brokersList, producerConfig)

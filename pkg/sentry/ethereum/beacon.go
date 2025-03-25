@@ -154,7 +154,13 @@ func (b *BeaconNode) Metadata() *services.MetadataService {
 		return nil
 	}
 
-	return service.(*services.MetadataService)
+	metadataService, ok := service.(*services.MetadataService)
+	if !ok {
+		// This should never happen. If it does, good luck.
+		return nil
+	}
+
+	return metadataService
 }
 
 func (b *BeaconNode) Duties() *services.DutiesService {
@@ -164,7 +170,13 @@ func (b *BeaconNode) Duties() *services.DutiesService {
 		return nil
 	}
 
-	return service.(*services.DutiesService)
+	dutiesService, ok := service.(*services.DutiesService)
+	if !ok {
+		// This should never happen. If it does, good luck.
+		return nil
+	}
+
+	return dutiesService
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {

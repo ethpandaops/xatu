@@ -38,7 +38,7 @@ require (
 	github.com/probe-lab/hermes v0.0.0-20241128085322-a39cba499cb1
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
-	github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0
+	github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250324193032-e08ed0d82355
 	github.com/redis/go-redis/v9 v9.7.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1

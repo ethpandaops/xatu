@@ -811,6 +811,8 @@ github.com/prysmaticlabs/protoc-gen-go-cast v0.0.0-20230228205207-28762a7b9294 h
 github.com/prysmaticlabs/protoc-gen-go-cast v0.0.0-20230228205207-28762a7b9294/go.mod h1:ZVEbRdnMkGhp/pu35zq4SXxtvUwWK0J1MATtekZpH2Y=
 github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0 h1:rtVp4k64o18H7CiOwsDVGNuY1NhrsxApQ1z1eKulNLM=
 github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0/go.mod h1:2SaUMpJ+O8r/pcnNDMHbrk0Ki9ObQXvfRc+rQHovzVk=
+github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250324193032-e08ed0d82355 h1:SaInxlxPyjKLPYD4hFzdueXjjbZxblxhBjlIUNfo00Y=
+github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250324193032-e08ed0d82355/go.mod h1:2SaUMpJ+O8r/pcnNDMHbrk0Ki9ObQXvfRc+rQHovzVk=
 github.com/quic-go/qpack v0.5.1 h1:giqksBPnT/HDtZ6VhtFKgoLOWmlyo9Ei6u9PqzIMbhI=
 github.com/quic-go/qpack v0.5.1/go.mod h1:+PC4XFrEskIVkcLzpEkbLqq1uCoxPhQuvK5rH1ZgaEg=
 github.com/quic-go/quic-go v0.50.0 h1:3H/ld1pa3CYhkcc20TPIyG1bNsdhn9qZBGN3b9/UyUo=

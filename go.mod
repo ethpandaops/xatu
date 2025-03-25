@@ -4,7 +4,7 @@ go 1.24.0
 
 toolchain go1.24.1
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250318101859-b1565d551e36
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4
 
 require (
 	github.com/IBM/sarama v1.45.1

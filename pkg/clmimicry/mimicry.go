@@ -236,7 +236,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		m.log.Info("Ethereum client is ready. Starting Hermes..")
 
 		if err := m.startHermes(ctx); err != nil {
-			m.log.Fatal("failed to start hermes: %w", err)
+			m.log.Fatalf("failed to start hermes: %v", err)
 		}
 
 		return nil

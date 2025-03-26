@@ -24,7 +24,13 @@ node:
   maxPeers: 30
   dialConcurrency: 16
   dataStreamType: "callback"
-
+  subnets:
+    beacon_attestation:
+      type: "all"
+    sync_committee:
+      type: "all"
+    blob_sidecar:
+      type: "all"
 outputs:
 - name: log
   type: stdout

@@ -356,7 +356,7 @@ func (m *Mimicry) startCrons(ctx context.Context) error {
 	if _, err := c.NewJob(
 		gocron.DurationJob(5*time.Minute),
 		gocron.NewTask(
-			func() {
+			func(ctx context.Context) {
 				if err := m.syncClockDrift(ctx); err != nil {
 					m.log.WithError(err).Error("Failed to sync clock drift")
 				}

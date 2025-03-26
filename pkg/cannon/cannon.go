@@ -330,11 +330,12 @@ func (c *Cannon) startCrons(ctx context.Context) error {
 	if _, err := c.scheduler.NewJob(
 		gocron.DurationJob(5*time.Minute),
 		gocron.NewTask(
-			func() {
+			func(ctx context.Context) {
 				if err := c.syncClockDrift(ctx); err != nil {
 					c.log.WithError(err).Error("Failed to sync clock drift")
 				}
 			},
+			ctx,
 		),
 	); err != nil {
 		return err

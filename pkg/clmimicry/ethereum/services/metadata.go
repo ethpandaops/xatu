@@ -87,7 +87,7 @@ func (m *MetadataService) Start(ctx context.Context) error {
 	if _, err := s.NewJob(
 		gocron.DurationJob(5*time.Minute),
 		gocron.NewTask(
-			func() {
+			func(ctx context.Context) {
 				_ = m.RefreshAll(ctx)
 			},
 			ctx,

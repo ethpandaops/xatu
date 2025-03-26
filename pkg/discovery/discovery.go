@@ -192,7 +192,7 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 	if _, err := c.NewJob(
 		gocron.DurationJob(5*time.Second),
 		gocron.NewTask(
-			func() {
+			func(ctx context.Context) {
 				d.log.WithFields(logrus.Fields{
 					"records": d.status.ActiveExecution(),
 				}).Info("execution records currently trying to dial")

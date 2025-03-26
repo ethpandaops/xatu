@@ -41,6 +41,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const unknown = "unknown"
+
 type Sentry struct {
 	Config *Config
 
@@ -787,12 +789,12 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	networkStr := fmt.Sprintf("%d", network)
 
 	if networkStr == "" || networkStr == "0" {
-		networkStr = "unknown"
+		networkStr = unknown
 	}
 
 	eventType := event.GetEvent().GetName().String()
 	if eventType == "" {
-		eventType = "unknown"
+		eventType = unknown
 	}
 
 	s.metrics.AddDecoratedEvent(1, eventType, networkStr)

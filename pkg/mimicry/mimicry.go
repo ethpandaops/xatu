@@ -25,6 +25,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const unknown = "unknown"
+
 type Mimicry struct {
 	Config *Config
 
@@ -267,12 +269,12 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 	networkStr := fmt.Sprintf("%d", network)
 
 	if networkStr == "" || networkStr == "0" {
-		networkStr = "unknown"
+		networkStr = unknown
 	}
 
 	eventType := event.GetEvent().GetName().String()
 	if eventType == "" {
-		eventType = "unknown"
+		eventType = unknown
 	}
 
 	m.metrics.AddDecoratedEvent(1, eventType, networkStr)

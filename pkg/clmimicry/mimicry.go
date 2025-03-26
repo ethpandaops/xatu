@@ -32,6 +32,8 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+const unknown = "unknown"
+
 type Mimicry struct {
 	Config *Config
 
@@ -234,7 +236,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		m.log.Info("Ethereum client is ready. Starting Hermes..")
 
 		if err := m.startHermes(ctx); err != nil {
-			m.log.Fatal("failed to start hermes: %w", err)
+			m.log.Fatalf("failed to start hermes: %v", err)
 		}
 
 		return nil
@@ -392,12 +394,12 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 	networkStr := fmt.Sprintf("%d", network)
 
 	if networkStr == "" || networkStr == "0" {
-		networkStr = "unknown"
+		networkStr = unknown
 	}
 
 	eventType := event.GetEvent().GetName().String()
 	if eventType == "" {
-		eventType = "unknown"
+		eventType = unknown
 	}
 
 	m.metrics.AddDecoratedEvent(1, eventType, networkStr)

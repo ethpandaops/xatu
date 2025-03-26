@@ -122,6 +122,9 @@ type NodeConfig struct {
 
 	// DataStreamType is the type of data stream to use for the node (e.g. kinesis, callback, etc).
 	DataStreamType string `yaml:"dataStreamType" default:"callback"`
+
+	// Subnets is the configuration for gossipsub subnets.
+	Subnets map[string]*hermes.SubnetConfig `yaml:"subnets"`
 }
 
 func (h *NodeConfig) AsHermesConfig() *hermes.NodeConfig {
@@ -138,6 +141,7 @@ func (h *NodeConfig) AsHermesConfig() *hermes.NodeConfig {
 		MaxPeers:        h.MaxPeers,
 		DialConcurrency: h.DialConcurrency,
 		DataStreamType:  host.DataStreamtypeFromStr(h.DataStreamType),
+		SubnetConfigs:   h.Subnets,
 	}
 }
 

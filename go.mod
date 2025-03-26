@@ -4,8 +4,6 @@ go 1.24.0
 
 toolchain go1.24.1
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250318101859-b1565d551e36
-
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/attestantio/go-eth2-client v0.24.1
@@ -26,7 +24,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/holiman/uint256 v1.3.2
-	github.com/huandu/go-sqlbuilder v1.34.0
+	github.com/huandu/go-sqlbuilder v1.35.0
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/klauspost/compress v1.18.0
 	github.com/lib/pq v1.10.9
@@ -35,11 +33,11 @@ require (
 	github.com/multiformats/go-multiaddr v0.15.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pkg/errors v0.9.1
-	github.com/probe-lab/hermes v0.0.0-20241128085322-a39cba499cb1
+	github.com/probe-lab/hermes v0.0.0-20250326124220-bbe750ac3b1d
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
 	github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0
-	github.com/redis/go-redis/v9 v9.7.1
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
@@ -51,7 +49,7 @@ require (
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/sync v0.12.0
 	google.golang.org/grpc v1.71.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
 )
 

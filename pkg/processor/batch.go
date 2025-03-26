@@ -439,6 +439,7 @@ func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, it
 
 func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	log := bvp.log.WithField("module", "batch_builder")
+
 	var batch []*TraceableItem[T]
 
 	for {
@@ -532,6 +533,7 @@ func (bvp *BatchItemProcessor[T]) drainQueue() {
 
 func recoverSendOnClosedChan() {
 	x := recover()
+
 	switch err := x.(type) {
 	case nil:
 		return
@@ -540,6 +542,7 @@ func recoverSendOnClosedChan() {
 			return
 		}
 	}
+
 	panic(x)
 }
 

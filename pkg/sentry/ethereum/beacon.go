@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
-	"github.com/go-co-op/gocron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -64,8 +63,6 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
-	s := gocron.NewScheduler(time.Local)
-
 	errs := make(chan error, 1)
 	healthyFirstTime := make(chan struct{})
 
@@ -108,8 +105,6 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 
 		return nil
 	})
-
-	s.StartAsync()
 
 	b.beacon.StartAsync(ctx)
 

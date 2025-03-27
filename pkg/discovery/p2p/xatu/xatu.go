@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/discovery"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -118,62 +118,71 @@ func (c *Coordinator) Stop(ctx context.Context) error {
 }
 
 func (c *Coordinator) startCrons(ctx context.Context) error {
-	s := gocron.NewScheduler(time.Local)
-
-	if _, err := s.Every(c.config.Restart).Do(func() {
-		forkIDHashes := make([][]byte, len(c.config.ForkIDHashes))
-
-		for i, forkIDHash := range c.config.ForkIDHashes {
-			forkIDHashBytes, err := hex.DecodeString(forkIDHash[2:])
-			if err == nil {
-				forkIDHashes[i] = forkIDHashBytes
-			}
-		}
-
-		req := xatu.GetDiscoveryNodeRecordRequest{
-			NetworkIds:   c.config.NetworkIds,
-			ForkIdHashes: forkIDHashes,
-		}
-
-		md := metadata.New(c.config.Headers)
-		ctx = metadata.NewOutgoingContext(ctx, md)
-
-		res, err := c.pb.GetDiscoveryNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
-
-		if err != nil {
-			c.log.WithError(err).Error("Failed to get a discovery node record")
-
-			return
-		}
-
-		if err = c.discV4.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-			c.log.WithError(err).Error("Failed to update discV4 boot nodes")
-
-			return
-		}
-
-		if errS := c.discV4.Start(ctx); errS != nil {
-			c.log.WithError(errS).Error("Failed to start discV4")
-
-			return
-		}
-
-		if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-			c.log.WithError(err).Error("Failed to update discV5 boot nodes")
-
-			return
-		}
-
-		if err := c.discV5.Start(ctx); err != nil {
-			c.log.WithError(err).Error("Failed to start discV5")
-
-			return
-		}
-	}); err != nil {
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	s.StartAsync()
+	if _, err := s.NewJob(
+		gocron.DurationJob(c.config.Restart),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				forkIDHashes := make([][]byte, len(c.config.ForkIDHashes))
+
+				for i, forkIDHash := range c.config.ForkIDHashes {
+					forkIDHashBytes, err := hex.DecodeString(forkIDHash[2:])
+					if err == nil {
+						forkIDHashes[i] = forkIDHashBytes
+					}
+				}
+
+				req := xatu.GetDiscoveryNodeRecordRequest{
+					NetworkIds:   c.config.NetworkIds,
+					ForkIdHashes: forkIDHashes,
+				}
+
+				md := metadata.New(c.config.Headers)
+				ctx = metadata.NewOutgoingContext(ctx, md)
+
+				res, err := c.pb.GetDiscoveryNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
+
+				if err != nil {
+					c.log.WithError(err).Error("Failed to get a discovery node record")
+
+					return
+				}
+
+				if err = c.discV4.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
+					c.log.WithError(err).Error("Failed to update discV4 boot nodes")
+
+					return
+				}
+
+				if errS := c.discV4.Start(ctx); errS != nil {
+					c.log.WithError(errS).Error("Failed to start discV4")
+
+					return
+				}
+
+				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
+					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+
+					return
+				}
+
+				if err := c.discV5.Start(ctx); err != nil {
+					c.log.WithError(err).Error("Failed to start discV5")
+
+					return
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	s.Start()
 
 	return nil
 }

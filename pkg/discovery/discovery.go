@@ -18,7 +18,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -184,28 +184,37 @@ func (d *Discovery) ServePProf(ctx context.Context) error {
 }
 
 func (d *Discovery) startCrons(ctx context.Context) error {
-	c := gocron.NewScheduler(time.Local)
-
-	if _, err := c.Every("5s").Do(func() {
-		d.log.WithFields(logrus.Fields{
-			"records": d.status.ActiveExecution(),
-		}).Info("execution records currently trying to dial")
-		if d.status.ActiveExecution() == 0 {
-			d.log.Info("no active execution records to dial, requesting stale records from coordinator")
-			nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
-			if err != nil {
-				d.log.WithError(err).Error("Failed to list stale node records")
-
-				return
-			}
-			d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
-			d.status.AddExecutionNodeRecords(ctx, nodeRecords)
-		}
-	}); err != nil {
+	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
 		return err
 	}
 
-	c.StartAsync()
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				d.log.WithFields(logrus.Fields{
+					"records": d.status.ActiveExecution(),
+				}).Info("execution records currently trying to dial")
+				if d.status.ActiveExecution() == 0 {
+					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
+					nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
+					if err != nil {
+						d.log.WithError(err).Error("Failed to list stale node records")
+
+						return
+					}
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
+					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
+				}
+			},
+			ctx,
+		),
+	); err != nil {
+		return err
+	}
+
+	c.Start()
 
 	return nil
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -60,7 +60,7 @@ type Sentry struct {
 
 	metrics *Metrics
 
-	scheduler *gocron.Scheduler
+	scheduler gocron.Scheduler
 
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
@@ -178,6 +178,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	duplicateCache := cache.NewDuplicateCache()
 	duplicateCache.Start()
 
+	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Sentry{
 		Config:             config,
 		sinks:              sinks,
@@ -187,7 +192,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		duplicateCache:     duplicateCache,
 		id:                 uuid.New(),
 		metrics:            NewMetrics("xatu_sentry"),
-		scheduler:          gocron.NewScheduler(time.Local),
+		scheduler:          scheduler,
 		latestForkChoice:   nil,
 		latestForkChoiceMu: sync.RWMutex{},
 		shutdownFuncs:      []func(context.Context) error{},
@@ -734,15 +739,21 @@ func (s *Sentry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, err
 }
 
 func (s *Sentry) startCrons(ctx context.Context) error {
-	if _, err := s.scheduler.Every("5m").Do(func() {
-		if err := s.syncClockDrift(ctx); err != nil {
-			s.log.WithError(err).Error("Failed to sync clock drift")
-		}
-	}); err != nil {
+	if _, err := s.scheduler.NewJob(
+		gocron.DurationJob(5*time.Minute),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				if err := s.syncClockDrift(ctx); err != nil {
+					s.log.WithError(err).Error("Failed to sync clock drift")
+				}
+			},
+			ctx,
+		),
+	); err != nil {
 		return err
 	}
 
-	s.scheduler.StartAsync()
+	s.scheduler.Start()
 
 	return nil
 }

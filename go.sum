@@ -763,8 +763,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
-github.com/probe-lab/hermes v0.0.0-20250326124220-bbe750ac3b1d h1:DF+X943ojKJbff9ONCyxUQvT4YGKcyyZam4BAVorp6o=
-github.com/probe-lab/hermes v0.0.0-20250326124220-bbe750ac3b1d/go.mod h1:LgkbbePReT9kEZFqoHFbuKdDe9yGUgh74x6XuHvGNt4=
+github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38 h1:4bcB7jw06Jq/KvnhzLUKkJBIVQlAmTLtycNHdhsGvqk=
+github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38/go.mod h1:lzzFtjdyG3imvt18dSMU+EpDjInKkC7Hc3m1S+Aylqo=
 github.com/prometheus/client_golang v0.8.0/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829/go.mod h1:p2iRAGwDERtqlqzRXnrOVns+ignqQo//hLXqYxZYVNs=

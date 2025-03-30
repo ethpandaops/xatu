@@ -12,7 +12,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.15.6
+	github.com/ethereum/go-ethereum v1.15.5
 	github.com/ethpandaops/beacon v0.49.0
 	github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9
 	github.com/ethpandaops/ethwallclock v0.3.0
@@ -36,7 +36,7 @@ require (
 	github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
-	github.com/prysmaticlabs/prysm/v5 v5.3.2
+	github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1

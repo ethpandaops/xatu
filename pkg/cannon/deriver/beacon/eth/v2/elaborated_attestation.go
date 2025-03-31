@@ -275,54 +275,140 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			return nil, errors.Wrap(err, "failed to obtain attestation data")
 		}
 
-		// Get all the validator indexes of those who signed the attestation
-		var indexes []*wrapperspb.UInt64Value
-
-		var indexErr error
-
-		switch attestation.Version {
-		case spec.DataVersionPhase0, spec.DataVersionAltair, spec.DataVersionBellatrix, spec.DataVersionCapella, spec.DataVersionDeneb:
-			indexes, indexErr = b.getAttestatingValidatorIndexesPhase0(ctx, attestation)
-			if indexErr != nil {
-				return nil, errors.Wrap(indexErr, "failed to get attestating validator indexes")
-			}
-		default:
-			// Treat it as an Electra attestation
-			indexes, indexErr = b.getAttestatingValidatorIndexesElectra(ctx, attestation)
-			if indexErr != nil {
-				return nil, errors.Wrap(indexErr, "failed to get attestating validator indexes")
-			}
-		}
-
 		signature, err := attestation.Signature()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to obtain attestation signature")
 		}
 
-		elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
-			Signature: signature.String(),
-			Data: &xatuethv1.AttestationDataV2{
-				Slot:            &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
-				Index:           &wrapperspb.UInt64Value{Value: uint64(attestationData.Index)},
-				BeaconBlockRoot: xatuethv1.RootAsString(attestationData.BeaconBlockRoot),
-				Source: &xatuethv1.CheckpointV2{
-					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Source.Epoch)},
-					Root:  xatuethv1.RootAsString(attestationData.Source.Root),
-				},
-				Target: &xatuethv1.CheckpointV2{
-					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Target.Epoch)},
-					Root:  xatuethv1.RootAsString(attestationData.Target.Root),
-				},
-			},
-			ValidatorIndexes: indexes,
-		}
+		// Handle different attestation versions
+		switch attestation.Version {
+		case spec.DataVersionPhase0, spec.DataVersionAltair, spec.DataVersionBellatrix, spec.DataVersionCapella, spec.DataVersionDeneb:
+			// For pre-Electra attestations, each attestation can only have one committee
+			indexes, indexErr := b.getAttestatingValidatorIndexesPhase0(ctx, attestation)
+			if indexErr != nil {
+				return nil, errors.Wrap(indexErr, "failed to get attestating validator indexes")
+			}
 
-		event, err := b.createEventFromElaboratedAttestation(ctx, elaboratedAttestation, uint64(positionInBlock), blockIdentifier)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create event for attestation %s", attestation.String())
-		}
+			// Create a single elaborated attestation
+			elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
+				Signature: signature.String(),
+				Data: &xatuethv1.AttestationDataV2{
+					Slot:            &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
+					Index:           &wrapperspb.UInt64Value{Value: uint64(attestationData.Index)},
+					BeaconBlockRoot: xatuethv1.RootAsString(attestationData.BeaconBlockRoot),
+					Source: &xatuethv1.CheckpointV2{
+						Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Source.Epoch)},
+						Root:  xatuethv1.RootAsString(attestationData.Source.Root),
+					},
+					Target: &xatuethv1.CheckpointV2{
+						Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Target.Epoch)},
+						Root:  xatuethv1.RootAsString(attestationData.Target.Root),
+					},
+				},
+				ValidatorIndexes: indexes,
+			}
 
-		events = append(events, event)
+			//nolint:gosec // If we have that many attestations in a block we're cooked
+			event, err := b.createEventFromElaboratedAttestation(ctx, elaboratedAttestation, uint64(positionInBlock), blockIdentifier)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to create event for attestation %s", attestation.String())
+			}
+
+			events = append(events, event)
+
+		default:
+			// For Electra attestations, create multiple events (one per committee)
+			// Get the committee bits (this indicates which committees are included in this attestation)
+			committeeBits, err := attestation.CommitteeBits()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to obtain attestation committee bits")
+			}
+
+			// Get aggregation bits
+			aggregationBits, err := attestation.AggregationBits()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
+			}
+
+			// Process each committee from the committee_bits
+			committeeIndices := committeeBits.BitIndices()
+			committeeOffset := 0
+
+			for _, committeeIdx := range committeeIndices {
+				// Get the committee information
+				epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
+
+				epochCommittees, err := b.beacon.Duties().FetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()))
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to get committees for epoch")
+				}
+
+				// Find the committee matching our current slot and index
+				var committee *v1.BeaconCommittee
+
+				for _, c := range epochCommittees {
+					//nolint:gosec // This is capped at 64 committees in the spec
+					if c.Slot == attestationData.Slot && c.Index == phase0.CommitteeIndex(committeeIdx) {
+						committee = c
+
+						break
+					}
+				}
+
+				if committee == nil {
+					return nil, errors.New(fmt.Sprintf("committee %d in slot %d not found", committeeIdx, attestationData.Slot))
+				}
+
+				committeeSize := len(committee.Validators)
+
+				// Create committee-specific validator indexes array
+				committeeValidatorIndexes := []*wrapperspb.UInt64Value{}
+
+				// For each validator position in this committee
+				for i := 0; i < committeeSize; i++ {
+					// Calculate the bit position in the aggregation_bits
+					aggregationBitPosition := committeeOffset + i
+
+					// Check if this position is valid and set
+					//nolint:gosec // This is capped at 64 committees in the spec
+					if uint64(aggregationBitPosition) < aggregationBits.Len() && aggregationBits.BitAt(uint64(aggregationBitPosition)) {
+						validatorIndex := committee.Validators[i]
+						committeeValidatorIndexes = append(committeeValidatorIndexes, wrapperspb.UInt64(uint64(validatorIndex)))
+					}
+				}
+
+				// Create an elaborated attestation for this committee
+				elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
+					Signature: signature.String(),
+					Data: &xatuethv1.AttestationDataV2{
+						Slot: &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
+						//nolint:gosec // This is capped at 64 committees in the spec
+						Index:           &wrapperspb.UInt64Value{Value: uint64(committeeIdx)}, // Use the committee index from committee_bits
+						BeaconBlockRoot: xatuethv1.RootAsString(attestationData.BeaconBlockRoot),
+						Source: &xatuethv1.CheckpointV2{
+							Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Source.Epoch)},
+							Root:  xatuethv1.RootAsString(attestationData.Source.Root),
+						},
+						Target: &xatuethv1.CheckpointV2{
+							Epoch: &wrapperspb.UInt64Value{Value: uint64(attestationData.Target.Epoch)},
+							Root:  xatuethv1.RootAsString(attestationData.Target.Root),
+						},
+					},
+					ValidatorIndexes: committeeValidatorIndexes,
+				}
+
+				//nolint:gosec // If we have that many attestations in a block we're cooked
+				event, err := b.createEventFromElaboratedAttestation(ctx, elaboratedAttestation, uint64(positionInBlock), blockIdentifier)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to create event for attestation %s committee %d", attestation.String(), committeeIdx)
+				}
+
+				events = append(events, event)
+
+				// Update offset for the next committee
+				committeeOffset += committeeSize
+			}
+		}
 	}
 
 	return events, nil
@@ -349,6 +435,7 @@ func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesPhase0(ctx 
 			phase0.Epoch(epoch.Number()),
 			attestationData.Slot,
 			attestationData.Index,
+			//nolint:gosec // This is capped at 64 committees in the spec
 			uint64(position),
 		)
 		if err != nil {
@@ -356,82 +443,6 @@ func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesPhase0(ctx 
 		}
 
 		indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
-	}
-
-	return indexes, nil
-}
-
-func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesElectra(ctx context.Context, attestation *spec.VersionedAttestation) ([]*wrapperspb.UInt64Value, error) {
-	indexes := []*wrapperspb.UInt64Value{}
-
-	attestationData, err := attestation.Data()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain attestation data")
-	}
-
-	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
-
-	// Get the committee bits (this indicates which committees are included in this attestation)
-	// EIP-7549 moves committee index outside of signed attestation data
-	committeeBits, err := attestation.CommitteeBits()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain attestation committee bits")
-	}
-
-	// Get aggregation bits (this indicates which validators from the committee participated)
-	aggregationBits, err := attestation.AggregationBits()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
-	}
-
-	committeeIndices := committeeBits.BitIndices()
-
-	// In Electra format, per EIP-7549:
-	// - committee_bits indicates which committees are included
-	// - aggregation_bits is a concatenated bitfield of all validators across all committees
-	// - We need to apply an offset for each committee when reading the aggregation bits
-
-	// Process each committee that's set in the committee_bits
-	committeeOffset := 0
-
-	for _, committeeIdx := range committeeIndices {
-		// Get committees for this epoch/slot to verify size
-		epochCommittees, err := b.beacon.Duties().FetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get committees for epoch")
-		}
-
-		// Find the committee matching our current slot and committee index
-		var committee *v1.BeaconCommittee
-
-		for _, c := range epochCommittees {
-			if c.Slot == attestationData.Slot && c.Index == phase0.CommitteeIndex(committeeIdx) {
-				committee = c
-
-				break
-			}
-		}
-
-		if committee == nil {
-			return nil, errors.New(fmt.Sprintf("committee %d in slot %d not found", committeeIdx, attestationData.Slot))
-		}
-
-		committeeSize := len(committee.Validators)
-
-		// For each validator position in this committee
-		for i := 0; i < committeeSize; i++ {
-			// Calculate the bit position in the aggregation_bits
-			aggregationBitPosition := committeeOffset + i
-
-			// Check if this position is valid and set
-			if uint64(aggregationBitPosition) < aggregationBits.Len() && aggregationBits.BitAt(uint64(aggregationBitPosition)) {
-				validatorIndex := committee.Validators[i]
-				indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
-			}
-		}
-
-		// Update offset for the next committee
-		committeeOffset += committeeSize
 	}
 
 	return indexes, nil

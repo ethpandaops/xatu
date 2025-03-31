@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v5"
@@ -274,28 +275,23 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			return nil, errors.Wrap(err, "failed to obtain attestation data")
 		}
 
-		epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
-
 		// Get all the validator indexes of those who signed the attestation
-		indexes := []*wrapperspb.UInt64Value{}
+		var indexes []*wrapperspb.UInt64Value
 
-		bitIndices, err := attestation.AggregationBits()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
-		}
+		var indexErr error
 
-		for _, position := range bitIndices.BitIndices() {
-			validatorIndex, err := b.beacon.Duties().GetValidatorIndex(
-				phase0.Epoch(epoch.Number()),
-				attestationData.Slot,
-				attestationData.Index,
-				uint64(position),
-			)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to get validator index for position %d", position)
+		switch attestation.Version {
+		case spec.DataVersionPhase0, spec.DataVersionAltair, spec.DataVersionBellatrix, spec.DataVersionCapella, spec.DataVersionDeneb:
+			indexes, indexErr = b.getAttestatingValidatorIndexesPhase0(ctx, attestation)
+			if indexErr != nil {
+				return nil, errors.Wrap(indexErr, "failed to get attestating validator indexes")
 			}
-
-			indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
+		default:
+			// Treat it as an Electra attestation
+			indexes, indexErr = b.getAttestatingValidatorIndexesElectra(ctx, attestation)
+			if indexErr != nil {
+				return nil, errors.Wrap(indexErr, "failed to get attestating validator indexes")
+			}
 		}
 
 		signature, err := attestation.Signature()
@@ -330,6 +326,115 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	}
 
 	return events, nil
+}
+
+func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesPhase0(ctx context.Context, attestation *spec.VersionedAttestation) ([]*wrapperspb.UInt64Value, error) {
+	indexes := []*wrapperspb.UInt64Value{}
+
+	attestationData, err := attestation.Data()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation data")
+	}
+
+	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
+
+	bitIndices, err := attestation.AggregationBits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
+	}
+
+	for _, position := range bitIndices.BitIndices() {
+		validatorIndex, err := b.beacon.Duties().GetValidatorIndex(
+			ctx,
+			phase0.Epoch(epoch.Number()),
+			attestationData.Slot,
+			attestationData.Index,
+			uint64(position),
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get validator index for position %d", position)
+		}
+
+		indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
+	}
+
+	return indexes, nil
+}
+
+func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesElectra(ctx context.Context, attestation *spec.VersionedAttestation) ([]*wrapperspb.UInt64Value, error) {
+	indexes := []*wrapperspb.UInt64Value{}
+
+	attestationData, err := attestation.Data()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation data")
+	}
+
+	epoch := b.beacon.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.Slot))
+
+	// Get the committee bits (this indicates which committees are included in this attestation)
+	// EIP-7549 moves committee index outside of signed attestation data
+	committeeBits, err := attestation.CommitteeBits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation committee bits")
+	}
+
+	// Get aggregation bits (this indicates which validators from the committee participated)
+	aggregationBits, err := attestation.AggregationBits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain attestation aggregation bits")
+	}
+
+	committeeIndices := committeeBits.BitIndices()
+
+	// In Electra format, per EIP-7549:
+	// - committee_bits indicates which committees are included
+	// - aggregation_bits is a concatenated bitfield of all validators across all committees
+	// - We need to apply an offset for each committee when reading the aggregation bits
+
+	// Process each committee that's set in the committee_bits
+	committeeOffset := 0
+
+	for _, committeeIdx := range committeeIndices {
+		// Get committees for this epoch/slot to verify size
+		epochCommittees, err := b.beacon.Duties().FetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get committees for epoch")
+		}
+
+		// Find the committee matching our current slot and committee index
+		var committee *v1.BeaconCommittee
+
+		for _, c := range epochCommittees {
+			if c.Slot == attestationData.Slot && c.Index == phase0.CommitteeIndex(committeeIdx) {
+				committee = c
+
+				break
+			}
+		}
+
+		if committee == nil {
+			return nil, errors.New(fmt.Sprintf("committee %d in slot %d not found", committeeIdx, attestationData.Slot))
+		}
+
+		committeeSize := len(committee.Validators)
+
+		// For each validator position in this committee
+		for i := 0; i < committeeSize; i++ {
+			// Calculate the bit position in the aggregation_bits
+			aggregationBitPosition := committeeOffset + i
+
+			// Check if this position is valid and set
+			if uint64(aggregationBitPosition) < aggregationBits.Len() && aggregationBits.BitAt(uint64(aggregationBitPosition)) {
+				validatorIndex := committee.Validators[i]
+				indexes = append(indexes, wrapperspb.UInt64(uint64(validatorIndex)))
+			}
+		}
+
+		// Update offset for the next committee
+		committeeOffset += committeeSize
+	}
+
+	return indexes, nil
 }
 
 func (b *ElaboratedAttestationDeriver) createEventFromElaboratedAttestation(ctx context.Context, attestation *xatuethv1.ElaboratedAttestation, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier) (*xatu.DecoratedEvent, error) {

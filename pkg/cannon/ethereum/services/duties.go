@@ -148,8 +148,8 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	return committees, nil
 }
 
-func (m *DutiesService) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
-	if _, err := m.FetchBeaconCommittee(context.Background(), epoch); err != nil {
+func (m *DutiesService) GetValidatorIndex(ctx context.Context, epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
+	if _, err := m.FetchBeaconCommittee(ctx, epoch); err != nil {
 		return 0, fmt.Errorf("error fetching beacon committee for epoch %d: %w", epoch, err)
 	}
 

@@ -27,9 +27,11 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
 
 	_ "google.golang.org/grpc/encoding/gzip"
-	"google.golang.org/grpc/keepalive"
 )
 
 type Xatu struct {
@@ -41,6 +43,7 @@ type Xatu struct {
 	grpcServer    *grpc.Server
 	metricsServer *http.Server
 	pprofServer   *http.Server
+	healthServer  *health.Server
 
 	persistence   *persistence.Client
 	cache         store.Cache
@@ -90,22 +93,29 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Overr
 		}
 	}
 
-	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, &clockDrift, p, c, g)
-	if err != nil {
-		return nil, err
-	}
+	healthServer := health.NewServer()
 
-	return &Xatu{
+	xatuServer := &Xatu{
 		config:        conf,
 		log:           log.WithField("component", "server"),
 		persistence:   p,
 		cache:         c,
 		geoipProvider: g,
-		services:      services,
 		clockDrift:    &clockDrift,
 		shutdownFuncs: []func(ctx context.Context) error{},
 		overrides:     o,
-	}, nil
+		healthServer:  healthServer,
+	}
+
+	// Create services
+	services, err := service.CreateGRPCServices(ctx, log, &conf.Services, &clockDrift, p, c, g, healthServer)
+	if err != nil {
+		return nil, err
+	}
+
+	xatuServer.services = services
+
+	return xatuServer, nil
 }
 
 func (x *Xatu) Start(ctx context.Context) error {
@@ -217,6 +227,11 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
 
+	if x.healthServer != nil {
+		// Mark all services as NOT_SERVING during shutdown
+		x.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+	}
+
 	if x.grpcServer != nil {
 		x.grpcServer.GracefulStop()
 	}
@@ -318,15 +333,25 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 	}
 	x.grpcServer = grpc.NewServer(opts...)
 
+	// Register the health check service
+	x.healthServer = health.NewServer()
+	healthpb.RegisterHealthServer(x.grpcServer, x.healthServer)
+
+	// Set the overall health to SERVING
+	x.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+
 	for _, s := range x.services {
 		if err := s.Start(ctx, x.grpcServer); err != nil {
 			return err
 		}
+
+		// Register each service with the health checker
+		x.healthServer.SetServingStatus(s.Name(), healthpb.HealthCheckResponse_SERVING)
 	}
 
 	grpc_prometheus.Register(x.grpcServer)
 
-	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server")
+	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server with health checks enabled")
 
 	return x.grpcServer.Serve(lis)
 }

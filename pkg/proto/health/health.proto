@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package health;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/health";
+
+// The health service definition following the gRPC health checking protocol
+// https://github.com/grpc/grpc/blob/master/doc/health-checking.md
+service Health {
+  // Check returns the current health status of the requested service
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // Watch provides a stream of health status updates for the requested service
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+}
+
+// Request message for health check
+message HealthCheckRequest {
+  // Service name to check. Empty string means the overall system health.
+  string service = 1;
+}
+
+// Response message for health check
+message HealthCheckResponse {
+  // Enum defining the possible health statuses of a service
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  
+  // The health status of the requested service
+  ServingStatus status = 1;
+} 

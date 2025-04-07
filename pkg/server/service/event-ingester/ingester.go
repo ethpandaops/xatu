@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -36,9 +38,11 @@ type Ingester struct {
 	handler *Handler
 	auth    *auth.Authorization
 	sinks   []output.Sink
+
+	healthServer *health.Server
 }
 
-func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache) (*Ingester, error) {
+func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, healthServer *health.Server) (*Ingester, error) {
 	log = log.WithField("server/module", ServiceType)
 
 	a, err := auth.NewAuthorization(log, conf.Authorization)
@@ -47,10 +51,11 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 	}
 
 	e := &Ingester{
-		log:     log,
-		config:  conf,
-		auth:    a,
-		handler: NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),
+		log:          log,
+		config:       conf,
+		auth:         a,
+		handler:      NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),
+		healthServer: healthServer,
 	}
 
 	sinks, err := e.CreateSinks()
@@ -61,6 +66,11 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 	e.sinks = sinks
 
 	return e, nil
+}
+
+// Name returns the name of this service
+func (e *Ingester) Name() string {
+	return "event-ingester"
 }
 
 func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
@@ -78,11 +88,15 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 		}
 	}
 
+	e.healthServer.SetServingStatus(e.Name(), grpc_health_v1.HealthCheckResponse_SERVING)
+
 	return nil
 }
 
 func (e *Ingester) Stop(ctx context.Context) error {
 	e.log.Info("Stopping module")
+
+	e.healthServer.SetServingStatus(e.Name(), grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
 	for _, sink := range e.sinks {
 		if err := sink.Stop(ctx); err != nil {

@@ -20,6 +20,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -39,9 +41,11 @@ type Client struct {
 	metrics *Metrics
 
 	nodeRecord *n.Record
+
+	healthServer *health.Server
 }
 
-func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client, geoipProvider geoip.Provider) (*Client, error) {
+func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client, geoipProvider geoip.Provider, healthServer *health.Server) (*Client, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%s: persistence is required", ServiceType)
 	}
@@ -60,9 +64,15 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *per
 		geoipProvider: geoipProvider,
 		nodeRecord:    nodeRecord,
 		metrics:       NewMetrics("xatu_server_coordinator"),
+		healthServer:  healthServer,
 	}
 
 	return e, nil
+}
+
+// Name returns the name of this service
+func (c *Client) Name() string {
+	return "coordinator"
 }
 
 func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
@@ -73,6 +83,8 @@ func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
 	if err := c.nodeRecord.Start(ctx); err != nil {
 		return status.Error(codes.Internal, perrors.Wrap(err, "failed to start node record processor").Error())
 	}
+
+	c.healthServer.SetServingStatus(c.Name(), grpc_health_v1.HealthCheckResponse_SERVING)
 
 	return nil
 }
@@ -85,6 +97,8 @@ func (c *Client) Stop(ctx context.Context) error {
 	}
 
 	c.log.Info("Module stopped")
+
+	c.healthServer.SetServingStatus(c.Name(), grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
 	return nil
 }

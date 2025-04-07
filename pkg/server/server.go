@@ -334,7 +334,6 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 	x.grpcServer = grpc.NewServer(opts...)
 
 	// Register the health check service
-	x.healthServer = health.NewServer()
 	healthpb.RegisterHealthServer(x.grpcServer, x.healthServer)
 
 	// Set the overall health to SERVING
@@ -344,9 +343,6 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		if err := s.Start(ctx, x.grpcServer); err != nil {
 			return err
 		}
-
-		// Register each service with the health checker
-		x.healthServer.SetServingStatus(s.Name(), healthpb.HealthCheckResponse_SERVING)
 	}
 
 	grpc_prometheus.Register(x.grpcServer)

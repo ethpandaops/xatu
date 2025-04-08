@@ -79,8 +79,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 	addr := fmt.Sprintf("%s:%d", config.Node.PrysmHost, config.Node.PrysmPortHTTP)
 
-	if !strings.HasPrefix(addr, "http") {
-		addr = "http://" + addr
+	if !strings.HasPrefix(addr, "http") && !strings.HasPrefix(addr, "https") {
+		if config.Node.PrysmUseTLS {
+			addr = "https://" + addr
+		} else {
+			addr = "http://" + addr
+		}
 	}
 
 	client, err := ethereum.NewBeaconNode(ctx,

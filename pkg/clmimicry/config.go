@@ -110,7 +110,7 @@ type NodeConfig struct {
 	PrysmHost     string `yaml:"prysmHost" default:"127.0.0.1"`
 	PrysmPortHTTP int    `yaml:"prysmPortHttp" default:"3500"`
 	PrysmPortGRPC int    `yaml:"prysmPortGrpc" default:"4000"`
-	PrysmUseTLS   bool   `yaml:"prysmUseTLS" default:"false"`
+	PrysmUseTLS   bool   `yaml:"prysmUseTls" default:"false"`
 
 	// The maximum number of peers our libp2p host can be connected to.
 	MaxPeers int `yaml:"maxPeers" default:"30"`

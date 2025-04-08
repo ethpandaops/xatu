@@ -29,6 +29,9 @@ type Config struct {
 	// LoggingLevel is the logging level to use.
 	LoggingLevel string `yaml:"logging" default:"info"`
 
+	// KeepaliveParams is the keepalive parameters to use.
+	KeepaliveParams *KeepaliveParams `yaml:"keepAlive" default:"{\"enabled\": true}"`
+
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
 
@@ -49,6 +52,12 @@ type Config struct {
 func (c *Config) Validate() error {
 	if err := c.Services.Validate(); err != nil {
 		return err
+	}
+
+	if c.KeepaliveParams != nil {
+		if err := c.KeepaliveParams.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := c.Persistence.Validate(); err != nil {

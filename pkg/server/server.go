@@ -29,7 +29,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/keepalive"
 
 	_ "google.golang.org/grpc/encoding/gzip"
 )
@@ -303,13 +302,6 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 	// prevent NGINX from terminating connections before the server's age limit is reached.
 	opts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(mb100),
-		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     5 * time.Minute,
-			MaxConnectionAge:      12 * time.Minute,
-			MaxConnectionAgeGrace: 3 * time.Minute,
-			Time:                  1 * time.Minute,
-			Timeout:               15 * time.Second,
-		}),
 		grpc.ChainStreamInterceptor(
 			grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor),
 		),
@@ -331,6 +323,20 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			},
 		),
 	}
+
+	if x.config.KeepaliveParams != nil && x.config.KeepaliveParams.Enabled != nil && *x.config.KeepaliveParams.Enabled {
+		keepaliveParams, err := x.config.KeepaliveParams.ToGRPCKeepaliveParams()
+		if err != nil {
+			return fmt.Errorf("failed to convert keepalive params: %w", err)
+		}
+
+		x.log.WithField("params", x.config.KeepaliveParams.String()).Info("Enabling keepalive")
+
+		opts = append(opts, grpc.KeepaliveParams(keepaliveParams))
+	} else {
+		x.log.Info("Keepalive disabled")
+	}
+
 	x.grpcServer = grpc.NewServer(opts...)
 
 	// Register the health check service

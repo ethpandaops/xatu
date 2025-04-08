@@ -21,6 +21,7 @@ node:
   prysmHost: "127.0.0.1"
   prysmPortHttp: 5052
   prysmPortGrpc: 4000
+  prysmUseTLS: false
   maxPeers: 30
   dialConcurrency: 16
   dataStreamType: "callback"

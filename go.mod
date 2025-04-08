@@ -4,6 +4,8 @@ go 1.24.0
 
 toolchain go1.24.1
 
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250408014407-f530d492b03b
+
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/attestantio/go-eth2-client v0.24.1
@@ -121,7 +123,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect

@@ -17,6 +17,21 @@ ntpServer: time.google.com
 ethereum:
   beaconNodeAddress: http://localhost:5052
 
+# Execution client configuration for mempool transactions.
+execution:
+  # Set to true to enable mempool transaction monitoring.
+  enabled: false
+  # Address of your execution client's RPC or Websocket endpoint.
+  # For example:
+  #  - RPC URLs (polling), eg: http://localhost:8545
+  #  - WebSocket URLs (subscription), eg: ws://localhost:8546
+  address: ws://localhost:8546
+  # Optional headers.
+  headers:
+    # authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+  # Polling interval in seconds (not applicable to WebSocket addresses).
+  pollingInterval: 2
+
 forkChoice:
   enabled: false
 

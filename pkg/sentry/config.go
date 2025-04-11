@@ -27,6 +27,9 @@ type Config struct {
 	// Ethereum configuration
 	Ethereum ethereum.Config `yaml:"ethereum"`
 
+	// Execution client configuration
+	Execution *ExecutionConfig `yaml:"execution" default:"{'enabled': false}"`
+
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 
@@ -205,4 +208,19 @@ type BeaconCommitteesConfig struct {
 
 type ProposerDutyConfig struct {
 	Enabled bool `yaml:"enabled" default:"true"`
+}
+
+// ExecutionConfig defines configuration for connecting to an execution client
+type ExecutionConfig struct {
+	// Enabled is whether the execution client is enabled
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	// Address is the address of the execution client
+	Address string `yaml:"address"`
+
+	// Headers is a map of headers to send to the execution client
+	Headers map[string]string `yaml:"headers"`
+
+	// PollingInterval is the interval to poll for new transactions when using HTTP/HTTPS endpoints (in seconds)
+	PollingInterval int `yaml:"pollingInterval" default:"1"`
 }

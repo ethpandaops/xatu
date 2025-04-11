@@ -42,9 +42,9 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 	ctx, cancel := context.WithCancel(ctx)
 
 	var (
-		rpcClientent *rpc.Client
-		err          error
-		client       = &Client{
+		rpcClient *rpc.Client
+		err       error
+		client    = &Client{
 			log:           log.WithField("module", "sentry/execution"),
 			config:        config,
 			ctx:           ctx,
@@ -64,9 +64,9 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 
 	switch client.polling {
 	case false:
-		rpcClientent, err = rpc.DialWebsocket(ctx, config.Address, "")
+		rpcClient, err = rpc.DialWebsocket(ctx, config.Address, "")
 	default:
-		rpcClientent, err = rpc.DialOptions(
+		rpcClient, err = rpc.DialOptions(
 			ctx,
 			config.Address,
 			rpc.WithHTTPClient(client.httpClient),
@@ -77,7 +77,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 		return nil, fmt.Errorf("failed to dial execution node RPC: %w", err)
 	}
 
-	client.rpcClient = rpcClientent
+	client.rpcClient = rpcClient
 
 	return client, nil
 }

@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// MempoolTransaction is an event that represents a transaction in the mempool.
 type MempoolTransaction struct {
 	log            logrus.FieldLogger
 	now            time.Time
@@ -27,6 +28,7 @@ type MempoolTransaction struct {
 	signer         types.Signer
 }
 
+// NewMempoolTransaction creates a new MempoolTransaction.
 func NewMempoolTransaction(
 	log logrus.FieldLogger,
 	tx *types.Transaction,
@@ -46,6 +48,7 @@ func NewMempoolTransaction(
 	}
 }
 
+// Decorate decorates the transaction with additional data.
 func (e *MempoolTransaction) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	rawTx, err := e.tx.MarshalBinary()
 	if err != nil {
@@ -78,6 +81,7 @@ func (e *MempoolTransaction) Decorate(ctx context.Context) (*xatu.DecoratedEvent
 	return decoratedEvent, nil
 }
 
+// ShouldIgnore checks if the transaction should be ignored based on the cache.
 func (e *MempoolTransaction) ShouldIgnore(ctx context.Context) (bool, error) {
 	hash, err := e.tx.Hash().MarshalText()
 	if err != nil {
@@ -165,6 +169,8 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 		extra.BlobHashes = blobHashes
 
 		if sidecars != nil {
+			// When iterating, use the index to access the sidecar.
+			// These aren't pointers, so we'll be copying a shit ton of data otherwise.
 			for i := 0; i < len(sidecars.Blobs); i++ {
 				sidecar := sidecars.Blobs[i][:]
 				sidecarsSize += len(sidecar)

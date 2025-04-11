@@ -26,9 +26,9 @@ type TransactionCallback func(ctx context.Context, tx string) error
 // Config represents execution client configuration.
 type Config struct {
 	// Address is the address of the execution client.
-	Address string `yaml:"address"`
+	Address string
 	// Headers is a map of headers to send to the execution client.
-	Headers map[string]string `yaml:"headers"`
+	Headers map[string]string
 	// PollingInterval is the interval to poll for new transactions when using HTTP(S) endpoints.
-	PollingInterval time.Duration `yaml:"pollingInterval" default:"2s"`
+	PollingInterval time.Duration
 }

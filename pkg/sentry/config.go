@@ -222,5 +222,5 @@ type ExecutionConfig struct {
 	Headers map[string]string `yaml:"headers"`
 
 	// PollingInterval is the interval to poll for new transactions when using HTTP/HTTPS endpoints (in seconds)
-	PollingInterval int `yaml:"pollingInterval" default:"1"`
+	PollingInterval int `yaml:"pollingInterval" default:"2"`
 }

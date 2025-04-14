@@ -2,6 +2,7 @@ logging: "info" # panic,fatal,warn,info,debug,trace
 addr: ":8080"
 metricsAddr: ":9090"
 # pprofAddr: ":6060" # optional. if supplied it enables pprof server
+# grpcReflection: false # optional. if supplied it enables grpc reflection
 
 labels:
   ethpandaops: rocks

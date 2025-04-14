@@ -421,7 +421,7 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 		return transaction.GasPrice(), nil
 	}
 
-	if transaction.Type() == 2 || transaction.Type() == 3 { // EIP-1559 or Blob transactions
+	if transaction.Type() == 2 || transaction.Type() == 3 || transaction.Type() == 4 { // EIP-1559/blob/7702 transactions
 		baseFee := new(big.Int)
 
 		switch block.Version {

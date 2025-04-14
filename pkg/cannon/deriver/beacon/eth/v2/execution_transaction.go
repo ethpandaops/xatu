@@ -417,7 +417,7 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 }
 
 func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Transaction) (*big.Int, error) {
-	if transaction.Type() == 0 || transaction.Type() == 1 {
+	if transaction.Type() == 0 || transaction.Type() == 1 || transaction.Type() == 4 {
 		return transaction.GasPrice(), nil
 	}
 

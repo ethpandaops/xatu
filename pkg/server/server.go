@@ -352,8 +352,10 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		}
 	}
 
-	// Register reflection service on gRPC server.
-	reflection.Register(x.grpcServer)
+	// Register reflection service on gRPC server if enabled.
+	if x.config.GRPCReflection {
+		reflection.Register(x.grpcServer)
+	}
 
 	grpc_prometheus.Register(x.grpcServer)
 

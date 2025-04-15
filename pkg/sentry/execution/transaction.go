@@ -77,8 +77,3 @@ func (c *Client) InitSigner(ctx context.Context) {
 	chainIDInt := new(big.Int).SetUint64(chainID)
 	c.signer = types.NewCancunSigner(chainIDInt)
 }
-
-// GetSigner returns the transaction signer.
-func (c *Client) GetSigner() types.Signer {
-	return c.signer
-}

@@ -215,12 +215,18 @@ type ExecutionConfig struct {
 	// Enabled is whether the execution client is enabled
 	Enabled bool `yaml:"enabled" default:"false"`
 
-	// Address is the address of the execution client
-	Address string `yaml:"address"`
+	// WSAddress is the WebSocket address of the execution client for subscriptions
+	WSAddress string `yaml:"wsAddress"`
+
+	// RPCAddress is the RPC address of the execution client for txpool_content calls
+	RPCAddress string `yaml:"rpcAddress"`
 
 	// Headers is a map of headers to send to the execution client
 	Headers map[string]string `yaml:"headers"`
 
-	// PollingInterval is the interval to poll for new transactions when using HTTP/HTTPS endpoints (in seconds)
-	PollingInterval int `yaml:"pollingInterval" default:"2"`
+	// FetchInterval is how often to fetch txpool_content (in seconds)
+	FetchInterval int `yaml:"fetchInterval" default:"15"`
+
+	// PruneDuration is how long to keep pending transactions in memory before pruning (in seconds)
+	PruneDuration int `yaml:"pruneDuration" default:"300"`
 }

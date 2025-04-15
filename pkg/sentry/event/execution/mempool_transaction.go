@@ -127,12 +127,28 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 		to = e.tx.To().String()
 	}
 
-	if e.signer != nil {
+	// Logic for determining the "from" address:
+	// 1. Try to use the pre-populated from address from txpool_content when available
+	// 2. Only attempt signature recovery as a fallback when pre-populated address isn't available
+	//
+	// This approach is more reliable because:
+	// - The execution client has already verified the sender address when accepting the tx
+	// - The pre-populated "from" address comes directly from the client's txpool_content
+	if e.clientMeta != nil && e.clientMeta.AdditionalData != nil {
+		if metaTx, ok := e.clientMeta.AdditionalData.(*xatu.ClientMeta_MempoolTransactionV2); ok {
+			if metaTx.MempoolTransactionV2 != nil && metaTx.MempoolTransactionV2.From != "" {
+				from = metaTx.MempoolTransactionV2.From
+			}
+		}
+	}
+
+	// If no pre-populated from address is available, try signature recovery.
+	if from == "" && e.signer != nil {
 		sender, err := e.signer.Sender(e.tx)
 		if err == nil {
 			from = sender.String()
 		} else {
-			e.log.WithError(err).Error("Failed to get transaction sender")
+			e.log.WithError(err).Error("Failed to get transaction sender through signature recovery")
 		}
 	}
 

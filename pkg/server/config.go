@@ -28,6 +28,8 @@ type Config struct {
 	PProfAddr *string `yaml:"pprofAddr"`
 	// LoggingLevel is the logging level to use.
 	LoggingLevel string `yaml:"logging" default:"info"`
+	// GRPCReflection is the flag to enable grpc reflection.
+	GRPCReflection bool `yaml:"grpcReflection" default:"false"`
 
 	// KeepaliveParams is the keepalive parameters to use.
 	KeepaliveParams *KeepaliveParams `yaml:"keepAlive" default:"{\"enabled\": true}"`

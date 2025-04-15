@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 
 	_ "google.golang.org/grpc/encoding/gzip"
 )
@@ -349,6 +350,11 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		if err := s.Start(ctx, x.grpcServer); err != nil {
 			return err
 		}
+	}
+
+	// Register reflection service on gRPC server if enabled.
+	if x.config.GRPCReflection {
+		reflection.Register(x.grpcServer)
 	}
 
 	grpc_prometheus.Register(x.grpcServer)

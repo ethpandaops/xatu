@@ -86,6 +86,45 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 		return fmt.Errorf("failed to start mempool watcher: %w", err)
 	}
 
+	// Start a goroutine to periodically update metrics from the watcher
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		networkID := s.beacon.Metadata().Network.ID
+		networkIDStr := fmt.Sprintf("%d", networkID)
+		if networkIDStr == "" || networkIDStr == "0" {
+			networkIDStr = unknown
+		}
+
+		// If network name is overridden, we should still use the correct ID
+		if s.Config.Ethereum.OverrideNetworkName != "" {
+			s.log.WithField("network_id", networkIDStr).
+				WithField("network_name", s.Config.Ethereum.OverrideNetworkName).
+				Debug("Using network ID for mempool metrics with overridden network name")
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				totalReceived, _, totalExpired, totalNulls, pendingCount, pendingBySource := watcher.GetMetrics()
+
+				// Update all the mempool metrics
+				s.metrics.AddMempoolTxReceived(int(totalReceived), networkIDStr)
+				// The processed count is updated directly in processMempoolTransaction
+				// and doesn't need to be updated here
+				s.metrics.AddMempoolTxExpired(int(totalExpired), networkIDStr)
+				s.metrics.AddMempoolTxNull(int(totalNulls), networkIDStr)
+				s.metrics.SetMempoolTxPending(pendingCount, networkIDStr)
+
+				// Could add metrics for transactions by source if needed
+				_ = pendingBySource // Using the variable to avoid linter warnings
+			}
+		}
+	}()
+
 	// Add shutdown functions for the client
 	s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
 		watcher.Stop()
@@ -169,6 +208,16 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		}).Error("Failed to handle decorated event")
 		return err
 	}
+
+	// Update metrics
+	networkID := meta.Ethereum.Network.Id
+	networkIDStr := fmt.Sprintf("%d", networkID)
+	if networkIDStr == "" || networkIDStr == "0" {
+		networkIDStr = unknown
+	}
+
+	// Add metrics for processed transaction
+	s.metrics.AddMempoolTxProcessed(1, networkIDStr)
 
 	s.summary.AddEventStreamEvents("mempool_transaction", 1)
 

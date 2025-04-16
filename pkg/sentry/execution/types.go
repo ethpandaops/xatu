@@ -49,6 +49,24 @@ type MempoolWatcherConfig struct {
 }
 
 // DefaultMempoolWatcherConfig returns a default configuration for the mempool watcher.
+// The mempool watcher supports a multi-pronged approach to tracking transactions:
+// 1. WebSocket subscription for new transaction hashes (doesn't include transaction data)
+// 2. Regular polling of txpool_content (includes full transaction data)
+// 3. High-frequency polling of eth_pendingTransactions (includes transaction data)
+//
+// Transactions are stored in PendingTxRecord which can include the transaction data
+// when available. This avoids having to fetch the same transaction multiple times.
+//
+// The watcher uses a dedicated transaction processor that:
+// 1. First processes transactions that already have data attached
+// 2. Then processes transactions without data by batching RPC calls to fetch the data
+//
+// This approach maximizes efficiency by:
+//   - Avoiding duplicate processing of transactions
+//   - Prioritizing transactions that already have data
+//   - Minimizing RPC calls through batching
+//   - Ensuring all data sources (WebSocket, txpool_content, eth_pendingTransactions)
+//     contribute to a single unified transaction store
 func DefaultMempoolWatcherConfig() *MempoolWatcherConfig {
 	return &MempoolWatcherConfig{
 		FetchInterval: 15 * time.Second,

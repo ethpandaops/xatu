@@ -278,10 +278,6 @@ func (s *Sentry) Start(ctx context.Context) error {
 		return err
 	}
 
-	if err := s.startMempoolTransactionWatcher(ctx); err != nil {
-		return err
-	}
-
 	s.beacon.Node().OnEvent(ctx, func(ctx context.Context, event *eth2v1.Event) error {
 		s.summary.AddEventStreamEvents(event.Topic, 1)
 
@@ -606,6 +602,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 
 		if err := s.startValidatorBlockSchedule(ctx); err != nil {
+			return err
+		}
+
+		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
 			return err
 		}
 

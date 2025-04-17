@@ -130,9 +130,11 @@ func (w *MempoolWatcher) Start(ctx context.Context) error {
 	// Create a derived context that can be canceled independently of the parent context.
 	w.ctx, w.cancel = context.WithCancel(ctx)
 
-	// Start WebSocket subscription for new pending transactions.
-	if err := w.startNewPendingTxSubscription(); err != nil {
-		return fmt.Errorf("failed to start websocket subscription: %w", err)
+	// Start WebSocket subscription for new pending transactions (if enabled).
+	if w.config.WebsocketEnabled {
+		if err := w.startNewPendingTxSubscription(); err != nil {
+			return fmt.Errorf("failed to start websocket subscription: %w", err)
+		}
 	}
 
 	// Start periodic fetching of txpool content.
@@ -532,7 +534,6 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		processedCount   = 0
 		duplicateCount   = 0
 		newTxCount       = 0
-		updatedTxCount   = 0
 		allTxHashes      = make(map[string]bool)
 	)
 
@@ -561,6 +562,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		}
 
 		processedCount++
+		newTxCount++
 
 		// We're good, add it to be processed.
 		w.addPendingTransaction(txHash, txData, fmt.Sprintf("rpc_%s", RPCMethodPendingTransactions))
@@ -604,7 +606,6 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		"processed_txs": processedCount,
 		"duplicate_txs": duplicateCount,
 		"new_txs":       newTxCount,
-		"updated_txs":   updatedTxCount,
 		"fetch_time":    fetchTime.String(),
 		"process_time":  processTime.String(),
 		"total_time":    totalTime.String(),
@@ -676,7 +677,6 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 
 		// Use a mutex to prevent overlapping batch processing.
 		var batchMutex sync.Mutex
-		processingBatch := false
 
 		for {
 			select {
@@ -687,9 +687,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 				if batchMutex.TryLock() {
 					go func() {
 						defer batchMutex.Unlock()
-						processingBatch = true
 						w.processPendingTransactionsBatch()
-						processingBatch = false
 					}()
 				}
 			}

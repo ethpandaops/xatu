@@ -38,7 +38,7 @@ type Client struct {
 // NewClient creates a new unified execution client.
 func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Client, error) {
 	// Validate required configuration.
-	if config.WSAddress == "" {
+	if config.WebsocketEnabled && config.WSAddress == "" {
 		return nil, fmt.Errorf("WSAddress is required")
 	}
 
@@ -61,13 +61,15 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 	var err error
 
 	// Initialize WebSocket client.
-	client.wsClient, err = rpc.DialWebsocket(ctx, config.WSAddress, "")
-	if err != nil {
-		cancel() // Clean up context
-		return nil, fmt.Errorf("failed to dial execution node WebSocket: %w", err)
-	}
+	if config.WebsocketEnabled {
+		client.wsClient, err = rpc.DialWebsocket(ctx, config.WSAddress, "")
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("failed to dial execution node WebSocket: %w", err)
+		}
 
-	client.log.WithField("address", config.WSAddress).Debug("Connected to execution node WS endpoint")
+		client.log.WithField("address", config.WSAddress).Debug("Connected to execution node WS endpoint")
+	}
 
 	// Initialize RPC client (required)
 	client.rpcClient, err = rpc.DialOptions(
@@ -76,8 +78,12 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 		rpc.WithHTTPClient(client.httpClient),
 	)
 	if err != nil {
-		client.wsClient.Close() // Clean up WebSocket client
-		cancel()                // Clean up context
+		if client.wsClient != nil {
+			client.wsClient.Close() // Clean up WebSocket client
+		}
+
+		cancel() // Clean up context
+
 		return nil, fmt.Errorf("failed to dial execution node RPC: %w", err)
 	}
 
@@ -117,8 +123,13 @@ func (c *Client) Stop(ctx context.Context) error {
 
 	c.cancel()
 
-	c.wsClient.Close()
-	c.rpcClient.Close()
+	if c.wsClient != nil {
+		c.wsClient.Close()
+	}
+
+	if c.rpcClient != nil {
+		c.rpcClient.Close()
+	}
 
 	return nil
 }
@@ -219,7 +230,7 @@ func (c *Client) GetSender(tx *types.Transaction) (common.Address, error) {
 func (c *Client) GetTransactionByHash(ctx context.Context, hash string) (*types.Transaction, error) {
 	var tx *types.Transaction
 
-	if err := c.rpcClient.CallContext(ctx, &tx, "eth_getTransactionByHash", hash); err != nil {
+	if err := c.rpcClient.CallContext(ctx, &tx, RPCMethodGetTransactionByHash, hash); err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
 

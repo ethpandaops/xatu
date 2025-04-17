@@ -27,7 +27,7 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 		return fmt.Errorf("execution.rpcAddress is required when execution is enabled")
 	}
 
-	if s.Config.Execution.WSAddress == "" {
+	if s.Config.Execution.WebsocketEnabled && s.Config.Execution.WSAddress == "" {
 		return fmt.Errorf("execution.wsAddress is required when execution is enabled")
 	}
 

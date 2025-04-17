@@ -24,6 +24,8 @@ const (
 type Config struct {
 	// Enabled is whether the execution client is enabled.
 	Enabled bool `yaml:"enabled" default:"false"`
+	// WebsocketEnabled is whether the websocket is enabled.
+	WebsocketEnabled bool `yaml:"websocketEnabled" default:"false"`
 	// WSAddress is the WebSocket address of the execution client for subscriptions.
 	WSAddress string `yaml:"wsAddress"`
 	// RPCAddress is the RPC address of the execution client for txpool_content calls.

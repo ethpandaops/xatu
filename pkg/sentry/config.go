@@ -10,6 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +29,7 @@ type Config struct {
 	Ethereum ethereum.Config `yaml:"ethereum"`
 
 	// Execution client configuration
-	Execution *ExecutionConfig `yaml:"execution" default:"{'enabled': false}"`
+	Execution *execution.Config `yaml:"execution" default:"{'enabled': false}"`
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
@@ -208,25 +209,4 @@ type BeaconCommitteesConfig struct {
 
 type ProposerDutyConfig struct {
 	Enabled bool `yaml:"enabled" default:"true"`
-}
-
-// ExecutionConfig defines configuration for connecting to an execution client
-type ExecutionConfig struct {
-	// Enabled is whether the execution client is enabled
-	Enabled bool `yaml:"enabled" default:"false"`
-
-	// WSAddress is the WebSocket address of the execution client for subscriptions
-	WSAddress string `yaml:"wsAddress"`
-
-	// RPCAddress is the RPC address of the execution client for txpool_content calls
-	RPCAddress string `yaml:"rpcAddress"`
-
-	// Headers is a map of headers to send to the execution client
-	Headers map[string]string `yaml:"headers"`
-
-	// FetchInterval is how often to fetch txpool_content (in seconds)
-	FetchInterval int `yaml:"fetchInterval" default:"15"`
-
-	// PruneDuration is how long to keep pending transactions in memory before pruning (in seconds)
-	PruneDuration int `yaml:"pruneDuration" default:"300"`
 }

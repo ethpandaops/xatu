@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -36,12 +35,7 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 	client, err := execution.NewClient(
 		ctx,
 		s.log,
-		&execution.Config{
-			WSAddress:     s.Config.Execution.WSAddress,  // Required - WebSocket connection for subscriptions
-			RPCAddress:    s.Config.Execution.RPCAddress, // Required - RPC connection for txpool_content
-			Headers:       s.Config.Execution.Headers,
-			FetchInterval: time.Duration(s.Config.Execution.FetchInterval) * time.Second,
-		},
+		s.Config.Execution,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create execution client: %w", err)
@@ -55,75 +49,42 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 	// Store the client in the sentry
 	s.execution = client
 
-	// Use default config with overrides
-	watcherConfig := execution.DefaultMempoolWatcherConfig()
+	// Get network ID for metrics
+	networkName := s.beacon.Metadata().Network.Name
+	if networkName == "" {
+		networkName = unknown
+	}
 
 	// Override fetch interval if configured
-	if s.Config.Execution.FetchInterval > 0 {
-		watcherConfig.FetchInterval = time.Duration(s.Config.Execution.FetchInterval) * time.Second
-	}
+	// if s.Config.Execution.FetchInterval > 0 {
+	// 	watcherConfig.FetchInterval = time.Duration(s.Config.Execution.FetchInterval) * time.Second
+	// }
 
-	// Override prune duration if configured
-	if s.Config.Execution.PruneDuration > 0 {
-		watcherConfig.PruneDuration = time.Duration(s.Config.Execution.PruneDuration) * time.Second
-	}
+	// // Override prune duration if configured
+	// if s.Config.Execution.PruneDuration > 0 {
+	// 	watcherConfig.PruneDuration = time.Duration(s.Config.Execution.PruneDuration) * time.Second
+	// }
+
+	// Create execution metrics for the mempool watcher
+	mempoolMetrics := execution.NewMetrics("execution", string(networkName))
 
 	// Create mempool transaction processor callback
 	processTxCallback := func(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
 		return s.processMempoolTransaction(ctx, record, txData)
 	}
 
-	// Create and start the mempool watcher
+	// Create and start the mempool watcher with metrics
 	watcher := execution.NewMempoolWatcher(
 		client,
 		s.log,
-		watcherConfig.FetchInterval,
-		watcherConfig.PruneDuration,
+		s.Config.Execution,
 		processTxCallback,
+		mempoolMetrics,
 	)
 
 	if err := watcher.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start mempool watcher: %w", err)
 	}
-
-	// Start a goroutine to periodically update metrics from the watcher
-	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
-
-		networkID := s.beacon.Metadata().Network.ID
-		networkIDStr := fmt.Sprintf("%d", networkID)
-		if networkIDStr == "" || networkIDStr == "0" {
-			networkIDStr = unknown
-		}
-
-		// If network name is overridden, we should still use the correct ID
-		if s.Config.Ethereum.OverrideNetworkName != "" {
-			s.log.WithField("network_id", networkIDStr).
-				WithField("network_name", s.Config.Ethereum.OverrideNetworkName).
-				Debug("Using network ID for mempool metrics with overridden network name")
-		}
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				totalReceived, _, totalExpired, totalNulls, pendingCount, pendingBySource := watcher.GetMetrics()
-
-				// Update all the mempool metrics
-				s.metrics.AddMempoolTxReceived(int(totalReceived), networkIDStr)
-				// The processed count is updated directly in processMempoolTransaction
-				// and doesn't need to be updated here
-				s.metrics.AddMempoolTxExpired(int(totalExpired), networkIDStr)
-				s.metrics.AddMempoolTxNull(int(totalNulls), networkIDStr)
-				s.metrics.SetMempoolTxPending(pendingCount, networkIDStr)
-
-				// Could add metrics for transactions by source if needed
-				_ = pendingBySource // Using the variable to avoid linter warnings
-			}
-		}
-	}()
 
 	// Add shutdown functions for the client
 	s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
@@ -209,16 +170,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		return err
 	}
 
-	// Update metrics
-	networkID := meta.Ethereum.Network.Id
-	networkIDStr := fmt.Sprintf("%d", networkID)
-	if networkIDStr == "" || networkIDStr == "0" {
-		networkIDStr = unknown
-	}
-
-	// Add metrics for processed transaction
-	s.metrics.AddMempoolTxProcessed(1, networkIDStr)
-
+	// Note: No need to add metrics here anymore as the MempoolWatcher keeps track of metrics directly
 	s.summary.AddEventStreamEvents("mempool_transaction", 1)
 
 	return nil

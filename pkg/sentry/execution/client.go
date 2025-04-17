@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 )
@@ -20,12 +24,12 @@ type Client struct {
 	ctx    context.Context //nolint:containedctx // client ctx only.
 	cancel context.CancelFunc
 
-	// Connection clients
+	// Connection clients.
 	wsClient   *rpc.Client // For subscriptions (WebSocket)
 	rpcClient  *rpc.Client // For RPC calls (HTTP)
 	httpClient *http.Client
 
-	// Shared state
+	// Shared state.
 	signer        types.Signer
 	clientVersion string
 	vmu           sync.RWMutex
@@ -33,7 +37,7 @@ type Client struct {
 
 // NewClient creates a new unified execution client.
 func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Client, error) {
-	// Validate required configuration
+	// Validate required configuration.
 	if config.WSAddress == "" {
 		return nil, fmt.Errorf("WSAddress is required")
 	}
@@ -53,7 +57,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 
-	// Initialize connections
+	// Initialize connections.
 	var err error
 
 	// Initialize WebSocket client.
@@ -84,18 +88,18 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 
 // Start starts the execution client.
 func (c *Client) Start(ctx context.Context) error {
-	// Initialize client version
+	// Initialize client version.
 	var clientVersion string
 	if err := c.rpcClient.CallContext(ctx, &clientVersion, "web3_clientVersion"); err != nil {
 		return fmt.Errorf("failed to get client version: %w", err)
 	}
 
-	// Cache the client version
+	// Cache the client version.
 	c.vmu.Lock()
 	c.clientVersion = clientVersion
 	c.vmu.Unlock()
 
-	// Initialize the signer
+	// Initialize the signer.
 	c.InitSigner(ctx)
 
 	c.log.WithFields(logrus.Fields{
@@ -160,12 +164,12 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	return c.rpcClient.CallContext(ctx, result, method, args...)
 }
 
-// GetSigner returns the signer
+// GetSigner returns the signer.
 func (c *Client) GetSigner() types.Signer {
 	return c.signer
 }
 
-// BatchCallContext performs a batch JSON-RPC call for multiple transactions
+// BatchCallContext performs a batch JSON-RPC call for multiple transactions.
 func (c *Client) BatchCallContext(ctx context.Context, method string, params []interface{}) ([]json.RawMessage, error) {
 	// Prepare batch requests
 	reqs := make([]rpc.BatchElem, len(params))
@@ -200,4 +204,71 @@ func (c *Client) BatchCallContext(ctx context.Context, method string, params []i
 	}
 
 	return results, nil
+}
+
+// GetSender retrieves the sender of a transaction.
+func (c *Client) GetSender(tx *types.Transaction) (common.Address, error) {
+	if c.signer == nil {
+		return common.Address{}, fmt.Errorf("signer not initialized")
+	}
+
+	return c.signer.Sender(tx)
+}
+
+// GetTransactionByHash retrieves a transaction by its hash.
+func (c *Client) GetTransactionByHash(ctx context.Context, hash string) (*types.Transaction, error) {
+	var tx *types.Transaction
+
+	if err := c.rpcClient.CallContext(ctx, &tx, "eth_getTransactionByHash", hash); err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	if tx == nil {
+		return nil, fmt.Errorf("transaction not found: %s", hash)
+	}
+
+	return tx, nil
+}
+
+// GetRawTransactionByHash retrieves a raw transaction by its hash.
+func (c *Client) GetRawTransactionByHash(ctx context.Context, hash string) (string, error) {
+	var rawTx string
+
+	// Some clients might not support eth_getRawTransactionByHash, fallback to getting
+	// the transaction and encoding it.
+	if err := c.rpcClient.CallContext(ctx, &rawTx, "eth_getRawTransactionByHash", hash); err != nil {
+		tx, err := c.GetTransactionByHash(ctx, hash)
+		if err != nil {
+			return "", err
+		}
+
+		txBytes, err := tx.MarshalBinary()
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal transaction: %w", err)
+		}
+
+		rawTx = hexutil.Encode(txBytes)
+	}
+
+	return rawTx, nil
+}
+
+// InitSigner initialises the transaction signer. This is used to determine mempool tx senders.
+func (c *Client) InitSigner(ctx context.Context) {
+	var (
+		chainIDHex string
+		chainID    = params.MainnetChainConfig.ChainID.Uint64()
+	)
+
+	// Get chain ID and initialise our signer.
+	if err := c.rpcClient.CallContext(ctx, &chainIDHex, "eth_chainId"); err != nil {
+		c.log.WithError(err).Warn("Failed to get chain ID, using mainnet as default")
+	} else if decoded, err := hexutil.DecodeUint64(chainIDHex); err != nil {
+		c.log.WithError(err).Warn("Failed to decode chain ID, using mainnet as default")
+	} else {
+		chainID = decoded
+	}
+
+	chainIDInt := new(big.Int).SetUint64(chainID)
+	c.signer = types.NewCancunSigner(chainIDInt)
 }

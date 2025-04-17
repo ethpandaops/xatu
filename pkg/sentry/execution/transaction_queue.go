@@ -48,6 +48,7 @@ func (q *txQueue) add(record *PendingTxRecord, txData json.RawMessage) bool {
 	q.mutex.RLock()
 	_, exists := q.processed[record.Hash]
 	q.mutex.RUnlock()
+
 	if exists {
 		return false
 	}
@@ -68,6 +69,7 @@ func (q *txQueue) add(record *PendingTxRecord, txData json.RawMessage) bool {
 	default:
 		// Queue is full.
 		q.metrics.AddQueueRejections(1)
+
 		return false
 	}
 }
@@ -90,6 +92,7 @@ func (q *txQueue) isProcessed(hash string) bool {
 	q.mutex.RLock()
 	_, exists := q.processed[hash]
 	q.mutex.RUnlock()
+
 	return exists
 }
 
@@ -106,6 +109,7 @@ func (q *txQueue) prune() int {
 	for hash, timestamp := range q.processed {
 		if now.Sub(timestamp) > q.pruneDur {
 			delete(q.processed, hash)
+
 			prunedCount++
 		}
 	}

@@ -70,7 +70,6 @@ func NewMetrics(namespace, networkID string) *Metrics {
 		}, []string{"network_id"}),
 
 		// New metrics
-
 		queueThroughputCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "tx_queue_throughput_total",
@@ -129,7 +128,6 @@ func NewMetrics(namespace, networkID string) *Metrics {
 		m.txWatcherProcessed,
 		m.txWatcherExpired,
 		m.txWatcherPendingGauge,
-		// Register new metrics
 		m.queueSizeGauge,
 		m.queueRejectionsCounter,
 		m.queueThroughputCounter,
@@ -145,27 +143,27 @@ func NewMetrics(namespace, networkID string) *Metrics {
 	return m
 }
 
-// AddMempoolTxReceived increments the counter for received mempool transactions
+// AddMempoolTxReceived increments the counter for received mempool transactions.
 func (m *Metrics) AddMempoolTxReceived(count int) {
 	m.txWatcherReceived.WithLabelValues(m.networkID).Add(float64(count))
 }
 
-// AddMempoolTxProcessed increments the counter for processed mempool transactions
+// AddMempoolTxProcessed increments the counter for processed mempool transactions.
 func (m *Metrics) AddMempoolTxProcessed(count int) {
 	m.txWatcherProcessed.WithLabelValues(m.networkID).Add(float64(count))
 }
 
-// AddMempoolTxExpired increments the counter for expired mempool transactions
+// AddMempoolTxExpired increments the counter for expired mempool transactions.
 func (m *Metrics) AddMempoolTxExpired(count int) {
 	m.txWatcherExpired.WithLabelValues(m.networkID).Add(float64(count))
 }
 
-// SetMempoolTxPending sets the gauge for pending mempool transactions
+// SetMempoolTxPending sets the gauge for pending mempool transactions.
 func (m *Metrics) SetMempoolTxPending(count int) {
 	m.txWatcherPendingGauge.WithLabelValues(m.networkID).Set(float64(count))
 }
 
-// SetQueueSize sets the queue size gauge
+// SetQueueSize sets the queue size gauge.
 func (m *Metrics) SetQueueSize(size int) {
 	if m == nil {
 		return
@@ -174,41 +172,48 @@ func (m *Metrics) SetQueueSize(size int) {
 	m.queueSizeGauge.WithLabelValues(m.networkID).Set(float64(size))
 }
 
+// AddQueueRejections increments the counter for queue rejections.
 func (m *Metrics) AddQueueRejections(count int) {
 	m.queueRejectionsCounter.WithLabelValues(m.networkID).Add(float64(count))
 }
 
-// New method for queue throughput
+// AddQueueThroughput increments the counter for queue throughput.
 func (m *Metrics) AddQueueThroughput(count int) {
 	m.queueThroughputCounter.WithLabelValues(m.networkID).Add(float64(count))
 }
 
-// New methods for processing time metrics
+// ObserveRPCRequestDuration observes the duration of RPC requests.
 func (m *Metrics) ObserveRPCRequestDuration(method string, duration float64) {
 	m.rpcRequestDurationHistogram.WithLabelValues(m.networkID, method).Observe(duration)
 }
 
+// ObserveBatchProcessingDuration observes the duration of batch processing.
 func (m *Metrics) ObserveBatchProcessingDuration(duration float64) {
 	m.batchProcessingDurationHistogram.WithLabelValues(m.networkID).Observe(duration)
 }
 
-// New methods for additional metrics
+// AddTxBySource increments the counter for transactions by source.
 func (m *Metrics) AddTxBySource(source string, count int) {
 	m.txBySourceCounter.WithLabelValues(m.networkID, source).Add(float64(count))
 }
 
+// AddTxProcessingOutcome increments the counter for transaction processing outcomes.
 func (m *Metrics) AddTxProcessingOutcome(outcome string, count int) {
 	m.txProcessingOutcomeCounter.WithLabelValues(m.networkID, outcome).Add(float64(count))
 }
 
+// SetWebsocketConnected sets the gauge for websocket connection.
 func (m *Metrics) SetWebsocketConnected(connected bool) {
 	value := 0.0
+
 	if connected {
 		value = 1.0
 	}
+
 	m.websocketConnectionGauge.WithLabelValues(m.networkID).Set(value)
 }
 
+// SetProcessedCacheSize sets the gauge for processed cache size.
 func (m *Metrics) SetProcessedCacheSize(size int) {
 	m.processedCacheSizeGauge.WithLabelValues(m.networkID).Set(float64(size))
 }
@@ -217,6 +222,7 @@ func (m *Metrics) SetProcessedCacheSize(size int) {
 func (m *Metrics) SetCircuitBreakerState(breakerName, state string) {
 	// Convert state string to numeric value
 	var stateValue float64
+
 	switch state {
 	case "closed":
 		stateValue = 0

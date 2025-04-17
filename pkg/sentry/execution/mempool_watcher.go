@@ -37,7 +37,7 @@ type MempoolWatcher struct {
 	pendingTxs          map[string]*PendingTxRecord
 	pendingTxsMutex     sync.RWMutex
 	wg                  sync.WaitGroup
-	ctx                 context.Context
+	ctx                 context.Context //nolint:containedctx // This is a derived context from the parent context.
 	cancel              context.CancelFunc
 	txQueue             *txQueue
 	wsSubscription      *rpc.ClientSubscription
@@ -71,7 +71,7 @@ func NewMempoolWatcher(
 		Timeout:     time.Duration(config.CircuitBreakerResetTimeout) * time.Second, // Time to wait in open state before trying again
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
 			// Trip after configured consecutive failures
-			return counts.ConsecutiveFailures > uint32(config.CircuitBreakerFailureThreshold)
+			return counts.ConsecutiveFailures > uint32(config.CircuitBreakerFailureThreshold) //nolint:gosec // G115: intentional conversionwg.Add(1)
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
 			log.WithFields(logrus.Fields{
@@ -92,7 +92,7 @@ func NewMempoolWatcher(
 		Timeout:     time.Duration(config.CircuitBreakerResetTimeout) * time.Second, // Time to wait in open state before trying again
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
 			// Trip after configured consecutive failures
-			return counts.ConsecutiveFailures > uint32(config.CircuitBreakerFailureThreshold)
+			return counts.ConsecutiveFailures > uint32(config.CircuitBreakerFailureThreshold) //nolint:gosec // G115: intentional conversion
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
 			log.WithFields(logrus.Fields{
@@ -206,6 +206,7 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 				return "", backoff.Permanent(fmt.Errorf("context canceled"))
 			case err := <-w.wsSubscription.Err():
 				w.wsSubscription = nil
+
 				bo.Reset()
 
 				return "", err
@@ -384,12 +385,14 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 				txDataBytes, err := json.Marshal(txData)
 				if err != nil {
 					w.log.WithError(err).WithField("tx_hash", txHash).Error("Failed to marshal transaction data")
+
 					continue
 				}
 
 				// Check if we've already processed this transaction.
 				if w.txQueue.isProcessed(txHash) {
 					duplicateCount++
+
 					continue
 				}
 
@@ -410,6 +413,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 	)
 
 	w.pendingTxsMutex.RLock()
+
 	for hash, record := range w.pendingTxs {
 		// If transaction is marked for pruning and not found in txpool content,
 		// add it to the list of txs to remove.
@@ -417,6 +421,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 			txsToRemove = append(txsToRemove, hash)
 		}
 	}
+
 	w.pendingTxsMutex.RUnlock()
 
 	// Now remove the collected transactions (if any).
@@ -481,7 +486,7 @@ func (w *MempoolWatcher) startPendingTransactionsFetcher() {
 
 		// Apply jitter to avoid thundering herd problem and predictable load spikes
 		// This adds random variance between 10% and 90% of the fetchInterval.
-		jitterDuration := time.Duration(float64(fetchInterval) * (0.1 + rand.Float64()*0.8))
+		jitterDuration := time.Duration(float64(fetchInterval) * (0.1 + rand.Float64()*0.8)) //nolint:gosec // G404: non-cryptographic randomness is sufficient for jitter
 		time.Sleep(jitterDuration)
 
 		ticker := time.NewTicker(fetchInterval)
@@ -508,6 +513,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 	rawResponse, err := w.singleRpcBreaker.Execute(func() (json.RawMessage, error) {
 		var result json.RawMessage
 		err := w.client.CallContext(ctx, &result, RPCMethodPendingTransactions)
+
 		return result, err
 	})
 
@@ -546,6 +552,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 
 		if err := json.Unmarshal(txData, &tx); err != nil {
 			w.log.WithError(err).Debug("Failed to parse transaction data from eth_pendingTransactions")
+
 			continue
 		}
 
@@ -573,11 +580,13 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 	txsToClear := make([]string, 0)
 
 	w.pendingTxsMutex.RLock()
+
 	for hash, record := range w.pendingTxs {
 		if record.MarkedForPruning && allTxHashes[hash] {
 			txsToClear = append(txsToClear, hash)
 		}
 	}
+
 	w.pendingTxsMutex.RUnlock()
 
 	if len(txsToClear) > 0 {
@@ -624,6 +633,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 	// while the other half is implicitly reserved for batch processing transactions that need data fetched.
 	for i := 0; i < w.config.ProcessorWorkerCount/2; i++ {
 		w.wg.Add(1)
+
 		go func(workerID int) {
 			defer w.wg.Done()
 
@@ -635,7 +645,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 					w.txQueue.updateQueueMetrics()
 
 					// First, process transactions that already have data. Remembering, tx's received via
-					// socket don't come hydrated, so we need to fetch their in a seperate process.
+					// socket don't come hydrated, so we need to fetch their in a separate process.
 					if item.txData != nil {
 						if err := w.processTxCallback(w.ctx, item.record, item.txData); err != nil {
 							w.log.WithError(err).WithField("tx_hash", item.record.Hash).
@@ -669,6 +679,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 
 	// Start a separate goroutine for batch processing of transactions without data.
 	w.wg.Add(1)
+
 	go func() {
 		defer w.wg.Done()
 
@@ -696,6 +707,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 
 	// Start a goroutine to periodically prune the processed transactions map.
 	w.wg.Add(1)
+
 	go func() {
 		defer w.wg.Done()
 
@@ -729,6 +741,7 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 
 	// Create a copy of the transactions we want to process.
 	txsWithoutData = make(map[string]*PendingTxRecord)
+
 	for hash, record := range w.pendingTxs {
 		if record.TxData == nil && !w.txQueue.isProcessed(hash) {
 			txsWithoutData[hash] = record
@@ -769,16 +782,19 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 		circuitState   = w.rpcBreaker.State()
 	)
 
-	// Reduce concurrency when the circuit breaker is in half-open state. When the circut breaker moves
+	// Reduce concurrency when the circuit breaker is in half-open state. When the circuit breaker moves
 	// to the half-open state, it means that it's trying to re-establish the connection, we don't want to
 	// go back into the EL with a full-head of steam. Ease into it.
-	if circuitState == gobreaker.StateHalfOpen {
+	switch circuitState {
+	case gobreaker.StateHalfOpen:
 		maxConcurrency = 1
-		w.log.Debug("Circuit breaker in half-open state, reducing batch concurrency to 1")
-	} else if circuitState == gobreaker.StateOpen {
-		w.log.Debug("Circuit breaker in open state, skipping batch processing")
+
+		w.log.Debug("circuit breaker in half-open state, reducing batch concurrency to 1")
+	case gobreaker.StateOpen:
+		w.log.Debug("circuit breaker in open state, skipping batch processing")
 
 		return
+	default:
 	}
 
 	var (
@@ -789,6 +805,7 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 	// Process each batch.
 	for batchIndex, batch := range txBatches {
 		sem <- struct{}{}
+
 		wg.Add(1)
 
 		go func(batchNum int, hashes []string) {
@@ -1016,15 +1033,18 @@ func (w *MempoolWatcher) prunePendingTxs() {
 	prunedCount := 0
 
 	for hash, record := range w.pendingTxs {
-		if now.Sub(record.FirstSeen) > time.Duration(w.config.PruneDuration)*time.Second {
-			delete(w.pendingTxs, hash)
-			prunedCount++
-
-			w.txQueue.recordProcessingOutcome("expired", 1)
-
-			pendingCount := len(w.pendingTxs)
-			w.txQueue.setTxPending(pendingCount)
+		if now.Sub(record.FirstSeen) <= time.Duration(w.config.PruneDuration)*time.Second {
+			continue
 		}
+
+		delete(w.pendingTxs, hash)
+
+		prunedCount++
+
+		w.txQueue.recordProcessingOutcome("expired", 1)
+
+		pendingCount := len(w.pendingTxs)
+		w.txQueue.setTxPending(pendingCount)
 	}
 
 	if prunedCount > 0 {

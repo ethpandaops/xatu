@@ -65,6 +65,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 		client.wsClient, err = rpc.DialWebsocket(ctx, config.WSAddress, "")
 		if err != nil {
 			cancel()
+
 			return nil, fmt.Errorf("failed to dial execution node WebSocket: %w", err)
 		}
 
@@ -182,7 +183,7 @@ func (c *Client) GetSigner() types.Signer {
 
 // BatchCallContext performs a batch JSON-RPC call for multiple transactions.
 func (c *Client) BatchCallContext(ctx context.Context, method string, params []interface{}) ([]json.RawMessage, error) {
-	// Prepare batch requests
+	// Prepare batch requests.
 	reqs := make([]rpc.BatchElem, len(params))
 	for i, param := range params {
 		reqs[i] = rpc.BatchElem{
@@ -192,22 +193,29 @@ func (c *Client) BatchCallContext(ctx context.Context, method string, params []i
 		}
 	}
 
-	// Execute batch request
+	// Execute batch request.
 	err := c.rpcClient.BatchCallContext(ctx, reqs)
 	if err != nil {
 		return nil, fmt.Errorf("batch call failed: %w", err)
 	}
 
-	// Collect results and check for per-request errors
+	// Collect results and check for per-request errors.
 	results := make([]json.RawMessage, len(reqs))
+
 	for i, req := range reqs {
+		// Skip individual errors, we'll handle them when processing.
 		if req.Error != nil {
-			// Skip individual errors, we'll handle them when processing
 			continue
 		}
 
 		if req.Result != nil {
-			rawMsg := req.Result.(*json.RawMessage)
+			var ok bool
+
+			rawMsg, ok := req.Result.(*json.RawMessage)
+			if !ok {
+				continue
+			}
+
 			if rawMsg != nil && len(*rawMsg) > 0 {
 				results[i] = *rawMsg
 			}

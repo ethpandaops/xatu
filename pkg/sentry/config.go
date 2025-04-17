@@ -10,6 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,6 +27,9 @@ type Config struct {
 
 	// Ethereum configuration
 	Ethereum ethereum.Config `yaml:"ethereum"`
+
+	// Execution client configuration
+	Execution *execution.Config `yaml:"execution" default:"{'enabled': false}"`
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`

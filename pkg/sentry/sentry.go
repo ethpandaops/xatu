@@ -32,6 +32,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	perrors "github.com/pkg/errors"
@@ -49,6 +50,8 @@ type Sentry struct {
 	sinks []output.Sink
 
 	beacon *ethereum.BeaconNode
+
+	execution *execution.Client
 
 	clockDrift time.Duration
 
@@ -187,6 +190,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		Config:             config,
 		sinks:              sinks,
 		beacon:             b,
+		execution:          nil,
 		clockDrift:         time.Duration(0),
 		log:                log,
 		duplicateCache:     duplicateCache,
@@ -598,6 +602,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 
 		if err := s.startValidatorBlockSchedule(ctx); err != nil {
+			return err
+		}
+
+		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
 			return err
 		}
 

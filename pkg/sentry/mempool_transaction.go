@@ -31,7 +31,7 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 		return fmt.Errorf("execution.wsAddress is required when execution is enabled")
 	}
 
-	// Initialize the unified execution client that handles both WebSocket and RPC connections
+	// Initialize the unified execution client that handles both WebSocket and RPC connections.
 	client, err := execution.NewClient(
 		ctx,
 		s.log,
@@ -41,39 +41,29 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 		return fmt.Errorf("failed to create execution client: %w", err)
 	}
 
-	// Start the execution client
+	// Start the execution .
 	if err := client.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start execution client: %w", err)
 	}
 
-	// Store the client in the sentry
+	// Store the client in the sentry.
 	s.execution = client
 
-	// Get network ID for metrics
+	// Get network ID for metrics.
 	networkName := s.beacon.Metadata().Network.Name
 	if networkName == "" {
 		networkName = unknown
 	}
 
-	// Override fetch interval if configured
-	// if s.Config.Execution.FetchInterval > 0 {
-	// 	watcherConfig.FetchInterval = time.Duration(s.Config.Execution.FetchInterval) * time.Second
-	// }
-
-	// // Override prune duration if configured
-	// if s.Config.Execution.PruneDuration > 0 {
-	// 	watcherConfig.PruneDuration = time.Duration(s.Config.Execution.PruneDuration) * time.Second
-	// }
-
-	// Create execution metrics for the mempool watcher
+	// Create execution metrics for the mempool watcher.
 	mempoolMetrics := execution.NewMetrics("execution", string(networkName))
 
-	// Create mempool transaction processor callback
+	// Create mempool transaction processor callback.
 	processTxCallback := func(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
 		return s.processMempoolTransaction(ctx, record, txData)
 	}
 
-	// Create and start the mempool watcher with metrics
+	// Create and start the mempool watcher with metrics.
 	watcher := execution.NewMempoolWatcher(
 		client,
 		s.log,
@@ -86,7 +76,7 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 		return fmt.Errorf("failed to start mempool watcher: %w", err)
 	}
 
-	// Add shutdown functions for the client
+	// Add shutdown functions for the client.
 	s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
 		watcher.Stop()
 		return client.Stop(ctx)
@@ -95,47 +85,40 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 	return nil
 }
 
-// processMempoolTransaction is called when a full transaction is found in txpool_content
+// processMempoolTransaction is called when a full transaction is found in txpool_content.
 func (s *Sentry) processMempoolTransaction(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
-	// Get the hash from the record
+	// Get the hash from the record.
 	txHash := common.HexToHash(record.Hash)
 
-	// First unmarshal into a map to access the hash field and essential metadata
+	// First unmarshal into a map to access the hash field and essential metadata.
 	var txMap map[string]interface{}
 	if err := json.Unmarshal(txData, &txMap); err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to unmarshal transaction data")
 		return err
 	}
 
-	// Extract the from address if available
+	// Extract the from address if available.
 	var fromAddress string
 	if from, ok := txMap["from"].(string); ok {
 		fromAddress = from
 	}
 
-	// Use the original hash from the record for better logging
-	//s.log.WithField("tx_hash", record.Hash).Debug("Processing mempool transaction")
-
-	// Build out the client meta for the event
+	// Build out the client meta for the event.
 	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to create client meta")
 		return err
 	}
 
-	// Parse the transaction
+	// Parse the transaction.
 	tx, err := parseRawTransactionFromTxPool(txData, s.execution.GetSigner(), txHash)
 	if err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to parse transaction data")
 		return err
 	}
 
-	// We use the from address even if it doesn't match what we'd recover from signature
-	// This is especially important since we might not have valid signatures
-	// s.log.WithField("tx_hash", record.Hash).WithField("from", fromAddress).Debug("Using from address from txpool_content")
-
-	// Pre-populate additional data with the from address from txpool_content
-	// This will be used if signature recovery fails in the MempoolTransaction.Decorate method
+	// Pre-populate additional data with the from address from txpool_content.
+	// This will be used if signature recovery fails in the MempoolTransaction.Decorate method.
 	additionalData := &xatu.ClientMeta_AdditionalMempoolTransactionV2Data{
 		Hash: record.Hash,
 		From: fromAddress,
@@ -145,7 +128,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		MempoolTransactionV2: additionalData,
 	}
 
-	// Create the mempool transaction event using the ORIGINAL timestamp when the tx was first seen
+	// Create the mempool transaction event using the ORIGINAL timestamp when the tx was first seen.
 	event := execEvent.NewMempoolTransaction(
 		s.log,
 		tx,
@@ -155,14 +138,14 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		s.execution.GetSigner(),
 	)
 
-	// Decorate the event
+	// Decorate the event.
 	decoratedEvent, err := event.Decorate(ctx)
 	if err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to decorate event")
 		return err
 	}
 
-	// Handle the decorated event
+	// Handle the decorated event.
 	if err = s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"tx_hash": record.Hash,
@@ -170,21 +153,21 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		return err
 	}
 
-	// Note: No need to add metrics here anymore as the MempoolWatcher keeps track of metrics directly
+	// Note: No need to add metrics here anymore as the MempoolWatcher keeps track of metrics directly.
 	s.summary.AddEventStreamEvents("mempool_transaction", 1)
 
 	return nil
 }
 
 // parseRawTransactionFromTxPool parses a transaction from txpool_content JSON format
-// and ensures it has the correct hash by creating a special wrapping transaction
+// and ensures it has the correct hash by creating a special wrapping transaction.
 func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
 	var txMap map[string]interface{}
 	if err := json.Unmarshal(txData, &txMap); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal transaction data: %w", err)
 	}
 
-	// First, try to create an exact transaction with matching hash
+	// First, try to create an exact transaction with matching hash.
 	if txType, ok := txMap["type"].(string); ok {
 		txTypeVal, err := hexutil.DecodeUint64(txType)
 		if err == nil {
@@ -201,11 +184,11 @@ func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, 
 		}
 	}
 
-	// Fallback to creating a simple transaction with basic fields
+	// Fallback to creating a simple transaction with basic fields.
 	return createBasicTransaction(txMap, signer, expectedHash)
 }
 
-// createBasicTransaction creates a basic transaction with essential fields
+// createBasicTransaction creates a basic transaction with essential fields.
 func createBasicTransaction(txMap map[string]interface{}, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
@@ -216,7 +199,7 @@ func createBasicTransaction(txMap map[string]interface{}, signer types.Signer, e
 		to       *common.Address
 	)
 
-	// Parse basic fields
+	// Parse basic fields.
 	if nonceHex, ok := txMap["nonce"].(string); ok {
 		nonceVal, err := hexutil.DecodeUint64(nonceHex)
 		if err == nil {
@@ -275,11 +258,10 @@ func createBasicTransaction(txMap map[string]interface{}, signer types.Signer, e
 		Data:     data,
 	})
 
-	// Just return the standard transaction, the caller will handle hash verification
 	return tx, nil
 }
 
-// parseTypeLegacyTx attempts to parse a legacy transaction (type 0)
+// parseTypeLegacyTx attempts to parse a legacy transaction (type 0).
 func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
@@ -290,7 +272,7 @@ func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (
 		to       *common.Address
 	)
 
-	// Parse transaction fields
+	// Parse transaction fields.
 	if nonceHex, ok := txMap["nonce"].(string); ok {
 		nonceVal, err := hexutil.DecodeUint64(nonceHex)
 		if err == nil {
@@ -339,7 +321,7 @@ func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (
 		to = &addr
 	}
 
-	// Create a legacy transaction with the parsed data
+	// Create a legacy transaction with the parsed data.
 	legacyTx := &types.LegacyTx{
 		Nonce:    nonce,
 		GasPrice: gasPrice,
@@ -349,11 +331,10 @@ func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (
 		Data:     data,
 	}
 
-	// We just create it without signatures since we can't reliably reconstruct them
 	return types.NewTx(legacyTx), nil
 }
 
-// parseTypeAccessListTx attempts to parse an access list transaction (type 1)
+// parseTypeAccessListTx attempts to parse an access list transaction (type 1).
 func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
@@ -365,7 +346,7 @@ func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Has
 		chainID  *big.Int
 	)
 
-	// Parse fields (similar to legacy but with chainID and accessList)
+	// Parse fields (similar to legacy but with chainID and accessList).
 	if nonceHex, ok := txMap["nonce"].(string); ok {
 		nonceVal, err := hexutil.DecodeUint64(nonceHex)
 		if err == nil {
@@ -419,13 +400,13 @@ func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Has
 		if err == nil {
 			chainID = id
 		} else {
-			chainID = big.NewInt(1) // default to mainnet
+			chainID = big.NewInt(1)
 		}
 	} else {
-		chainID = big.NewInt(1) // default to mainnet
+		chainID = big.NewInt(1)
 	}
 
-	// Create the access list transaction
+	// Create the access list transaction.
 	accessListTx := &types.AccessListTx{
 		ChainID:    chainID,
 		Nonce:      nonce,
@@ -434,13 +415,13 @@ func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Has
 		To:         to,
 		Value:      value,
 		Data:       data,
-		AccessList: types.AccessList{}, // Empty access list
+		AccessList: types.AccessList{},
 	}
 
 	return types.NewTx(accessListTx), nil
 }
 
-// parseTypeDynamicFeeTx attempts to parse a dynamic fee transaction (type 2, EIP-1559)
+// parseTypeDynamicFeeTx attempts to parse a dynamic fee transaction (type 2, EIP-1559).
 func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce          uint64
@@ -453,7 +434,7 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 		chainID        *big.Int
 	)
 
-	// Parse fields specific to dynamic fee transactions
+	// Parse fields specific to dynamic fee transactions.
 	if nonceHex, ok := txMap["nonce"].(string); ok {
 		nonceVal, err := hexutil.DecodeUint64(nonceHex)
 		if err == nil {
@@ -476,7 +457,7 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 			maxFeePerGas = big.NewInt(0)
 		}
 	} else {
-		// Fallback to gasPrice if maxFeePerGas is not available
+		// Fallback to gasPrice if maxFeePerGas is not available.
 		if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
 			gpVal, err := hexutil.DecodeBig(gasPriceHex)
 			if err == nil {
@@ -497,7 +478,7 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 			maxPriorityFee = big.NewInt(0)
 		}
 	} else {
-		// Default to maxFeePerGas or a lower value
+		// Default to maxFeePerGas or a lower value.
 		maxPriorityFee = maxFeePerGas
 	}
 
@@ -529,13 +510,13 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 		if err == nil {
 			chainID = id
 		} else {
-			chainID = big.NewInt(1) // default to mainnet
+			chainID = big.NewInt(1)
 		}
 	} else {
-		chainID = big.NewInt(1) // default to mainnet
+		chainID = big.NewInt(1)
 	}
 
-	// Create the dynamic fee transaction
+	// Create the dynamic fee transaction.
 	dynamicFeeTx := &types.DynamicFeeTx{
 		ChainID:    chainID,
 		Nonce:      nonce,
@@ -545,13 +526,13 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 		To:         to,
 		Value:      value,
 		Data:       data,
-		AccessList: types.AccessList{}, // Empty access list
+		AccessList: types.AccessList{},
 	}
 
 	return types.NewTx(dynamicFeeTx), nil
 }
 
-// parseTypeBlobTx attempts to parse a blob transaction (type 3, EIP-4844)
+// parseTypeBlobTx attempts to parse a blob transaction (type 3, EIP-4844).
 func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce          uint64
@@ -564,7 +545,7 @@ func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*t
 		chainID        *big.Int
 	)
 
-	// Parse fields
+	// Parse fields.
 	if nonceHex, ok := txMap["nonce"].(string); ok {
 		nonceVal, err := hexutil.DecodeUint64(nonceHex)
 		if err == nil {
@@ -608,7 +589,7 @@ func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*t
 			maxPriorityFee = big.NewInt(0)
 		}
 	} else {
-		// Default to maxFeePerGas
+		// Default to maxFeePerGas.
 		maxPriorityFee = maxFeePerGas
 	}
 
@@ -640,14 +621,13 @@ func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*t
 		if err == nil {
 			chainID = id
 		} else {
-			chainID = big.NewInt(1) // default to mainnet
+			chainID = big.NewInt(1)
 		}
 	} else {
-		chainID = big.NewInt(1) // default to mainnet
+		chainID = big.NewInt(1)
 	}
 
-	// For blob transactions, we just create a dynamic fee tx as approximation
-	// since we don't need the actual blob data for our purposes
+	// TODO: Parse blob data.
 	dynamicFeeTx := &types.DynamicFeeTx{
 		ChainID:    chainID,
 		Nonce:      nonce,
@@ -657,7 +637,7 @@ func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*t
 		To:         to,
 		Value:      value,
 		Data:       data,
-		AccessList: types.AccessList{}, // Empty access list
+		AccessList: types.AccessList{},
 	}
 
 	return types.NewTx(dynamicFeeTx), nil

@@ -9,7 +9,6 @@ import (
 // SubscriptionType represents a type of subscription to the execution client.
 type SubscriptionType string
 
-// Transaction-related constants
 const (
 	// SubNewPendingTransactions subscribes to new pending transactions.
 	SubNewPendingTransactions SubscriptionType = "newPendingTransactions"
@@ -56,9 +55,9 @@ type PendingTxRecord struct {
 	Hash             string
 	FirstSeen        time.Time
 	Attempts         int
-	TxData           json.RawMessage // Raw transaction data when available.
-	Source           string          // Source of the transaction: "websocket", "txpool_content", or "eth_pendingTransactions".
-	MarkedForPruning bool            // Flag indicating if eth_getTransactionByHash returned null for this tx, marking it as a candidate for pruning.
+	TxData           json.RawMessage // Raw tx data (when available).
+	Source           string          // Eg: "websocket", "txpool_content", or "eth_pendingTransactions".
+	MarkedForPruning bool
 }
 
 // EventCallback is a generic callback function for subscription events.

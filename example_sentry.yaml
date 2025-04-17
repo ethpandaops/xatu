@@ -21,6 +21,8 @@ ethereum:
 execution:
   # Set to true to enable mempool transaction monitoring.
   enabled: false
+  # Websocket enabled (should we subscribe to newPendingTransactions).
+  websocketEnabled: false
   # WebSocket address for streaming transactions
   wsAddress: ws://localhost:8545
   # RPC address for txpool_content calls

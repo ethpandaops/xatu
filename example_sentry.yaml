@@ -94,9 +94,6 @@ validatorBlock:
     slotTimes:
       - 4s
 
-tracing:
-  enabled: false
-
 outputs:
 - name: http-sink
   type: http
@@ -122,15 +119,8 @@ outputs:
     headers:
       authorization: Someb64Value
     maxQueueSize: 51200
-    batchTimeout: 1s
+    batchTimeout: 5s
     exportTimeout: 30s
-    maxExportBatchSize: 32
-    keepAlive:
-      enabled: true
-      time: 10s
-      timeout: 30s
-    streaming:
-      enabled: true
 - name: kafka-sink
   type: kafka
   config:
@@ -143,9 +133,3 @@ outputs:
     compression: snappy
     requiredAcks: leader
     partitioning: random
-    # Optional TLS configuration
-    # tls: true
-    # tlsClientConfig:
-    #   certificatePath: /path/to/certificate.pem
-    #   keyPath: /path/to/key.pem
-    #   caCertificate: /path/to/rootCA.pem

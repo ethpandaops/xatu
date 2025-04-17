@@ -21,16 +21,31 @@ ethereum:
 execution:
   # Set to true to enable mempool transaction monitoring.
   enabled: false
-  # Address of your execution client's RPC or Websocket endpoint.
-  # For example:
-  #  - RPC URLs (polling), eg: http://localhost:8545
-  #  - WebSocket URLs (subscription), eg: ws://localhost:8546
-  address: ws://localhost:8546
+  # WebSocket address for streaming transactions
+  wsAddress: ws://localhost:8545
+  # RPC address for txpool_content calls
+  rpcAddress: http://localhost:8545
   # Optional headers.
   headers:
     # authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
-  # Polling interval in seconds (not applicable to WebSocket addresses).
-  pollingInterval: 2
+  # How often to fetch txpool_content (in seconds)
+  fetchInterval: 45
+  # How long to keep pending/processed transactions in memory before pruning (in seconds)
+  pruneDuration: 384 # 6.4 minutes (one epoch)
+  # Number of worker goroutines for processing transactions
+  processorWorkerCount: 40
+  # Number of transactions to include in a single RPC batch call
+  rpcBatchSize: 15
+  # Size of the transaction processing queue
+  queueSize: 10000
+  # Interval at which to process batches of transactions (in milliseconds)
+  processingInterval: 3000
+  # Maximum number of concurrent batch RPC requests
+  maxConcurrency: 3
+  # Number of consecutive failures before opening the circuit breaker
+  circuitBreakerFailureThreshold: 5
+  # Time to wait before transitioning from open to half-open (in seconds)
+  circuitBreakerResetTimeout: 30
 
 forkChoice:
   enabled: false
@@ -79,6 +94,9 @@ validatorBlock:
     slotTimes:
       - 4s
 
+tracing:
+  enabled: false
+
 outputs:
 - name: http-sink
   type: http
@@ -104,9 +122,15 @@ outputs:
     headers:
       authorization: Someb64Value
     maxQueueSize: 51200
-    batchTimeout: 5s
+    batchTimeout: 1s
     exportTimeout: 30s
-    maxExportBatchSize: 512
+    maxExportBatchSize: 32
+    keepAlive:
+      enabled: true
+      time: 10s
+      timeout: 30s
+    streaming:
+      enabled: true
 - name: kafka-sink
   type: kafka
   config:
@@ -119,3 +143,9 @@ outputs:
     compression: snappy
     requiredAcks: leader
     partitioning: random
+    # Optional TLS configuration
+    # tls: true
+    # tlsClientConfig:
+    #   certificatePath: /path/to/certificate.pem
+    #   keyPath: /path/to/key.pem
+    #   caCertificate: /path/to/rootCA.pem

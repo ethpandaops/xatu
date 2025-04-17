@@ -149,12 +149,12 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 		return true, err
 	}
 
-	_, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
+	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
-		// e.log.WithFields(logrus.Fields{
-		// 	"hash":                  hash,
-		// 	"time_since_first_item": time.Since(item.Value()),
-		// }).Debug("Duplicate attestation event received")
+		e.log.WithFields(logrus.Fields{
+			"hash":                  hash,
+			"time_since_first_item": time.Since(item.Value()),
+		}).Debug("Duplicate attestation event received")
 
 		return true, nil
 	}

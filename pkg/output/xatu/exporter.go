@@ -84,7 +84,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEven
 	_, span := observability.Tracer().Start(ctx, "XatuItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
-	//e.log.WithField("events", len(items)).Debug("Sending batch of events to xatu sink")
+	e.log.WithField("events", len(items)).Debug("Sending batch of events to xatu sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		e.log.
@@ -118,7 +118,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 		md.Set(key, value)
 	}
 
-	//var rsp *pb.CreateEventsResponse
+	var rsp *pb.CreateEventsResponse
 
 	var err error
 
@@ -154,15 +154,15 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 		)
 	}
 
-	_, err = e.client.CreateEvents(ctx, req, opts...)
+	rsp, err = e.client.CreateEvents(ctx, req, opts...)
 	if err != nil {
 		return err
 	}
 
-	// logCtx.WithFields(logrus.Fields{
-	// 	"events_ingested": rsp.GetEventsIngested().GetValue(),
-	// 	"events_sent":     len(items),
-	// }).Debug("Received response from Xatu sink")
+	logCtx.WithFields(logrus.Fields{
+		"events_ingested": rsp.GetEventsIngested().GetValue(),
+		"events_sent":     len(items),
+	}).Debug("Received response from Xatu sink")
 
 	return nil
 }

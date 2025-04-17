@@ -15,9 +15,7 @@ func NewMetrics(namespace string) *Metrics {
 		}, []string{"type", "network_id"}),
 	}
 
-	prometheus.MustRegister(
-		m.decoratedEventTotal,
-	)
+	prometheus.MustRegister(m.decoratedEventTotal)
 
 	return m
 }

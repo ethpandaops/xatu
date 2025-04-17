@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 	"github.com/sony/gobreaker/v2"
 )
@@ -31,28 +30,29 @@ import (
 // The pendingTxs map functions as a temporary workspace for in-flight processing,
 // not as a permanent mirror of the mempool state.
 type MempoolWatcher struct {
-	client              *Client
-	log                 logrus.FieldLogger
-	config              *Config
-	pendingTxs          map[string]*PendingTxRecord
-	pendingTxsMutex     sync.RWMutex
-	wg                  sync.WaitGroup
-	ctx                 context.Context //nolint:containedctx // This is a derived context from the parent context.
-	cancel              context.CancelFunc
-	txQueue             *txQueue
-	wsSubscription      *rpc.ClientSubscription
-	processTxCallback   func(context.Context, *PendingTxRecord, json.RawMessage) error
-	metrics             *Metrics
-	txsReceivedBySource map[string]int64
-	metricsMutex        sync.RWMutex
-	rpcBreaker          *gobreaker.CircuitBreaker[[]json.RawMessage]
-	singleRpcBreaker    *gobreaker.CircuitBreaker[json.RawMessage]
+	client                  ClientProvider
+	log                     logrus.FieldLogger
+	config                  *Config
+	pendingTxs              map[string]*PendingTxRecord
+	pendingTxsMutex         sync.RWMutex
+	wg                      sync.WaitGroup
+	ctx                     context.Context //nolint:containedctx // This is a derived context from the parent context.
+	cancel                  context.CancelFunc
+	txQueue                 *txQueue
+	subscriptionCancel      context.CancelFunc // for canceling active subscription
+	processTxCallback       func(context.Context, *PendingTxRecord, json.RawMessage) error
+	metrics                 *Metrics
+	txsReceivedBySource     map[string]int64
+	metricsMutex            sync.RWMutex
+	txsByHashRpcBreaker     *gobreaker.CircuitBreaker[[]json.RawMessage]
+	txPoolContentRpcBreaker *gobreaker.CircuitBreaker[json.RawMessage]
+	pendingTxsBreaker       *gobreaker.CircuitBreaker[[]json.RawMessage]
 }
 
 // NewMempoolWatcher creates a new MempoolWatcher with configured circuit breakers
 // for resilient RPC operations
 func NewMempoolWatcher(
-	client *Client,
+	client ClientProvider,
 	log logrus.FieldLogger,
 	config *Config,
 	processTxCallback func(context.Context, *PendingTxRecord, json.RawMessage) error,
@@ -64,7 +64,7 @@ func NewMempoolWatcher(
 	)
 
 	// Create a circuit breaker for batch RPC calls.
-	rpcBreaker := gobreaker.NewCircuitBreaker[[]json.RawMessage](gobreaker.Settings{
+	txsByHashRpcBreaker := gobreaker.NewCircuitBreaker[[]json.RawMessage](gobreaker.Settings{
 		Name:        "el-rpc-breaker",
 		MaxRequests: 1,                                                              // Allow only 1 request when half-open
 		Interval:    0,                                                              // Don't reset counts until state change
@@ -84,8 +84,8 @@ func NewMempoolWatcher(
 		},
 	})
 
-	// Create a circuit breaker for single RPC calls.
-	singleRpcBreaker := gobreaker.NewCircuitBreaker[json.RawMessage](gobreaker.Settings{
+	// Create a circuit breaker for txpool_content RPC calls.
+	txPoolContentRpcBreaker := gobreaker.NewCircuitBreaker[json.RawMessage](gobreaker.Settings{
 		Name:        "el-single-rpc-breaker",
 		MaxRequests: 1,                                                              // Allow only 1 request when half-open
 		Interval:    0,                                                              // Don't reset counts until state change
@@ -105,22 +105,44 @@ func NewMempoolWatcher(
 		},
 	})
 
+	// Create a circuit breaker for pending transactions.
+	pendingTxsBreaker := gobreaker.NewCircuitBreaker[[]json.RawMessage](gobreaker.Settings{
+		Name:        "el-pending-tx-breaker",
+		MaxRequests: 1,                                                              // Allow only 1 request when half-open
+		Interval:    0,                                                              // Don't reset counts until state change
+		Timeout:     time.Duration(config.CircuitBreakerResetTimeout) * time.Second, // Time to wait in open state before trying again
+		ReadyToTrip: func(counts gobreaker.Counts) bool {
+			// Trip after configured consecutive failures
+			return counts.ConsecutiveFailures > uint32(config.CircuitBreakerFailureThreshold) //nolint:gosec // G115: intentional conversion
+		},
+		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
+			log.WithFields(logrus.Fields{
+				"from_state": from.String(),
+				"to_state":   to.String(),
+			}).Info("Circuit breaker state changed")
+
+			// Update metrics when state changes
+			metrics.SetCircuitBreakerState("el-pending-tx-breaker", to.String())
+		},
+	})
+
 	return &MempoolWatcher{
-		client:              client,
-		config:              config,
-		log:                 log.WithField("component", "execution/mempool_watcher"),
-		pendingTxs:          make(map[string]*PendingTxRecord),
-		pendingTxsMutex:     sync.RWMutex{},
-		wg:                  sync.WaitGroup{},
-		ctx:                 ctx,
-		cancel:              cancel,
-		txQueue:             newTxQueue(metrics, config.QueueSize, time.Duration(config.PruneDuration)*time.Second),
-		processTxCallback:   processTxCallback,
-		metrics:             metrics,
-		txsReceivedBySource: make(map[string]int64),
-		metricsMutex:        sync.RWMutex{},
-		rpcBreaker:          rpcBreaker,
-		singleRpcBreaker:    singleRpcBreaker,
+		client:                  client,
+		config:                  config,
+		log:                     log.WithField("component", "execution/mempool_watcher"),
+		pendingTxs:              make(map[string]*PendingTxRecord),
+		pendingTxsMutex:         sync.RWMutex{},
+		wg:                      sync.WaitGroup{},
+		ctx:                     ctx,
+		cancel:                  cancel,
+		txQueue:                 newTxQueue(metrics, config.QueueSize, time.Duration(config.PruneDuration)*time.Second),
+		processTxCallback:       processTxCallback,
+		metrics:                 metrics,
+		txsReceivedBySource:     make(map[string]int64),
+		metricsMutex:            sync.RWMutex{},
+		txsByHashRpcBreaker:     txsByHashRpcBreaker,
+		txPoolContentRpcBreaker: txPoolContentRpcBreaker,
+		pendingTxsBreaker:       pendingTxsBreaker,
 	}
 }
 
@@ -163,8 +185,8 @@ func (w *MempoolWatcher) Stop() {
 	w.log.Info("Stopping mempool watcher")
 
 	// Unsubscribe from WebSocket subscription if active.
-	if w.wsSubscription != nil {
-		w.wsSubscription.Unsubscribe()
+	if w.subscriptionCancel != nil {
+		w.subscriptionCancel()
 	}
 
 	w.cancel()
@@ -200,17 +222,23 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 				return "", err
 			}
 
-			// Wait for subscription to fail or context to be canceled.
-			select {
-			case <-ctx.Done():
-				return "", backoff.Permanent(fmt.Errorf("context canceled"))
-			case err := <-w.wsSubscription.Err():
-				w.wsSubscription = nil
+			// Create a channel to signal when the subscription ends.
+			done := make(chan error, 1)
 
-				bo.Reset()
+			// Wait in a goroutine for the subscription to end.
+			go func() {
+				// The subscription will end when w.subscriptionCancel is called
+				// or when the parent context is canceled.
+				<-ctx.Done()
+				done <- fmt.Errorf("context canceled")
+			}()
 
-				return "", err
-			}
+			// Wait for signal that subscription has ended.
+			err := <-done
+
+			bo.Reset()
+
+			return "", err
 		}
 
 		// Configure subscription retry options.
@@ -239,38 +267,41 @@ func (w *MempoolWatcher) subscribeToNewPendingTransactions() error {
 	// Always set the connected status to false at the beginning.
 	w.metrics.SetWebsocketConnected(false)
 
-	ch := make(chan string)
+	// Create a context for this subscription that can be canceled
+	subCtx, cancel := context.WithCancel(w.ctx)
+	w.subscriptionCancel = cancel
 
-	wsClient := w.client.GetWebSocketClient()
-	if wsClient == nil {
-		return fmt.Errorf("websocket client not initialized")
-	}
-
-	sub, err := wsClient.EthSubscribe(w.ctx, ch, string(SubNewPendingTransactions))
+	// Subscribe to new pending transactions
+	txChan, errChan, err := w.client.SubscribeToNewPendingTxs(subCtx)
 	if err != nil {
+		w.subscriptionCancel = nil
+
+		cancel() // Clean up if subscription fails
+
 		w.log.WithError(err).Error("Failed to subscribe to newPendingTransactions")
 
 		return err
 	}
 
 	// We've got a connection, :tada:
-	w.wsSubscription = sub
 	w.metrics.SetWebsocketConnected(true)
 
 	w.log.WithField("topic", SubNewPendingTransactions).Debug("Subscribed to newPendingTransactions")
 
 	// Start goroutine to process incoming transactions.
 	go func() {
+		defer cancel() // Ensure context is canceled when goroutine exits
+
 		for {
 			select {
-			case <-w.ctx.Done():
-				w.log.Debug("context canceled, stopping transaction processing")
+			case <-subCtx.Done():
+				w.log.Debug("subscription context canceled, stopping transaction processing")
 				w.metrics.SetWebsocketConnected(false)
 
 				return
-			case txHash := <-ch:
+			case txHash := <-txChan:
 				w.addPendingTransaction(txHash, nil, fmt.Sprintf("ws_%s", SubNewPendingTransactions))
-			case err := <-w.wsSubscription.Err():
+			case err := <-errChan:
 				w.log.WithError(err).Error("subscription error")
 				w.metrics.SetWebsocketConnected(false)
 
@@ -318,11 +349,8 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 	// overwhelm the EL if we're not careful.
 	var rawResponse json.RawMessage
 
-	rawResponse, err := w.singleRpcBreaker.Execute(func() (json.RawMessage, error) {
-		var result json.RawMessage
-		err := w.client.CallContext(ctx, &result, RPCMethodTxpoolContent)
-
-		return result, err
+	rawResponse, err := w.txPoolContentRpcBreaker.Execute(func() (json.RawMessage, error) {
+		return w.client.GetTxpoolContent(ctx)
 	})
 	if err != nil {
 		return err
@@ -509,22 +537,13 @@ func (w *MempoolWatcher) startPendingTransactionsFetcher() {
 func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context) error {
 	startTime := time.Now()
 
-	// Fetch pending transactions.
-	rawResponse, err := w.singleRpcBreaker.Execute(func() (json.RawMessage, error) {
-		var result json.RawMessage
-		err := w.client.CallContext(ctx, &result, RPCMethodPendingTransactions)
-
-		return result, err
+	// Fetch pending transactions directly using the pendingTxsBreaker
+	transactions, err := w.pendingTxsBreaker.Execute(func() ([]json.RawMessage, error) {
+		return w.client.GetPendingTransactions(ctx)
 	})
 
 	if err != nil {
 		return err
-	}
-
-	// Parse the raw response into the transactions array.
-	var transactions []json.RawMessage
-	if err := json.Unmarshal(rawResponse, &transactions); err != nil {
-		return fmt.Errorf("failed to unmarshal eth_pendingTransactions response: %w", err)
 	}
 
 	fetchTime := time.Since(startTime)
@@ -779,7 +798,7 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 	// Adjust concurrency based on circuit breaker state.
 	var (
 		maxConcurrency = w.config.MaxConcurrency
-		circuitState   = w.rpcBreaker.State()
+		circuitState   = w.txsByHashRpcBreaker.State()
 	)
 
 	// Reduce concurrency when the circuit breaker is in half-open state. When the circuit breaker moves
@@ -816,15 +835,9 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 				wg.Done()
 			}()
 
-			// Prepare batch request params.
-			params := make([]interface{}, len(hashes))
-			for i, hash := range hashes {
-				params[i] = hash
-			}
-
 			// Execute batch request.
-			results, err := w.rpcBreaker.Execute(func() ([]json.RawMessage, error) {
-				return w.client.BatchCallContext(w.ctx, RPCMethodGetTransactionByHash, params)
+			results, err := w.txsByHashRpcBreaker.Execute(func() ([]json.RawMessage, error) {
+				return w.client.BatchGetTransactionsByHash(w.ctx, hashes)
 			})
 
 			// Record RPC request duration in metrics.
@@ -1095,6 +1108,6 @@ func (w *MempoolWatcher) logMetrics() {
 		"pending_count":      pendingCount,
 		"marked_for_pruning": markedForPruningCount,
 		"queue_size":         len(w.txQueue.items),
-		"circuit_state":      w.rpcBreaker.State().String(),
+		"circuit_state":      w.txsByHashRpcBreaker.State().String(),
 	}).Info("Mempool watcher stats")
 }

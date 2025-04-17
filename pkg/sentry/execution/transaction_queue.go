@@ -37,6 +37,7 @@ func newTxQueue(metrics *Metrics, capacity int, pruneDuration time.Duration) *tx
 // updateQueueMetrics updates the queue size metrics.
 func (q *txQueue) updateQueueMetrics() {
 	// Update current queue size.
+	// Since reading channel length is atomic, no lock needed here
 	queueSize := len(q.items)
 	q.metrics.SetQueueSize(queueSize)
 }
@@ -57,6 +58,7 @@ func (q *txQueue) add(record *PendingTxRecord, txData json.RawMessage) bool {
 	select {
 	case q.items <- txQueueItem{record: record, txData: txData}:
 		// Get queue size after adding.
+		// Reading channel length is atomic so we don't need a lock
 		queueSize := len(q.items)
 
 		// Update current queue size.
@@ -78,10 +80,13 @@ func (q *txQueue) add(record *PendingTxRecord, txData json.RawMessage) bool {
 func (q *txQueue) markProcessed(hash string) {
 	q.mutex.Lock()
 	q.processed[hash] = time.Now()
+
+	// Get the processed map size while we have the lock
+	processedSize := len(q.processed)
 	q.mutex.Unlock()
 
 	// Update metrics if available.
-	q.metrics.SetProcessedCacheSize(len(q.processed))
+	q.metrics.SetProcessedCacheSize(processedSize)
 
 	// Update queue metrics after processing.
 	q.updateQueueMetrics()

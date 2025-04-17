@@ -17,6 +17,26 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate mockgen -package mock -destination mock/client.mock.go github.com/ethpandaops/xatu/pkg/sentry/execution ClientProvider
+
+// ClientProvider defines the interface for unified execution client (WS and RPC) operations.
+type ClientProvider interface {
+	// GetTxpoolContent retrieves the full transaction pool content.
+	GetTxpoolContent(ctx context.Context) (json.RawMessage, error)
+
+	// GetPendingTransactions retrieves pending transactions.
+	GetPendingTransactions(ctx context.Context) ([]json.RawMessage, error)
+
+	// BatchGetTransactionsByHash retrieves transactions by their hashes.
+	BatchGetTransactionsByHash(ctx context.Context, hashes []string) ([]json.RawMessage, error)
+
+	// SubscribeToNewPendingTxs subscribes to new pending transaction notifications.
+	SubscribeToNewPendingTxs(ctx context.Context) (<-chan string, <-chan error, error)
+
+	// CallContext performs a JSON-RPC call with the given arguments.
+	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+}
+
 // ExecutionClient represents a unified execution client with both WebSocket and RPC capabilities.
 type Client struct {
 	log    logrus.FieldLogger
@@ -161,6 +181,58 @@ func (c *Client) GetClientInfo(ctx context.Context, version *string) error {
 	return nil
 }
 
+// GetTxpoolContent retrieves the full transaction pool content.
+func (c *Client) GetTxpoolContent(ctx context.Context) (json.RawMessage, error) {
+	var result json.RawMessage
+	err := c.CallContext(ctx, &result, RPCMethodTxpoolContent)
+
+	return result, err
+}
+
+// GetPendingTransactions retrieves pending transactions.
+func (c *Client) GetPendingTransactions(ctx context.Context) ([]json.RawMessage, error) {
+	var result json.RawMessage
+	if err := c.CallContext(ctx, &result, RPCMethodPendingTransactions); err != nil {
+		return nil, err
+	}
+
+	// Parse into array of raw messages.
+	var txs []json.RawMessage
+	if err := json.Unmarshal(result, &txs); err != nil {
+		return nil, err
+	}
+
+	return txs, nil
+}
+
+// BatchGetTransactionsByHash retrieves transactions by their hashes.
+func (c *Client) BatchGetTransactionsByHash(ctx context.Context, hashes []string) ([]json.RawMessage, error) {
+	params := make([]interface{}, len(hashes))
+	for i, hash := range hashes {
+		params[i] = hash
+	}
+
+	return c.BatchCallContext(ctx, RPCMethodGetTransactionByHash, params)
+}
+
+// SubscribeToNewPendingTxs subscribes to new pending transaction notifications
+//
+//nolint:gocritic // No need for named returns.
+func (c *Client) SubscribeToNewPendingTxs(ctx context.Context) (<-chan string, <-chan error, error) {
+	if c.wsClient == nil {
+		return nil, nil, fmt.Errorf("websocket client not initialized")
+	}
+
+	txChan := make(chan string)
+
+	sub, err := c.wsClient.EthSubscribe(ctx, txChan, string(SubNewPendingTransactions))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return txChan, sub.Err(), nil
+}
+
 // GetRPCClient provides access to the RPC client directly.
 func (c *Client) GetRPCClient() *rpc.Client {
 	return c.rpcClient
@@ -232,44 +304,6 @@ func (c *Client) GetSender(tx *types.Transaction) (common.Address, error) {
 	}
 
 	return c.signer.Sender(tx)
-}
-
-// GetTransactionByHash retrieves a transaction by its hash.
-func (c *Client) GetTransactionByHash(ctx context.Context, hash string) (*types.Transaction, error) {
-	var tx *types.Transaction
-
-	if err := c.rpcClient.CallContext(ctx, &tx, RPCMethodGetTransactionByHash, hash); err != nil {
-		return nil, fmt.Errorf("failed to get transaction: %w", err)
-	}
-
-	if tx == nil {
-		return nil, fmt.Errorf("transaction not found: %s", hash)
-	}
-
-	return tx, nil
-}
-
-// GetRawTransactionByHash retrieves a raw transaction by its hash.
-func (c *Client) GetRawTransactionByHash(ctx context.Context, hash string) (string, error) {
-	var rawTx string
-
-	// Some clients might not support eth_getRawTransactionByHash, fallback to getting
-	// the transaction and encoding it.
-	if err := c.rpcClient.CallContext(ctx, &rawTx, "eth_getRawTransactionByHash", hash); err != nil {
-		tx, err := c.GetTransactionByHash(ctx, hash)
-		if err != nil {
-			return "", err
-		}
-
-		txBytes, err := tx.MarshalBinary()
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal transaction: %w", err)
-		}
-
-		rawTx = hexutil.Encode(txBytes)
-	}
-
-	return rawTx, nil
 }
 
 // InitSigner initialises the transaction signer. This is used to determine mempool tx senders.

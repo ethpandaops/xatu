@@ -606,7 +606,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 		}
 
 		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
-			return err
+			// If we can't reach the execution node, we can't start the mempool transaction watcher.
+			// Instead of preventing the sentry from starting, we'll log an error and continue.
+			s.log.WithError(err).Error("failed to start mempool transaction watcher")
+
+			return nil
 		}
 
 		return nil

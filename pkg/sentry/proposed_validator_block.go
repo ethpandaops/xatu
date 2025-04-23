@@ -33,6 +33,7 @@ func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
 				},
 				ctx,
 			),
+			gocron.WithStartAt(gocron.WithStartImmediately()),
 		); err != nil {
 			return err
 		}

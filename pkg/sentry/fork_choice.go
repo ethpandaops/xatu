@@ -103,6 +103,7 @@ func (s *Sentry) startForkChoiceSchedule(ctx context.Context) error {
 				},
 				ctx,
 			),
+			gocron.WithStartAt(gocron.WithStartImmediately()),
 		); err != nil {
 			return err
 		}

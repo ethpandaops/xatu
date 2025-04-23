@@ -337,6 +337,7 @@ func (c *Cannon) startCrons(ctx context.Context) error {
 			},
 			ctx,
 		),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
 	); err != nil {
 		return err
 	}

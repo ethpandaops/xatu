@@ -235,8 +235,8 @@ github.com/ethpandaops/beacon v0.51.0 h1:P8sPZ9OClMpUl0b5Pp+2Ag9guQH0xZME8ISMxhC
 github.com/ethpandaops/beacon v0.51.0/go.mod h1:kT+QvEde34c1fc5kziOuc9EnfrdDe4di0gKrz9xPsNY=
 github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9 h1:W5S3gzJFhi30QaOCZVL3is+qd8AFQtcypAFNmDIeFeU=
 github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
-github.com/ethpandaops/ethwallclock v0.3.0 h1:xF5fwtBf+bHFHZKBnwiPFEuelW3sMM7SD3ZNFq1lJY4=
-github.com/ethpandaops/ethwallclock v0.3.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
+github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
+github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
 github.com/ethpandaops/hermes v0.0.4-0.20250422034341-756419f354cc h1:Oo0zBuhb9bSqB3GauByZI1tgbtU98Pqs6YUc5NGDbGc=
 github.com/ethpandaops/hermes v0.0.4-0.20250422034341-756419f354cc/go.mod h1:jF1FslMW6Eg6cfTk2bvhAQeWZ7x5PTFgDeW0iiDsxDc=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

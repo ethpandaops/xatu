@@ -27,7 +27,14 @@ func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
 				func(ctx context.Context) {
 					logCtx.Debug("Fetching validator beacon block")
 
-					if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
+					slot, _, err := s.beacon.Metadata().Wallclock().Now()
+					if err != nil {
+						logCtx.WithError(err).Error("Failed to get current slot")
+
+						return
+					}
+
+					if err := s.fetchDecoratedValidatorBlock(ctx, phase0.Slot(slot.Number())); err != nil {
 						logCtx.WithError(err).Error("Failed to fetch validator beacon block")
 					}
 				},
@@ -62,19 +69,14 @@ func (s *Sentry) scheduleValidatorBlockFetchingAtSlotTime(ctx context.Context, a
 
 		logCtx.WithField("slot", slot.Number()).Debug("Fetching validator beacon block")
 
-		if err := s.fetchDecoratedValidatorBlock(ctx); err != nil {
+		if err := s.fetchDecoratedValidatorBlock(ctx, phase0.Slot(slot.Number())); err != nil {
 			logCtx.WithField("slot_time", offset.String()).WithError(err).Error("Failed to fetch validator beacon block")
 		}
 	})
 }
 
-func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v3.ValidatorBlock, error) {
+func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3.ValidatorBlock, error) {
 	snapshot := &v3.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
-
-	slot, _, err := s.beacon.Metadata().Wallclock().Now()
-	if err != nil {
-		return nil, err
-	}
 
 	provider, ok := s.beacon.Node().Service().(eth2client.ProposalProvider)
 	if !ok {
@@ -90,7 +92,7 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v3.ValidatorBlock, e
 
 	// RandaoReveal must be set to the point at infinity (0xc0..00) if we're skipping Randao verification.
 	rsp, err := provider.Proposal(ctx, &api.ProposalOpts{
-		Slot: phase0.Slot(slot.Number() + 1),
+		Slot: slot,
 		RandaoReveal: phase0.BLSSignature{
 			0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -123,8 +125,8 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context) (*v3.ValidatorBlock, e
 	return v3.NewValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
 }
 
-func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context) error {
-	fc, err := s.fetchValidatorBlock(ctx)
+func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context, slot phase0.Slot) error {
+	fc, err := s.fetchValidatorBlock(ctx, slot)
 	if err != nil {
 		return err
 	}

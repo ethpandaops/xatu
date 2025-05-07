@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	ethtypes "github.com/OffchainLabs/prysm/v6/proto/prysm/v1alpha1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -11,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
-	ethtypes "github.com/prysmaticlabs/prysm/v5/proto/prysm/v1alpha1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/OffchainLabs/prysm/v6/consensus-types/primitives"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/probe-lab/hermes/host"
-	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )

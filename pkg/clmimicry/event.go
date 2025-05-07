@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"

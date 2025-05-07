@@ -15,6 +15,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/OffchainLabs/prysm/v6/beacon-chain/core/signing"
+	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p/encoder"
+	"github.com/OffchainLabs/prysm/v6/config/params"
+	"github.com/OffchainLabs/prysm/v6/time/slots"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -24,10 +28,6 @@ import (
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/core/signing"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/encoder"
-	"github.com/prysmaticlabs/prysm/v5/config/params"
-	"github.com/prysmaticlabs/prysm/v5/time/slots"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 )

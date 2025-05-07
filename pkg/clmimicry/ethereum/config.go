@@ -3,7 +3,7 @@ package ethereum
 import (
 	"errors"
 
-	"github.com/prysmaticlabs/prysm/v5/config/params"
+	"github.com/OffchainLabs/prysm/v6/config/params"
 )
 
 type Config struct {

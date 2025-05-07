@@ -4,17 +4,18 @@ go 1.24.0
 
 toolchain go1.24.1
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250422034341-756419f354cc
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250507104336-daf72ec9ebfe
 
 require (
 	github.com/IBM/sarama v1.45.1
+	github.com/OffchainLabs/prysm/v6 v6.0.1
 	github.com/attestantio/go-eth2-client v0.24.2
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.15.5
+	github.com/ethereum/go-ethereum v1.15.9
 	github.com/ethpandaops/beacon v0.51.0
 	github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9
 	github.com/ethpandaops/ethwallclock v0.4.0
@@ -38,7 +39,6 @@ require (
 	github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
-	github.com/prysmaticlabs/prysm/v5 v5.3.2-0.20250317054927-5c24978702e0
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sony/gobreaker/v2 v2.1.0
@@ -110,6 +110,7 @@ require (
 	github.com/elastic/gosigar v0.14.3 // indirect
 	github.com/emicklei/dot v1.8.0 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.3 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.1 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn/noise v1.1.0 // indirect
@@ -280,7 +281,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect

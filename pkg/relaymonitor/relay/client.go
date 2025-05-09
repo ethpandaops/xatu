@@ -25,6 +25,12 @@ var ErrValidatorNotRegistered = errors.New("validator not registered")
 
 var ErrRateLimited = errors.New("rate limited")
 
+// API endpoint constants
+var (
+	GetProposerPayloadEndpoint       = "get_proposer_payload"
+	GetValidatorRegistrationEndpoint = "get_validator_registration"
+)
+
 func (c *Config) Validate() error {
 	if c.URL == "" {
 		return fmt.Errorf("url is required")
@@ -85,9 +91,12 @@ func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.Bi
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	start := time.Now()
 	resp, err := c.httpClient.Do(req)
+	duration := time.Since(start).Milliseconds()
 
 	c.metrics.IncAPIRequests(c.name, GetBidsEndpoint, c.networkName)
+	c.metrics.ObserveResponseTime(c.name, GetBidsEndpoint, c.networkName, float64(duration))
 
 	if err != nil {
 		c.metrics.IncAPIFailures(c.name, GetBidsEndpoint, c.networkName)
@@ -183,13 +192,21 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	start := time.Now()
 	resp, err := c.httpClient.Do(req)
+	duration := time.Since(start).Milliseconds()
+
+	c.metrics.IncAPIRequests(c.name, GetProposerPayloadEndpoint, c.networkName)
+	c.metrics.ObserveResponseTime(c.name, GetProposerPayloadEndpoint, c.networkName, float64(duration))
+
 	if err != nil {
+		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -209,6 +226,7 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&rawPayloads); err != nil {
+		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
@@ -254,13 +272,22 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	start := time.Now()
 	resp, err := c.httpClient.Do(req)
+	duration := time.Since(start).Milliseconds()
+
+	c.metrics.IncAPIRequests(c.name, GetValidatorRegistrationEndpoint, c.networkName)
+	c.metrics.ObserveResponseTime(c.name, GetValidatorRegistrationEndpoint, c.networkName, float64(duration))
+
 	if err != nil {
+		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
+
 		if resp.StatusCode == http.StatusTooManyRequests {
 			return nil, ErrRateLimited
 		}
@@ -291,6 +318,7 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 	}
 
 	if errr := json.NewDecoder(resp.Body).Decode(&rawRegistrations); errr != nil {
+		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
 		return nil, fmt.Errorf("failed to decode response: %w", errr)
 	}
 
@@ -313,6 +341,8 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 		},
 		Signature: &wrapperspb.StringValue{Value: rawRegistrations.Signature},
 	}
+
+	c.metrics.IncValidatorRegistrationsReceived(c.name, c.networkName, 1)
 
 	return registration, nil
 }

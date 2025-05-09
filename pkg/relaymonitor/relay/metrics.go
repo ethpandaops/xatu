@@ -12,6 +12,7 @@ type Metrics struct {
 	apiFailuresTotal               *prometheus.CounterVec
 	proposerPayloadDelivered       *prometheus.CounterVec
 	validatorRegistrationsReceived *prometheus.CounterVec
+	responseTime                   *prometheus.HistogramVec
 }
 
 var (
@@ -55,6 +56,12 @@ func newMetrics(namespace string) *Metrics {
 			Name:      "validator_registrations_received_total",
 			Help:      "Total number of validator registrations received from the relay",
 		}, []string{"relay", "network"}),
+		responseTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "response_time_milliseconds",
+			Help:      "Response time in milliseconds for requests to the relay",
+			Buckets:   []float64{50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000, 30000},
+		}, []string{"relay", "endpoint", "network"}),
 	}
 
 	prometheus.MustRegister(
@@ -63,6 +70,7 @@ func newMetrics(namespace string) *Metrics {
 		m.apiFailuresTotal,
 		m.proposerPayloadDelivered,
 		m.validatorRegistrationsReceived,
+		m.responseTime,
 	)
 
 	return m
@@ -86,4 +94,8 @@ func (m *Metrics) IncProposerPayloadDelivered(relay, network string, count int) 
 
 func (m *Metrics) IncValidatorRegistrationsReceived(relay, network string, count int) {
 	m.validatorRegistrationsReceived.WithLabelValues(relay, network).Add(float64(count))
+}
+
+func (m *Metrics) ObserveResponseTime(relay, endpoint, network string, duration float64) {
+	m.responseTime.WithLabelValues(relay, endpoint, network).Observe(duration)
 }

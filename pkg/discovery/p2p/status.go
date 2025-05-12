@@ -14,6 +14,7 @@ import (
 
 const (
 	topicExecutionStatus = "execution_status"
+	topicConsensusStatus = "consensus_status"
 )
 
 type Status struct {
@@ -24,6 +25,7 @@ type Status struct {
 	broker *emission.Emitter
 
 	activeExecution int
+	activeConsensus int
 
 	mu sync.Mutex
 
@@ -54,6 +56,13 @@ func (s *Status) ActiveExecution() int {
 	return s.activeExecution
 }
 
+func (s *Status) ActiveConsensus() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.activeConsensus
+}
+
 func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -64,7 +73,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 		go func(record string) {
 			_ = retry.Do(
 				func() error {
-					peer, err := NewPeer(ctx, s.log, record, s.publishExecutionStatus)
+					peer, err := NewExecutionPeer(ctx, s.log, record, s.publishExecutionStatus)
 					if err != nil {
 						return err
 					}
@@ -81,7 +90,78 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 								status = "success"
 							}
 
-							s.metrics.AddDialedNodeRecod(1, status)
+							s.metrics.AddDialedNodeRecod(1, status, "execution")
+
+							if err = peer.Stop(ctx); err != nil {
+								s.log.WithError(err).Warn("failed to stop peer")
+							}
+						}
+					}()
+
+					disconnect, err := peer.Start(ctx)
+					if err != nil {
+						return err
+					}
+
+					timeout := time.After(15 * time.Second)
+
+					select {
+					case response = <-disconnect:
+					case <-timeout:
+						response = errors.New("timeout")
+					}
+
+					if response == nil {
+						connected = true
+					}
+
+					return response
+				},
+				retry.Attempts(5),
+				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+					s.log.WithError(err).Debug("peer failed")
+
+					return 5 * time.Second
+				}),
+			)
+
+			s.mu.Lock()
+			defer s.mu.Unlock()
+
+			s.activeExecution--
+			s.metrics.SetActiveDialingNodeRecods(s.activeExecution, "execution")
+		}(nodeRecord)
+	}
+}
+
+func (s *Status) AddConsensusNodeRecords(ctx context.Context, nodeRecords []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.activeConsensus += len(nodeRecords)
+	s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
+
+	for _, nodeRecord := range nodeRecords {
+		go func(record string) {
+			_ = retry.Do(
+				func() error {
+					peer, err := NewConsensusPeer(ctx, s.log, record, s.publishConsensusStatus)
+					if err != nil {
+						return err
+					}
+
+					var response error
+
+					connected := false
+
+					defer func() {
+						if peer != nil {
+							status := "failed"
+
+							if connected {
+								status = "success"
+							}
+
+							s.metrics.AddDialedNodeRecod(1, status, "consensus")
 
 							if err = peer.Stop(ctx); err != nil {
 								s.log.WithError(err).Warn("failed to stop peer")
@@ -129,6 +209,10 @@ func (s *Status) publishExecutionStatus(ctx context.Context, status *xatu.Execut
 	s.broker.Emit(topicExecutionStatus, status)
 }
 
+func (s *Status) publishConsensusStatus(ctx context.Context, status *xatu.ConsensusNodeStatus) {
+	s.broker.Emit(topicConsensusStatus, status)
+}
+
 func (s *Status) handleSubscriberError(err error, topic string) {
 	if err != nil {
 		s.log.WithError(err).WithField("topic", topic).Error("Subscriber error")
@@ -138,5 +222,11 @@ func (s *Status) handleSubscriberError(err error, topic string) {
 func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error) {
 	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
 		s.handleSubscriberError(handler(ctx, status), topicExecutionStatus)
+	})
+}
+
+func (s *Status) OnConsensusStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ConsensusNodeStatus) error) {
+	s.broker.On(topicConsensusStatus, func(status *xatu.ConsensusNodeStatus) {
+		s.handleSubscriberError(handler(ctx, status), topicConsensusStatus)
 	})
 }

@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
@@ -87,4 +88,8 @@ func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 	}
 
 	return records, nil
+}
+
+func (c *Client) CheckoutStalledConsensusNodeRecords(ctx context.Context, limit int) ([]*node.Record, error) {
+	return nil, errors.New("not implemented")
 }

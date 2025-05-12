@@ -23,7 +23,12 @@ const (
 	Coordinator_ListStalledExecutionNodeRecords_FullMethodName = "/xatu.Coordinator/ListStalledExecutionNodeRecords"
 	Coordinator_CreateExecutionNodeRecordStatus_FullMethodName = "/xatu.Coordinator/CreateExecutionNodeRecordStatus"
 	Coordinator_CoordinateExecutionNodeRecords_FullMethodName  = "/xatu.Coordinator/CoordinateExecutionNodeRecords"
+	Coordinator_ListStalledConsensusNodeRecords_FullMethodName = "/xatu.Coordinator/ListStalledConsensusNodeRecords"
+	Coordinator_CreateConsensusNodeRecordStatus_FullMethodName = "/xatu.Coordinator/CreateConsensusNodeRecordStatus"
+	Coordinator_CoordinateConsensusNodeRecords_FullMethodName  = "/xatu.Coordinator/CoordinateConsensusNodeRecords"
 	Coordinator_GetDiscoveryNodeRecord_FullMethodName          = "/xatu.Coordinator/GetDiscoveryNodeRecord"
+	Coordinator_GetDiscoveryExecutionNodeRecord_FullMethodName = "/xatu.Coordinator/GetDiscoveryExecutionNodeRecord"
+	Coordinator_GetDiscoveryConsensusNodeRecord_FullMethodName = "/xatu.Coordinator/GetDiscoveryConsensusNodeRecord"
 	Coordinator_GetCannonLocation_FullMethodName               = "/xatu.Coordinator/GetCannonLocation"
 	Coordinator_UpsertCannonLocation_FullMethodName            = "/xatu.Coordinator/UpsertCannonLocation"
 )
@@ -36,7 +41,12 @@ type CoordinatorClient interface {
 	ListStalledExecutionNodeRecords(ctx context.Context, in *ListStalledExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledExecutionNodeRecordsResponse, error)
 	CreateExecutionNodeRecordStatus(ctx context.Context, in *CreateExecutionNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error)
+	ListStalledConsensusNodeRecords(ctx context.Context, in *ListStalledConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledConsensusNodeRecordsResponse, error)
+	CreateConsensusNodeRecordStatus(ctx context.Context, in *CreateConsensusNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateConsensusNodeRecordStatusResponse, error)
+	CoordinateConsensusNodeRecords(ctx context.Context, in *CoordinateConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateConsensusNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error)
+	GetDiscoveryExecutionNodeRecord(ctx context.Context, in *GetDiscoveryExecutionNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryExecutionNodeRecordResponse, error)
+	GetDiscoveryConsensusNodeRecord(ctx context.Context, in *GetDiscoveryConsensusNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryConsensusNodeRecordResponse, error)
 	GetCannonLocation(ctx context.Context, in *GetCannonLocationRequest, opts ...grpc.CallOption) (*GetCannonLocationResponse, error)
 	UpsertCannonLocation(ctx context.Context, in *UpsertCannonLocationRequest, opts ...grpc.CallOption) (*UpsertCannonLocationResponse, error)
 }
@@ -89,10 +99,60 @@ func (c *coordinatorClient) CoordinateExecutionNodeRecords(ctx context.Context, 
 	return out, nil
 }
 
+func (c *coordinatorClient) ListStalledConsensusNodeRecords(ctx context.Context, in *ListStalledConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledConsensusNodeRecordsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListStalledConsensusNodeRecordsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ListStalledConsensusNodeRecords_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) CreateConsensusNodeRecordStatus(ctx context.Context, in *CreateConsensusNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateConsensusNodeRecordStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateConsensusNodeRecordStatusResponse)
+	err := c.cc.Invoke(ctx, Coordinator_CreateConsensusNodeRecordStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) CoordinateConsensusNodeRecords(ctx context.Context, in *CoordinateConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateConsensusNodeRecordsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CoordinateConsensusNodeRecordsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_CoordinateConsensusNodeRecords_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDiscoveryNodeRecordResponse)
 	err := c.cc.Invoke(ctx, Coordinator_GetDiscoveryNodeRecord_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) GetDiscoveryExecutionNodeRecord(ctx context.Context, in *GetDiscoveryExecutionNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryExecutionNodeRecordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDiscoveryExecutionNodeRecordResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetDiscoveryExecutionNodeRecord_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) GetDiscoveryConsensusNodeRecord(ctx context.Context, in *GetDiscoveryConsensusNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryConsensusNodeRecordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDiscoveryConsensusNodeRecordResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetDiscoveryConsensusNodeRecord_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +187,12 @@ type CoordinatorServer interface {
 	ListStalledExecutionNodeRecords(context.Context, *ListStalledExecutionNodeRecordsRequest) (*ListStalledExecutionNodeRecordsResponse, error)
 	CreateExecutionNodeRecordStatus(context.Context, *CreateExecutionNodeRecordStatusRequest) (*CreateExecutionNodeRecordStatusResponse, error)
 	CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error)
+	ListStalledConsensusNodeRecords(context.Context, *ListStalledConsensusNodeRecordsRequest) (*ListStalledConsensusNodeRecordsResponse, error)
+	CreateConsensusNodeRecordStatus(context.Context, *CreateConsensusNodeRecordStatusRequest) (*CreateConsensusNodeRecordStatusResponse, error)
+	CoordinateConsensusNodeRecords(context.Context, *CoordinateConsensusNodeRecordsRequest) (*CoordinateConsensusNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error)
+	GetDiscoveryExecutionNodeRecord(context.Context, *GetDiscoveryExecutionNodeRecordRequest) (*GetDiscoveryExecutionNodeRecordResponse, error)
+	GetDiscoveryConsensusNodeRecord(context.Context, *GetDiscoveryConsensusNodeRecordRequest) (*GetDiscoveryConsensusNodeRecordResponse, error)
 	GetCannonLocation(context.Context, *GetCannonLocationRequest) (*GetCannonLocationResponse, error)
 	UpsertCannonLocation(context.Context, *UpsertCannonLocationRequest) (*UpsertCannonLocationResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
@@ -152,8 +217,23 @@ func (UnimplementedCoordinatorServer) CreateExecutionNodeRecordStatus(context.Co
 func (UnimplementedCoordinatorServer) CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CoordinateExecutionNodeRecords not implemented")
 }
+func (UnimplementedCoordinatorServer) ListStalledConsensusNodeRecords(context.Context, *ListStalledConsensusNodeRecordsRequest) (*ListStalledConsensusNodeRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStalledConsensusNodeRecords not implemented")
+}
+func (UnimplementedCoordinatorServer) CreateConsensusNodeRecordStatus(context.Context, *CreateConsensusNodeRecordStatusRequest) (*CreateConsensusNodeRecordStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateConsensusNodeRecordStatus not implemented")
+}
+func (UnimplementedCoordinatorServer) CoordinateConsensusNodeRecords(context.Context, *CoordinateConsensusNodeRecordsRequest) (*CoordinateConsensusNodeRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CoordinateConsensusNodeRecords not implemented")
+}
 func (UnimplementedCoordinatorServer) GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDiscoveryNodeRecord not implemented")
+}
+func (UnimplementedCoordinatorServer) GetDiscoveryExecutionNodeRecord(context.Context, *GetDiscoveryExecutionNodeRecordRequest) (*GetDiscoveryExecutionNodeRecordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDiscoveryExecutionNodeRecord not implemented")
+}
+func (UnimplementedCoordinatorServer) GetDiscoveryConsensusNodeRecord(context.Context, *GetDiscoveryConsensusNodeRecordRequest) (*GetDiscoveryConsensusNodeRecordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDiscoveryConsensusNodeRecord not implemented")
 }
 func (UnimplementedCoordinatorServer) GetCannonLocation(context.Context, *GetCannonLocationRequest) (*GetCannonLocationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCannonLocation not implemented")
@@ -254,6 +334,60 @@ func _Coordinator_CoordinateExecutionNodeRecords_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ListStalledConsensusNodeRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStalledConsensusNodeRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ListStalledConsensusNodeRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ListStalledConsensusNodeRecords_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ListStalledConsensusNodeRecords(ctx, req.(*ListStalledConsensusNodeRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_CreateConsensusNodeRecordStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateConsensusNodeRecordStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CreateConsensusNodeRecordStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_CreateConsensusNodeRecordStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CreateConsensusNodeRecordStatus(ctx, req.(*CreateConsensusNodeRecordStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_CoordinateConsensusNodeRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CoordinateConsensusNodeRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CoordinateConsensusNodeRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_CoordinateConsensusNodeRecords_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CoordinateConsensusNodeRecords(ctx, req.(*CoordinateConsensusNodeRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_GetDiscoveryNodeRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDiscoveryNodeRecordRequest)
 	if err := dec(in); err != nil {
@@ -268,6 +402,42 @@ func _Coordinator_GetDiscoveryNodeRecord_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CoordinatorServer).GetDiscoveryNodeRecord(ctx, req.(*GetDiscoveryNodeRecordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_GetDiscoveryExecutionNodeRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDiscoveryExecutionNodeRecordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetDiscoveryExecutionNodeRecord(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetDiscoveryExecutionNodeRecord_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetDiscoveryExecutionNodeRecord(ctx, req.(*GetDiscoveryExecutionNodeRecordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_GetDiscoveryConsensusNodeRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDiscoveryConsensusNodeRecordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetDiscoveryConsensusNodeRecord(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetDiscoveryConsensusNodeRecord_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetDiscoveryConsensusNodeRecord(ctx, req.(*GetDiscoveryConsensusNodeRecordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -332,8 +502,28 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Coordinator_CoordinateExecutionNodeRecords_Handler,
 		},
 		{
+			MethodName: "ListStalledConsensusNodeRecords",
+			Handler:    _Coordinator_ListStalledConsensusNodeRecords_Handler,
+		},
+		{
+			MethodName: "CreateConsensusNodeRecordStatus",
+			Handler:    _Coordinator_CreateConsensusNodeRecordStatus_Handler,
+		},
+		{
+			MethodName: "CoordinateConsensusNodeRecords",
+			Handler:    _Coordinator_CoordinateConsensusNodeRecords_Handler,
+		},
+		{
 			MethodName: "GetDiscoveryNodeRecord",
 			Handler:    _Coordinator_GetDiscoveryNodeRecord_Handler,
+		},
+		{
+			MethodName: "GetDiscoveryExecutionNodeRecord",
+			Handler:    _Coordinator_GetDiscoveryExecutionNodeRecord_Handler,
+		},
+		{
+			MethodName: "GetDiscoveryConsensusNodeRecord",
+			Handler:    _Coordinator_GetDiscoveryConsensusNodeRecord_Handler,
 		},
 		{
 			MethodName: "GetCannonLocation",

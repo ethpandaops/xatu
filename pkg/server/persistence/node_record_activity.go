@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +19,14 @@ type AvailableExecutionNodeRecord struct {
 }
 
 var availableExecutionNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableExecutionNodeRecord)).For(sqlbuilder.PostgreSQL)
+
+type AvailableConsensusNodeRecord struct {
+	Enr             string    `db:"enr"`
+	ConsensusCount  int64     `db:"consensus_count"`
+	LastConnectTime time.Time `db:"last_connect_time"`
+}
+
+var availableConsensusNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableConsensusNodeRecord)).For(sqlbuilder.PostgreSQL)
 
 func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
 	values := make([]interface{}, len(activities))
@@ -146,4 +155,8 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	}
 
 	return nodeRecords, nil
+}
+
+func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkDigests [][]byte, limit int) ([]*string, error) {
+	return nil, errors.New("not implemented")
 }

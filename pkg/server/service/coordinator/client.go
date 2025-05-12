@@ -3,6 +3,7 @@ package coordinator
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -195,6 +196,10 @@ func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.
 	return response, nil
 }
 
+func (c *Client) ListStalledConsensusNodeRecords(ctx context.Context, req *xatu.ListStalledConsensusNodeRecordsRequest) (*xatu.ListStalledConsensusNodeRecordsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.CreateExecutionNodeRecordStatusRequest) (*xatu.CreateExecutionNodeRecordStatusResponse, error) {
 	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -261,6 +266,10 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 	}
 
 	return &xatu.CreateExecutionNodeRecordStatusResponse{}, nil
+}
+
+func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.CreateConsensusNodeRecordStatusRequest) (*xatu.CreateConsensusNodeRecordStatusResponse, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
@@ -344,6 +353,11 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	}, nil
 }
 
+func (c *Client) CoordinateConsensusNodeRecords(ctx context.Context, req *xatu.CoordinateConsensusNodeRecordsRequest) (*xatu.CoordinateConsensusNodeRecordsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// TODO: deprecate this in favor of GetDiscoveryExecutionNodeRecord
 func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
 	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -371,6 +385,14 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 	return &xatu.GetDiscoveryNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
 	}, nil
+}
+
+func (c *Client) GetDiscoveryConsensusNodeRecord(ctx context.Context, req *xatu.GetDiscoveryConsensusNodeRecordRequest) (*xatu.GetDiscoveryConsensusNodeRecordResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (c *Client) GetDiscoveryExecutionNodeRecord(ctx context.Context, req *xatu.GetDiscoveryExecutionNodeRecordRequest) (*xatu.GetDiscoveryExecutionNodeRecordResponse, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *Client) GetCannonLocation(ctx context.Context, req *xatu.GetCannonLocationRequest) (*xatu.GetCannonLocationResponse, error) {

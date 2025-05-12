@@ -12,15 +12,11 @@ coordinator:
   exportTimeout: 30s
   maxExportBatchSize: 512
   concurrentExecutionPeers: 100
+  concurrentConsensusPeers: 100
 
 p2p:
   type: static
   config:
-    # Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time
-    # enable Node Discovery Protocol v4
-    discV4: true
-    # enable Node Discovery Protocol v5
-    discV5: true
     # time between initiating discovery scans, will generate a fresh private key each time
     restart: 2m
     bootNodes:
@@ -72,8 +68,7 @@ p2p:
   #   tls: false
   #   headers:
   #     authorization: Someb64Value
-  #   discV4: true
-  #   discV5: true
   #   restart: 2m
   #   networkIds: [1]
-  #   forkIdHashes: [0xf0afd0e3]
+  #   forkIdHashes: [0xf0afd0e3] # execution layer
+  #   forkDigests: [0x09fb0a12] # consensus layer

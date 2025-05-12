@@ -117,6 +117,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 	}
 
 	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
+	d.status.OnConsensusStatus(ctx, d.handleConsensusStatus)
 
 	if err := d.startCrons(ctx); err != nil {
 		return err
@@ -198,7 +199,33 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 				}).Info("execution records currently trying to dial")
 				if d.status.ActiveExecution() == 0 {
 					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
-					nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
+					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
+					if err != nil {
+						d.log.WithError(err).Error("Failed to list stale node records")
+
+						return
+					}
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
+					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
+				}
+			},
+			ctx,
+		),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	); err != nil {
+		return err
+	}
+
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				d.log.WithFields(logrus.Fields{
+					"records": d.status.ActiveConsensus(),
+				}).Info("execution records currently trying to dial")
+				if d.status.ActiveExecution() == 0 {
+					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
+					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
 					if err != nil {
 						d.log.WithError(err).Error("Failed to list stale node records")
 
@@ -221,9 +248,19 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 }
 
 func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "execution", fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+
+	// TODO: create and send status event for clickhouse
 
 	return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
+}
+
+func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.ConsensusNodeStatus) error {
+	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "consensus", fmt.Sprintf("0x%x", status.GetForkDigest()))
+
+	// TODO: create and send status event for clickhouse
+
+	return d.coordinator.HandleConsensusNodeRecordStatus(ctx, status)
 }
 
 func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, source string) error {

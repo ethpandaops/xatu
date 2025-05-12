@@ -7,7 +7,6 @@ import (
 
 type Config struct {
 	BootNodes []string      `yaml:"bootNodes"`
-	DiscV4    bool          `yaml:"discV4" default:"true"`
 	DiscV5    bool          `yaml:"discV5" default:"true"`
 	Restart   time.Duration `yaml:"restart" default:"2m"`
 }

@@ -13,8 +13,18 @@ service Coordinator {
       returns (CreateExecutionNodeRecordStatusResponse) {}
   rpc CoordinateExecutionNodeRecords(CoordinateExecutionNodeRecordsRequest)
       returns (CoordinateExecutionNodeRecordsResponse) {}
+  rpc ListStalledConsensusNodeRecords(ListStalledConsensusNodeRecordsRequest)
+      returns (ListStalledConsensusNodeRecordsResponse) {}
+  rpc CreateConsensusNodeRecordStatus(CreateConsensusNodeRecordStatusRequest)
+      returns (CreateConsensusNodeRecordStatusResponse) {}
+  rpc CoordinateConsensusNodeRecords(CoordinateConsensusNodeRecordsRequest)
+      returns (CoordinateConsensusNodeRecordsResponse) {}
   rpc GetDiscoveryNodeRecord(GetDiscoveryNodeRecordRequest)
       returns (GetDiscoveryNodeRecordResponse) {}
+  rpc GetDiscoveryExecutionNodeRecord(GetDiscoveryExecutionNodeRecordRequest)
+      returns (GetDiscoveryExecutionNodeRecordResponse) {}
+  rpc GetDiscoveryConsensusNodeRecord(GetDiscoveryConsensusNodeRecordRequest)
+      returns (GetDiscoveryConsensusNodeRecordResponse) {}
 
   rpc GetCannonLocation(GetCannonLocationRequest)
       returns (GetCannonLocationResponse) {}
@@ -80,12 +90,73 @@ message CoordinateExecutionNodeRecordsResponse {
   uint32 retry_delay = 2;
 }
 
+
+message ConsensusNodeStatus {
+  string node_record = 1;
+  string name = 2;
+  bytes fork_digest = 3;
+  bytes finalized_root = 4;
+  bytes finalized_epoch = 5;
+  bytes head_root = 6;
+  bytes head_slot = 7;
+  bytes csc = 8;
+  uint64 network_id = 9;
+}
+
+message ListStalledConsensusNodeRecordsRequest { int32 page_size = 1; }
+
+message ListStalledConsensusNodeRecordsResponse {
+  repeated string node_records = 1;
+}
+
+message CreateConsensusNodeRecordStatusRequest {
+  ConsensusNodeStatus status = 1;
+}
+
+message CreateConsensusNodeRecordStatusResponse {}
+
+message CoordinateConsensusNodeRecordsRequest {
+  repeated CoordinatedNodeRecord node_records = 1;
+  uint32 limit = 2;
+  repeated uint64 network_ids = 3;
+  repeated bytes fork_id_hashes = 4;
+  string client_id = 5;
+  repeated string capabilities = 6;
+}
+
+message CoordinateConsensusNodeRecordsResponse {
+  repeated string node_records = 1;
+  uint32 retry_delay = 2;
+}
+
 message GetDiscoveryNodeRecordRequest {
+  option deprecated = true;
   repeated uint64 network_ids = 1;
   repeated bytes fork_id_hashes = 2;
 }
 
-message GetDiscoveryNodeRecordResponse { string node_record = 1; }
+message GetDiscoveryNodeRecordResponse {
+  option deprecated = true;
+  string node_record = 1;
+}
+
+message GetDiscoveryExecutionNodeRecordRequest {
+  repeated uint64 network_ids = 1;
+  repeated bytes fork_id_hashes = 2;
+}
+
+message GetDiscoveryExecutionNodeRecordResponse {
+  string node_record = 1;
+}
+
+message GetDiscoveryConsensusNodeRecordRequest {
+  repeated uint64 network_ids = 1;
+  repeated bytes fork_digests = 2;
+}
+
+message GetDiscoveryConsensusNodeRecordResponse {
+  string node_record = 1;
+}
 
 enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT = 0;

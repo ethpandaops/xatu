@@ -75,6 +75,8 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_DenebBlock).DenebBlock.GetStateRoot()
 	case "electra":
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_ElectraBlock).ElectraBlock.GetStateRoot()
+	case "fulu":
+		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_FuluBlock).FuluBlock.GetStateRoot()
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

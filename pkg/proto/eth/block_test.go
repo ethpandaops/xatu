@@ -90,6 +90,17 @@ func TestNewEventBlockV2FromVersionedProposal(t *testing.T) {
 			expectedError:   false,
 			expectedVersion: v2.BlockVersion_ELECTRA,
 		},
+		{
+			name: "fulu proposal",
+			proposal: &api.VersionedProposal{
+				Version: spec.DataVersionFulu,
+				Fulu: &apiv1electra.BlockContents{
+					Block: mockFuluBlock(),
+				},
+			},
+			expectedError:   false,
+			expectedVersion: v2.BlockVersion_FULU,
+		},
 	}
 
 	for _, tt := range tests {
@@ -340,6 +351,42 @@ func mockDenebBlock() *deneb.BeaconBlock {
 }
 
 func mockElectraBlock() *electra.BeaconBlock {
+	return &electra.BeaconBlock{
+		Slot:          phase0.Slot(1),
+		ProposerIndex: phase0.ValidatorIndex(1),
+		ParentRoot:    [32]byte{},
+		StateRoot:     [32]byte{},
+		Body: &electra.BeaconBlockBody{
+			RANDAOReveal: [96]byte{},
+			ETH1Data: &phase0.ETH1Data{
+				DepositRoot:  [32]byte{},
+				DepositCount: 1,
+				BlockHash:    []byte{},
+			},
+			Graffiti:          [32]byte{},
+			ProposerSlashings: []*phase0.ProposerSlashing{},
+			AttesterSlashings: []*electra.AttesterSlashing{},
+			Attestations:      []*electra.Attestation{},
+			Deposits:          []*phase0.Deposit{},
+			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
+			SyncAggregate: &altair.SyncAggregate{
+				SyncCommitteeBits: []byte{},
+			},
+			ExecutionPayload: &deneb.ExecutionPayload{
+				BaseFeePerGas: uint256.NewInt(1),
+			},
+			BLSToExecutionChanges: []*capella.SignedBLSToExecutionChange{},
+			BlobKZGCommitments:    []deneb.KZGCommitment{},
+			ExecutionRequests: &electra.ExecutionRequests{
+				Deposits:       []*electra.DepositRequest{},
+				Withdrawals:    []*electra.WithdrawalRequest{},
+				Consolidations: []*electra.ConsolidationRequest{},
+			},
+		},
+	}
+}
+
+func mockFuluBlock() *electra.BeaconBlock {
 	return &electra.BeaconBlock{
 		Slot:          phase0.Slot(1),
 		ProposerIndex: phase0.ValidatorIndex(1),

@@ -6,6 +6,8 @@ toolchain go1.24.1
 
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250512053543-c9109ba82177
 
+replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250512161743-130a93a383a9
+
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/OffchainLabs/prysm/v6 v6.0.1

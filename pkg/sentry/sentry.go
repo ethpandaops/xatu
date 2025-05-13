@@ -431,6 +431,33 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return nil
 		})
 
+		s.beacon.Node().OnBlockGossip(ctx, func(ctx context.Context, block *eth2v1.BlockGossipEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsBlockGossip(s.log, block, now, s.beacon, s.duplicateCache.BeaconETHV1EventsBlockGossip, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
 		s.beacon.Node().OnChainReOrg(ctx, func(ctx context.Context, chainReorg *eth2v1.ChainReorgEvent) error {
 			now := time.Now().Add(s.clockDrift)
 

@@ -252,6 +252,7 @@ services:
           "beacon-api-eth-v1-events-blob-sidecar"
           "beacon-api-eth-v1-events-block"
           "beacon-api-eth-v1-events-block-v2"
+          "beacon-api-eth-v1-events-block-gossip"
           "beacon-api-eth-v1-events-chain-reorg"
           "beacon-api-eth-v1-events-chain-reorg-v2"
           "beacon-api-eth-v1-events-contribution-and-proof"

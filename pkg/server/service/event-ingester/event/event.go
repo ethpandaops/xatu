@@ -25,6 +25,7 @@ var (
 	TypeUnknown                                 Type = "unknown"
 	TypeBeaconETHV1EventsBlock                  Type = v1.EventsBlockType
 	TypeBeaconETHV1EventsBlockV2                Type = v1.EventsBlockV2Type
+	TypeBeaconETHV1EventsBlockGossip            Type = v1.EventsBlockGossipType
 	TypeBeaconETHV1EventsChainReorg             Type = v1.EventsChainReorgType
 	TypeBeaconETHV1EventsChainReorgV2           Type = v1.EventsChainReorgV2Type
 	TypeBeaconETHV1EventsFinalizedCheckpoint    Type = v1.EventsFinalizedCheckpointType
@@ -121,6 +122,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsBlockV2, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsBlockV2(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsBlockGossip, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsBlockGossip(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsChainReorg, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsChainReorg(router.log, event), nil

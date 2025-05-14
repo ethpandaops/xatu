@@ -295,6 +295,17 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsBlockGossipData {
+    // Epoch contains the epoch information for the block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the block.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the block.
+    PropagationV2 propagation = 3;
+  }
+
   message AdditionalEthV1EventsVoluntaryExitData {
     // Epoch contains the epoch information for the voluntary exit.
     Epoch epoch = 1;
@@ -1239,6 +1250,11 @@ message ClientMeta {
     AdditionalEthV3ValidatorBlockData eth_v3_validator_block = 65 [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
     // AdditionalMevRelayValidatorRegistrationData contains additional data about the mev relay validator registration event.
     AdditionalMevRelayValidatorRegistrationData mev_relay_validator_registration = 66 [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
+
+
+    // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
+    // v1 block gossip event.
+    AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1400,6 +1416,7 @@ message Event {
     MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED = 54;
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
+    BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1543,6 +1560,9 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V3_VALIDATOR_BLOCK" ];
     xatu.mevrelay.ValidatorRegistration mev_relay_validator_registration = 56
         [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
+
+    xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
   };
 }
 

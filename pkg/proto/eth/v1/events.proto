@@ -174,3 +174,9 @@ message EventBlobSidecar {
 
   string versioned_hash = 5 [ json_name = "versioned_hash" ];
 }
+
+message EventBlockGossip {
+  google.protobuf.UInt64Value slot = 1  [ json_name = "slot" ];
+
+  string block = 2;
+}

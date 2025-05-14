@@ -2,28 +2,44 @@ package clmimicry
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"reflect"
 
-	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
-	"github.com/google/uuid"
+	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.
+// To better understand this, here's a breakdown of the events, categorised:
+//
+// 1. GossipSub protocol events:
+//   - "HANDLE_MESSAGE": Processes gossip messages based on their topic
+//   - Attestations (p2p.GossipAttestationMessage)
+//   - Beacon Blocks (p2p.GossipBlockMessage)
+//   - Blob Sidecars (p2p.GossipBlobSidecarMessage)
+//
+// 2. libp2p pubsub protocol level events:
+//   - "ADD_PEER": When a peer is added to the pubsub system
+//   - "REMOVE_PEER": When a peer is removed from the pubsub system
+//   - "RECV_RPC": When an RPC message is received
+//   - "SEND_RPC": When an RPC message is sent
+//   - "JOIN": When joining a pubsub topic
+//
+// 3. libp2p core networking events:
+//   - "CONNECTED": When a peer connects at the network layer (from libp2p's network.Notify)
+//   - "DISCONNECTED": When a peer disconnects at the network layer (from libp2p's network.Notify)
+//
+// 3. Request/Response (RPC) protocol events:
+//   - "HANDLE_METADATA": Processing of metadata requests
+//   - "HANDLE_STATUS": Processing of status requests
 func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
 	if event == nil {
 		return errors.New("event is nil")
 	}
 
-	// Log the event type
 	m.log.WithField("type", event.Type).Trace("Received Hermes event")
 
 	clientMeta, err := m.createNewClientMeta(ctx)
@@ -35,458 +51,61 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 		PeerId: wrapperspb.String(event.PeerID.String()),
 	}
 
-	switch event.Type {
-	case "ADD_PEER":
-		if !m.Config.Events.AddPeerEnabled {
-			return nil
-		}
+	// Route the event to the appropriate handler based on its category.
+	switch {
+	// GossipSub protocol events.
+	case event.Type == "HANDLE_MESSAGE":
+		return m.handleHermesGossipSubEvent(ctx, event, clientMeta, traceMeta)
 
-		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
-	case "RECV_RPC":
-		if !m.Config.Events.RecvRPCEnabled {
-			return nil
-		}
+	// libp2p pubsub protocol level events.
+	case event.Type == pubsubpb.TraceEvent_ADD_PEER.String() ||
+		event.Type == pubsubpb.TraceEvent_REMOVE_PEER.String() ||
+		event.Type == pubsubpb.TraceEvent_RECV_RPC.String() ||
+		event.Type == pubsubpb.TraceEvent_SEND_RPC.String() ||
+		event.Type == pubsubpb.TraceEvent_JOIN.String():
+		return m.handleHermesLibp2pEvent(ctx, event, clientMeta, traceMeta)
 
-		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
-	case "SEND_RPC":
-		if !m.Config.Events.SendRPCEnabled {
-			return nil
-		}
+	// libp2p core networking events.
+	case event.Type == "CONNECTED" || event.Type == "DISCONNECTED":
+		return m.handleHermesLibp2pCoreEvent(ctx, event, clientMeta, traceMeta)
 
-		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
-	case "CONNECTED":
-		if !m.Config.Events.ConnectedEnabled {
-			return nil
-		}
+	// Request/Response (RPC) protocol events.
+	case event.Type == "HANDLE_METADATA" || event.Type == "HANDLE_STATUS":
+		return m.handleHermesRPCEvent(ctx, event, clientMeta, traceMeta)
 
-		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
-	case "DISCONNECTED":
-		if !m.Config.Events.DisconnectedEnabled {
-			return nil
-		}
-
-		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
-	case "REMOVE_PEER":
-		if !m.Config.Events.RemovePeerEnabled {
-			return nil
-		}
-
-		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
-	case "JOIN":
-		if !m.Config.Events.JoinEnabled {
-			return nil
-		}
-
-		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
-	case "HANDLE_METADATA":
-		if !m.Config.Events.HandleMetadataEnabled {
-			return nil
-		}
-
-		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
-	case "HANDLE_STATUS":
-		if !m.Config.Events.HandleStatusEnabled {
-			return nil
-		}
-
-		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
-	case "HANDLE_MESSAGE":
-		// Handle message events are specific to gossipsub
-		return m.handleHandleMessageEvent(ctx, clientMeta, traceMeta, event)
 	default:
-		m.log.WithField("type", event.Type).Trace("Unsupported Hermes event")
+		m.log.WithField("type", event.Type).Trace("unsupported Hermes event")
 
 		return nil
 	}
 }
 
-func (m *Mimicry) handleAddPeerEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToAddPeer(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to add_peer event")
+// getMsgID extracts the MsgID field from any supported payload type.
+// The alternative to using reflection here is a massive switch statement that we
+// would need to manage. If we find CPU issues, we should switch it out, pun intended.
+func getMsgID(payload interface{}) string {
+	// Use reflection to access the MsgID field.
+	if payload == nil {
+		return ""
 	}
 
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
+	// Try to access the MsgID field using reflection.
+	v := reflect.ValueOf(payload)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return ""
 	}
 
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceAddPeer{
-		Libp2PTraceAddPeer: &xatu.ClientMeta_AdditionalLibP2PTraceAddPeerData{
-			Metadata: traceMeta,
-		},
+	// Dereference the pointer and check if it's a struct.
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return ""
 	}
 
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_ADD_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceAddPeer{
-			Libp2PTraceAddPeer: data,
-		},
+	// Try to find the MsgID field.
+	msgIDField := v.FieldByName("MsgID")
+	if !msgIDField.IsValid() || msgIDField.Kind() != reflect.String {
+		return ""
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleSendRPCEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToSendRPC(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to deliver message event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceSendRpc{
-		Libp2PTraceSendRpc: &xatu.ClientMeta_AdditionalLibP2PTraceSendRPCData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_SEND_RPC,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceSendRpc{
-			Libp2PTraceSendRpc: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleRecvRPCEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToRecvRPC(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to deliver message event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRecvRpc{
-		Libp2PTraceRecvRpc: &xatu.ClientMeta_AdditionalLibP2PTraceRecvRPCData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_RECV_RPC,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
-			Libp2PTraceRecvRpc: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleConnectedEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToConnected(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to connected event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceConnected{
-		Libp2PTraceConnected: &xatu.ClientMeta_AdditionalLibP2PTraceConnectedData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_CONNECTED,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceConnected{
-			Libp2PTraceConnected: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToDisconnected(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to disconnected event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceDisconnected{
-		Libp2PTraceDisconnected: &xatu.ClientMeta_AdditionalLibP2PTraceDisconnectedData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_DISCONNECTED,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceDisconnected{
-			Libp2PTraceDisconnected: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleRemovePeerEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToRemovePeer(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to remove peer event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRemovePeer{
-		Libp2PTraceRemovePeer: &xatu.ClientMeta_AdditionalLibP2PTraceRemovePeerData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_REMOVE_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceRemovePeer{
-			Libp2PTraceRemovePeer: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleJoinEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToJoin(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to join event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceJoin{
-		Libp2PTraceJoin: &xatu.ClientMeta_AdditionalLibP2PTraceJoinData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_JOIN,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceJoin{
-			Libp2PTraceJoin: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToHandleMetadata(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to handle metadata event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHandleMetadata{
-		Libp2PTraceHandleMetadata: &xatu.ClientMeta_AdditionalLibP2PTraceHandleMetadataData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceHandleMetadata{
-			Libp2PTraceHandleMetadata: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent) error {
-	data, err := libp2p.TraceEventToHandleStatus(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to handle status event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHandleStatus{
-		Libp2PTraceHandleStatus: &xatu.ClientMeta_AdditionalLibP2PTraceHandleStatusData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceHandleStatus{
-			Libp2PTraceHandleStatus: data,
-		},
-	}
-
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
-}
-
-func (m *Mimicry) handleHandleMessageEvent(
-	ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
-) error {
-	// We route based on the topic of the message
-	topic := event.Topic
-	if topic == "" {
-		return errors.New("missing topic in HandleMessage event")
-	}
-
-	switch {
-	case strings.Contains(topic, p2p.GossipAttestationMessage):
-		if !m.Config.Events.GossipSubAttestationEnabled {
-			return nil
-		}
-
-		switch payload := event.Payload.(type) {
-		case *eth.TraceEventAttestation:
-			if err := m.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
-				return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
-			}
-		case *eth.TraceEventSingleAttestation:
-			if err := m.handleGossipSingleAttestation(ctx, clientMeta, event, payload); err != nil {
-				return errors.Wrap(err, "failed to handle gossipsub single beacon attestation")
-			}
-		default:
-			return fmt.Errorf("invalid payload type for HandleMessage event: %T", event.Payload)
-		}
-	case strings.Contains(topic, p2p.GossipBlockMessage):
-		if !m.Config.Events.GossipSubBeaconBlockEnabled {
-			return nil
-		}
-
-		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
-			return errors.Wrap(err, "failed to handle gossipsub beacon block")
-		}
-	case strings.Contains(topic, p2p.GossipBlobSidecarMessage):
-		if !m.Config.Events.GossipSubBlobSidecarEnabled {
-			return nil
-		}
-
-		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
-		if !ok {
-			return errors.New("invalid payload type for HandleMessage event")
-		}
-
-		if err := m.handleGossipBlobSidecar(ctx, clientMeta, event, payload); err != nil {
-			return errors.Wrap(err, "failed to handle gossipsub blob sidecar")
-		}
-	default:
-		m.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
-	}
-
-	return nil
+	return msgIDField.String()
 }

@@ -21,21 +21,13 @@ func (m *Mimicry) handleHermesRPCEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	// Extract MsgID for sharding decision.
-	msgID := getMsgID(event.Payload)
-
 	// Map libp2p event to Xatu event.
 	xatuEvent, err := mapRPCEventToXatuEvent(event.Type)
 	if err != nil {
-		return errors.Wrapf(err, "failed to map RPC event to Xatu event")
-	}
+		m.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesRPCEvent event")
 
-	// Extract network from clientMeta
-	network := clientMeta.GetEthereum().GetNetwork().GetId()
-	networkStr := fmt.Sprintf("%d", network)
-
-	if networkStr == "" || networkStr == "0" {
-		networkStr = unknown
+		//nolint:nilerr // we don't want to return an error here.
+		return nil
 	}
 
 	switch xatuEvent {
@@ -45,13 +37,9 @@ func (m *Mimicry) handleHermesRPCEvent(
 		}
 
 		// Check if we should process this event based on trace/sharding config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
-			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
-
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
-
-		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 
@@ -61,13 +49,9 @@ func (m *Mimicry) handleHermesRPCEvent(
 		}
 
 		// Check if we should process this event based on trace/sharding config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
-			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
-
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
-
-		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	}
@@ -159,5 +143,5 @@ func mapRPCEventToXatuEvent(event string) (string, error) {
 		return xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(), nil
 	}
 
-	return "", errors.New("unknown libp2p rpc event")
+	return "", fmt.Errorf("unknown libp2p rpc event: %s", event)
 }

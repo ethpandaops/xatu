@@ -3,6 +3,7 @@ package clmimicry
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
 	"github.com/pkg/errors"
@@ -25,7 +26,7 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		return nil
 	}
 
-	// We route based on the topic of the message
+	// We route based on the topic of the message.
 	topic := event.Topic
 	if topic == "" {
 		return errors.New("missing topic in handleHermesGossipSubEvent event")
@@ -34,18 +35,10 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 	// Map gossipsub event to Xatu event.
 	xatuEvent, err := mapGossipSubEventToXatuEvent(topic)
 	if err != nil {
-		return errors.Wrap(err, "failed to map gossipsub event to xatu event")
-	}
+		m.log.WithField("topic", topic).Tracef("unsupported topic in handleHermesGossipSubEvent event")
 
-	// Extract MsgID for sharding decision.
-	msgID := getMsgID(event.Payload)
-
-	// Extract network from clientMeta
-	network := clientMeta.GetEthereum().GetNetwork().GetId()
-	networkStr := fmt.Sprintf("%d", network)
-
-	if networkStr == "" || networkStr == "0" {
-		networkStr = unknown
+		//nolint:nilerr // we don't want to return an error here.
+		return nil
 	}
 
 	switch xatuEvent {
@@ -55,14 +48,9 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		}
 
 		// Check if we should process this message based on trace/sharding config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
-			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
-
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
-
-		// Count processed message
-		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		switch payload := event.Payload.(type) {
 		case *eth.TraceEventAttestation:
@@ -83,14 +71,9 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		}
 
 		// Check if we should process this message based on trace/sharding config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
-			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
-
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
-
-		// Count processed message
-		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
@@ -102,14 +85,9 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		}
 
 		// Check if we should process this message based on trace/sharding config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
-			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
-
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
-
-		// Count processed message
-		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
 		if !ok {
@@ -128,14 +106,15 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 }
 
 func mapGossipSubEventToXatuEvent(event string) (string, error) {
-	switch event {
-	case p2p.GossipAttestationMessage:
+	switch {
+	case strings.Contains(event, p2p.GossipAttestationMessage):
 		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(), nil
-	case p2p.GossipBlockMessage:
+	case strings.Contains(event, p2p.GossipBlockMessage):
 		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(), nil
-	case p2p.GossipBlobSidecarMessage:
+	case strings.Contains(event, p2p.GossipBlobSidecarMessage):
 		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(), nil
+	case strings.Contains(event, p2p.GossipSyncCommitteeMessage):
 	}
 
-	return "", errors.New("unknown gossipsub event")
+	return "", fmt.Errorf("unknown gossipsub event: %s", event)
 }

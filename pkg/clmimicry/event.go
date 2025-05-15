@@ -2,6 +2,7 @@ package clmimicry
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -118,6 +120,18 @@ func getMsgID(payload interface{}) string {
 	}
 
 	return msgIDField.String()
+}
+
+// getNetworkID extracts the network ID from the client metadata.
+func getNetworkID(clientMeta *xatu.ClientMeta) string {
+	network := clientMeta.GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
+	return networkStr
 }
 
 // isRpcEvent checks if the event is a RPC event.

@@ -44,6 +44,7 @@ jobs:
             beacon_subscriptions:
             - attestation
             - block
+            - block_gossip
             - chain_reorg
             - finalized_checkpoint
             - head

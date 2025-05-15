@@ -1,0 +1,1505 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "dark-red",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": true,
+          "tags": [],
+          "type": "tags"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Slot annotations",
+        "target": {
+          "limit": 2000,
+          "matchAny": true,
+          "refId": "Anno",
+          "tags": [
+            "slot",
+            "xatu"
+          ],
+          "type": "tags"
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": 204,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "These are the  \"block\" event and max(\"block_gossip\", \"blob_sidecar\") events. Basically time received on gossipsub and when the block was processed by the client",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "block_processed_time"
+            },
+            "properties": [
+              {
+                "id": "custom.fillBelowTo",
+                "value": "last_gossip_time"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 207,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "asc"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Time into a slot between gossip and processed block events",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": false,
+              "block_processing_time": true,
+              "block_size": true,
+              "block_size_compressed": true,
+              "gas_used": true,
+              "last_gossip_time": false,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "This is the amount of time to process a block; \"block\" event - max(\"block_gossip\", \"blob_sidecar\") events. Basically time received on gossipsub to when it was executed and verified",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 208,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "asc"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Time spent processing a block",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": false,
+              "block_size": true,
+              "block_size_compressed": true,
+              "gas_used": true,
+              "last_gossip_time": true,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 209,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Blob count",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": false,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": true,
+              "block_size": true,
+              "block_size_compressed": true,
+              "gas_used": true,
+              "last_gossip_time": true,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 210,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Gas used",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": true,
+              "block_size": true,
+              "block_size_compressed": true,
+              "gas_used": false,
+              "last_gossip_time": true,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 211,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Block size",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": true,
+              "block_size": false,
+              "block_size_compressed": true,
+              "gas_used": true,
+              "last_gossip_time": true,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 213,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Block size compressed",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": true,
+              "block_size": true,
+              "block_size_compressed": false,
+              "gas_used": true,
+              "last_gossip_time": true,
+              "total_size": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "P5C0FA5C61C0F8586"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "semi-dark-blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisWidth": 100,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_epoch_start"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.barAlignment",
+                "value": 1
+              },
+              {
+                "id": "custom.barWidthFactor",
+                "value": 0.7
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 100
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 13
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "hidden"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 212,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "P5C0FA5C61C0F8586"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "table",
+          "rawSql": "WITH\n  -- 1) block sizes (driving table)\n  block_size_cte AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      max(block_total_bytes) AS block_size,\n      max(execution_payload_gas_used) AS gas_used\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 2) block-processing latency\n  block_prop AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_processed_time\n    FROM default.beacon_api_eth_v1_events_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 3) gossip receive latency\n  gossip AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS block_gossip_time\n    FROM default.beacon_api_eth_v1_events_block_gossip\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 4) blob-sidecar aggregates\n  blob_agg AS (\n    SELECT\n      $__timeInterval(slot_start_date_time) AS time,\n      quantile(0.50)(propagation_slot_start_diff) AS blob_last_propagation,\n      count(*) AS blob_count,\n      count(*) * 131072 AS blob_total_size,\n      any(meta_consensus_implementation) AS meta_consensus_implementation\n    FROM default.beacon_api_eth_v1_events_blob_sidecar\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_client_name IN (${client_name})\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  ),\n\n  -- 5) epoch‐start indicator: 1 when slot % 32 = 0, else 0\n  epoch_start AS (\n    SELECT\n      $__timeInterval(slot_start_date_time)    AS time,\n      if(\n        max(slot) % 32 = 0,  -- true at slots 0,32,64…\n        1,\n        0\n      )                                       AS is_epoch_start\n    FROM default.beacon_api_eth_v2_beacon_block\n    WHERE\n      $__timeFilter(slot_start_date_time)\n      AND meta_network_name IN (${network_name})\n    GROUP BY time\n  )\n\nSELECT\n  bs.time                                     AS time,\n  coalesce(es.is_epoch_start, 0) AS is_epoch_start,\n  coalesce(bp.block_processed_time, 0) AS block_processed_time,\n  CASE\n    -- lodestar emits blob_sidecar events at the same time as block event\n    WHEN ba.meta_consensus_implementation = 'lodestar' THEN coalesce(g.block_gossip_time, 0)\n    ELSE greatest(coalesce(g.block_gossip_time, 0), coalesce(ba.blob_last_propagation, 0))\n  END AS last_gossip_time,\n  block_processed_time - last_gossip_time AS block_processing_time,\n  coalesce(ba.blob_count, 0) AS blob_count,\n  coalesce(ba.blob_total_size, 0) AS blob_total_size,\n  coalesce(bs.gas_used, 0) AS gas_used,\n  coalesce(bs.block_size, 0) AS block_size,\n  block_size + blob_total_size AS total_size\n\nFROM block_size_cte   AS bs\nLEFT JOIN block_prop  AS bp USING (time)\nLEFT JOIN gossip      AS g  USING (time)\nLEFT JOIN blob_agg    AS ba USING (time)\nLEFT JOIN epoch_start AS es USING (time)\n\nORDER BY bs.time ASC\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Total size (block + blobs)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "blob_count": true,
+              "blob_total_size": true,
+              "block_processed_time": true,
+              "block_processing_time": true,
+              "block_size": true,
+              "block_size_compressed": true,
+              "gas_used": true,
+              "last_gossip_time": true,
+              "total_size": false
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "mainnet"
+          ],
+          "value": [
+            "mainnet"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT meta_network_name\nFROM default.beacon_api_eth_v1_events_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "includeAll": true,
+        "label": "Network",
+        "multi": true,
+        "name": "network_name",
+        "options": [],
+        "query": "SELECT meta_network_name\nFROM default.beacon_api_eth_v1_events_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\nGROUP BY meta_network_name ",
+        "refresh": 2,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "ethpandaops/mainnet/utility-mainnet-lodestar-nethermind-001"
+          ],
+          "value": [
+            "ethpandaops/mainnet/utility-mainnet-lodestar-nethermind-001"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5C0FA5C61C0F8586"
+        },
+        "definition": "SELECT meta_client_name\nFROM default.beacon_api_eth_v1_events_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "includeAll": true,
+        "label": "Client",
+        "multi": true,
+        "name": "client_name",
+        "options": [],
+        "query": "SELECT meta_client_name\nFROM default.beacon_api_eth_v1_events_block\nWHERE\n  slot_start_date_time >= toDateTime(${__from} / 1000)\n  AND slot_start_date_time <= toDateTime(${__to} / 1000)\n  AND meta_network_name IN (${network_name})\nGROUP BY meta_client_name ",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "auto": true,
+        "auto_count": 300,
+        "auto_min": "12s",
+        "current": {
+          "text": "12s",
+          "value": "12s"
+        },
+        "hide": 2,
+        "name": "interval_tight",
+        "options": [
+          {
+            "selected": true,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "text": "12s",
+          "value": "12s"
+        },
+        "hide": 2,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "12s",
+            "value": "12s"
+          },
+          {
+            "selected": false,
+            "text": "60s",
+            "value": "60s"
+          },
+          {
+            "selected": false,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "12s,60s,384s,3840s,92160s",
+        "refresh": 2,
+        "type": "interval"
+      },
+      {
+        "auto": true,
+        "auto_count": 50,
+        "auto_min": "12s",
+        "current": {
+          "text": "384s",
+          "value": "384s"
+        },
+        "hide": 2,
+        "name": "interval_loose",
+        "options": [
+          {
+            "selected": true,
+            "text": "384s",
+            "value": "384s"
+          },
+          {
+            "selected": false,
+            "text": "3840s",
+            "value": "3840s"
+          },
+          {
+            "selected": false,
+            "text": "92160s",
+            "value": "92160s"
+          }
+        ],
+        "query": "384s,3840s,92160s",
+        "refresh": 2,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Beacon API Events Blocks",
+  "uid": "celxapx6qpmgwa",
+  "version": 39,
+  "weekStart": ""
+}

@@ -21,8 +21,14 @@ func (m *Mimicry) handleHermesRPCEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	// Extract MsgID for sampling decision
+	// Extract MsgID for sharding decision.
 	msgID := getMsgID(event.Payload)
+
+	// Map libp2p event to Xatu event.
+	xatuEvent, err := mapRPCEventToXatuEvent(event.Type)
+	if err != nil {
+		return errors.Wrapf(err, "failed to map RPC event to Xatu event")
+	}
 
 	// Extract network from clientMeta
 	network := clientMeta.GetEthereum().GetNetwork().GetId()
@@ -32,36 +38,36 @@ func (m *Mimicry) handleHermesRPCEvent(
 		networkStr = unknown
 	}
 
-	switch event.Type {
-	case TraceEvent_HANDLE_METADATA:
+	switch xatuEvent {
+	case xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String():
 		if !m.Config.Events.HandleMetadataEnabled {
 			return nil
 		}
 
-		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_METADATA, networkStr) {
-			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_METADATA, networkStr)
+		// Check if we should process this event based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_METADATA, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 
-	case TraceEvent_HANDLE_STATUS:
+	case xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String():
 		if !m.Config.Events.HandleStatusEnabled {
 			return nil
 		}
 
-		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_STATUS, networkStr) {
-			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_STATUS, networkStr)
+		// Check if we should process this event based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_STATUS, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	}
@@ -143,4 +149,15 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func mapRPCEventToXatuEvent(event string) (string, error) {
+	switch event {
+	case TraceEvent_HANDLE_METADATA:
+		return xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(), nil
+	case TraceEvent_HANDLE_STATUS:
+		return xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(), nil
+	}
+
+	return "", errors.New("unknown libp2p rpc event")
 }

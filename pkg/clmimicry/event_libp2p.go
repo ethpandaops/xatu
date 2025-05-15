@@ -22,10 +22,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	// Extract MsgID for sampling decision.
+	// Extract MsgID for sharding decision..
 	msgID := getMsgID(event.Payload)
 
-	// Extract network from clientMeta
+	// Map libp2p event to Xatu event.
+	xatuEvent, err := mapLibp2pEventToXatuEvent(event.Type)
+	if err != nil {
+		return errors.Wrap(err, "failed to map libp2p event to xatu event")
+	}
+
+	// Extract network from clientMeta.
 	network := clientMeta.GetEthereum().GetNetwork().GetId()
 	networkStr := fmt.Sprintf("%d", network)
 
@@ -33,94 +39,84 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		networkStr = unknown
 	}
 
-	switch event.Type {
-	case pubsubpb.TraceEvent_ADD_PEER.String():
+	switch xatuEvent {
+	case xatu.Event_LIBP2P_TRACE_ADD_PEER.String():
 		if !m.Config.Events.AddPeerEnabled {
 			return nil
 		}
 
-		evtName := pubsubpb.TraceEvent_ADD_PEER.String()
-
-		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this event based on trace/sharding config..
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
 
-	case pubsubpb.TraceEvent_RECV_RPC.String():
+	case xatu.Event_LIBP2P_TRACE_RECV_RPC.String():
 		if !m.Config.Events.RecvRPCEnabled {
 			return nil
 		}
 
-		evtName := pubsubpb.TraceEvent_RECV_RPC.String()
-
-		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this event based on trace/sharding config..
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
 
-	case pubsubpb.TraceEvent_SEND_RPC.String():
+	case xatu.Event_LIBP2P_TRACE_SEND_RPC.String():
 		if !m.Config.Events.SendRPCEnabled {
 			return nil
 		}
 
-		evtName := pubsubpb.TraceEvent_SEND_RPC.String()
-
-		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this event based on trace/sharding config..
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
 
-	case pubsubpb.TraceEvent_REMOVE_PEER.String():
+	case xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String():
 		if !m.Config.Events.RemovePeerEnabled {
 			return nil
 		}
 
-		evtName := pubsubpb.TraceEvent_REMOVE_PEER.String()
-
-		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this event based on trace/sharding config..
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 
-	case pubsubpb.TraceEvent_JOIN.String():
+	case xatu.Event_LIBP2P_TRACE_JOIN.String():
 		if !m.Config.Events.JoinEnabled {
 			return nil
 		}
 
-		evtName := pubsubpb.TraceEvent_JOIN.String()
-
-		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this event based on trace/sharding config..
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
 	}
@@ -128,7 +124,8 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 	return nil
 }
 
-func (m *Mimicry) handleRemovePeerEvent(ctx context.Context,
+func (m *Mimicry) handleRemovePeerEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -166,7 +163,8 @@ func (m *Mimicry) handleRemovePeerEvent(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleJoinEvent(ctx context.Context,
+func (m *Mimicry) handleJoinEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -204,7 +202,8 @@ func (m *Mimicry) handleJoinEvent(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleSendRPCEvent(ctx context.Context,
+func (m *Mimicry) handleSendRPCEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -242,7 +241,8 @@ func (m *Mimicry) handleSendRPCEvent(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleAddPeerEvent(ctx context.Context,
+func (m *Mimicry) handleAddPeerEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -280,7 +280,8 @@ func (m *Mimicry) handleAddPeerEvent(ctx context.Context,
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleRecvRPCEvent(ctx context.Context,
+func (m *Mimicry) handleRecvRPCEvent(
+	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -316,4 +317,40 @@ func (m *Mimicry) handleRecvRPCEvent(ctx context.Context,
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+// mapLibp2pEventToXatuEvent maps libp2p events to Xatu events, commented out events are not yet implemented.
+//
+//nolint:gocritic,wsl // keeping commented events, as they will be implemented shortly.
+func mapLibp2pEventToXatuEvent(event string) (string, error) {
+	switch event {
+	case pubsubpb.TraceEvent_PUBLISH_MESSAGE.String():
+		// return xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String(), nil
+	case pubsubpb.TraceEvent_REJECT_MESSAGE.String():
+		// return xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(), nil
+	case pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String():
+		// return xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(), nil
+	case pubsubpb.TraceEvent_DELIVER_MESSAGE.String():
+		// return xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(), nil
+	case pubsubpb.TraceEvent_ADD_PEER.String():
+		return xatu.Event_LIBP2P_TRACE_ADD_PEER.String(), nil
+	case pubsubpb.TraceEvent_REMOVE_PEER.String():
+		return xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(), nil
+	case pubsubpb.TraceEvent_RECV_RPC.String():
+		return xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), nil
+	case pubsubpb.TraceEvent_SEND_RPC.String():
+		return xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), nil
+	case pubsubpb.TraceEvent_DROP_RPC.String():
+		return xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), nil
+	case pubsubpb.TraceEvent_JOIN.String():
+		return xatu.Event_LIBP2P_TRACE_JOIN.String(), nil
+	case pubsubpb.TraceEvent_LEAVE.String():
+		// return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
+	case pubsubpb.TraceEvent_GRAFT.String():
+		// return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
+	case pubsubpb.TraceEvent_PRUNE.String():
+		// return xatu.Event_LIBP2P_TRACE_PRUNE.String(), nil
+	}
+
+	return "", errors.New("unknown libp2p rpc event")
 }

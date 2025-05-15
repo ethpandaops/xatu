@@ -3,7 +3,6 @@ package clmimicry
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
 	"github.com/pkg/errors"
@@ -32,7 +31,13 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		return errors.New("missing topic in handleHermesGossipSubEvent event")
 	}
 
-	// Extract MsgID for sampling decision
+	// Map gossipsub event to Xatu event.
+	xatuEvent, err := mapGossipSubEventToXatuEvent(topic)
+	if err != nil {
+		return errors.Wrap(err, "failed to map gossipsub event to xatu event")
+	}
+
+	// Extract MsgID for sharding decision.
 	msgID := getMsgID(event.Payload)
 
 	// Extract network from clientMeta
@@ -43,23 +48,21 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		networkStr = unknown
 	}
 
-	switch {
-	case strings.Contains(topic, p2p.GossipAttestationMessage):
+	switch xatuEvent {
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String():
 		if !m.Config.Events.GossipSubAttestationEnabled {
 			return nil
 		}
 
-		evtName := p2p.GossipAttestationMessage
-
-		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this message based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		switch payload := event.Payload.(type) {
 		case *eth.TraceEventAttestation:
@@ -74,43 +77,39 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 			return fmt.Errorf("invalid payload type for HandleMessage event: %T", event.Payload)
 		}
 
-	case strings.Contains(topic, p2p.GossipBlockMessage):
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String():
 		if !m.Config.Events.GossipSubBeaconBlockEnabled {
 			return nil
 		}
 
-		evtName := p2p.GossipBlockMessage
-
-		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this message based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
 		}
 
-	case strings.Contains(topic, p2p.GossipBlobSidecarMessage):
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String():
 		if !m.Config.Events.GossipSubBlobSidecarEnabled {
 			return nil
 		}
 
-		evtName := p2p.GossipBlobSidecarMessage
-
-		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
-			m.metrics.AddSkippedMessage(evtName, networkStr)
+		// Check if we should process this message based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
 		if !ok {
@@ -126,4 +125,17 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 	}
 
 	return nil
+}
+
+func mapGossipSubEventToXatuEvent(event string) (string, error) {
+	switch event {
+	case p2p.GossipAttestationMessage:
+		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(), nil
+	case p2p.GossipBlockMessage:
+		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(), nil
+	case p2p.GossipBlobSidecarMessage:
+		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(), nil
+	}
+
+	return "", errors.New("unknown gossipsub event")
 }

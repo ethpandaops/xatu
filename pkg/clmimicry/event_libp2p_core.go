@@ -17,8 +17,14 @@ import (
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
 // This includes CONNECTED and DISCONNECTED events from libp2p's network.Notify system.
 func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
-	// Extract MsgID for sampling decision
+	// Extract MsgID for sharding decision.
 	msgID := getMsgID(event.Payload)
+
+	// Map libp2p core event to Xatu event.
+	xatuEvent, err := mapLibp2pCoreEventToXatuEvent(event.Type)
+	if err != nil {
+		return errors.Wrapf(err, "failed to map libp2p core event to Xatu event")
+	}
 
 	// Extract network from clientMeta
 	network := clientMeta.GetEthereum().GetNetwork().GetId()
@@ -28,36 +34,36 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 		networkStr = unknown
 	}
 
-	switch event.Type {
-	case TraceEvent_CONNECTED:
+	switch xatuEvent {
+	case xatu.Event_LIBP2P_TRACE_CONNECTED.String():
 		if !m.Config.Events.ConnectedEnabled {
 			return nil
 		}
 
-		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_CONNECTED, networkStr) {
-			m.metrics.AddSkippedMessage(TraceEvent_CONNECTED, networkStr)
+		// Check if we should process this event based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_CONNECTED, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
 
-	case TraceEvent_DISCONNECTED:
+	case xatu.Event_LIBP2P_TRACE_DISCONNECTED.String():
 		if !m.Config.Events.DisconnectedEnabled {
 			return nil
 		}
 
-		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_DISCONNECTED, networkStr) {
-			m.metrics.AddSkippedMessage(TraceEvent_DISCONNECTED, networkStr)
+		// Check if we should process this event based on trace/sharding config.
+		if msgID != "" && !m.ShouldTraceMessage(msgID, xatuEvent, networkStr) {
+			m.metrics.AddSkippedMessage(xatuEvent, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_DISCONNECTED, networkStr)
+		m.metrics.AddProcessedMessage(xatuEvent, networkStr)
 
 		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 	}
@@ -139,4 +145,15 @@ func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func mapLibp2pCoreEventToXatuEvent(event string) (string, error) {
+	switch event {
+	case TraceEvent_CONNECTED:
+		return xatu.Event_LIBP2P_TRACE_CONNECTED.String(), nil
+	case TraceEvent_DISCONNECTED:
+		return xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(), nil
+	}
+
+	return "", errors.New("unknown libp2p core event")
 }

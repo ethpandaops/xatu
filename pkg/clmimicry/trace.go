@@ -1,7 +1,7 @@
 package clmimicry
 
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
-// in the sample based on the configured sampling settings.
+// in the sample based on the configured trace settings.
 func (m *Mimicry) ShouldTraceMessage(msgID, eventType, network string) bool {
 	// If no msgID, we can't sample.
 	if msgID == "" {

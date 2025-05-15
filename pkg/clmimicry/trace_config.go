@@ -12,6 +12,8 @@ type TracesConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 	// Topics allows for per-topic configuration.
 	Topics map[string]TopicConfig `yaml:"topics"`
+	// Compiled regex patterns.
+	compiledPatterns map[string]*regexp.Regexp
 }
 
 // TopicConfig represents configuration for a specific topic pattern.
@@ -28,6 +30,28 @@ func (e *TracesConfig) Validate() error {
 		if err := validateTracesConfig(e); err != nil {
 			return fmt.Errorf("invalid traces config: %w", err)
 		}
+
+		// Pre-compile all regex patterns, otherwise, with each event grok, we'll be
+		// compiling the regex.
+		if err := e.CompilePatterns(); err != nil {
+			return fmt.Errorf("failed to compile regex patterns: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// CompilePatterns pre-compiles all regex patterns for better performance.
+func (e *TracesConfig) CompilePatterns() error {
+	e.compiledPatterns = make(map[string]*regexp.Regexp)
+
+	for pattern := range e.Topics {
+		compiled, err := regexp.Compile(pattern)
+		if err != nil {
+			return fmt.Errorf("invalid regex pattern '%s': %w", pattern, err)
+		}
+
+		e.compiledPatterns[pattern] = compiled
 	}
 
 	return nil
@@ -39,9 +63,18 @@ func (e *TracesConfig) FindMatchingTopicConfig(eventType string) (*TopicConfig, 
 		return nil, false
 	}
 
-	for pattern, config := range e.Topics {
-		matched, err := regexp.MatchString(pattern, eventType)
-		if err == nil && matched {
+	// If patterns haven't been compiled yet, compile them now.
+	if e.compiledPatterns == nil {
+		if err := e.CompilePatterns(); err != nil {
+			return nil, false
+		}
+	}
+
+	// Use pre-compiled patterns for matching
+	for pattern, compiled := range e.compiledPatterns {
+		if compiled.MatchString(eventType) {
+			config := e.Topics[pattern]
+
 			return &config, true
 		}
 	}

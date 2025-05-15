@@ -165,6 +165,31 @@ func TestShouldTraceMessage(t *testing.T) {
 			network:   "mainnet",
 			expected:  true,
 		},
+		{
+			name: "all shards active skips hashing and returns true",
+			mimicry: &Mimicry{
+				Config: &Config{
+					Traces: TracesConfig{
+						Enabled: true,
+						Topics: map[string]TopicConfig{
+							"test_event": {
+								TotalShards: 4,
+								// All shards 0-3 are active
+								ActiveShards: []uint64{0, 1, 2, 3},
+							},
+						},
+					},
+				},
+				metrics: NewMetrics("test8"),
+			},
+			// This would normally map to a shard that might or might not be active,
+			// but since all shards are active, it should skip the hash calculation
+			// and return true regardless of the actual shard
+			msgID:     "0xdoesntmatter",
+			eventType: "test_event",
+			network:   "mainnet",
+			expected:  true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -245,6 +270,68 @@ func TestIsShardActive(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+// TestSkipsSipHashIfAllShardsActive specifically tests that we skip hashing when all shards are active.
+func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+
+	// Small total shards for easier testing.
+	totalShards := uint64(8)
+
+	// Create a list of all shards from 0 to totalShards-1.
+	allShards := make([]uint64, totalShards)
+	for i := uint64(0); i < totalShards; i++ {
+		allShards[i] = i
+	}
+
+	m := &Mimicry{
+		Config: &Config{
+			Traces: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"test_event": {
+						TotalShards:  totalShards,
+						ActiveShards: allShards,
+					},
+				},
+			},
+		},
+		metrics: NewMetrics("test_all_active_shards1"),
+	}
+
+	// Even a message ID that would hash to an inactive shard should return true
+	// because the optimization should skip the hashing entirely.
+	result := m.ShouldTraceMessage("0xanymessage", "test_event", "mainnet")
+	assert.True(t, result, "When all shards are active, any message should be processed")
+
+	// Now let's remove one shard and verify the optimization doesn't apply.
+	partialShards := make([]uint64, totalShards-1)
+	copy(partialShards, allShards[:totalShards-1])
+
+	// Create a new config with one shard missing.
+	m = &Mimicry{
+		Config: &Config{
+			Traces: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"test_event": {
+						TotalShards:  totalShards,
+						ActiveShards: partialShards,
+					},
+				},
+			},
+		},
+		metrics: NewMetrics("test_all_active_shards2"),
+	}
+
+	// Find a message that would hash to the inactive shard.
+	inactiveShard := totalShards - 1
+	msgIDForInactiveShard := findMsgIDForShard(inactiveShard, totalShards)
+
+	result = m.ShouldTraceMessage(msgIDForInactiveShard, "test_event", "mainnet")
+	assert.False(t, result, "When not all shards are active, messages for inactive shards should be skipped")
 }
 
 // findMsgIDForShard finds a message ID that maps to a specific shard.

@@ -17,6 +17,14 @@ func (m *Mimicry) ShouldTraceMessage(msgID, eventType, network string) bool {
 	if m.Config.Traces.Enabled {
 		topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(eventType)
 		if found {
+			// If all shards are configured to be active, skip hashing and return true, some some trees.
+			//nolint:gosec // controlled config, no overflow.
+			if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
+				m.metrics.AddProcessedMessage(eventType, network)
+
+				return true
+			}
+
 			// Calculate the shard for this message.
 			shard := GetShard(msgID, topicConfig.TotalShards)
 

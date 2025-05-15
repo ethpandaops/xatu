@@ -88,6 +88,9 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 	case spec.DataVersionElectra.String():
 		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_ElectraBlock).ElectraBlock.StateRoot
+	case spec.DataVersionFulu.String():
+		//nolint:staticcheck // Handled by v2
+		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_FuluBlock).FuluBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

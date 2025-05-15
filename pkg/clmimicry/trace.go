@@ -21,7 +21,7 @@ func (m *Mimicry) ShouldTraceMessage(
 			// Get the appropriate sharding key based on the configuration
 			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey)
 
-			// If no sharding key, we can't sample.
+			// If no sharding key, we can't sample. Shouldn't ever happen.
 			if shardingKey == "" {
 				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 

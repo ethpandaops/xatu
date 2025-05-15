@@ -24,11 +24,14 @@ type Metrics struct {
 
 func NewMetrics(namespace string) *Metrics {
 	return &Metrics{
-		decoratedEvents: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "decorated_event_total",
-			Help:      "Total number of decorated events received",
-		}, []string{"type", "network_id"}),
+		decoratedEvents: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "decorated_event_total",
+				Help:      "Total number of decorated events received",
+			},
+			[]string{"type", "network_id"},
+		),
 		samplingProcessed: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,

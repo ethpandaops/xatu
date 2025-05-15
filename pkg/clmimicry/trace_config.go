@@ -24,6 +24,8 @@ type TopicConfig struct {
 	TotalShards uint64 `yaml:"totalShards" default:"64"`
 	// List of active shards to process.
 	ActiveShards []uint64 `yaml:"activeShards"`
+	// Key to use for sharding (MsgID, PeerID, etc).
+	ShardingKey string `yaml:"shardingKey" default:"MsgID"`
 }
 
 // Validate validates the traces config.
@@ -113,9 +115,10 @@ func (e *TracesConfig) LogSummary() string {
 
 		if isFirehose {
 			summary += fmt.Sprintf(
-				"\n  - Pattern '%s': FIREHOSE (all %d shards active)",
+				"\n  - Pattern '%s': FIREHOSE (all %d shards active), sharding on %s",
 				pattern,
 				config.TotalShards,
+				config.ShardingKey,
 			)
 		} else {
 			// Sort active shards for better readability.
@@ -131,12 +134,13 @@ func (e *TracesConfig) LogSummary() string {
 			}
 
 			summary += fmt.Sprintf(
-				"\n  - Pattern '%s': %d/%d shards active (%.1f%%) [%s]",
+				"\n  - Pattern '%s': %d/%d shards active (%.1f%%) [%s], sharding on %s",
 				pattern,
 				len(config.ActiveShards),
 				config.TotalShards,
 				activePercentage,
 				shardsDisplay,
+				config.ShardingKey,
 			)
 		}
 	}
@@ -174,6 +178,20 @@ func validateTracesConfig(config *TracesConfig) error {
 					pattern,
 				)
 			}
+		}
+
+		// Validate sharding key.
+		switch ShardingKeyType(topicConfig.ShardingKey) {
+		case ShardingKeyTypeMsgID, ShardingKeyTypePeerID:
+			// Valid sharding key types
+		default:
+			return fmt.Errorf(
+				"invalid sharding key '%s' for pattern '%s', valid values are: %s, %s",
+				topicConfig.ShardingKey,
+				pattern,
+				ShardingKeyTypeMsgID,
+				ShardingKeyTypePeerID,
+			)
 		}
 	}
 

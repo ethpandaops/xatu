@@ -3,9 +3,11 @@ package clmimicry
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/probe-lab/hermes/host"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -347,6 +349,95 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 	mockEvent = createMockTraceEvent(msgIDForInactiveShard)
 	result = m.ShouldTraceMessage(mockEvent, mockClientMeta, "test_event")
 	assert.False(t, result, "When not all shards are active, messages for inactive shards should be skipped")
+}
+
+// TestShouldTraceMessageWithDifferentShardingKeys tests the ShouldTraceMessage function
+// with different sharding key configurations.
+func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+
+	testPeerID, _ := peer.Decode("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
+	testTime := time.Now()
+	testMsgID := "test-msg-id"
+
+	// Create a consistent event to test different sharding keys
+	event := &host.TraceEvent{
+		Type:      "TEST_EVENT",
+		Topic:     "test-topic",
+		PeerID:    testPeerID,
+		Timestamp: testTime,
+		Payload:   &MockPayload{MsgID: testMsgID},
+	}
+
+	clientMeta := createMockClientMeta(networks.DeriveFromID(1).ID) // mainnet
+
+	// Create test cases with different sharding key configurations
+	tests := []struct {
+		name         string
+		topicConfig  TopicConfig
+		expectedTrue bool
+	}{
+		{
+			name: "MsgID sharding with active shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{GetShard(testMsgID, 64)}, // The shard for testMsgID
+				ShardingKey:  string(ShardingKeyTypeMsgID),
+			},
+			expectedTrue: true,
+		},
+		{
+			name: "MsgID sharding with inactive shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{(GetShard(testMsgID, 64) + 1) % 64}, // A different shard
+				ShardingKey:  string(ShardingKeyTypeMsgID),
+			},
+			expectedTrue: false,
+		},
+		{
+			name: "PeerID sharding with active shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{GetShard(testPeerID.String(), 64)}, // The shard for testPeerID
+				ShardingKey:  string(ShardingKeyTypePeerID),
+			},
+			expectedTrue: true,
+		},
+		{
+			name: "PeerID sharding with inactive shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{(GetShard(testPeerID.String(), 64) + 1) % 64}, // A different shard
+				ShardingKey:  string(ShardingKeyTypePeerID),
+			},
+			expectedTrue: false,
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mimicry := &Mimicry{
+				Config: &Config{
+					Traces: TracesConfig{
+						Enabled: true,
+						Topics: map[string]TopicConfig{
+							"TEST_EVENT": tt.topicConfig,
+						},
+					},
+				},
+				metrics: NewMetrics(fmt.Sprintf("test_sharding_key_%d", i)),
+			}
+
+			// Compile the regex patterns
+			err := mimicry.Config.Traces.CompilePatterns()
+			assert.NoError(t, err)
+
+			result := mimicry.ShouldTraceMessage(event, clientMeta, "TEST_EVENT")
+			assert.Equal(t, tt.expectedTrue, result)
+		})
+	}
 }
 
 // findMsgIDForShard finds a message ID that maps to a specific shard.

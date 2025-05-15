@@ -12,23 +12,23 @@ func (m *Mimicry) ShouldTraceMessage(
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 ) bool {
-	var (
-		msgID      = getMsgID(event.Payload)
-		networkStr = getNetworkID(clientMeta)
-	)
-
-	// If no msgID, we can't sample.
-	if msgID == "" {
-		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-		return true
-	}
+	networkStr := getNetworkID(clientMeta)
 
 	// Check if there's a matching topic config in the trace-based configuration.
 	if m.Config.Traces.Enabled {
 		topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
 		if found {
-			// If all shards are configured to be active, skip hashing and return true, some some trees.
+			// Get the appropriate sharding key based on the configuration
+			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey)
+
+			// If no sharding key, we can't sample.
+			if shardingKey == "" {
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+				return true
+			}
+
+			// If all shards are configured to be active, skip hashing and return true, save some trees.
 			//nolint:gosec // controlled config, no overflow.
 			if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
 				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
@@ -37,7 +37,7 @@ func (m *Mimicry) ShouldTraceMessage(
 			}
 
 			// Calculate the shard for this message.
-			shard := GetShard(msgID, topicConfig.TotalShards)
+			shard := GetShard(shardingKey, topicConfig.TotalShards)
 
 			// Record metrics for all messages to track distribution.
 			m.metrics.AddShardObservation(xatuEventType, shard, networkStr)

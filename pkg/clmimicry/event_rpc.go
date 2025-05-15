@@ -25,37 +25,35 @@ func (m *Mimicry) handleHermesRPCEvent(
 	msgID := getMsgID(event.Payload)
 
 	switch event.Type {
-	case "HANDLE_METADATA":
-		if !m.Config.Events.HandleMetadata.Enabled {
+	case TraceEvent_HANDLE_METADATA:
+		if !m.Config.Events.HandleMetadataEnabled {
 			return nil
 		}
-
-		evtName := "HANDLE_METADATA"
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_METADATA) {
+			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_METADATA)
+
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_METADATA)
 
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 
-	case "HANDLE_STATUS":
-		if !m.Config.Events.HandleStatus.Enabled {
+	case TraceEvent_HANDLE_STATUS:
+		if !m.Config.Events.HandleStatusEnabled {
 			return nil
 		}
-
-		evtName := "HANDLE_STATUS"
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_STATUS) {
+			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_STATUS)
+
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_STATUS)
 
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	}

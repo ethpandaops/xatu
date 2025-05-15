@@ -21,37 +21,35 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 	msgID := getMsgID(event.Payload)
 
 	switch event.Type {
-	case "CONNECTED":
-		if !m.Config.Events.Connected.Enabled {
+	case TraceEvent_CONNECTED:
+		if !m.Config.Events.ConnectedEnabled {
 			return nil
 		}
-
-		evtName := "CONNECTED"
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_CONNECTED) {
+			m.metrics.AddSkippedMessage(TraceEvent_CONNECTED)
+
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(TraceEvent_CONNECTED)
 
 		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
 
-	case "DISCONNECTED":
-		if !m.Config.Events.Disconnected.Enabled {
+	case TraceEvent_DISCONNECTED:
+		if !m.Config.Events.DisconnectedEnabled {
 			return nil
 		}
-
-		evtName := "DISCONNECTED"
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_DISCONNECTED) {
+			m.metrics.AddSkippedMessage(TraceEvent_DISCONNECTED)
+
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(TraceEvent_DISCONNECTED)
 
 		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 	}

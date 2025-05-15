@@ -37,6 +37,9 @@ type Config struct {
 
 	// Events is the configuration for the events
 	Events EventConfig `yaml:"events"`
+
+	// Traces is the configuration for the traces.
+	Traces TracesConfig `yaml:"traces"`
 }
 
 func (c *Config) Validate() error {
@@ -56,6 +59,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Events.Validate(); err != nil {
 		return fmt.Errorf("invalid events config: %w", err)
+	}
+
+	if err := c.Traces.Validate(); err != nil {
+		return fmt.Errorf("invalid traces config: %w", err)
 	}
 
 	return nil

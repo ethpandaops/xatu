@@ -22,14 +22,14 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	if event.Type != "HANDLE_MESSAGE" {
+	if event.Type != TraceEvent_HANDLE_MESSAGE {
 		return nil
 	}
 
 	// We route based on the topic of the message
 	topic := event.Topic
 	if topic == "" {
-		return errors.New("missing topic in HandleMessage event")
+		return errors.New("missing topic in handleHermesGossipSubEvent event")
 	}
 
 	// Extract MsgID for sampling decision
@@ -37,15 +37,16 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 
 	switch {
 	case strings.Contains(topic, p2p.GossipAttestationMessage):
-		if !m.Config.Events.GossipSubAttestation.Enabled {
+		if !m.Config.Events.GossipSubAttestationEnabled {
 			return nil
 		}
 
 		evtName := p2p.GossipAttestationMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -66,15 +67,16 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		}
 
 	case strings.Contains(topic, p2p.GossipBlockMessage):
-		if !m.Config.Events.GossipSubBeaconBlock.Enabled {
+		if !m.Config.Events.GossipSubBeaconBlockEnabled {
 			return nil
 		}
 
 		evtName := p2p.GossipBlockMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -86,15 +88,16 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		}
 
 	case strings.Contains(topic, p2p.GossipBlobSidecarMessage):
-		if !m.Config.Events.GossipSubBlobSidecar.Enabled {
+		if !m.Config.Events.GossipSubBlobSidecarEnabled {
 			return nil
 		}
 
 		evtName := p2p.GossipBlobSidecarMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 

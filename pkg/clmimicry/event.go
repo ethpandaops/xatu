@@ -12,6 +12,20 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 )
 
+// Define events not supplied by libp2p proto pkgs.
+const (
+	// libp2p pubsub events.
+	TraceEvent_HANDLE_MESSAGE = "HANDLE_MESSAGE"
+
+	// libp2p core networking events.
+	TraceEvent_CONNECTED    = "CONNECTED"
+	TraceEvent_DISCONNECTED = "DISCONNECTED"
+
+	// RPC events.
+	TraceEvent_HANDLE_METADATA = "HANDLE_METADATA"
+	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
+)
+
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.
 // To better understand this, here's a breakdown of the events, categorised:
 //
@@ -54,23 +68,19 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	// Route the event to the appropriate handler based on its category.
 	switch {
 	// GossipSub protocol events.
-	case event.Type == "HANDLE_MESSAGE":
+	case isGossipSubEvent(event):
 		return m.handleHermesGossipSubEvent(ctx, event, clientMeta, traceMeta)
 
 	// libp2p pubsub protocol level events.
-	case event.Type == pubsubpb.TraceEvent_ADD_PEER.String() ||
-		event.Type == pubsubpb.TraceEvent_REMOVE_PEER.String() ||
-		event.Type == pubsubpb.TraceEvent_RECV_RPC.String() ||
-		event.Type == pubsubpb.TraceEvent_SEND_RPC.String() ||
-		event.Type == pubsubpb.TraceEvent_JOIN.String():
+	case isLibp2pEvent(event):
 		return m.handleHermesLibp2pEvent(ctx, event, clientMeta, traceMeta)
 
 	// libp2p core networking events.
-	case event.Type == "CONNECTED" || event.Type == "DISCONNECTED":
+	case isLibp2pCoreEvent(event):
 		return m.handleHermesLibp2pCoreEvent(ctx, event, clientMeta, traceMeta)
 
 	// Request/Response (RPC) protocol events.
-	case event.Type == "HANDLE_METADATA" || event.Type == "HANDLE_STATUS":
+	case isRpcEvent(event):
 		return m.handleHermesRPCEvent(ctx, event, clientMeta, traceMeta)
 
 	default:
@@ -108,4 +118,28 @@ func getMsgID(payload interface{}) string {
 	}
 
 	return msgIDField.String()
+}
+
+// isRpcEvent checks if the event is a RPC event.
+func isRpcEvent(event *host.TraceEvent) bool {
+	return event.Type == TraceEvent_HANDLE_METADATA || event.Type == TraceEvent_HANDLE_STATUS
+}
+
+// isLibp2pCoreEvent checks if the event is a libp2p core event.
+func isLibp2pCoreEvent(event *host.TraceEvent) bool {
+	return event.Type == TraceEvent_CONNECTED || event.Type == TraceEvent_DISCONNECTED
+}
+
+// isLibp2pEvent checks if the event is a libp2p event.
+func isLibp2pEvent(event *host.TraceEvent) bool {
+	return event.Type == pubsubpb.TraceEvent_ADD_PEER.String() ||
+		event.Type == pubsubpb.TraceEvent_REMOVE_PEER.String() ||
+		event.Type == pubsubpb.TraceEvent_RECV_RPC.String() ||
+		event.Type == pubsubpb.TraceEvent_SEND_RPC.String() ||
+		event.Type == pubsubpb.TraceEvent_JOIN.String()
+}
+
+// isGossipSubEvent checks if the event is a gossipsub event.
+func isGossipSubEvent(event *host.TraceEvent) bool {
+	return event.Type == TraceEvent_HANDLE_MESSAGE
 }

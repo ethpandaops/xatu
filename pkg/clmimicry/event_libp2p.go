@@ -27,15 +27,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 
 	switch event.Type {
 	case pubsubpb.TraceEvent_ADD_PEER.String():
-		if !m.Config.Events.AddPeer.Enabled {
+		if !m.Config.Events.AddPeerEnabled {
 			return nil
 		}
 
 		evtName := pubsubpb.TraceEvent_ADD_PEER.String()
 
 		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -44,15 +45,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case pubsubpb.TraceEvent_RECV_RPC.String():
-		if !m.Config.Events.RecvRPC.Enabled {
+		if !m.Config.Events.RecvRPCEnabled {
 			return nil
 		}
 
 		evtName := pubsubpb.TraceEvent_RECV_RPC.String()
 
 		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -61,15 +63,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
 
 	case pubsubpb.TraceEvent_SEND_RPC.String():
-		if !m.Config.Events.SendRPC.Enabled {
+		if !m.Config.Events.SendRPCEnabled {
 			return nil
 		}
 
 		evtName := pubsubpb.TraceEvent_SEND_RPC.String()
 
 		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -78,15 +81,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
 
 	case pubsubpb.TraceEvent_REMOVE_PEER.String():
-		if !m.Config.Events.RemovePeer.Enabled {
+		if !m.Config.Events.RemovePeerEnabled {
 			return nil
 		}
 
 		evtName := pubsubpb.TraceEvent_REMOVE_PEER.String()
 
 		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 
@@ -95,15 +99,16 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case pubsubpb.TraceEvent_JOIN.String():
-		if !m.Config.Events.Join.Enabled {
+		if !m.Config.Events.JoinEnabled {
 			return nil
 		}
 
 		evtName := pubsubpb.TraceEvent_JOIN.String()
 
 		// Check if we should process this event based on sampling config.
-		if msgID != "" && !m.ShouldSampleMessage(msgID, evtName) {
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
 			m.metrics.AddSkippedMessage(evtName)
+
 			return nil
 		}
 

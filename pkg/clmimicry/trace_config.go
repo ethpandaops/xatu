@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
+	"strings"
 )
 
 // TracesConfig represents the new trace-based configuration.
@@ -80,6 +82,66 @@ func (e *TracesConfig) FindMatchingTopicConfig(eventType string) (*TopicConfig, 
 	}
 
 	return nil, false
+}
+
+// LogSummary returns a human-readable summary of the trace configuration.
+func (e *TracesConfig) LogSummary() string {
+	if !e.Enabled {
+		return "Trace-based sampling disabled"
+	}
+
+	if len(e.Topics) == 0 {
+		return "Trace-based sampling enabled but no topics configured"
+	}
+
+	summary := fmt.Sprintf("Trace-based sampling enabled with %d topic patterns:", len(e.Topics))
+
+	// Sort patterns for consistent output.
+	patterns := make([]string, 0, len(e.Topics))
+	for pattern := range e.Topics {
+		patterns = append(patterns, pattern)
+	}
+
+	sort.Strings(patterns)
+
+	for _, pattern := range patterns {
+		var (
+			config           = e.Topics[pattern]
+			activePercentage = float64(len(config.ActiveShards)) / float64(config.TotalShards) * 100.0
+			isFirehose       = len(config.ActiveShards) == int(config.TotalShards) //nolint:gosec // controlled config, no overflow.
+		)
+
+		if isFirehose {
+			summary += fmt.Sprintf(
+				"\n  - Pattern '%s': FIREHOSE (all %d shards active)",
+				pattern,
+				config.TotalShards,
+			)
+		} else {
+			// Sort active shards for better readability.
+			activeShards := make([]string, 0, len(config.ActiveShards))
+			for _, shard := range config.ActiveShards {
+				activeShards = append(activeShards, fmt.Sprintf("%d", shard))
+			}
+
+			// Truncate the list if it's too long.
+			shardsDisplay := strings.Join(activeShards, ",")
+			if len(activeShards) > 10 {
+				shardsDisplay = strings.Join(activeShards[:10], ",") + ",...(" + fmt.Sprintf("%d", len(activeShards)-10) + " more)"
+			}
+
+			summary += fmt.Sprintf(
+				"\n  - Pattern '%s': %d/%d shards active (%.1f%%) [%s]",
+				pattern,
+				len(config.ActiveShards),
+				config.TotalShards,
+				activePercentage,
+				shardsDisplay,
+			)
+		}
+	}
+
+	return summary
 }
 
 func validateTracesConfig(config *TracesConfig) error {

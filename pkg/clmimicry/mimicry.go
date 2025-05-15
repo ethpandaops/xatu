@@ -226,6 +226,8 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		WithField("id", m.id.String()).
 		Info("Starting Xatu in consensus layer mimicry mode")
 
+	m.log.Info(m.Config.Traces.LogSummary())
+
 	if err := m.startCrons(ctx); err != nil {
 		m.log.WithError(err).Fatal("Failed to start crons")
 	}

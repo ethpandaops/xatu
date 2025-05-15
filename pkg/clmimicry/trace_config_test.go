@@ -1,6 +1,7 @@
 package clmimicry
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,6 +95,100 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 				assert.NotNil(t, config)
 			} else {
 				assert.Nil(t, config)
+			}
+		})
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	tests := []struct {
+		name               string
+		config             TracesConfig
+		expectedPhrases    []string
+		notExpectedPhrases []string
+	}{
+		{
+			name: "disabled config",
+			config: TracesConfig{
+				Enabled: false,
+				Topics: map[string]TopicConfig{
+					"beacon_block": {
+						TotalShards:  64,
+						ActiveShards: []uint64{1, 2, 3},
+					},
+				},
+			},
+			expectedPhrases: []string{
+				"Trace-based sampling disabled",
+			},
+			notExpectedPhrases: []string{
+				"beacon_block",
+			},
+		},
+		{
+			name: "enabled but empty topics",
+			config: TracesConfig{
+				Enabled: true,
+				Topics:  map[string]TopicConfig{},
+			},
+			expectedPhrases: []string{
+				"Trace-based sampling enabled but no topics configured",
+			},
+		},
+		{
+			name: "regular config",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"beacon_block": {
+						TotalShards:  64,
+						ActiveShards: []uint64{1, 2, 3},
+					},
+					"beacon_attestation": {
+						TotalShards:  64,
+						ActiveShards: []uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+					},
+				},
+			},
+			expectedPhrases: []string{
+				"Trace-based sampling enabled with 2 topic patterns",
+				"Pattern 'beacon_block': 3/64 shards active (4.7%)",
+				"Pattern 'beacon_attestation': 16/64 shards active (25.0%)",
+				"[0,1,2,3,4,5,6,7,8,9",
+			},
+		},
+		{
+			name: "firehose config",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"blob_sidecar": {
+						TotalShards:  1,
+						ActiveShards: []uint64{0},
+					},
+				},
+			},
+			expectedPhrases: []string{
+				"Pattern 'blob_sidecar': FIREHOSE (all 1 shards active)",
+			},
+			notExpectedPhrases: []string{
+				"shards active (100.0%)",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			summary := tt.config.LogSummary()
+
+			for _, phrase := range tt.expectedPhrases {
+				assert.True(t, strings.Contains(summary, phrase),
+					"Expected summary to contain phrase: %s, but got: %s", phrase, summary)
+			}
+
+			for _, phrase := range tt.notExpectedPhrases {
+				assert.False(t, strings.Contains(summary, phrase),
+					"Expected summary to NOT contain phrase: %s, but got: %s", phrase, summary)
 			}
 		})
 	}

@@ -35,6 +35,14 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 	// Extract MsgID for sampling decision
 	msgID := getMsgID(event.Payload)
 
+	// Extract network from clientMeta
+	network := clientMeta.GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
 	switch {
 	case strings.Contains(topic, p2p.GossipAttestationMessage):
 		if !m.Config.Events.GossipSubAttestationEnabled {
@@ -44,14 +52,14 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		evtName := p2p.GossipAttestationMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
+			m.metrics.AddSkippedMessage(evtName, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(evtName, networkStr)
 
 		switch payload := event.Payload.(type) {
 		case *eth.TraceEventAttestation:
@@ -74,14 +82,14 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		evtName := p2p.GossipBlockMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
+			m.metrics.AddSkippedMessage(evtName, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(evtName, networkStr)
 
 		if err := m.handleGossipBeaconBlock(ctx, clientMeta, event, event.Payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub beacon block")
@@ -95,14 +103,14 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 		evtName := p2p.GossipBlobSidecarMessage
 
 		// Check if we should process this message based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName) {
-			m.metrics.AddSkippedMessage(evtName)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, evtName, networkStr) {
+			m.metrics.AddSkippedMessage(evtName, networkStr)
 
 			return nil
 		}
 
 		// Count processed message
-		m.metrics.AddProcessedMessage(evtName)
+		m.metrics.AddProcessedMessage(evtName, networkStr)
 
 		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
 		if !ok {

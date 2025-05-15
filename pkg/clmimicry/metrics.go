@@ -38,7 +38,7 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "sampling_processed_total",
 				Help:      "The number of messages processed after sampling",
 			},
-			[]string{"event_type"},
+			[]string{"event_type", "network"},
 		),
 		samplingSkipped: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -46,7 +46,7 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "sampling_skipped_total",
 				Help:      "The number of messages skipped due to sampling",
 			},
-			[]string{"event_type"},
+			[]string{"event_type", "network"},
 		),
 		shardDistribution: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -54,7 +54,7 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "shard_distribution_total",
 				Help:      "The distribution of messages across shards",
 			},
-			[]string{"topic", "shard"},
+			[]string{"topic", "shard", "network"},
 		),
 		shardProcessed: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -62,7 +62,7 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "shard_processed_total",
 				Help:      "The number of messages processed by shard",
 			},
-			[]string{"topic", "shard"},
+			[]string{"topic", "shard", "network"},
 		),
 		shardSkipped: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -70,7 +70,7 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "shard_skipped_total",
 				Help:      "The number of messages skipped by shard",
 			},
-			[]string{"topic", "shard"},
+			[]string{"topic", "shard", "network"},
 		),
 		shardDistributionHist: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -79,7 +79,7 @@ func NewMetrics(namespace string) *Metrics {
 				Help:      "Histogram of shard distribution",
 				Buckets:   prometheus.LinearBuckets(0, 1, 64), // 64 buckets, one per potential shard
 			},
-			[]string{"topic"},
+			[]string{"topic", "network"},
 		),
 	}
 }
@@ -88,29 +88,29 @@ func (m *Metrics) AddDecoratedEvent(count float64, eventType, network string) {
 	m.decoratedEvents.WithLabelValues(eventType, network).Add(count)
 }
 
-func (m *Metrics) AddProcessedMessage(eventType string) {
-	m.samplingProcessed.WithLabelValues(eventType).Inc()
+func (m *Metrics) AddProcessedMessage(eventType, network string) {
+	m.samplingProcessed.WithLabelValues(eventType, network).Inc()
 }
 
-func (m *Metrics) AddSkippedMessage(eventType string) {
-	m.samplingSkipped.WithLabelValues(eventType).Inc()
+func (m *Metrics) AddSkippedMessage(eventType, network string) {
+	m.samplingSkipped.WithLabelValues(eventType, network).Inc()
 }
 
 // AddShardObservation records a message being assigned to a particular shard
-func (m *Metrics) AddShardObservation(topic string, shard uint64) {
+func (m *Metrics) AddShardObservation(topic string, shard uint64, network string) {
 	shardStr := fmt.Sprintf("%d", shard)
-	m.shardDistribution.WithLabelValues(topic, shardStr).Inc()
-	m.shardDistributionHist.WithLabelValues(topic).Observe(float64(shard))
+	m.shardDistribution.WithLabelValues(topic, shardStr, network).Inc()
+	m.shardDistributionHist.WithLabelValues(topic, network).Observe(float64(shard))
 }
 
 // AddShardProcessed records a message being processed from a particular shard
-func (m *Metrics) AddShardProcessed(topic string, shard uint64) {
+func (m *Metrics) AddShardProcessed(topic string, shard uint64, network string) {
 	shardStr := fmt.Sprintf("%d", shard)
-	m.shardProcessed.WithLabelValues(topic, shardStr).Inc()
+	m.shardProcessed.WithLabelValues(topic, shardStr, network).Inc()
 }
 
 // AddShardSkipped records a message being skipped from a particular shard
-func (m *Metrics) AddShardSkipped(topic string, shard uint64) {
+func (m *Metrics) AddShardSkipped(topic string, shard uint64, network string) {
 	shardStr := fmt.Sprintf("%d", shard)
-	m.shardSkipped.WithLabelValues(topic, shardStr).Inc()
+	m.shardSkipped.WithLabelValues(topic, shardStr, network).Inc()
 }

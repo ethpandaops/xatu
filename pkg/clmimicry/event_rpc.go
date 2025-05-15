@@ -24,6 +24,14 @@ func (m *Mimicry) handleHermesRPCEvent(
 	// Extract MsgID for sampling decision
 	msgID := getMsgID(event.Payload)
 
+	// Extract network from clientMeta
+	network := clientMeta.GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
 	switch event.Type {
 	case TraceEvent_HANDLE_METADATA:
 		if !m.Config.Events.HandleMetadataEnabled {
@@ -31,13 +39,13 @@ func (m *Mimicry) handleHermesRPCEvent(
 		}
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_METADATA) {
-			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_METADATA)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_METADATA, networkStr) {
+			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_METADATA, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_METADATA)
+		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_METADATA, networkStr)
 
 		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 
@@ -47,13 +55,13 @@ func (m *Mimicry) handleHermesRPCEvent(
 		}
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_STATUS) {
-			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_STATUS)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_HANDLE_STATUS, networkStr) {
+			m.metrics.AddSkippedMessage(TraceEvent_HANDLE_STATUS, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_STATUS)
+		m.metrics.AddProcessedMessage(TraceEvent_HANDLE_STATUS, networkStr)
 
 		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	}

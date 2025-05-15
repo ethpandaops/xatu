@@ -20,6 +20,14 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 	// Extract MsgID for sampling decision
 	msgID := getMsgID(event.Payload)
 
+	// Extract network from clientMeta
+	network := clientMeta.GetEthereum().GetNetwork().GetId()
+	networkStr := fmt.Sprintf("%d", network)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
 	switch event.Type {
 	case TraceEvent_CONNECTED:
 		if !m.Config.Events.ConnectedEnabled {
@@ -27,13 +35,13 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 		}
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_CONNECTED) {
-			m.metrics.AddSkippedMessage(TraceEvent_CONNECTED)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_CONNECTED, networkStr) {
+			m.metrics.AddSkippedMessage(TraceEvent_CONNECTED, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_CONNECTED)
+		m.metrics.AddProcessedMessage(TraceEvent_CONNECTED, networkStr)
 
 		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
 
@@ -43,13 +51,13 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 		}
 
 		// Check if we should process this event based on sampling config
-		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_DISCONNECTED) {
-			m.metrics.AddSkippedMessage(TraceEvent_DISCONNECTED)
+		if msgID != "" && !m.ShouldTraceMessage(msgID, TraceEvent_DISCONNECTED, networkStr) {
+			m.metrics.AddSkippedMessage(TraceEvent_DISCONNECTED, networkStr)
 
 			return nil
 		}
 
-		m.metrics.AddProcessedMessage(TraceEvent_DISCONNECTED)
+		m.metrics.AddProcessedMessage(TraceEvent_DISCONNECTED, networkStr)
 
 		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 	}

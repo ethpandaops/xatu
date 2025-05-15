@@ -33,5 +33,24 @@ node:
     blob_sidecar:
       type: "all"
 outputs:
-- name: log
-  type: stdout
+  - name: log
+    type: stdout
+# traces:
+#   enabled: true
+#   topics:
+#     ".*beacon_attestation.*":
+#       totalShards: 64
+#       activeShards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+# events:
+#   recvRpcEnabled: false
+#   sendRpcEnabled: false
+#   addPeerEnabled: false
+#   removePeerEnabled: false
+#   connectedEnabled: false
+#   disconnectedEnabled: false
+#   joinEnabled: false
+#   handleMetadataEnabled: false
+#   handleStatusEnabled: false
+#   gossipSubBeaconBlockEnabled: false
+#   gossipSubAttestationEnabled: false
+#   gossipSubBlobSidecarEnabled: false

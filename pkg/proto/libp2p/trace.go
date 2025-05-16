@@ -163,10 +163,11 @@ func convertRPCControl(ctrl *host.RpcMetaControl) *ControlMeta {
 	}
 
 	return &ControlMeta{
-		Ihave: convertControlIHaveMeta(ctrl.IHave),
-		Iwant: convertControlIWantMeta(ctrl.IWant),
-		Graft: convertControlGraftMeta(ctrl.Graft),
-		Prune: convertControlPruneMeta(ctrl.Prune),
+		Ihave:     convertControlIHaveMeta(ctrl.IHave),
+		Iwant:     convertControlIWantMeta(ctrl.IWant),
+		Graft:     convertControlGraftMeta(ctrl.Graft),
+		Prune:     convertControlPruneMeta(ctrl.Prune),
+		Idontwant: convertControlIDontWantMeta(ctrl.Idontwant),
 	}
 }
 
@@ -195,6 +196,18 @@ func convertControlIWantMeta(iwant []host.RpcControlIWant) []*ControlIWantMeta {
 	return converted
 }
 
+func convertControlIDontWantMeta(idontwant []host.RpcControlIdontWant) []*ControlIDontWantMeta {
+	converted := make([]*ControlIDontWantMeta, len(idontwant))
+
+	for i, item := range idontwant {
+		converted[i] = &ControlIDontWantMeta{
+			MessageIds: convertStringValues(item.MsgIDs),
+		}
+	}
+
+	return converted
+}
+
 func convertControlGraftMeta(graft []host.RpcControlGraft) []*ControlGraftMeta {
 	converted := make([]*ControlGraftMeta, len(graft))
 
@@ -211,7 +224,7 @@ func convertControlPruneMeta(prune []host.RpcControlPrune) []*ControlPruneMeta {
 	converted := make([]*ControlPruneMeta, len(prune))
 
 	for i, item := range prune {
-		peerIds := make([]string, len(prune))
+		peerIds := make([]string, 0, len(item.PeerIDs))
 		for _, peer := range item.PeerIDs {
 			peerIds = append(peerIds, peer.String())
 		}

@@ -71,6 +71,7 @@ message ControlMeta {
   repeated ControlIWantMeta iwant = 2;
   repeated ControlGraftMeta graft = 3;
   repeated ControlPruneMeta prune = 4;
+  repeated ControlIDontWantMeta idontwant = 5;
 }
 
 message ControlIHaveMeta {
@@ -89,6 +90,10 @@ message ControlGraftMeta {
 message ControlPruneMeta {
   google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
   repeated google.protobuf.StringValue peer_ids = 2 [json_name = "peer_ids"];
+}
+
+message ControlIDontWantMeta {
+  repeated google.protobuf.StringValue message_ids = 1 [json_name = "message_ids"];
 }
 
 message TraceEventMetadata {

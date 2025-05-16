@@ -32,6 +32,7 @@ var (
 	// Some events dont have anything reasonable to shard on, so we let them all through.
 	UnshardableEventTypes = []string{
 		xatu.Event_LIBP2P_TRACE_JOIN.String(),
+		xatu.Event_LIBP2P_TRACE_LEAVE.String(),
 	}
 )
 

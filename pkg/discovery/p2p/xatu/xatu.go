@@ -25,6 +25,7 @@ const Type = "xatu"
 type Coordinator struct {
 	config *Config
 
+	discV4  *discovery.DiscV4
 	discV5  *discovery.DiscV5
 	handler func(ctx context.Context, node *enode.Node, source string) error
 
@@ -81,18 +82,36 @@ func (c *Coordinator) Start(ctx context.Context) error {
 		return err
 	}
 
-	c.discV5 = discovery.NewDiscV5(ctx, c.config.Restart, c.log)
+	if c.config.DiscV4 {
+		c.discV4 = discovery.NewDiscV4(ctx, c.config.Restart, c.log)
 
-	c.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
-		return c.handler(ctx, node, "discV4")
-	})
+		c.discV4.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+			return c.handler(ctx, node, "discV4")
+		})
+	}
+
+	if c.config.DiscV5 {
+		c.discV5 = discovery.NewDiscV5(ctx, c.config.Restart, c.log)
+
+		c.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+			return c.handler(ctx, node, "discV5")
+		})
+	}
 
 	return nil
 }
 
 func (c *Coordinator) Stop(ctx context.Context) error {
-	if err := c.discV5.Stop(ctx); err != nil {
-		return err
+	if c.config.DiscV4 {
+		if err := c.discV4.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	if c.config.DiscV5 {
+		if err := c.discV5.Stop(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -128,7 +147,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				res, err := c.pb.GetDiscoveryExecutionNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a discovery node record")
+					c.log.WithError(err).Error("Failed to get a execution discovery node record")
 
 					return
 				}
@@ -176,7 +195,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				res, err := c.pb.GetDiscoveryConsensusNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a discovery node record")
+					c.log.WithError(err).Error("Failed to get a consensus discovery node record")
 
 					return
 				}

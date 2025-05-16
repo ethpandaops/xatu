@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"errors"
 
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
@@ -91,5 +90,56 @@ func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 }
 
 func (c *Client) CheckoutStalledConsensusNodeRecords(ctx context.Context, limit int) ([]*node.Record, error) {
-	return nil, errors.New("not implemented")
+	sb := nodeRecordStruct.SelectFrom("node_record")
+
+	sb.Where("eth2 IS NOT NULL")
+	sb.Where("consecutive_dial_attempts < 1000")
+	sb.Where("(last_dial_time < now() - interval '1 minute' OR last_dial_time IS NULL)")
+	sb.Where("(last_connect_time < now() - interval '1 day' OR last_connect_time IS NULL)")
+
+	sb.OrderBy("last_dial_time DESC")
+	sb.Limit(limit)
+
+	sql, args := sb.Build()
+
+	rows, err := c.db.QueryContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var records []*node.Record
+
+	var enrs []interface{}
+
+	for rows.Next() {
+		var record node.Record
+
+		err = rows.Scan(nodeRecordStruct.Addr(&record)...)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, &record)
+
+		enrs = append(enrs, record.Enr)
+	}
+
+	if len(records) == 0 {
+		return records, nil
+	}
+
+	// TODO: this should be a transaction, but not a huge deal for now
+	ub := nodeRecordStruct.Update("node_record", &node.Record{})
+	ub.Set(ub.Add("consecutive_dial_attempts", "1"), ub.Assign("last_dial_time", "now()"))
+	ub.Where(ub.In("enr", enrs...))
+	sql, args = ub.Build()
+
+	_, err = c.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }

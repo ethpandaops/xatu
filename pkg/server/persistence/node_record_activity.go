@@ -2,7 +2,7 @@ package persistence
 
 import (
 	"context"
-	"errors"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -158,5 +158,98 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 }
 
 func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkDigests [][]byte, limit int) ([]*string, error) {
-	return nil, errors.New("not implemented")
+	inr := make([]interface{}, 0, len(ignoredNodeRecords))
+	for _, nr := range ignoredNodeRecords {
+		inr = append(inr, nr)
+	}
+
+	nids := make([]interface{}, 0, len(networkIds))
+	for _, nid := range networkIds {
+		nids = append(nids, nid)
+	}
+
+	fds := make([]interface{}, 0, len(forkDigests))
+	for _, fd := range forkDigests {
+		fds = append(fds, fd)
+	}
+
+	// subquery: get the count of active clients for each node record
+	psb := sqlbuilder.PostgreSQL.NewSelectBuilder()
+
+	psb.Select("nra.enr", "COUNT(DISTINCT client_id) as active_clients", "MAX(nr.last_connect_time) as last_connect_time")
+	psb.From("node_record_activity as nra")
+	psb.Join("node_record as nr", "nra.enr = nr.enr")
+	psb.Where(psb.GreaterThan("nra.update_time", sqlbuilder.Raw("now() - interval '12 hours'")))
+	psb.GroupBy("nra.enr")
+
+	subQuery, subArgs := psb.Build()
+
+	// main query: get node records that are available
+	sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
+
+	sb.Select(
+		"nrc.enr",
+		"COALESCE(nra.active_clients, 0) as active_clients",
+		"COALESCE(nra.last_connect_time, nr.last_connect_time) as last_connect_time",
+	)
+	sb.From("node_record_consensus as nrc")
+	sb.Join("node_record as nr", "nr.enr = nrc.enr")
+	sb.JoinWithOption(sqlbuilder.LeftJoin,
+		"("+subQuery+") as nra",
+		"nra.enr = nrc.enr",
+	)
+
+	where := []string{
+		sb.GreaterThan("nrc.create_time", sqlbuilder.Raw("now() - interval '1 week'")),
+		sb.Or(
+			sb.LessThan("nra.active_clients", 2),
+			sb.IsNull("nra.active_clients"),
+		),
+	}
+
+	if len(inr) > 0 {
+		where = append(where, sb.NotIn("nrc.enr", inr...))
+	}
+
+	if len(nids) > 0 {
+		where = append(where, sb.In("nrc.network_id", nids...))
+	}
+
+	if len(fds) > 0 {
+		where = append(where, sb.In("nrc.fork_digest", fds...))
+	}
+
+	sb.Where(where...)
+	sb.GroupBy("nrc.enr", "active_clients", "last_connect_time")
+	sb.OrderBy("last_connect_time ASC")
+	sb.Limit(limit)
+
+	sqlQuery, args := sb.Build()
+
+	args[0] = subArgs[0]
+
+	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	nodeRecords := make([]*string, 0, limit)
+
+	for rows.Next() {
+		var record struct {
+			Enr               string
+			ActiveClients     int64
+			LastConnectTime   sql.NullTime
+		}
+
+		err = rows.Scan(&record.Enr, &record.ActiveClients, &record.LastConnectTime)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeRecords = append(nodeRecords, &record.Enr)
+	}
+
+	return nodeRecords, nil
 }

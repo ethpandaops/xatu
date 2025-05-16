@@ -14,6 +14,7 @@ const Type = "static"
 type Static struct {
 	config *Config
 
+	discV4  *discovery.DiscV4
 	discV5  *discovery.DiscV5
 	handler func(ctx context.Context, node *enode.Node, source string) error
 
@@ -41,6 +42,22 @@ func (s *Static) Type() string {
 }
 
 func (s *Static) Start(ctx context.Context) error {
+	if s.config.DiscV4 {
+		s.discV4 = discovery.NewDiscV4(ctx, s.config.Restart, s.log)
+
+		if err := s.discV4.UpdateBootNodes(s.config.BootNodes); err != nil {
+			return err
+		}
+
+		if err := s.discV4.Start(ctx); err != nil {
+			return err
+		}
+
+		s.discV4.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
+			return s.handler(ctx, node, "discV4")
+		})
+	}
+
 	if s.config.DiscV5 {
 		s.discV5 = discovery.NewDiscV5(ctx, s.config.Restart, s.log)
 
@@ -61,6 +78,12 @@ func (s *Static) Start(ctx context.Context) error {
 }
 
 func (s *Static) Stop(ctx context.Context) error {
+	if s.config.DiscV4 {
+		if err := s.discV4.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
 	if s.config.DiscV5 {
 		if err := s.discV5.Stop(ctx); err != nil {
 			return err

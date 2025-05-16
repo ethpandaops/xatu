@@ -11,9 +11,12 @@ import (
 )
 
 func TestGetShardingKey(t *testing.T) {
-	testPeerID, _ := peer.Decode("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
-	testTime := time.Now()
-	mockMsgID := "test-msg-id"
+	var (
+		remotePeerIDStr = "16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq"
+		testPeerID, _   = peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
+		testTime        = time.Now()
+		mockMsgID       = "test-msg-id"
+	)
 
 	testCases := []struct {
 		name            string
@@ -33,7 +36,7 @@ func TestGetShardingKey(t *testing.T) {
 			expectedKey:     mockMsgID,
 		},
 		{
-			name: "PeerID sharding key",
+			name: "PeerID sharding key with payload lacking PeerID",
 			event: &host.TraceEvent{
 				Type:      "TEST_EVENT",
 				PeerID:    testPeerID,
@@ -42,6 +45,20 @@ func TestGetShardingKey(t *testing.T) {
 			},
 			shardingKeyType: string(ShardingKeyTypePeerID),
 			expectedKey:     testPeerID.String(),
+		},
+		{
+			name: "PeerID sharding key with map payload containing PeerID",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: map[string]any{
+					"PeerID": remotePeerIDStr,
+					"Other":  "value",
+				},
+			},
+			shardingKeyType: string(ShardingKeyTypePeerID),
+			expectedKey:     remotePeerIDStr,
 		},
 		{
 			name: "Default to MsgID for unknown type",

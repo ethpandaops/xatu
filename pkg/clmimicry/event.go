@@ -124,8 +124,10 @@ func getMsgID(payload interface{}) string {
 
 // getNetworkID extracts the network ID from the client metadata.
 func getNetworkID(clientMeta *xatu.ClientMeta) string {
-	network := clientMeta.GetEthereum().GetNetwork().GetId()
-	networkStr := fmt.Sprintf("%d", network)
+	var (
+		network    = clientMeta.GetEthereum().GetNetwork().GetId()
+		networkStr = fmt.Sprintf("%d", network)
+	)
 
 	if networkStr == "" || networkStr == "0" {
 		networkStr = unknown

@@ -828,6 +828,11 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceLeaveData: Holds additional data for a leave event in LibP2P tracing.
+  message AdditionalLibP2PTraceLeaveData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceConnectedData: Holds additional data for a connected event in LibP2P tracing.
   message AdditionalLibP2PTraceConnectedData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1255,6 +1260,7 @@ message ClientMeta {
     // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
     // v1 block gossip event.
     AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+    AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 68 [ json_name = "LIBP2P_TRACE_LEAVE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1417,6 +1423,7 @@ message Event {
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
     BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
+    LIBP2P_TRACE_LEAVE = 58;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1563,6 +1570,8 @@ message DecoratedEvent {
 
     xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+    xatu.libp2p.Leave libp2p_trace_leave = 58
+        [ json_name = "LIBP2P_TRACE_LEAVE" ];
   };
 }
 

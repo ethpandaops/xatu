@@ -22,6 +22,8 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
+	fmt.Println("handleHermesLibp2pEvent", event.Type)
+
 	// Map libp2p event to Xatu event.
 	xatuEvent, err := mapLibp2pEventToXatuEvent(event.Type)
 	if err != nil {
@@ -91,6 +93,17 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		}
 
 		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_LEAVE.String():
+		if !m.Config.Events.LeaveEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleLeaveEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
@@ -170,6 +183,47 @@ func (m *Mimicry) handleJoinEvent(
 			Libp2PTraceJoin: data,
 		},
 	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleLeaveEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToLeave(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to leave event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceLeave{
+		Libp2PTraceLeave: &xatu.ClientMeta_AdditionalLibP2PTraceLeaveData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_LEAVE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceLeave{
+			Libp2PTraceLeave: data,
+		},
+	}
+
+	fmt.Println("handleLeaveEvent", decoratedEvent)
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
@@ -317,7 +371,7 @@ func mapLibp2pEventToXatuEvent(event string) (string, error) {
 	case pubsubpb.TraceEvent_JOIN.String():
 		return xatu.Event_LIBP2P_TRACE_JOIN.String(), nil
 	case pubsubpb.TraceEvent_LEAVE.String():
-		// return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
+		return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
 	case pubsubpb.TraceEvent_GRAFT.String():
 		// return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
 	case pubsubpb.TraceEvent_PRUNE.String():

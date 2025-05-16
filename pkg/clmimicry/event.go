@@ -2,7 +2,8 @@ package clmimicry
 
 import (
 	"context"
-	"reflect"
+	"fmt"
+	"slices"
 
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/pkg/errors"
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -24,6 +26,13 @@ const (
 	// RPC events.
 	TraceEvent_HANDLE_METADATA = "HANDLE_METADATA"
 	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
+)
+
+var (
+	// Some events dont have anything reasonable to shard on, so we let them all through.
+	UnshardableEventTypes = []string{
+		xatu.Event_LIBP2P_TRACE_JOIN.String(),
+	}
 )
 
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.
@@ -90,34 +99,18 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	}
 }
 
-// getMsgID extracts the MsgID field from any supported payload type.
-// The alternative to using reflection here is a massive switch statement that we
-// would need to manage. If we find CPU issues, we should switch it out, pun intended.
-func getMsgID(payload interface{}) string {
-	// Use reflection to access the MsgID field.
-	if payload == nil {
-		return ""
+// getNetworkID extracts the network ID from the client metadata.
+func getNetworkID(clientMeta *xatu.ClientMeta) string {
+	var (
+		network    = clientMeta.GetEthereum().GetNetwork().GetId()
+		networkStr = fmt.Sprintf("%d", network)
+	)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
 	}
 
-	// Try to access the MsgID field using reflection.
-	v := reflect.ValueOf(payload)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return ""
-	}
-
-	// Dereference the pointer and check if it's a struct.
-	v = v.Elem()
-	if v.Kind() != reflect.Struct {
-		return ""
-	}
-
-	// Try to find the MsgID field.
-	msgIDField := v.FieldByName("MsgID")
-	if !msgIDField.IsValid() || msgIDField.Kind() != reflect.String {
-		return ""
-	}
-
-	return msgIDField.String()
+	return networkStr
 }
 
 // isRpcEvent checks if the event is a RPC event.
@@ -142,4 +135,9 @@ func isLibp2pEvent(event *host.TraceEvent) bool {
 // isGossipSubEvent checks if the event is a gossipsub event.
 func isGossipSubEvent(event *host.TraceEvent) bool {
 	return event.Type == TraceEvent_HANDLE_MESSAGE
+}
+
+// isUnshardableEvent checks if the event type is unshardable.
+func isUnshardableEvent(eventType string) bool {
+	return slices.Contains(UnshardableEventTypes, eventType)
 }

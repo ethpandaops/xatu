@@ -10,7 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-type Peer struct {
+type ExecutionPeer struct {
 	log logrus.FieldLogger
 
 	nodeRecord string
@@ -22,13 +22,13 @@ type Peer struct {
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
 }
 
-func NewPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*Peer, error) {
+func NewExecutionPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*ExecutionPeer, error) {
 	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
 	if err != nil {
 		return nil, err
 	}
 
-	return &Peer{
+	return &ExecutionPeer{
 		log:         log.WithField("node_record", nodeRecord),
 		nodeRecord:  nodeRecord,
 		client:      client,
@@ -36,7 +36,7 @@ func NewPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, han
 	}, nil
 }
 
-func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
+func (p *ExecutionPeer) Start(ctx context.Context) (<-chan error, error) {
 	response := make(chan error, 1)
 
 	p.client.OnHello(ctx, func(ctx context.Context, hello *mimicry.Hello) error {
@@ -98,6 +98,6 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	return response, nil
 }
 
-func (p *Peer) Stop(ctx context.Context) error {
+func (p *ExecutionPeer) Stop(ctx context.Context) error {
 	return p.client.Stop(ctx)
 }

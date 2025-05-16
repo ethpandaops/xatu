@@ -31,6 +31,9 @@ import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
 
+import "pkg/proto/noderecord/consensus.proto";
+import "pkg/proto/noderecord/execution.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -1057,6 +1060,16 @@ message ClientMeta {
     google.protobuf.UInt64Value validator_index = 6 [ json_name = "validator_index" ];
   }
 
+  // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+  message AdditionalNodeRecordConsensusData {
+    // FinalizedEpoch is the epoch the node record consensus was received for.
+    EpochV2 finalized_epoch = 2;
+    // HeadSlot is the slot the node record consensus was received for.
+    SlotV2 head_slot = 3;
+    // HeadEpoch is the epoch the node record consensus was received for.
+    EpochV2 head_epoch = 4;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1255,6 +1268,9 @@ message ClientMeta {
     // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
     // v1 block gossip event.
     AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+
+    // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+    AdditionalNodeRecordConsensusData node_record_consensus = 68 [ json_name = "NODE_RECORD_CONSENSUS" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1417,6 +1433,8 @@ message Event {
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
     BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
+    NODE_RECORD_CONSENSUS = 58;
+    NODE_RECORD_EXECUTION = 59;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1563,6 +1581,13 @@ message DecoratedEvent {
 
     xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+
+    xatu.noderecord.Consensus node_record_consensus = 58
+        [ json_name = "NODE_RECORD_CONSENSUS" ];
+
+    xatu.noderecord.Execution node_record_execution = 59
+        [ json_name = "NODE_RECORD_EXECUTION" ];
+
   };
 }
 

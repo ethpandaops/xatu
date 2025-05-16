@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,7 @@ func TestGetShardingKey(t *testing.T) {
 	testCases := []struct {
 		name            string
 		event           *host.TraceEvent
+		eventType       string
 		shardingKeyType string
 		expectedKey     string
 	}{
@@ -32,6 +34,7 @@ func TestGetShardingKey(t *testing.T) {
 				Timestamp: testTime,
 				Payload:   &MockPayload{MsgID: mockMsgID},
 			},
+			eventType:       "TEST_EVENT",
 			shardingKeyType: string(ShardingKeyTypeMsgID),
 			expectedKey:     mockMsgID,
 		},
@@ -43,6 +46,7 @@ func TestGetShardingKey(t *testing.T) {
 				Timestamp: testTime,
 				Payload:   &MockPayload{MsgID: mockMsgID},
 			},
+			eventType:       "TEST_EVENT",
 			shardingKeyType: string(ShardingKeyTypePeerID),
 			expectedKey:     testPeerID.String(),
 		},
@@ -57,6 +61,7 @@ func TestGetShardingKey(t *testing.T) {
 					"Other":  "value",
 				},
 			},
+			eventType:       "TEST_EVENT",
 			shardingKeyType: string(ShardingKeyTypePeerID),
 			expectedKey:     remotePeerIDStr,
 		},
@@ -68,6 +73,7 @@ func TestGetShardingKey(t *testing.T) {
 				Timestamp: testTime,
 				Payload:   &MockPayload{MsgID: mockMsgID},
 			},
+			eventType:       "TEST_EVENT",
 			shardingKeyType: "UnknownType",
 			expectedKey:     mockMsgID,
 		},
@@ -79,14 +85,43 @@ func TestGetShardingKey(t *testing.T) {
 				Timestamp: testTime,
 				Payload:   nil,
 			},
+			eventType:       "TEST_EVENT",
 			shardingKeyType: string(ShardingKeyTypeMsgID),
 			expectedKey:     "",
+		},
+		// Add tests for special event types
+		{
+			name: "PeerID sharding with ADD_PEER event",
+			event: &host.TraceEvent{
+				Type:   pubsubpb.TraceEvent_ADD_PEER.String(),
+				PeerID: testPeerID,
+				Payload: map[string]any{
+					"PeerID":   testPeerID,
+					"Protocol": "test-protocol",
+				},
+			},
+			eventType:       xatu.Event_LIBP2P_TRACE_ADD_PEER.String(),
+			shardingKeyType: string(ShardingKeyTypePeerID),
+			expectedKey:     testPeerID.String(), // Should get PeerID from the converter
+		},
+		{
+			name: "Unshardable JOIN event",
+			event: &host.TraceEvent{
+				Type:   pubsubpb.TraceEvent_JOIN.String(),
+				PeerID: testPeerID,
+				Payload: map[string]any{
+					"Topic": "test-topic",
+				},
+			},
+			eventType:       xatu.Event_LIBP2P_TRACE_JOIN.String(),
+			shardingKeyType: string(ShardingKeyTypePeerID),
+			expectedKey:     testPeerID.String(), // No PeerID in JOIN, should fallback to host peer
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := GetShardingKey(tc.event, &xatu.ClientMeta{}, tc.shardingKeyType)
+			result := GetShardingKey(tc.event, &xatu.ClientMeta{}, tc.shardingKeyType, tc.eventType)
 			assert.Equal(t, tc.expectedKey, result)
 		})
 	}

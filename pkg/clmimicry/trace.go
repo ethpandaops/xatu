@@ -14,12 +14,19 @@ func (m *Mimicry) ShouldTraceMessage(
 ) bool {
 	networkStr := getNetworkID(clientMeta)
 
+	// If the event type is unshardable, we can move on with life.
+	if isUnshardableEvent(xatuEventType) {
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+		return true
+	}
+
 	// Check if there's a matching topic config in the trace-based configuration.
 	if m.Config.Traces.Enabled {
 		topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
 		if found {
 			// Get the appropriate sharding key based on the configuration
-			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey)
+			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey, xatuEventType)
 
 			// If no sharding key, we can't sample. Shouldn't ever happen.
 			if shardingKey == "" {

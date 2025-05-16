@@ -200,6 +200,27 @@ func TestShouldTraceMessage(t *testing.T) {
 			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
+		{
+			name: "unshardable event always returns true",
+			mimicry: &Mimicry{
+				Config: &Config{
+					Traces: TracesConfig{
+						Enabled: true,
+						Topics: map[string]TopicConfig{
+							xatu.Event_LIBP2P_TRACE_JOIN.String(): {
+								TotalShards:  64,
+								ActiveShards: []uint64{1, 2, 3}, // Note: shard 0 is not active
+							},
+						},
+					},
+				},
+				metrics: NewMetrics("test9"),
+			},
+			msgID:     msgIDForShard4, // This would normally be filtered out
+			eventType: xatu.Event_LIBP2P_TRACE_JOIN.String(),
+			networkID: networks.DeriveFromID(1).ID, // mainnet
+			expected:  true,                        // Should return true because it's an unshardable event
+		},
 	}
 
 	for _, tt := range tests {

@@ -180,9 +180,9 @@ func validateTracesConfig(config *TracesConfig) error {
 			}
 		}
 
-		// Validate sharding key.
+		// Validate sharding key, if provided (if empty, will default to MsgID).
 		switch ShardingKeyType(topicConfig.ShardingKey) {
-		case ShardingKeyTypeMsgID, ShardingKeyTypePeerID:
+		case ShardingKeyTypeMsgID, ShardingKeyTypePeerID, "": // Allow empty sharding key (will default to MsgID)
 			// Valid sharding key types
 		default:
 			return fmt.Errorf(

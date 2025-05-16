@@ -14,6 +14,31 @@ coordinator:
   concurrentExecutionPeers: 100
   concurrentConsensusPeers: 100
 
+outputs:
+  - name: clickhouse
+    type: xatu
+    config:
+      address: http://localhost:8081
+      headers:
+        authorization: Someb64Value
+  # Example of multiple outputs
+  # - name: local-stdout
+  #   type: stdout
+  # - name: http-server
+  #   type: http
+  #   config:
+  #     address: https://your-webhook-server.com/events
+  #     method: POST
+  #     headers:
+  #       authorization: Bearer your-token
+  # - name: kafka
+  #   type: kafka
+  #   config:
+  #     brokers:
+  #       - localhost:9092
+  #     topic: xatu-events
+  #     compression: snappy
+
 p2p:
   type: static
   config:

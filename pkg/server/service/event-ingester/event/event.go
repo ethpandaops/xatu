@@ -16,6 +16,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mevrelay"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/noderecord"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 )
 
@@ -78,6 +79,8 @@ var (
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
 	TypeMEVRelayValidatorRegistration           Type = Type(mevrelay.ValidatorRegistrationType)
 	TypeBeaconETHV3ValidatorBlock               Type = v3.ValidatorBlockType
+	TypeNodeRecordExecution                     Type = Type(noderecord.ExecutionType)
+	TypeNodeRecordConsensus                     Type = Type(noderecord.ConsensusType)
 )
 
 type Event interface {
@@ -266,6 +269,12 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeMEVRelayValidatorRegistration, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mevrelay.NewValidatorRegistration(router.log, event), nil
+	})
+	router.RegisterHandler(TypeNodeRecordExecution, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return noderecord.NewExecution(router.log, event), nil
+	})
+	router.RegisterHandler(TypeNodeRecordConsensus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return noderecord.NewConsensus(router.log, event), nil
 	})
 
 	return router

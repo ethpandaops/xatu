@@ -12,7 +12,6 @@
 -- These control tables reference:
 --   rpc_meta_unique_key      = libp2p_*_rpc_local.unique_key
 --   peer_id_unique_key       = libp2p_*_rpc_local.peer_id_unique_key
---   graft_peer_id_unique_key = seahash(peerId + networkname) for each peerId in prune.peerIds
 CREATE TABLE libp2p_drop_rpc_local ON CLUSTER '{cluster}'
 (
     unique_key Int64 COMMENT 'Unique identifier for each record',

@@ -1,3 +1,18 @@
+-- libp2p_drop_rpc_local
+-- unique_key = seahash(.event.id)
+-- peer_id_unique_key = seahash(data.meta.peer_id + .meta_network_name)
+--
+-- Control messages (prune, iwant, idontwant, etc) are split off from this message
+-- and stored in separate tables:
+--   libp2p_rpc_meta_control_prune_local
+--   libp2p_rpc_meta_control_iwant_local
+--   libp2p_rpc_meta_control_idontwant_local
+--   etc.
+--
+-- These control tables reference:
+--   rpc_meta_unique_key      = libp2p_*_rpc_local.unique_key
+--   peer_id_unique_key       = libp2p_*_rpc_local.peer_id_unique_key
+--   graft_peer_id_unique_key = seahash(peerId + networkname) for each peerId in prune.peerIds
 CREATE TABLE libp2p_drop_rpc_local ON CLUSTER '{cluster}'
 (
     unique_key Int64 COMMENT 'Unique identifier for each record',

@@ -4,6 +4,7 @@ package clmimicry
 type EventConfig struct {
 	RecvRPCEnabled              bool `yaml:"recvRpcEnabled" default:"false"`
 	SendRPCEnabled              bool `yaml:"sendRpcEnabled" default:"false"`
+	DropRPCEnabled              bool `yaml:"dropRpcEnabled" default:"false"`
 	AddPeerEnabled              bool `yaml:"addPeerEnabled" default:"true"`
 	RemovePeerEnabled           bool `yaml:"removePeerEnabled" default:"true"`
 	ConnectedEnabled            bool `yaml:"connectedEnabled" default:"true"`

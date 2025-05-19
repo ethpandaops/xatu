@@ -20,6 +20,7 @@ enum EventType {
   JOIN = 7;
   HANDLE_STATUS = 8;
   HANDLE_METADATA = 9;
+  DROP_RPC = 10;
 }
 
 message AddPeer {
@@ -37,6 +38,11 @@ message RecvRPC {
 }
 
 message SendRPC {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  RPCMeta meta = 2;
+}
+
+message DropRPC {
   google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   RPCMeta meta = 2;
 }

@@ -87,7 +87,7 @@ func TraceEventToLeave(event *host.TraceEvent) (*Leave, error) {
 	}, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC.
 func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -107,7 +107,7 @@ func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	return r, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC.
 func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -115,6 +115,26 @@ func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	}
 
 	r := &SendRPC{
+		PeerId: wrapperspb.String(payload.PeerID.String()),
+		Meta: &RPCMeta{
+			PeerId:        wrapperspb.String(payload.PeerID.String()),
+			Messages:      convertRPCMessages(payload.Messages),
+			Subscriptions: convertRPCSubscriptions(payload.Subscriptions),
+			Control:       convertRPCControl(payload.Control),
+		},
+	}
+
+	return r, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DropRPC.
+func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
+	payload, ok := event.Payload.(*host.RpcMeta)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for rpc")
+	}
+
+	r := &DropRPC{
 		PeerId: wrapperspb.String(payload.PeerID.String()),
 		Meta: &RPCMeta{
 			PeerId:        wrapperspb.String(payload.PeerID.String()),

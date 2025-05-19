@@ -56,6 +56,18 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 
 		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
 
+	case xatu.Event_LIBP2P_TRACE_DROP_RPC.String():
+		if !m.Config.Events.DropRPCEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleDropRPCEvent(ctx, clientMeta, traceMeta, event)
+
 	case xatu.Event_LIBP2P_TRACE_SEND_RPC.String():
 		if !m.Config.Events.SendRPCEnabled {
 			return nil
@@ -285,6 +297,45 @@ func (m *Mimicry) handleRecvRPCEvent(
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
 			Libp2PTraceRecvRpc: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleDropRPCEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToDropRPC(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to deliver message event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRecvRpc{
+		Libp2PTraceRecvRpc: &xatu.ClientMeta_AdditionalLibP2PTraceRecvRPCData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_DROP_RPC,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceDropRpc{
+			Libp2PTraceDropRpc: data,
 		},
 	}
 

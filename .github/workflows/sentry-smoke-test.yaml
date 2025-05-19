@@ -34,6 +34,7 @@ jobs:
               cl_type: lodestar
             - el_type: ethereumjs
               cl_type: nimbus
+              cl_image: ethpandaops/nimbus-eth2:unstable
           additional_services: []
           network_params:
             genesis_delay: 180

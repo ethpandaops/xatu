@@ -73,7 +73,7 @@ Sentry connects to a consensus client's event stream and processes incoming even
 
 ### Event Subscriptions
 
-Available subscription topics include:
+Some available subscription topics include:
 - `head` - New head blocks
 - `block` - New blocks
 - `attestation` - Attestations

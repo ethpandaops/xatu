@@ -1,6 +1,5 @@
 CREATE TABLE canonical_beacon_block_consolidation_request_local ON CLUSTER '{cluster}'
 (
-    unique_key Int64 COMMENT 'Unique key for the row generated from seahash' CODEC(ZSTD(1)),
     updated_date_time DateTime COMMENT 'When this row was last updated' CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) COMMENT 'When the client fetched the beacon block from a beacon node' CODEC(DoubleDelta, ZSTD(1)),
     slot UInt32 COMMENT 'The slot number from beacon block payload' CODEC(DoubleDelta, ZSTD(1)),
@@ -42,8 +41,9 @@ CREATE TABLE canonical_beacon_block_consolidation_request_local ON CLUSTER '{clu
 ) PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (
     slot_start_date_time,
-    unique_key,
-    meta_network_name
+    meta_network_name,
+    block_root,
+    position_in_block
 ) COMMENT 'Contains consolidation requests from beacon blocks starting from the Electra fork.';
 
 CREATE TABLE canonical_beacon_block_consolidation_request ON CLUSTER '{cluster}' AS canonical_beacon_block_consolidation_request_local 

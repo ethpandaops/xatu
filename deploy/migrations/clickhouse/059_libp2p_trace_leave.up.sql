@@ -1,6 +1,5 @@
 CREATE TABLE libp2p_leave_local ON CLUSTER '{cluster}'
 (
-    unique_key Int64 COMMENT 'Unique identifier for each record',
     updated_date_time DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) COMMENT 'Timestamp of the event' CODEC(DoubleDelta, ZSTD(1)),
     topic_layer LowCardinality(String) COMMENT 'Layer of the topic',
@@ -24,17 +23,31 @@ CREATE TABLE libp2p_leave_local ON CLUSTER '{cluster}'
     meta_client_geo_autonomous_system_organization Nullable(String) COMMENT 'Autonomous system organization of the client that generated the event' CODEC(ZSTD(1)),
     meta_network_id Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String) COMMENT 'Ethereum network name'
-) Engine = ReplicatedReplacingMergeTree(
-    '/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', 
-    '{replica}', 
+) ENGINE = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/default/tables/{table}/{shard}',
+    '{replica}',
     updated_date_time
 ) PARTITION BY toYYYYMM(event_date_time)
-ORDER BY (
-    event_date_time, 
-    unique_key, 
-    meta_network_name,
-    meta_client_name
-) COMMENT 'Contains the details of the LEAVE events from the libp2p client.';
+ORDER BY
+    (
+        event_date_time,
+        meta_network_name,
+        meta_client_name,
+        peer_id_unique_key,
+        topic_fork_digest_value,
+        topic_name
+    ) COMMENT 'Contains the details of the LEAVE events from the libp2p client.';
 
-CREATE TABLE libp2p_leave ON CLUSTER '{cluster}' AS libp2p_leave_local
-ENGINE = Distributed('{cluster}', default, libp2p_leave_local, unique_key);
+CREATE TABLE libp2p_leave ON CLUSTER '{cluster}' AS libp2p_leave_local ENGINE = Distributed(
+    '{cluster}',
+    default,
+    libp2p_leave_local,
+    cityHash64(
+        event_date_time,
+        meta_network_name,
+        meta_client_name,
+        peer_id_unique_key,
+        topic_fork_digest_value,
+        topic_name
+    )
+);

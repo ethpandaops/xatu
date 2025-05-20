@@ -18,4 +18,13 @@ message Execution {
   google.protobuf.StringValue genesis = 8;
   google.protobuf.StringValue fork_id_hash = 9 [json_name = "fork_id_hash"];
   google.protobuf.StringValue fork_id_next = 10 [json_name = "fork_id_next"];
+  // Parsed ENR fields
+  google.protobuf.StringValue node_id = 11 [json_name = "node_id"];
+  google.protobuf.StringValue ip4 = 12;
+  google.protobuf.StringValue ip6 = 13;
+  google.protobuf.UInt32Value tcp4 = 14;
+  google.protobuf.UInt32Value tcp6 = 15;
+  google.protobuf.UInt32Value udp4 = 16;
+  google.protobuf.UInt32Value udp6 = 17;
+  google.protobuf.StringValue client_id = 18 [json_name = "client_id"];
 }

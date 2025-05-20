@@ -135,6 +135,18 @@ sources:
       - "beacon-api-eth-v3-validator-block"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  node_record_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    auto_offset_reset: earliest
+    group_id: xatu-vector-kafka-clickhouse-node-record
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "^node-record-.+"
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -150,6 +162,7 @@ transforms:
       - beacon_api_eth_v1_beacon_validators_kafka
       - mev_relay_kafka
       - beacon_api_eth_v3_validator_block_kafka
+      - node_record_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -371,6 +384,8 @@ transforms:
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
       mev_relay_validator_registration: .event.name == "MEV_RELAY_VALIDATOR_REGISTRATION"
+      node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
+      node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -415,6 +430,8 @@ transforms:
       - xatu_server_events_router.mev_relay_proposer_payload_delivered
       - xatu_server_events_router.eth_v3_validator_block
       - xatu_server_events_router.mev_relay_validator_registration
+      - xatu_server_events_router.node_record_consensus
+      - xatu_server_events_router.node_record_execution
     metrics:
       - type: counter
         field: event.name
@@ -2809,6 +2826,129 @@ sinks:
       strategy: basic
       user: "${CLICKHOUSE_USER}"
       password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  node_record_consensus_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_consensus
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .enr = .data.enr
+      .timestamp = .data.timestamp
+      .name = .data.name
+      .fork_digest = .data.fork_digest
+      .finalized_root = .data.finalized_root
+      .finalized_epoch = .data.finalized_epoch
+      .head_root = .data.head_root
+      .head_slot = .data.head_slot
+      .csc = .data.csc
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.data)
+  node_record_execution_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_execution
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .enr = .data.enr
+      .name = .data.name
+      # Parse capabilities string into array
+      if exists(.data.capabilities) && .data.capabilities != null {
+        .capabilities = split(.data.capabilities, ",")
+      } else {
+        .capabilities = []
+      }
+      .protocol_version = .data.protocol_version
+      .total_difficulty = .data.total_difficulty
+      .head = .data.head
+      .genesis = .data.genesis
+      .fork_id_hash = .data.fork_id_hash
+      .fork_id_next = .data.fork_id_next
+      # Parsed ENR fields
+      .node_id = .data.node_id
+      .client_id = .data.client_id
+      .ip4 = .data.ip4
+      .ip6 = .data.ip6
+      .tcp4 = .data.tcp4
+      .tcp6 = .data.tcp6
+      .udp4 = .data.udp4
+      .udp6 = .data.udp6
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.data)
+sinks:
+  node_record_consensus_clickhouse:
+    type: clickhouse
+    inputs:
+      - node_record_consensus_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: node_record_consensus
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  node_record_execution_clickhouse:
+    type: clickhouse
+    inputs:
+      - node_record_execution_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: node_record_execution
     batch:
       max_bytes: 52428800
       max_events: 200000

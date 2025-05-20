@@ -296,6 +296,8 @@ services:
           "mev-relay-proposer-payload-delivered"
           "beacon-api-eth-v3-validator-block"
           "mev-relay-validator-registration"
+          "node-record-consensus"
+          "node-record-execution"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

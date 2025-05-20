@@ -1,0 +1,122 @@
+---
+description: Cannon component guidelines and architecture
+globs: ["**/cannon/**/*.go"]
+alwaysApply: false
+---
+
+# Cannon Component Guidelines
+
+The Cannon component is a crucial part of the Xatu ecosystem, responsible for collecting canonical finalized data from Ethereum consensus clients via the Beacon API.
+
+## Architecture Overview
+
+Cannon operates as a standalone client that connects to a consensus client's HTTP API to collect data. It processes this data and outputs events to various configured sinks.
+
+### Key Components
+
+1. **Main Cannon Service**
+   - Initializes and manages all subcomponents
+   - Handles the lifecycle of event derivers
+   - Processes and routes events to output sinks
+   - Manages metrics and monitoring
+
+2. **Ethereum Client Interface**
+   - Connects to a beacon node via HTTP
+   - Fetches data from the Beacon API
+   - Provides metadata about the connected network
+
+3. **Event Derivers**
+   - Process blockchain data into specific event types
+   - Each deriver focuses on a specific type of data:
+     - Beacon blocks and block components
+     - Attestations and slashings
+     - Deposits and withdrawals
+     - BLS to execution changes
+     - Block classifications
+     - Proposer duties
+     - And more
+
+4. **Iterators**
+   - Manage the backfilling of historical data
+   - Track progress through the blockchain
+   - Coordinate with the Xatu server to determine processing state
+
+5. **Output Sinks**
+   - Support multiple output destinations (HTTP, Kafka, stdout, Xatu server)
+   - Handle batching, compression, and delivery of events
+   - Provide configurable filtering
+
+## Data Flow
+
+1. Cannon connects to a consensus client's Beacon API
+2. The service initializes event derivers when the beacon node is ready
+3. Each deriver pulls data from the beacon node for its specific event type
+4. The derivers convert raw blockchain data into structured Xatu events
+5. Events are enriched with metadata and timestamps
+6. Processed events are sent to configured output sinks
+7. Metrics are collected and exposed for monitoring
+
+## Configuration Guidelines
+
+### General Configuration
+
+- Always provide a unique `name` for each Cannon instance
+- Set appropriate log levels for your environment
+- Configure NTP servers for accurate clock drift calculation
+- Consider adding labels to identify the instance's purpose
+
+### Ethereum Connection
+
+- Configure the `beaconNodeAddress` to point to a valid consensus client HTTP endpoint
+- Set appropriate authentication headers if required
+- Consider cache sizes and TTL values based on your hardware resources
+
+### Event Derivers
+
+- Enable or disable specific derivers based on your data needs
+- Configure iterator backfilling settings to control historical data retrieval
+- Set appropriate head slot lag to ensure data consistency
+
+### Output Configuration
+
+- Configure at least one output sink for events
+- Choose appropriate batching and timeout settings
+- Set up filters if you only need specific event types
+- Ensure your sink configuration matches your destination system's requirements
+
+## Implementation Patterns
+
+### Error Handling
+
+- Always wrap errors with context using `fmt.Errorf("failed to do X: %w", err)`
+- Use appropriate log levels for different error severities
+- Implement retries with backoff for transient errors
+- Fail gracefully when critical components are unavailable
+
+### Thread Safety
+
+- Use context for cancellation and coordination
+- Implement proper shutdown hooks for graceful termination
+- Be cautious with concurrent access to shared data
+
+### Metrics
+
+- Expose metrics for all critical operations
+- Track event counts by type and network
+- Monitor resource usage (memory, connections)
+- Track processing latency
+
+## Event Lifecycle
+
+1. **Derivation**: Converting raw beacon node data into Xatu events
+2. **Decoration**: Adding metadata like client info, timestamps, and labels
+3. **Filtering**: Optional filtering of events based on configuration
+4. **Batching**: Grouping events for efficient transmission
+5. **Export**: Sending events to configured output sinks
+
+## Testing Considerations
+
+- Test with different network configurations
+- Verify event derivation logic with known test cases
+- Ensure proper handling of various beacon node responses
+- Test fault tolerance with simulated errors

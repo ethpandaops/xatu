@@ -1,0 +1,71 @@
+---
+description: Server component guidelines and architecture
+globs: ["**/server/**/*.go"]
+alwaysApply: false
+---
+
+# Server Component Guidelines
+
+The Server component is the central hub of the Xatu ecosystem, collecting events from various clients and distributing them to configured output sinks.
+
+## Architecture Overview
+
+The server runs multiple configurable services that handle different aspects of data collection, processing, and distribution.
+
+### Key Services
+
+1. **Event Ingester**
+   - Receives events from Xatu clients (Sentry, Cannon, etc.)
+   - Validates and enriches incoming events
+   - Routes events to appropriate output sinks
+   - Provides authentication and authorization
+
+2. **Coordinator**
+   - Manages client coordination and checkpointing
+   - Tracks processing state for backfilling operations
+   - Maintains client metadata and health status
+   - Coordinates distributed processing
+
+3. **GeoIP Service**
+   - Enriches events with geographical information
+   - Supports MaxMind databases
+   - Provides IP-based location data
+
+### Data Flow
+
+1. Clients connect to the server via gRPC
+2. Events are received by the Event Ingester service
+3. Events are validated and enriched with metadata
+4. GeoIP data is added if configured
+5. Events are routed to configured output sinks
+6. Processing state is tracked via the Coordinator
+
+## Implementation Guidelines
+
+### Service Architecture
+
+- Each service should be independently configurable
+- Services should handle their own authentication
+- Implement proper resource cleanup and shutdown
+- Use context for cancellation and timeouts
+
+### Event Processing
+
+- Validate all incoming events
+- Add consistent metadata enrichment
+- Handle high-volume event streams efficiently
+- Implement backpressure management
+
+### Storage and Persistence
+
+- Use appropriate database patterns for each service
+- Implement proper connection pooling
+- Handle database migrations cleanly
+- Consider read/write splitting for high volumes
+
+### Configuration
+
+- Support both standalone and distributed deployments
+- Provide clear separation between services
+- Allow flexible output routing
+- Support authentication and TLS configuration

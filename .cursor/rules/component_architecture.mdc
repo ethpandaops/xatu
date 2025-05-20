@@ -1,0 +1,65 @@
+---
+description: Architecture guidelines for Xatu components
+globs: ["**/pkg/**/*.go", "**/cmd/**/*.go"]
+alwaysApply: false
+---
+
+# Component Architecture in Xatu
+
+Xatu follows a modular architecture where each component can run independently but also work together in a hub-and-spoke model.
+
+## Component Guidelines
+
+### General Principles
+
+- Each component should have a clear, single responsibility
+- Components communicate through well-defined interfaces
+- Configuration should be explicit and documented
+- All components should follow similar patterns for metrics, logging, and error handling
+
+### Component Structure
+
+Each major component (Server, Sentry, Discovery, Mimicry, Cannon, Relay Monitor) should follow this structure:
+
+1. **Config**: A dedicated config struct that holds all configuration options
+2. **Service**: The main implementation that handles the component's core logic
+3. **Metrics**: Prometheus metrics registration and collection
+4. **Dependencies**: Clear interfaces for external dependencies
+
+### Standard Component Files
+
+- `config.go`: Configuration structure and validation
+- `<component>.go`: Main implementation (e.g., `server.go`, `sentry.go`)
+- `metrics.go`: Prometheus metrics registration
+- `overrides.go`: Runtime configuration overrides
+
+## Data Flow
+
+- Components should process data in a streaming fashion where possible
+- Use channels and goroutines for concurrent processing
+- Each processing step should be modular and testable in isolation
+
+## Dependency Injection
+
+- Use explicit dependency injection rather than global state
+- Dependencies should be defined as interfaces to enable testing
+- Constructor functions should accept all required dependencies
+
+## Component Communication
+
+- Components should communicate via well-defined APIs (gRPC, HTTP, etc.)
+- Internal communication should use clear interfaces
+- Event-based systems should use typed events with clear semantics
+
+## Error Handling
+
+- Components should handle their own errors appropriately
+- Critical errors should trigger graceful shutdown
+- Transient errors should be retried with backoff
+- All error paths should be tested
+
+## Resource Management
+
+- Components should clean up their resources when stopped
+- Use context for cancellation and coordination
+- Implement proper shutdown hooks for graceful termination

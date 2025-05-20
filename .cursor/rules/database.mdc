@@ -1,0 +1,83 @@
+---
+description: Database and ClickHouse integration guidelines
+globs: ["**/migrations/**/*.sql", "**/persistence/**/*.go"]
+alwaysApply: false
+---
+
+# Database and ClickHouse Guidelines for Xatu
+
+## Database Schema Design
+
+### General Principles
+
+- Use appropriate data types for each column
+- Follow consistent naming conventions
+- Document table relationships and constraints
+- Consider indexing strategy for query performance
+
+### ClickHouse Specifics
+
+- Use appropriate table engines for your use case (MergeTree, ReplacingMergeTree, etc.)
+- Consider data partitioning strategy for large tables
+- Use materialized views when appropriate for aggregation
+- Optimize schemas for analytical queries
+
+## SQL Migrations
+
+- Name migration files with sequential numbers and descriptive names
+- Include both up and down migrations
+- Keep individual migrations focused on a single concern
+- Document complex migrations or major schema changes
+- Test migrations on representative data before deployment
+
+## Database Access Code
+
+- Use prepared statements to prevent SQL injection
+- Implement proper connection pooling
+- Handle database errors appropriately
+- Use transactions where appropriate
+- Avoid N+1 query patterns
+
+## Data Types
+
+- Use appropriate Go types for database fields
+- Consider nullability requirements carefully
+- Handle serialization/deserialization consistently
+- Document any special type handling
+
+## Query Patterns
+
+### ClickHouse Queries
+
+- Optimize queries for ClickHouse's columnar architecture
+- Use appropriate filtering to minimize data scanned
+- Consider distributed query performance
+- Use sampling for large datasets when appropriate
+
+### Performance Considerations
+
+- Monitor query performance and resource usage
+- Use appropriate indexing strategy
+- Consider read vs. write optimization tradeoffs
+- Document expected performance characteristics
+
+## Data Integration
+
+- Handle data schema evolution gracefully
+- Consider batching for bulk operations
+- Implement appropriate retry logic for database operations
+- Document data flow through the database layer
+
+## Testing Database Code
+
+- Use testable database access patterns
+- Consider using an in-memory database for tests
+- Test both success and error paths
+- Verify data integrity constraints
+
+## Database Configuration
+
+- Use connection pooling appropriately
+- Configure timeouts and retry policies
+- Document required database permissions
+- Consider high availability and failover scenarios

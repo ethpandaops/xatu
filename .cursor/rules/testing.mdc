@@ -1,0 +1,119 @@
+---
+description: Testing standards and practices for Xatu
+globs: ["**/*_test.go"]
+alwaysApply: false
+---
+
+# Testing Guidelines for Xatu
+
+## Test Structure
+
+### Unit Tests
+
+- Write focused unit tests that test a single unit of functionality
+- Use table-driven tests for similar test cases
+- Test both success and error paths
+- Avoid testing private implementation details
+
+### Integration Tests
+
+- Focus on component interactions and boundaries
+- Use clear test setups and teardowns
+- Document test prerequisites and dependencies
+- Consider test isolation and parallelism
+
+### Test Naming
+
+- Use descriptive test names that explain what is being tested
+- Follow the pattern `Test<Function>_<Scenario>_<ExpectedOutcome>`
+- Use subtests with `t.Run()` for organized test suites
+- Keep test names consistent within a package
+
+## Test Patterns
+
+### Table-Driven Tests
+
+```go
+func TestSomething(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    string
+        expected string
+        wantErr  bool
+    }{
+        {
+            name:     "valid input",
+            input:    "valid",
+            expected: "processed",
+            wantErr:  false,
+        },
+        {
+            name:     "invalid input",
+            input:    "",
+            expected: "",
+            wantErr:  true,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := Something(tt.input)
+            if (err != nil) != tt.wantErr {
+                t.Errorf("unexpected error: %v", err)
+            }
+            if result != tt.expected {
+                t.Errorf("got %v, want %v", result, tt.expected)
+            }
+        })
+    }
+}
+```
+
+### Mocking and Test Doubles
+
+- Use interfaces to enable mocking
+- Keep mocks simple and focused
+- Consider using testify/mock for complex mocks
+- Document mock behavior expectations
+
+## Test Coverage
+
+- Aim for high test coverage of core functionality
+- Focus on testing business logic and error handling
+- Don't chase 100% coverage at the expense of valuable tests
+- Use coverage tools to identify untested code paths
+
+## Testing Utilities
+
+- Create test helpers for common operations
+- Keep test helpers in a separate `testutil` package
+- Document the purpose and usage of test utilities
+- Ensure test utilities are themselves tested
+
+## Integration Testing
+
+- Set up required dependencies in test fixtures
+- Use docker-compose for integration testing when appropriate
+- Clean up test resources after tests complete
+- Document environment requirements for integration tests
+
+## Performance Testing
+
+- Write benchmarks for performance-critical code
+- Use representative data sets for benchmarks
+- Track benchmark results over time
+- Document performance expectations
+
+## Test Data
+
+- Use minimal test data that demonstrates the behavior
+- Consider generating test data programmatically
+- Keep large test fixtures in separate files
+- Document the structure and meaning of test data
+
+## Continuous Integration
+
+- Run all tests in CI for every change
+- Include integration tests in CI when practical
+- Configure appropriate timeouts for long-running tests
+- Ensure tests are deterministic and don't flake

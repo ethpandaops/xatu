@@ -1,0 +1,72 @@
+---
+description: Protocol Buffer guidelines and standards for Xatu
+globs: ["**/*.proto", "**/proto/**/*.go"]
+alwaysApply: false
+---
+
+# Protocol Buffer Guidelines for Xatu
+
+Protocol Buffers are used extensively in Xatu for data serialization, API definitions, and event schemas. This document outlines the standards and best practices for working with Protocol Buffers in the project.
+
+## Proto File Organization
+
+- Group related message definitions in the same file
+- Use a consistent package structure that reflects the Go package structure
+- Place service definitions in separate files from message definitions when appropriate
+- Organize files by domain area (ethereum, libp2p, xatu, etc.)
+
+## Message Design
+
+- Use clear, descriptive message names
+- Follow standard casing: `CamelCase` for message names, `snake_case` for field names
+- Use appropriate field types and avoid over-general types like `bytes` when a more specific type would be clearer
+- Include comments for all messages and fields
+- Use reserved fields for backward compatibility when removing fields
+
+## Field Numbering
+
+- Use sequential field numbers starting from 1
+- Reserve field numbers when removing fields to prevent future reuse
+- Consider leaving gaps in numbering for related fields to allow for future additions
+
+## Versioning
+
+- Include version information in package names when appropriate (e.g., `v1`, `v2`)
+- Maintain backward compatibility by following Protobuf evolution rules
+- Document breaking changes clearly
+- Consider using separate packages for major versions
+
+## Service Definitions
+
+- Use meaningful method names that follow a consistent pattern
+- Group related methods in the same service
+- Document expected behavior, error conditions, and side effects
+- Consider performance implications of streaming vs. unary methods
+
+## Generated Code
+
+- Do not modify generated code
+- Use `buf.gen.yaml` to control code generation options
+- Add helper methods in separate files, not in the generated code
+- Use wrapper types for complex transformations or validations
+
+## Validation
+
+- Define validation rules as comments in the proto files
+- Implement validation in the service layer, not in the generated code
+- Consider using a validation framework for complex validation rules
+- Document validation requirements clearly
+
+## Compatibility
+
+- Follow the Protobuf backward compatibility guidelines
+- Test compatibility between versions when making changes
+- Consider the impact of changes on all consumers
+- Document evolution strategies for long-lived message types
+
+## Common Types
+
+- Reuse common types across messages where appropriate
+- Define common patterns as separate messages (e.g., timestamps, identifiers)
+- Follow standard Proto3 patterns for optional values
+- Use well-known types (e.g., google.protobuf.Timestamp) when appropriate

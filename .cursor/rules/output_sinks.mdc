@@ -1,0 +1,102 @@
+---
+description: Output and data sink guidelines for Xatu
+globs: ["**/output/**/*.go", "**/sink/**/*.go"]
+alwaysApply: false
+---
+
+# Output and Data Sink Guidelines for Xatu
+
+Xatu uses various output sinks to store and forward collected data. This document outlines patterns and best practices for implementing and working with output sinks.
+
+## Output Architecture
+
+### Standard Interfaces
+
+All output sinks should implement the standard interfaces defined in the output package:
+
+```go
+type Sink interface {
+    Export(ctx context.Context, item *events.Event) error
+    Name() string
+    // Additional methods as required
+}
+```
+
+### Common Patterns
+
+- Each sink type should be in its own package (e.g., `output/http`, `output/kafka`)
+- Sinks should handle their own configuration
+- Sinks should be initialized with a clear constructor pattern
+- Sinks should have consistent error handling and logging
+
+## Sink Types
+
+### HTTP Sink
+
+- Implement proper retry logic with backoff
+- Handle compression appropriately
+- Support authentication methods consistently
+- Document expected request and response formats
+
+### Kafka Sink
+
+- Use appropriate serialization formats
+- Handle message batching for efficiency
+- Implement proper producer configuration
+- Document topic naming and partitioning strategies
+
+### ClickHouse Sink
+
+- Batch inserts for efficiency
+- Use appropriate table engines
+- Handle schema evolution gracefully
+- Consider performance implications of insert patterns
+
+### Stdout Sink
+
+- Use consistent formatting
+- Implement proper log levels
+- Consider output volume for different event types
+- Format output for human readability when appropriate
+
+## Data Handling
+
+### Serialization
+
+- Use consistent serialization formats across sinks
+- Handle versioning of message formats
+- Document wire formats and schema evolution
+- Consider performance implications of serialization choices
+
+### Batching
+
+- Implement consistent batching patterns
+- Consider memory usage for large batches
+- Handle partial batch failures appropriately
+- Document batch size limits and performance characteristics
+
+### Error Handling
+
+- Implement consistent error handling across sinks
+- Consider retry policies for transient failures
+- Document error handling behavior for consumers
+- Log appropriate context for sink failures
+
+## Metrics and Monitoring
+
+- Export standard metrics for all sinks:
+  - Export attempts (count)
+  - Export successes (count)
+  - Export failures (count, with error type labels)
+  - Export latency (histogram)
+  - Batch sizes (histogram)
+  - Queue sizes/backlog (gauge)
+- Use consistent metric naming patterns
+- Document expected metric behaviors
+
+## Configuration
+
+- Use consistent configuration patterns across sinks
+- Document all configuration options
+- Provide sensible defaults
+- Validate configuration at startup

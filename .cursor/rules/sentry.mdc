@@ -1,0 +1,151 @@
+---
+description: Sentry component guidelines and architecture
+globs: ["**/sentry/**/*.go"]
+alwaysApply: false
+---
+
+# Sentry Component Guidelines
+
+The Sentry component monitors Ethereum consensus clients by subscribing to real-time events via the Beacon API's server-sent events (SSE) stream.
+
+## Architecture Overview
+
+Sentry connects to a consensus client's event stream and processes incoming events in real-time. Unlike Cannon (which focuses on historical/canonical data), Sentry captures live network activity.
+
+### Key Components
+
+1. **Main Sentry Service**
+   - Manages event subscriptions from beacon clients
+   - Processes real-time beacon events
+   - Routes events to configured output sinks
+   - Handles metrics and observability
+
+2. **Ethereum Client Interface**
+   - Connects to beacon node event streams (SSE)
+   - Subscribes to configurable set of event topics
+   - Maintains connection health and reconnection logic
+
+3. **Event Processors**
+   - Convert beacon API events into Xatu format
+   - Handle different event types:
+     - Block events
+     - Attestation events
+     - Finalization events
+     - Chain reorganization events
+     - Voluntary exits
+     - And more
+
+4. **Execution Client Interface** (Optional)
+   - Monitors execution layer when configured
+   - Tracks mempool transactions
+   - Provides execution context for consensus events
+
+5. **Duplicate Cache**
+   - Prevents duplicate event processing
+   - Maintains memory-efficient cache of processed events
+   - Configurable TTL and size limits
+
+## Data Flow
+
+1. Sentry connects to a consensus client's event stream endpoint
+2. The service subscribes to configured event topics
+3. Real-time events are received via server-sent events (SSE)
+4. Each event is processed and converted to Xatu format
+5. Events are enriched with metadata and context
+6. Duplicate events are filtered out using the cache
+7. Processed events are routed to configured output sinks
+
+## Configuration Guidelines
+
+### General Configuration
+
+- Provide a unique `name` for each Sentry instance
+- Set appropriate log levels for your monitoring needs
+- Configure NTP for accurate timestamping
+- Use labels to identify the purpose and location of the sentry
+
+### Ethereum Connection
+
+- Configure `beaconNodeAddress` to point to a consensus client with event streaming enabled
+- Choose specific `beaconSubscriptions` topics or use defaults for all events
+- Set appropriate authentication headers if required
+- Consider connection timeouts and retry logic
+
+### Event Subscriptions
+
+Some available subscription topics include:
+- `head` - New head blocks
+- `block` - New blocks
+- `attestation` - Attestations
+- `voluntary_exit` - Voluntary validator exits
+- `finalized_checkpoint` - Finalization events
+- `chain_reorg` - Chain reorganizations
+- `contribution_and_proof` - Sync committee contributions
+
+### Output Configuration
+
+- Configure appropriate output sinks for your monitoring needs
+- Set batching parameters based on event volume
+- Use filtering to focus on specific event types
+- Consider multiple outputs for different purposes (monitoring, storage, alerting)
+
+### Performance Tuning
+
+- Adjust cache settings based on event volume
+- Configure appropriate timeout values
+- Monitor connection health and reconnection behavior
+- Set resource limits appropriate for your environment
+
+## Implementation Patterns
+
+### Event Handling
+
+- Process events asynchronously to prevent blocking
+- Use appropriate buffering for high-volume events
+- Handle connection failures gracefully with reconnection logic
+- Implement proper backpressure management
+
+### Error Handling
+
+- Log connection errors with appropriate context
+- Implement circuit breaker patterns for failing outputs
+- Handle malformed events gracefully
+- Provide clear error messages for configuration issues
+
+### Resource Management
+
+- Monitor memory usage of duplicate cache
+- Implement proper cleanup for long-running connections
+- Handle graceful shutdown of subscriptions
+- Monitor goroutine leaks in event processing
+
+## Event Types
+
+### Consensus Events
+
+- **Head Events**: New head of the chain
+- **Block Events**: New block proposals
+- **Attestation Events**: Validator attestations with committee data
+- **Finalization Events**: Checkpoint finalization
+- **Reorg Events**: Chain reorganizations with depth information
+
+### Execution Events (Optional)
+
+- **Mempool Transactions**: Pending transaction monitoring
+- **Block Processing**: Execution block details
+
+## Monitoring Considerations
+
+- Track event processing rates by type
+- Monitor connection health and reconnection frequency
+- Measure event processing latency
+- Track duplicate detection efficiency
+- Monitor output sink health and backlog
+
+## Testing Guidelines
+
+- Test with different beacon client implementations
+- Verify event stream reconnection logic
+- Test duplicate detection with synthetic events
+- Verify proper handling of malformed events
+- Test resource cleanup during shutdown

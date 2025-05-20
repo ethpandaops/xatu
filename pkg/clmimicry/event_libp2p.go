@@ -22,8 +22,6 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	fmt.Println("handleHermesLibp2pEvent", event.Type)
-
 	// Map libp2p event to Xatu event.
 	xatuEvent, err := mapLibp2pEventToXatuEvent(event.Type)
 	if err != nil {
@@ -234,8 +232,6 @@ func (m *Mimicry) handleLeaveEvent(
 			Libp2PTraceLeave: data,
 		},
 	}
-
-	fmt.Println("handleLeaveEvent", decoratedEvent)
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }

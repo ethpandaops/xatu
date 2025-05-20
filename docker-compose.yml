@@ -286,6 +286,7 @@ services:
           "libp2p-trace-recv-rpc"
           "libp2p-trace-send-rpc"
           "libp2p-trace-join"
+          "libp2p-trace-leave"
           "libp2p-trace-handle-metadata"
           "libp2p-trace-handle-status"
           "libp2p-trace-gossipsub-beacon-block"

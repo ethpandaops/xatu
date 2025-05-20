@@ -21,6 +21,7 @@ enum EventType {
   HANDLE_STATUS = 8;
   HANDLE_METADATA = 9;
   DROP_RPC = 10;
+  LEAVE = 11;
 }
 
 message AddPeer {

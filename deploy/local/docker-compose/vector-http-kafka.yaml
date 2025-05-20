@@ -63,6 +63,8 @@ transforms:
       libp2p_trace_drop_rpc: .event.name == "LIBP2P_TRACE_DROP_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
       libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
+      libp2p_trace_graft: .event.name == "LIBP2P_TRACE_GRAFT"
+      libp2p_trace_prune: .event.name == "LIBP2P_TRACE_PRUNE"
       libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
       libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
       libp2p_trace_gossipsub_beacon_block: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
@@ -827,6 +829,38 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-leave
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_graft_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_graft
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-graft
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_prune_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_prune
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-prune
     compression: snappy
     healthcheck:
       enabled: true

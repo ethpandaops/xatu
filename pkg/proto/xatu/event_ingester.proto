@@ -838,6 +838,16 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceGraftData: Holds additional data for a graft event in LibP2P tracing.
+  message AdditionalLibP2PTraceGraftData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTracePruneData: Holds additional data for a prune event in LibP2P tracing.
+  message AdditionalLibP2PTracePruneData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceConnectedData: Holds additional data for a connected event in LibP2P tracing.
   message AdditionalLibP2PTraceConnectedData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1268,6 +1278,10 @@ message ClientMeta {
     AdditionalLibP2PTraceDropRPCData libp2p_trace_drop_rpc = 68 [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
     // AdditionalLibP2PTraceLeaveData contains additional data about the leave event.
     AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 69 [ json_name = "LIBP2P_TRACE_LEAVE" ];
+    // AdditionalLibP2PTraceGraftData contains additional data about the graft event.
+    AdditionalLibP2PTraceGraftData libp2p_trace_graft = 70 [ json_name = "LIBP2P_TRACE_GRAFT" ];
+    // AdditionalLibP2PTracePruneData contains additional data about the prune event.
+    AdditionalLibP2PTracePruneData libp2p_trace_prune = 71 [ json_name = "LIBP2P_TRACE_PRUNE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1431,6 +1445,8 @@ message Event {
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
     BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
     LIBP2P_TRACE_LEAVE = 58;
+    LIBP2P_TRACE_GRAFT = 59;
+    LIBP2P_TRACE_PRUNE = 60;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1581,6 +1597,10 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
     xatu.libp2p.Leave libp2p_trace_leave = 59
         [ json_name = "LIBP2P_TRACE_LEAVE" ];
+    xatu.libp2p.Graft libp2p_trace_graft = 60
+        [ json_name = "LIBP2P_TRACE_GRAFT" ];
+    xatu.libp2p.Prune libp2p_trace_prune = 61
+        [ json_name = "LIBP2P_TRACE_PRUNE" ];
   };
 }
 

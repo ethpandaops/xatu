@@ -114,6 +114,28 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		}
 
 		return m.handleLeaveEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_GRAFT.String():
+		if !m.Config.Events.GraftEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleGraftEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_PRUNE.String():
+		if !m.Config.Events.PruneEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handlePruneEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
@@ -230,6 +252,84 @@ func (m *Mimicry) handleLeaveEvent(
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceLeave{
 			Libp2PTraceLeave: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleGraftEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToGraft(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to graft event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceGraft{
+		Libp2PTraceGraft: &xatu.ClientMeta_AdditionalLibP2PTraceGraftData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_GRAFT,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceGraft{
+			Libp2PTraceGraft: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handlePruneEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToPrune(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to prune event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTracePrune{
+		Libp2PTracePrune: &xatu.ClientMeta_AdditionalLibP2PTracePruneData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_PRUNE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTracePrune{
+			Libp2PTracePrune: data,
 		},
 	}
 
@@ -420,9 +520,9 @@ func mapLibp2pEventToXatuEvent(event string) (string, error) {
 	case pubsubpb.TraceEvent_LEAVE.String():
 		return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
 	case pubsubpb.TraceEvent_GRAFT.String():
-		// return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
+		return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
 	case pubsubpb.TraceEvent_PRUNE.String():
-		// return xatu.Event_LIBP2P_TRACE_PRUNE.String(), nil
+		return xatu.Event_LIBP2P_TRACE_PRUNE.String(), nil
 	}
 
 	return "", fmt.Errorf("unknown libp2p event: %s", event)

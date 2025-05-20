@@ -1,0 +1,1 @@
+../../.cursor/rules/protocol_buffers.mdc

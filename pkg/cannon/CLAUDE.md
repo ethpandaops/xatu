@@ -1,0 +1,1 @@
+../../.cursor/rules/component_architecture.mdc

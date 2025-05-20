@@ -1,0 +1,1 @@
+../../.cursor/rules/output_sinks.mdc

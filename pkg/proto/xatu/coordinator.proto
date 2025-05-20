@@ -103,6 +103,7 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_VALIDATORS = 12;
   BEACON_API_ETH_V1_BEACON_COMMITTEE = 13;
   BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST = 14;
+  BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST_EPOCH = 15;
 }
 
 message BackfillingCheckpointMarker {
@@ -178,6 +179,10 @@ message CannonLocationEthV1BeaconValidators {
 }
 
 message CannonLocationEthV1BeaconCommittee {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockConsolidationRequestEpoch {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 

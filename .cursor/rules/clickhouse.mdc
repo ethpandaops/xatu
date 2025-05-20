@@ -1,0 +1,259 @@
+---
+description: ClickHouse database schema and migration rules for the Xatu project
+globs: ["**/*.sql", "**/migrations/**/*"]
+alwaysApply: false
+---
+
+# ClickHouse Rules
+
+These rules apply to all ClickHouse-related work including schema design, migrations, and table management.
+
+## Migration File Structure
+
+### File Naming
+- Migration files MUST follow the pattern: `{number}_{descriptive_name}.{up|down}.sql`
+- Numbers MUST be zero-padded to 3 digits (e.g., `001_`, `042_`)
+- Descriptive names MUST use snake_case
+- All migrations MUST have both `.up.sql` and `.down.sql` files
+
+### Migration Content Structure
+- All DDL statements MUST include `ON CLUSTER '{cluster}'`
+- Tables MUST be created with both `_local` and distributed versions
+- Distributed tables MUST use the pattern: `ENGINE = Distributed('{cluster}', {database}, {table}_local, {sharding_key})`
+
+## Table Design Patterns
+
+### Naming Conventions
+- Table names MUST use snake_case
+- Local tables MUST end with `_local` suffix
+- Distributed tables MUST NOT have the `_local` suffix
+- Canonical tables MUST start with `canonical_` prefix
+- Event tables typically follow the pattern: `{component}_api_{version}_{endpoint/event}_{sub_type}`
+
+### Engine Types
+- **ReplicatedMergeTree**: Use for append-only event data
+- **ReplicatedReplacingMergeTree**: Use for data that may be updated (MUST include `updated_date_time` column and parameter)
+- Distributed engines MUST point to the corresponding `_local` table
+
+### Column Design Standards
+
+#### Required Metadata Columns
+ALL tables MUST include these metadata columns:
+```sql
+meta_client_name LowCardinality(String) COMMENT 'Name of the client that generated the event',
+meta_client_id String COMMENT 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.' CODEC(ZSTD(1)),
+meta_client_version LowCardinality(String) COMMENT 'Version of the client that generated the event',
+meta_client_implementation LowCardinality(String) COMMENT 'Implementation of the client that generated the event',
+meta_client_os LowCardinality(String) COMMENT 'Operating system of the client that generated the event',
+meta_client_ip Nullable(IPv6) COMMENT 'IP address of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_city LowCardinality(String) COMMENT 'City of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_country LowCardinality(String) COMMENT 'Country of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_country_code LowCardinality(String) COMMENT 'Country code of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_continent_code LowCardinality(String) COMMENT 'Continent code of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_longitude Nullable(Float64) COMMENT 'Longitude of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_latitude Nullable(Float64) COMMENT 'Latitude of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_autonomous_system_number Nullable(UInt32) COMMENT 'Autonomous system number of the client that generated the event' CODEC(ZSTD(1)),
+meta_client_geo_autonomous_system_organization Nullable(String) COMMENT 'Autonomous system organization of the client that generated the event' CODEC(ZSTD(1)),
+meta_network_id Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
+meta_network_name LowCardinality(String) COMMENT 'Ethereum network name',
+meta_consensus_version LowCardinality(String) COMMENT 'Ethereum consensus client version that generated the event',
+meta_consensus_version_major LowCardinality(String) COMMENT 'Ethereum consensus client major version that generated the event',
+meta_consensus_version_minor LowCardinality(String) COMMENT 'Ethereum consensus client minor version that generated the event',
+meta_consensus_version_patch LowCardinality(String) COMMENT 'Ethereum consensus client patch version that generated the event',
+meta_consensus_implementation LowCardinality(String) COMMENT 'Ethereum consensus client implementation that generated the event',
+meta_labels Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
+```
+
+#### Event Timestamp Columns
+Event-based tables typically include:
+```sql
+event_date_time DateTime64(3) COMMENT 'When the event was received/generated' CODEC(DoubleDelta, ZSTD(1)),
+```
+
+#### Ethereum-specific Columns
+For Ethereum beacon chain data:
+```sql
+slot UInt32 COMMENT 'Slot number' CODEC(DoubleDelta, ZSTD(1)),
+slot_start_date_time DateTime COMMENT 'The wall clock time when the slot started' CODEC(DoubleDelta, ZSTD(1)),
+epoch UInt32 COMMENT 'Epoch number' CODEC(DoubleDelta, ZSTD(1)),
+epoch_start_date_time DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
+```
+
+#### ReplacingMergeTree Tables
+Tables using ReplacingMergeTree MUST include:
+```sql
+updated_date_time DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
+```
+
+**IMPORTANT**: Only add a `unique_key` column when the natural data fields cannot provide sufficient uniqueness in the ORDER BY clause:
+```sql
+unique_key Int64 COMMENT 'Unique identifier for each record', -- ONLY when absolutely necessary
+```
+
+**Prefer natural uniqueness**: Design the ORDER BY clause using natural data columns to achieve uniqueness rather than adding artificial unique_key columns.
+
+### Data Types and Encoding
+
+#### Data Type Guidelines
+- **FixedString(66)**: For Ethereum hashes (e.g., `0x...` - 66 characters)
+- **FixedString(98)**: For BLS public keys
+- **FixedString(42)**: For Ethereum addresses
+- **LowCardinality(String)**: For enum-like values with limited cardinality
+- **UInt32/UInt64**: For numeric identifiers and counters
+- **DateTime64(3)**: For high-precision timestamps
+- **DateTime**: For standard timestamps
+- **Nullable(Type)**: Only when the field can legitimately be null
+- **IPv6**: For IP addresses (supports both IPv4 and IPv6)
+- **Map(String, String)**: For key-value metadata
+
+#### Compression (CODEC)
+- **DoubleDelta, ZSTD(1)**: For time-series data and incrementing counters
+- **ZSTD(1)**: For general string and binary data
+- No CODEC for LowCardinality columns
+
+### Partitioning and Ordering
+
+#### Partitioning Strategy
+- MUST partition by `toStartOfMonth(date_time_column)`
+- Use the primary time-based column for partitioning
+- Common patterns:
+  - `PARTITION BY toStartOfMonth(slot_start_date_time)` for slot-based data
+  - `PARTITION BY toStartOfMonth(event_date_time)` for event-based data
+  - `PARTITION BY toStartOfMonth(epoch_start_date_time)` for epoch-based data
+
+#### Ordering Key (ORDER BY)
+- Primary sort MUST be the partition key column
+- Include `meta_network_name` as second sort key
+- **Avoid unique_key**: Use natural data columns to achieve uniqueness
+- Include all columns needed for uniqueness in data deduplication
+- Include high-cardinality filter columns
+- Include `meta_client_name` as final sort key
+
+Common patterns:
+```sql
+-- Event tables (ReplicatedMergeTree)
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name)
+
+-- ReplacingMergeTree tables (PREFER natural uniqueness)
+ORDER BY (slot_start_date_time, meta_network_name, slot, block_root, meta_client_name)
+
+-- Block-specific tables with position
+ORDER BY (slot_start_date_time, meta_network_name, block_root, position_in_block)
+
+-- ONLY when natural columns cannot provide uniqueness
+ORDER BY (slot_start_date_time, unique_key, meta_network_name, meta_client_name)
+```
+
+**Key Principle**: The ORDER BY clause should include all columns necessary to uniquely identify a record. This eliminates the need for artificial `unique_key` columns in most cases.
+
+### Sharding Strategy
+
+#### Distributed Table Sharding
+- **Time-based sharding**: `cityHash64(slot_start_date_time, meta_network_name)` for blockchain data
+- **Random sharding**: `rand()` for append-only data without natural sharding key
+- **Natural key sharding**: Use natural data columns for sharding when possible
+- **Unique key sharding**: `unique_key` ONLY for ReplacingMergeTree tables that require it
+
+## Comments and Documentation
+
+### Table Comments
+ALL tables MUST have descriptive comments:
+```sql
+COMMENT 'Contains {data_description} from {component} {additional_context}.'
+```
+
+### Column Comments  
+ALL columns MUST have comments explaining their purpose:
+- Use descriptive, complete sentences
+- Explain what the data represents, not just the column name
+- Include units for numeric values where applicable
+- Reference the source API/payload when relevant
+
+## Migration Patterns
+
+### Table Creation Pattern
+1. Create `_local` table with ReplicatedMergeTree/ReplicatedReplacingMergeTree
+2. Add table and column comments using `ALTER TABLE ... COMMENT`
+3. Create distributed table pointing to `_local` table
+4. Set appropriate sharding key for distributed table
+
+### Table Migration Pattern (ReplacingMergeTree)
+1. Create temporary table in `tmp` schema with new structure
+2. **Prefer natural ORDER BY**: Design ORDER BY using natural columns for uniqueness
+3. **Only if natural uniqueness impossible**: Generate `unique_key` using `cityHash64()` 
+4. Insert data from old table into temporary table
+5. Drop old distributed table
+6. Exchange `_local` tables using `EXCHANGE TABLES`
+7. Create new distributed table
+8. Clean up temporary tables
+
+### Unique Key Generation (Use Sparingly)
+**ONLY when natural columns cannot provide uniqueness**, generate unique_key as:
+```sql
+toInt64(cityHash64(column1 || column2 || ... || meta_client_name) - 9223372036854775808)
+```
+- Include all columns that make the record unique
+- Always include `meta_client_name` as final component
+- Subtract large constant to get signed integer
+
+**Alternative Approach**: Most tables can achieve uniqueness by including the right combination of natural data columns in the ORDER BY clause.
+
+## Schema Evolution
+
+### Adding Columns
+- New columns SHOULD be Nullable unless they have sensible defaults
+- Add comments for all new columns
+- Consider impact on compression and query performance
+
+### Changing Column Types
+- Requires table recreation via migration pattern
+- Plan for data type compatibility
+- Consider NULL handling during migration
+
+### Dropping Columns  
+- Use `ALTER TABLE ... DROP COLUMN` on both `_local` and distributed tables
+- Verify no applications depend on the column before dropping
+
+## Performance Considerations
+
+### Index Strategy
+- Rely primarily on ORDER BY for filtering
+- Avoid creating secondary indices unless absolutely necessary
+- Consider data skipping indices for specific use cases
+
+### Query Optimization
+- Design ORDER BY to match common query patterns
+- Use LowCardinality for enum-like columns
+- Partition pruning is critical for performance
+
+### Storage Optimization
+- Choose appropriate compression codecs
+- Use FixedString for known-length strings
+- Balance compression ratio vs. query performance
+
+## Validation Requirements
+
+Before creating any ClickHouse migration:
+1. Verify table naming follows conventions
+2. Ensure all required metadata columns are included
+3. Confirm appropriate ENGINE type for use case
+4. **Validate ORDER BY provides natural uniqueness** - avoid `unique_key` if possible
+5. Check all columns have proper comments
+6. Verify partitioning strategy matches data access patterns
+7. Test migration on development environment
+8. Ensure both .up.sql and .down.sql files are created
+
+## Best Practices Summary
+
+**DO:**
+- Use natural data columns in ORDER BY for uniqueness
+- Design ORDER BY to match query patterns
+- Include all necessary columns for deduplication
+- Use ReplicatedMergeTree for append-only data
+- Use ReplacingMergeTree only when updates are needed
+
+**DON'T:**
+- Add `unique_key` columns unless absolutely necessary
+- Create artificial uniqueness when natural columns suffice
+- Ignore query patterns when designing ORDER BY
+- Use ReplacingMergeTree for purely append-only data

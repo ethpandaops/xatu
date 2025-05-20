@@ -823,6 +823,11 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceDropRPCData: Holds additional data for a drop RPC event in LibP2P tracing.
+  message AdditionalLibP2PTraceDropRPCData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
   message AdditionalLibP2PTraceJoinData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1256,11 +1261,13 @@ message ClientMeta {
     // AdditionalMevRelayValidatorRegistrationData contains additional data about the mev relay validator registration event.
     AdditionalMevRelayValidatorRegistrationData mev_relay_validator_registration = 66 [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
 
-
     // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
     // v1 block gossip event.
     AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
-    AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 68 [ json_name = "LIBP2P_TRACE_LEAVE" ];
+    // AdditionalLibP2PTraceDropRPCData contains additional data about the drop RPC event.
+    AdditionalLibP2PTraceDropRPCData libp2p_trace_drop_rpc = 68 [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
+    // AdditionalLibP2PTraceLeaveData contains additional data about the leave event.
+    AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 69 [ json_name = "LIBP2P_TRACE_LEAVE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1570,7 +1577,9 @@ message DecoratedEvent {
 
     xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
-    xatu.libp2p.Leave libp2p_trace_leave = 58
+    xatu.libp2p.DropRPC libp2p_trace_drop_rpc = 58
+        [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
+    xatu.libp2p.Leave libp2p_trace_leave = 59
         [ json_name = "LIBP2P_TRACE_LEAVE" ];
   };
 }

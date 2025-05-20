@@ -20,7 +20,8 @@ enum EventType {
   JOIN = 7;
   HANDLE_STATUS = 8;
   HANDLE_METADATA = 9;
-  LEAVE = 10;
+  DROP_RPC = 10;
+  LEAVE = 11;
 }
 
 message AddPeer {
@@ -38,6 +39,11 @@ message RecvRPC {
 }
 
 message SendRPC {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  RPCMeta meta = 2;
+}
+
+message DropRPC {
   google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   RPCMeta meta = 2;
 }
@@ -72,6 +78,7 @@ message ControlMeta {
   repeated ControlIWantMeta iwant = 2;
   repeated ControlGraftMeta graft = 3;
   repeated ControlPruneMeta prune = 4;
+  repeated ControlIDontWantMeta idontwant = 5;
 }
 
 message ControlIHaveMeta {
@@ -90,6 +97,10 @@ message ControlGraftMeta {
 message ControlPruneMeta {
   google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
   repeated google.protobuf.StringValue peer_ids = 2 [json_name = "peer_ids"];
+}
+
+message ControlIDontWantMeta {
+  repeated google.protobuf.StringValue message_ids = 1 [json_name = "message_ids"];
 }
 
 message TraceEventMetadata {

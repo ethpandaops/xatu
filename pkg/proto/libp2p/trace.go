@@ -87,7 +87,7 @@ func TraceEventToLeave(event *host.TraceEvent) (*Leave, error) {
 	}, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC.
 func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -107,7 +107,7 @@ func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	return r, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC.
 func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -115,6 +115,26 @@ func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	}
 
 	r := &SendRPC{
+		PeerId: wrapperspb.String(payload.PeerID.String()),
+		Meta: &RPCMeta{
+			PeerId:        wrapperspb.String(payload.PeerID.String()),
+			Messages:      convertRPCMessages(payload.Messages),
+			Subscriptions: convertRPCSubscriptions(payload.Subscriptions),
+			Control:       convertRPCControl(payload.Control),
+		},
+	}
+
+	return r, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DropRPC.
+func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
+	payload, ok := event.Payload.(*host.RpcMeta)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for rpc")
+	}
+
+	r := &DropRPC{
 		PeerId: wrapperspb.String(payload.PeerID.String()),
 		Meta: &RPCMeta{
 			PeerId:        wrapperspb.String(payload.PeerID.String()),
@@ -163,10 +183,11 @@ func convertRPCControl(ctrl *host.RpcMetaControl) *ControlMeta {
 	}
 
 	return &ControlMeta{
-		Ihave: convertControlIHaveMeta(ctrl.IHave),
-		Iwant: convertControlIWantMeta(ctrl.IWant),
-		Graft: convertControlGraftMeta(ctrl.Graft),
-		Prune: convertControlPruneMeta(ctrl.Prune),
+		Ihave:     convertControlIHaveMeta(ctrl.IHave),
+		Iwant:     convertControlIWantMeta(ctrl.IWant),
+		Graft:     convertControlGraftMeta(ctrl.Graft),
+		Prune:     convertControlPruneMeta(ctrl.Prune),
+		Idontwant: convertControlIDontWantMeta(ctrl.Idontwant),
 	}
 }
 
@@ -195,6 +216,18 @@ func convertControlIWantMeta(iwant []host.RpcControlIWant) []*ControlIWantMeta {
 	return converted
 }
 
+func convertControlIDontWantMeta(idontwant []host.RpcControlIdontWant) []*ControlIDontWantMeta {
+	converted := make([]*ControlIDontWantMeta, len(idontwant))
+
+	for i, item := range idontwant {
+		converted[i] = &ControlIDontWantMeta{
+			MessageIds: convertStringValues(item.MsgIDs),
+		}
+	}
+
+	return converted
+}
+
 func convertControlGraftMeta(graft []host.RpcControlGraft) []*ControlGraftMeta {
 	converted := make([]*ControlGraftMeta, len(graft))
 
@@ -211,7 +244,7 @@ func convertControlPruneMeta(prune []host.RpcControlPrune) []*ControlPruneMeta {
 	converted := make([]*ControlPruneMeta, len(prune))
 
 	for i, item := range prune {
-		peerIds := make([]string, len(prune))
+		peerIds := make([]string, 0, len(item.PeerIDs))
 		for _, peer := range item.PeerIDs {
 			peerIds = append(peerIds, peer.String())
 		}

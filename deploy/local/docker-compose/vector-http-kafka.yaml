@@ -60,6 +60,7 @@ transforms:
       libp2p_trace_remove_peer: .event.name == "LIBP2P_TRACE_REMOVE_PEER"
       libp2p_trace_recv_rpc: .event.name == "LIBP2P_TRACE_RECV_RPC"
       libp2p_trace_send_rpc: .event.name == "LIBP2P_TRACE_SEND_RPC"
+      libp2p_trace_drop_rpc: .event.name == "LIBP2P_TRACE_DROP_RPC"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
       libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
       libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
@@ -778,6 +779,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-send-rpc
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_drop_rpc_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_drop_rpc
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-drop-rpc
     compression: snappy
     healthcheck:
       enabled: true

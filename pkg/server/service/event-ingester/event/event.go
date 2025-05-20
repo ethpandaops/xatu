@@ -69,6 +69,7 @@ var (
 	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
 	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
 	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
+	TypeLibP2PTraceDropRPC                      Type = Type(libp2p.TraceDropRPCType)
 	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
@@ -246,6 +247,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceSendRPC, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceSendRPC(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDropRPC, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDropRPC(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceHandleStatus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleStatus(router.log, event), nil

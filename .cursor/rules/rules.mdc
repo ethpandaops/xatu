@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## Rules
+This file describes the high level rules system that this repo uses. 
+
+- Rules live in `./cursor/rules/$name.mdc` and follow the Cursor Rules format.
+- A rules file must be created for each folder in the project. They should follow a heirachy, should be composable, be concise, and should 
+- An equivalent CLAUDE.md file MUST be created that points to all the relevent rule files. 
+  - An example CLAUDE.md file in `pkg/cannon/CLAUDE.md`:
+    ```
+    # Cannon Package Guidelines
+
+    The cannon package implements the Xatu cannon component, which collects canonical finalized data from Ethereum consensus clients via the Beacon API.
+
+    ## Cannon Component
+    Claude MUST read the `.cursor/rules/cannon.mdc` file before making any changes here.
+
+    ## Event Handling
+    Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+    ```
+- Rules are a constantly changing and evolving part of the project. Update them when needed.

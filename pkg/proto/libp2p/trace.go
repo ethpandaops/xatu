@@ -87,6 +87,52 @@ func TraceEventToLeave(event *host.TraceEvent) (*Leave, error) {
 	}, nil
 }
 
+// Helper function to convert a Hermes TraceEvent to a libp2p Graft.
+func TraceEventToGraft(event *host.TraceEvent) (*Graft, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Graft")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for Graft")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for Graft")
+	}
+
+	return &Graft{
+		Topic:  wrapperspb.String(topic),
+		PeerId: wrapperspb.String(peerID.String()),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p Prune.
+func TraceEventToPrune(event *host.TraceEvent) (*Prune, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Prune")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for Prune")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for Prune")
+	}
+
+	return &Prune{
+		Topic:  wrapperspb.String(topic),
+		PeerId: wrapperspb.String(peerID.String()),
+	}, nil
+}
+
 // Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC.
 func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)

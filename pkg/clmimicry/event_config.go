@@ -11,6 +11,8 @@ type EventConfig struct {
 	DisconnectedEnabled         bool `yaml:"disconnectedEnabled" default:"true"`
 	JoinEnabled                 bool `yaml:"joinEnabled" default:"true"`
 	LeaveEnabled                bool `yaml:"leaveEnabled" default:"false"`
+	GraftEnabled                bool `yaml:"graftEnabled" default:"false"`
+	PruneEnabled                bool `yaml:"pruneEnabled" default:"false"`
 	HandleMetadataEnabled       bool `yaml:"handleMetadataEnabled" default:"true"`
 	HandleStatusEnabled         bool `yaml:"handleStatusEnabled" default:"true"`
 	GossipSubBeaconBlockEnabled bool `yaml:"gossipSubBeaconBlockEnabled" default:"true"`

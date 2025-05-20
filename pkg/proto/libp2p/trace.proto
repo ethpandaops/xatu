@@ -22,6 +22,8 @@ enum EventType {
   HANDLE_METADATA = 9;
   DROP_RPC = 10;
   LEAVE = 11;
+  GRAFT = 12;
+  PRUNE = 13;
 }
 
 message AddPeer {
@@ -53,6 +55,16 @@ message Join {
 }
 
 message Leave {
+  google.protobuf.StringValue topic = 2;
+}
+
+message Graft {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue topic = 2;
+}
+
+message Prune {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   google.protobuf.StringValue topic = 2;
 }
 

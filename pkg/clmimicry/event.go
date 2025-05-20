@@ -130,7 +130,11 @@ func isLibp2pEvent(event *host.TraceEvent) bool {
 		event.Type == pubsubpb.TraceEvent_REMOVE_PEER.String() ||
 		event.Type == pubsubpb.TraceEvent_RECV_RPC.String() ||
 		event.Type == pubsubpb.TraceEvent_SEND_RPC.String() ||
-		event.Type == pubsubpb.TraceEvent_JOIN.String()
+		event.Type == pubsubpb.TraceEvent_DROP_RPC.String() ||
+		event.Type == pubsubpb.TraceEvent_JOIN.String() ||
+		event.Type == pubsubpb.TraceEvent_GRAFT.String() ||
+		event.Type == pubsubpb.TraceEvent_PRUNE.String() ||
+		event.Type == pubsubpb.TraceEvent_LEAVE.String()
 }
 
 // isGossipSubEvent checks if the event is a gossipsub event.

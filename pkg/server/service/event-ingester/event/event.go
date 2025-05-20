@@ -55,6 +55,7 @@ var (
 	TypeBeaconEthV2BeaconExecutionTransaction   Type = v2.BeaconBlockExecutionTransactionType
 	TypeBeaconEthV2BeaconBLSToExecutionChange   Type = v2.BeaconBlockBLSToExecutionChangeType
 	TypeBeaconEthV2BeaconWithdrawal             Type = v2.BeaconBlockWithdrawalType
+	TypeBeaconEthV2BeaconConsolidationRequest   Type = v2.BeaconBlockConsolidationRequestType
 	TypeBlockprintBlockClassification           Type = blockprint.BlockClassificationType
 	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
@@ -210,6 +211,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconWithdrawal, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockWithdrawal(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconConsolidationRequest, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockConsolidationRequest(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBlockprintBlockClassification, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return blockprint.NewBlockClassification(router.log, event), nil

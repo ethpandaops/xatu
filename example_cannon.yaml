@@ -35,6 +35,8 @@ ethereum:
 #     enabled: true
 #   blsToExecutionChange:
 #     enabled: true
+#   consolidationRequest:
+#     enabled: true
 #   deposit:
 #     enabled: true
 #   withdrawal:

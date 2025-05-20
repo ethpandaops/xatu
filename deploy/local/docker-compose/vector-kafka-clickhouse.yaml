@@ -341,6 +341,7 @@ transforms:
       canonical_beacon_block_voluntary_exit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
       canonical_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
       canonical_beacon_block_withdrawal: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
+      canonical_beacon_block_consolidation_request: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST"
       canonical_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_V2" && .meta.client.additional_data.finalized_when_requested == true
       canonical_beacon_proposer_duty: .event.name == "BEACON_API_ETH_V1_PROPOSER_DUTY" && .meta.client.additional_data.state_id == "finalized"
       canonical_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE" && .meta.client.additional_data.state_id == "finalized"
@@ -386,6 +387,7 @@ transforms:
       - xatu_server_events_router.canonical_beacon_block_proposer_slashing
       - xatu_server_events_router.canonical_beacon_block_voluntary_exit
       - xatu_server_events_router.canonical_beacon_block_withdrawal
+      - xatu_server_events_router.canonical_beacon_block_consolidation_request
       - xatu_server_events_router.canonical_beacon_proposer_duty
       - xatu_server_events_router.canonical_beacon_committee
       - xatu_server_events_router.eth_v1_beacon_committee
@@ -1373,6 +1375,39 @@ transforms:
       .withdrawal_validator_index = .data.validator_index
       .withdrawal_address = .data.address
       .withdrawal_amount = .data.amount
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  canonical_beacon_block_consolidation_request_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_block_consolidation_request
+    source: |-
+      .slot = .meta.client.additional_data.block.slot.number
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.block.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .position_in_block = .meta.client.additional_data.position_in_block
+      .block_root = .meta.client.additional_data.block.root
+      .block_version = .meta.client.additional_data.block.version
+      .source_address = .data.source_address
+      .source_pubkey = .data.source_pubkey
+      .target_pubkey = .data.target_pubkey
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -2565,6 +2600,26 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_block_withdrawal
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_block_consolidation_request_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_block_consolidation_request_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_block_consolidation_request
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

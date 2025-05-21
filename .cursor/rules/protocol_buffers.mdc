@@ -28,6 +28,7 @@ Protocol Buffers are used extensively in Xatu for data serialization, API defini
 - Use sequential field numbers starting from 1
 - Reserve field numbers when removing fields to prevent future reuse
 - Consider leaving gaps in numbering for related fields to allow for future additions
+- MUST NOT be altered once they're set unless they were set within this session. Regardless of other ordering (visual or by "group") they MUST NOT be altered.
 
 ## Versioning
 
@@ -49,6 +50,7 @@ Protocol Buffers are used extensively in Xatu for data serialization, API defini
 - Use `buf.gen.yaml` to control code generation options
 - Add helper methods in separate files, not in the generated code
 - Use wrapper types for complex transformations or validations
+- IMPORTANT: Run `make` in the root of the project to regenerate files.
 
 ## Validation
 

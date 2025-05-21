@@ -193,6 +193,17 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST"
+
+		data := msg.GetEthV2BeaconBlockConsolidationRequest()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -390,6 +401,19 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconCommittee{
 			EthV1BeaconCommittee: data,
+		}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST
+
+		data := &xatu.CannonLocationEthV2BeaconBlockConsolidationRequest{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockConsolidationRequest{
+			EthV2BeaconBlockConsolidationRequest: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

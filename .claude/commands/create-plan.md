@@ -21,10 +21,14 @@ General guidelines:
     - Include relevent files and code snippets to help with context.
     - Include a "BIG PICTURE" overview of the task.
     - IF relevent, include mermaid diagrams to help with context and the overall plan.
-  - A detailed plan of the steps required to complete the task.
-  - A list of dependencies for the task.
   - A list of assumptions that will be made to complete the task.
-  - A detailed list of tasks that need to be completed to complete the task. The list should be granular and detailed, with a clear description of the task and the expected outcome.
+  - A detailed list of tasks that need to be completed to complete the task. 
+    - The list should be granular and detailed, with a clear description of the task and the expected outcome.
+    - MUST be in the form of a checklist.
+    - MUST include a list of dependencies for each task.
+    - MUST include any relevent commands that need to be run to complete the task.
+    - MUST include any relevent links to documentation that will help complete the task.
+    - MAY include the exact code that needs to be written to complete the task.
 
 #### Format
 ````

@@ -17,6 +17,7 @@ import "pkg/proto/eth/v2/withdrawals.proto";
 import "pkg/proto/eth/v1/fork_choice.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
+import "pkg/proto/eth/v1/execution_requests.proto";
 import "pkg/proto/eth/v1/validator.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
@@ -662,6 +663,15 @@ message ClientMeta {
     BlockIdentifier block = 1;
   }
 
+  message AdditionalEthV2BeaconBlockConsolidationRequestData {
+    // Block contains the information about the block that we are deriving the
+    // consolidation request from.
+    BlockIdentifier block = 1;
+    // Position in block specifies the position of the consolidation request
+    // within the block's consolidation requests.
+    uint32 position_in_block = 2 [ json_name = "position_in_block" ];
+  }
+
   message AdditionalBlockprintBlockClassificationData {
     // Epoch contains the epoch information for the block classification.
     EpochV2 epoch = 1;
@@ -1282,6 +1292,10 @@ message ClientMeta {
     AdditionalLibP2PTraceGraftData libp2p_trace_graft = 70 [ json_name = "LIBP2P_TRACE_GRAFT" ];
     // AdditionalLibP2PTracePruneData contains additional data about the prune event.
     AdditionalLibP2PTracePruneData libp2p_trace_prune = 71 [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    // AdditionalEthV2BeaconBlockConsolidationRequestData contains additional data on
+    // consolidation requests derived from beacon blocks.
+    AdditionalEthV2BeaconBlockConsolidationRequestData eth_v2_beacon_block_consolidation_request = 72
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1447,6 +1461,7 @@ message Event {
     LIBP2P_TRACE_LEAVE = 58;
     LIBP2P_TRACE_GRAFT = 59;
     LIBP2P_TRACE_PRUNE = 60;
+    BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST = 61;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1601,6 +1616,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GRAFT" ];
     xatu.libp2p.Prune libp2p_trace_prune = 61
         [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    xatu.eth.v1.ElectraExecutionRequestConsolidation eth_v2_beacon_block_consolidation_request = 62
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_CONSOLIDATION_REQUEST" ];
   };
 }
 

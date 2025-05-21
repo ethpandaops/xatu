@@ -195,6 +195,7 @@ func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
 
 // Helper function to convert a Hermes TraceEvent to a libp2p PublishMessage.
 func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error) {
+	//nolint:tagliatelle // This is a direct mapping of the Hermes TraceEvent payload.
 	payload, ok := event.Payload.(struct {
 		MsgID string `json:"MsgID"`
 		Topic string `json:"Topic"`
@@ -211,6 +212,7 @@ func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error)
 
 // Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
 func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
+	//nolint:tagliatelle // This is a direct mapping of the Hermes TraceEvent payload.
 	payload, ok := event.Payload.(struct {
 		MsgID   string  `json:"MsgID"`
 		Topic   string  `json:"Topic"`
@@ -235,6 +237,7 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 
 // Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
 func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, error) {
+	//nolint:tagliatelle // This is a direct mapping of the Hermes TraceEvent payload.
 	payload, ok := event.Payload.(struct {
 		MsgID   string  `json:"MsgID"`
 		Topic   string  `json:"Topic"`
@@ -258,6 +261,7 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 
 // Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
 func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error) {
+	//nolint:tagliatelle // This is a direct mapping of the Hermes TraceEvent payload.
 	payload, ok := event.Payload.(struct {
 		MsgID   string  `json:"MsgID"`
 		Topic   string  `json:"Topic"`

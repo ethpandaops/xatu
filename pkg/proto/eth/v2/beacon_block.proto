@@ -51,6 +51,12 @@ message SignedBeaconBlockElectra {
   string signature = 2;
 }
 
+message SignedBeaconBlockFulu {
+  BeaconBlockFulu message = 1;
+
+  string signature = 2;
+}
+
 message SignedBlindedBeaconBlockBellatrix {
   BlindedBeaconBlockBellatrix message = 1;
 
@@ -186,6 +192,19 @@ message BeaconBlockElectra {
   string state_root = 4 [ json_name = "state_root" ];
 
   BeaconBlockBodyElectra body = 5;
+}
+
+message BeaconBlockFulu {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BeaconBlockBodyFulu body = 5;
 }
 
 message BlindedBeaconBlockCapella {
@@ -433,6 +452,40 @@ message BeaconBlockBodyDeneb {
 }
 
 message BeaconBlockBodyElectra {
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated v1.AttesterSlashing attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  repeated v1.SignedVoluntaryExit voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+
+  v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
+
+  v1.ExecutionPayloadElectra execution_payload = 10
+      [ json_name = "execution_payload" ];
+
+  repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
+      [ json_name = "bls_to_execution_changes" ];
+
+  repeated string blob_kzg_commitments = 12 
+      [ json_name = "blob_kzg_commitments" ];
+  
+  v1.ElectraExecutionRequests execution_requests = 13 [ json_name = "execution_requests" ];
+}
+
+message BeaconBlockBodyFulu {
   string randao_reveal = 1 [ json_name = "randao_reveal" ];
 
   v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];

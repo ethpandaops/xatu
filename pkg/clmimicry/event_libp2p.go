@@ -15,6 +15,24 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Map of libp2p event types to Xatu event types.
+// This serves both for mapping and for checking if an event is a libp2p event.
+var libp2pToXatuEventMap = map[string]string{
+	pubsubpb.TraceEvent_PUBLISH_MESSAGE.String():   xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String(),
+	pubsubpb.TraceEvent_REJECT_MESSAGE.String():    xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(),
+	pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String(): xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(),
+	pubsubpb.TraceEvent_DELIVER_MESSAGE.String():   xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(),
+	pubsubpb.TraceEvent_ADD_PEER.String():          xatu.Event_LIBP2P_TRACE_ADD_PEER.String(),
+	pubsubpb.TraceEvent_REMOVE_PEER.String():       xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(),
+	pubsubpb.TraceEvent_RECV_RPC.String():          xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
+	pubsubpb.TraceEvent_SEND_RPC.String():          xatu.Event_LIBP2P_TRACE_SEND_RPC.String(),
+	pubsubpb.TraceEvent_DROP_RPC.String():          xatu.Event_LIBP2P_TRACE_DROP_RPC.String(),
+	pubsubpb.TraceEvent_JOIN.String():              xatu.Event_LIBP2P_TRACE_JOIN.String(),
+	pubsubpb.TraceEvent_LEAVE.String():             xatu.Event_LIBP2P_TRACE_LEAVE.String(),
+	pubsubpb.TraceEvent_GRAFT.String():             xatu.Event_LIBP2P_TRACE_GRAFT.String(),
+	pubsubpb.TraceEvent_PRUNE.String():             xatu.Event_LIBP2P_TRACE_PRUNE.String(),
+}
+
 // handleHermesLibp2pEvent handles libp2p pubsub protocol level events.
 func (m *Mimicry) handleHermesLibp2pEvent(
 	ctx context.Context,
@@ -492,37 +510,10 @@ func (m *Mimicry) handleDropRPCEvent(
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-// mapLibp2pEventToXatuEvent maps libp2p events to Xatu events, commented out events are not yet implemented.
-//
-//nolint:gocritic,wsl // keeping commented events, as they will be implemented shortly.
+// mapLibp2pEventToXatuEvent maps libp2p events to Xatu events.
 func mapLibp2pEventToXatuEvent(event string) (string, error) {
-	switch event {
-	case pubsubpb.TraceEvent_PUBLISH_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_REJECT_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_DELIVER_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_ADD_PEER.String():
-		return xatu.Event_LIBP2P_TRACE_ADD_PEER.String(), nil
-	case pubsubpb.TraceEvent_REMOVE_PEER.String():
-		return xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(), nil
-	case pubsubpb.TraceEvent_RECV_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), nil
-	case pubsubpb.TraceEvent_SEND_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), nil
-	case pubsubpb.TraceEvent_DROP_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), nil
-	case pubsubpb.TraceEvent_JOIN.String():
-		return xatu.Event_LIBP2P_TRACE_JOIN.String(), nil
-	case pubsubpb.TraceEvent_LEAVE.String():
-		return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
-	case pubsubpb.TraceEvent_GRAFT.String():
-		return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
-	case pubsubpb.TraceEvent_PRUNE.String():
-		return xatu.Event_LIBP2P_TRACE_PRUNE.String(), nil
+	if xatuEvent, exists := libp2pToXatuEventMap[event]; exists {
+		return xatuEvent, nil
 	}
 
 	return "", fmt.Errorf("unknown libp2p event: %s", event)

@@ -24,6 +24,10 @@ enum EventType {
   LEAVE = 11;
   GRAFT = 12;
   PRUNE = 13;
+  PUBLISH_MESSAGE = 14;
+  REJECT_MESSAGE = 15;
+  DUPLICATE_MESSAGE = 16;
+  DELIVER_MESSAGE = 17;
 }
 
 message AddPeer {
@@ -66,6 +70,36 @@ message Graft {
 message Prune {
   google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
   google.protobuf.StringValue topic = 2;
+}
+
+message PublishMessage {
+  google.protobuf.StringValue msg_id = 1 [json_name = "msg_id"];
+  google.protobuf.StringValue topic = 2;
+}
+
+message RejectMessage {
+  google.protobuf.StringValue msg_id = 1 [json_name = "msg_id"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
+  google.protobuf.StringValue topic = 3;
+  google.protobuf.StringValue reason = 4;
+  google.protobuf.BoolValue local = 5;
+  google.protobuf.UInt64Value msg_size = 6 [json_name = "msg_size"];
+}
+
+message DuplicateMessage {
+  google.protobuf.StringValue msg_id = 1 [json_name = "msg_id"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
+  google.protobuf.StringValue topic = 3;
+  google.protobuf.BoolValue local = 4;
+  google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
+}
+
+message DeliverMessage {
+  google.protobuf.StringValue msg_id = 1 [json_name = "msg_id"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
+  google.protobuf.StringValue topic = 3;
+  google.protobuf.BoolValue local = 4;
+  google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
 }
 
 message RPCMeta {

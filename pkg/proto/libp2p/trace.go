@@ -193,6 +193,92 @@ func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
 	return r, nil
 }
 
+// Helper function to convert a Hermes TraceEvent to a libp2p PublishMessage.
+func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error) {
+	payload, ok := event.Payload.(struct {
+		MsgID string `json:"MsgID"`
+		Topic string `json:"Topic"`
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for PublishMessage")
+	}
+
+	return &PublishMessage{
+		MsgId: wrapperspb.String(payload.MsgID),
+		Topic: wrapperspb.String(payload.Topic),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
+func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
+	payload, ok := event.Payload.(struct {
+		MsgID   string  `json:"MsgID"`
+		Topic   string  `json:"Topic"`
+		PeerID  peer.ID `json:"PeerID"`
+		Reason  string  `json:"Reason"`
+		Local   bool    `json:"Local"`
+		MsgSize uint64  `json:"MsgSize"`
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for RejectMessage")
+	}
+
+	return &RejectMessage{
+		MsgId:   wrapperspb.String(payload.MsgID),
+		PeerId:  wrapperspb.String(payload.PeerID.String()),
+		Topic:   wrapperspb.String(payload.Topic),
+		Reason:  wrapperspb.String(payload.Reason),
+		Local:   wrapperspb.Bool(payload.Local),
+		MsgSize: wrapperspb.UInt64(payload.MsgSize),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
+func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, error) {
+	payload, ok := event.Payload.(struct {
+		MsgID   string  `json:"MsgID"`
+		Topic   string  `json:"Topic"`
+		PeerID  peer.ID `json:"PeerID"`
+		Reason  string  `json:"Reason"`
+		Local   bool    `json:"Local"`
+		MsgSize uint64  `json:"MsgSize"`
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DuplicateMessage")
+	}
+
+	return &DuplicateMessage{
+		MsgId:   wrapperspb.String(payload.MsgID),
+		PeerId:  wrapperspb.String(payload.PeerID.String()),
+		Topic:   wrapperspb.String(payload.Topic),
+		Local:   wrapperspb.Bool(payload.Local),
+		MsgSize: wrapperspb.UInt64(payload.MsgSize),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
+func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error) {
+	payload, ok := event.Payload.(struct {
+		MsgID   string  `json:"MsgID"`
+		Topic   string  `json:"Topic"`
+		PeerID  peer.ID `json:"PeerID"`
+		Reason  string  `json:"Reason"`
+		Local   bool    `json:"Local"`
+		MsgSize uint64  `json:"MsgSize"`
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DeliverMessage")
+	}
+
+	return &DeliverMessage{
+		MsgId:   wrapperspb.String(payload.MsgID),
+		PeerId:  wrapperspb.String(payload.PeerID.String()),
+		Topic:   wrapperspb.String(payload.Topic),
+		Local:   wrapperspb.Bool(payload.Local),
+		MsgSize: wrapperspb.UInt64(payload.MsgSize),
+	}, nil
+}
+
 func convertRPCMessages(messages []host.RpcMetaMsg) []*MessageMeta {
 	ourMessages := make([]*MessageMeta, len(messages))
 

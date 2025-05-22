@@ -6,6 +6,7 @@ CREATE TABLE libp2p_deliver_message_local ON CLUSTER '{cluster}'
     topic_fork_digest_value LowCardinality(String) COMMENT 'Fork digest value of the topic',
     topic_name LowCardinality(String) COMMENT 'Name of the topic',
     topic_encoding LowCardinality(String) COMMENT 'Encoding of the topic',
+    seq_number UInt64 COMMENT 'A linearly increasing number that is unique among messages originating from the given peer' CODEC(DoubleDelta, ZSTD(1)),
     local_delivery Bool COMMENT 'Indicates if the message was delivered to in-process subscribers only',
     peer_id_unique_key Int64 COMMENT 'Unique key for the peer that delivered the message',
     message_id String COMMENT 'Identifier of the message' CODEC(ZSTD(1)),
@@ -43,7 +44,8 @@ ORDER BY
         peer_id_unique_key,
         topic_fork_digest_value,
         topic_name,
-        message_id
+        message_id,
+        seq_number
     ) COMMENT 'Contains the details of the DELIVER_MESSAGE events from the libp2p client.';
 
 CREATE TABLE libp2p_deliver_message ON CLUSTER '{cluster}' AS libp2p_deliver_message_local ENGINE = Distributed(
@@ -57,6 +59,7 @@ CREATE TABLE libp2p_deliver_message ON CLUSTER '{cluster}' AS libp2p_deliver_mes
         peer_id_unique_key,
         topic_fork_digest_value,
         topic_name,
-        message_id
+        message_id,
+        seq_number
     )
 );

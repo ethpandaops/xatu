@@ -93,6 +93,7 @@ message DuplicateMessage {
   google.protobuf.StringValue topic = 3;
   google.protobuf.BoolValue local = 4;
   google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
+  google.protobuf.UInt64Value seq_number = 6 [json_name = "seq_number"];
 }
 
 message DeliverMessage {
@@ -101,6 +102,7 @@ message DeliverMessage {
   google.protobuf.StringValue topic = 3;
   google.protobuf.BoolValue local = 4;
   google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
+  google.protobuf.UInt64Value seq_number = 6 [json_name = "seq_number"];
 }
 
 message RPCMeta {

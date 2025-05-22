@@ -246,17 +246,19 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 		PeerID  peer.ID `json:"PeerID"`
 		Local   bool    `json:"Local"`
 		MsgSize uint64  `json:"MsgSize"`
+		Seq     uint64  `json:"Seq"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("invalid payload type for DuplicateMessage")
 	}
 
 	return &DuplicateMessage{
-		MsgId:   wrapperspb.String(payload.MsgID),
-		PeerId:  wrapperspb.String(payload.PeerID.String()),
-		Topic:   wrapperspb.String(payload.Topic),
-		Local:   wrapperspb.Bool(payload.Local),
-		MsgSize: wrapperspb.UInt64(payload.MsgSize),
+		MsgId:     wrapperspb.String(payload.MsgID),
+		PeerId:    wrapperspb.String(payload.PeerID.String()),
+		Topic:     wrapperspb.String(payload.Topic),
+		Local:     wrapperspb.Bool(payload.Local),
+		MsgSize:   wrapperspb.UInt64(payload.MsgSize),
+		SeqNumber: wrapperspb.UInt64(payload.Seq),
 	}, nil
 }
 
@@ -269,17 +271,19 @@ func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error)
 		PeerID  peer.ID `json:"PeerID"`
 		Local   bool    `json:"Local"`
 		MsgSize uint64  `json:"MsgSize"`
+		Seq     uint64  `json:"Seq"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("invalid payload type for DeliverMessage")
 	}
 
 	return &DeliverMessage{
-		MsgId:   wrapperspb.String(payload.MsgID),
-		PeerId:  wrapperspb.String(payload.PeerID.String()),
-		Topic:   wrapperspb.String(payload.Topic),
-		Local:   wrapperspb.Bool(payload.Local),
-		MsgSize: wrapperspb.UInt64(payload.MsgSize),
+		MsgId:     wrapperspb.String(payload.MsgID),
+		PeerId:    wrapperspb.String(payload.PeerID.String()),
+		Topic:     wrapperspb.String(payload.Topic),
+		Local:     wrapperspb.Bool(payload.Local),
+		MsgSize:   wrapperspb.UInt64(payload.MsgSize),
+		SeqNumber: wrapperspb.UInt64(payload.Seq),
 	}, nil
 }
 

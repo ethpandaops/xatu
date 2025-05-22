@@ -203,12 +203,12 @@ func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error)
 
 	msgID, ok := payload["MsgID"].(string)
 	if !ok {
-		return nil, fmt.Errorf("MsgID is required for PublishMessage")
+		return nil, fmt.Errorf("msgID is required for PublishMessage")
 	}
 
 	topic, ok := payload["Topic"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Topic is required for PublishMessage")
+		return nil, fmt.Errorf("topic is required for PublishMessage")
 	}
 
 	return &PublishMessage{
@@ -226,37 +226,37 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 
 	msgID, ok := payload["MsgID"].(string)
 	if !ok {
-		return nil, fmt.Errorf("MsgID is required for RejectMessage")
+		return nil, fmt.Errorf("msgID is required for RejectMessage")
 	}
 
 	topic, ok := payload["Topic"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Topic is required for RejectMessage")
+		return nil, fmt.Errorf("topic is required for RejectMessage")
 	}
 
 	peerID, ok := payload["PeerID"].(peer.ID)
 	if !ok {
-		return nil, fmt.Errorf("PeerID is required for RejectMessage")
+		return nil, fmt.Errorf("peerID is required for RejectMessage")
 	}
 
 	reason, ok := payload["Reason"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Reason is required for RejectMessage")
+		return nil, fmt.Errorf("reason is required for RejectMessage")
 	}
 
 	local, ok := payload["Local"].(bool)
 	if !ok {
-		return nil, fmt.Errorf("Local is required for RejectMessage")
+		return nil, fmt.Errorf("local is required for RejectMessage")
 	}
 
 	msgSize, ok := payload["MsgSize"].(int)
 	if !ok {
-		return nil, fmt.Errorf("MsgSize is required for RejectMessage")
+		return nil, fmt.Errorf("msgSize is required for RejectMessage")
 	}
 
 	seqHex, ok := payload["Seq"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Seq is required for RejectMessage")
+		return nil, fmt.Errorf("seq is required for RejectMessage")
 	}
 
 	// Parse hex sequence number.
@@ -266,6 +266,7 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 	}
 
 	var seqNumber uint64
+
 	if len(seqBytes) > 0 {
 		for _, b := range seqBytes {
 			seqNumber = (seqNumber << 8) | uint64(b)
@@ -278,7 +279,7 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 		Topic:     wrapperspb.String(topic),
 		Reason:    wrapperspb.String(reason),
 		Local:     wrapperspb.Bool(local),
-		MsgSize:   wrapperspb.UInt32(uint32(msgSize)),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
 		SeqNumber: wrapperspb.UInt64(seqNumber),
 	}, nil
 }
@@ -292,32 +293,32 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 
 	msgID, ok := payload["MsgID"].(string)
 	if !ok {
-		return nil, fmt.Errorf("MsgID is required for DuplicateMessage")
+		return nil, fmt.Errorf("msgID is required for DuplicateMessage")
 	}
 
 	topic, ok := payload["Topic"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Topic is required for DuplicateMessage")
+		return nil, fmt.Errorf("topic is required for DuplicateMessage")
 	}
 
 	peerID, ok := payload["PeerID"].(peer.ID)
 	if !ok {
-		return nil, fmt.Errorf("PeerID is required for DuplicateMessage")
+		return nil, fmt.Errorf("peerID is required for DuplicateMessage")
 	}
 
 	local, ok := payload["Local"].(bool)
 	if !ok {
-		return nil, fmt.Errorf("Local is required for DuplicateMessage")
+		return nil, fmt.Errorf("local is required for DuplicateMessage")
 	}
 
 	msgSize, ok := payload["MsgSize"].(int)
 	if !ok {
-		return nil, fmt.Errorf("MsgSize is required for DuplicateMessage")
+		return nil, fmt.Errorf("msgSize is required for DuplicateMessage")
 	}
 
 	seqHex, ok := payload["Seq"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Seq is required for DuplicateMessage")
+		return nil, fmt.Errorf("seq is required for DuplicateMessage")
 	}
 
 	// Parse hex sequence number
@@ -327,8 +328,8 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 	}
 
 	var seqNumber uint64
+
 	if len(seqBytes) > 0 {
-		// Convert bytes to uint64 (big endian assumed)
 		for _, b := range seqBytes {
 			seqNumber = (seqNumber << 8) | uint64(b)
 		}
@@ -339,7 +340,7 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 		PeerId:    wrapperspb.String(peerID.String()),
 		Topic:     wrapperspb.String(topic),
 		Local:     wrapperspb.Bool(local),
-		MsgSize:   wrapperspb.UInt32(uint32(msgSize)),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
 		SeqNumber: wrapperspb.UInt64(seqNumber),
 	}, nil
 }
@@ -353,32 +354,32 @@ func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error)
 
 	msgID, ok := payload["MsgID"].(string)
 	if !ok {
-		return nil, fmt.Errorf("MsgID is required for DeliverMessage")
+		return nil, fmt.Errorf("msgID is required for DeliverMessage")
 	}
 
 	topic, ok := payload["Topic"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Topic is required for DeliverMessage")
+		return nil, fmt.Errorf("topic is required for DeliverMessage")
 	}
 
 	peerID, ok := payload["PeerID"].(peer.ID)
 	if !ok {
-		return nil, fmt.Errorf("PeerID is required for DeliverMessage")
+		return nil, fmt.Errorf("peerID is required for DeliverMessage")
 	}
 
 	local, ok := payload["Local"].(bool)
 	if !ok {
-		return nil, fmt.Errorf("Local is required for DeliverMessage")
+		return nil, fmt.Errorf("local is required for DeliverMessage")
 	}
 
 	msgSize, ok := payload["MsgSize"].(int)
 	if !ok {
-		return nil, fmt.Errorf("MsgSize is required for DeliverMessage")
+		return nil, fmt.Errorf("msgSize is required for DeliverMessage")
 	}
 
 	seqHex, ok := payload["Seq"].(string)
 	if !ok {
-		return nil, fmt.Errorf("Seq is required for DeliverMessage")
+		return nil, fmt.Errorf("seq is required for DeliverMessage")
 	}
 
 	// Parse hex sequence number
@@ -388,8 +389,8 @@ func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error)
 	}
 
 	var seqNumber uint64
+
 	if len(seqBytes) > 0 {
-		// Convert bytes to uint64 (big endian assumed)
 		for _, b := range seqBytes {
 			seqNumber = (seqNumber << 8) | uint64(b)
 		}
@@ -400,7 +401,7 @@ func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error)
 		PeerId:    wrapperspb.String(peerID.String()),
 		Topic:     wrapperspb.String(topic),
 		Local:     wrapperspb.Bool(local),
-		MsgSize:   wrapperspb.UInt32(uint32(msgSize)),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
 		SeqNumber: wrapperspb.UInt64(seqNumber),
 	}, nil
 }

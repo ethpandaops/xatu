@@ -84,6 +84,7 @@ message RejectMessage {
   google.protobuf.StringValue reason = 4;
   google.protobuf.BoolValue local = 5;
   google.protobuf.UInt64Value msg_size = 6 [json_name = "msg_size"];
+  google.protobuf.UInt64Value seq_id = 7 [json_name = "seq_id"];
 }
 
 message DuplicateMessage {

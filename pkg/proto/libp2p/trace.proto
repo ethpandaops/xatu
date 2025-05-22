@@ -83,7 +83,7 @@ message RejectMessage {
   google.protobuf.StringValue topic = 3;
   google.protobuf.StringValue reason = 4;
   google.protobuf.BoolValue local = 5;
-  google.protobuf.UInt64Value msg_size = 6 [json_name = "msg_size"];
+  google.protobuf.UInt32Value msg_size = 6 [json_name = "msg_size"];
   google.protobuf.UInt64Value seq_number = 7 [json_name = "seq_number"];
 }
 
@@ -92,7 +92,7 @@ message DuplicateMessage {
   google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
   google.protobuf.StringValue topic = 3;
   google.protobuf.BoolValue local = 4;
-  google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
+  google.protobuf.UInt32Value msg_size = 5 [json_name = "msg_size"];
   google.protobuf.UInt64Value seq_number = 6 [json_name = "seq_number"];
 }
 
@@ -101,7 +101,7 @@ message DeliverMessage {
   google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
   google.protobuf.StringValue topic = 3;
   google.protobuf.BoolValue local = 4;
-  google.protobuf.UInt64Value msg_size = 5 [json_name = "msg_size"];
+  google.protobuf.UInt32Value msg_size = 5 [json_name = "msg_size"];
   google.protobuf.UInt64Value seq_number = 6 [json_name = "seq_number"];
 }
 

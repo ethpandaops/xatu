@@ -590,6 +590,8 @@ func (m *Mimicry) handlePublishMessageEvent(
 		},
 	}
 
+	fmt.Println("publish message event", decoratedEvent)
+
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
@@ -628,6 +630,8 @@ func (m *Mimicry) handleRejectMessageEvent(
 			Libp2PTraceRejectMessage: data,
 		},
 	}
+
+	fmt.Println("reject message event", decoratedEvent)
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
@@ -668,6 +672,8 @@ func (m *Mimicry) handleDuplicateMessageEvent(
 		},
 	}
 
+	fmt.Println("duplicate message event", decoratedEvent)
+
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
@@ -706,6 +712,8 @@ func (m *Mimicry) handleDeliverMessageEvent(
 			Libp2PTraceDeliverMessage: data,
 		},
 	}
+
+	fmt.Println("deliver message event", decoratedEvent)
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }

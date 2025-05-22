@@ -242,7 +242,6 @@ func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, er
 		MsgID   string  `json:"MsgID"`
 		Topic   string  `json:"Topic"`
 		PeerID  peer.ID `json:"PeerID"`
-		Reason  string  `json:"Reason"`
 		Local   bool    `json:"Local"`
 		MsgSize uint64  `json:"MsgSize"`
 	})
@@ -266,7 +265,6 @@ func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error)
 		MsgID   string  `json:"MsgID"`
 		Topic   string  `json:"Topic"`
 		PeerID  peer.ID `json:"PeerID"`
-		Reason  string  `json:"Reason"`
 		Local   bool    `json:"Local"`
 		MsgSize uint64  `json:"MsgSize"`
 	})

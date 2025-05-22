@@ -61,6 +61,10 @@ var (
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
+	TypeLibP2PTraceDuplicateMessage             Type = Type(libp2p.TraceDuplicateMessageType)
+	TypeLibP2PTraceDeliverMessage               Type = Type(libp2p.TraceDeliverMessageType)
+	TypeLibP2PTraceRejectMessage                Type = Type(libp2p.TraceRejectMessageType)
+	TypeLibP2PTracePublishMessage               Type = Type(libp2p.TracePublishMessageType)
 	TypeLibP2PTraceAddPeer                      Type = Type(libp2p.TraceAddPeerType)
 	TypeLibP2PTraceConnected                    Type = Type(libp2p.TraceConnectedType)
 	TypeLibP2PTraceJoin                         Type = Type(libp2p.TraceJoinType)
@@ -225,6 +229,18 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconElaboratedAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockElaboratedAttestation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDuplicateMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDuplicateMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDeliverMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDeliverMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRejectMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRejectMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTracePublishMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTracePublishMessage(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceAddPeer, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceAddPeer(router.log, event), nil

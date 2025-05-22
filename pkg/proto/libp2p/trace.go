@@ -220,20 +220,20 @@ func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
 		Reason  string  `json:"Reason"`
 		Local   bool    `json:"Local"`
 		MsgSize uint64  `json:"MsgSize"`
-		SeqID   uint64  `json:"SeqID"`
+		Seq     uint64  `json:"Seq"`
 	})
 	if !ok {
 		return nil, fmt.Errorf("invalid payload type for RejectMessage")
 	}
 
 	return &RejectMessage{
-		MsgId:   wrapperspb.String(payload.MsgID),
-		PeerId:  wrapperspb.String(payload.PeerID.String()),
-		Topic:   wrapperspb.String(payload.Topic),
-		Reason:  wrapperspb.String(payload.Reason),
-		Local:   wrapperspb.Bool(payload.Local),
-		MsgSize: wrapperspb.UInt64(payload.MsgSize),
-		SeqId:   wrapperspb.UInt64(payload.SeqID),
+		MsgId:     wrapperspb.String(payload.MsgID),
+		PeerId:    wrapperspb.String(payload.PeerID.String()),
+		Topic:     wrapperspb.String(payload.Topic),
+		Reason:    wrapperspb.String(payload.Reason),
+		Local:     wrapperspb.Bool(payload.Local),
+		MsgSize:   wrapperspb.UInt64(payload.MsgSize),
+		SeqNumber: wrapperspb.UInt64(payload.Seq),
 	}, nil
 }
 

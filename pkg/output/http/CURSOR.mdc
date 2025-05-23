@@ -1,0 +1,22 @@
+---
+description: HTTP - HTTP sink with compression, batching, and configurable retry patterns
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# HTTP Output Sink
+
+HTTP output sink that sends Ethereum event data to HTTP endpoints with optional compression and batch processing.
+
+## Key Integration Patterns
+- Use `ItemExporter` for HTTP request execution with configurable compression strategies
+- Implement batch processing via `processor.BatchItemProcessor` with configurable queue sizes and timeouts
+- Support multiple compression formats (gzip, zstd, zlib, snappy) through `Compressor` abstraction
+
+## Critical Design Constraints
+- Events are serialized to NDJSON format with protojson marshaling
+- HTTP client uses configurable timeouts and keep-alive settings
+- All compression happens before request execution to optimize network transfer
+- Filter events before batching to reduce unnecessary processing overhead

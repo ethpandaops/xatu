@@ -1,0 +1,21 @@
+---
+description: Redis Cluster - Redis cluster implementation of the cache interface
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Redis Cluster Component Rules
+
+Redis cluster implementation of the cache interface with connection management and metrics tracking.
+
+## Key Integration Patterns
+- **go-redis/v9 Cluster Client**: Uses `redis.ClusterClient` with URL-based configuration parsing
+- **Prefix-Based Key Management**: All cache keys are prefixed to support multi-tenant usage
+- **Prometheus Metrics Integration**: Tracks get/set/delete operations with status (hit/miss/error) labels
+
+## Critical Design Constraints
+- **URL Configuration**: Must parse cluster URLs via `redis.ParseClusterURL()` for connection options
+- **Graceful Error Handling**: Redis nil responses are valid cache misses, not errors
+- **Metrics Collection**: All cache operations must increment appropriate Prometheus counters with operation status

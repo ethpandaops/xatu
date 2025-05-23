@@ -1,6 +1,6 @@
-# Discovery Package Guidelines
+# Discovery
 
-The discovery package implements the Xatu discovery component.
+Ethereum network node discovery client using Node Discovery Protocol v4/v5 to discover and monitor network nodes.
 
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

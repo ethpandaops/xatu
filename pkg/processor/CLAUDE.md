@@ -1,3 +1,6 @@
-# Processor Package Guidelines
+# Processor
 
-The processor package handles batch processing functionality.
+Generic batching processor that handles high-throughput item export with configurable worker pools and timeouts.
+
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

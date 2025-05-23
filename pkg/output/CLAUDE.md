@@ -1,6 +1,6 @@
-# Output Package Guidelines
+# Output
 
-The output package handles data output to various sinks.
+Data output abstraction layer that supports multiple sink types (HTTP, Kafka, stdout, Xatu) with unified interface and event filtering.
 
-## Output Sink Guidelines
-Claude MUST read the `.cursor/rules/output_sinks.mdc` file before making any changes here.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

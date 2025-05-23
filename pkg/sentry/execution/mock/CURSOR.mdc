@@ -1,0 +1,19 @@
+---
+description: Mock - Auto-generated test doubles for execution ClientProvider interface
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Mock Component
+
+Auto-generated mock implementation of the execution ClientProvider interface for testing purposes.
+
+## Key Integration Pattern
+- **GoMock Framework**: Uses go.uber.org/mock/gomock for generating interface test doubles
+- **ClientProvider Interface**: Mocks all execution client operations (pending txs, batch fetching, subscriptions)
+
+## Critical Constraints
+- **Generated Code**: File is auto-generated and should NEVER be manually edited
+- **Regeneration Required**: Changes to parent ClientProvider interface require regenerating mocks via `mockgen` command

@@ -1,0 +1,21 @@
+---
+description: ETH V2 - Ethereum beacon chain v2 API event handlers with finalization tracking
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# ETH V2 Event Handlers Rules
+
+Ethereum beacon chain v2 API event handlers that process beacon blocks and sub-block components with finalization state tracking.
+
+## Key Integration Patterns
+- **Finalization Cache Pattern**: Non-finalized blocks use cache to prevent duplicate processing; finalized blocks bypass cache
+- **Sub-Block Component Handlers**: Each beacon block element (deposits, attestations, slashings, etc.) has dedicated handler
+- **Type Constant Pattern**: All handlers define const Type strings following "BEACON_API_ETH_V2_BEACON_BLOCK_*" format
+
+## Important Constraints
+- **Cache Strategy**: Only non-finalized blocks require cache lookup to prevent duplicate forwarding
+- **Event Data Casting**: All handlers must validate DecoratedEvent casting in Validate() method before processing
+- **V2 API Compliance**: Handlers process eth/v2 beacon API data structures from attestantio/go-eth2-client

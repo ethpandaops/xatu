@@ -1,0 +1,23 @@
+---
+description: P2P - Ethereum execution node status checking via peer connections  
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# P2P Status Component
+
+Ethereum execution node status checker that dials discovered nodes to verify connectivity and gather protocol information.
+
+## Key Integration Patterns
+- **Factory Pattern**: Uses `NewP2P()` factory with type-based instantiation for pluggable implementations (static, xatu)
+- **Event-Driven Status**: Publishes execution node status via emission broker for async consumption
+- **Concurrent Dialing**: Manages multiple simultaneous peer connections with retry logic and 15-second timeouts
+- **Mimicry Integration**: Leverages `ethcore/mimicry` client for execution layer handshakes and status retrieval
+
+## Critical Design Decisions
+- Always use retry logic with 5 attempts and 5-second delays for peer connections
+- Maintain thread-safe active connection counting with mutex protection
+- Status checks must complete within 15 seconds or timeout automatically
+- All peer connections are ephemeral - establish, gather status, then disconnect immediately

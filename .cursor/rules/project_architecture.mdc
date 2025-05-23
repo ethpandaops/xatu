@@ -1,0 +1,73 @@
+---
+description: Xatu project architecture and structure
+globs: 
+alwaysApply: false
+---
+
+# Xatu Project Architecture
+
+## Project Overview
+Xatu is an Ethereum network monitoring system with collection clients and a centralized server for data pipelining. It's designed to collect and process Ethereum blockchain data from various sources.
+
+## Core Modes/Components
+The project operates in multiple modes that can run independently:
+
+- **Server** (`pkg/server/`) - Centralized server collecting events from clients and outputting to various sinks
+- **Sentry** (`pkg/sentry/`) - Client running alongside consensus clients, collecting data via Beacon API
+- **Discovery** (`pkg/discovery/`) - Client using Node Discovery Protocol v4/v5 to discover network nodes
+- **Mimicry** (`pkg/mimicry/`) - Client collecting data from execution layer P2P network
+- **Cannon** (`pkg/cannon/`) - Client collecting canonical finalized data via consensus client Beacon API
+- **CL-Mimicry** (`pkg/clmimicry/`) - Client for consensus layer P2P network monitoring
+- **Relay Monitor** (`pkg/relaymonitor/`) - MEV relay monitoring component
+
+## Technology Stack
+- **Language**: Go 1.24+ (primary codebase)
+- **Protocol Buffers**: For data serialization and gRPC services
+- **Build System**: Standard Go tooling with Makefile
+- **Architecture**: Microservices pattern with modular client/server components
+- **P2P Networking**: libp2p for peer-to-peer functionality
+- **Observability**: OpenTelemetry tracing, Prometheus metrics
+
+## Directory Structure
+```
+pkg/                    # Core business logic packages
+├── cannon/            # Canonical data collection client
+├── sentry/           # Beacon API monitoring client  
+├── discovery/        # Network discovery client
+├── mimicry/          # Execution layer P2P client
+├── clmimicry/        # Consensus layer P2P client
+├── relaymonitor/     # MEV relay monitoring
+├── server/           # Centralized data collection server
+├── proto/            # Protocol buffer definitions
+├── output/           # Data output/sink abstractions
+├── processor/        # Data processing utilities
+├── observability/    # Tracing and monitoring
+└── networks/         # Network configuration
+
+cmd/                   # CLI command definitions
+deploy/               # Deployment configurations
+├── local/           # Local docker-compose setup
+└── migrations/      # Database migration scripts
+
+docs/                 # Component documentation
+example_*.yaml        # Configuration examples
+```
+
+## Data Flow Architecture
+1. Collection clients (sentry, discovery, mimicry, cannon) gather data from Ethereum networks
+2. Data is sent to the centralized Xatu server via gRPC
+3. Server processes and routes data to configured output sinks (ClickHouse, Kafka, etc.)
+4. Persistence layer stores processed data for analysis
+
+## Key Design Patterns
+- **Modular Architecture**: Each mode is independently deployable
+- **Event-Driven**: Components communicate via structured events
+- **Plugin System**: Configurable output sinks and data processors
+- **Observability First**: Built-in metrics, tracing, and logging
+- **Protocol Buffers**: Structured data definitions for consistency
+
+## Build and Development
+- Standard Go module structure
+- Protocol buffer code generation via `buf`
+- Docker-based local development environment
+- Kubernetes deployment via Helm charts

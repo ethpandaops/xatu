@@ -1,9 +1,6 @@
-# Cannon Package Guidelines
+# Cannon
 
-The cannon package implements the Xatu cannon component, which collects canonical finalized data from Ethereum consensus clients via the Beacon API.
+Canonical finalized data collection client that systematically collects finalized blockchain data via consensus client Beacon API.
 
-## Cannon Component
-Claude MUST read the `.cursor/rules/cannon.mdc` file before making any changes here.
-
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

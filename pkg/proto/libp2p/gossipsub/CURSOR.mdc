@@ -1,0 +1,21 @@
+---
+description: gossipsub - Ethereum gossipsub protocol buffer definitions for BeaconBlock and BlobSidecar messages
+globs: 
+  - "*.proto"
+  - "*.pb.go"
+alwaysApply: false
+---
+
+# gossipsub Protocol Buffers
+
+Ethereum gossipsub protocol buffer definitions for BeaconBlock and BlobSidecar messages.
+
+## Key Integration Pattern
+- Defines specific Ethereum consensus layer data structures for gossipsub monitoring
+- Uses xatu.libp2p.gossipsub.eth namespace for Ethereum-specific gossipsub messages
+- Follows standard protobuf wrapper pattern for nullable fields
+
+## Important Constraints  
+- Generated .pb.go code should never be manually modified - regenerate via buf
+- Message definitions focus solely on BeaconBlock and BlobSidecar structures
+- Uses google.protobuf wrappers for all fields to ensure proper nullable field handling

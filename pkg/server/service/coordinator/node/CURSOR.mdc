@@ -1,0 +1,21 @@
+---
+description: Node - Batched processing and persistence of Ethereum node records
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Node Record Processing Rules
+
+Batched processing and persistence of Ethereum node records with configurable queueing and timeout handling.
+
+## Key Integration Patterns
+- **Batch Item Processor**: Uses processor.BatchItemProcessor for async batch processing with configurable parameters
+- **Exporter Pattern**: RecordExporter implements processor.Exporter interface for database persistence operations
+- **Graceful Lifecycle**: Start/Stop methods coordinate processor lifecycle with proper shutdown handling
+
+## Important Constraints
+- **Error Isolation**: Write errors are logged but don't block processing - persistence failures don't propagate back to coordinator
+- **Configurable Batching**: All timing parameters (batch timeout, export timeout, queue size) are externally configurable
+- **Async Shipping**: Uses ShippingMethodAsync for non-blocking writes to maintain coordinator responsiveness

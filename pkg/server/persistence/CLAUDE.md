@@ -1,6 +1,6 @@
-# Persistence Package Guidelines
+# Persistence
 
-The persistence package handles database operations for the server.
+Database abstraction layer that manages connections and provides conflict resolution for Xatu server data persistence.
 
-## Database Guidelines
-Claude MUST read the `.cursor/rules/database.mdc` file before making any changes here.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

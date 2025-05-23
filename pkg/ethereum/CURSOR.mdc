@@ -1,0 +1,17 @@
+---
+description: Ethereum - Client type definitions and detection utilities
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Ethereum Client Types
+
+Provides standardized Ethereum consensus client type definitions and string-based client detection utilities.
+
+## Key Patterns
+- Use `Client` type for all client representations instead of raw strings
+- Detection logic supports fuzzy matching via `strings.Contains` for flexible client identification
+- Always return `ClientUnknown` for unrecognized client strings rather than errors
+- Maintain the `AllClients` slice when adding new client types for enumeration

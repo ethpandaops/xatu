@@ -1,0 +1,22 @@
+---
+description: ClickHouse-02 database initialization for Xatu distributed cluster
+globs: 
+  - "*.sh"
+  - "init-*.sh"
+alwaysApply: false
+---
+
+# ClickHouse-02 Database Initialization
+
+ClickHouse database initialization script for the second node in a distributed cluster setup.
+
+## Key Integration Patterns
+- Configures distributed ClickHouse cluster with clickhouse-01 as primary shard
+- Uses ReplicatedMergeTree engine for data replication across cluster nodes
+- Implements schema migration tracking with distributed tables
+
+## Important Constraints
+- Must coordinate with clickhouse-01 instance for cluster configuration
+- Requires CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, and CLICKHOUSE_USER_READONLY_PASSWORD environment variables
+- Uses specific cluster name 'cluster_2S_1R' (2 Shards, 1 Replica) for distributed operations
+- Schema migration table must be created before Xatu server can track database changes

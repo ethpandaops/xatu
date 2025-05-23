@@ -65,6 +65,10 @@ transforms:
       libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
       libp2p_trace_graft: .event.name == "LIBP2P_TRACE_GRAFT"
       libp2p_trace_prune: .event.name == "LIBP2P_TRACE_PRUNE"
+      libp2p_trace_deliver_message: .event.name == "LIBP2P_TRACE_DELIVER_MESSAGE"
+      libp2p_trace_reject_message: .event.name == "LIBP2P_TRACE_REJECT_MESSAGE"
+      libp2p_trace_publish_message: .event.name == "LIBP2P_TRACE_PUBLISH_MESSAGE"
+      libp2p_trace_duplicate_message: .event.name == "LIBP2P_TRACE_DUPLICATE_MESSAGE"
       libp2p_trace_handle_metadata: .event.name == "LIBP2P_TRACE_HANDLE_METADATA"
       libp2p_trace_handle_status: .event.name == "LIBP2P_TRACE_HANDLE_STATUS"
       libp2p_trace_gossipsub_beacon_block: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK"
@@ -861,6 +865,70 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-prune
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_deliver_message_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_deliver_message
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-deliver-message
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_reject_message_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_reject_message
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-reject-message
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_publish_message_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_publish_message
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-publish-message
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_duplicate_message_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_duplicate_message
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-duplicate-message
     compression: snappy
     healthcheck:
       enabled: true

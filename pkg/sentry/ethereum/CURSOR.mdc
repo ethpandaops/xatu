@@ -1,0 +1,21 @@
+---
+description: Ethereum Beacon Node - Beacon API client with service orchestration
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Ethereum Beacon Node Component
+
+Beacon API client wrapper that orchestrates metadata and duties services for Ethereum beacon chain monitoring.
+
+## Key Integration Patterns
+- **Service Orchestration**: Manages lifecycle of metadata and duties services with dependency coordination
+- **Health-aware Startup**: Waits for upstream beacon node health before initializing services
+- **Subscription Configuration**: Supports custom beacon subscriptions or defaults to standard event types
+
+## Important Constraints
+- **Sequential Service Startup**: Services start only after beacon node health confirmation with 10-minute timeout
+- **Service Dependencies**: Duties service depends on metadata service for network context
+- **Synchronization Requirements**: All services must be ready before marking node as operational

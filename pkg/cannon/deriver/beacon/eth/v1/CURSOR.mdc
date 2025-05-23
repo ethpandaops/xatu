@@ -1,0 +1,22 @@
+---
+description: Beacon API ETH V1 derivers - Extracts beacon chain data via finalized ETH V1 endpoints
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Beacon API ETH V1 Derivers
+
+Finalized beacon chain data extractors that collect structured data via Ethereum Beacon API v1 endpoints.
+
+## Core Implementation Pattern
+- **Iterator-Driven Processing**: All derivers use BackfillingCheckpoint iterators for systematic epoch-by-epoch data collection
+- **Fork-Aware Activation**: Each deriver specifies ActivationFork (Phase0, Deneb) to handle network upgrade compatibility
+- **Exponential Backoff Retry**: Use 3-minute max interval backoff for resilience against temporary beacon node issues
+
+## Key Design Requirements
+- Process epochs sequentially via iterator.Next() for data completeness
+- Check beacon.Synced() before processing to avoid stale data
+- Implement proper fork activation (Phase0 for most, Deneb for blob sidecars)
+- Use callback-based event emission via OnEventsDerived for output handling

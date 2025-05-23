@@ -25,20 +25,24 @@ const (
 type EventType int32
 
 const (
-	EventType_UNKNOWN         EventType = 0
-	EventType_CONNECTED       EventType = 1
-	EventType_DISCONNECTED    EventType = 2
-	EventType_ADD_PEER        EventType = 3
-	EventType_REMOVE_PEER     EventType = 4
-	EventType_RECV_RPC        EventType = 5
-	EventType_SEND_RPC        EventType = 6
-	EventType_JOIN            EventType = 7
-	EventType_HANDLE_STATUS   EventType = 8
-	EventType_HANDLE_METADATA EventType = 9
-	EventType_DROP_RPC        EventType = 10
-	EventType_LEAVE           EventType = 11
-	EventType_GRAFT           EventType = 12
-	EventType_PRUNE           EventType = 13
+	EventType_UNKNOWN           EventType = 0
+	EventType_CONNECTED         EventType = 1
+	EventType_DISCONNECTED      EventType = 2
+	EventType_ADD_PEER          EventType = 3
+	EventType_REMOVE_PEER       EventType = 4
+	EventType_RECV_RPC          EventType = 5
+	EventType_SEND_RPC          EventType = 6
+	EventType_JOIN              EventType = 7
+	EventType_HANDLE_STATUS     EventType = 8
+	EventType_HANDLE_METADATA   EventType = 9
+	EventType_DROP_RPC          EventType = 10
+	EventType_LEAVE             EventType = 11
+	EventType_GRAFT             EventType = 12
+	EventType_PRUNE             EventType = 13
+	EventType_PUBLISH_MESSAGE   EventType = 14
+	EventType_REJECT_MESSAGE    EventType = 15
+	EventType_DUPLICATE_MESSAGE EventType = 16
+	EventType_DELIVER_MESSAGE   EventType = 17
 )
 
 // Enum value maps for EventType.
@@ -58,22 +62,30 @@ var (
 		11: "LEAVE",
 		12: "GRAFT",
 		13: "PRUNE",
+		14: "PUBLISH_MESSAGE",
+		15: "REJECT_MESSAGE",
+		16: "DUPLICATE_MESSAGE",
+		17: "DELIVER_MESSAGE",
 	}
 	EventType_value = map[string]int32{
-		"UNKNOWN":         0,
-		"CONNECTED":       1,
-		"DISCONNECTED":    2,
-		"ADD_PEER":        3,
-		"REMOVE_PEER":     4,
-		"RECV_RPC":        5,
-		"SEND_RPC":        6,
-		"JOIN":            7,
-		"HANDLE_STATUS":   8,
-		"HANDLE_METADATA": 9,
-		"DROP_RPC":        10,
-		"LEAVE":           11,
-		"GRAFT":           12,
-		"PRUNE":           13,
+		"UNKNOWN":           0,
+		"CONNECTED":         1,
+		"DISCONNECTED":      2,
+		"ADD_PEER":          3,
+		"REMOVE_PEER":       4,
+		"RECV_RPC":          5,
+		"SEND_RPC":          6,
+		"JOIN":              7,
+		"HANDLE_STATUS":     8,
+		"HANDLE_METADATA":   9,
+		"DROP_RPC":          10,
+		"LEAVE":             11,
+		"GRAFT":             12,
+		"PRUNE":             13,
+		"PUBLISH_MESSAGE":   14,
+		"REJECT_MESSAGE":    15,
+		"DUPLICATE_MESSAGE": 16,
+		"DELIVER_MESSAGE":   17,
 	}
 )
 
@@ -575,6 +587,330 @@ func (x *Prune) GetTopic() *wrapperspb.StringValue {
 	return nil
 }
 
+type PublishMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MsgId *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=msg_id,proto3" json:"msg_id,omitempty"`
+	Topic *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+}
+
+func (x *PublishMessage) Reset() {
+	*x = PublishMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PublishMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PublishMessage) ProtoMessage() {}
+
+func (x *PublishMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PublishMessage.ProtoReflect.Descriptor instead.
+func (*PublishMessage) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PublishMessage) GetMsgId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.MsgId
+	}
+	return nil
+}
+
+func (x *PublishMessage) GetTopic() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Topic
+	}
+	return nil
+}
+
+type RejectMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MsgId     *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=msg_id,proto3" json:"msg_id,omitempty"`
+	PeerId    *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=peer_id,proto3" json:"peer_id,omitempty"`
+	Topic     *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	Reason    *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	Local     *wrapperspb.BoolValue   `protobuf:"bytes,5,opt,name=local,proto3" json:"local,omitempty"`
+	MsgSize   *wrapperspb.UInt32Value `protobuf:"bytes,6,opt,name=msg_size,proto3" json:"msg_size,omitempty"`
+	SeqNumber *wrapperspb.UInt64Value `protobuf:"bytes,7,opt,name=seq_number,proto3" json:"seq_number,omitempty"`
+}
+
+func (x *RejectMessage) Reset() {
+	*x = RejectMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RejectMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectMessage) ProtoMessage() {}
+
+func (x *RejectMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectMessage.ProtoReflect.Descriptor instead.
+func (*RejectMessage) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RejectMessage) GetMsgId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.MsgId
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetPeerId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.PeerId
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetTopic() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Topic
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetReason() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Reason
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetLocal() *wrapperspb.BoolValue {
+	if x != nil {
+		return x.Local
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetMsgSize() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.MsgSize
+	}
+	return nil
+}
+
+func (x *RejectMessage) GetSeqNumber() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.SeqNumber
+	}
+	return nil
+}
+
+type DuplicateMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MsgId     *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=msg_id,proto3" json:"msg_id,omitempty"`
+	PeerId    *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=peer_id,proto3" json:"peer_id,omitempty"`
+	Topic     *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	Local     *wrapperspb.BoolValue   `protobuf:"bytes,4,opt,name=local,proto3" json:"local,omitempty"`
+	MsgSize   *wrapperspb.UInt32Value `protobuf:"bytes,5,opt,name=msg_size,proto3" json:"msg_size,omitempty"`
+	SeqNumber *wrapperspb.UInt64Value `protobuf:"bytes,6,opt,name=seq_number,proto3" json:"seq_number,omitempty"`
+}
+
+func (x *DuplicateMessage) Reset() {
+	*x = DuplicateMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DuplicateMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DuplicateMessage) ProtoMessage() {}
+
+func (x *DuplicateMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DuplicateMessage.ProtoReflect.Descriptor instead.
+func (*DuplicateMessage) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DuplicateMessage) GetMsgId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.MsgId
+	}
+	return nil
+}
+
+func (x *DuplicateMessage) GetPeerId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.PeerId
+	}
+	return nil
+}
+
+func (x *DuplicateMessage) GetTopic() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Topic
+	}
+	return nil
+}
+
+func (x *DuplicateMessage) GetLocal() *wrapperspb.BoolValue {
+	if x != nil {
+		return x.Local
+	}
+	return nil
+}
+
+func (x *DuplicateMessage) GetMsgSize() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.MsgSize
+	}
+	return nil
+}
+
+func (x *DuplicateMessage) GetSeqNumber() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.SeqNumber
+	}
+	return nil
+}
+
+type DeliverMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MsgId     *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=msg_id,proto3" json:"msg_id,omitempty"`
+	PeerId    *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=peer_id,proto3" json:"peer_id,omitempty"`
+	Topic     *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	Local     *wrapperspb.BoolValue   `protobuf:"bytes,4,opt,name=local,proto3" json:"local,omitempty"`
+	MsgSize   *wrapperspb.UInt32Value `protobuf:"bytes,5,opt,name=msg_size,proto3" json:"msg_size,omitempty"`
+	SeqNumber *wrapperspb.UInt64Value `protobuf:"bytes,6,opt,name=seq_number,proto3" json:"seq_number,omitempty"`
+}
+
+func (x *DeliverMessage) Reset() {
+	*x = DeliverMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeliverMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeliverMessage) ProtoMessage() {}
+
+func (x *DeliverMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeliverMessage.ProtoReflect.Descriptor instead.
+func (*DeliverMessage) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DeliverMessage) GetMsgId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.MsgId
+	}
+	return nil
+}
+
+func (x *DeliverMessage) GetPeerId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.PeerId
+	}
+	return nil
+}
+
+func (x *DeliverMessage) GetTopic() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Topic
+	}
+	return nil
+}
+
+func (x *DeliverMessage) GetLocal() *wrapperspb.BoolValue {
+	if x != nil {
+		return x.Local
+	}
+	return nil
+}
+
+func (x *DeliverMessage) GetMsgSize() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.MsgSize
+	}
+	return nil
+}
+
+func (x *DeliverMessage) GetSeqNumber() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.SeqNumber
+	}
+	return nil
+}
+
 type RPCMeta struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -589,7 +925,7 @@ type RPCMeta struct {
 func (x *RPCMeta) Reset() {
 	*x = RPCMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[9]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -602,7 +938,7 @@ func (x *RPCMeta) String() string {
 func (*RPCMeta) ProtoMessage() {}
 
 func (x *RPCMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[9]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +951,7 @@ func (x *RPCMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RPCMeta.ProtoReflect.Descriptor instead.
 func (*RPCMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{9}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RPCMeta) GetMessages() []*MessageMeta {
@@ -658,7 +994,7 @@ type MessageMeta struct {
 func (x *MessageMeta) Reset() {
 	*x = MessageMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[10]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -671,7 +1007,7 @@ func (x *MessageMeta) String() string {
 func (*MessageMeta) ProtoMessage() {}
 
 func (x *MessageMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[10]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -684,7 +1020,7 @@ func (x *MessageMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageMeta.ProtoReflect.Descriptor instead.
 func (*MessageMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{10}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MessageMeta) GetMessageId() *wrapperspb.StringValue {
@@ -713,7 +1049,7 @@ type SubMeta struct {
 func (x *SubMeta) Reset() {
 	*x = SubMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[11]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -726,7 +1062,7 @@ func (x *SubMeta) String() string {
 func (*SubMeta) ProtoMessage() {}
 
 func (x *SubMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[11]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -739,7 +1075,7 @@ func (x *SubMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubMeta.ProtoReflect.Descriptor instead.
 func (*SubMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{11}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SubMeta) GetSubscribe() *wrapperspb.BoolValue {
@@ -771,7 +1107,7 @@ type ControlMeta struct {
 func (x *ControlMeta) Reset() {
 	*x = ControlMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[12]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -784,7 +1120,7 @@ func (x *ControlMeta) String() string {
 func (*ControlMeta) ProtoMessage() {}
 
 func (x *ControlMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[12]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -797,7 +1133,7 @@ func (x *ControlMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlMeta.ProtoReflect.Descriptor instead.
 func (*ControlMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{12}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ControlMeta) GetIhave() []*ControlIHaveMeta {
@@ -847,7 +1183,7 @@ type ControlIHaveMeta struct {
 func (x *ControlIHaveMeta) Reset() {
 	*x = ControlIHaveMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[13]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -860,7 +1196,7 @@ func (x *ControlIHaveMeta) String() string {
 func (*ControlIHaveMeta) ProtoMessage() {}
 
 func (x *ControlIHaveMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[13]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -873,7 +1209,7 @@ func (x *ControlIHaveMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlIHaveMeta.ProtoReflect.Descriptor instead.
 func (*ControlIHaveMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{13}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ControlIHaveMeta) GetTopicId() *wrapperspb.StringValue {
@@ -901,7 +1237,7 @@ type ControlIWantMeta struct {
 func (x *ControlIWantMeta) Reset() {
 	*x = ControlIWantMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[14]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -914,7 +1250,7 @@ func (x *ControlIWantMeta) String() string {
 func (*ControlIWantMeta) ProtoMessage() {}
 
 func (x *ControlIWantMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[14]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -927,7 +1263,7 @@ func (x *ControlIWantMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlIWantMeta.ProtoReflect.Descriptor instead.
 func (*ControlIWantMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{14}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ControlIWantMeta) GetMessageIds() []*wrapperspb.StringValue {
@@ -948,7 +1284,7 @@ type ControlGraftMeta struct {
 func (x *ControlGraftMeta) Reset() {
 	*x = ControlGraftMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[15]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -961,7 +1297,7 @@ func (x *ControlGraftMeta) String() string {
 func (*ControlGraftMeta) ProtoMessage() {}
 
 func (x *ControlGraftMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[15]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -974,7 +1310,7 @@ func (x *ControlGraftMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlGraftMeta.ProtoReflect.Descriptor instead.
 func (*ControlGraftMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{15}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ControlGraftMeta) GetTopicId() *wrapperspb.StringValue {
@@ -996,7 +1332,7 @@ type ControlPruneMeta struct {
 func (x *ControlPruneMeta) Reset() {
 	*x = ControlPruneMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[16]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1009,7 +1345,7 @@ func (x *ControlPruneMeta) String() string {
 func (*ControlPruneMeta) ProtoMessage() {}
 
 func (x *ControlPruneMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[16]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1358,7 @@ func (x *ControlPruneMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlPruneMeta.ProtoReflect.Descriptor instead.
 func (*ControlPruneMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{16}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ControlPruneMeta) GetTopicId() *wrapperspb.StringValue {
@@ -1050,7 +1386,7 @@ type ControlIDontWantMeta struct {
 func (x *ControlIDontWantMeta) Reset() {
 	*x = ControlIDontWantMeta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[17]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1063,7 +1399,7 @@ func (x *ControlIDontWantMeta) String() string {
 func (*ControlIDontWantMeta) ProtoMessage() {}
 
 func (x *ControlIDontWantMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[17]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1076,7 +1412,7 @@ func (x *ControlIDontWantMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlIDontWantMeta.ProtoReflect.Descriptor instead.
 func (*ControlIDontWantMeta) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{17}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ControlIDontWantMeta) GetMessageIds() []*wrapperspb.StringValue {
@@ -1097,7 +1433,7 @@ type TraceEventMetadata struct {
 func (x *TraceEventMetadata) Reset() {
 	*x = TraceEventMetadata{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[18]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1110,7 +1446,7 @@ func (x *TraceEventMetadata) String() string {
 func (*TraceEventMetadata) ProtoMessage() {}
 
 func (x *TraceEventMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[18]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1123,7 +1459,7 @@ func (x *TraceEventMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceEventMetadata.ProtoReflect.Descriptor instead.
 func (*TraceEventMetadata) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{18}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *TraceEventMetadata) GetPeerId() *wrapperspb.StringValue {
@@ -1153,7 +1489,7 @@ type Connected struct {
 func (x *Connected) Reset() {
 	*x = Connected{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[19]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1166,7 +1502,7 @@ func (x *Connected) String() string {
 func (*Connected) ProtoMessage() {}
 
 func (x *Connected) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[19]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1179,7 +1515,7 @@ func (x *Connected) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Connected.ProtoReflect.Descriptor instead.
 func (*Connected) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{19}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Connected) GetRemotePeer() *wrapperspb.StringValue {
@@ -1252,7 +1588,7 @@ type Disconnected struct {
 func (x *Disconnected) Reset() {
 	*x = Disconnected{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[20]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1265,7 +1601,7 @@ func (x *Disconnected) String() string {
 func (*Disconnected) ProtoMessage() {}
 
 func (x *Disconnected) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[20]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1278,7 +1614,7 @@ func (x *Disconnected) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Disconnected.ProtoReflect.Descriptor instead.
 func (*Disconnected) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{20}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Disconnected) GetRemotePeer() *wrapperspb.StringValue {
@@ -1347,7 +1683,7 @@ type HandleStatus struct {
 func (x *HandleStatus) Reset() {
 	*x = HandleStatus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[21]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1360,7 +1696,7 @@ func (x *HandleStatus) String() string {
 func (*HandleStatus) ProtoMessage() {}
 
 func (x *HandleStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[21]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1373,7 +1709,7 @@ func (x *HandleStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleStatus.ProtoReflect.Descriptor instead.
 func (*HandleStatus) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{21}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *HandleStatus) GetPeerId() *wrapperspb.StringValue {
@@ -1433,7 +1769,7 @@ type HandleMetadata struct {
 func (x *HandleMetadata) Reset() {
 	*x = HandleMetadata{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[22]
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1446,7 +1782,7 @@ func (x *HandleMetadata) String() string {
 func (*HandleMetadata) ProtoMessage() {}
 
 func (x *HandleMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[22]
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1459,7 +1795,7 @@ func (x *HandleMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleMetadata.ProtoReflect.Descriptor instead.
 func (*HandleMetadata) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{22}
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *HandleMetadata) GetPeerId() *wrapperspb.StringValue {
@@ -1563,7 +1899,84 @@ var file_pkg_proto_libp2p_trace_proto_rawDesc = []byte{
 	0x64, 0x12, 0x32, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05,
-	0x74, 0x6f, 0x70, 0x69, 0x63, 0x22, 0xe7, 0x01, 0x0a, 0x07, 0x52, 0x50, 0x43, 0x4d, 0x65, 0x74,
+	0x74, 0x6f, 0x70, 0x69, 0x63, 0x22, 0x7a, 0x0a, 0x0e, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69, 0x64, 0x12, 0x32, 0x0a,
+	0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x74, 0x6f, 0x70, 0x69,
+	0x63, 0x22, 0x91, 0x03, 0x0a, 0x0d, 0x52, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x52, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69, 0x64, 0x12, 0x36, 0x0a, 0x07, 0x70, 0x65, 0x65,
+	0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69,
+	0x64, 0x12, 0x32, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05,
+	0x74, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x34, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61,
+	0x6c, 0x75, 0x65, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x30, 0x0a, 0x05, 0x6c,
+	0x6f, 0x63, 0x61, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x42, 0x6f, 0x6f,
+	0x6c, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x12, 0x38, 0x0a,
+	0x08, 0x6d, 0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x08, 0x6d,
+	0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x3c, 0x0a, 0x0a, 0x73, 0x65, 0x71, 0x5f, 0x6e,
+	0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49,
+	0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0a, 0x73, 0x65, 0x71, 0x5f, 0x6e,
+	0x75, 0x6d, 0x62, 0x65, 0x72, 0x22, 0xde, 0x02, 0x0a, 0x10, 0x44, 0x75, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x6d, 0x73,
+	0x67, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69, 0x64,
+	0x12, 0x36, 0x0a, 0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52,
+	0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x12, 0x32, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69,
+	0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x30, 0x0a, 0x05,
+	0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x42, 0x6f,
+	0x6f, 0x6c, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x12, 0x38,
+	0x0a, 0x08, 0x6d, 0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x08,
+	0x6d, 0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x3c, 0x0a, 0x0a, 0x73, 0x65, 0x71, 0x5f,
+	0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55,
+	0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0a, 0x73, 0x65, 0x71, 0x5f,
+	0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x22, 0xdc, 0x02, 0x0a, 0x0e, 0x44, 0x65, 0x6c, 0x69, 0x76,
+	0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x6d, 0x73, 0x67,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x6d, 0x73, 0x67, 0x5f, 0x69, 0x64, 0x12,
+	0x36, 0x0a, 0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x07,
+	0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x12, 0x32, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56,
+	0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x30, 0x0a, 0x05, 0x6c,
+	0x6f, 0x63, 0x61, 0x6c, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x42, 0x6f, 0x6f,
+	0x6c, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x12, 0x38, 0x0a,
+	0x08, 0x6d, 0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x08, 0x6d,
+	0x73, 0x67, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x3c, 0x0a, 0x0a, 0x73, 0x65, 0x71, 0x5f, 0x6e,
+	0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49,
+	0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0a, 0x73, 0x65, 0x71, 0x5f, 0x6e,
+	0x75, 0x6d, 0x62, 0x65, 0x72, 0x22, 0xe7, 0x01, 0x0a, 0x07, 0x52, 0x50, 0x43, 0x4d, 0x65, 0x74,
 	0x61, 0x12, 0x34, 0x0a, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20,
 	0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x6c, 0x69, 0x62, 0x70, 0x32,
 	0x70, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x52, 0x08, 0x6d,
@@ -1745,7 +2158,7 @@ var file_pkg_proto_libp2p_trace_proto_rawDesc = []byte{
 	0x74, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x31, 0x0a, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
 	0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x6c,
 	0x69, 0x62, 0x70, 0x32, 0x70, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x08,
-	0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x2a, 0xd5, 0x01, 0x0a, 0x09, 0x45, 0x76, 0x65,
+	0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x2a, 0xaa, 0x02, 0x0a, 0x09, 0x45, 0x76, 0x65,
 	0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57,
 	0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x45, 0x44,
 	0x10, 0x01, 0x12, 0x10, 0x0a, 0x0c, 0x44, 0x49, 0x53, 0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54,
@@ -1759,10 +2172,15 @@ var file_pkg_proto_libp2p_trace_proto_rawDesc = []byte{
 	0x09, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x52, 0x4f, 0x50, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x0a, 0x12,
 	0x09, 0x0a, 0x05, 0x4c, 0x45, 0x41, 0x56, 0x45, 0x10, 0x0b, 0x12, 0x09, 0x0a, 0x05, 0x47, 0x52,
 	0x41, 0x46, 0x54, 0x10, 0x0c, 0x12, 0x09, 0x0a, 0x05, 0x50, 0x52, 0x55, 0x4e, 0x45, 0x10, 0x0d,
-	0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65,
-	0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f,
-	0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x62, 0x70, 0x32, 0x70,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x13, 0x0a, 0x0f, 0x50, 0x55, 0x42, 0x4c, 0x49, 0x53, 0x48, 0x5f, 0x4d, 0x45, 0x53, 0x53,
+	0x41, 0x47, 0x45, 0x10, 0x0e, 0x12, 0x12, 0x0a, 0x0e, 0x52, 0x45, 0x4a, 0x45, 0x43, 0x54, 0x5f,
+	0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x0f, 0x12, 0x15, 0x0a, 0x11, 0x44, 0x55, 0x50,
+	0x4c, 0x49, 0x43, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x10,
+	0x12, 0x13, 0x0a, 0x0f, 0x44, 0x45, 0x4c, 0x49, 0x56, 0x45, 0x52, 0x5f, 0x4d, 0x45, 0x53, 0x53,
+	0x41, 0x47, 0x45, 0x10, 0x11, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
+	0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f,
+	0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c,
+	0x69, 0x62, 0x70, 0x32, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1778,7 +2196,7 @@ func file_pkg_proto_libp2p_trace_proto_rawDescGZIP() []byte {
 }
 
 var file_pkg_proto_libp2p_trace_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pkg_proto_libp2p_trace_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_pkg_proto_libp2p_trace_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_pkg_proto_libp2p_trace_proto_goTypes = []any{
 	(EventType)(0),                 // 0: xatu.libp2p.EventType
 	(*AddPeer)(nil),                // 1: xatu.libp2p.AddPeer
@@ -1790,94 +2208,121 @@ var file_pkg_proto_libp2p_trace_proto_goTypes = []any{
 	(*Leave)(nil),                  // 7: xatu.libp2p.Leave
 	(*Graft)(nil),                  // 8: xatu.libp2p.Graft
 	(*Prune)(nil),                  // 9: xatu.libp2p.Prune
-	(*RPCMeta)(nil),                // 10: xatu.libp2p.RPCMeta
-	(*MessageMeta)(nil),            // 11: xatu.libp2p.MessageMeta
-	(*SubMeta)(nil),                // 12: xatu.libp2p.SubMeta
-	(*ControlMeta)(nil),            // 13: xatu.libp2p.ControlMeta
-	(*ControlIHaveMeta)(nil),       // 14: xatu.libp2p.ControlIHaveMeta
-	(*ControlIWantMeta)(nil),       // 15: xatu.libp2p.ControlIWantMeta
-	(*ControlGraftMeta)(nil),       // 16: xatu.libp2p.ControlGraftMeta
-	(*ControlPruneMeta)(nil),       // 17: xatu.libp2p.ControlPruneMeta
-	(*ControlIDontWantMeta)(nil),   // 18: xatu.libp2p.ControlIDontWantMeta
-	(*TraceEventMetadata)(nil),     // 19: xatu.libp2p.TraceEventMetadata
-	(*Connected)(nil),              // 20: xatu.libp2p.Connected
-	(*Disconnected)(nil),           // 21: xatu.libp2p.Disconnected
-	(*HandleStatus)(nil),           // 22: xatu.libp2p.HandleStatus
-	(*HandleMetadata)(nil),         // 23: xatu.libp2p.HandleMetadata
-	(*wrapperspb.StringValue)(nil), // 24: google.protobuf.StringValue
-	(*wrapperspb.BoolValue)(nil),   // 25: google.protobuf.BoolValue
-	(*timestamppb.Timestamp)(nil),  // 26: google.protobuf.Timestamp
-	(*wrapperspb.FloatValue)(nil),  // 27: google.protobuf.FloatValue
-	(*Status)(nil),                 // 28: xatu.libp2p.Status
-	(*Metadata)(nil),               // 29: xatu.libp2p.Metadata
+	(*PublishMessage)(nil),         // 10: xatu.libp2p.PublishMessage
+	(*RejectMessage)(nil),          // 11: xatu.libp2p.RejectMessage
+	(*DuplicateMessage)(nil),       // 12: xatu.libp2p.DuplicateMessage
+	(*DeliverMessage)(nil),         // 13: xatu.libp2p.DeliverMessage
+	(*RPCMeta)(nil),                // 14: xatu.libp2p.RPCMeta
+	(*MessageMeta)(nil),            // 15: xatu.libp2p.MessageMeta
+	(*SubMeta)(nil),                // 16: xatu.libp2p.SubMeta
+	(*ControlMeta)(nil),            // 17: xatu.libp2p.ControlMeta
+	(*ControlIHaveMeta)(nil),       // 18: xatu.libp2p.ControlIHaveMeta
+	(*ControlIWantMeta)(nil),       // 19: xatu.libp2p.ControlIWantMeta
+	(*ControlGraftMeta)(nil),       // 20: xatu.libp2p.ControlGraftMeta
+	(*ControlPruneMeta)(nil),       // 21: xatu.libp2p.ControlPruneMeta
+	(*ControlIDontWantMeta)(nil),   // 22: xatu.libp2p.ControlIDontWantMeta
+	(*TraceEventMetadata)(nil),     // 23: xatu.libp2p.TraceEventMetadata
+	(*Connected)(nil),              // 24: xatu.libp2p.Connected
+	(*Disconnected)(nil),           // 25: xatu.libp2p.Disconnected
+	(*HandleStatus)(nil),           // 26: xatu.libp2p.HandleStatus
+	(*HandleMetadata)(nil),         // 27: xatu.libp2p.HandleMetadata
+	(*wrapperspb.StringValue)(nil), // 28: google.protobuf.StringValue
+	(*wrapperspb.BoolValue)(nil),   // 29: google.protobuf.BoolValue
+	(*wrapperspb.UInt32Value)(nil), // 30: google.protobuf.UInt32Value
+	(*wrapperspb.UInt64Value)(nil), // 31: google.protobuf.UInt64Value
+	(*timestamppb.Timestamp)(nil),  // 32: google.protobuf.Timestamp
+	(*wrapperspb.FloatValue)(nil),  // 33: google.protobuf.FloatValue
+	(*Status)(nil),                 // 34: xatu.libp2p.Status
+	(*Metadata)(nil),               // 35: xatu.libp2p.Metadata
 }
 var file_pkg_proto_libp2p_trace_proto_depIdxs = []int32{
-	24, // 0: xatu.libp2p.AddPeer.peer_id:type_name -> google.protobuf.StringValue
-	24, // 1: xatu.libp2p.AddPeer.protocol:type_name -> google.protobuf.StringValue
-	24, // 2: xatu.libp2p.RemovePeer.peer_id:type_name -> google.protobuf.StringValue
-	24, // 3: xatu.libp2p.RecvRPC.peer_id:type_name -> google.protobuf.StringValue
-	10, // 4: xatu.libp2p.RecvRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	24, // 5: xatu.libp2p.SendRPC.peer_id:type_name -> google.protobuf.StringValue
-	10, // 6: xatu.libp2p.SendRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	24, // 7: xatu.libp2p.DropRPC.peer_id:type_name -> google.protobuf.StringValue
-	10, // 8: xatu.libp2p.DropRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	24, // 9: xatu.libp2p.Join.topic:type_name -> google.protobuf.StringValue
-	24, // 10: xatu.libp2p.Leave.topic:type_name -> google.protobuf.StringValue
-	24, // 11: xatu.libp2p.Graft.peer_id:type_name -> google.protobuf.StringValue
-	24, // 12: xatu.libp2p.Graft.topic:type_name -> google.protobuf.StringValue
-	24, // 13: xatu.libp2p.Prune.peer_id:type_name -> google.protobuf.StringValue
-	24, // 14: xatu.libp2p.Prune.topic:type_name -> google.protobuf.StringValue
-	11, // 15: xatu.libp2p.RPCMeta.messages:type_name -> xatu.libp2p.MessageMeta
-	12, // 16: xatu.libp2p.RPCMeta.subscriptions:type_name -> xatu.libp2p.SubMeta
-	13, // 17: xatu.libp2p.RPCMeta.control:type_name -> xatu.libp2p.ControlMeta
-	24, // 18: xatu.libp2p.RPCMeta.peer_id:type_name -> google.protobuf.StringValue
-	24, // 19: xatu.libp2p.MessageMeta.message_id:type_name -> google.protobuf.StringValue
-	24, // 20: xatu.libp2p.MessageMeta.topic:type_name -> google.protobuf.StringValue
-	25, // 21: xatu.libp2p.SubMeta.subscribe:type_name -> google.protobuf.BoolValue
-	24, // 22: xatu.libp2p.SubMeta.topic_id:type_name -> google.protobuf.StringValue
-	14, // 23: xatu.libp2p.ControlMeta.ihave:type_name -> xatu.libp2p.ControlIHaveMeta
-	15, // 24: xatu.libp2p.ControlMeta.iwant:type_name -> xatu.libp2p.ControlIWantMeta
-	16, // 25: xatu.libp2p.ControlMeta.graft:type_name -> xatu.libp2p.ControlGraftMeta
-	17, // 26: xatu.libp2p.ControlMeta.prune:type_name -> xatu.libp2p.ControlPruneMeta
-	18, // 27: xatu.libp2p.ControlMeta.idontwant:type_name -> xatu.libp2p.ControlIDontWantMeta
-	24, // 28: xatu.libp2p.ControlIHaveMeta.topic_id:type_name -> google.protobuf.StringValue
-	24, // 29: xatu.libp2p.ControlIHaveMeta.message_ids:type_name -> google.protobuf.StringValue
-	24, // 30: xatu.libp2p.ControlIWantMeta.message_ids:type_name -> google.protobuf.StringValue
-	24, // 31: xatu.libp2p.ControlGraftMeta.topic_id:type_name -> google.protobuf.StringValue
-	24, // 32: xatu.libp2p.ControlPruneMeta.topic_id:type_name -> google.protobuf.StringValue
-	24, // 33: xatu.libp2p.ControlPruneMeta.peer_ids:type_name -> google.protobuf.StringValue
-	24, // 34: xatu.libp2p.ControlIDontWantMeta.message_ids:type_name -> google.protobuf.StringValue
-	24, // 35: xatu.libp2p.TraceEventMetadata.peer_id:type_name -> google.protobuf.StringValue
-	24, // 36: xatu.libp2p.Connected.remote_peer:type_name -> google.protobuf.StringValue
-	24, // 37: xatu.libp2p.Connected.remote_maddrs:type_name -> google.protobuf.StringValue
-	24, // 38: xatu.libp2p.Connected.agent_version:type_name -> google.protobuf.StringValue
-	24, // 39: xatu.libp2p.Connected.direction:type_name -> google.protobuf.StringValue
-	26, // 40: xatu.libp2p.Connected.opened:type_name -> google.protobuf.Timestamp
-	25, // 41: xatu.libp2p.Connected.transient:type_name -> google.protobuf.BoolValue
-	25, // 42: xatu.libp2p.Connected.limited:type_name -> google.protobuf.BoolValue
-	24, // 43: xatu.libp2p.Disconnected.remote_peer:type_name -> google.protobuf.StringValue
-	24, // 44: xatu.libp2p.Disconnected.remote_maddrs:type_name -> google.protobuf.StringValue
-	24, // 45: xatu.libp2p.Disconnected.agent_version:type_name -> google.protobuf.StringValue
-	24, // 46: xatu.libp2p.Disconnected.direction:type_name -> google.protobuf.StringValue
-	26, // 47: xatu.libp2p.Disconnected.opened:type_name -> google.protobuf.Timestamp
-	25, // 48: xatu.libp2p.Disconnected.transient:type_name -> google.protobuf.BoolValue
-	25, // 49: xatu.libp2p.Disconnected.limited:type_name -> google.protobuf.BoolValue
-	24, // 50: xatu.libp2p.HandleStatus.peer_id:type_name -> google.protobuf.StringValue
-	24, // 51: xatu.libp2p.HandleStatus.protocol_id:type_name -> google.protobuf.StringValue
-	24, // 52: xatu.libp2p.HandleStatus.error:type_name -> google.protobuf.StringValue
-	27, // 53: xatu.libp2p.HandleStatus.latency:type_name -> google.protobuf.FloatValue
-	28, // 54: xatu.libp2p.HandleStatus.request:type_name -> xatu.libp2p.Status
-	28, // 55: xatu.libp2p.HandleStatus.response:type_name -> xatu.libp2p.Status
-	24, // 56: xatu.libp2p.HandleMetadata.peer_id:type_name -> google.protobuf.StringValue
-	24, // 57: xatu.libp2p.HandleMetadata.protocol_id:type_name -> google.protobuf.StringValue
-	24, // 58: xatu.libp2p.HandleMetadata.error:type_name -> google.protobuf.StringValue
-	27, // 59: xatu.libp2p.HandleMetadata.latency:type_name -> google.protobuf.FloatValue
-	29, // 60: xatu.libp2p.HandleMetadata.metadata:type_name -> xatu.libp2p.Metadata
-	61, // [61:61] is the sub-list for method output_type
-	61, // [61:61] is the sub-list for method input_type
-	61, // [61:61] is the sub-list for extension type_name
-	61, // [61:61] is the sub-list for extension extendee
-	0,  // [0:61] is the sub-list for field type_name
+	28, // 0: xatu.libp2p.AddPeer.peer_id:type_name -> google.protobuf.StringValue
+	28, // 1: xatu.libp2p.AddPeer.protocol:type_name -> google.protobuf.StringValue
+	28, // 2: xatu.libp2p.RemovePeer.peer_id:type_name -> google.protobuf.StringValue
+	28, // 3: xatu.libp2p.RecvRPC.peer_id:type_name -> google.protobuf.StringValue
+	14, // 4: xatu.libp2p.RecvRPC.meta:type_name -> xatu.libp2p.RPCMeta
+	28, // 5: xatu.libp2p.SendRPC.peer_id:type_name -> google.protobuf.StringValue
+	14, // 6: xatu.libp2p.SendRPC.meta:type_name -> xatu.libp2p.RPCMeta
+	28, // 7: xatu.libp2p.DropRPC.peer_id:type_name -> google.protobuf.StringValue
+	14, // 8: xatu.libp2p.DropRPC.meta:type_name -> xatu.libp2p.RPCMeta
+	28, // 9: xatu.libp2p.Join.topic:type_name -> google.protobuf.StringValue
+	28, // 10: xatu.libp2p.Leave.topic:type_name -> google.protobuf.StringValue
+	28, // 11: xatu.libp2p.Graft.peer_id:type_name -> google.protobuf.StringValue
+	28, // 12: xatu.libp2p.Graft.topic:type_name -> google.protobuf.StringValue
+	28, // 13: xatu.libp2p.Prune.peer_id:type_name -> google.protobuf.StringValue
+	28, // 14: xatu.libp2p.Prune.topic:type_name -> google.protobuf.StringValue
+	28, // 15: xatu.libp2p.PublishMessage.msg_id:type_name -> google.protobuf.StringValue
+	28, // 16: xatu.libp2p.PublishMessage.topic:type_name -> google.protobuf.StringValue
+	28, // 17: xatu.libp2p.RejectMessage.msg_id:type_name -> google.protobuf.StringValue
+	28, // 18: xatu.libp2p.RejectMessage.peer_id:type_name -> google.protobuf.StringValue
+	28, // 19: xatu.libp2p.RejectMessage.topic:type_name -> google.protobuf.StringValue
+	28, // 20: xatu.libp2p.RejectMessage.reason:type_name -> google.protobuf.StringValue
+	29, // 21: xatu.libp2p.RejectMessage.local:type_name -> google.protobuf.BoolValue
+	30, // 22: xatu.libp2p.RejectMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	31, // 23: xatu.libp2p.RejectMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	28, // 24: xatu.libp2p.DuplicateMessage.msg_id:type_name -> google.protobuf.StringValue
+	28, // 25: xatu.libp2p.DuplicateMessage.peer_id:type_name -> google.protobuf.StringValue
+	28, // 26: xatu.libp2p.DuplicateMessage.topic:type_name -> google.protobuf.StringValue
+	29, // 27: xatu.libp2p.DuplicateMessage.local:type_name -> google.protobuf.BoolValue
+	30, // 28: xatu.libp2p.DuplicateMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	31, // 29: xatu.libp2p.DuplicateMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	28, // 30: xatu.libp2p.DeliverMessage.msg_id:type_name -> google.protobuf.StringValue
+	28, // 31: xatu.libp2p.DeliverMessage.peer_id:type_name -> google.protobuf.StringValue
+	28, // 32: xatu.libp2p.DeliverMessage.topic:type_name -> google.protobuf.StringValue
+	29, // 33: xatu.libp2p.DeliverMessage.local:type_name -> google.protobuf.BoolValue
+	30, // 34: xatu.libp2p.DeliverMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	31, // 35: xatu.libp2p.DeliverMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	15, // 36: xatu.libp2p.RPCMeta.messages:type_name -> xatu.libp2p.MessageMeta
+	16, // 37: xatu.libp2p.RPCMeta.subscriptions:type_name -> xatu.libp2p.SubMeta
+	17, // 38: xatu.libp2p.RPCMeta.control:type_name -> xatu.libp2p.ControlMeta
+	28, // 39: xatu.libp2p.RPCMeta.peer_id:type_name -> google.protobuf.StringValue
+	28, // 40: xatu.libp2p.MessageMeta.message_id:type_name -> google.protobuf.StringValue
+	28, // 41: xatu.libp2p.MessageMeta.topic:type_name -> google.protobuf.StringValue
+	29, // 42: xatu.libp2p.SubMeta.subscribe:type_name -> google.protobuf.BoolValue
+	28, // 43: xatu.libp2p.SubMeta.topic_id:type_name -> google.protobuf.StringValue
+	18, // 44: xatu.libp2p.ControlMeta.ihave:type_name -> xatu.libp2p.ControlIHaveMeta
+	19, // 45: xatu.libp2p.ControlMeta.iwant:type_name -> xatu.libp2p.ControlIWantMeta
+	20, // 46: xatu.libp2p.ControlMeta.graft:type_name -> xatu.libp2p.ControlGraftMeta
+	21, // 47: xatu.libp2p.ControlMeta.prune:type_name -> xatu.libp2p.ControlPruneMeta
+	22, // 48: xatu.libp2p.ControlMeta.idontwant:type_name -> xatu.libp2p.ControlIDontWantMeta
+	28, // 49: xatu.libp2p.ControlIHaveMeta.topic_id:type_name -> google.protobuf.StringValue
+	28, // 50: xatu.libp2p.ControlIHaveMeta.message_ids:type_name -> google.protobuf.StringValue
+	28, // 51: xatu.libp2p.ControlIWantMeta.message_ids:type_name -> google.protobuf.StringValue
+	28, // 52: xatu.libp2p.ControlGraftMeta.topic_id:type_name -> google.protobuf.StringValue
+	28, // 53: xatu.libp2p.ControlPruneMeta.topic_id:type_name -> google.protobuf.StringValue
+	28, // 54: xatu.libp2p.ControlPruneMeta.peer_ids:type_name -> google.protobuf.StringValue
+	28, // 55: xatu.libp2p.ControlIDontWantMeta.message_ids:type_name -> google.protobuf.StringValue
+	28, // 56: xatu.libp2p.TraceEventMetadata.peer_id:type_name -> google.protobuf.StringValue
+	28, // 57: xatu.libp2p.Connected.remote_peer:type_name -> google.protobuf.StringValue
+	28, // 58: xatu.libp2p.Connected.remote_maddrs:type_name -> google.protobuf.StringValue
+	28, // 59: xatu.libp2p.Connected.agent_version:type_name -> google.protobuf.StringValue
+	28, // 60: xatu.libp2p.Connected.direction:type_name -> google.protobuf.StringValue
+	32, // 61: xatu.libp2p.Connected.opened:type_name -> google.protobuf.Timestamp
+	29, // 62: xatu.libp2p.Connected.transient:type_name -> google.protobuf.BoolValue
+	29, // 63: xatu.libp2p.Connected.limited:type_name -> google.protobuf.BoolValue
+	28, // 64: xatu.libp2p.Disconnected.remote_peer:type_name -> google.protobuf.StringValue
+	28, // 65: xatu.libp2p.Disconnected.remote_maddrs:type_name -> google.protobuf.StringValue
+	28, // 66: xatu.libp2p.Disconnected.agent_version:type_name -> google.protobuf.StringValue
+	28, // 67: xatu.libp2p.Disconnected.direction:type_name -> google.protobuf.StringValue
+	32, // 68: xatu.libp2p.Disconnected.opened:type_name -> google.protobuf.Timestamp
+	29, // 69: xatu.libp2p.Disconnected.transient:type_name -> google.protobuf.BoolValue
+	29, // 70: xatu.libp2p.Disconnected.limited:type_name -> google.protobuf.BoolValue
+	28, // 71: xatu.libp2p.HandleStatus.peer_id:type_name -> google.protobuf.StringValue
+	28, // 72: xatu.libp2p.HandleStatus.protocol_id:type_name -> google.protobuf.StringValue
+	28, // 73: xatu.libp2p.HandleStatus.error:type_name -> google.protobuf.StringValue
+	33, // 74: xatu.libp2p.HandleStatus.latency:type_name -> google.protobuf.FloatValue
+	34, // 75: xatu.libp2p.HandleStatus.request:type_name -> xatu.libp2p.Status
+	34, // 76: xatu.libp2p.HandleStatus.response:type_name -> xatu.libp2p.Status
+	28, // 77: xatu.libp2p.HandleMetadata.peer_id:type_name -> google.protobuf.StringValue
+	28, // 78: xatu.libp2p.HandleMetadata.protocol_id:type_name -> google.protobuf.StringValue
+	28, // 79: xatu.libp2p.HandleMetadata.error:type_name -> google.protobuf.StringValue
+	33, // 80: xatu.libp2p.HandleMetadata.latency:type_name -> google.protobuf.FloatValue
+	35, // 81: xatu.libp2p.HandleMetadata.metadata:type_name -> xatu.libp2p.Metadata
+	82, // [82:82] is the sub-list for method output_type
+	82, // [82:82] is the sub-list for method input_type
+	82, // [82:82] is the sub-list for extension type_name
+	82, // [82:82] is the sub-list for extension extendee
+	0,  // [0:82] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_libp2p_trace_proto_init() }
@@ -1996,7 +2441,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*RPCMeta); i {
+			switch v := v.(*PublishMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2008,7 +2453,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[10].Exporter = func(v any, i int) any {
-			switch v := v.(*MessageMeta); i {
+			switch v := v.(*RejectMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2020,7 +2465,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[11].Exporter = func(v any, i int) any {
-			switch v := v.(*SubMeta); i {
+			switch v := v.(*DuplicateMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2032,7 +2477,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[12].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlMeta); i {
+			switch v := v.(*DeliverMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2044,7 +2489,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[13].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlIHaveMeta); i {
+			switch v := v.(*RPCMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2056,7 +2501,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[14].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlIWantMeta); i {
+			switch v := v.(*MessageMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2068,7 +2513,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlGraftMeta); i {
+			switch v := v.(*SubMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2080,7 +2525,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlPruneMeta); i {
+			switch v := v.(*ControlMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2092,7 +2537,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*ControlIDontWantMeta); i {
+			switch v := v.(*ControlIHaveMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2104,7 +2549,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*TraceEventMetadata); i {
+			switch v := v.(*ControlIWantMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2116,7 +2561,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*Connected); i {
+			switch v := v.(*ControlGraftMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2128,7 +2573,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*Disconnected); i {
+			switch v := v.(*ControlPruneMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2140,7 +2585,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*HandleStatus); i {
+			switch v := v.(*ControlIDontWantMeta); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2152,6 +2597,54 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			}
 		}
 		file_pkg_proto_libp2p_trace_proto_msgTypes[22].Exporter = func(v any, i int) any {
+			switch v := v.(*TraceEventMetadata); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_libp2p_trace_proto_msgTypes[23].Exporter = func(v any, i int) any {
+			switch v := v.(*Connected); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_libp2p_trace_proto_msgTypes[24].Exporter = func(v any, i int) any {
+			switch v := v.(*Disconnected); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_libp2p_trace_proto_msgTypes[25].Exporter = func(v any, i int) any {
+			switch v := v.(*HandleStatus); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_libp2p_trace_proto_msgTypes[26].Exporter = func(v any, i int) any {
 			switch v := v.(*HandleMetadata); i {
 			case 0:
 				return &v.state
@@ -2170,7 +2663,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_libp2p_trace_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   23,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

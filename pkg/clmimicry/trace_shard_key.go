@@ -69,6 +69,18 @@ func getPeerID(eventType string, event *host.TraceEvent) string {
 		if s, err := libp2p.TraceEventToSendRPC(event); err == nil && s.PeerId != nil {
 			return s.PeerId.GetValue()
 		}
+	case xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String():
+		if d, err := libp2p.TraceEventToDeliverMessage(event); err == nil && d.PeerId != nil {
+			return d.PeerId.GetValue()
+		}
+	case xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String():
+		if r, err := libp2p.TraceEventToRejectMessage(event); err == nil && r.PeerId != nil {
+			return r.PeerId.GetValue()
+		}
+	case xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String():
+		if d, err := libp2p.TraceEventToDuplicateMessage(event); err == nil && d.PeerId != nil {
+			return d.PeerId.GetValue()
+		}
 	default:
 	}
 

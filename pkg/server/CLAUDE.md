@@ -1,9 +1,6 @@
-# Server Package Guidelines
+# Server
 
-The server package implements the Xatu server component, which acts as the central hub collecting events from various clients and distributing them to output sinks.
+Centralized gRPC server that collects events from distributed Xatu clients and routes data to configured output sinks.
 
-## Server Component
-Claude MUST read the `.cursor/rules/server.mdc` file before making any changes here.
-
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

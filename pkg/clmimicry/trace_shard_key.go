@@ -113,6 +113,17 @@ func getMsgID(payload interface{}) string {
 		return ""
 	}
 
+	// Handle map[string]any payloads (used by deliver_message, duplicate_message, etc.)
+	if mapPayload, ok := payload.(map[string]any); ok {
+		if msgID, found := mapPayload["MsgID"]; found {
+			if msgIDStr, ok := msgID.(string); ok {
+				return msgIDStr
+			}
+		}
+
+		return ""
+	}
+
 	// Try to access the MsgID field using reflection.
 	v := reflect.ValueOf(payload)
 	if v.Kind() != reflect.Ptr || v.IsNil() {

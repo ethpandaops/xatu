@@ -1,0 +1,78 @@
+---
+description: Go coding standards and conventions for Xatu
+globs: ["**/*.go"]
+alwaysApply: false
+---
+
+# Xatu Code Standards
+
+## Go Language Standards
+- Follow official Go style guidelines and `gofmt` formatting
+- Use `go mod` for dependency management
+- Target Go 1.24+ as specified in go.mod
+- Utilize standard library packages when possible
+
+## Project Structure Conventions
+- Package names should be lowercase, single words
+- Use descriptive package names that reflect functionality
+- Place related functionality in appropriate `pkg/` subdirectories
+- Keep configuration structs in `config.go` files within each package
+
+## Configuration Management
+- Use YAML struct tags for configuration binding
+- Provide sensible defaults using `default:` tags
+- Document configuration fields with inline comments
+- Use pointer types for optional configuration sections (e.g., `*Config`)
+- Example pattern:
+```go
+type Config struct {
+    // MetricsAddr is the address to listen on for metrics.
+    MetricsAddr string `yaml:"metricsAddr" default:":9090"`
+    // Optional feature configuration
+    Feature *FeatureConfig `yaml:"feature" default:"{'enabled': false}"`
+}
+```
+
+## Error Handling
+- Use standard Go error handling patterns
+- Wrap errors with context using `fmt.Errorf` or `pkg/errors`
+- Return errors as the last return value
+- Check errors immediately after function calls
+
+## Logging Standards
+- Use `logrus` for structured logging throughout the project
+- Include appropriate log levels (debug, info, warn, error)
+- Add contextual fields to log entries when helpful
+- Use consistent field naming for common values
+
+## Import Organization
+- Group imports in standard Go order:
+  1. Standard library packages
+  2. External dependencies 
+  3. Internal project packages (github.com/ethpandaops/xatu/pkg/...)
+- Use blank lines to separate import groups
+
+## Naming Conventions
+- Use camelCase for variables and functions
+- Use PascalCase for exported types and functions
+- Use ALL_CAPS for constants
+- Interface names should end with 'er' when appropriate
+- Use descriptive names that explain purpose
+
+## Documentation
+- Document all public APIs with godoc comments
+- Use complete sentences in documentation
+- Provide usage examples for complex interfaces
+- Keep documentation up to date with code changes
+
+## Testing
+- Place tests in `*_test.go` files
+- Use table-driven tests for multiple test cases
+- Mock external dependencies using interfaces
+- Follow existing test patterns in the codebase
+
+## Protocol Buffers
+- Place `.proto` files in `pkg/proto/` subdirectories
+- Use appropriate protobuf naming conventions
+- Generate Go code using `buf generate`
+- Keep protobuf definitions and generated code in sync

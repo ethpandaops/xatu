@@ -1,0 +1,79 @@
+---
+description: Development workflow and processes for Xatu
+globs: 
+alwaysApply: false
+---
+
+# Xatu Development Workflow
+
+## Git Workflow and Branching
+- **Main Branch**: `master` (primary development branch)
+- **Feature Branches**: Use descriptive names with prefixes:
+  - `feat/` for new features
+  - `fix/` for bug fixes  
+  - `chore/` for maintenance tasks
+  - `refactor/` for code refactoring
+- **Branch Naming**: Use kebab-case (e.g., `feat/new-output-sink`)
+- **Pull Requests**: All changes must go through pull request process
+
+## Commit Message Standards
+Follow conventional commit format:
+- `feat(component): description` for new features
+- `fix(component): description` for bug fixes
+- `chore(component): description` for maintenance
+- Example: `feat(sentry): new output` or `fix(server): connection handling`
+
+## Code Quality Requirements
+All pull requests must pass:
+- **Tests**: `go test ./...` - automated via GitHub Actions
+- **Linting**: `golangci-lint` with 5 minute timeout
+- **Go Version**: Target Go 1.24.x for compatibility
+- **Code Review**: Pull requests require review before merging
+
+## Testing Standards
+- **Unit Tests**: Place in `*_test.go` files alongside source code
+- **Test Coverage**: Maintain reasonable test coverage for critical paths
+- **Table-Driven Tests**: Use for testing multiple scenarios
+- **Mocking**: Mock external dependencies using interfaces
+- **CI Testing**: All tests run automatically on pull requests
+
+## Build and Development Tools
+- **Protocol Buffers**: Generate code using `buf generate`
+- **Docker**: Local development environment via `docker-compose up`
+- **Go Modules**: Use `go mod` for dependency management
+- **Local Testing**: Run full pipeline locally with ClickHouse and Grafana
+
+## Release Process
+- **Versioning**: Follow semantic versioning (SemVer)
+- **Alpha Releases**: Automated via GitHub Actions for preview builds
+- **Production Releases**: Tagged releases via goreleaser
+- **Docker Images**: Multi-architecture builds (distroless and debian variants)
+
+## CI/CD Pipeline
+- **GitHub Actions**: Automated testing, linting, and building
+- **Smoke Tests**: Automated testing for cannon and sentry components
+- **Security**: Dependabot enabled for dependency updates
+- **Quality Gates**: All checks must pass before merge
+
+## Local Development Setup
+1. Clone repository and checkout feature branch
+2. Run `docker-compose up -d` for local infrastructure
+3. Build and test changes: `go build` and `go test ./...`
+4. Run specific components with example configurations
+5. Access local services:
+   - Xatu server: `:8080`
+   - ClickHouse: `:9000` (native), `:8123` (HTTP)
+   - Grafana: `:3000`
+
+## Configuration Management
+- **Example Configs**: Provided as `example_*.yaml` files
+- **Environment-Specific**: Use appropriate configs for local vs production
+- **Documentation**: Keep example configs updated with new features
+- **Validation**: Validate configurations before deployment
+
+## Code Review Guidelines
+- Review for adherence to coding standards
+- Verify test coverage for new functionality
+- Check for security considerations
+- Ensure documentation is updated
+- Validate protocol buffer changes if applicable

@@ -1,0 +1,21 @@
+---
+description: MaxMind - GeoIP provider implementation using MaxMind GeoLite2 databases
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# MaxMind Provider Rules
+
+MaxMind GeoIP provider implementation using GeoLite2 databases for city and ASN lookups with caching and metrics.
+
+## Key Integration Pattern
+- **Database Composition**: Combines separate City and ASN database handlers for complete geolocation data
+- **TTL Cache Integration**: Uses ttlcache for IP lookup result caching to improve performance
+- **Prometheus Metrics**: Tracks lookup operations with provider type and status labels
+
+## Important Constraints
+- **Database Lifecycle**: City and ASN databases must be started/stopped independently in Start/Stop methods
+- **Graceful Error Handling**: Continue partial operations if only one database type fails
+- **Metrics Consistency**: Always increment metrics counters for both success and error cases

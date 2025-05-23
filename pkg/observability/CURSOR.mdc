@@ -1,0 +1,21 @@
+---
+description: Observability - OpenTelemetry tracing and observability utilities for Xatu
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Observability Package
+
+OpenTelemetry tracing and observability utilities for distributed monitoring across Xatu components.
+
+## Key Integration Patterns
+- **OTLP HTTP Export**: Uses OpenTelemetry HTTP exporters with configurable endpoints and retry logic
+- **Context Merging**: Provides MergeContexts() to link multiple span contexts for cross-component tracing
+- **SDK Lifecycle Management**: Handles proper setup and shutdown of OpenTelemetry tracer providers
+
+## Important Constraints
+- All configuration uses YAML struct tags with sensible defaults
+- HTTP exporters support compression, authentication headers, and TLS configuration
+- Trace sampling rate is configurable but defaults to 1% (0.01) for production safety

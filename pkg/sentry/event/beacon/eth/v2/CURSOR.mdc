@@ -1,0 +1,21 @@
+---
+description: Ethereum Beacon Chain v2 block event processing and decoration
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Beacon Eth V2 Events
+
+Processes Ethereum Beacon Chain v2 block events with fork-specific handling and network monitoring enrichment.
+
+## Key Integration Patterns
+- **Fork-Aware Processing**: Handles multiple Ethereum consensus specification versions (Phase0, Altair, Bellatrix, Capella, Deneb, Electra) with version-specific transaction extraction
+- **Event Decoration Pattern**: Enriches beacon block events with computed metadata (slot timing, transaction counts, compression metrics)
+- **Duplicate Detection**: Uses TTL cache with content hashing to prevent reprocessing of identical block events
+
+## Important Constraints
+- **Time-Based Filtering**: Automatically ignores blocks older than 16 slots from current slot
+- **Beacon Sync Dependency**: Requires beacon node synchronization before processing events
+- **SSZ Serialization**: Uses SSZ marshaling for block size calculations and compression metrics

@@ -1,0 +1,21 @@
+---
+description: CL-Mimicry - Consensus layer P2P network monitoring client
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# CL-Mimicry Component Rules
+
+Consensus layer P2P network monitoring client that mimics validator behavior to collect libp2p and gossipsub events from Ethereum consensus networks.
+
+## Key Integration Patterns
+- **Event-driven architecture**: Processes Hermes events and routes them through configured output sinks
+- **Dual client integration**: Combines Hermes libp2p node with Ethereum beacon client for comprehensive monitoring
+- **Prysm compatibility**: Relies on Prysm beacon client for consensus layer operations and network participation
+
+## Critical Constraints
+- **Network configuration consistency**: config.ethereum.network and prysm network settings must align to prevent fork digest mismatches
+- **Hermes event categorization**: Events are strictly categorized into GossipSub, libp2p protocol, libp2p core, and RPC types
+- **Trace sampling**: Uses configurable shard-based sampling for high-volume event filtering

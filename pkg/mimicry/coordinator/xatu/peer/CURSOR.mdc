@@ -1,0 +1,21 @@
+---
+description: Xatu Peer - Individual peer management with resilient connection handling and retry logic
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Xatu Peer
+
+Individual peer wrapper that manages resilient connections to Ethereum execution layer peers with automatic retry and connection state tracking.
+
+## Key Integration Patterns
+- **Resilient connection lifecycle**: Wraps execution.Peer with automatic retry logic and graceful shutdown handling
+- **Thread-safe state management**: Uses mutex protection for peer state (stopped, connection attempts) accessed by retry goroutines
+- **Connection tracking integration**: Maintains CoordinatedNodeRecord state for parent coordinator consumption
+
+## Important Constraints
+- **Unrecoverable error pattern**: Must return retry.Unrecoverable when peer is stopped to prevent infinite retry loops
+- **Mutex discipline**: All shared state access must be protected by mutex due to concurrent retry operations
+- **Proper cleanup**: Always defer peer.Stop() and update connection state in retry function cleanup

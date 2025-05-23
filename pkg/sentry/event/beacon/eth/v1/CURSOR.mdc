@@ -1,0 +1,21 @@
+---
+description: Sentry Beacon ETH API v1 - Ethereum beacon chain event handlers for v1 specification
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Sentry Beacon ETH API v1 Event Handlers
+
+Ethereum beacon chain event handler implementations for Beacon API v1 specification.
+
+## Key Integration Patterns
+- **Standardized Event Processing**: All event handlers follow consistent struct pattern with beacon node, client metadata, and duplicate cache
+- **Protocol Buffer Serialization**: Events are converted to protobuf format for standardized data pipeline processing
+- **Deduplication Logic**: Uses TTL cache with hash-based deduplication to prevent duplicate event processing
+
+## Design Constraints
+- **API Version Specificity**: Handlers are locked to go-eth2-client v1 API types - maintain strict version alignment
+- **Event-specific Validation**: Each event type has unique validation requirements based on beacon chain specification
+- **Memory Efficiency**: Duplicate cache and event processing must handle high-throughput beacon chain events

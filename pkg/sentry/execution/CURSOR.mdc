@@ -1,0 +1,21 @@
+---
+description: Execution - Mempool monitoring with multiple client support via unified interface
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Execution Component
+
+Mempool monitoring client that collects pending transactions from Ethereum execution clients via multiple discovery methods.
+
+## Key Integration Patterns
+- **Unified Client Interface**: Supports multiple execution clients (Geth, Besu, Nethermind, Erigon) through `ClientProvider` interface
+- **Triple Discovery Strategy**: Combines WebSocket subscriptions, txpool_content polling, and eth_pendingTransactions for comprehensive coverage
+- **Circuit Breaker Protection**: All RPC operations wrapped in circuit breakers to handle client failures gracefully
+
+## Critical Design Constraints
+- **Deduplication Required**: Same transactions discovered via multiple sources must be deduplicated using hash-based tracking
+- **Batch Processing**: Transaction details fetched in configurable batches to avoid overwhelming execution clients
+- **Stateful Transaction Tracking**: Maintains temporary `pendingTxs` map for processing coordination, not permanent mempool state

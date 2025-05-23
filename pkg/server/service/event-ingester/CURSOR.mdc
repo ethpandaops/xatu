@@ -1,0 +1,22 @@
+---
+description: Event Ingester - gRPC service that ingests Ethereum network events with authorization and routing
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Event Ingester Service Rules
+
+gRPC service that ingests Ethereum network events from distributed clients with authorization, filtering, and routing to configured output sinks.
+
+## Key Integration Patterns
+- **Authorization Pipeline**: Implements user/group-based access control with token validation and event filtering
+- **Event Router Pattern**: Routes events through type-specific handlers for validation and enrichment before sink delivery
+- **Dual Redaction Strategy**: Events are redacted before AND after processing to prevent data leakage during geoip/enrichment
+
+## Important Constraints
+- **Authorization Required**: When enabled, all requests must include valid authorization headers
+- **Event Validation**: All events must pass handler-specific validation before routing to output sinks
+- **GeoIP Enrichment**: Client IP addresses are enriched with geographical data when geoip provider is available
+- **OpenTelemetry Integration**: All operations include proper span creation with error status reporting

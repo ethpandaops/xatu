@@ -1,0 +1,22 @@
+---
+description: Ethereum Beacon API client adapter for Cannon data collection
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Ethereum Package
+
+Beacon API client wrapper that provides caching, preloading, and service management for Cannon's finalized data collection.
+
+## Key Integration Patterns
+- **Service Interface**: All components implement `services.Service` interface with lifecycle management
+- **Caching Layer**: Uses TTL caches for blocks and validators with singleflight deduplication
+- **Preloading System**: Background workers preload frequently accessed data to reduce API latency
+- **Beacon API Abstraction**: Wraps `go-eth2-client` with operational enhancements for production workloads
+
+## Critical Constraints
+- Maintain cache consistency during network upgrades and reorgs
+- Handle beacon node connection failures gracefully with retry logic
+- Coordinate preloading to avoid overwhelming beacon node API rate limits

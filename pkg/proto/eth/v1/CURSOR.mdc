@@ -1,0 +1,18 @@
+---
+description: Ethereum v1 Protocol Buffers - Type conversion layer for consensus client data structures
+globs: 
+  - "*.go"
+  - "*.proto"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Ethereum v1 Protocol Buffers
+
+Conversion layer between Ethereum consensus client types and protocol buffer formats supporting all hard fork versions.
+
+## Key Patterns
+- Use conversion functions for bidirectional mapping between go-eth2-client types and protobuf messages
+- Maintain string representations for complex types (roots, signatures, commitments) using hex encoding
+- Support multiple hard fork versions (phase0, capella, deneb, electra) in conversion logic
+- Always validate hex string format with proper "0x" prefix and expected length in string-to-type conversions

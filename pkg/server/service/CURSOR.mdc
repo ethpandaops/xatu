@@ -1,0 +1,21 @@
+---
+description: Service - Factory and configuration layer for gRPC service instantiation
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Server Service Layer Rules
+
+Service factory that instantiates and manages gRPC services (event-ingester, coordinator) with shared dependencies.
+
+## Key Integration Patterns
+- **GRPCService Interface**: All services implement Start/Stop lifecycle and Name() for uniform management
+- **Factory Pattern**: CreateGRPCServices() instantiates enabled services with shared dependencies (persistence, geoip, cache)
+- **Conditional Instantiation**: Services are only created when explicitly enabled in configuration
+
+## Important Constraints
+- **Service Interface Compliance**: All created services must implement the GRPCService interface with proper lifecycle methods
+- **Shared Dependency Injection**: Pass common dependencies (logger, health server, cache, persistence) to all service constructors
+- **Configuration Validation**: Both service-level and package-level validation must pass before instantiation

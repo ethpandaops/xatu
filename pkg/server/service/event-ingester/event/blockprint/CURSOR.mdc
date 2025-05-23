@@ -1,0 +1,17 @@
+---
+description: Blockprint - Handles Blockprint block classification events within the event ingestion pipeline
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Blockprint Event Handler
+
+Handles Blockprint block classification events within the event ingestion pipeline.
+
+## Key Patterns
+- **Event Handler Interface**: Must implement Type(), Validate(), Filter(), and AppendServerMeta() methods
+- **Type Constant**: Use BlockClassificationType constant for event identification
+- **Data Validation**: Cast event data to *xatu.DecoratedEvent_BlockprintBlockClassification in Validate()
+- **No Enrichment**: AppendServerMeta() returns meta unchanged - no server-side enrichment

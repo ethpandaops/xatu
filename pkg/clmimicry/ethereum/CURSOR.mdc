@@ -1,0 +1,21 @@
+---
+description: Ethereum beacon node abstraction for CL-Mimicry
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Ethereum Beacon Node Component
+
+Beacon node abstraction that manages services and provides sync status validation for consensus layer monitoring.
+
+## Key Integration Patterns
+- **Service lifecycle management**: BeaconNode orchestrates metadata and duties services with readiness callbacks
+- **Sync status validation**: Validates both beacon node sync distance and service readiness before operations
+- **Network configuration integration**: Supports standard networks and devnet configurations via beacon package
+
+## Critical Constraints
+- **Service dependency ordering**: Services must be started sequentially and marked ready before the node is considered operational
+- **Sync distance threshold**: Node must be within 3 blocks of network head and less than 32 slots behind current slot
+- **Service interface compliance**: All services must implement the Service interface with lifecycle methods

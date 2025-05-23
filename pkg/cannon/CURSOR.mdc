@@ -1,0 +1,22 @@
+---
+description: Cannon - Canonical finalized data collection client via Beacon API
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Cannon Component
+
+Canonical finalized data collection client that systematically collects finalized blockchain data via consensus client Beacon API.
+
+## Key Design Patterns
+- **Event Deriver Architecture**: Uses pluggable deriver system for extracting different data types from beacon blocks
+- **Backfilling Iterator**: Implements checkpoint-based backfilling with coordinator synchronization for data consistency
+- **Multi-sink Output**: Routes processed events to multiple configured output destinations simultaneously
+
+## Critical Implementation Details
+- All derivers must implement `EventDeriver` interface and declare activation fork requirements
+- Use backfilling checkpoint iterators for systematic data collection with coordinator client
+- Coordinate with external services via `coordinator.Client` for distributed collection scenarios
+- Handle fork-specific activation logic - derivers wait for required forks before starting

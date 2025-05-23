@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig_Validate(t *testing.T) {
+func TestDeriverConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      *Config

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig_Validate(t *testing.T) {
+func TestCoordinatorConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      *Config
@@ -68,7 +68,7 @@ func TestConfig_Validate(t *testing.T) {
 	}
 }
 
-func TestConfig_DefaultValues(t *testing.T) {
+func TestCoordinatorConfig_DefaultValues(t *testing.T) {
 	// Test that we can create a minimal valid config
 	config := &Config{
 		Address: "localhost:8080",

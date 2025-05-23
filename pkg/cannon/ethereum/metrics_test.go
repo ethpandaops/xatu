@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewMetrics(t *testing.T) {
+func TestNewEthereumMetrics(t *testing.T) {
 	tests := []struct {
 		name           string
 		namespace      string

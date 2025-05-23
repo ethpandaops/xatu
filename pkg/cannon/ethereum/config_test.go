@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig_Validate(t *testing.T) {
+func TestEthereumConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      *Config
@@ -71,7 +71,7 @@ func TestConfig_Validate(t *testing.T) {
 	}
 }
 
-func TestConfig_DefaultValues(t *testing.T) {
+func TestEthereumConfig_DefaultValues(t *testing.T) {
 	config := &Config{
 		BeaconNodeAddress: "http://localhost:5052",
 	}

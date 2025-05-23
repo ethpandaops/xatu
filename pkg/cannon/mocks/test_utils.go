@@ -144,8 +144,11 @@ func (m *MockScheduler) Start() {
 
 func (m *MockScheduler) Shutdown() error {
 	args := m.Called()
-	m.isStarted = false
-	return args.Error(0)
+	err := args.Error(0)
+	if err == nil {
+		m.isStarted = false
+	}
+	return err
 }
 
 func (m *MockScheduler) NewJob(jobDefinition any, task any, options ...any) (any, error) {

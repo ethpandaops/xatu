@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -191,6 +192,218 @@ func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
 	}
 
 	return r, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p PublishMessage.
+func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for PublishMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for PublishMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for PublishMessage")
+	}
+
+	return &PublishMessage{
+		MsgId: wrapperspb.String(msgID),
+		Topic: wrapperspb.String(topic),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
+func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for RejectMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for RejectMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for RejectMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for RejectMessage")
+	}
+
+	reason, ok := payload["Reason"].(string)
+	if !ok {
+		return nil, fmt.Errorf("reason is required for RejectMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for RejectMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for RejectMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for RejectMessage")
+	}
+
+	// Parse hex sequence number.
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &RejectMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Reason:    wrapperspb.String(reason),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DuplicateMessage.
+func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DuplicateMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for DuplicateMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for DuplicateMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for DuplicateMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for DuplicateMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for DuplicateMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for DuplicateMessage")
+	}
+
+	// Parse hex sequence number
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &DuplicateMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DeliverMessage.
+func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DeliverMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for DeliverMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for DeliverMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for DeliverMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for DeliverMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for DeliverMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for DeliverMessage")
+	}
+
+	// Parse hex sequence number
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &DeliverMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
 }
 
 func convertRPCMessages(messages []host.RpcMetaMsg) []*MessageMeta {

@@ -13,6 +13,10 @@ type EventConfig struct {
 	LeaveEnabled                bool `yaml:"leaveEnabled" default:"false"`
 	GraftEnabled                bool `yaml:"graftEnabled" default:"false"`
 	PruneEnabled                bool `yaml:"pruneEnabled" default:"false"`
+	PublishMessageEnabled       bool `yaml:"publishMessageEnabled" default:"false"`
+	RejectMessageEnabled        bool `yaml:"rejectMessageEnabled" default:"false"`
+	DuplicateMessageEnabled     bool `yaml:"duplicateMessageEnabled" default:"false"`
+	DeliverMessageEnabled       bool `yaml:"deliverMessageEnabled" default:"false"`
 	HandleMetadataEnabled       bool `yaml:"handleMetadataEnabled" default:"true"`
 	HandleStatusEnabled         bool `yaml:"handleStatusEnabled" default:"true"`
 	GossipSubBeaconBlockEnabled bool `yaml:"gossipSubBeaconBlockEnabled" default:"true"`

@@ -848,6 +848,26 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceDuplicateMessageData: Holds additional data for a duplicate message event in LibP2P tracing.
+  message AdditionalLibP2PTraceDuplicateMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceDeliverMessageData: Holds additional data for a deliver message event in LibP2P tracing.
+  message AdditionalLibP2PTraceDeliverMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTracePublishMessageData: Holds additional data for a publish message event in LibP2P tracing.
+  message AdditionalLibP2PTracePublishMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRejectMessageData: Holds additional data for a reject message event in LibP2P tracing.
+  message AdditionalLibP2PTraceRejectMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceConnectedData: Holds additional data for a connected event in LibP2P tracing.
   message AdditionalLibP2PTraceConnectedData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1282,6 +1302,14 @@ message ClientMeta {
     AdditionalLibP2PTraceGraftData libp2p_trace_graft = 70 [ json_name = "LIBP2P_TRACE_GRAFT" ];
     // AdditionalLibP2PTracePruneData contains additional data about the prune event.
     AdditionalLibP2PTracePruneData libp2p_trace_prune = 71 [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    // AdditionalLibP2PTraceDuplicateMessageData contains additional data about the duplicate message event.
+    AdditionalLibP2PTraceDuplicateMessageData libp2p_trace_duplicate_message = 72 [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
+    // AdditionalLibP2PTraceDeliverMessageData contains additional data about the deliver message event.
+    AdditionalLibP2PTraceDeliverMessageData libp2p_trace_deliver_message = 73 [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
+    // AdditionalLibP2PTracePublishMessageData contains additional data about the publish message event.
+    AdditionalLibP2PTracePublishMessageData libp2p_trace_publish_message = 74 [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
+    // AdditionalLibP2PTraceRejectMessageData contains additional data about the reject message event.
+    AdditionalLibP2PTraceRejectMessageData libp2p_trace_reject_message = 75 [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1447,6 +1475,10 @@ message Event {
     LIBP2P_TRACE_LEAVE = 58;
     LIBP2P_TRACE_GRAFT = 59;
     LIBP2P_TRACE_PRUNE = 60;
+    LIBP2P_TRACE_DUPLICATE_MESSAGE = 61;
+    LIBP2P_TRACE_DELIVER_MESSAGE = 62;
+    LIBP2P_TRACE_PUBLISH_MESSAGE = 63;
+    LIBP2P_TRACE_REJECT_MESSAGE = 64;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1601,6 +1633,14 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GRAFT" ];
     xatu.libp2p.Prune libp2p_trace_prune = 61
         [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    xatu.libp2p.DuplicateMessage libp2p_trace_duplicate_message = 62
+        [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
+    xatu.libp2p.DeliverMessage libp2p_trace_deliver_message = 63
+        [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
+    xatu.libp2p.PublishMessage libp2p_trace_publish_message = 64
+        [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
+    xatu.libp2p.RejectMessage libp2p_trace_reject_message = 65
+        [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
   };
 }
 

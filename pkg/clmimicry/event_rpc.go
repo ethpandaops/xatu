@@ -14,6 +14,12 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Map of RPC event types to Xatu event types.
+var rpcToXatuEventMap = map[string]string{
+	TraceEvent_HANDLE_METADATA: xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
+	TraceEvent_HANDLE_STATUS:   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
+}
+
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
 func (m *Mimicry) handleHermesRPCEvent(
 	ctx context.Context,
@@ -136,11 +142,8 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 }
 
 func mapRPCEventToXatuEvent(event string) (string, error) {
-	switch event {
-	case TraceEvent_HANDLE_METADATA:
-		return xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(), nil
-	case TraceEvent_HANDLE_STATUS:
-		return xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(), nil
+	if xatuEvent, exists := rpcToXatuEventMap[event]; exists {
+		return xatuEvent, nil
 	}
 
 	return "", fmt.Errorf("unknown libp2p rpc event: %s", event)

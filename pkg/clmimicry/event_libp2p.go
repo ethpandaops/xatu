@@ -15,6 +15,24 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Map of libp2p event types to Xatu event types.
+// This serves both for mapping and for checking if an event is a libp2p event.
+var libp2pToXatuEventMap = map[string]string{
+	pubsubpb.TraceEvent_PUBLISH_MESSAGE.String():   xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String(),
+	pubsubpb.TraceEvent_REJECT_MESSAGE.String():    xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(),
+	pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String(): xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(),
+	pubsubpb.TraceEvent_DELIVER_MESSAGE.String():   xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(),
+	pubsubpb.TraceEvent_ADD_PEER.String():          xatu.Event_LIBP2P_TRACE_ADD_PEER.String(),
+	pubsubpb.TraceEvent_REMOVE_PEER.String():       xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(),
+	pubsubpb.TraceEvent_RECV_RPC.String():          xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
+	pubsubpb.TraceEvent_SEND_RPC.String():          xatu.Event_LIBP2P_TRACE_SEND_RPC.String(),
+	pubsubpb.TraceEvent_DROP_RPC.String():          xatu.Event_LIBP2P_TRACE_DROP_RPC.String(),
+	pubsubpb.TraceEvent_JOIN.String():              xatu.Event_LIBP2P_TRACE_JOIN.String(),
+	pubsubpb.TraceEvent_LEAVE.String():             xatu.Event_LIBP2P_TRACE_LEAVE.String(),
+	pubsubpb.TraceEvent_GRAFT.String():             xatu.Event_LIBP2P_TRACE_GRAFT.String(),
+	pubsubpb.TraceEvent_PRUNE.String():             xatu.Event_LIBP2P_TRACE_PRUNE.String(),
+}
+
 // handleHermesLibp2pEvent handles libp2p pubsub protocol level events.
 func (m *Mimicry) handleHermesLibp2pEvent(
 	ctx context.Context,
@@ -136,6 +154,50 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		}
 
 		return m.handlePruneEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String():
+		if !m.Config.Events.PublishMessageEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handlePublishMessageEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String():
+		if !m.Config.Events.RejectMessageEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleRejectMessageEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String():
+		if !m.Config.Events.DuplicateMessageEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleDuplicateMessageEvent(ctx, clientMeta, traceMeta, event)
+	case xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String():
+		if !m.Config.Events.DeliverMessageEnabled {
+			return nil
+		}
+
+		// Check if we should process this event based on trace/sharding config..
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return m.handleDeliverMessageEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
@@ -492,37 +554,166 @@ func (m *Mimicry) handleDropRPCEvent(
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
 }
 
-// mapLibp2pEventToXatuEvent maps libp2p events to Xatu events, commented out events are not yet implemented.
-//
-//nolint:gocritic,wsl // keeping commented events, as they will be implemented shortly.
+func (m *Mimicry) handlePublishMessageEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToPublishMessage(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to publish message event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTracePublishMessage{
+		Libp2PTracePublishMessage: &xatu.ClientMeta_AdditionalLibP2PTracePublishMessageData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTracePublishMessage{
+			Libp2PTracePublishMessage: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleRejectMessageEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToRejectMessage(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to reject message event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRejectMessage{
+		Libp2PTraceRejectMessage: &xatu.ClientMeta_AdditionalLibP2PTraceRejectMessageData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceRejectMessage{
+			Libp2PTraceRejectMessage: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleDuplicateMessageEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToDuplicateMessage(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to duplicate message event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceDuplicateMessage{
+		Libp2PTraceDuplicateMessage: &xatu.ClientMeta_AdditionalLibP2PTraceDuplicateMessageData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceDuplicateMessage{
+			Libp2PTraceDuplicateMessage: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) handleDeliverMessageEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToDeliverMessage(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to deliver message event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceDeliverMessage{
+		Libp2PTraceDeliverMessage: &xatu.ClientMeta_AdditionalLibP2PTraceDeliverMessageData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE,
+			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceDeliverMessage{
+			Libp2PTraceDeliverMessage: data,
+		},
+	}
+
+	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+// mapLibp2pEventToXatuEvent maps libp2p events to Xatu events.
 func mapLibp2pEventToXatuEvent(event string) (string, error) {
-	switch event {
-	case pubsubpb.TraceEvent_PUBLISH_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_REJECT_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_DELIVER_MESSAGE.String():
-		// return xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(), nil
-	case pubsubpb.TraceEvent_ADD_PEER.String():
-		return xatu.Event_LIBP2P_TRACE_ADD_PEER.String(), nil
-	case pubsubpb.TraceEvent_REMOVE_PEER.String():
-		return xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(), nil
-	case pubsubpb.TraceEvent_RECV_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), nil
-	case pubsubpb.TraceEvent_SEND_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), nil
-	case pubsubpb.TraceEvent_DROP_RPC.String():
-		return xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), nil
-	case pubsubpb.TraceEvent_JOIN.String():
-		return xatu.Event_LIBP2P_TRACE_JOIN.String(), nil
-	case pubsubpb.TraceEvent_LEAVE.String():
-		return xatu.Event_LIBP2P_TRACE_LEAVE.String(), nil
-	case pubsubpb.TraceEvent_GRAFT.String():
-		return xatu.Event_LIBP2P_TRACE_GRAFT.String(), nil
-	case pubsubpb.TraceEvent_PRUNE.String():
-		return xatu.Event_LIBP2P_TRACE_PRUNE.String(), nil
+	if xatuEvent, exists := libp2pToXatuEventMap[event]; exists {
+		return xatuEvent, nil
 	}
 
 	return "", fmt.Errorf("unknown libp2p event: %s", event)

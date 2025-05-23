@@ -14,6 +14,12 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Map of libp2p core event types to Xatu event types
+var libp2pCoreToXatuEventMap = map[string]string{
+	TraceEvent_CONNECTED:    xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
+	TraceEvent_DISCONNECTED: xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
+}
+
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
 // This includes CONNECTED and DISCONNECTED events from libp2p's network.Notify system.
 func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
@@ -132,11 +138,8 @@ func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
 }
 
 func mapLibp2pCoreEventToXatuEvent(event string) (string, error) {
-	switch event {
-	case TraceEvent_CONNECTED:
-		return xatu.Event_LIBP2P_TRACE_CONNECTED.String(), nil
-	case TraceEvent_DISCONNECTED:
-		return xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(), nil
+	if xatuEvent, exists := libp2pCoreToXatuEventMap[event]; exists {
+		return xatuEvent, nil
 	}
 
 	return "", fmt.Errorf("unknown libp2p core event: %s", event)

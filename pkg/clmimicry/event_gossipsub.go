@@ -14,6 +14,18 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Define a slice of all gossipsub event types.
+var gossipsubEventTypes = []string{
+	TraceEvent_HANDLE_MESSAGE,
+}
+
+// Map of gossipsub topic substrings to Xatu event types.
+var gossipsubTopicToXatuEventMap = map[string]string{
+	p2p.GossipAttestationMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
+	p2p.GossipBlockMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
+	p2p.GossipBlobSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+}
+
 // handleHermesGossipSubEvent handles GossipSub protocol events.
 // This includes HANDLE_MESSAGE events which are further categorized by topic.
 func (m *Mimicry) handleHermesGossipSubEvent(
@@ -105,16 +117,12 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 	return nil
 }
 
-func mapGossipSubEventToXatuEvent(event string) (string, error) {
-	switch {
-	case strings.Contains(event, p2p.GossipAttestationMessage):
-		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(), nil
-	case strings.Contains(event, p2p.GossipBlockMessage):
-		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(), nil
-	case strings.Contains(event, p2p.GossipBlobSidecarMessage):
-		return xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(), nil
-	case strings.Contains(event, p2p.GossipSyncCommitteeMessage):
+func mapGossipSubEventToXatuEvent(topic string) (string, error) {
+	for topicSubstr, xatuEvent := range gossipsubTopicToXatuEventMap {
+		if strings.Contains(topic, topicSubstr) {
+			return xatuEvent, nil
+		}
 	}
 
-	return "", fmt.Errorf("unknown gossipsub event: %s", event)
+	return "", fmt.Errorf("unknown gossipsub event: %s", topic)
 }

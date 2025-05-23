@@ -9,12 +9,12 @@ import (
 
 func TestBackfillingCheckpointConfig_Structure(t *testing.T) {
 	tests := []struct {
-		name   string
-		config *BackfillingCheckpointConfig
+		name     string
+		config   *BackfillingCheckpointConfig
 		validate func(*testing.T, *BackfillingCheckpointConfig)
 	}{
 		{
-			name: "default_config",
+			name:   "default_config",
 			config: &BackfillingCheckpointConfig{},
 			validate: func(t *testing.T, config *BackfillingCheckpointConfig) {
 				// Test default values (disabled backfill, epoch 0)
@@ -107,7 +107,7 @@ func TestBackfillingCheckpointConfig_YAMLTags(t *testing.T) {
 	// This test verifies the struct has appropriate YAML tags
 	// We can't easily test YAML unmarshaling without external dependencies,
 	// but we can verify the struct structure is correct
-	
+
 	config := &BackfillingCheckpointConfig{
 		Backfill: struct {
 			Enabled bool         `yaml:"enabled" default:"false"`

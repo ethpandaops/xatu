@@ -144,10 +144,10 @@ func TestService_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, service *MockService) {
 				ctx := context.Background()
-				
+
 				err := service.Start(ctx)
 				assert.NoError(t, err)
-				
+
 				err = service.Stop(ctx)
 				assert.NoError(t, err)
 			},
@@ -159,7 +159,7 @@ func TestService_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, service *MockService) {
 				ctx := context.Background()
-				
+
 				err := service.Start(ctx)
 				assert.Error(t, err)
 				assert.Equal(t, assert.AnError, err)
@@ -172,7 +172,7 @@ func TestService_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, service *MockService) {
 				ctx := context.Background()
-				
+
 				err := service.Stop(ctx)
 				assert.Error(t, err)
 				assert.Equal(t, assert.AnError, err)
@@ -185,7 +185,7 @@ func TestService_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, service *MockService) {
 				ctx := context.Background()
-				
+
 				err := service.Ready(ctx)
 				assert.NoError(t, err)
 			},
@@ -197,7 +197,7 @@ func TestService_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, service *MockService) {
 				ctx := context.Background()
-				
+
 				err := service.Ready(ctx)
 				assert.Error(t, err)
 				assert.Equal(t, assert.AnError, err)
@@ -217,111 +217,111 @@ func TestService_Lifecycle(t *testing.T) {
 
 func TestService_OnReadyCallbacks(t *testing.T) {
 	service := NewMockService(Name("test"))
-	
+
 	// Mock the OnReady call
 	service.On("OnReady", mock.Anything, mock.Anything).Return()
-	
+
 	ctx := context.Background()
 	callbackExecuted := false
-	
+
 	callback := func(ctx context.Context) error {
 		callbackExecuted = true
 		return nil
 	}
-	
+
 	// Register the callback
 	service.OnReady(ctx, callback)
-	
+
 	// Verify callback was registered by triggering it
 	err := service.TriggerReadyCallbacks(ctx)
 	assert.NoError(t, err)
 	assert.True(t, callbackExecuted, "OnReady callback should have been executed")
-	
+
 	service.AssertExpectations(t)
 }
 
 func TestService_MultipleOnReadyCallbacks(t *testing.T) {
 	service := NewMockService(Name("test"))
-	
+
 	// Mock multiple OnReady calls
 	service.On("OnReady", mock.Anything, mock.Anything).Return().Times(3)
-	
+
 	ctx := context.Background()
 	executionOrder := []int{}
-	
+
 	// Register multiple callbacks
 	callback1 := func(ctx context.Context) error {
 		executionOrder = append(executionOrder, 1)
 		return nil
 	}
-	
+
 	callback2 := func(ctx context.Context) error {
 		executionOrder = append(executionOrder, 2)
 		return nil
 	}
-	
+
 	callback3 := func(ctx context.Context) error {
 		executionOrder = append(executionOrder, 3)
 		return nil
 	}
-	
+
 	service.OnReady(ctx, callback1)
 	service.OnReady(ctx, callback2)
 	service.OnReady(ctx, callback3)
-	
+
 	// Trigger all callbacks
 	err := service.TriggerReadyCallbacks(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, []int{1, 2, 3}, executionOrder, "OnReady callbacks should execute in registration order")
-	
+
 	service.AssertExpectations(t)
 }
 
 func TestService_OnReadyCallbackError(t *testing.T) {
 	service := NewMockService(Name("test"))
-	
+
 	service.On("OnReady", mock.Anything, mock.Anything).Return()
-	
+
 	ctx := context.Background()
-	
+
 	// Register a callback that returns an error
 	callback := func(ctx context.Context) error {
 		return assert.AnError
 	}
-	
+
 	service.OnReady(ctx, callback)
-	
+
 	// Trigger callback and expect error
 	err := service.TriggerReadyCallbacks(ctx)
 	assert.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
-	
+
 	service.AssertExpectations(t)
 }
 
 func TestService_ContextCancellation(t *testing.T) {
 	service := NewMockService(Name("test"))
-	
+
 	// Test that services properly handle context cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	service.On("Start", mock.MatchedBy(func(ctx context.Context) bool {
 		return ctx.Err() != nil // Context should be cancelled
 	})).Return(context.Canceled)
-	
+
 	service.On("Ready", mock.MatchedBy(func(ctx context.Context) bool {
 		return ctx.Err() != nil // Context should be cancelled
 	})).Return(context.Canceled)
-	
+
 	err := service.Start(ctx)
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	
+
 	err = service.Ready(ctx)
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	
+
 	service.AssertExpectations(t)
 }
 
@@ -330,7 +330,7 @@ func TestService_NameComparisons(t *testing.T) {
 	name1 := Name("service1")
 	name2 := Name("service2")
 	name3 := Name("service1")
-	
+
 	assert.NotEqual(t, name1, name2)
 	assert.Equal(t, name1, name3)
 	assert.True(t, name1 == name3)
@@ -340,7 +340,7 @@ func TestService_NameComparisons(t *testing.T) {
 func TestService_ServiceInterfaceCompliance(t *testing.T) {
 	// Test that MockService implements the Service interface
 	var _ Service = &MockService{}
-	
+
 	// This test verifies interface compliance at compile time
 	service := NewMockService(Name("test"))
 	assert.NotNil(t, service)

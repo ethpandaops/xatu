@@ -211,7 +211,12 @@ func (b *BeaconNode) Metadata() *services.MetadataService {
 		return nil
 	}
 
-	return service.(*services.MetadataService)
+	metadataService, ok := service.(*services.MetadataService)
+	if !ok {
+		return nil
+	}
+
+	return metadataService
 }
 
 func (b *BeaconNode) Duties() *services.DutiesService {
@@ -221,7 +226,12 @@ func (b *BeaconNode) Duties() *services.DutiesService {
 		return nil
 	}
 
-	return service.(*services.DutiesService)
+	dutiesService, ok := service.(*services.DutiesService)
+	if !ok {
+		return nil
+	}
+
+	return dutiesService
 }
 
 func (b *BeaconNode) OnReady(_ context.Context, callback func(ctx context.Context) error) {
@@ -323,7 +333,12 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 
 	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
-	return x.(*spec.VersionedSignedBeaconBlock), nil
+	block, ok := x.(*spec.VersionedSignedBeaconBlock)
+	if !ok {
+		return nil, errors.New("failed to cast to VersionedSignedBeaconBlock")
+	}
+
+	return block, nil
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
@@ -395,7 +410,12 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 
 	span.AddEvent("Validators fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
-	return x.(map[phase0.ValidatorIndex]*apiv1.Validator), nil
+	validators, ok := x.(map[phase0.ValidatorIndex]*apiv1.Validator)
+	if !ok {
+		return nil, errors.New("failed to cast to validator map")
+	}
+
+	return validators, nil
 }
 
 func (b *BeaconNode) LazyLoadValidators(stateID string) {

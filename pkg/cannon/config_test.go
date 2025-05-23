@@ -39,7 +39,7 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				Outputs: []output.Config{
 					{
-						Name: "stdout",
+						Name:     "stdout",
 						SinkType: output.SinkTypeStdOut,
 					},
 				},
@@ -87,7 +87,7 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				Outputs: []output.Config{
 					{
-						Name: "test-output",
+						Name:     "test-output",
 						SinkType: output.SinkTypeUnknown, // Invalid - unknown sink type
 					},
 				},
@@ -127,11 +127,11 @@ func TestConfig_CreateSinks(t *testing.T) {
 			config: &Config{
 				Outputs: []output.Config{
 					{
-						Name: "stdout1",
+						Name:     "stdout1",
 						SinkType: output.SinkTypeStdOut,
 					},
 					{
-						Name: "stdout2", 
+						Name:     "stdout2",
 						SinkType: output.SinkTypeStdOut,
 					},
 				},
@@ -158,7 +158,7 @@ func TestConfig_CreateSinks(t *testing.T) {
 			config: &Config{
 				Outputs: []output.Config{
 					{
-						Name: "stdout",
+						Name:     "stdout",
 						SinkType: output.SinkTypeStdOut,
 						ShippingMethod: func() *processor.ShippingMethod {
 							method := processor.ShippingMethodAsync
@@ -257,7 +257,10 @@ func TestConfig_ApplyOverrides(t *testing.T) {
 				},
 			},
 			override: &Override{
-				BeaconNodeAuthorizationHeader: struct{Enabled bool; Value string}{
+				BeaconNodeAuthorizationHeader: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: true,
 					Value:   "Bearer token123",
 				},
@@ -276,7 +279,10 @@ func TestConfig_ApplyOverrides(t *testing.T) {
 				},
 			},
 			override: &Override{
-				XatuCoordinatorAuth: struct{Enabled bool; Value string}{
+				XatuCoordinatorAuth: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: true,
 					Value:   "Bearer coord-token",
 				},
@@ -290,12 +296,15 @@ func TestConfig_ApplyOverrides(t *testing.T) {
 			name: "network_name_override_applied",
 			config: &Config{
 				Ethereum: ethereum.Config{
-					BeaconNodeAddress:     "http://localhost:5052",
+					BeaconNodeAddress:   "http://localhost:5052",
 					OverrideNetworkName: "mainnet",
 				},
 			},
 			override: &Override{
-				NetworkName: struct{Enabled bool; Value string}{
+				NetworkName: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: true,
 					Value:   "testnet",
 				},
@@ -311,7 +320,10 @@ func TestConfig_ApplyOverrides(t *testing.T) {
 				MetricsAddr: ":9090",
 			},
 			override: &Override{
-				MetricsAddr: struct{Enabled bool; Value string}{
+				MetricsAddr: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: true,
 					Value:   ":9091",
 				},
@@ -330,11 +342,17 @@ func TestConfig_ApplyOverrides(t *testing.T) {
 				},
 			},
 			override: &Override{
-				MetricsAddr: struct{Enabled bool; Value string}{
+				MetricsAddr: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: false,
 					Value:   ":9091",
 				},
-				BeaconNodeURL: struct{Enabled bool; Value string}{
+				BeaconNodeURL: struct {
+					Enabled bool
+					Value   string
+				}{
 					Enabled: false,
 					Value:   "http://override:5052",
 				},
@@ -371,7 +389,7 @@ func TestConfig_Validation_EdgeCases(t *testing.T) {
 			},
 			Outputs: []output.Config{
 				{
-					Name: "stdout",
+					Name:     "stdout",
 					SinkType: output.SinkTypeStdOut,
 				},
 			},
@@ -418,7 +436,10 @@ func TestConfig_Validation_EdgeCases(t *testing.T) {
 		}
 
 		override := &Override{
-			MetricsAddr: struct{Enabled bool; Value string}{
+			MetricsAddr: struct {
+				Enabled bool
+				Value   string
+			}{
 				Enabled: true,
 				Value:   ":9091",
 			},

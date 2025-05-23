@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testSlotIteratorCurrentSlotMetric = "test_slot_iterator_current_slot"
+)
+
 func TestBackfillingCheckpointMetrics_Creation(t *testing.T) {
 	// Use separate registry to avoid conflicts
 	reg := prometheus.NewRegistry()
@@ -35,19 +39,19 @@ func TestBackfillingCheckpointMetrics_Creation(t *testing.T) {
 	// Verify metrics are registered by gathering them
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	expectedMetrics := []string{
 		"test_cannon_epoch_iterator_backfill_epoch",
 		"test_cannon_epoch_iterator_finalized_epoch",
 		"test_cannon_epoch_iterator_finalized_checkpoint_epoch",
 		"test_cannon_epoch_iterator_lag_epochs",
 	}
-	
+
 	metricNames := make(map[string]bool)
 	for _, mf := range metricFamilies {
 		metricNames[*mf.Name] = true
 	}
-	
+
 	for _, expected := range expectedMetrics {
 		assert.True(t, metricNames[expected], "Expected metric %s to be registered", expected)
 	}
@@ -62,21 +66,21 @@ func TestBackfillingCheckpointMetrics_SetBackfillEpoch(t *testing.T) {
 	}()
 
 	metrics := NewBackfillingCheckpointMetrics("test")
-	
+
 	// Set a value
 	metrics.SetBackfillEpoch("beacon_block", "mainnet", "finalized", 12345.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	// Find the backfill_epoch metric
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_epoch_iterator_backfill_epoch" {
 			require.Len(t, mf.Metric, 1)
 			assert.Equal(t, 12345.0, *mf.Metric[0].Gauge.Value)
-			
+
 			// Verify labels
 			labels := mf.Metric[0].Label
 			require.Len(t, labels, 3)
@@ -86,7 +90,7 @@ func TestBackfillingCheckpointMetrics_SetBackfillEpoch(t *testing.T) {
 			assert.Equal(t, "finalized", *labels[1].Value)
 			assert.Equal(t, "network", *labels[2].Name)
 			assert.Equal(t, "mainnet", *labels[2].Value)
-			
+
 			found = true
 			break
 		}
@@ -103,14 +107,14 @@ func TestBackfillingCheckpointMetrics_SetFinalizedEpoch(t *testing.T) {
 	}()
 
 	metrics := NewBackfillingCheckpointMetrics("test")
-	
+
 	// Set a value
 	metrics.SetFinalizedEpoch("beacon_block", "mainnet", "finalized", 67890.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_epoch_iterator_finalized_epoch" {
@@ -132,26 +136,26 @@ func TestBackfillingCheckpointMetrics_SetFinalizedCheckpointEpoch(t *testing.T) 
 	}()
 
 	metrics := NewBackfillingCheckpointMetrics("test")
-	
+
 	// Set a value
 	metrics.SetFinalizedCheckpointEpoch("mainnet", 11111.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_epoch_iterator_finalized_checkpoint_epoch" {
 			require.Len(t, mf.Metric, 1)
 			assert.Equal(t, 11111.0, *mf.Metric[0].Gauge.Value)
-			
+
 			// Should only have network label
 			labels := mf.Metric[0].Label
 			require.Len(t, labels, 1)
 			assert.Equal(t, "network", *labels[0].Name)
 			assert.Equal(t, "mainnet", *labels[0].Value)
-			
+
 			found = true
 			break
 		}
@@ -168,20 +172,20 @@ func TestBackfillingCheckpointMetrics_SetLag(t *testing.T) {
 	}()
 
 	metrics := NewBackfillingCheckpointMetrics("test")
-	
+
 	// Set a value
 	metrics.SetLag("beacon_block", "mainnet", BackfillingCheckpointDirectionBackfill, 25.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_epoch_iterator_lag_epochs" {
 			require.Len(t, mf.Metric, 1)
 			assert.Equal(t, 25.0, *mf.Metric[0].Gauge.Value)
-			
+
 			// Verify direction label value
 			labels := mf.Metric[0].Label
 			var directionFound bool
@@ -193,7 +197,7 @@ func TestBackfillingCheckpointMetrics_SetLag(t *testing.T) {
 				}
 			}
 			assert.True(t, directionFound, "Direction label not found")
-			
+
 			found = true
 			break
 		}
@@ -223,17 +227,17 @@ func TestBlockprintMetrics_Creation(t *testing.T) {
 	// Verify metrics are registered
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	expectedMetrics := []string{
 		"test_blockprint_slot_iterator_target_slot",
 		"test_blockprint_slot_iterator_current_slot",
 	}
-	
+
 	metricNames := make(map[string]bool)
 	for _, mf := range metricFamilies {
 		metricNames[*mf.Name] = true
 	}
-	
+
 	for _, expected := range expectedMetrics {
 		assert.True(t, metricNames[expected], "Expected metric %s to be registered", expected)
 	}
@@ -248,14 +252,14 @@ func TestBlockprintMetrics_SetTargetSlot(t *testing.T) {
 	}()
 
 	metrics := NewBlockprintMetrics("test")
-	
+
 	// Set a value
 	metrics.SetTargetSlot("blockprint", "mainnet", 999999.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_slot_iterator_target_slot" {
@@ -277,17 +281,17 @@ func TestBlockprintMetrics_SetCurrentSlot(t *testing.T) {
 	}()
 
 	metrics := NewBlockprintMetrics("test")
-	
+
 	// Set a value
 	metrics.SetCurrentSlot("blockprint", "mainnet", 888888.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
-		if *mf.Name == "test_slot_iterator_current_slot" {
+		if *mf.Name == testSlotIteratorCurrentSlotMetric {
 			require.Len(t, mf.Metric, 1)
 			assert.Equal(t, 888888.0, *mf.Metric[0].Gauge.Value)
 			found = true
@@ -319,17 +323,17 @@ func TestSlotMetrics_Creation(t *testing.T) {
 	// Verify metrics are registered
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	expectedMetrics := []string{
 		"test_slot_slot_iterator_trailing_slots",
 		"test_slot_slot_iterator_current_slot",
 	}
-	
+
 	metricNames := make(map[string]bool)
 	for _, mf := range metricFamilies {
 		metricNames[*mf.Name] = true
 	}
-	
+
 	for _, expected := range expectedMetrics {
 		assert.True(t, metricNames[expected], "Expected metric %s to be registered", expected)
 	}
@@ -344,14 +348,14 @@ func TestSlotMetrics_SetTrailingSlots(t *testing.T) {
 	}()
 
 	metrics := NewSlotMetrics("test")
-	
+
 	// Set a value
 	metrics.SetTrailingSlots("beacon_block", "mainnet", 42.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
 		if *mf.Name == "test_slot_iterator_trailing_slots" {
@@ -373,17 +377,17 @@ func TestSlotMetrics_SetCurrentSlot(t *testing.T) {
 	}()
 
 	metrics := NewSlotMetrics("test")
-	
+
 	// Set a value
 	metrics.SetCurrentSlot("beacon_block", "mainnet", 777777.0)
-	
+
 	// Verify the value was set
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var found bool
 	for _, mf := range metricFamilies {
-		if *mf.Name == "test_slot_iterator_current_slot" {
+		if *mf.Name == testSlotIteratorCurrentSlotMetric {
 			require.Len(t, mf.Metric, 1)
 			assert.Equal(t, 777777.0, *mf.Metric[0].Gauge.Value)
 			found = true
@@ -402,19 +406,19 @@ func TestSlotMetrics_MultipleValues(t *testing.T) {
 	}()
 
 	metrics := NewSlotMetrics("test")
-	
+
 	// Set multiple values with different labels
 	metrics.SetCurrentSlot("beacon_block", "mainnet", 100.0)
 	metrics.SetCurrentSlot("beacon_block", "sepolia", 200.0)
 	metrics.SetCurrentSlot("blockprint", "mainnet", 300.0)
-	
+
 	// Verify all values are present
 	metricFamilies, err := reg.Gather()
 	require.NoError(t, err)
-	
+
 	var currentSlotMetrics int
 	for _, mf := range metricFamilies {
-		if *mf.Name == "test_slot_iterator_current_slot" {
+		if *mf.Name == testSlotIteratorCurrentSlotMetric {
 			currentSlotMetrics = len(mf.Metric)
 			assert.Equal(t, 3, len(mf.Metric), "Should have 3 metrics with different label combinations")
 			break

@@ -54,6 +54,7 @@ func TestCannonFactory_Build(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, cannon *TestableCannon) {
+				t.Helper()
 				assert.NotNil(t, cannon.GetBeacon())
 				assert.NotNil(t, cannon.GetCoordinator())
 				assert.NotNil(t, cannon.GetScheduler())
@@ -90,6 +91,7 @@ func TestCannonFactory_Build(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, cannon *TestableCannon) {
+				t.Helper()
 				assert.NotNil(t, cannon.GetScheduler())
 				assert.NotNil(t, cannon.GetTimeProvider())
 				assert.NotNil(t, cannon.GetNTPClient())
@@ -100,9 +102,9 @@ func TestCannonFactory_Build(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			factory := tt.setup()
-			
+
 			cannon, err := factory.Build()
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				if tt.errorMsg != "" {
@@ -144,6 +146,7 @@ func TestTestableCannon_Start(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, cannon *TestableCannon) {
+				t.Helper()
 				// Add validation for started state
 				assert.NotNil(t, cannon.GetBeacon())
 			},
@@ -213,7 +216,7 @@ func TestTestableCannon_Shutdown(t *testing.T) {
 				mockBeacon := &mocks.MockBeaconNode{}
 				mockCoordinator := &mocks.MockCoordinator{}
 				mockScheduler := &mocks.MockScheduler{}
-				
+
 				mockSink := mocks.NewMockSink("test", "stdout")
 				mockSink.On("Stop", mock.Anything).Return(nil)
 				mockScheduler.On("Shutdown").Return(nil)
@@ -221,6 +224,7 @@ func TestTestableCannon_Shutdown(t *testing.T) {
 				return mockBeacon, mockCoordinator, mockScheduler, []output.Sink{mockSink}
 			},
 			validate: func(t *testing.T, err error) {
+				t.Helper()
 				assert.NoError(t, err)
 			},
 		},
@@ -230,13 +234,14 @@ func TestTestableCannon_Shutdown(t *testing.T) {
 				mockBeacon := &mocks.MockBeaconNode{}
 				mockCoordinator := &mocks.MockCoordinator{}
 				mockScheduler := &mocks.MockScheduler{}
-				
+
 				mockSink := mocks.NewMockSink("test", "stdout")
 				mockSink.On("Stop", mock.Anything).Return(errors.New("sink error"))
 
 				return mockBeacon, mockCoordinator, mockScheduler, []output.Sink{mockSink}
 			},
 			validate: func(t *testing.T, err error) {
+				t.Helper()
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "sink error")
 			},
@@ -247,7 +252,7 @@ func TestTestableCannon_Shutdown(t *testing.T) {
 				mockBeacon := &mocks.MockBeaconNode{}
 				mockCoordinator := &mocks.MockCoordinator{}
 				mockScheduler := &mocks.MockScheduler{}
-				
+
 				mockSink := mocks.NewMockSink("test", "stdout")
 				mockSink.On("Stop", mock.Anything).Return(nil)
 				mockScheduler.On("Shutdown").Return(errors.New("scheduler error"))
@@ -255,6 +260,7 @@ func TestTestableCannon_Shutdown(t *testing.T) {
 				return mockBeacon, mockCoordinator, mockScheduler, []output.Sink{mockSink}
 			},
 			validate: func(t *testing.T, err error) {
+				t.Helper()
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "scheduler error")
 			},
@@ -310,7 +316,7 @@ func TestTestableCannon_GettersSetters(t *testing.T) {
 	mockCoordinator := &mocks.MockCoordinator{}
 	mockScheduler := &mocks.MockScheduler{}
 	mockTimeProvider := &mocks.MockTimeProvider{}
-	
+
 	mockSink := mocks.NewMockSink("test", "stdout")
 
 	config := &Config{

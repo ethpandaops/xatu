@@ -82,7 +82,7 @@ func TestEventDeriver_Interface(t *testing.T) {
 			activationFork: spec.DataVersionPhase0,
 		},
 		{
-			name:           "attestation_deriver", 
+			name:           "attestation_deriver",
 			deriverName:    "attestation",
 			cannonType:     xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION,
 			activationFork: spec.DataVersionPhase0,
@@ -151,10 +151,10 @@ func TestEventDeriver_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, mock *MockEventDeriver) {
 				ctx := context.Background()
-				
+
 				err := mock.Start(ctx)
 				assert.NoError(t, err)
-				
+
 				err = mock.Stop(ctx)
 				assert.NoError(t, err)
 			},
@@ -166,7 +166,7 @@ func TestEventDeriver_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, mock *MockEventDeriver) {
 				ctx := context.Background()
-				
+
 				err := mock.Start(ctx)
 				assert.Error(t, err)
 				assert.Equal(t, assert.AnError, err)
@@ -179,7 +179,7 @@ func TestEventDeriver_Lifecycle(t *testing.T) {
 			},
 			testFunc: func(t *testing.T, mock *MockEventDeriver) {
 				ctx := context.Background()
-				
+
 				err := mock.Stop(ctx)
 				assert.Error(t, err)
 				assert.Equal(t, assert.AnError, err)
@@ -199,21 +199,21 @@ func TestEventDeriver_Lifecycle(t *testing.T) {
 
 func TestEventDeriver_CallbackRegistration(t *testing.T) {
 	deriver := NewMockEventDeriver("test", xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK, spec.DataVersionPhase0)
-	
+
 	// Mock the OnEventsDerived call
 	deriver.On("OnEventsDerived", mock.Anything, mock.Anything).Return()
-	
+
 	ctx := context.Background()
 	callbackExecuted := false
-	
+
 	callback := func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 		callbackExecuted = true
 		return nil
 	}
-	
+
 	// Register the callback
 	deriver.OnEventsDerived(ctx, callback)
-	
+
 	// Verify callback was registered by triggering it
 	events := []*xatu.DecoratedEvent{
 		{
@@ -223,43 +223,43 @@ func TestEventDeriver_CallbackRegistration(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := deriver.TriggerCallbacks(ctx, events)
 	assert.NoError(t, err)
 	assert.True(t, callbackExecuted, "Callback should have been executed")
-	
+
 	deriver.AssertExpectations(t)
 }
 
 func TestEventDeriver_MultipleCallbacks(t *testing.T) {
 	deriver := NewMockEventDeriver("test", xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK, spec.DataVersionPhase0)
-	
+
 	// Mock multiple OnEventsDerived calls
 	deriver.On("OnEventsDerived", mock.Anything, mock.Anything).Return().Times(3)
-	
+
 	ctx := context.Background()
 	executionOrder := []int{}
-	
+
 	// Register multiple callbacks
 	callback1 := func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 		executionOrder = append(executionOrder, 1)
 		return nil
 	}
-	
+
 	callback2 := func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 		executionOrder = append(executionOrder, 2)
 		return nil
 	}
-	
+
 	callback3 := func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 		executionOrder = append(executionOrder, 3)
 		return nil
 	}
-	
+
 	deriver.OnEventsDerived(ctx, callback1)
 	deriver.OnEventsDerived(ctx, callback2)
 	deriver.OnEventsDerived(ctx, callback3)
-	
+
 	// Trigger all callbacks
 	events := []*xatu.DecoratedEvent{
 		{
@@ -269,28 +269,28 @@ func TestEventDeriver_MultipleCallbacks(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := deriver.TriggerCallbacks(ctx, events)
 	assert.NoError(t, err)
 	assert.Equal(t, []int{1, 2, 3}, executionOrder, "Callbacks should execute in registration order")
-	
+
 	deriver.AssertExpectations(t)
 }
 
 func TestEventDeriver_CallbackError(t *testing.T) {
 	deriver := NewMockEventDeriver("test", xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK, spec.DataVersionPhase0)
-	
+
 	deriver.On("OnEventsDerived", mock.Anything, mock.Anything).Return()
-	
+
 	ctx := context.Background()
-	
+
 	// Register a callback that returns an error
 	callback := func(ctx context.Context, events []*xatu.DecoratedEvent) error {
 		return assert.AnError
 	}
-	
+
 	deriver.OnEventsDerived(ctx, callback)
-	
+
 	// Trigger callback and expect error
 	events := []*xatu.DecoratedEvent{
 		{
@@ -300,11 +300,11 @@ func TestEventDeriver_CallbackError(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := deriver.TriggerCallbacks(ctx, events)
 	assert.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
-	
+
 	deriver.AssertExpectations(t)
 }
 
@@ -349,12 +349,12 @@ func TestEventDeriver_ActivationForkValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			deriver := NewMockEventDeriver("test", xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK, tt.activationFork)
-			
+
 			deriver.On("ActivationFork").Return()
-			
+
 			fork := deriver.ActivationFork()
 			assert.Equal(t, tt.activationFork, fork, tt.description)
-			
+
 			deriver.AssertExpectations(t)
 		})
 	}
@@ -364,10 +364,10 @@ func TestEventDeriver_CompileTimeInterfaceChecks(t *testing.T) {
 	// This test verifies that the compile-time interface checks in event_deriver.go
 	// are working correctly. If any of the deriver types don't implement EventDeriver,
 	// this will fail at compile time.
-	
+
 	// We can't directly test the var _ EventDeriver = &Type{} declarations,
 	// but we can verify that the types exist and can be instantiated
-	
+
 	// These would fail at compile time if the interface implementations are broken
 	t.Run("interface_compliance_compiles", func(t *testing.T) {
 		// This test just verifies the file compiles, which means all interface
@@ -378,18 +378,18 @@ func TestEventDeriver_CompileTimeInterfaceChecks(t *testing.T) {
 
 func TestEventDeriver_ContextCancellation(t *testing.T) {
 	deriver := NewMockEventDeriver("test", xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK, spec.DataVersionPhase0)
-	
+
 	// Test that derivers properly handle context cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	deriver.On("Start", mock.MatchedBy(func(ctx context.Context) bool {
 		return ctx.Err() != nil // Context should be cancelled
 	})).Return(context.Canceled)
-	
+
 	err := deriver.Start(ctx)
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	
+
 	deriver.AssertExpectations(t)
 }

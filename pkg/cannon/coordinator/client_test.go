@@ -34,8 +34,8 @@ func TestNew(t *testing.T) {
 			errorMsg:    "address is required",
 		},
 		{
-			name: "nil_config_fails",
-			config: nil,
+			name:        "nil_config_fails",
+			config:      nil,
 			expectError: true,
 		},
 	}
@@ -43,7 +43,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			log := logrus.NewEntry(logrus.New())
-			
+
 			client, err := New(tt.config, log)
 
 			if tt.expectError {
@@ -75,11 +75,11 @@ func TestClient_StartStop(t *testing.T) {
 
 	// Test Start/Stop lifecycle
 	ctx := context.Background()
-	
+
 	// Note: These may fail with actual network connections, but should not panic
-	err = client.Start(ctx)
+	_ = client.Start(ctx)
 	// We don't assert on error since this might fail due to no actual server
-	
+
 	err = client.Stop(ctx)
 	// Stop should generally succeed
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestClient_GetCannonLocation(t *testing.T) {
 	// Test method exists and has correct signature
 	// Note: This will likely fail with network error, but tests the interface
 	location, err := client.GetCannonLocation(ctx, cannonType, networkID)
-	
+
 	// We expect this to fail with network error in unit test environment
 	// but the method should exist and not panic
 	_ = location // Ignore result for unit test
@@ -122,7 +122,7 @@ func TestClient_UpsertCannonLocationRequest(t *testing.T) {
 	assert.NotNil(t, client)
 
 	ctx := context.Background()
-	
+
 	// Create a test location
 	location := &xatu.CannonLocation{
 		NetworkId: "1",
@@ -131,7 +131,7 @@ func TestClient_UpsertCannonLocationRequest(t *testing.T) {
 
 	// Test method exists and has correct signature
 	err = client.UpsertCannonLocationRequest(ctx, location)
-	
+
 	// We expect this to fail with network error in unit test environment
 	// but the method should exist and not panic
 	_ = err // Network errors are expected in unit tests

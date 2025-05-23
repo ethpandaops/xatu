@@ -17,21 +17,21 @@ import (
 type BeaconNode interface {
 	// Core beacon node operations
 	Start(ctx context.Context) error
-	
+
 	// Block operations
 	GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error)
-	
+
 	// Validator operations
 	GetValidators(ctx context.Context, identifier string) (map[phase0.ValidatorIndex]*apiv1.Validator, error)
-	
+
 	// Node information
 	Node() beacon.Node
 	Metadata() *services.MetadataService
 	Duties() *services.DutiesService
-	
+
 	// Event callbacks
 	OnReady(ctx context.Context, callback func(ctx context.Context) error)
-	
+
 	// Synchronization status
 	Synced(ctx context.Context) error
 }
@@ -41,7 +41,7 @@ type Coordinator interface {
 	// Cannon location operations
 	GetCannonLocation(ctx context.Context, typ xatu.CannonType, networkID string) (*xatu.CannonLocation, error)
 	UpsertCannonLocationRequest(ctx context.Context, location *xatu.CannonLocation) error
-	
+
 	// Connection management
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
@@ -51,15 +51,15 @@ type Coordinator interface {
 type BlockClassification struct {
 	Slot        uint64 `json:"slot"`
 	Blockprint  string `json:"blockprint"`
-	BlockHash   string `json:"block_hash"`
-	BlockNumber uint64 `json:"block_number"`
+	BlockHash   string `json:"blockHash"`
+	BlockNumber uint64 `json:"blockNumber"`
 }
 
 // Blockprint defines the interface for blockprint operations
 type Blockprint interface {
 	// Block classification operations
 	GetBlockClassifications(ctx context.Context, slots []uint64) (map[uint64]*BlockClassification, error)
-	
+
 	// Health check
 	HealthCheck(ctx context.Context) error
 }
@@ -111,13 +111,13 @@ type Logger interface {
 	WithField(key string, value any) logrus.FieldLogger
 	WithFields(fields logrus.Fields) logrus.FieldLogger
 	WithError(err error) logrus.FieldLogger
-	
+
 	Debug(args ...any)
 	Info(args ...any)
 	Warn(args ...any)
 	Error(args ...any)
 	Fatal(args ...any)
-	
+
 	Debugf(format string, args ...any)
 	Infof(format string, args ...any)
 	Warnf(format string, args ...any)
@@ -134,7 +134,7 @@ type TimeProvider interface {
 	After(d time.Duration) <-chan time.Time
 }
 
-// NTPClient defines the interface for NTP operations  
+// NTPClient defines the interface for NTP operations
 type NTPClient interface {
 	Query(host string) (NTPResponse, error)
 }

@@ -16,15 +16,15 @@ func TestProposerDutyDeriver_Name(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &ProposerDutyDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -37,15 +37,15 @@ func TestProposerDutyDeriver_CannonType(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &ProposerDutyDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -58,22 +58,22 @@ func TestProposerDutyDeriver_ActivationFork(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &ProposerDutyDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
 	// Test that it returns a valid fork version
 	fork := deriver.ActivationFork()
-	assert.True(t, fork == spec.DataVersionPhase0 || 
-		fork == spec.DataVersionAltair || 
+	assert.True(t, fork == spec.DataVersionPhase0 ||
+		fork == spec.DataVersionAltair ||
 		fork == spec.DataVersionBellatrix ||
 		fork == spec.DataVersionCapella ||
 		fork == spec.DataVersionDeneb)
@@ -85,15 +85,15 @@ func TestProposerDutyDeriver_OnEventsDerived(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &ProposerDutyDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -132,7 +132,7 @@ func TestProposerDutyDeriverConfig_Validation(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid_disabled_config", 
+			name: "valid_disabled_config",
 			config: &ProposerDutyDeriverConfig{
 				Enabled: false,
 			},
@@ -144,18 +144,18 @@ func TestProposerDutyDeriverConfig_Validation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test basic config validation
 			assert.NotNil(t, tt.config)
-			
+
 			// Test that we can create a deriver with this config
 			clientMeta := &xatu.ClientMeta{
-				Name:         "test-client",
-				Version:      "1.0.0",
-				Id:           "test-id",
+				Name:           "test-client",
+				Version:        "1.0.0",
+				Id:             "test-id",
 				Implementation: "test-impl",
 			}
 
 			deriver := &ProposerDutyDeriver{
-				log: logrus.NewEntry(logrus.New()),
-				cfg: tt.config,
+				log:        logrus.NewEntry(logrus.New()),
+				cfg:        tt.config,
 				clientMeta: clientMeta,
 			}
 
@@ -172,9 +172,9 @@ func TestNewProposerDutyDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
@@ -196,15 +196,15 @@ func TestProposerDutyDeriver_ImplementsEventDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &ProposerDutyDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 

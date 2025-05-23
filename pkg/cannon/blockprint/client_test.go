@@ -57,12 +57,12 @@ func TestNewClient(t *testing.T) {
 
 func TestClient_Get(t *testing.T) {
 	tests := []struct {
-		name           string
-		serverHandler  http.HandlerFunc
-		path           string
-		headers        map[string]string
-		expectedData   json.RawMessage
-		expectedError  string
+		name            string
+		serverHandler   http.HandlerFunc
+		path            string
+		headers         map[string]string
+		expectedData    json.RawMessage
+		expectedError   string
 		validateRequest func(*testing.T, *http.Request)
 	}{
 		{
@@ -86,7 +86,7 @@ func TestClient_Get(t *testing.T) {
 				// Verify headers were set
 				assert.Equal(t, "xatu-cannon/1.0", r.Header.Get("User-Agent"))
 				assert.Equal(t, "Bearer secret-token", r.Header.Get("Authorization"))
-				
+
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(`{"authenticated": true}`))
@@ -259,7 +259,7 @@ func TestClient_Get_HeaderOverrides(t *testing.T) {
 		// Verify custom headers are set and override defaults
 		assert.Equal(t, "custom-agent", r.Header.Get("User-Agent"))
 		assert.Equal(t, "custom-value", r.Header.Get("X-Custom"))
-		
+
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"success": true}`))
 	}))
@@ -269,7 +269,7 @@ func TestClient_Get_HeaderOverrides(t *testing.T) {
 		"User-Agent": "custom-agent",
 		"X-Custom":   "custom-value",
 	}
-	
+
 	client := NewClient(server.URL, headers)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -287,7 +287,7 @@ func TestClient_Get_MultipleHeaders(t *testing.T) {
 		assert.Equal(t, "Bearer token123", r.Header.Get("Authorization"))
 		assert.Equal(t, "application/json", r.Header.Get("Accept"))
 		assert.Equal(t, "custom-client", r.Header.Get("X-Client"))
-		
+
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"headers": "verified"}`))
 	}))
@@ -299,7 +299,7 @@ func TestClient_Get_MultipleHeaders(t *testing.T) {
 		"Accept":        "application/json",
 		"X-Client":      "custom-client",
 	}
-	
+
 	client := NewClient(server.URL, headers)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

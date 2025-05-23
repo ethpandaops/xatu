@@ -26,6 +26,7 @@ func (m *MockBeaconNode) GetBeaconBlock(ctx context.Context, identifier string, 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
+
 	return args.Get(0).(*spec.VersionedSignedBeaconBlock), args.Error(1)
 }
 
@@ -34,6 +35,7 @@ func (m *MockBeaconNode) GetValidators(ctx context.Context, identifier string) (
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
+
 	return args.Get(0).(map[phase0.ValidatorIndex]*apiv1.Validator), args.Error(1)
 }
 
@@ -106,7 +108,8 @@ func (m *MockBeaconNode) SetupOnReadyCallback() {
 func (m *MockBeaconNode) TriggerOnReadyCallback(ctx context.Context) error {
 	// This helper method allows tests to manually trigger the OnReady callback
 	calls := m.Calls
-	for _, call := range calls {
+	for i := range calls {
+		call := &calls[i]
 		if call.Method == "OnReady" && len(call.Arguments) >= 2 {
 			if callback, ok := call.Arguments[1].(func(context.Context) error); ok {
 				return callback(ctx)

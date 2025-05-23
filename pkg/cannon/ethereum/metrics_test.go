@@ -39,7 +39,7 @@ func TestNewEthereumMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a new registry for this test to avoid conflicts
 			reg := prometheus.NewRegistry()
-			
+
 			// Temporarily replace the default registry
 			origRegistry := prometheus.DefaultRegisterer
 			prometheus.DefaultRegisterer = reg
@@ -67,7 +67,7 @@ func TestNewEthereumMetrics(t *testing.T) {
 			// Verify metrics are registered
 			metricFamilies, err := reg.Gather()
 			require.NoError(t, err)
-			
+
 			expectedMetrics := []string{
 				tt.expectedPrefix + "_blocks_fetched_total",
 				tt.expectedPrefix + "_blocks_fetch_errors_total",
@@ -75,7 +75,7 @@ func TestNewEthereumMetrics(t *testing.T) {
 				tt.expectedPrefix + "_block_cache_miss_total",
 				tt.expectedPrefix + "_preload_block_queue_size",
 			}
-			
+
 			for _, expectedMetric := range expectedMetrics {
 				found := false
 				for _, mf := range metricFamilies {
@@ -121,7 +121,7 @@ func TestMetrics_IncBlocksFetched(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a new registry for this test to avoid conflicts
 			reg := prometheus.NewRegistry()
-			
+
 			// Temporarily replace the default registry
 			origRegistry := prometheus.DefaultRegisterer
 			prometheus.DefaultRegisterer = reg
@@ -130,7 +130,7 @@ func TestMetrics_IncBlocksFetched(t *testing.T) {
 			}()
 
 			metrics := NewMetrics("test", tt.beacon)
-			
+
 			// Increment the metric
 			for i := 0; i < tt.incCount; i++ {
 				metrics.IncBlocksFetched(tt.network)
@@ -165,7 +165,7 @@ func TestMetrics_IncBlocksFetched(t *testing.T) {
 func TestMetrics_IncBlocksFetchErrors(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -174,7 +174,7 @@ func TestMetrics_IncBlocksFetchErrors(t *testing.T) {
 	}()
 
 	metrics := NewMetrics("test", "beacon")
-	
+
 	// Increment errors for different networks
 	metrics.IncBlocksFetchErrors("mainnet")
 	metrics.IncBlocksFetchErrors("mainnet")
@@ -211,7 +211,7 @@ func TestMetrics_IncBlocksFetchErrors(t *testing.T) {
 func TestMetrics_CacheMetrics(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -220,7 +220,7 @@ func TestMetrics_CacheMetrics(t *testing.T) {
 	}()
 
 	metrics := NewMetrics("test", "beacon")
-	
+
 	// Increment cache hits and misses
 	metrics.IncBlockCacheHit("mainnet")
 	metrics.IncBlockCacheHit("mainnet")
@@ -253,9 +253,9 @@ func TestMetrics_CacheMetrics(t *testing.T) {
 
 func TestMetrics_SetPreloadBlockQueueSize(t *testing.T) {
 	tests := []struct {
-		name     string
-		network  string
-		beacon   string
+		name      string
+		network   string
+		beacon    string
 		queueSize int
 	}{
 		{
@@ -266,7 +266,7 @@ func TestMetrics_SetPreloadBlockQueueSize(t *testing.T) {
 		},
 		{
 			name:      "set_sepolia_queue_size",
-			network:   "sepolia", 
+			network:   "sepolia",
 			beacon:    "prysm",
 			queueSize: 50,
 		},
@@ -282,7 +282,7 @@ func TestMetrics_SetPreloadBlockQueueSize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a new registry for this test to avoid conflicts
 			reg := prometheus.NewRegistry()
-			
+
 			// Temporarily replace the default registry
 			origRegistry := prometheus.DefaultRegisterer
 			prometheus.DefaultRegisterer = reg
@@ -291,7 +291,7 @@ func TestMetrics_SetPreloadBlockQueueSize(t *testing.T) {
 			}()
 
 			metrics := NewMetrics("test", tt.beacon)
-			
+
 			// Set the queue size
 			metrics.SetPreloadBlockQueueSize(tt.network, tt.queueSize)
 
@@ -324,7 +324,7 @@ func TestMetrics_SetPreloadBlockQueueSize(t *testing.T) {
 func TestMetrics_MultipleOperations(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -333,7 +333,7 @@ func TestMetrics_MultipleOperations(t *testing.T) {
 	}()
 
 	metrics := NewMetrics("test", "multi-beacon")
-	
+
 	// Perform multiple operations
 	metrics.IncBlocksFetched("mainnet")
 	metrics.IncBlocksFetched("mainnet")
@@ -347,7 +347,7 @@ func TestMetrics_MultipleOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	metricsFound := make(map[string]float64)
-	
+
 	for _, mf := range metricFamilies {
 		for _, metric := range mf.GetMetric() {
 			metricName := mf.GetName()
@@ -369,7 +369,7 @@ func TestMetrics_MultipleOperations(t *testing.T) {
 func TestMetrics_LabelValues(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -379,7 +379,7 @@ func TestMetrics_LabelValues(t *testing.T) {
 
 	beaconName := "test-beacon-node"
 	metrics := NewMetrics("test", beaconName)
-	
+
 	// Increment a metric
 	metrics.IncBlocksFetched("custom-network")
 

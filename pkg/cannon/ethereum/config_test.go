@@ -105,8 +105,8 @@ func TestConfig_BeaconNodeHeaders(t *testing.T) {
 
 func TestConfig_NetworkOverride(t *testing.T) {
 	config := &Config{
-		BeaconNodeAddress:     "http://localhost:5052",
-		OverrideNetworkName:   "mainnet",
+		BeaconNodeAddress:   "http://localhost:5052",
+		OverrideNetworkName: "mainnet",
 	}
 
 	err := config.Validate()
@@ -129,9 +129,9 @@ func TestConfig_CacheSettings(t *testing.T) {
 
 func TestConfig_PreloadSettings(t *testing.T) {
 	config := &Config{
-		BeaconNodeAddress:      "http://localhost:5052",
-		BlockPreloadWorkers:    10,
-		BlockPreloadQueueSize:  5000,
+		BeaconNodeAddress:     "http://localhost:5052",
+		BlockPreloadWorkers:   10,
+		BlockPreloadQueueSize: 5000,
 	}
 
 	err := config.Validate()

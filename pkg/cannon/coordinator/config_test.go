@@ -86,7 +86,7 @@ func TestConfig_Headers(t *testing.T) {
 		Address: "localhost:8080",
 		Headers: map[string]string{
 			"Authorization": "Bearer secret123",
-			"X-API-Key":     "key456", 
+			"X-API-Key":     "key456",
 			"User-Agent":    "xatu-cannon/1.0",
 		},
 	}

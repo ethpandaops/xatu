@@ -15,8 +15,8 @@ type MockBlockprint struct {
 type BlockClassification struct {
 	Slot        uint64 `json:"slot"`
 	Blockprint  string `json:"blockprint"`
-	BlockHash   string `json:"block_hash"`
-	BlockNumber uint64 `json:"block_number"`
+	BlockHash   string `json:"blockHash"`
+	BlockNumber uint64 `json:"blockNumber"`
 }
 
 func (m *MockBlockprint) GetBlockClassifications(ctx context.Context, slots []uint64) (map[uint64]*BlockClassification, error) {

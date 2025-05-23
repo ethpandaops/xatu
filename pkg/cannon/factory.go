@@ -14,19 +14,19 @@ import (
 
 // CannonFactory provides a testable factory for creating Cannon instances
 type CannonFactory struct {
-	config            *Config
-	beacon            BeaconNode
-	coordinator       Coordinator
-	blockprint        Blockprint
-	logger            logrus.FieldLogger
-	sinks             []output.Sink
-	scheduler         Scheduler
-	timeProvider      TimeProvider
-	ntpClient         NTPClient
-	overrides         *Override
-	id                uuid.UUID
-	metrics           *Metrics
-	isTestMode        bool
+	config       *Config
+	beacon       BeaconNode
+	coordinator  Coordinator
+	blockprint   Blockprint
+	logger       logrus.FieldLogger
+	sinks        []output.Sink
+	scheduler    Scheduler
+	timeProvider TimeProvider
+	ntpClient    NTPClient
+	overrides    *Override
+	id           uuid.UUID
+	metrics      *Metrics
+	isTestMode   bool
 }
 
 // NewCannonFactory creates a new factory for creating Cannon instances
@@ -50,18 +50,21 @@ func NewTestCannonFactory() *CannonFactory {
 // WithConfig sets the configuration
 func (f *CannonFactory) WithConfig(config *Config) *CannonFactory {
 	f.config = config
+
 	return f
 }
 
 // WithBeaconNode sets the beacon node
 func (f *CannonFactory) WithBeaconNode(beacon BeaconNode) *CannonFactory {
 	f.beacon = beacon
+
 	return f
 }
 
 // WithCoordinator sets the coordinator client
 func (f *CannonFactory) WithCoordinator(coord Coordinator) *CannonFactory {
 	f.coordinator = coord
+
 	return f
 }
 
@@ -151,21 +154,21 @@ func (f *CannonFactory) Build() (*TestableCannon, error) {
 	}
 
 	return &TestableCannon{
-		config:            f.config,
-		sinks:             f.sinks,
-		beacon:            f.beacon,
-		coordinator:       f.coordinator,
-		blockprint:        f.blockprint,
-		clockDrift:        time.Duration(0),
-		log:               f.logger,
-		id:                f.id,
-		metrics:           f.metrics,
-		scheduler:         f.scheduler,
-		timeProvider:      f.timeProvider,
-		ntpClient:         f.ntpClient,
-		eventDerivers:     nil,
-		shutdownFuncs:     []func(ctx context.Context) error{},
-		overrides:         f.overrides,
+		config:        f.config,
+		sinks:         f.sinks,
+		beacon:        f.beacon,
+		coordinator:   f.coordinator,
+		blockprint:    f.blockprint,
+		clockDrift:    time.Duration(0),
+		log:           f.logger,
+		id:            f.id,
+		metrics:       f.metrics,
+		scheduler:     f.scheduler,
+		timeProvider:  f.timeProvider,
+		ntpClient:     f.ntpClient,
+		eventDerivers: nil,
+		shutdownFuncs: []func(ctx context.Context) error{},
+		overrides:     f.overrides,
 	}, nil
 }
 

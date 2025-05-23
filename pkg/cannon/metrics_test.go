@@ -12,6 +12,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	testCannonDecoratedEventTotalMetric = "test_cannon_decorated_event_total"
+)
+
 func TestNewMetrics(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -35,7 +39,7 @@ func TestNewMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a new registry for this test to avoid conflicts
 			reg := prometheus.NewRegistry()
-			
+
 			// Temporarily replace the default registry
 			origRegistry := prometheus.DefaultRegisterer
 			prometheus.DefaultRegisterer = reg
@@ -60,12 +64,12 @@ func TestNewMetrics(t *testing.T) {
 			// Verify the metric is registered
 			metricFamilies, err := reg.Gather()
 			require.NoError(t, err)
-			
+
 			expectedName := tt.namespace + "_decorated_event_total"
 			if tt.namespace == "" {
 				expectedName = "decorated_event_total"
 			}
-			
+
 			found := false
 			for _, mf := range metricFamilies {
 				if mf.GetName() == expectedName {
@@ -162,7 +166,7 @@ func TestMetrics_AddDecoratedEvent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a new registry for this test to avoid conflicts
 			reg := prometheus.NewRegistry()
-			
+
 			// Temporarily replace the default registry
 			origRegistry := prometheus.DefaultRegisterer
 			prometheus.DefaultRegisterer = reg
@@ -171,7 +175,7 @@ func TestMetrics_AddDecoratedEvent(t *testing.T) {
 			}()
 
 			metrics := NewMetrics("test_cannon")
-			
+
 			// Add the decorated event
 			metrics.AddDecoratedEvent(tt.count, tt.eventType, tt.network)
 
@@ -181,7 +185,7 @@ func TestMetrics_AddDecoratedEvent(t *testing.T) {
 
 			found := false
 			for _, mf := range metricFamilies {
-				if mf.GetName() == "test_cannon_decorated_event_total" {
+				if mf.GetName() == testCannonDecoratedEventTotalMetric {
 					for _, metric := range mf.GetMetric() {
 						// Check if this metric has the expected labels
 						labels := make(map[string]string)
@@ -189,8 +193,8 @@ func TestMetrics_AddDecoratedEvent(t *testing.T) {
 							labels[label.GetName()] = label.GetValue()
 						}
 
-						if labels["type"] == tt.expectedLabels["type"] && 
-						   labels["network"] == tt.expectedLabels["network"] {
+						if labels["type"] == tt.expectedLabels["type"] &&
+							labels["network"] == tt.expectedLabels["network"] {
 							found = true
 							assert.Equal(t, tt.expectedValue, metric.GetCounter().GetValue())
 							break
@@ -206,7 +210,7 @@ func TestMetrics_AddDecoratedEvent(t *testing.T) {
 func TestMetrics_AddDecoratedEvent_Multiple(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -235,7 +239,7 @@ func TestMetrics_AddDecoratedEvent_Multiple(t *testing.T) {
 
 	// Add multiple events
 	metrics.AddDecoratedEvent(3, blockEvent, "mainnet")
-	metrics.AddDecoratedEvent(7, blockEvent, "mainnet")      // Same type/network - should accumulate
+	metrics.AddDecoratedEvent(7, blockEvent, "mainnet")       // Same type/network - should accumulate
 	metrics.AddDecoratedEvent(2, attestationEvent, "mainnet") // Different type - separate counter
 	metrics.AddDecoratedEvent(1, blockEvent, "sepolia")       // Same type, different network - separate counter
 
@@ -254,7 +258,7 @@ func TestMetrics_AddDecoratedEvent_Multiple(t *testing.T) {
 	}
 
 	for _, mf := range metricFamilies {
-		if mf.GetName() == "test_cannon_decorated_event_total" {
+		if mf.GetName() == testCannonDecoratedEventTotalMetric {
 			for _, metric := range mf.GetMetric() {
 				labels := make(map[string]string)
 				for _, label := range metric.GetLabel() {
@@ -267,7 +271,7 @@ func TestMetrics_AddDecoratedEvent_Multiple(t *testing.T) {
 
 				if expectedNetworks, exists := expectedValues[eventType]; exists {
 					if expectedValue, exists := expectedNetworks[network]; exists {
-						assert.Equal(t, expectedValue, actualValue, 
+						assert.Equal(t, expectedValue, actualValue,
 							"Unexpected value for type=%s network=%s", eventType, network)
 					} else {
 						t.Errorf("Unexpected network %s for event type %s", network, eventType)
@@ -283,7 +287,7 @@ func TestMetrics_AddDecoratedEvent_Multiple(t *testing.T) {
 func TestMetrics_CounterVecLabels(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -309,11 +313,11 @@ func TestMetrics_CounterVecLabels(t *testing.T) {
 
 	found := false
 	for _, mf := range metricFamilies {
-		if mf.GetName() == "test_cannon_decorated_event_total" {
+		if mf.GetName() == testCannonDecoratedEventTotalMetric {
 			found = true
 			assert.Equal(t, dto.MetricType_COUNTER, mf.GetType())
 			assert.Equal(t, "Total number of decorated events created by the cannon", mf.GetHelp())
-			
+
 			// Should have one metric entry now
 			assert.Len(t, mf.GetMetric(), 1)
 			break
@@ -325,7 +329,7 @@ func TestMetrics_CounterVecLabels(t *testing.T) {
 func TestMetrics_ThreadSafety(t *testing.T) {
 	// Create a new registry for this test to avoid conflicts
 	reg := prometheus.NewRegistry()
-	
+
 	// Temporarily replace the default registry
 	origRegistry := prometheus.DefaultRegisterer
 	prometheus.DefaultRegisterer = reg
@@ -345,14 +349,14 @@ func TestMetrics_ThreadSafety(t *testing.T) {
 
 	// Test concurrent access (basic smoke test)
 	done := make(chan bool, 2)
-	
+
 	go func() {
 		for i := 0; i < 100; i++ {
 			metrics.AddDecoratedEvent(1, event, "mainnet")
 		}
 		done <- true
 	}()
-	
+
 	go func() {
 		for i := 0; i < 100; i++ {
 			metrics.AddDecoratedEvent(1, event, "sepolia")
@@ -372,7 +376,7 @@ func TestMetrics_ThreadSafety(t *testing.T) {
 	sepoliaCount := 0.0
 
 	for _, mf := range metricFamilies {
-		if mf.GetName() == "test_cannon_decorated_event_total" {
+		if mf.GetName() == testCannonDecoratedEventTotalMetric {
 			for _, metric := range mf.GetMetric() {
 				labels := make(map[string]string)
 				for _, label := range metric.GetLabel() {

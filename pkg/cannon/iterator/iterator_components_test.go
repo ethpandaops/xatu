@@ -100,10 +100,10 @@ func TestBlockprintIterator_CreateLocation(t *testing.T) {
 		validateFunc func(*testing.T, *xatu.CannonLocation)
 	}{
 		{
-			name:       "valid_blockprint_classification",
-			cannonType: xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
-			slot:       phase0.Slot(100),
-			target:     phase0.Slot(200),
+			name:        "valid_blockprint_classification",
+			cannonType:  xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
+			slot:        phase0.Slot(100),
+			target:      phase0.Slot(200),
 			expectError: false,
 			validateFunc: func(t *testing.T, location *xatu.CannonLocation) {
 				assert.Equal(t, xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION, location.Type)
@@ -115,10 +115,10 @@ func TestBlockprintIterator_CreateLocation(t *testing.T) {
 			},
 		},
 		{
-			name:       "zero_values",
-			cannonType: xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
-			slot:       phase0.Slot(0),
-			target:     phase0.Slot(0),
+			name:        "zero_values",
+			cannonType:  xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
+			slot:        phase0.Slot(0),
+			target:      phase0.Slot(0),
 			expectError: false,
 			validateFunc: func(t *testing.T, location *xatu.CannonLocation) {
 				data := location.GetBlockprintBlockClassification()
@@ -162,11 +162,11 @@ func TestBlockprintIterator_CreateLocation(t *testing.T) {
 
 func TestBlockprintIterator_GetSlotsFromLocation(t *testing.T) {
 	tests := []struct {
-		name          string
-		location      *xatu.CannonLocation
-		expectedSlot  phase0.Slot
+		name           string
+		location       *xatu.CannonLocation
+		expectedSlot   phase0.Slot
 		expectedTarget phase0.Slot
-		expectedError string
+		expectedError  string
 	}{
 		{
 			name: "valid_blockprint_location",

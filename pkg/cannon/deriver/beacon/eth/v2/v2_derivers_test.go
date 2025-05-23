@@ -18,7 +18,7 @@ func TestDepositDeriverConfig_BasicStructure(t *testing.T) {
 	config := DepositDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -38,7 +38,7 @@ func TestWithdrawalDeriverConfig_BasicStructure(t *testing.T) {
 	config := WithdrawalDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -58,7 +58,7 @@ func TestBLSToExecutionChangeDeriverConfig_BasicStructure(t *testing.T) {
 	config := BLSToExecutionChangeDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -73,7 +73,7 @@ func TestAttesterSlashingDeriverConfig_BasicStructure(t *testing.T) {
 	config := AttesterSlashingDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -88,7 +88,7 @@ func TestProposerSlashingDeriverConfig_BasicStructure(t *testing.T) {
 	config := ProposerSlashingDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -103,12 +103,12 @@ func TestExecutionTransactionDeriverConfig_BasicStructure(t *testing.T) {
 	config := ExecutionTransactionDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
 
-// Tests for ElaboratedAttestationDeriver  
+// Tests for ElaboratedAttestationDeriver
 func TestElaboratedAttestationDeriver_Constants(t *testing.T) {
 	assert.Equal(t, xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION, ElaboratedAttestationDeriverName)
 	assert.Contains(t, ElaboratedAttestationDeriverName.String(), "ELABORATED_ATTESTATION")
@@ -118,7 +118,7 @@ func TestElaboratedAttestationDeriverConfig_BasicStructure(t *testing.T) {
 	config := ElaboratedAttestationDeriverConfig{
 		Enabled: true,
 	}
-	
+
 	assert.True(t, config.Enabled)
 	assert.NotNil(t, &config.Iterator)
 }
@@ -166,7 +166,7 @@ func TestV2Derivers_CannonTypeConsistency(t *testing.T) {
 			expectName: "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expectName, tt.constant.String())
@@ -187,7 +187,7 @@ func TestV2DeriverConfigs_CommonStructure(t *testing.T) {
 		proposerConfig := ProposerSlashingDeriverConfig{Enabled: true}
 		executionConfig := ExecutionTransactionDeriverConfig{Enabled: true}
 		attestationConfig := ElaboratedAttestationDeriverConfig{Enabled: true}
-		
+
 		assert.True(t, depositConfig.Enabled)
 		assert.True(t, withdrawalConfig.Enabled)
 		assert.True(t, blsConfig.Enabled)
@@ -196,7 +196,7 @@ func TestV2DeriverConfigs_CommonStructure(t *testing.T) {
 		assert.True(t, executionConfig.Enabled)
 		assert.True(t, attestationConfig.Enabled)
 	})
-	
+
 	t.Run("all_configs_have_iterator_field", func(t *testing.T) {
 		// Test that all V2 configs have Iterator field
 		var depositConfig DepositDeriverConfig
@@ -206,7 +206,7 @@ func TestV2DeriverConfigs_CommonStructure(t *testing.T) {
 		var proposerConfig ProposerSlashingDeriverConfig
 		var executionConfig ExecutionTransactionDeriverConfig
 		var attestationConfig ElaboratedAttestationDeriverConfig
-		
+
 		// Iterator fields should be accessible
 		_ = depositConfig.Iterator
 		_ = withdrawalConfig.Iterator
@@ -227,50 +227,50 @@ func TestV2DeriverConfigs_ZeroValues(t *testing.T) {
 		// Note: We can't use this pattern without adding GetEnabled() methods
 		// So we'll test each one individually
 	}
-	
+
 	// Individual zero value tests
 	t.Run("deposit_zero_value", func(t *testing.T) {
 		var config DepositDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("withdrawal_zero_value", func(t *testing.T) {
 		var config WithdrawalDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("bls_zero_value", func(t *testing.T) {
 		var config BLSToExecutionChangeDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("attester_slashing_zero_value", func(t *testing.T) {
 		var config AttesterSlashingDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("proposer_slashing_zero_value", func(t *testing.T) {
 		var config ProposerSlashingDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("execution_transaction_zero_value", func(t *testing.T) {
 		var config ExecutionTransactionDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	t.Run("elaborated_attestation_zero_value", func(t *testing.T) {
 		var config ElaboratedAttestationDeriverConfig
 		assert.False(t, config.Enabled)
 	})
-	
+
 	_ = configs // Use the variable to avoid compiler warning
 }
 
 // Test activation forks (where applicable)
 func TestV2Derivers_ActivationForks(t *testing.T) {
 	// Most V2 derivers are available from Phase0, but some have specific activation forks
-	
+
 	t.Run("deposit_activation", func(t *testing.T) {
 		// Deposits have been available since Phase0
 		// If DepositDeriver has an ActivationFork method, test it
@@ -278,13 +278,13 @@ func TestV2Derivers_ActivationForks(t *testing.T) {
 		expectedFork := spec.DataVersionPhase0
 		assert.Equal(t, spec.DataVersionPhase0, expectedFork)
 	})
-	
+
 	t.Run("withdrawal_activation", func(t *testing.T) {
 		// Withdrawals were introduced in Capella
 		expectedFork := spec.DataVersionCapella
 		assert.Equal(t, spec.DataVersionCapella, expectedFork)
 	})
-	
+
 	t.Run("bls_to_execution_change_activation", func(t *testing.T) {
 		// BLS to execution changes were introduced in Capella
 		expectedFork := spec.DataVersionCapella
@@ -303,18 +303,18 @@ func TestV2Derivers_NamingConsistency(t *testing.T) {
 		ExecutionTransactionDeriverName,
 		ElaboratedAttestationDeriverName,
 	}
-	
+
 	for _, constant := range constants {
 		t.Run(constant.String(), func(t *testing.T) {
 			name := constant.String()
-			
+
 			// All V2 derivers should follow this pattern
 			assert.Contains(t, name, "BEACON_API_ETH_V2_BEACON_BLOCK_")
 			assert.NotContains(t, name, "V1") // Should not contain V1
-			
+
 			// Should not be empty
 			assert.NotEmpty(t, name)
-			
+
 			// Should be uppercase
 			assert.Equal(t, name, name) // This is a bit redundant but checks consistency
 		})

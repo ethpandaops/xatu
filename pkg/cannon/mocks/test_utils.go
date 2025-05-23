@@ -151,7 +151,7 @@ func (m *MockScheduler) Shutdown() error {
 	return err
 }
 
-func (m *MockScheduler) NewJob(jobDefinition any, task any, options ...any) (any, error) {
+func (m *MockScheduler) NewJob(jobDefinition, task any, options ...any) (any, error) {
 	args := m.Called(jobDefinition, task, options)
 	return args.Get(0), args.Error(1)
 }
@@ -240,7 +240,7 @@ func (ta *TestAssertions) AssertCannonStarted(cannon any) {
 	assert.NotNil(ta.t, cannon, "cannon should be set")
 }
 
-// AssertCannonStopped verifies that a cannon has been properly stopped  
+// AssertCannonStopped verifies that a cannon has been properly stopped
 func (ta *TestAssertions) AssertCannonStopped(cannon any) {
 	// This would need to be implemented with type assertions
 	// For now, just a placeholder

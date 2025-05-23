@@ -16,15 +16,15 @@ func TestVoluntaryExitDeriver_Name(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &VoluntaryExitDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -37,15 +37,15 @@ func TestVoluntaryExitDeriver_CannonType(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &VoluntaryExitDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -58,22 +58,22 @@ func TestVoluntaryExitDeriver_ActivationFork(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &VoluntaryExitDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
 	// Test that it returns a valid fork version
 	fork := deriver.ActivationFork()
-	assert.True(t, fork == spec.DataVersionPhase0 || 
-		fork == spec.DataVersionAltair || 
+	assert.True(t, fork == spec.DataVersionPhase0 ||
+		fork == spec.DataVersionAltair ||
 		fork == spec.DataVersionBellatrix ||
 		fork == spec.DataVersionCapella ||
 		fork == spec.DataVersionDeneb)
@@ -85,15 +85,15 @@ func TestVoluntaryExitDeriver_OnEventsDerived(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &VoluntaryExitDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -126,7 +126,7 @@ func TestVoluntaryExitDeriverConfig_Validation(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid_disabled_config", 
+			name: "valid_disabled_config",
 			config: &VoluntaryExitDeriverConfig{
 				Enabled: false,
 			},
@@ -138,18 +138,18 @@ func TestVoluntaryExitDeriverConfig_Validation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test basic config properties
 			assert.NotNil(t, tt.config)
-			
+
 			// Test that we can create a deriver with this config
 			clientMeta := &xatu.ClientMeta{
-				Name:         "test-client",
-				Version:      "1.0.0",
-				Id:           "test-id",
+				Name:           "test-client",
+				Version:        "1.0.0",
+				Id:             "test-id",
 				Implementation: "test-impl",
 			}
 
 			deriver := &VoluntaryExitDeriver{
-				log: logrus.NewEntry(logrus.New()),
-				cfg: tt.config,
+				log:        logrus.NewEntry(logrus.New()),
+				cfg:        tt.config,
 				clientMeta: clientMeta,
 			}
 
@@ -166,9 +166,9 @@ func TestNewVoluntaryExitDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
@@ -190,15 +190,15 @@ func TestVoluntaryExitDeriver_ImplementsEventDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &VoluntaryExitDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -215,7 +215,7 @@ func TestVoluntaryExitDeriver_ImplementsEventDeriver(t *testing.T) {
 func TestVoluntaryExitDeriver_Constants(t *testing.T) {
 	// Test that constants are properly defined
 	assert.NotEmpty(t, VoluntaryExitDeriverName.String())
-	
+
 	// Test that the constant is the expected cannon type
 	expectedType := xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
 	assert.Equal(t, expectedType, VoluntaryExitDeriverName)

@@ -12,10 +12,10 @@ import (
 
 func TestBeaconNode_Structure(t *testing.T) {
 	config := &Config{
-		BeaconNodeAddress: "http://localhost:5052",
+		BeaconNodeAddress:   "http://localhost:5052",
 		OverrideNetworkName: "testnet",
 	}
-	
+
 	logger := logrus.NewEntry(logrus.New())
 	logger.Logger.SetLevel(logrus.FatalLevel) // Suppress logs during tests
 
@@ -150,11 +150,11 @@ func TestBeaconNode_ZeroValue(t *testing.T) {
 
 func TestBeaconNode_ConfigPointerSafety(t *testing.T) {
 	config1 := &Config{
-		BeaconNodeAddress: "http://localhost:5052",
+		BeaconNodeAddress:   "http://localhost:5052",
 		OverrideNetworkName: "testnet",
 	}
 	config2 := &Config{
-		BeaconNodeAddress: "http://localhost:5053",
+		BeaconNodeAddress:   "http://localhost:5053",
 		OverrideNetworkName: "mainnet",
 	}
 

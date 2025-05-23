@@ -18,15 +18,15 @@ func TestBlockClassificationDeriver_Name(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &BlockClassificationDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -41,15 +41,15 @@ func TestBlockClassificationDeriver_CannonType(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &BlockClassificationDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -64,22 +64,22 @@ func TestBlockClassificationDeriver_ActivationFork(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &BlockClassificationDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
 	// Test that it returns a valid fork version
 	fork := deriver.ActivationFork()
-	assert.True(t, fork == spec.DataVersionPhase0 || 
-		fork == spec.DataVersionAltair || 
+	assert.True(t, fork == spec.DataVersionPhase0 ||
+		fork == spec.DataVersionAltair ||
 		fork == spec.DataVersionBellatrix ||
 		fork == spec.DataVersionCapella ||
 		fork == spec.DataVersionDeneb)
@@ -156,15 +156,15 @@ func TestBlockClassificationDeriver_OnEventsDerived(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &BlockClassificationDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 
@@ -197,9 +197,9 @@ func TestNewBlockClassificationDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
@@ -223,15 +223,15 @@ func TestBlockClassificationDeriver_ImplementsEventDeriver(t *testing.T) {
 	}
 
 	clientMeta := &xatu.ClientMeta{
-		Name:         "test-client",
-		Version:      "1.0.0",
-		Id:           "test-id",
+		Name:           "test-client",
+		Version:        "1.0.0",
+		Id:             "test-id",
 		Implementation: "test-impl",
 	}
 
 	deriver := &BlockClassificationDeriver{
-		log: logrus.NewEntry(logrus.New()),
-		cfg: config,
+		log:        logrus.NewEntry(logrus.New()),
+		cfg:        config,
 		clientMeta: clientMeta,
 	}
 

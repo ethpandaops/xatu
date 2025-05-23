@@ -88,7 +88,7 @@ func (s *DefaultScheduler) Shutdown() error {
 	return s.scheduler.Shutdown()
 }
 
-func (s *DefaultScheduler) NewJob(jobDefinition any, task any, options ...any) (any, error) {
+func (s *DefaultScheduler) NewJob(jobDefinition, task any, options ...any) (any, error) {
 	// This is a simplified implementation - would need more complex type handling for production
 	return nil, errors.New("not implemented")
 }

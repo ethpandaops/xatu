@@ -168,7 +168,7 @@ func TestConfig_FieldsExist(t *testing.T) {
 
 	// Verify all fields can be set without compilation errors
 	assert.NotNil(t, config)
-	
+
 	// Test individual field types
 	assert.IsType(t, v2.AttesterSlashingDeriverConfig{}, config.AttesterSlashingConfig)
 	assert.IsType(t, v2.BLSToExecutionChangeDeriverConfig{}, config.BLSToExecutionConfig)
@@ -230,13 +230,13 @@ func TestConfig_YAMLTags(t *testing.T) {
 	// This test verifies that the YAML tags are correctly set
 	// We can't easily test YAML unmarshaling without additional setup,
 	// but we can verify the struct field names match expected patterns
-	
+
 	config := &Config{}
-	
+
 	// Verify that the struct has the expected number of fields
 	// This is a basic structural test
 	assert.NotNil(t, config)
-	
+
 	// Test that we can create a fully populated config
 	fullConfig := &Config{
 		AttesterSlashingConfig:      v2.AttesterSlashingDeriverConfig{},
@@ -254,6 +254,6 @@ func TestConfig_YAMLTags(t *testing.T) {
 		BeaconValidatorsConfig:      v1.BeaconValidatorsDeriverConfig{},
 		BeaconCommitteeConfig:       v1.BeaconCommitteeDeriverConfig{},
 	}
-	
+
 	assert.NotNil(t, fullConfig)
 }

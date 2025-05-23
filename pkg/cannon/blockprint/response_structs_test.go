@@ -76,7 +76,7 @@ func TestBlocksPerClientResponse_JSONSerialization(t *testing.T) {
 
 func TestBlocksPerClientResponse_ZeroValue(t *testing.T) {
 	var response BlocksPerClientResponse
-	
+
 	// Verify zero values
 	assert.Equal(t, uint64(0), response.Uncertain)
 	assert.Equal(t, uint64(0), response.Lighthouse)
@@ -91,7 +91,7 @@ func TestBlocksPerClientResponse_ZeroValue(t *testing.T) {
 func TestSyncStatusResponse_Structure(t *testing.T) {
 	response := SyncStatusResponse{
 		GreatestBlockSlot: 12345678,
-		Synced:           true,
+		Synced:            true,
 	}
 
 	assert.Equal(t, uint64(12345678), response.GreatestBlockSlot)
@@ -108,7 +108,7 @@ func TestSyncStatusResponse_JSONSerialization(t *testing.T) {
 			name: "synced_status",
 			response: SyncStatusResponse{
 				GreatestBlockSlot: 98765432,
-				Synced:           true,
+				Synced:            true,
 			},
 			expected: `{"greatest_block_slot":98765432,"synced":true}`,
 		},
@@ -116,7 +116,7 @@ func TestSyncStatusResponse_JSONSerialization(t *testing.T) {
 			name: "not_synced_status",
 			response: SyncStatusResponse{
 				GreatestBlockSlot: 12345,
-				Synced:           false,
+				Synced:            false,
 			},
 			expected: `{"greatest_block_slot":12345,"synced":false}`,
 		},
@@ -151,7 +151,7 @@ func TestProposersBlocksResponse_Structure(t *testing.T) {
 
 	response := ProposersBlocksResponse{
 		ProposerIndex:   123456,
-		Slot:           7890123,
+		Slot:            7890123,
 		BestGuessSingle: ClientNamePrysm,
 		BestGuessMulti:  "Prysm (80%), Lighthouse (20%)",
 		ProbabilityMap:  &probMap,
@@ -176,7 +176,7 @@ func TestProposersBlocksResponse_JSONSerialization(t *testing.T) {
 			name: "complete_response",
 			response: ProposersBlocksResponse{
 				ProposerIndex:   555,
-				Slot:           777,
+				Slot:            777,
 				BestGuessSingle: ClientNameTeku,
 				BestGuessMulti:  "Teku (90%), Other (10%)",
 				ProbabilityMap: &ProbabilityMap{
@@ -199,7 +199,7 @@ func TestProposersBlocksResponse_JSONSerialization(t *testing.T) {
 			name: "minimal_response",
 			response: ProposersBlocksResponse{
 				ProposerIndex:   1,
-				Slot:           2,
+				Slot:            2,
 				BestGuessSingle: ClientNameUnknown,
 				BestGuessMulti:  "",
 				ProbabilityMap:  nil,
@@ -229,7 +229,7 @@ func TestProposersBlocksResponse_JSONSerialization(t *testing.T) {
 			assert.Equal(t, tt.response.Slot, unmarshaled.Slot)
 			assert.Equal(t, tt.response.BestGuessSingle, unmarshaled.BestGuessSingle)
 			assert.Equal(t, tt.response.BestGuessMulti, unmarshaled.BestGuessMulti)
-			
+
 			if tt.response.ProbabilityMap != nil {
 				require.NotNil(t, unmarshaled.ProbabilityMap)
 				assert.Equal(t, *tt.response.ProbabilityMap, *unmarshaled.ProbabilityMap)
@@ -242,7 +242,7 @@ func TestProposersBlocksResponse_JSONSerialization(t *testing.T) {
 
 func TestProposersBlocksResponse_ZeroValue(t *testing.T) {
 	var response ProposersBlocksResponse
-	
+
 	assert.Equal(t, uint64(0), response.ProposerIndex)
 	assert.Equal(t, uint64(0), response.Slot)
 	assert.Equal(t, ClientName(""), response.BestGuessSingle)
@@ -265,7 +265,7 @@ func TestClientName_Values(t *testing.T) {
 func TestClientName_StringConversion(t *testing.T) {
 	name := ClientNamePrysm
 	assert.Equal(t, "Prysm", string(name))
-	
+
 	// Test custom client name
 	custom := ClientName("CustomClient")
 	assert.Equal(t, "CustomClient", string(custom))
@@ -305,11 +305,11 @@ func TestProbabilityMap_JSONSerialization(t *testing.T) {
 
 func TestProbabilityMap_EmptyMap(t *testing.T) {
 	var probMap ProbabilityMap
-	
+
 	// Empty map should handle non-existent keys gracefully
 	assert.Equal(t, 0.0, probMap[ClientNamePrysm])
 	assert.Equal(t, 0.0, probMap[ClientNameLighthouse])
-	
+
 	// JSON serialization of empty map
 	data, err := json.Marshal(probMap)
 	require.NoError(t, err)

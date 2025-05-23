@@ -1,6 +1,6 @@
-# Mimicry Package Guidelines
+# Mimicry
 
-The mimicry package implements the Xatu mimicry component.
+Execution layer P2P network monitoring client that collects data from Ethereum execution layer peers.
 
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

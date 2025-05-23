@@ -1,0 +1,21 @@
+---
+description: Cache - Shared cache for transaction deduplication with Prometheus metrics
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Cache Component
+
+Shared cache for transaction deduplication with Prometheus metrics collection.
+
+## Key Integration Patterns
+- **TTL-based caching**: Uses `ttlcache` with 24-hour TTL for transaction deduplication
+- **Prometheus metrics integration**: Automatically tracks cache hits, misses, insertions, and evictions
+- **Scheduled metrics reporting**: Uses `gocron` for periodic metrics collection every 5 seconds
+
+## Important Constraints
+- **Single transaction store**: Currently supports only transaction cache with boolean values
+- **Auto-start lifecycle**: Cache must be started via `Start()` method to initialize TTL cleanup and metrics cron
+- **Namespace-scoped metrics**: Uses "xatu_mimicry_coordinator_cache" namespace for Prometheus metrics

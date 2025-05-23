@@ -1,0 +1,21 @@
+---
+description: ETH V3 - Ethereum beacon chain v3 API event handlers with multi-fork validator block support
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# ETH V3 Event Handlers Rules
+
+Ethereum beacon chain v3 API event handlers that process validator blocks across multiple consensus protocol versions.
+
+## Key Integration Patterns
+- **Multi-Fork Support Pattern**: Handlers switch on version field to process different consensus forks (phase0, altair, bellatrix, capella, deneb, electra)
+- **State Root Extraction**: Extract state roots from version-specific block structures for filtering decisions
+- **Type Constant Pattern**: All handlers define const Type strings following "BEACON_API_ETH_V3_*" format
+
+## Important Constraints
+- **Version Validation Required**: All handlers must validate version field from client additional data before processing
+- **Fork-Specific Casting**: Type assertions must handle all supported consensus forks with appropriate error handling
+- **V3 API Compliance**: Handlers process eth/v3 validator block API data structures with version-specific message types

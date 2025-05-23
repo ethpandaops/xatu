@@ -1,0 +1,21 @@
+---
+description: Redis Server - Redis-based cache implementation with automatic key prefixing and metrics collection
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Redis Server Cache Rules
+
+Redis server-based cache implementation that provides key-value storage operations with automatic prefixing and metrics collection.
+
+## Key Integration Patterns
+- **Automatic Key Prefixing**: All keys are automatically prefixed with configurable namespace via `prefixKey()`
+- **Redis URL Configuration**: Uses Redis URL parsing for connection configuration (supports connection strings)
+- **Comprehensive Metrics**: Track all operations (get/set/delete) with detailed status (hit/miss/error) for observability
+
+## Critical Design Constraints
+- **Status-Based Metrics**: Always increment metrics with operation type and status before returning
+- **Graceful Redis Handling**: Handle `redis.Nil` separately from errors for cache miss scenarios
+- **TTL Support**: All Set operations must support time-to-live parameter for automatic expiration

@@ -1,0 +1,21 @@
+---
+description: Mimicry - Execution layer P2P network monitoring client
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Mimicry Component
+
+Execution layer P2P network monitoring client that collects data from Ethereum execution layer peers.
+
+## Key Integration Patterns
+- **Coordinator-based architecture**: Uses pluggable coordinator types (static, xatu) to manage peer connections and data collection
+- **Event-driven processing**: Processes decorated events through multiple configurable output sinks 
+- **Capture delay mechanism**: Implements configurable delay before capturing transactions from peers to ensure data stability
+
+## Important Constraints
+- **Clock drift synchronization**: Maintains NTP-based clock synchronization for accurate event timestamping
+- **Graceful shutdown**: Implements proper signal handling and sink flushing on termination
+- **Multi-sink output**: Supports concurrent output to multiple configured data sinks with error isolation

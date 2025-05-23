@@ -1,0 +1,21 @@
+---
+description: ETH v3 Validator Block - Ethereum hard fork version-aware validator block event processor
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# ETH v3 Validator Block Event Processor
+
+Transforms Ethereum v3 validator block proposals into decorated Xatu events with multi-fork version support.
+
+## Key Integration Patterns
+- **Hard Fork Version Support**: Handles Phase0, Altair, Bellatrix, Capella, Deneb, and Electra versions with version-specific processing logic
+- **SSZ Block Size Computation**: Uses SSZ marshaling with snappy compression for accurate block size metrics
+- **Execution/Consensus Value Tracking**: Processes big integer values for both execution and consensus rewards
+
+## Important Constraints
+- Always check `e.event.Version` before accessing version-specific block fields
+- Use `safeUint64FromInt64()` helper for safe integer conversions
+- Include transaction count and size metrics for post-merge forks (Bellatrix+)

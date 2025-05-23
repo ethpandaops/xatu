@@ -1,6 +1,6 @@
-# Relay Monitor Package Guidelines
+# Relay Monitor
 
-The relaymonitor package implements the Xatu relay monitor component.
+Monitors MEV relay infrastructure by fetching bid traces and payload delivery data using slot-based scheduling.
 
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

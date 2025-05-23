@@ -1,0 +1,23 @@
+---
+description: Discovery Coordinator - gRPC client for centralized node record management
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Discovery Coordinator Client
+
+gRPC client that sends discovered node records and execution client status to the centralized Xatu coordinator server.
+
+## Key Integration Patterns
+- **Batch Processing**: Uses `processor.BatchItemProcessor` for efficient bulk uploads of node records
+- **Dual gRPC Clients**: Maintains separate connections for node record exports and status reporting
+- **Status Monitoring**: Fetches stale node records from coordinator and reports execution client status updates
+- **Header Authentication**: Supports custom gRPC headers for coordinator authentication
+
+## Important Constraints
+- All node records are batched and sent asynchronously via the processor pipeline
+- Status updates for execution clients are sent immediately via synchronous gRPC calls
+- Both TLS and insecure connections supported based on configuration
+- Connection failures require graceful shutdown of the batch processor

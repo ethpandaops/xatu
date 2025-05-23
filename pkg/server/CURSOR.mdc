@@ -1,0 +1,21 @@
+---
+description: Server - Centralized gRPC server for collecting events from clients and routing to output sinks
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Server Component Rules
+
+Centralized gRPC server that collects events from distributed Xatu clients and routes data to configured output sinks.
+
+## Key Integration Patterns
+- **Service-Based Architecture**: Manages multiple gRPC services (event-ingester, coordinator) via common interface
+- **Multi-Store Support**: Abstracts persistence (database) and caching (memory/redis) via provider pattern
+- **Optional Components**: All major features (persistence, geoip, tracing) are configurable and can be disabled
+
+## Critical Design Constraints
+- **Graceful Lifecycle Management**: All components must implement Start/Stop methods for coordinated shutdown
+- **Health Check Integration**: Use grpc health service to report component status during startup/shutdown
+- **Override Support**: Configuration can be dynamically overridden at runtime (especially for auth)

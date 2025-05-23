@@ -1,6 +1,6 @@
-# CL Mimicry Package Guidelines
+# CL-Mimicry
 
-The clmimicry package implements the Xatu CL Mimicry component.
+Consensus layer P2P network monitoring client that mimics validator behavior to collect libp2p and gossipsub events from Ethereum consensus networks.
 
-## Event Handling
-Claude MUST read the `.cursor/rules/event_handling.mdc` file before making any changes to event-related code.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

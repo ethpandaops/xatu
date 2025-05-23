@@ -1,0 +1,21 @@
+---
+description: Validator registration monitor for MEV relays with sharded processing
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Validator Registration Monitor
+
+Monitors validator registrations across MEV relays using sharded, rate-limited crawling with configurable sweep durations.
+
+## Key Integration Patterns
+- **Sharded Processing**: Use ValidatorSetWalker for deterministic validator distribution across shards
+- **Rate-Limited Crawling**: Implement exponential backoff via RelayValidatorRegistrationScraper when receiving rate limits
+- **Worker Pool Pattern**: Each relay gets independent workers (configured via config.Workers)
+
+## Critical Constraints
+- **Sweep Duration**: Must respect targetSweepDuration to avoid relay bans - calculate validator feed rate accordingly
+- **Rate Limit Handling**: Always check relay.ErrRateLimited and back off for 30+ seconds
+- **Shard Boundaries**: Validator indices must stay within shard min/max bounds during processing

@@ -1,0 +1,29 @@
+---
+description: Discovery - Ethereum network node discovery via P2P protocols
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Discovery Component
+
+Ethereum network node discovery client using Node Discovery Protocol v4/v5 to discover and monitor network nodes.
+
+## Key Architecture Patterns
+- **Multi-Protocol Support**: Uses both Discovery v4 and v5 protocols via adapter pattern in `p2p/discovery/`
+- **Duplicate Detection**: Implements TTL-based caching to prevent processing duplicate node records
+- **Status Monitoring**: Actively dials discovered nodes to check execution client status and network health
+- **Coordinator Integration**: All discovered nodes and status updates are sent to centralized coordinator for aggregation
+
+## Critical Components
+- **P2P Discovery**: Pluggable discovery protocols (disc_v4, disc_v5) with unified interface
+- **Status Checking**: Concurrent execution client dialing with automatic retry for stale records
+- **Cache Management**: TTL-based duplicate prevention using `ttlcache` for efficient node record deduplication
+- **Metrics Collection**: Prometheus metrics for discovery rates and status check results by protocol and network
+
+## Important Constraints
+- Discovery runs continuously with 5-second intervals for status monitoring
+- Duplicate detection is essential - all new nodes must be checked against cache before processing
+- Status checks require active network connections to discovered execution clients
+- All discovered data flows through coordinator client for centralized processing

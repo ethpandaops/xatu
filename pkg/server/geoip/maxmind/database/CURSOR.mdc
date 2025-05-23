@@ -1,0 +1,21 @@
+---
+description: Database - MaxMind database readers for ASN and City GeoIP lookups
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Database Component Rules
+
+Database readers for MaxMind GeoLite2 databases providing ASN and City geolocation lookup functionality.
+
+## Key Integration Pattern
+- **Dual Database Pattern**: Separate ASN and City handlers that follow identical lifecycle and lookup patterns
+- **MaxMindDB Integration**: Direct usage of maxminddb.Reader for efficient binary database access
+- **Struct Tag Mapping**: Use maxminddb struct tags for automatic field mapping from database records
+
+## Important Constraints
+- **Database File Validation**: Both City and ASN database files must be validated in Config.Validate()
+- **Resource Cleanup**: Always close maxminddb.Reader in Stop() method to prevent file handle leaks
+- **Logging Consistency**: Use structured logging with "database" field to identify ASN vs City operations

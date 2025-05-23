@@ -1,0 +1,25 @@
+---
+description: Xatu Protocol Buffer definitions and core types
+globs: 
+  - "*.proto"
+  - "*.pb.go"
+  - "*_grpc.pb.go"
+  - "*.go"
+alwaysApply: false
+---
+
+# Xatu Protocol Buffer Package
+
+Protocol buffer definitions and generated Go code for Xatu's core data structures and gRPC services.
+
+## Key Integration Patterns
+- All protobuf definitions follow consistent naming with `xatu` package namespace
+- Generated Go code includes gRPC service interfaces for coordinator and event ingester
+- Event filtering system uses protobuf enums for type-safe event and module matching
+- Version information utilities follow module-aware naming pattern
+
+## Important Constraints
+- Protocol buffer schemas must maintain backwards compatibility
+- Generated `.pb.go` files should never be manually edited
+- Filter implementations must handle nil events gracefully with proper error messages
+- Version strings follow `Implementation-Module/Release-Commit` format for traceability

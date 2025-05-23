@@ -1,0 +1,21 @@
+---
+description: Services - Ethereum beacon node service abstractions
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Services Component
+
+Service interface abstractions and implementations for beacon node duty management and metadata collection.
+
+## Key Integration Patterns
+- **Service lifecycle contract**: All services implement Start/Stop/Ready/OnReady pattern for orchestrated initialization
+- **TTL-cached duty fetching**: DutiesService maintains 60-minute cached beacon committees and proposer duties with proactive refresh
+- **Event-driven sync monitoring**: Services respond to chain reorgs, sync status changes, and epoch transitions for cache invalidation
+
+## Critical Constraints
+- **Readiness dependency chain**: Services must mark Ready() only when all required epochs are cached and accessible
+- **Cache invalidation triggers**: Chain reorgs and sync status changes force immediate refetch of required epoch duties
+- **Epoch timing coordination**: Duties fetched anticipatively before epoch transitions with precise sleep timing

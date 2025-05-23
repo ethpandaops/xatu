@@ -1,0 +1,21 @@
+---
+description: Mempool - Event handlers for Ethereum mempool transaction events
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Mempool Event Handlers
+
+Event handlers for Ethereum mempool transaction events with validation and processing.
+
+## Key Integration Patterns
+- **Versioned Transaction Types**: Supports both MEMPOOL_TRANSACTION and MEMPOOL_TRANSACTION_V2 event types with separate handlers
+- **Event Interface Compliance**: All handlers implement Event interface with Type(), Validate(), Filter(), and AppendServerMeta() methods
+- **Type-Safe Validation**: Each handler validates specific protobuf event data types (MempoolTransaction vs MempoolTransactionV2)
+
+## Important Constraints
+- **Version-Specific Validation**: Each handler must validate against its specific protobuf data type and return appropriate cast errors
+- **Consistent Logging**: Use event type in log field context for traceability
+- **No Filtering Applied**: Current implementation returns false for all Filter() calls (no events are filtered out)

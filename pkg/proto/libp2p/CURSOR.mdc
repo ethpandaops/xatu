@@ -1,0 +1,23 @@
+---
+description: libp2p Protocol Buffers - Hermes trace event conversion to Xatu protobuf messages
+globs: 
+  - "*.proto"
+  - "*.pb.go"
+  - "trace.go"
+  - "*_test.go"
+alwaysApply: false
+---
+
+# libp2p Protocol Buffers
+
+Protocol buffer definitions and conversion utilities for libp2p network monitoring data.
+
+## Key Integration Pattern
+- Converts Hermes TraceEvent structs to Xatu protobuf message types
+- Uses wrapperspb for optional field handling in protocol buffer messages
+- Maintains separation between peer events, gossipsub events, and Ethereum protocol events
+
+## Important Constraints
+- All conversion functions follow strict type assertion patterns with error handling
+- Protobuf messages use google.protobuf.wrappers for nullable fields
+- Generated .pb.go files should never be manually modified - regenerate via buf

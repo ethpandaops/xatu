@@ -1,0 +1,19 @@
+---
+description: Cache - Duplicate event detection with TTL-based caching
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Cache Component
+
+Provides duplicate event detection using TTL-based caching to prevent reprocessing of beacon chain and execution layer events.
+
+## Key Integration Pattern
+- **Event-specific TTL Caching**: Uses separate TTL caches for each event type with appropriate timeouts (7min for consensus, 30s for execution)
+- **Single Cache Instance**: Centralized DuplicateCache struct manages all event type caches through unified Start() lifecycle
+
+## Design Constraints
+- **TTL-based Expiration**: Cache entries auto-expire based on event type - consensus events need longer retention due to potential epoch boundary duplicates
+- **String Key Mapping**: All cache keys are strings mapped to timestamps for simple duplicate detection

@@ -1,0 +1,21 @@
+---
+description: Node - Ethereum node record persistence with ENR parsing and geolocation
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Node Component Rules
+
+Ethereum node record persistence models that handle ENR parsing, node activity tracking, and execution client data.
+
+## Key Integration Patterns
+- **ENR Parsing**: Uses go-ethereum/p2p/enode for parsing Ethereum Node Records with libp2p interoperability
+- **Structured Models**: Separates node records (Record), activity tracking (Activity), and execution client data (Execution)
+- **Database Mapping**: Uses struct tags with sqlbuilder for PostgreSQL persistence with optional field handling
+
+## Critical Design Constraints
+- **Pointer Fields for Optionals**: Use pointer types (*string, *[]byte) for optional ENR fields to handle NULL database values
+- **ENR Standard Compliance**: Always validate ENR strings before parsing and maintain signature verification
+- **Geolocation Integration**: Node records include geolocation fields populated by external GeoIP services

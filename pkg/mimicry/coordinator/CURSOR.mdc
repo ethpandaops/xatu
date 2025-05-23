@@ -1,0 +1,21 @@
+---
+description: Mimicry Coordinator - Factory component for P2P network coordinator implementations
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Mimicry Coordinator
+
+Factory component that creates and manages different types of P2P network coordinators via interface abstraction.
+
+## Key Integration Patterns
+- **Factory pattern with interface abstraction**: Use `Coordinator` interface for all coordinator implementations
+- **Type-driven configuration**: Use `Type` enum and type-specific config unmarshaling via `RawMessage`
+- **Delayed configuration unmarshaling**: Defer config unmarshaling until coordinator type is determined
+
+## Important Constraints
+- **Strict type validation**: Always validate coordinator type before instantiation
+- **Handler injection**: All coordinators must accept peer handlers and capture delay parameters
+- **Error propagation**: Factory methods must properly propagate configuration and instantiation errors

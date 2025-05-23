@@ -1,0 +1,21 @@
+---
+description: CMD - CLI command entry points for all Xatu components
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# CMD Component Rules
+
+CLI command entry points that bootstrap all Xatu components via cobra CLI framework.
+
+## Key Integration Patterns
+- Use cobra.Command for consistent CLI interface across all components
+- Implement config override pattern for environment variables and CLI flags
+- Initialize each component with standardized config loading, logging setup, and graceful shutdown
+
+## Important Constraints  
+- All commands must support YAML config files with sensible defaults
+- Environment variables and CLI flags override config file values
+- Maintain consistent logging initialization pattern across all component commands

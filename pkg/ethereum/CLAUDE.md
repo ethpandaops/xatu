@@ -1,6 +1,6 @@
-# Ethereum Package Guidelines
+# Ethereum
 
-The ethereum package handles interactions with Ethereum clients and networks.
+Provides standardized Ethereum consensus client type definitions and string-based client detection utilities.
 
-## Ethereum Development
-Claude MUST read the `.cursor/rules/ethereum.mdc` file before making any changes here.
+## Architecture  
+Claude MUST read the `./CURSOR.mdc` file before making any changes to this component.

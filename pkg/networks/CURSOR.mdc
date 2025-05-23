@@ -1,0 +1,24 @@
+---
+description: Networks - Ethereum network definitions and identification utilities
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Networks Package
+
+Provides Ethereum network identification using chain IDs and genesis roots.
+
+## Key Patterns
+- Use predefined NetworkName constants for network identification
+- Maintain NetworkGenesisRoots and NetworkIds mappings for network derivation
+- Always return Network struct with both Name and ID fields populated
+- Default to NetworkNameUnknown for unrecognized networks
+
+## Network Addition Process
+When adding new networks:
+1. Add NetworkName constant following existing naming pattern
+2. Update NetworkGenesisRoots mapping with genesis root -> chain ID
+3. Update NetworkIds mapping with chain ID -> network name
+4. Ensure both derivation functions support the new network

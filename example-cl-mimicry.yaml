@@ -46,6 +46,27 @@ outputs:
 #       shardingKey: "MsgID"
 #       totalShards: 64
 #       activeShards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+#     # RPC meta control events are depending on recv_rpc, send_rpc or drop_rpc events
+#     "(?i).*rpc_meta_control_ihave.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_iwant.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_idontwant.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_graft.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_prune.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

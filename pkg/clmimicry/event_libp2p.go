@@ -919,7 +919,7 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 						Topic:        ihave.TopicId,
 						MessageId:    msgWithIndex.MessageID,
 						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
-						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
 			})
@@ -989,7 +989,7 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 						PeerId:       wrapperspb.String(peerID),
 						MessageId:    msgWithIndex.MessageID,
 						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
-						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
 			})
@@ -1059,7 +1059,7 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 						PeerId:       wrapperspb.String(peerID),
 						MessageId:    msgWithIndex.MessageID,
 						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
-						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
 			})
@@ -1111,7 +1111,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 					RootEventId:  wrapperspb.String(rootEventID),
 					PeerId:       wrapperspb.String(peerID),
 					Topic:        graft.TopicId,
-					ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
+					ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 				},
 			},
 		})
@@ -1181,7 +1181,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 						PeerId:       wrapperspb.String(peerID),
 						Topic:        prune.TopicId,
 						PeerIndex:    wrapperspb.UInt32(peerWithIndex.OriginalIndex),
-						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
 			})

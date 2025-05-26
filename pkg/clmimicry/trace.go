@@ -90,7 +90,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		for i, messageID := range messageIDs {
 			result[i] = FilteredMessageWithIndex{
 				MessageID:     messageID,
-				OriginalIndex: uint32(i),
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
 		}
 
@@ -104,7 +104,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		for i, messageID := range messageIDs {
 			result[i] = FilteredMessageWithIndex{
 				MessageID:     messageID,
-				OriginalIndex: uint32(i),
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
 		}
 
@@ -118,7 +118,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		for i, messageID := range messageIDs {
 			result[i] = FilteredMessageWithIndex{
 				MessageID:     messageID,
-				OriginalIndex: uint32(i),
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
 		}
 
@@ -148,7 +148,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		if isActive {
 			filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
 				MessageID:     messageID,
-				OriginalIndex: uint32(i),
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			})
 
 			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)

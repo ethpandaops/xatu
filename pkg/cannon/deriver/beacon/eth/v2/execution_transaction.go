@@ -433,6 +433,9 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 		case spec.DataVersionElectra:
 			executionPayload := block.Electra.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		case spec.DataVersionFulu:
+			executionPayload := block.Fulu.Message.Body.ExecutionPayload
+			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		default:
 			return nil, fmt.Errorf("unknown block version: %d", block.Version)
 		}

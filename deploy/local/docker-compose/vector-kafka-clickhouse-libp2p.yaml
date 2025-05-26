@@ -1191,7 +1191,6 @@ transforms:
       del(.data)
       del(.path)
 
-
   libp2p_trace_handle_status_formatted:
     type: remap
     inputs:
@@ -1307,6 +1306,14 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1315,23 +1322,37 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      rpc_meta_unique_key, err = .data.rpc_meta_unique_key
+      topicParts, err = split(.data.topic, "/")
       if err != null {
         .error = err
-        .error_description = "failed to get rpc_meta_unique_key"
+        .error_description = "failed to split topic"
         log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
       }
-      .rpc_meta_unique_key = rpc_meta_unique_key
+
+      key, err = rootEventKey + "rpc_meta_control_ihave" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
+      if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "index": .data.message_index,
+        }
+        .error = err
+        .error_description = "failed to generate unique key for rpc_meta_control_ihave"
+      }
+      .unique_key = seahash(key)
 
       .control_index = .data.control_index
       .message_index = .data.message_index
       .message_id = .data.message_id
-      .topic_layer = .data.topic_layer
-      .topic_fork_digest_value = .data.topic_fork_digest_value
-      .topic_name = .data.topic_name
-      .topic_encoding = .data.topic_encoding
-
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -1352,6 +1373,14 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1360,19 +1389,20 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      rpc_meta_unique_key, err = .data.rpc_meta_unique_key
+      key, err = rootEventKey + "rpc_meta_control_iwant" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
       if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "index": .data.message_index,
+        }
         .error = err
-        .error_description = "failed to get rpc_meta_unique_key"
-        log(., level: "error", rate_limit_secs: 60)
+        .error_description = "failed to generate unique key for rpc_meta_control_iwant"
       }
-      .rpc_meta_unique_key = rpc_meta_unique_key
+      .unique_key = seahash(key)
 
       .control_index = .data.control_index
       .message_index = .data.message_index
       .message_id = .data.message_id
-
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -1393,6 +1423,14 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1401,19 +1439,20 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      rpc_meta_unique_key, err = .data.rpc_meta_unique_key
+      key, err = rootEventKey + "rpc_meta_control_idontwant" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
       if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "index": .data.message_index,
+        }
         .error = err
-        .error_description = "failed to get rpc_meta_unique_key"
-        log(., level: "error", rate_limit_secs: 60)
+        .error_description = "failed to generate unique key for rpc_meta_control_idontwant"
       }
-      .rpc_meta_unique_key = rpc_meta_unique_key
+      .unique_key = seahash(key)
 
       .control_index = .data.control_index
       .message_index = .data.message_index
       .message_id = .data.message_id
-
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -1434,6 +1473,14 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1442,21 +1489,35 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      rpc_meta_unique_key, err = .data.rpc_meta_unique_key
+      topicParts, err = split(.data.topic, "/")
       if err != null {
         .error = err
-        .error_description = "failed to get rpc_meta_unique_key"
+        .error_description = "failed to split topic"
         log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
       }
-      .rpc_meta_unique_key = rpc_meta_unique_key
+
+      key, err = rootEventKey + "rpc_meta_control_graft" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "topic_id": .data.topic_id,
+        }
+        .error = err
+        .error_description = "failed to generate unique key for rpc_meta_control_graft"
+      }
+      .unique_key = seahash(key)
 
       .control_index = .data.control_index
-      .topic_layer = .data.topic_layer
-      .topic_fork_digest_value = .data.topic_fork_digest_value
-      .topic_name = .data.topic_name
-      .topic_encoding = .data.topic_encoding
-
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -1477,6 +1538,14 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1484,6 +1553,23 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+
+      topicParts, err = split(.data.topic, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split topic"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
 
       graft_peer_id_key, err = .data.graft_peer_id + .meta_network_name
       if err != null {
@@ -1493,22 +1579,19 @@ transforms:
       }
       .graft_peer_id_unique_key = seahash(graft_peer_id_key)
 
-      rpc_meta_unique_key, err = .data.rpc_meta_unique_key
+      key, err = rootEventKey + "rpc_meta_control_prune" +to_string(.data.control_index)+ "_" + to_string(.data.peer_index)
       if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "peer_index": .data.peer_index,
+        }
         .error = err
-        .error_description = "failed to get rpc_meta_unique_key"
-        log(., level: "error", rate_limit_secs: 60)
+        .error_description = "failed to generate unique key for rpc_meta_control_prune"
       }
-      .rpc_meta_unique_key = rpc_meta_unique_key
+      .unique_key = seahash(key)
 
       .control_index = .data.control_index
-      .peer_id_index = .data.peer_id_index
-      .topic_layer = .data.topic_layer
-      .topic_fork_digest_value = .data.topic_fork_digest_value
-      .topic_name = .data.topic_name
-      .topic_encoding = .data.topic_encoding
-
-      .unique_key = seahash(.event.id)
+      .peer_id_index = .data.peer_index
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)

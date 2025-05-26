@@ -483,7 +483,10 @@ func (m *Mimicry) handleRecvRPCEvent(
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
 ) error {
-	var decoratedEvents []*xatu.DecoratedEvent
+	var (
+		rootEventID     = uuid.New().String()
+		decoratedEvents []*xatu.DecoratedEvent
+	)
 
 	data, err := libp2p.TraceEventToRecvRPC(event)
 	if err != nil {
@@ -506,7 +509,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_RECV_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
+			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
 			Client: metadata,
@@ -518,6 +521,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+		rootEventID,
 		data.GetPeerId().String(),
 		clientMeta,
 		traceMeta,
@@ -735,6 +739,7 @@ func (m *Mimicry) handleDeliverMessageEvent(
 }
 
 func (m *Mimicry) parseRPCMeta(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -744,6 +749,7 @@ func (m *Mimicry) parseRPCMeta(
 	var decoratedEvents []*xatu.DecoratedEvent
 
 	controlEvents, err := m.parseRPCMetaControl(
+		rootEventID,
 		peerID,
 		clientMeta,
 		traceMeta,
@@ -760,6 +766,7 @@ func (m *Mimicry) parseRPCMeta(
 }
 
 func (m *Mimicry) parseRPCMetaControl(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -770,6 +777,7 @@ func (m *Mimicry) parseRPCMetaControl(
 
 	if data.GetControl().GetIhave() != nil {
 		ihave, err := m.parseRPCMetaControlIHave(
+			rootEventID,
 			peerID,
 			clientMeta,
 			traceMeta,
@@ -785,6 +793,7 @@ func (m *Mimicry) parseRPCMetaControl(
 
 	if data.GetControl().GetIwant() != nil {
 		iwant, err := m.parseRPCMetaControlIWant(
+			rootEventID,
 			peerID,
 			clientMeta,
 			traceMeta,
@@ -800,6 +809,7 @@ func (m *Mimicry) parseRPCMetaControl(
 
 	if data.GetControl().GetIdontwant() != nil {
 		idontwant, err := m.parseRPCMetaControlIDontWant(
+			rootEventID,
 			peerID,
 			clientMeta,
 			traceMeta,
@@ -815,6 +825,7 @@ func (m *Mimicry) parseRPCMetaControl(
 
 	if data.GetControl().GetGraft() != nil {
 		graft, err := m.parseRPCMetaControlGraft(
+			rootEventID,
 			peerID,
 			clientMeta,
 			traceMeta,
@@ -830,6 +841,7 @@ func (m *Mimicry) parseRPCMetaControl(
 
 	if data.GetControl().GetPrune() != nil {
 		prune, err := m.parseRPCMetaControlPrune(
+			rootEventID,
 			peerID,
 			clientMeta,
 			traceMeta,
@@ -847,6 +859,7 @@ func (m *Mimicry) parseRPCMetaControl(
 }
 
 func (m *Mimicry) parseRPCMetaControlIHave(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -866,15 +879,15 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 		},
 	}
 
-	for _, ihave := range data.GetControl().GetIhave() {
+	for controlIndex, ihave := range data.GetControl().GetIhave() {
 		if !m.Config.Events.RpcMetaControlIHaveEnabled {
 			continue
 		}
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE
 
-		// Filter message IDs based on trace/sharding config.
-		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+		// Filter message IDs based on trace/sharding config, preserving original indices.
+		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
@@ -885,11 +898,11 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 		}
 
 		// Skip this control message if no message IDs remain after filtering.
-		if len(filteredMsgIDs) == 0 {
+		if len(filteredMsgIDsWithIndex) == 0 {
 			continue
 		}
 
-		for _, msgID := range filteredMsgIDs {
+		for _, msgWithIndex := range filteredMsgIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -901,9 +914,12 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 				},
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIhave{
 					Libp2PTraceRpcMetaControlIhave: &libp2p.ControlIHaveMetaItem{
-						PeerId:    wrapperspb.String(peerID),
-						TopicId:   ihave.TopicId,
-						MessageId: msgID,
+						RootEventId:  wrapperspb.String(rootEventID),
+						PeerId:       wrapperspb.String(peerID),
+						Topic:        ihave.TopicId,
+						MessageId:    msgWithIndex.MessageID,
+						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
 					},
 				},
 			})
@@ -914,6 +930,7 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 }
 
 func (m *Mimicry) parseRPCMetaControlIWant(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -933,15 +950,15 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 		},
 	}
 
-	for _, iwant := range data.GetControl().GetIwant() {
+	for controlIndex, iwant := range data.GetControl().GetIwant() {
 		if !m.Config.Events.RpcMetaControlIWantEnabled {
 			continue
 		}
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT
 
-		// Filter message IDs based on trace/sharding config.
-		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+		// Filter message IDs based on trace/sharding config, preserving original indices.
+		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
@@ -952,11 +969,11 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 		}
 
 		// Skip this control message if no message IDs remain after filtering.
-		if len(filteredMsgIDs) == 0 {
+		if len(filteredMsgIDsWithIndex) == 0 {
 			continue
 		}
 
-		for _, msgID := range filteredMsgIDs {
+		for _, msgWithIndex := range filteredMsgIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -968,8 +985,11 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 				},
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIwant{
 					Libp2PTraceRpcMetaControlIwant: &libp2p.ControlIWantMetaItem{
-						PeerId:    wrapperspb.String(peerID),
-						MessageId: msgID,
+						RootEventId:  wrapperspb.String(rootEventID),
+						PeerId:       wrapperspb.String(peerID),
+						MessageId:    msgWithIndex.MessageID,
+						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
 					},
 				},
 			})
@@ -980,6 +1000,7 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 }
 
 func (m *Mimicry) parseRPCMetaControlIDontWant(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -999,15 +1020,15 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 		},
 	}
 
-	for _, idontwant := range data.GetControl().GetIdontwant() {
+	for controlIndex, idontwant := range data.GetControl().GetIdontwant() {
 		if !m.Config.Events.RpcMetaControlIDontWantEnabled {
 			continue
 		}
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT
 
-		// Filter message IDs based on trace/sharding config.
-		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+		// Filter message IDs based on trace/sharding config, preserving original indices.
+		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
@@ -1018,11 +1039,11 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 		}
 
 		// Skip this control message if no message IDs remain after filtering.
-		if len(filteredMsgIDs) == 0 {
+		if len(filteredMsgIDsWithIndex) == 0 {
 			continue
 		}
 
-		for _, msgID := range filteredMsgIDs {
+		for _, msgWithIndex := range filteredMsgIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -1034,8 +1055,11 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 				},
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant{
 					Libp2PTraceRpcMetaControlIdontwant: &libp2p.ControlIDontWantMetaItem{
-						PeerId:    wrapperspb.String(peerID),
-						MessageId: msgID,
+						RootEventId:  wrapperspb.String(rootEventID),
+						PeerId:       wrapperspb.String(peerID),
+						MessageId:    msgWithIndex.MessageID,
+						MessageIndex: wrapperspb.UInt32(msgWithIndex.OriginalIndex),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
 					},
 				},
 			})
@@ -1046,6 +1070,7 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 }
 
 func (m *Mimicry) parseRPCMetaControlGraft(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -1065,7 +1090,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 		},
 	}
 
-	for _, graft := range data.GetControl().GetGraft() {
+	for controlIndex, graft := range data.GetControl().GetGraft() {
 		if !m.Config.Events.RpcMetaControlGraftEnabled {
 			continue
 		}
@@ -1083,8 +1108,10 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 			},
 			Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlGraft{
 				Libp2PTraceRpcMetaControlGraft: &libp2p.ControlGraftMetaItem{
-					PeerId:  wrapperspb.String(peerID),
-					TopicId: graft.TopicId,
+					RootEventId:  wrapperspb.String(rootEventID),
+					PeerId:       wrapperspb.String(peerID),
+					Topic:        graft.TopicId,
+					ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
 				},
 			},
 		})
@@ -1094,6 +1121,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 }
 
 func (m *Mimicry) parseRPCMetaControlPrune(
+	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -1113,15 +1141,15 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 		},
 	}
 
-	for _, prune := range data.GetControl().GetPrune() {
+	for controlIndex, prune := range data.GetControl().GetPrune() {
 		if !m.Config.Events.RpcMetaControlPruneEnabled {
 			continue
 		}
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
 
-		// Filter message IDs based on trace/sharding config.
-		filteredPeerIDs, err := m.ShouldTraceRPCMetaMessages(
+		// Filter peer IDs based on trace/sharding config, preserving original indices.
+		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
@@ -1131,12 +1159,12 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 			return nil, fmt.Errorf("failed to check trace config for prune: %w", err)
 		}
 
-		// Skip this control message if no message IDs remain after filtering.
-		if len(filteredPeerIDs) == 0 {
+		// Skip this control message if no peer IDs remain after filtering.
+		if len(filteredPeerIDsWithIndex) == 0 {
 			continue
 		}
 
-		for _, peerID := range filteredPeerIDs {
+		for _, peerWithIndex := range filteredPeerIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -1148,8 +1176,12 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 				},
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlPrune{
 					Libp2PTraceRpcMetaControlPrune: &libp2p.ControlPruneMetaItem{
-						PeerId:  peerID,
-						TopicId: prune.TopicId,
+						RootEventId:  wrapperspb.String(rootEventID),
+						GraftPeerId:  peerWithIndex.MessageID,
+						PeerId:       wrapperspb.String(peerID),
+						Topic:        prune.TopicId,
+						PeerIndex:    wrapperspb.UInt32(peerWithIndex.OriginalIndex),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)),
 					},
 				},
 			})

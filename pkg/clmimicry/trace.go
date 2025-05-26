@@ -72,39 +72,66 @@ func (m *Mimicry) ShouldTraceMessage(
 	return true
 }
 
+// FilteredMessageWithIndex represents a filtered message with its original index
+type FilteredMessageWithIndex struct {
+	MessageID     *wrapperspb.StringValue
+	OriginalIndex uint32
+}
+
 func (m *Mimicry) ShouldTraceRPCMetaMessages(
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 	messageIDs []*wrapperspb.StringValue,
-) ([]*wrapperspb.StringValue, error) {
-	msgIDs := make([]string, len(messageIDs))
-
-	for i, messageID := range messageIDs {
-		msgIDs[i] = messageID.GetValue()
-	}
-
+) ([]FilteredMessageWithIndex, error) {
 	if !m.Config.Traces.Enabled {
-		return messageIDs, nil
+		// Return all messages with their indices if tracing is not enabled
+		result := make([]FilteredMessageWithIndex, len(messageIDs))
+		for i, messageID := range messageIDs {
+			result[i] = FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i),
+			}
+		}
+
+		return result, nil
 	}
 
 	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
 	if !found {
-		return messageIDs, nil
+		// Return all messages with their indices if no topic config found
+		result := make([]FilteredMessageWithIndex, len(messageIDs))
+		for i, messageID := range messageIDs {
+			result[i] = FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i),
+			}
+		}
+
+		return result, nil
 	}
 
 	// If all shards are configured to be active, skip filtering
 	//nolint:gosec // controlled config, no overflow.
 	if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
-		return messageIDs, nil
+		result := make([]FilteredMessageWithIndex, len(messageIDs))
+		for i, messageID := range messageIDs {
+			result[i] = FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i),
+			}
+		}
+
+		return result, nil
 	}
 
-	var filteredMessageIDs []string
+	var filteredMessages []FilteredMessageWithIndex
 
 	networkStr := getNetworkID(clientMeta)
 
 	// Check each message ID against the sharding configuration
-	for _, msgID := range msgIDs {
+	for i, messageID := range messageIDs {
+		msgID := messageID.GetValue()
 		if msgID == "" {
 			continue
 		}
@@ -119,7 +146,10 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		isActive := IsShardActive(shard, topicConfig.ActiveShards)
 
 		if isActive {
-			filteredMessageIDs = append(filteredMessageIDs, msgID)
+			filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i),
+			})
 
 			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
 		} else {
@@ -127,12 +157,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		}
 	}
 
-	returnMsgIDs := make([]*wrapperspb.StringValue, len(filteredMessageIDs))
-	for i, msgID := range filteredMessageIDs {
-		returnMsgIDs[i] = wrapperspb.String(msgID)
-	}
-
-	return returnMsgIDs, nil
+	return filteredMessages, nil
 }
 
 // IsShardActive checks if a shard is in the active shards list.

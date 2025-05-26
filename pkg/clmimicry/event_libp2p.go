@@ -10,6 +10,7 @@ import (
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -482,6 +483,8 @@ func (m *Mimicry) handleRecvRPCEvent(
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
 ) error {
+	var decoratedEvents []*xatu.DecoratedEvent
+
 	data, err := libp2p.TraceEventToRecvRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
@@ -492,13 +495,14 @@ func (m *Mimicry) handleRecvRPCEvent(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
+	// 1. Root level rpc event.
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRecvRpc{
 		Libp2PTraceRecvRpc: &xatu.ClientMeta_AdditionalLibP2PTraceRecvRPCData{
 			Metadata: traceMeta,
 		},
 	}
 
-	decoratedEvent := &xatu.DecoratedEvent{
+	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_RECV_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -510,9 +514,29 @@ func (m *Mimicry) handleRecvRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
 			Libp2PTraceRecvRpc: data,
 		},
+	})
+
+	// 2. RPC meta level messages.
+	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+		data.GetPeerId().String(),
+		clientMeta,
+		traceMeta,
+		event,
+		data.GetMeta(),
+	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	if len(rpcMetaDecoratedEvents) > 0 {
+		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
+	}
+
+	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		return errors.Wrapf(err, "failed to handle decorated events")
+	}
+
+	return nil
 }
 
 func (m *Mimicry) handleDropRPCEvent(
@@ -708,6 +732,431 @@ func (m *Mimicry) handleDeliverMessageEvent(
 	}
 
 	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (m *Mimicry) parseRPCMeta(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	controlEvents, err := m.parseRPCMetaControl(
+		peerID,
+		clientMeta,
+		traceMeta,
+		event,
+		data,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse rpc meta control")
+	}
+
+	decoratedEvents = append(decoratedEvents, controlEvents...)
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControl(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	if data.GetControl().GetIhave() != nil {
+		ihave, err := m.parseRPCMetaControlIHave(
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta control i have")
+		}
+
+		decoratedEvents = append(decoratedEvents, ihave...)
+	}
+
+	if data.GetControl().GetIwant() != nil {
+		iwant, err := m.parseRPCMetaControlIWant(
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta control i want")
+		}
+
+		decoratedEvents = append(decoratedEvents, iwant...)
+	}
+
+	if data.GetControl().GetIdontwant() != nil {
+		idontwant, err := m.parseRPCMetaControlIDontWant(
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta control idontwant")
+		}
+
+		decoratedEvents = append(decoratedEvents, idontwant...)
+	}
+
+	if data.GetControl().GetGraft() != nil {
+		graft, err := m.parseRPCMetaControlGraft(
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta control graft")
+		}
+
+		decoratedEvents = append(decoratedEvents, graft...)
+	}
+
+	if data.GetControl().GetPrune() != nil {
+		prune, err := m.parseRPCMetaControlPrune(
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta control prune")
+		}
+
+		decoratedEvents = append(decoratedEvents, prune...)
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControlIHave(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaControlIhave{
+		Libp2PTraceRpcMetaControlIhave: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for _, ihave := range data.GetControl().GetIhave() {
+		if !m.Config.Events.RpcMetaControlIHaveEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE
+
+		// Filter message IDs based on trace/sharding config.
+		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			ihave.GetMessageIds(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for ihave: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredMsgIDs) == 0 {
+			continue
+		}
+
+		for _, msgID := range filteredMsgIDs {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIhave{
+					Libp2PTraceRpcMetaControlIhave: &libp2p.ControlIHaveMetaItem{
+						PeerId:    wrapperspb.String(peerID),
+						TopicId:   ihave.TopicId,
+						MessageId: msgID,
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControlIWant(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaControlIwant{
+		Libp2PTraceRpcMetaControlIwant: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for _, iwant := range data.GetControl().GetIwant() {
+		if !m.Config.Events.RpcMetaControlIWantEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT
+
+		// Filter message IDs based on trace/sharding config.
+		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			iwant.GetMessageIds(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for iwant: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredMsgIDs) == 0 {
+			continue
+		}
+
+		for _, msgID := range filteredMsgIDs {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIwant{
+					Libp2PTraceRpcMetaControlIwant: &libp2p.ControlIWantMetaItem{
+						PeerId:    wrapperspb.String(peerID),
+						MessageId: msgID,
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControlIDontWant(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaControlIdontwant{
+		Libp2PTraceRpcMetaControlIdontwant: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for _, idontwant := range data.GetControl().GetIdontwant() {
+		if !m.Config.Events.RpcMetaControlIDontWantEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT
+
+		// Filter message IDs based on trace/sharding config.
+		filteredMsgIDs, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			idontwant.GetMessageIds(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for idontwant: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredMsgIDs) == 0 {
+			continue
+		}
+
+		for _, msgID := range filteredMsgIDs {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant{
+					Libp2PTraceRpcMetaControlIdontwant: &libp2p.ControlIDontWantMetaItem{
+						PeerId:    wrapperspb.String(peerID),
+						MessageId: msgID,
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControlGraft(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	decoratedEvents := make([]*xatu.DecoratedEvent, 0)
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaControlGraft{
+		Libp2PTraceRpcMetaControlGraft: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for _, graft := range data.GetControl().GetGraft() {
+		if !m.Config.Events.RpcMetaControlGraftEnabled {
+			continue
+		}
+
+		// How do we shard on this? We only have a topic ID.
+
+		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+			Event: &xatu.Event{
+				Name:     xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT,
+				DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+				Id:       uuid.New().String(),
+			},
+			Meta: &xatu.Meta{
+				Client: metadata,
+			},
+			Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlGraft{
+				Libp2PTraceRpcMetaControlGraft: &libp2p.ControlGraftMetaItem{
+					PeerId:  wrapperspb.String(peerID),
+					TopicId: graft.TopicId,
+				},
+			},
+		})
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaControlPrune(
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaControlPrune{
+		Libp2PTraceRpcMetaControlPrune: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for _, prune := range data.GetControl().GetPrune() {
+		if !m.Config.Events.RpcMetaControlPruneEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
+
+		// Filter message IDs based on trace/sharding config.
+		filteredPeerIDs, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			prune.GetPeerIds(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for prune: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredPeerIDs) == 0 {
+			continue
+		}
+
+		for _, peerID := range filteredPeerIDs {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlPrune{
+					Libp2PTraceRpcMetaControlPrune: &libp2p.ControlPruneMetaItem{
+						PeerId:  peerID,
+						TopicId: prune.TopicId,
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
 }
 
 // mapLibp2pEventToXatuEvent maps libp2p events to Xatu events.

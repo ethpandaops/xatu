@@ -3,6 +3,7 @@ package clmimicry
 import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/probe-lab/hermes/host"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
@@ -69,6 +70,69 @@ func (m *Mimicry) ShouldTraceMessage(
 	m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 
 	return true
+}
+
+func (m *Mimicry) ShouldTraceRPCMetaMessages(
+	event *host.TraceEvent,
+	clientMeta *xatu.ClientMeta,
+	xatuEventType string,
+	messageIDs []*wrapperspb.StringValue,
+) ([]*wrapperspb.StringValue, error) {
+	msgIDs := make([]string, len(messageIDs))
+
+	for i, messageID := range messageIDs {
+		msgIDs[i] = messageID.GetValue()
+	}
+
+	if !m.Config.Traces.Enabled {
+		return messageIDs, nil
+	}
+
+	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
+	if !found {
+		return messageIDs, nil
+	}
+
+	// If all shards are configured to be active, skip filtering
+	//nolint:gosec // controlled config, no overflow.
+	if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
+		return messageIDs, nil
+	}
+
+	var filteredMessageIDs []string
+
+	networkStr := getNetworkID(clientMeta)
+
+	// Check each message ID against the sharding configuration
+	for _, msgID := range msgIDs {
+		if msgID == "" {
+			continue
+		}
+
+		// Calculate the shard for this message ID
+		shard := GetShard(msgID, topicConfig.TotalShards)
+
+		// Record metrics for all messages to track distribution
+		m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
+
+		// Check if this shard is in the active shards list
+		isActive := IsShardActive(shard, topicConfig.ActiveShards)
+
+		if isActive {
+			filteredMessageIDs = append(filteredMessageIDs, msgID)
+
+			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
+		} else {
+			m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
+		}
+	}
+
+	returnMsgIDs := make([]*wrapperspb.StringValue, len(filteredMessageIDs))
+	for i, msgID := range filteredMessageIDs {
+		returnMsgIDs[i] = wrapperspb.String(msgID)
+	}
+
+	return returnMsgIDs, nil
 }
 
 // IsShardActive checks if a shard is in the active shards list.

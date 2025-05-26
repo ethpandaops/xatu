@@ -28,6 +28,11 @@ enum EventType {
   REJECT_MESSAGE = 15;
   DUPLICATE_MESSAGE = 16;
   DELIVER_MESSAGE = 17;
+  RPC_META_CONTROL_IHAVE = 18;
+  RPC_META_CONTROL_IWANT = 19;
+  RPC_META_CONTROL_IDONTWANT = 20;
+  RPC_META_CONTROL_GRAFT = 21;
+  RPC_META_CONTROL_PRUNE = 22;
 }
 
 message AddPeer {
@@ -105,53 +110,6 @@ message DeliverMessage {
   google.protobuf.UInt64Value seq_number = 6 [json_name = "seq_number"];
 }
 
-message RPCMeta {
-  repeated MessageMeta messages = 1;
-  repeated SubMeta subscriptions = 2;
-  ControlMeta control = 3;
-  google.protobuf.StringValue peer_id = 4 [json_name = "peer_id"];
-}
-
-message MessageMeta {
-  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
-}
-
-message SubMeta {
-  google.protobuf.BoolValue subscribe = 1 [json_name = "subscribe"];
-  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
-}
-
-message ControlMeta {
-  repeated ControlIHaveMeta ihave = 1;
-  repeated ControlIWantMeta iwant = 2;
-  repeated ControlGraftMeta graft = 3;
-  repeated ControlPruneMeta prune = 4;
-  repeated ControlIDontWantMeta idontwant = 5;
-}
-
-message ControlIHaveMeta {
-  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
-  repeated google.protobuf.StringValue message_ids = 2 [json_name = "message_ids"];
-}
-
-message ControlIWantMeta {
-  repeated google.protobuf.StringValue message_ids = 1 [json_name = "message_ids"];
-}
-
-message ControlGraftMeta {
-  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
-}
-
-message ControlPruneMeta {
-  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
-  repeated google.protobuf.StringValue peer_ids = 2 [json_name = "peer_ids"];
-}
-
-message ControlIDontWantMeta {
-  repeated google.protobuf.StringValue message_ids = 1 [json_name = "message_ids"];
-}
-
 message TraceEventMetadata {
   google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
 }
@@ -193,4 +151,101 @@ message HandleMetadata {
   google.protobuf.StringValue error = 3;
   google.protobuf.FloatValue latency = 4;
   xatu.libp2p.Metadata metadata = 5;
+}
+
+// RPCMeta represents the RPC meta data for a peer. This is used to represent the highest level of
+// the RPC meta data, and is what is used when parsing/preparing the RPC meta data.
+message RPCMeta {
+  repeated MessageMeta messages = 1;
+  repeated SubMeta subscriptions = 2;
+  ControlMeta control = 3;
+  google.protobuf.StringValue peer_id = 4 [json_name = "peer_id"];
+}
+
+message MessageMeta {
+  google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
+  google.protobuf.StringValue topic = 2;
+}
+
+message SubMeta {
+  google.protobuf.BoolValue subscribe = 1 [json_name = "subscribe"];
+  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+}
+
+message ControlMeta {
+  repeated ControlIHaveMeta ihave = 1;
+  repeated ControlIWantMeta iwant = 2;
+  repeated ControlGraftMeta graft = 3;
+  repeated ControlPruneMeta prune = 4;
+  repeated ControlIDontWantMeta idontwant = 5;
+}
+
+// ControlIHaveMeta represents a single topic and its message IDs. This is used to represent the
+// highest level of the control message, and is what is used when parsing/preparing the control
+// messages.
+message ControlIHaveMeta {
+  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
+  repeated google.protobuf.StringValue message_ids = 2 [json_name = "message_ids"];
+}
+
+// ControlIHaveMetaItem represents a single message ID for a topic. This is used to represent the
+// lowest level of the control message, and is what is persisted to the store.
+message ControlIHaveMetaItem {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+  google.protobuf.StringValue message_id = 3 [json_name = "message_id"];
+}
+
+// ControlIWantMeta represents a single message ID. This is used to represent the highest level of
+// the control message, and is what is used when parsing/preparing the control messages.
+message ControlIWantMeta {
+  repeated google.protobuf.StringValue message_ids = 2 [json_name = "message_ids"];
+}
+
+// ControlIWantMetaItem represents a single message ID. This is used to represent the lowest level
+// of the control message, and is what is persisted to the store.
+message ControlIWantMetaItem {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue message_id = 2 [json_name = "message_id"];
+}
+
+// ControlGraftMeta represents a single topic. This is used to represent the highest level of the
+// control message, and is what is used when parsing/preparing the control messages.
+message ControlGraftMeta {
+  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
+}
+
+// ControlGraftMetaItem represents a single topic. This is used to represent the lowest level of
+// the control message, and is what is persisted to the store.
+message ControlGraftMetaItem {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+}
+
+// ControlPruneMeta represents a single topic and its peer IDs. This is used to represent the
+// highest level of the control message, and is what is used when parsing/preparing the control
+// messages.
+message ControlPruneMeta {
+  google.protobuf.StringValue topic_id = 1 [json_name = "topic_id"];
+  repeated google.protobuf.StringValue peer_ids = 2 [json_name = "peer_ids"];
+}
+
+// ControlPruneMetaItem represents a single peer ID for a topic. This is used to represent the
+// lowest level of the control message, and is what is persisted to the store.
+message ControlPruneMetaItem {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+}
+
+// ControlIDontWantMeta represents a single message ID. This is used to represent the highest level
+// of the control message, and is what is used when parsing/preparing the control messages.
+message ControlIDontWantMeta {
+  repeated google.protobuf.StringValue message_ids = 1 [json_name = "message_ids"];
+}
+
+// ControlIDontWantMetaItem represents a single message ID. This is used to represent the lowest
+// level of the control message, and is what is persisted to the store.
+message ControlIDontWantMetaItem {
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+  google.protobuf.StringValue message_id = 2 [json_name = "message_id"];
 }

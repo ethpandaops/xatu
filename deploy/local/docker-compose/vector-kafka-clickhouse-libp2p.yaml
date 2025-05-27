@@ -1506,11 +1506,11 @@ transforms:
         }
       }
 
-      key, err = rootEventKey + "rpc_meta_control_graft" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      key, err = rootEventKey + "rpc_meta_control_graft" +to_string(.data.control_index)+ "_" + to_string(.data.topic)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
-          "topic_id": .data.topic_id,
+          "topic": .data.topic,
         }
         .error = err
         .error_description = "failed to generate unique key for rpc_meta_control_graft"

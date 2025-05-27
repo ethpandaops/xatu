@@ -431,7 +431,7 @@ func (m *Mimicry) handleSendRPCEvent(
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_SEND_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
+			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
 			Client: metadata,
@@ -602,7 +602,7 @@ func (m *Mimicry) handleDropRPCEvent(
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DROP_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-			Id:       uuid.New().String(),
+			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
 			Client: metadata,

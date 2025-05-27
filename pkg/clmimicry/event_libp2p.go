@@ -405,6 +405,11 @@ func (m *Mimicry) handleSendRPCEvent(
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
 ) error {
+	var (
+		rootEventID     = uuid.New().String()
+		decoratedEvents []*xatu.DecoratedEvent
+	)
+
 	data, err := libp2p.TraceEventToSendRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
@@ -415,13 +420,14 @@ func (m *Mimicry) handleSendRPCEvent(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
+	// 1. Root level rpc event.
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceSendRpc{
 		Libp2PTraceSendRpc: &xatu.ClientMeta_AdditionalLibP2PTraceSendRPCData{
 			Metadata: traceMeta,
 		},
 	}
 
-	decoratedEvent := &xatu.DecoratedEvent{
+	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_SEND_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -433,9 +439,30 @@ func (m *Mimicry) handleSendRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceSendRpc{
 			Libp2PTraceSendRpc: data,
 		},
+	})
+
+	// 2. RPC meta level messages.
+	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+		rootEventID,
+		data.GetPeerId().String(),
+		clientMeta,
+		traceMeta,
+		event,
+		data.GetMeta(),
+	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	if len(rpcMetaDecoratedEvents) > 0 {
+		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
+	}
+
+	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		return errors.Wrapf(err, "failed to handle decorated events")
+	}
+
+	return nil
 }
 
 func (m *Mimicry) handleAddPeerEvent(
@@ -549,6 +576,11 @@ func (m *Mimicry) handleDropRPCEvent(
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
 ) error {
+	var (
+		rootEventID     = uuid.New().String()
+		decoratedEvents []*xatu.DecoratedEvent
+	)
+
 	data, err := libp2p.TraceEventToDropRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
@@ -559,13 +591,14 @@ func (m *Mimicry) handleDropRPCEvent(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
+	// 1. Root level rpc event.
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRecvRpc{
 		Libp2PTraceRecvRpc: &xatu.ClientMeta_AdditionalLibP2PTraceRecvRPCData{
 			Metadata: traceMeta,
 		},
 	}
 
-	decoratedEvent := &xatu.DecoratedEvent{
+	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DROP_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -577,9 +610,30 @@ func (m *Mimicry) handleDropRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceDropRpc{
 			Libp2PTraceDropRpc: data,
 		},
+	})
+
+	// 2. RPC meta level messages.
+	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+		rootEventID,
+		data.GetPeerId().String(),
+		clientMeta,
+		traceMeta,
+		event,
+		data.GetMeta(),
+	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	if len(rpcMetaDecoratedEvents) > 0 {
+		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
+	}
+
+	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		return errors.Wrapf(err, "failed to handle decorated events")
+	}
+
+	return nil
 }
 
 func (m *Mimicry) handlePublishMessageEvent(

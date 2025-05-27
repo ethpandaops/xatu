@@ -152,8 +152,10 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 			})
 
 			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		} else {
 			m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
+			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
 		}
 	}
 

@@ -86,6 +86,11 @@ var (
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
 	TypeMEVRelayValidatorRegistration           Type = Type(mevrelay.ValidatorRegistrationType)
 	TypeBeaconETHV3ValidatorBlock               Type = v3.ValidatorBlockType
+	TypeLibP2PTraceRPCMetaControlIHave          Type = Type(libp2p.TraceRPCMetaControlIHaveType)
+	TypeLibP2PTraceRPCMetaControlIWant          Type = Type(libp2p.TraceRPCMetaControlIWantType)
+	TypeLibP2PTraceRPCMetaControlIDontWant      Type = Type(libp2p.TraceRPCMetaControlIDontWantType)
+	TypeLibP2PTraceRPCMetaControlGraft          Type = Type(libp2p.TraceRPCMetaControlGraftType)
+	TypeLibP2PTraceRPCMetaControlPrune          Type = Type(libp2p.TraceRPCMetaControlPruneType)
 )
 
 type Event interface {
@@ -274,6 +279,21 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceDropRPC, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceDropRPC(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIHave, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIHave(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIWant, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIWant(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIDontWant, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIDontWant(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlGraft, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlGraft(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlPrune, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlPrune(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceHandleStatus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleStatus(router.log, event), nil

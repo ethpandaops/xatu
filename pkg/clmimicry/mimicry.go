@@ -443,7 +443,7 @@ func (m *Mimicry) handleNewDecoratedEvents(ctx context.Context, events []*xatu.D
 			eventType = unknown
 		}
 
-		m.metrics.AddDecoratedEvent(float64(len(events)), eventType, networkStr)
+		m.metrics.AddDecoratedEvent(1, eventType, networkStr)
 	}
 
 	for _, sink := range m.sinks {

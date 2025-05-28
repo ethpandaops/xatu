@@ -91,6 +91,8 @@ var (
 	TypeLibP2PTraceRPCMetaControlIDontWant      Type = Type(libp2p.TraceRPCMetaControlIDontWantType)
 	TypeLibP2PTraceRPCMetaControlGraft          Type = Type(libp2p.TraceRPCMetaControlGraftType)
 	TypeLibP2PTraceRPCMetaControlPrune          Type = Type(libp2p.TraceRPCMetaControlPruneType)
+	TypeLibP2PTraceRPCMetaSubscription          Type = Type(libp2p.TraceRPCMetaSubscriptionType)
+	TypeLibP2PTraceRPCMetaMessage               Type = Type(libp2p.TraceRPCMetaMessageType)
 )
 
 type Event interface {
@@ -294,6 +296,12 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlPrune, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceRPCMetaControlPrune(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaSubscription, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaSubscription(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaMessage(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceHandleStatus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleStatus(router.log, event), nil

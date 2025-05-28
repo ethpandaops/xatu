@@ -459,6 +459,10 @@ func (m *Mimicry) handleSendRPCEvent(
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
+		if rootRPCEvent.Data != nil {
+			fmt.Printf("PEERRRRRR ID: %+v\n", rootRPCEvent.Data.(*xatu.DecoratedEvent_Libp2PTraceSendRpc).Libp2PTraceSendRpc.PeerId)
+		}
+
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
@@ -820,7 +824,33 @@ func (m *Mimicry) parseRPCMeta(
 		return nil, errors.Wrapf(err, "failed to parse rpc meta control")
 	}
 
+	subscriptionEvents, err := m.parseRPCMetaSubscriptions(
+		rootEventID,
+		peerID,
+		clientMeta,
+		traceMeta,
+		event,
+		data,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse rpc meta subscription")
+	}
+
+	messageEvents, err := m.parseRPCMetaMessages(
+		rootEventID,
+		peerID,
+		clientMeta,
+		traceMeta,
+		event,
+		data,
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse rpc meta message")
+	}
+
 	decoratedEvents = append(decoratedEvents, controlEvents...)
+	decoratedEvents = append(decoratedEvents, subscriptionEvents...)
+	decoratedEvents = append(decoratedEvents, messageEvents...)
 
 	return decoratedEvents, nil
 }
@@ -1241,6 +1271,209 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 						PeerId:       wrapperspb.String(peerID),
 						Topic:        prune.TopicId,
 						PeerIndex:    wrapperspb.UInt32(peerWithIndex.OriginalIndex),
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaSubscriptions(
+	rootEventID,
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	if data.GetSubscriptions() != nil {
+		subscriptions, err := m.parseRPCMetaSubscription(
+			rootEventID,
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta subscription")
+		}
+
+		decoratedEvents = append(decoratedEvents, subscriptions...)
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaSubscription(
+	rootEventID,
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaSubscription{
+		Libp2PTraceRpcMetaSubscription: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for controlIndex, subscription := range data.GetSubscriptions() {
+		if !m.Config.Events.RpcMetaSubscriptionEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION
+
+		// Filter message IDs based on trace/sharding config, preserving original indices.
+		// RPC meta subscriptions don't have a message ID, so we use the peer ID.
+		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			[]*wrapperspb.StringValue{wrapperspb.String(peerID)},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for subscription: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredPeerIDsWithIndex) == 0 {
+			continue
+		}
+
+		fmt.Println("parseRPCMetaSubscription filteredPeerIDsWithIndex", filteredPeerIDsWithIndex)
+
+		for range filteredPeerIDsWithIndex {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaSubscription{
+					Libp2PTraceRpcMetaSubscription: &libp2p.SubMetaItem{
+						RootEventId:  wrapperspb.String(rootEventID),
+						PeerId:       wrapperspb.String(peerID),
+						TopicId:      subscription.TopicId,
+						Subscribe:    subscription.Subscribe,
+						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
+					},
+				},
+			})
+		}
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaMessages(
+	rootEventID,
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	if data.GetMessages() != nil {
+		messages, err := m.parseRPCMetaMessage(
+			rootEventID,
+			peerID,
+			clientMeta,
+			traceMeta,
+			event,
+			data,
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rpc meta message")
+		}
+
+		decoratedEvents = append(decoratedEvents, messages...)
+	}
+
+	return decoratedEvents, nil
+}
+
+func (m *Mimicry) parseRPCMetaMessage(
+	rootEventID,
+	peerID string,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+	data *libp2p.RPCMeta,
+) ([]*xatu.DecoratedEvent, error) {
+	var decoratedEvents []*xatu.DecoratedEvent
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcMetaMessage{
+		Libp2PTraceRpcMetaMessage: &xatu.ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData{
+			Metadata: traceMeta,
+		},
+	}
+
+	for controlIndex, message := range data.GetMessages() {
+		if !m.Config.Events.RpcMetaMessageEnabled {
+			continue
+		}
+
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE
+
+		// Filter message IDs based on trace/sharding config, preserving original indices.
+		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+			event,
+			clientMeta,
+			eventType.String(),
+			[]*wrapperspb.StringValue{message.MessageId},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for message: %w", err)
+		}
+
+		// Skip this control message if no message IDs remain after filtering.
+		if len(filteredMsgIDsWithIndex) == 0 {
+			continue
+		}
+
+		fmt.Println("parseRPCMetaMessage filteredMsgIDsWithIndex", filteredMsgIDsWithIndex)
+
+		for range filteredMsgIDsWithIndex {
+			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name:     eventType,
+					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					Id:       uuid.New().String(),
+				},
+				Meta: &xatu.Meta{
+					Client: metadata,
+				},
+				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaMessage{
+					Libp2PTraceRpcMetaMessage: &libp2p.MessageMetaItem{
+						RootEventId:  wrapperspb.String(rootEventID),
+						PeerId:       wrapperspb.String(peerID),
+						MessageId:    message.MessageId,
+						TopicId:      message.TopicId,
 						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},

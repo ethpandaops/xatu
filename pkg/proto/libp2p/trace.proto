@@ -33,6 +33,8 @@ enum EventType {
   RPC_META_CONTROL_IDONTWANT = 20;
   RPC_META_CONTROL_GRAFT = 21;
   RPC_META_CONTROL_PRUNE = 22;
+  RPC_META_SUBSCRIPTION = 23;
+  RPC_META_MESSAGE = 24;
 }
 
 message AddPeer {
@@ -162,14 +164,38 @@ message RPCMeta {
   google.protobuf.StringValue peer_id = 4 [json_name = "peer_id"];
 }
 
+// MessageMeta represents a single message. This is used to represent the highest level of the
+// RPC meta data, and is what is used when parsing/preparing the RPC meta data.
 message MessageMeta {
   google.protobuf.StringValue message_id = 1 [json_name = "message_id"];
-  google.protobuf.StringValue topic = 2;
+  google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
 }
 
+// MessageMetaItem represents a single message. This is used to represent the lowest level of the
+// RPC meta data, and is what is persisted to the store.
+message MessageMetaItem {
+  google.protobuf.StringValue root_event_id = 1 [json_name = "root_event_id"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
+  google.protobuf.StringValue message_id = 3 [json_name = "message_id"];
+  google.protobuf.StringValue topic_id = 4 [json_name = "topic_id"];
+  google.protobuf.UInt32Value control_index = 5 [json_name = "control_index"];
+}
+
+// SubMeta represents the RPC meta data for a peer. This is used to represent the highest level of
+// the RPC meta data, and is what is used when parsing/preparing the RPC meta data.
 message SubMeta {
   google.protobuf.BoolValue subscribe = 1 [json_name = "subscribe"];
   google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+}
+
+// SubMetaItem represents a single subscription. This is used to represent the lowest level of the
+// RPC meta data, and is what is persisted to the store.
+message SubMetaItem {
+  google.protobuf.StringValue root_event_id = 1 [json_name = "root_event_id"];
+  google.protobuf.StringValue peer_id = 2 [json_name = "peer_id"];
+  google.protobuf.StringValue topic_id = 3 [json_name = "topic_id"];
+  google.protobuf.BoolValue subscribe = 4 [json_name = "subscribe"];
+  google.protobuf.UInt32Value control_index = 5 [json_name = "control_index"];
 }
 
 message ControlMeta {

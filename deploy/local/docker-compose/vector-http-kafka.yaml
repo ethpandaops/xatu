@@ -66,6 +66,8 @@ transforms:
       libp2p_trace_rpc_meta_control_idontwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT"
       libp2p_trace_rpc_meta_control_graft: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT"
       libp2p_trace_rpc_meta_control_prune: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE"
+      libp2p_trace_rpc_meta_subscription: .event.name == "LIBP2P_TRACE_RPC_META_SUBSCRIPTION"
+      libp2p_trace_rpc_meta_message: .event.name == "LIBP2P_TRACE_RPC_META_MESSAGE"
       libp2p_trace_join: .event.name == "LIBP2P_TRACE_JOIN"
       libp2p_trace_leave: .event.name == "LIBP2P_TRACE_LEAVE"
       libp2p_trace_graft: .event.name == "LIBP2P_TRACE_GRAFT"
@@ -886,6 +888,38 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-rpc-meta-control-prune
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_rpc_meta_subscription_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_rpc_meta_subscription
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-rpc-meta-subscription
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_rpc_meta_message_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_rpc_meta_message
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-rpc-meta-message
     compression: snappy
     healthcheck:
       enabled: true

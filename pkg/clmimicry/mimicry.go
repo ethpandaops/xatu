@@ -437,12 +437,14 @@ func (m *Mimicry) handleNewDecoratedEvents(ctx context.Context, events []*xatu.D
 		networkStr = unknown
 	}
 
-	eventType := event.GetEvent().GetName().String()
-	if eventType == "" {
-		eventType = unknown
-	}
+	for _, event := range events {
+		eventType := event.GetEvent().GetName().String()
+		if eventType == "" {
+			eventType = unknown
+		}
 
-	m.metrics.AddDecoratedEvent(float64(len(events)), eventType, networkStr)
+		m.metrics.AddDecoratedEvent(float64(len(events)), eventType, networkStr)
+	}
 
 	for _, sink := range m.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {

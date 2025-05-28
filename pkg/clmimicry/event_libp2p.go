@@ -427,7 +427,7 @@ func (m *Mimicry) handleSendRPCEvent(
 		},
 	}
 
-	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_SEND_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -439,7 +439,7 @@ func (m *Mimicry) handleSendRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceSendRpc{
 			Libp2PTraceSendRpc: data,
 		},
-	})
+	}
 
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
@@ -454,12 +454,14 @@ func (m *Mimicry) handleSendRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	if len(rpcMetaDecoratedEvents) > 0 {
+	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
+	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
-	}
 
-	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
-		return errors.Wrapf(err, "failed to handle decorated events")
+		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
+		}
 	}
 
 	return nil
@@ -532,7 +534,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 		},
 	}
 
-	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_RECV_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -544,7 +546,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
 			Libp2PTraceRecvRpc: data,
 		},
-	})
+	}
 
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
@@ -559,12 +561,14 @@ func (m *Mimicry) handleRecvRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	if len(rpcMetaDecoratedEvents) > 0 {
+	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
+	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
-	}
 
-	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
-		return errors.Wrapf(err, "failed to handle decorated events")
+		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
+		}
 	}
 
 	return nil
@@ -598,7 +602,7 @@ func (m *Mimicry) handleDropRPCEvent(
 		},
 	}
 
-	decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DROP_RPC,
 			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
@@ -610,7 +614,7 @@ func (m *Mimicry) handleDropRPCEvent(
 		Data: &xatu.DecoratedEvent_Libp2PTraceDropRpc{
 			Libp2PTraceDropRpc: data,
 		},
-	})
+	}
 
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
@@ -625,12 +629,14 @@ func (m *Mimicry) handleDropRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	if len(rpcMetaDecoratedEvents) > 0 {
+	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
+	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
-	}
 
-	if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
-		return errors.Wrapf(err, "failed to handle decorated events")
+		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
+		}
 	}
 
 	return nil

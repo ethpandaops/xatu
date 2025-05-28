@@ -37,6 +37,9 @@ outputs:
     type: stdout
 # traces:
 #   enabled: true
+#   # If true, the root rpc events will be recorded (if sharding config dictates) even if
+#   # there are no rpc meta/control level messages.
+#   alwaysRecordRootRpcEvents: false
 #   topics:
 #     "(?i).*add_peer.*":
 #       shardingKey: "PeerID"

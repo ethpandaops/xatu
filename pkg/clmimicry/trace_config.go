@@ -12,6 +12,9 @@ import (
 type TracesConfig struct {
 	// Whether or not trace config is globally enabled.
 	Enabled bool `yaml:"enabled" default:"false"`
+	// AlwaysRecordRootRpcEvents is a flag that controls whether or not to record
+	// the root rpc events even if there are no rpc meta/control level messages.
+	AlwaysRecordRootRpcEvents bool `yaml:"alwaysRecordRootRpcEvents" default:"false"`
 	// Topics allows for per-topic configuration.
 	Topics map[string]TopicConfig `yaml:"topics"`
 	// Compiled regex patterns.

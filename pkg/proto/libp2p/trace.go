@@ -410,17 +410,13 @@ func convertRPCMessages(messages []host.RpcMetaMsg) []*MessageMeta {
 	ourMessages := make([]*MessageMeta, len(messages))
 
 	for i, msg := range messages {
-		ourMessages[i] = convertRPCMetaMessage(msg)
+		ourMessages[i] = &MessageMeta{
+			MessageId: wrapperspb.String(msg.MsgID),
+			TopicId:   wrapperspb.String(msg.Topic),
+		}
 	}
 
 	return ourMessages
-}
-
-func convertRPCMetaMessage(msg host.RpcMetaMsg) *MessageMeta {
-	return &MessageMeta{
-		MessageId: wrapperspb.String(msg.MsgID),
-		Topic:     wrapperspb.String(msg.Topic),
-	}
 }
 
 func convertRPCSubscriptions(subs []host.RpcMetaSub) []*SubMeta {

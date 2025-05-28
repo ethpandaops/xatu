@@ -229,6 +229,8 @@ transforms:
       libp2p_trace_rpc_meta_control_idontwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT"
       libp2p_trace_rpc_meta_control_graft: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT"
       libp2p_trace_rpc_meta_control_prune: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE"
+      libp2p_trace_rpc_meta_subscription: .event.name == "LIBP2P_TRACE_RPC_META_SUBSCRIPTION"
+      libp2p_trace_rpc_meta_message: .event.name == "LIBP2P_TRACE_RPC_META_MESSAGE"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -257,6 +259,8 @@ transforms:
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_idontwant
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_graft
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_prune
+      - xatu_server_events_router.libp2p_trace_rpc_meta_subscription
+      - xatu_server_events_router.libp2p_trace_rpc_meta_message
     metrics:
       - type: counter
         field: event.name
@@ -1598,6 +1602,138 @@ transforms:
       del(.meta)
       del(.data)
       del(.path)
+  libp2p_trace_rpc_meta_subscription_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_rpc_meta_subscription
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
+      peer_id_key, err = .data.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+
+      topicParts, err = split(.data.topic_id, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split topic_id"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic_id"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      key, err = rootEventKey + "rpc_meta_subscription" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "topic_id": .data.topic_id,
+        }
+        .error = err
+        .error_description = "failed to generate unique key for rpc_meta_subscription"
+      }
+      .unique_key = seahash(key)
+
+      .control_index = .data.control_index
+      .subscribe = .data.subscribe
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+  libp2p_trace_rpc_meta_message_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_rpc_meta_message
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      rootEventKey = seahash(.data.root_event_id)
+      if err != null {
+        .error = err
+        .error_description = "failed to generate root event key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .rpc_meta_unique_key = rootEventKey
+
+      peer_id_key, err = .data.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+
+      topicParts, err = split(.data.topic_id, "/")
+      if err != null {
+        .error = err
+        .error_description = "failed to split topic_id"
+        log(., level: "error", rate_limit_secs: 60)
+      } else {
+        if length(topicParts) == 5 {
+            .topic_layer = topicParts[1]
+            .topic_fork_digest_value = topicParts[2]
+            .topic_name = topicParts[3]
+            .topic_encoding = topicParts[4]
+        } else {
+            .error_description = "failed to split topic_id"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      key, err = rootEventKey + "rpc_meta_message" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      if err != null {
+        .errDebug = {
+          "root_event_key": rootEventKey,
+          "topic_id": .data.topic_id,
+        }
+        .error = err
+        .error_description = "failed to generate unique key for rpc_meta_message"
+      }
+      .unique_key = seahash(key)
+
+      .control_index = .data.control_index
+      .message_id = .data.message_id
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
   libp2p_trace_recv_rpc_formatted:
     type: remap
     inputs:
@@ -2200,6 +2336,46 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: libp2p_gossipsub_blob_sidecar
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_subscription_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_meta_subscription_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_subscription
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_message_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_meta_message_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_message
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

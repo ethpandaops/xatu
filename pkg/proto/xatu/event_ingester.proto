@@ -913,6 +913,16 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceRPCMetaSubscriptionData: Holds additional data for a RPC meta subscription event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaSubscriptionData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaMessageData: Holds additional data for a RPC meta message event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceGossipSubBeaconBlockData contains additional data about the gossip sub beacon block event.
   message AdditionalLibP2PTraceGossipSubBeaconBlockData {
     // Epoch contains the epoch information for the beacon block.
@@ -1345,6 +1355,10 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaControlGraftData libp2p_trace_rpc_meta_control_graft = 79 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT" ];
     // AdditionalLibP2PTraceRPCMetaControlPruneData contains additional data about the rpc meta control prune event.
     AdditionalLibP2PTraceRPCMetaControlPruneData libp2p_trace_rpc_meta_control_prune = 80 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE" ];
+    // AdditionalLibP2PTraceRPCMetaSubscriptionData contains additional data about the rpc meta subscription event.
+    AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
+    // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
+    AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1519,6 +1533,8 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT = 67;
     LIBP2P_TRACE_RPC_META_CONTROL_GRAFT = 68;
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
+    LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
+    LIBP2P_TRACE_RPC_META_MESSAGE = 71;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1691,6 +1707,10 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT" ];
     xatu.libp2p.ControlPruneMetaItem libp2p_trace_rpc_meta_control_prune = 70
         [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE" ];
+    xatu.libp2p.SubMetaItem libp2p_trace_rpc_meta_subscription = 71
+        [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
+    xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
+        [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
   };
 }
 

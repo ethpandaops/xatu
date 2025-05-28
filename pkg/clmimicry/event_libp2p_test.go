@@ -1479,3 +1479,385 @@ func Test_handleRecvRPCEvent_DetailedControlMessages(t *testing.T) {
 		})
 	}
 }
+
+func Test_handleRecvRPCEvent_DetailedSubscriptionMessages(t *testing.T) {
+	// Create a valid peer ID for testing
+	peerID, err := peer.Decode(examplePeerID)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name               string
+		config             *Config
+		subscriptions      []host.RpcMetaSub
+		expectedEventTypes []string
+		expectedEventCount int
+		expectMockCall     bool
+	}{
+		{
+			name: "subscription messages enabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "test-topic-1",
+				},
+				{
+					Subscribe: false,
+					TopicID:   "test-topic-2",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+				"LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
+			},
+			expectedEventCount: 3,
+			expectMockCall:     true,
+		},
+		{
+			name: "subscription messages disabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: false,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "test-topic-1",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+			},
+			expectedEventCount: 1,
+			expectMockCall:     true,
+		},
+		{
+			name: "subscription messages disabled and no AlwaysRecordRootRpcEvents",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: false,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: false,
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "test-topic-1",
+				},
+			},
+			expectedEventTypes: []string{},
+			expectedEventCount: 0,
+			expectMockCall:     false,
+		},
+		{
+			name: "multiple subscription messages",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "topic-1",
+				},
+				{
+					Subscribe: false,
+					TopicID:   "topic-2",
+				},
+				{
+					Subscribe: true,
+					TopicID:   "topic-3",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+				"LIBP2P_TRACE_RPC_META_SUBSCRIPTION",
+			},
+			expectedEventCount: 4,
+			expectMockCall:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockSink := mock.NewMockSink(ctrl)
+
+			// Track actual event types received
+			receivedEventTypes := []string{}
+
+			// Setup mock to capture and verify events
+			if tt.expectMockCall {
+				mockSink.EXPECT().HandleNewDecoratedEvents(gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, events []*xatu.DecoratedEvent) {
+						for _, event := range events {
+							receivedEventTypes = append(receivedEventTypes, event.Event.Name.String())
+						}
+					}).
+					Return(nil).
+					Times(1)
+			}
+
+			mimicry := &Mimicry{
+				Config:  tt.config,
+				sinks:   []output.Sink{mockSink},
+				log:     logrus.NewEntry(logrus.New()),
+				id:      uuid.New(),
+				metrics: NewMetrics(tt.name),
+			}
+
+			clientMeta := &xatu.ClientMeta{
+				Name: "test-client",
+				Id:   uuid.New().String(),
+			}
+
+			traceMeta := &libp2p.TraceEventMetadata{
+				PeerId: wrapperspb.String("test-peer"),
+			}
+
+			event := &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    peerID,
+				Timestamp: time.Now(),
+				Payload: &host.RpcMeta{
+					PeerID:        peerID,
+					Subscriptions: tt.subscriptions,
+				},
+			}
+
+			ctx := context.Background()
+			err := mimicry.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedEventCount, len(receivedEventTypes))
+
+			// Verify that all expected event types are present
+			for _, expectedType := range tt.expectedEventTypes {
+				assert.Contains(t, receivedEventTypes, expectedType)
+			}
+		})
+	}
+}
+
+func Test_handleRecvRPCEvent_DetailedMetaMessages(t *testing.T) {
+	// Create a valid peer ID for testing
+	peerID, err := peer.Decode(examplePeerID)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name               string
+		config             *Config
+		messages           []host.RpcMetaMsg
+		expectedEventTypes []string
+		expectedEventCount int
+		expectMockCall     bool
+	}{
+		{
+			name: "meta messages enabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					RpcMetaMessageEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "msg1",
+					Topic: "topic1",
+				},
+				{
+					MsgID: "msg2",
+					Topic: "topic2",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+				"LIBP2P_TRACE_RPC_META_MESSAGE",
+			},
+			expectedEventCount: 3,
+			expectMockCall:     true,
+		},
+		{
+			name: "meta messages disabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					RpcMetaMessageEnabled: false,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "msg1",
+					Topic: "topic1",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+			},
+			expectedEventCount: 1,
+			expectMockCall:     true,
+		},
+		{
+			name: "meta messages disabled and no AlwaysRecordRootRpcEvents",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					RpcMetaMessageEnabled: false,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: false,
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "msg1",
+					Topic: "topic1",
+				},
+			},
+			expectedEventTypes: []string{},
+			expectedEventCount: 0,
+			expectMockCall:     false,
+		},
+		{
+			name: "multiple meta messages",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					RpcMetaMessageEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "msg1",
+					Topic: "eth2/beacon_block",
+				},
+				{
+					MsgID: "msg2",
+					Topic: "eth2/attestation",
+				},
+				{
+					MsgID: "msg3",
+					Topic: "eth2/voluntary_exit",
+				},
+			},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+				"LIBP2P_TRACE_RPC_META_MESSAGE",
+			},
+			expectedEventCount: 4,
+			expectMockCall:     true,
+		},
+		{
+			name: "empty messages list",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					RpcMetaMessageEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			messages: []host.RpcMetaMsg{},
+			expectedEventTypes: []string{
+				"LIBP2P_TRACE_RECV_RPC",
+			},
+			expectedEventCount: 1,
+			expectMockCall:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockSink := mock.NewMockSink(ctrl)
+
+			// Track actual event types received
+			receivedEventTypes := []string{}
+
+			// Setup mock to capture and verify events
+			if tt.expectMockCall {
+				mockSink.EXPECT().HandleNewDecoratedEvents(gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, events []*xatu.DecoratedEvent) {
+						for _, event := range events {
+							receivedEventTypes = append(receivedEventTypes, event.Event.Name.String())
+						}
+					}).
+					Return(nil).
+					Times(1)
+			}
+
+			mimicry := &Mimicry{
+				Config:  tt.config,
+				sinks:   []output.Sink{mockSink},
+				log:     logrus.NewEntry(logrus.New()),
+				id:      uuid.New(),
+				metrics: NewMetrics(tt.name),
+			}
+
+			clientMeta := &xatu.ClientMeta{
+				Name: "test-client",
+				Id:   uuid.New().String(),
+			}
+
+			traceMeta := &libp2p.TraceEventMetadata{
+				PeerId: wrapperspb.String("test-peer"),
+			}
+
+			event := &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    peerID,
+				Timestamp: time.Now(),
+				Payload: &host.RpcMeta{
+					PeerID:   peerID,
+					Messages: tt.messages,
+				},
+			}
+
+			ctx := context.Background()
+			err := mimicry.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedEventCount, len(receivedEventTypes))
+
+			// Verify that all expected event types are present
+			for _, expectedType := range tt.expectedEventTypes {
+				assert.Contains(t, receivedEventTypes, expectedType)
+			}
+		})
+	}
+}

@@ -1727,6 +1727,7 @@ transforms:
       .unique_key = seahash(key)
 
       .control_index = .data.control_index
+      .message_id = .data.message_id
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)
@@ -2335,6 +2336,46 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: libp2p_gossipsub_blob_sidecar
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_subscription_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_meta_subscription_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_subscription
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_meta_message_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_meta_message_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_meta_message
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

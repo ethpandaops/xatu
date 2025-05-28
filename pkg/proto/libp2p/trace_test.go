@@ -467,7 +467,7 @@ func createExpectedMessages() []*MessageMeta {
 	return []*MessageMeta{
 		{
 			MessageId: wrapperspb.String("msg1"),
-			Topic:     wrapperspb.String("topic1"),
+			TopicId:   wrapperspb.String("topic1"),
 		},
 	}
 }
@@ -551,7 +551,7 @@ func assertMessagesEquals(t *testing.T, expected, actual []*MessageMeta) {
 
 		for i, exp := range expected {
 			assert.Equal(t, exp.MessageId.GetValue(), actual[i].MessageId.GetValue())
-			assert.Equal(t, exp.Topic.GetValue(), actual[i].Topic.GetValue())
+			assert.Equal(t, exp.TopicId.GetValue(), actual[i].TopicId.GetValue())
 		}
 	}
 }

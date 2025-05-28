@@ -459,10 +459,6 @@ func (m *Mimicry) handleSendRPCEvent(
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if rootRPCEvent.Data != nil {
-			fmt.Printf("PEERRRRRR ID: %+v\n", rootRPCEvent.Data.(*xatu.DecoratedEvent_Libp2PTraceSendRpc).Libp2PTraceSendRpc.PeerId)
-		}
-
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
@@ -1355,8 +1351,6 @@ func (m *Mimicry) parseRPCMetaSubscription(
 			continue
 		}
 
-		fmt.Println("parseRPCMetaSubscription filteredPeerIDsWithIndex", filteredPeerIDsWithIndex)
-
 		for range filteredPeerIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
@@ -1455,8 +1449,6 @@ func (m *Mimicry) parseRPCMetaMessage(
 		if len(filteredMsgIDsWithIndex) == 0 {
 			continue
 		}
-
-		fmt.Println("parseRPCMetaMessage filteredMsgIDsWithIndex", filteredMsgIDsWithIndex)
 
 		for range filteredMsgIDsWithIndex {
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{

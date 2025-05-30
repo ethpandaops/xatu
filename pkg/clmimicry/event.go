@@ -32,6 +32,7 @@ var (
 	UnshardableEventTypes = []string{
 		xatu.Event_LIBP2P_TRACE_JOIN.String(),
 		xatu.Event_LIBP2P_TRACE_LEAVE.String(),
+		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT.String(),
 	}
 )
 

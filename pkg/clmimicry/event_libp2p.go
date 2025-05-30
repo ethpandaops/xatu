@@ -470,6 +470,9 @@ func (m *Mimicry) handleSendRPCEvent(
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
+	} else {
+		// If we don't send the root level event, we need to add a metric for it.
+		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), getNetworkID(clientMeta))
 	}
 
 	return nil
@@ -664,6 +667,9 @@ func (m *Mimicry) handleDropRPCEvent(
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
+	} else {
+		// If we don't send the root level event, we need to add a metric for it.
+		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), getNetworkID(clientMeta))
 	}
 
 	return nil

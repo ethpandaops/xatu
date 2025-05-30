@@ -436,8 +436,16 @@ func (m *Mimicry) handleSendRPCEvent(
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
+		// The root level event will still contain all rpc meta level messages. With some events, these
+		// are really large, and will exceed msg limits at kafka/vector. Because we're splitting the meta
+		// events into multiple messages, we can remove the meta level messages from the root event.
 		Data: &xatu.DecoratedEvent_Libp2PTraceSendRpc{
-			Libp2PTraceSendRpc: data,
+			Libp2PTraceSendRpc: &libp2p.SendRPC{
+				PeerId: data.GetPeerId(),
+				Meta: &libp2p.RPCMeta{
+					PeerId: data.GetPeerId(),
+				},
+			},
 		},
 	}
 
@@ -462,6 +470,9 @@ func (m *Mimicry) handleSendRPCEvent(
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
+	} else {
+		// If we don't send the root level event, we need to add a metric for it.
+		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), getNetworkID(clientMeta))
 	}
 
 	return nil
@@ -543,8 +554,16 @@ func (m *Mimicry) handleRecvRPCEvent(
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
+		// The root level event will still contain all rpc meta level messages. With some events, these
+		// are really large, and will exceed msg limits at kafka/vector. Because we're splitting the meta
+		// events into multiple messages, we can remove the meta level messages from the root event.
 		Data: &xatu.DecoratedEvent_Libp2PTraceRecvRpc{
-			Libp2PTraceRecvRpc: data,
+			Libp2PTraceRecvRpc: &libp2p.RecvRPC{
+				PeerId: data.GetPeerId(),
+				Meta: &libp2p.RPCMeta{
+					PeerId: data.GetPeerId(),
+				},
+			},
 		},
 	}
 
@@ -614,8 +633,16 @@ func (m *Mimicry) handleDropRPCEvent(
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
+		// The root level event will still contain all rpc meta level messages. With some events, these
+		// are really large, and will exceed msg limits at kafka/vector. Because we're splitting the meta
+		// events into multiple messages, we can remove the meta level messages from the root event.
 		Data: &xatu.DecoratedEvent_Libp2PTraceDropRpc{
-			Libp2PTraceDropRpc: data,
+			Libp2PTraceDropRpc: &libp2p.DropRPC{
+				PeerId: data.GetPeerId(),
+				Meta: &libp2p.RPCMeta{
+					PeerId: data.GetPeerId(),
+				},
+			},
 		},
 	}
 
@@ -640,6 +667,9 @@ func (m *Mimicry) handleDropRPCEvent(
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
+	} else {
+		// If we don't send the root level event, we need to add a metric for it.
+		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), getNetworkID(clientMeta))
 	}
 
 	return nil

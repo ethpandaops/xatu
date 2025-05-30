@@ -1184,22 +1184,6 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 			continue
 		}
 
-		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT
-
-		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
-			clientMeta,
-			eventType.String(),
-			[]*wrapperspb.StringValue{wrapperspb.String(peerID)},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check trace config for graft: %w", err)
-		}
-
-		if len(filteredPeerIDsWithIndex) == 0 {
-			continue
-		}
-
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{
 				Name:     xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT,

@@ -569,6 +569,9 @@ func (m *Mimicry) handleRecvRPCEvent(
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
+	} else {
+		// If we don't send the root level event, we need to add a metric for it.
+		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), getNetworkID(clientMeta))
 	}
 
 	return nil
@@ -1180,8 +1183,6 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 		if !m.Config.Events.RpcMetaControlGraftEnabled {
 			continue
 		}
-
-		// How do we shard on this? We only have a topic ID.
 
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{

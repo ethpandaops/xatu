@@ -2,6 +2,7 @@ package clmimicry
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1857,6 +1858,369 @@ func Test_handleRecvRPCEvent_DetailedMetaMessages(t *testing.T) {
 			// Verify that all expected event types are present
 			for _, expectedType := range tt.expectedEventTypes {
 				assert.Contains(t, receivedEventTypes, expectedType)
+			}
+		})
+	}
+}
+
+// Test_AllRPCEvents_MetaDataStripping verifies that root RPC events (Recv/Send/Drop)
+// properly strip meta data to prevent message size issues while preserving all information.
+//
+// Background:
+// - RPC events can contain large amounts of meta data (control messages, subscriptions, messages)
+// - These large payloads can exceed message size limits in Kafka/Vector.
+// - We already explode all meta data into individual events.
+// - Therefore, it's safe to strip the bulk data from root events while keeping minimal context.
+//
+// This test ensures that:
+// 1. Root events contain only essential data (PeerId) to stay small.
+// 2. Meta field contains only PeerId, not the full control/subscription/message data.
+// 3. All detailed meta data is still captured as separate individual events.
+// 4. Behavior is consistent across all three RPC event types (Recv/Send/Drop).
+// 5. Different scenarios work correctly (various meta data types, configuration options).
+func Test_AllRPCEvents_MetaDataStripping(t *testing.T) {
+	// Create a valid peer ID for testing.
+	peerID, err := peer.Decode(examplePeerID)
+	require.NoError(t, err)
+
+	// Test scenarios with different types of meta data.
+	testScenarios := []struct {
+		name               string
+		config             *Config
+		controlData        *host.RpcMetaControl
+		subscriptions      []host.RpcMetaSub
+		messages           []host.RpcMetaMsg
+		expectRootEvent    bool
+		expectMetaEvents   bool
+		expectedEventCount int
+	}{
+		{
+			name: "control data with IHave messages",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					SendRPCEnabled:             true,
+					DropRPCEnabled:             true,
+					RpcMetaControlIHaveEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			controlData: &host.RpcMetaControl{
+				IHave: []host.RpcControlIHave{
+					{
+						TopicID: "test-topic",
+						MsgIDs:  []string{"msg1", "msg2"},
+					},
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   true,
+			expectedEventCount: 3, // 1 root + 2 IHave events.
+		},
+		{
+			name: "control data with IWant messages",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					SendRPCEnabled:             true,
+					DropRPCEnabled:             true,
+					RpcMetaControlIWantEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			controlData: &host.RpcMetaControl{
+				IWant: []host.RpcControlIWant{
+					{
+						MsgIDs: []string{"want1", "want2", "want3"},
+					},
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   true,
+			expectedEventCount: 4, // 1 root + 3 IWant events.
+		},
+		{
+			name: "subscription data",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					SendRPCEnabled:             true,
+					DropRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "eth2/beacon_block",
+				},
+				{
+					Subscribe: false,
+					TopicID:   "eth2/attestation",
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   true,
+			expectedEventCount: 3, // 1 root + 2 subscription events.
+		},
+		{
+			name: "message data",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:        true,
+					SendRPCEnabled:        true,
+					DropRPCEnabled:        true,
+					RpcMetaMessageEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "msg1",
+					Topic: "eth2/beacon_block",
+				},
+				{
+					MsgID: "msg2",
+					Topic: "eth2/voluntary_exit",
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   true,
+			expectedEventCount: 3, // 1 root + 2 message events.
+		},
+		{
+			name: "complex meta data with multiple types",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					SendRPCEnabled:             true,
+					DropRPCEnabled:             true,
+					RpcMetaControlIHaveEnabled: true,
+					RpcMetaControlGraftEnabled: true,
+					RpcMetaSubscriptionEnabled: true,
+					RpcMetaMessageEnabled:      true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			controlData: &host.RpcMetaControl{
+				IHave: []host.RpcControlIHave{
+					{
+						TopicID: "test-topic",
+						MsgIDs:  []string{"ihave1"},
+					},
+				},
+				Graft: []host.RpcControlGraft{
+					{
+						TopicID: "graft-topic",
+					},
+				},
+			},
+			subscriptions: []host.RpcMetaSub{
+				{
+					Subscribe: true,
+					TopicID:   "sub-topic",
+				},
+			},
+			messages: []host.RpcMetaMsg{
+				{
+					MsgID: "complex-msg",
+					Topic: "msg-topic",
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   true,
+			expectedEventCount: 5, // 1 root + 1 IHave + 1 Graft + 1 subscription + 1 message.
+		},
+		{
+			name: "no meta data with AlwaysRecordRootRpcEvents enabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled: true,
+					SendRPCEnabled: true,
+					DropRPCEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: true,
+				},
+			},
+			expectRootEvent:    true,
+			expectMetaEvents:   false,
+			expectedEventCount: 1, // 1 root event only.
+		},
+		{
+			name: "no meta data with AlwaysRecordRootRpcEvents disabled",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled: true,
+					SendRPCEnabled: true,
+					DropRPCEnabled: true,
+				},
+				Traces: TracesConfig{
+					AlwaysRecordRootRpcEvents: false,
+				},
+			},
+			expectRootEvent:    false,
+			expectMetaEvents:   false,
+			expectedEventCount: 0, // No events.
+		},
+	}
+
+	// Test all three RPC event types to ensure they all strip meta data consistently.
+	eventTypes := []struct {
+		name          string
+		eventType     string
+		handlerFunc   func(*Mimicry, context.Context, *xatu.ClientMeta, *libp2p.TraceEventMetadata, *host.TraceEvent) error
+		rootEventName xatu.Event_Name
+	}{
+		{
+			name:          "RecvRPC",
+			eventType:     "RECV_RPC",
+			handlerFunc:   (*Mimicry).handleRecvRPCEvent,
+			rootEventName: xatu.Event_LIBP2P_TRACE_RECV_RPC,
+		},
+		{
+			name:          "SendRPC",
+			eventType:     "SEND_RPC",
+			handlerFunc:   (*Mimicry).handleSendRPCEvent,
+			rootEventName: xatu.Event_LIBP2P_TRACE_SEND_RPC,
+		},
+		{
+			name:          "DropRPC",
+			eventType:     "DROP_RPC",
+			handlerFunc:   (*Mimicry).handleDropRPCEvent,
+			rootEventName: xatu.Event_LIBP2P_TRACE_DROP_RPC,
+		},
+	}
+
+	for scenarioIdx, scenario := range testScenarios {
+		t.Run(scenario.name, func(t *testing.T) {
+			for eventIdx, eventType := range eventTypes {
+				t.Run(eventType.name, func(t *testing.T) {
+					ctrl := gomock.NewController(t)
+					defer ctrl.Finish()
+
+					mockSink := mock.NewMockSink(ctrl)
+
+					var receivedEvents []*xatu.DecoratedEvent
+
+					// Setup mock to capture events.
+					if scenario.expectedEventCount > 0 {
+						mockSink.EXPECT().HandleNewDecoratedEvents(gomock.Any(), gomock.Any()).
+							Do(func(ctx context.Context, events []*xatu.DecoratedEvent) {
+								receivedEvents = events
+							}).
+							Return(nil).
+							Times(1)
+					}
+
+					mimicry := &Mimicry{
+						Config:  scenario.config,
+						sinks:   []output.Sink{mockSink},
+						log:     logrus.NewEntry(logrus.New()),
+						id:      uuid.New(),
+						metrics: NewMetrics(fmt.Sprintf("all_rpc_strip_%d_%d", scenarioIdx, eventIdx)),
+					}
+
+					clientMeta := &xatu.ClientMeta{
+						Name: "test-client",
+						Id:   uuid.New().String(),
+					}
+
+					traceMeta := &libp2p.TraceEventMetadata{
+						PeerId: wrapperspb.String("test-peer"),
+					}
+
+					event := &host.TraceEvent{
+						Type:      eventType.eventType,
+						PeerID:    peerID,
+						Timestamp: time.Now(),
+						Payload: &host.RpcMeta{
+							PeerID:        peerID,
+							Control:       scenario.controlData,
+							Subscriptions: scenario.subscriptions,
+							Messages:      scenario.messages,
+						},
+					}
+
+					ctx := context.Background()
+					err := eventType.handlerFunc(mimicry, ctx, clientMeta, traceMeta, event)
+
+					require.NoError(t, err)
+					assert.Equal(t, scenario.expectedEventCount, len(receivedEvents), "Event count mismatch for %s", eventType.name)
+
+					if scenario.expectRootEvent {
+						// Find the root RPC event.
+						var rootEvent *xatu.DecoratedEvent
+						for _, e := range receivedEvents {
+							if e.Event.Name == eventType.rootEventName {
+								rootEvent = e
+
+								break
+							}
+						}
+
+						require.NotNil(t, rootEvent, "Expected root RPC event but didn't find one for %s", eventType.name)
+
+						// Verify the root event structure based on event type.
+						switch eventType.rootEventName {
+						case xatu.Event_LIBP2P_TRACE_RECV_RPC:
+							recvData := rootEvent.GetLibp2PTraceRecvRpc()
+							require.NotNil(t, recvData, "Root event should have RecvRPC data")
+							assert.NotNil(t, recvData.PeerId, "Root event should have PeerId")
+							assert.Equal(t, peerID.String(), recvData.PeerId.GetValue())
+							require.NotNil(t, recvData.Meta, "Root event should contain minimal Meta data")
+							assert.NotNil(t, recvData.Meta.PeerId, "Root event Meta should have PeerId")
+							assert.Equal(t, peerID.String(), recvData.Meta.PeerId.GetValue())
+							assert.Nil(t, recvData.Meta.Control, "Root event Meta should not contain Control data")
+							assert.Nil(t, recvData.Meta.Subscriptions, "Root event Meta should not contain Subscriptions data")
+							assert.Nil(t, recvData.Meta.Messages, "Root event Meta should not contain Messages data")
+						case xatu.Event_LIBP2P_TRACE_SEND_RPC:
+							sendData := rootEvent.GetLibp2PTraceSendRpc()
+							require.NotNil(t, sendData, "Root event should have SendRPC data")
+							assert.NotNil(t, sendData.PeerId, "Root event should have PeerId")
+							assert.Equal(t, peerID.String(), sendData.PeerId.GetValue())
+							require.NotNil(t, sendData.Meta, "Root event should contain minimal Meta data")
+							assert.NotNil(t, sendData.Meta.PeerId, "Root event Meta should have PeerId")
+							assert.Equal(t, peerID.String(), sendData.Meta.PeerId.GetValue())
+							assert.Nil(t, sendData.Meta.Control, "Root event Meta should not contain Control data")
+							assert.Nil(t, sendData.Meta.Subscriptions, "Root event Meta should not contain Subscriptions data")
+							assert.Nil(t, sendData.Meta.Messages, "Root event Meta should not contain Messages data")
+						case xatu.Event_LIBP2P_TRACE_DROP_RPC:
+							dropData := rootEvent.GetLibp2PTraceDropRpc()
+							require.NotNil(t, dropData, "Root event should have DropRPC data")
+							assert.NotNil(t, dropData.PeerId, "Root event should have PeerId")
+							assert.Equal(t, peerID.String(), dropData.PeerId.GetValue())
+							require.NotNil(t, dropData.Meta, "Root event should contain minimal Meta data")
+							assert.NotNil(t, dropData.Meta.PeerId, "Root event Meta should have PeerId")
+							assert.Equal(t, peerID.String(), dropData.Meta.PeerId.GetValue())
+							assert.Nil(t, dropData.Meta.Control, "Root event Meta should not contain Control data")
+							assert.Nil(t, dropData.Meta.Subscriptions, "Root event Meta should not contain Subscriptions data")
+							assert.Nil(t, dropData.Meta.Messages, "Root event Meta should not contain Messages data")
+						}
+					}
+
+					if scenario.expectMetaEvents {
+						// Verify meta events are still generated.
+						metaEventCount := 0
+						for _, e := range receivedEvents {
+							if e.Event.Name != eventType.rootEventName {
+								metaEventCount++
+							}
+						}
+						assert.Greater(t, metaEventCount, 0, "Should have generated meta events for %s", eventType.name)
+					}
+				})
 			}
 		})
 	}

@@ -84,6 +84,8 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 	xatuEventType string,
 	messageIDs []*wrapperspb.StringValue,
 ) ([]FilteredMessageWithIndex, error) {
+	networkStr := getNetworkID(clientMeta)
+
 	if !m.Config.Traces.Enabled {
 		// Return all messages with their indices if tracing is not enabled
 		result := make([]FilteredMessageWithIndex, len(messageIDs))
@@ -92,6 +94,24 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 				MessageID:     messageID,
 				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		}
+
+		return result, nil
+	}
+
+	// If the event type is unshardable, we can move on with life.
+	if isUnshardableEvent(xatuEventType) {
+		result := make([]FilteredMessageWithIndex, len(messageIDs))
+
+		for i, messageID := range messageIDs {
+			result[i] = FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			}
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		}
 
 		return result, nil
@@ -101,11 +121,14 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 	if !found {
 		// Return all messages with their indices if no topic config found
 		result := make([]FilteredMessageWithIndex, len(messageIDs))
+
 		for i, messageID := range messageIDs {
 			result[i] = FilteredMessageWithIndex{
 				MessageID:     messageID,
 				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		}
 
 		return result, nil
@@ -115,19 +138,20 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 	//nolint:gosec // controlled config, no overflow.
 	if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
 		result := make([]FilteredMessageWithIndex, len(messageIDs))
+
 		for i, messageID := range messageIDs {
 			result[i] = FilteredMessageWithIndex{
 				MessageID:     messageID,
 				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			}
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		}
 
 		return result, nil
 	}
 
 	var filteredMessages []FilteredMessageWithIndex
-
-	networkStr := getNetworkID(clientMeta)
 
 	// Check each message ID against the sharding configuration
 	for i, messageID := range messageIDs {

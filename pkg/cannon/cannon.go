@@ -706,7 +706,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 		// Handle derivers that require phase0, since its not actually a fork it'll never appear
 		// in the spec.
 		if d.ActivationFork() != spec.DataVersionPhase0 {
-			spec, err := c.beacon.Node().Spec()
+			nodeSpec, err := c.beacon.Node().Spec()
 			if err != nil {
 				c.log.WithError(err).Error("Failed to get spec")
 
@@ -715,7 +715,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 				continue
 			}
 
-			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork().String())
+			fork, err := nodeSpec.ForkEpochs.GetByName(d.ActivationFork().String())
 			if err != nil {
 				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
 

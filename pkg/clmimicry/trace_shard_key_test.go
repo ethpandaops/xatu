@@ -126,3 +126,68 @@ func TestGetShardingKey(t *testing.T) {
 		})
 	}
 }
+
+func TestGetMsgID(t *testing.T) {
+	mockMsgID := "test-msg-id-12345"
+
+	testCases := []struct {
+		name        string
+		payload     interface{}
+		expectedKey string
+	}{
+		{
+			name:        "Struct pointer payload with MsgID",
+			payload:     &MockPayload{MsgID: mockMsgID},
+			expectedKey: mockMsgID,
+		},
+		{
+			name: "Map payload with MsgID (deliver_message/duplicate_message style)",
+			payload: map[string]any{
+				"MsgID":   mockMsgID,
+				"Topic":   "test-topic",
+				"PeerID":  "peer-123",
+				"Local":   true,
+				"MsgSize": 1024,
+			},
+			expectedKey: mockMsgID,
+		},
+		{
+			name:        "Nil payload returns empty string",
+			payload:     nil,
+			expectedKey: "",
+		},
+		{
+			name: "Map payload missing MsgID returns empty string",
+			payload: map[string]any{
+				"Topic":  "test-topic",
+				"PeerID": "peer-123",
+			},
+			expectedKey: "",
+		},
+		{
+			name: "Map payload with non-string MsgID returns empty string",
+			payload: map[string]any{
+				"MsgID": 12345, // Not a string
+				"Topic": "test-topic",
+			},
+			expectedKey: "",
+		},
+		{
+			name:        "Struct pointer with empty MsgID",
+			payload:     &MockPayload{MsgID: ""},
+			expectedKey: "",
+		},
+		{
+			name:        "Non-struct, non-map payload returns empty string",
+			payload:     []string{"not", "a", "struct", "or", "map"},
+			expectedKey: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := getMsgID(tc.payload)
+			assert.Equal(t, tc.expectedKey, result)
+		})
+	}
+}

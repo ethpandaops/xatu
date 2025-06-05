@@ -419,3 +419,38 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 
 	return nil
 }
+
+func (m *Mimicry) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	// Grab the first event and use it to get the network and event type.
+	// Saves us parsing the same data multiple times.
+	var (
+		event      = events[0]
+		network    = event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+		networkStr = fmt.Sprintf("%d", network)
+	)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
+	for _, event := range events {
+		eventType := event.GetEvent().GetName().String()
+		if eventType == "" {
+			eventType = unknown
+		}
+
+		m.metrics.AddDecoratedEvent(1, eventType, networkStr)
+	}
+
+	for _, sink := range m.sinks {
+		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
+			m.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send events to sink")
+		}
+	}
+
+	return nil
+}

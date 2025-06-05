@@ -275,3 +275,139 @@ func BenchmarkFindMatchingTopicConfig(b *testing.B) {
 		config.FindMatchingTopicConfig(eventType)
 	}
 }
+
+func TestActiveShardsConfig_ToUint64Slice(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    ActiveShardsConfig
+		expected []uint64
+		wantErr  bool
+	}{
+		{
+			name:     "individual numbers",
+			input:    ActiveShardsConfig{0, 1, 2, 3},
+			expected: []uint64{0, 1, 2, 3},
+			wantErr:  false,
+		},
+		{
+			name:     "range syntax",
+			input:    ActiveShardsConfig{"0-3"},
+			expected: []uint64{0, 1, 2, 3},
+			wantErr:  false,
+		},
+		{
+			name:     "mixed individual and range",
+			input:    ActiveShardsConfig{0, "2-4", 10},
+			expected: []uint64{0, 2, 3, 4, 10},
+			wantErr:  false,
+		},
+		{
+			name:  "larger range",
+			input: ActiveShardsConfig{"0-255"},
+			expected: func() []uint64 {
+				var result []uint64
+
+				for i := uint64(0); i <= 255; i++ {
+					result = append(result, i)
+				}
+
+				return result
+			}(),
+			wantErr: false,
+		},
+		{
+			name:     "duplicates removed",
+			input:    ActiveShardsConfig{0, 1, "0-2", 2},
+			expected: []uint64{0, 1, 2},
+			wantErr:  false,
+		},
+		{
+			name:     "invalid range format",
+			input:    ActiveShardsConfig{"0-1-2"},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "invalid range start",
+			input:    ActiveShardsConfig{"a-5"},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "invalid range end",
+			input:    ActiveShardsConfig{"0-b"},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "start greater than end",
+			input:    ActiveShardsConfig{"5-2"},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "string numbers",
+			input:    ActiveShardsConfig{"0", "1", "2"},
+			expected: []uint64{0, 1, 2},
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := tt.input.ToUint64Slice()
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ToUint64Slice() error = %v, wantErr %v", err, tt.wantErr)
+
+				return
+			}
+
+			if !tt.wantErr {
+				if len(result) != len(tt.expected) {
+					t.Errorf("ToUint64Slice() result length = %d, expected %d", len(result), len(tt.expected))
+
+					return
+				}
+
+				for i, v := range result {
+					if v != tt.expected[i] {
+						t.Errorf("ToUint64Slice() result[%d] = %d, expected %d", i, v, tt.expected[i])
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestTracesConfig_ValidateWithRanges(t *testing.T) {
+	config := &TracesConfig{
+		Enabled: true,
+		Topics: map[string]TopicConfig{
+			"test_pattern": {
+				TotalShards:     10,
+				ActiveShardsRaw: ActiveShardsConfig{"0-4", 7, "8-9"},
+				ShardingKey:     "MsgID",
+			},
+		},
+	}
+
+	err := config.Validate()
+	if err != nil {
+		t.Fatalf("Validate() failed: %v", err)
+	}
+
+	// Check that ranges were expanded correctly.
+	topicConfig := config.Topics["test_pattern"]
+	expected := []uint64{0, 1, 2, 3, 4, 7, 8, 9}
+
+	if len(topicConfig.ActiveShards) != len(expected) {
+		t.Fatalf("Expected %d active shards, got %d", len(expected), len(topicConfig.ActiveShards))
+	}
+
+	for i, v := range topicConfig.ActiveShards {
+		if v != expected[i] {
+			t.Errorf("ActiveShards[%d] = %d, expected %d", i, v, expected[i])
+		}
+	}
+}

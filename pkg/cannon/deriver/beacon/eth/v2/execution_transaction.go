@@ -243,21 +243,27 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
 	}
 
-	blobSidecars, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
-	if err != nil {
-		var apiErr *api.Error
-		if errors.As(err, &apiErr) {
-			switch apiErr.StatusCode {
-			case 404:
-				b.log.WithError(err).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
-			case 503:
-				return nil, errors.New("beacon node is syncing")
-			default:
+	blobSidecars := []*deneb.BlobSidecar{}
+
+	if block.Version >= spec.DataVersionDeneb {
+		sidecars, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+		if err != nil {
+			var apiErr *api.Error
+			if errors.As(err, &apiErr) {
+				switch apiErr.StatusCode {
+				case 404:
+					b.log.WithError(err).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
+				case 503:
+					return nil, errors.New("beacon node is syncing")
+				default:
+					return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+				}
+			} else {
 				return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
 			}
-		} else {
-			return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
 		}
+
+		blobSidecars = sidecars
 	}
 
 	blobSidecarsMap := map[string]*deneb.BlobSidecar{}
@@ -274,8 +280,15 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return nil, err
 	}
 
+	chainID := new(big.Int).SetUint64(b.beacon.Metadata().Spec.DepositChainID)
+	if chainID.Cmp(big.NewInt(0)) == 0 {
+		return nil, fmt.Errorf("failed to get chain ID from beacon node metadata")
+	}
+
+	signer := types.LatestSignerForChainID(chainID)
+
 	for index, transaction := range transactions {
-		from, err := types.Sender(types.LatestSignerForChainID(transaction.ChainId()), transaction)
+		from, err := types.Sender(signer, transaction)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get transaction sender: %v", err)
 		}
@@ -298,11 +311,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 
 		if transaction.To() != nil {
 			to = transaction.To().Hex()
-		}
-
-		chainID := transaction.ChainId()
-		if chainID == nil {
-			return nil, fmt.Errorf("failed to get transaction chain ID")
 		}
 
 		tx := &xatuethv1.Transaction{

@@ -105,7 +105,7 @@ func (c *Client) HandleNewNodeRecord(ctx context.Context, record *string) error 
 	return c.proc.Write(ctx, []*string{record})
 }
 
-func (c *Client) ListStaleNodeRecords(ctx context.Context) ([]string, error) {
+func (c *Client) ListStaleExecutionNodeRecords(ctx context.Context) ([]string, error) {
 	req := xatu.ListStalledExecutionNodeRecordsRequest{
 		PageSize: c.config.ConcurrentExecutionPeers,
 	}
@@ -114,6 +114,23 @@ func (c *Client) ListStaleNodeRecords(ctx context.Context) ([]string, error) {
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	records, err := c.pb.ListStalledExecutionNodeRecords(ctx, &req, grpc.UseCompressor(gzip.Name))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return records.NodeRecords, nil
+}
+
+func (c *Client) ListStaleConsensusNodeRecords(ctx context.Context) ([]string, error) {
+	req := xatu.ListStalledConsensusNodeRecordsRequest{
+		PageSize: c.config.ConcurrentConsensusPeers,
+	}
+
+	md := metadata.New(c.config.Headers)
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	records, err := c.pb.ListStalledConsensusNodeRecords(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 	if err != nil {
 		return nil, err
@@ -133,6 +150,21 @@ func (c *Client) HandleExecutionNodeRecordStatus(ctx context.Context, status *xa
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	_, err := c.pb.CreateExecutionNodeRecordStatus(ctx, &req, grpc.UseCompressor(gzip.Name))
+
+	return err
+}
+
+func (c *Client) HandleConsensusNodeRecordStatus(ctx context.Context, status *xatu.ConsensusNodeStatus) error {
+	c.log.WithField("record", status.NodeRecord).Debug("found consensus node status, sending to coordinator")
+
+	req := xatu.CreateConsensusNodeRecordStatusRequest{
+		Status: status,
+	}
+
+	md := metadata.New(c.config.Headers)
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	_, err := c.pb.CreateConsensusNodeRecordStatus(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 	return err
 }

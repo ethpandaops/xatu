@@ -94,7 +94,7 @@ func (c *Coordinator) Start(ctx context.Context) error {
 		c.discV5 = discovery.NewDiscV5(ctx, c.config.Restart, c.log)
 
 		c.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
-			return c.handler(ctx, node, "discV4")
+			return c.handler(ctx, node, "discV5")
 		})
 	}
 
@@ -136,7 +136,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 					}
 				}
 
-				req := xatu.GetDiscoveryNodeRecordRequest{
+				req := xatu.GetDiscoveryExecutionNodeRecordRequest{
 					NetworkIds:   c.config.NetworkIds,
 					ForkIdHashes: forkIDHashes,
 				}
@@ -144,22 +144,58 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				md := metadata.New(c.config.Headers)
 				ctx = metadata.NewOutgoingContext(ctx, md)
 
-				res, err := c.pb.GetDiscoveryNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
+				res, err := c.pb.GetDiscoveryExecutionNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a discovery node record")
+					c.log.WithError(err).Error("Failed to get a execution discovery node record")
 
 					return
 				}
 
-				if err = c.discV4.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV4 boot nodes")
+				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
+					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
 
 					return
 				}
 
-				if errS := c.discV4.Start(ctx); errS != nil {
-					c.log.WithError(errS).Error("Failed to start discV4")
+				if err := c.discV5.Start(ctx); err != nil {
+					c.log.WithError(err).Error("Failed to start discV5")
+
+					return
+				}
+			},
+			ctx,
+		),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	); err != nil {
+		return err
+	}
+
+	if _, err := s.NewJob(
+		gocron.DurationJob(c.config.Restart),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				forkDigests := make([][]byte, len(c.config.ForkDigests))
+
+				for i, forkDigest := range c.config.ForkDigests {
+					forkDigestBytes, err := hex.DecodeString(forkDigest[2:])
+					if err == nil {
+						forkDigests[i] = forkDigestBytes
+					}
+				}
+
+				req := xatu.GetDiscoveryConsensusNodeRecordRequest{
+					NetworkIds:  c.config.NetworkIds,
+					ForkDigests: forkDigests,
+				}
+
+				md := metadata.New(c.config.Headers)
+				ctx = metadata.NewOutgoingContext(ctx, md)
+
+				res, err := c.pb.GetDiscoveryConsensusNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
+
+				if err != nil {
+					c.log.WithError(err).Error("Failed to get a consensus discovery node record")
 
 					return
 				}

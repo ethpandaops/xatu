@@ -1,0 +1,23 @@
+---
+description: Xatu Output Sink - gRPC-based event delivery to upstream Xatu server
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Xatu Output Sink
+
+gRPC-based output sink that delivers events to upstream Xatu server with batching, retry logic, and TLS support.
+
+## Key Integration Patterns
+- Use `BatchItemProcessor` for efficient batching with configurable queue and batch sizes
+- Implement exponential backoff retry with `retry.BackoffExponential` for upstream failures  
+- Support both TLS and insecure gRPC connections based on configuration
+- Apply gzip compression for all upstream requests to reduce bandwidth
+
+## Critical Design Constraints
+- Maintain stateless ItemExporter with connection lifecycle tied to component lifecycle
+- Always include keepalive configuration for long-running gRPC connections
+- Filter events before batching to avoid processing dropped events upstream
+- Use structured metadata headers for authentication and request context

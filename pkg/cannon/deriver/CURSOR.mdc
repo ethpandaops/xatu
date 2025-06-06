@@ -1,0 +1,22 @@
+---
+description: Deriver - Event derivation system for extracting Ethereum data from beacon blocks
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Deriver Component
+
+Event derivation system that extracts structured data from beacon blocks using pluggable deriver implementations.
+
+## Core Architecture Pattern
+- **EventDeriver Interface**: All derivers implement unified interface with Start/Stop lifecycle, Name/CannonType identification, and ActivationFork fork requirements
+- **Versioned API Structure**: Organize derivers by Beacon API version (v1/, v2/) to handle breaking changes in upstream specifications
+- **Callback-Based Event Emission**: Use OnEventsDerived callbacks for loose coupling between derivation and output handling
+
+## Implementation Requirements
+- Implement EventDeriver interface for all new derivers with proper ActivationFork specification
+- Register new derivers in compile-time interface validation (var _ EventDeriver = statements)
+- Place derivers in appropriate version directory based on Beacon API compatibility
+- Follow fork-aware activation pattern - derivers must declare minimum required fork version

@@ -1,0 +1,26 @@
+---
+description: Relay Monitor - MEV relay monitoring component that fetches bid traces and payload delivery data
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Relay Monitor Component
+
+Monitors MEV relay infrastructure by fetching bid traces and payload delivery data using slot-based scheduling.
+
+## Key Integration Patterns
+- **Slot-based Scheduling**: Use ethereum.Wallclock().OnSlotChanged() for time-sensitive operations
+- **Multi-relay Support**: Each relay.Client operates independently with consistent interfaces
+- **Event-driven Architecture**: All data flows through handleNewDecoratedEvent() pipeline
+
+## Critical Constraints
+- **Clock Drift Sync**: Always sync clock drift via NTP before scheduling operations
+- **Duplicate Prevention**: Use bidCache.Has() before processing bid traces to prevent duplicates
+- **Stateless Design**: Each relay client maintains no state between polling cycles
+
+## Timing Requirements
+- Bid traces fetch at configurable slot offsets (Schedule.AtSlotTimes)
+- Payload delivery data fetched after slot completion
+- All events timestamped with clock drift compensation

@@ -10,6 +10,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+//go:generate mockgen -package mock -destination mock/sink.mock.go github.com/ethpandaops/xatu/pkg/output Sink
+
 type SinkType string
 
 const (

@@ -37,10 +37,39 @@ outputs:
     type: stdout
 # traces:
 #   enabled: true
+#   # If true, the root rpc events will be recorded (if sharding config dictates) even if
+#   # there are no rpc meta/control level messages.
+#   alwaysRecordRootRpcEvents: false
 #   topics:
-#     ".*beacon_attestation.*":
-#       totalShards: 64
-#       activeShards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+#     "(?i).*add_peer.*":
+#       shardingKey: "PeerID"
+#       totalShards: 512
+#       activeShards: ["0-255"] # Range syntax - expands to shards 0 through 255
+#     "(?i).*beacon_attestation.*":
+#       shardingKey: "MsgID"
+#       totalShards: 512
+#       activeShards: [0, "10-20", 50] # Mix of individual shards and ranges
+#     # RPC meta control events are depending on recv_rpc, send_rpc or drop_rpc events
+#     "(?i).*rpc_meta_control_ihave.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0, 1, 2, 3, 4]
+#     "(?i).*rpc_meta_control_iwant.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_idontwant.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_graft.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
+#     "(?i).*rpc_meta_control_prune.*":
+#       shardingKey: "MsgID"
+#       totalShards: 1
+#       activeShards: [0]
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

@@ -1,0 +1,23 @@
+---
+description: Kafka Output - Apache Kafka sink for high-throughput event streaming
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Kafka Output
+
+Apache Kafka sink implementation providing high-throughput event streaming with batch processing and configurable reliability.
+
+## Key Integration Patterns
+- Use IBM Sarama library for Kafka producer operations with `sarama.SyncProducer`
+- Implement `BatchItemProcessor` pattern for efficient message batching
+- Apply compression strategies (gzip, snappy, lz4, zstd) via `CompressionStrategy` enums
+- Route events using `event.Id` as partition key for ordered processing
+
+## Important Constraints
+- TLS configuration requires both certificate and key paths when enabled
+- Message size validation against `FlushBytes` to prevent oversized messages
+- Required acknowledgment levels (none, leader, all) affect delivery guarantees
+- Partition strategy selection impacts message distribution across Kafka partitions

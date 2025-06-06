@@ -1,0 +1,21 @@
+---
+description: Execution P2P client - Connects to execution layer peers to collect mempool transactions
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Execution P2P Client
+
+Connects to individual execution layer peers via mimicry client to collect mempool transaction data.
+
+## Key Integration Patterns
+- **Mimicry client wrapper**: Uses ethcore mimicry.Client to establish P2P connections with execution peers
+- **Shared transaction cache**: Implements TTL cache coordination to avoid duplicate transaction processing across peers
+- **Batch transaction processing**: Uses processor.BatchItemProcessor for efficient transaction hash retrieval and processing
+
+## Important Constraints
+- **Capture delay avoidance**: Implements ignoreBefore timing to skip initial transaction pool dumps from new peer connections
+- **Transaction deduplication**: Must coordinate with shared cache before processing to prevent duplicate events
+- **Async transaction fetching**: GetPooledTransactions calls must be handled asynchronously to avoid blocking peer communication

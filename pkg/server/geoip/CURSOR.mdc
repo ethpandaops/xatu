@@ -1,0 +1,21 @@
+---
+description: GeoIP - IP geolocation service with pluggable provider support
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# GeoIP Component Rules
+
+IP geolocation service that supports multiple providers via adapter pattern for enriching network data with geographic information.
+
+## Key Integration Pattern
+- **Provider Interface**: All geoip providers must implement the Provider interface (Start/Stop, LookupIP)
+- **Factory Pattern**: NewProvider function creates providers based on type with unified configuration approach
+- **Optional Service**: Designed to be safely disabled when geoip.enabled=false
+
+## Important Constraints  
+- **Context-Aware Operations**: All LookupIP calls must include context for cancellation/timeout
+- **Lifecycle Management**: Providers must support Start/Stop for resource management (database connections, etc.)
+- **RawMessage Config**: Use RawMessage pattern for type-specific configuration unmarshaling

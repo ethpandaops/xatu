@@ -1,0 +1,22 @@
+---
+description: Services - Core service interfaces and implementations for Cannon Ethereum data collection
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Services Package
+
+Core service interfaces and implementations that provide beacon client abstraction, duties management, and metadata services for Cannon's finalized data collection.
+
+## Key Implementation Patterns
+- **Service Interface**: All services implement `Service` interface with Start/Stop/Ready lifecycle and OnReady callbacks
+- **Retry with Backoff**: Services use exponential backoff for beacon API operations with context-aware error handling
+- **TTL Caching**: Beacon committees and metadata cached with 90-minute TTL to reduce API load
+- **Event Subscriptions**: Services support callback registration for data availability notifications
+
+## Critical Constraints
+- Services must be ready before allowing data collection - check Ready() status
+- Mutex protection required for concurrent access to cached data and subscription lists
+- Always include retry logic with exponential backoff for beacon node interactions

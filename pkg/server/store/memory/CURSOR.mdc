@@ -1,0 +1,21 @@
+---
+description: Memory - In-memory cache implementation using TTL cache with Prometheus metrics
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Memory Cache Component Rules
+
+In-memory cache implementation using ttlcache library with comprehensive Prometheus metrics tracking.
+
+## Key Implementation Patterns
+- **TTL Cache Integration**: Uses `jellydator/ttlcache/v3` as the underlying storage engine with automatic expiration
+- **Operation Metrics**: Tracks all cache operations (get/set/delete) with hit/miss status via Prometheus counters
+- **Zero Configuration**: Requires no external dependencies or configuration - ready to use out of the box
+
+## Critical Design Decisions
+- **Ephemeral Storage**: Data is lost on process restart - suitable only for temporary caching needs
+- **Automatic Metrics Registration**: Prometheus metrics are registered globally during initialization
+- **Context Awareness**: All operations accept context for cancellation but don't currently use it

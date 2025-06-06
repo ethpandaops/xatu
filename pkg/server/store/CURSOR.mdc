@@ -1,0 +1,21 @@
+---
+description: Store - Cache abstraction layer supporting multiple backend implementations
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Store Component Rules
+
+Cache abstraction layer that supports multiple backend implementations (memory, Redis server, Redis cluster).
+
+## Key Integration Patterns
+- **Factory Pattern**: Use `NewCache()` function with type-based instantiation for all cache implementations
+- **Interface-Based Design**: All cache backends must implement the `Cache` interface with standardized methods
+- **Type-Safe Configuration**: Use `RawMessage` for deferred YAML unmarshaling to specific backend configs
+
+## Critical Design Constraints
+- **Consistent Lifecycle**: All cache implementations must support Start/Stop methods for coordinated management
+- **Standard Error Handling**: Return errors as last parameter, use context for cancellation
+- **TTL Support**: All cache operations must support time-to-live for automatic expiration

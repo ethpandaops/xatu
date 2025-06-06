@@ -1,0 +1,22 @@
+---
+description: ETH v2 Beacon API derivers - Extract beacon chain events from finalized blocks
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# ETH v2 Beacon API Derivers
+
+ETH v2 Beacon API data derivers that extract specific beacon chain events from finalized blockchain data.
+
+## Key Implementation Pattern
+- **Uniform Deriver Structure**: All v2 derivers follow identical pattern with backfilling checkpoint iterator and event callbacks
+- **Multi-version Ethereum Spec Support**: Handle version-specific data extraction (Phase0, Bellatrix, Capella, Deneb, Electra)
+- **Exponential Backoff Retry**: Use consistent retry logic with 3-minute max interval for robustness
+
+## Critical Requirements  
+- All derivers extract events from beacon blocks during slot processing within epoch iteration
+- Use snappy compression for transaction data and SSZ marshaling for block data
+- Always set FinalizedWhenRequested=true for cannon-derived events
+- Include comprehensive additional metadata (slot, epoch, block root, transaction counts/sizes)

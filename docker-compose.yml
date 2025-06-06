@@ -176,6 +176,8 @@ services:
       - ""
     image: postgres:17
     container_name: xatu-postgres
+    ports:
+      - "${POSTGRES_ADDRESS:-0.0.0.0}:${POSTGRES_PORT:-5432}:5432"
     hostname: xatu-postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data

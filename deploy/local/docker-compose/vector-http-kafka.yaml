@@ -86,6 +86,8 @@ transforms:
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       beacon_api_eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
       mev_relay_validator_registration: .event.name == "MEV_RELAY_VALIDATOR_REGISTRATION"
+      node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
+      node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -1217,3 +1219,35 @@ sinks:
       codec: json
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  node_record_consensus_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.node_record_consensus
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: node-record-consensus
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  node_record_execution_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.node_record_execution
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: node-record-execution
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json

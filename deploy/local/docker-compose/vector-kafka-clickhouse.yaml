@@ -2147,6 +2147,88 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  node_record_consensus_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_consensus
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .enr = .data.enr
+      .timestamp = .data.timestamp
+      .name = .data.name
+      .fork_digest = .data.fork_digest
+      .finalized_root = .data.finalized_root
+      .finalized_epoch = .data.finalized_epoch
+      .head_root = .data.head_root
+      .head_slot = .data.head_slot
+      .csc = .data.csc
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.data)
+  node_record_execution_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_execution
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .enr = .data.enr
+      .name = .data.name
+      # Parse capabilities string into array
+      if exists(.data.capabilities) && .data.capabilities != null {
+        .capabilities = split(.data.capabilities, ",")
+      } else {
+        .capabilities = []
+      }
+      .protocol_version = .data.protocol_version
+      .total_difficulty = .data.total_difficulty
+      .head = .data.head
+      .genesis = .data.genesis
+      .fork_id_hash = .data.fork_id_hash
+      .fork_id_next = .data.fork_id_next
+      # Parsed ENR fields
+      .node_id = .data.node_id
+      .client_id = .data.client_id
+      .ip4 = .data.ip4
+      .ip6 = .data.ip6
+      .tcp4 = .data.tcp4
+      .tcp6 = .data.tcp6
+      .udp4 = .data.udp4
+      .udp6 = .data.udp6
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2835,89 +2917,6 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-  node_record_consensus_formatted:
-    type: remap
-    inputs:
-      - xatu_server_events_router.node_record_consensus
-    source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .enr = .data.enr
-      .timestamp = .data.timestamp
-      .name = .data.name
-      .fork_digest = .data.fork_digest
-      .finalized_root = .data.finalized_root
-      .finalized_epoch = .data.finalized_epoch
-      .head_root = .data.head_root
-      .head_slot = .data.head_slot
-      .csc = .data.csc
-      .updated_date_time = to_unix_timestamp(now())
-      .meta_client_name = .meta.client.name
-      .meta_client_id = .meta.client.id
-      .meta_client_version = .meta.client.version
-      .meta_client_implementation = .meta.client.implementation
-      .meta_client_os = .meta.client.os
-      .meta_network_id = .meta.client.ethereum.network.id
-      .meta_network_name = .meta.client.ethereum.network.name
-      .meta_labels = .meta.client.labels
-      del(.event)
-      del(.meta)
-      del(.data)
-  node_record_execution_formatted:
-    type: remap
-    inputs:
-      - xatu_server_events_router.node_record_execution
-    source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .enr = .data.enr
-      .name = .data.name
-      # Parse capabilities string into array
-      if exists(.data.capabilities) && .data.capabilities != null {
-        .capabilities = split(.data.capabilities, ",")
-      } else {
-        .capabilities = []
-      }
-      .protocol_version = .data.protocol_version
-      .total_difficulty = .data.total_difficulty
-      .head = .data.head
-      .genesis = .data.genesis
-      .fork_id_hash = .data.fork_id_hash
-      .fork_id_next = .data.fork_id_next
-      # Parsed ENR fields
-      .node_id = .data.node_id
-      .client_id = .data.client_id
-      .ip4 = .data.ip4
-      .ip6 = .data.ip6
-      .tcp4 = .data.tcp4
-      .tcp6 = .data.tcp6
-      .udp4 = .data.udp4
-      .udp6 = .data.udp6
-      .updated_date_time = to_unix_timestamp(now())
-      .meta_client_name = .meta.client.name
-      .meta_client_id = .meta.client.id
-      .meta_client_version = .meta.client.version
-      .meta_client_implementation = .meta.client.implementation
-      .meta_client_os = .meta.client.os
-      .meta_network_id = .meta.client.ethereum.network.id
-      .meta_network_name = .meta.client.ethereum.network.name
-      .meta_labels = .meta.client.labels
-      del(.event)
-      del(.meta)
-      del(.data)
-sinks:
   node_record_consensus_clickhouse:
     type: clickhouse
     inputs:
@@ -2958,5 +2957,3 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-
-

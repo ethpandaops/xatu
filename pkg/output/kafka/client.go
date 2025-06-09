@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/IBM/sarama"
@@ -34,6 +35,16 @@ var (
 	PartitionStrategyRandom PartitionStrategy = "random"
 )
 
+type SASLMechanism string
+
+var (
+	SASLTypeOAuth       SASLMechanism = "OAUTHBEARER"
+	SASLTypePlaintext   SASLMechanism = "PLAIN"
+	SASLTypeSCRAMSHA256 SASLMechanism = "SCRAM-SHA-256"
+	SASLTypeSCRAMSHA512 SASLMechanism = "SCRAM-SHA-512"
+	SASLTypeGSSAPI      SASLMechanism = "GSSAPI"
+)
+
 func NewSyncProducer(config *Config) (sarama.SyncProducer, error) {
 	producerConfig, err := Init(config)
 	if err != nil {
@@ -51,8 +62,19 @@ func Init(config *Config) (*sarama.Config, error) {
 	c.Producer.Flush.Frequency = config.FlushFrequency
 	c.Producer.Retry.Max = config.MaxRetries
 	c.Producer.Return.Successes = true
+	c.Net.TLS.Enable = config.TLS
+	c.Metadata.Full = false
 
-	if config.TLSClientConfig.CertificatePath != "" {
+	if config.Version != "" {
+		version, err := sarama.ParseKafkaVersion(config.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		c.Version = version
+	}
+
+	if config.TLSClientConfig != nil {
 		clientCertificate, err := tls.LoadX509KeyPair(config.TLSClientConfig.CertificatePath, config.TLSClientConfig.KeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read client certificate: %w", err)
@@ -69,6 +91,38 @@ func Init(config *Config) (*sarama.Config, error) {
 
 		c.Net.TLS.Enable = true
 		c.Net.TLS.Config = tlsConfig
+	}
+
+	if config.SASLConfig != nil {
+		var password string
+		if config.SASLConfig.Password != "" {
+			password = config.SASLConfig.Password
+		} else if config.SASLConfig.PasswordFile != "" {
+			passwordFile, err := os.ReadFile(config.SASLConfig.PasswordFile)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read client password: %w", err)
+			}
+
+			password = strings.TrimSpace(string(passwordFile))
+		}
+
+		c.Net.SASL.Enable = true
+		c.Net.SASL.Version = config.SASLConfig.Version
+		c.Net.SASL.User = config.SASLConfig.User
+		c.Net.SASL.Password = password
+
+		switch config.SASLConfig.Mechanism {
+		case SASLTypeOAuth:
+			c.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+		case SASLTypeSCRAMSHA256:
+			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+		case SASLTypeSCRAMSHA512:
+			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+		case SASLTypeGSSAPI:
+			c.Net.SASL.Mechanism = sarama.SASLTypeGSSAPI
+		default:
+			c.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+		}
 	}
 
 	switch config.RequiredAcks {

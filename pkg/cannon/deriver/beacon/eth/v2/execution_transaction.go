@@ -246,20 +246,20 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	blobSidecars := []*deneb.BlobSidecar{}
 
 	if block.Version >= spec.DataVersionDeneb {
-		sidecars, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
-		if err != nil {
+		sidecars, errr := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+		if errr != nil {
 			var apiErr *api.Error
-			if errors.As(err, &apiErr) {
+			if errors.As(errr, &apiErr) {
 				switch apiErr.StatusCode {
 				case 404:
-					b.log.WithError(err).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
+					b.log.WithError(errr).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
 				case 503:
 					return nil, errors.New("beacon node is syncing")
 				default:
-					return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+					return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 				}
 			} else {
-				return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+				return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 			}
 		}
 

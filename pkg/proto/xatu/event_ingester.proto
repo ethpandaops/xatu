@@ -823,6 +823,17 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  message AdditionalEthV1EventsDataColumnSidecarData {
+    // Epoch contains the epoch information for the data column sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the data column sidecar.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the data column sidecar.
+    PropagationV2 propagation = 3;
+  }
+
   // AdditionalLibP2PTraceDropRPCData: Holds additional data for a drop RPC event in LibP2P tracing.
   message AdditionalLibP2PTraceDropRPCData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1359,6 +1370,9 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    // AdditionalEthV1EventsDataColumnSidecarData contains additional data about the
+    // eth v1 data column sidecar event.
+    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 83 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1535,6 +1549,7 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
     LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
     LIBP2P_TRACE_RPC_META_MESSAGE = 71;
+    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 72;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1711,6 +1726,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 73
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   };
 }
 

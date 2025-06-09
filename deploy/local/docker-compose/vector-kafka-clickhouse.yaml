@@ -551,9 +551,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .block_root = .data.block_root
-      .blob_index = .data.index
-      .kzg_commitment = .data.kzg_commitment
-      .versioned_hash = .data.versioned_hash
+      .column_index = .data.index
+      .kzg_commitments = .data.kzg_commitments
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)

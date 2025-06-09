@@ -22,6 +22,7 @@ CREATE TABLE beacon_api_eth_v1_events_data_column_sidecar_local on cluster '{clu
     meta_client_geo_latitude Nullable(Float64) CODEC(ZSTD(1)),
     meta_client_geo_autonomous_system_number Nullable(UInt32) CODEC(ZSTD(1)),
     meta_client_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
+    meta_client_clock_drift UInt64 CODEC(ZSTD(1)),
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String),
     meta_consensus_version LowCardinality(String),
@@ -34,8 +35,6 @@ CREATE TABLE beacon_api_eth_v1_events_data_column_sidecar_local on cluster '{clu
 PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
-ALTER TABLE beacon_api_eth_v1_events_data_column_sidecar_local 
-ADD COLUMN meta_client_clock_drift UInt64 CODEC(ZSTD(1)) AFTER meta_client_geo_autonomous_system_organization;
 
 CREATE TABLE beacon_api_eth_v1_events_data_column_sidecar on cluster '{cluster}' AS beacon_api_eth_v1_events_data_column_sidecar_local
 ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_data_column_sidecar_local, rand());

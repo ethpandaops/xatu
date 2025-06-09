@@ -1251,6 +1251,77 @@ func (x *EventBlockGossip) GetBlock() string {
 	return ""
 }
 
+type EventDataColumnSidecar struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Slot           *wrapperspb.UInt64Value `protobuf:"bytes,1,opt,name=slot,proto3" json:"slot,omitempty"`
+	Index          *wrapperspb.UInt64Value `protobuf:"bytes,2,opt,name=index,proto3" json:"index,omitempty"`
+	BlockRoot      string                  `protobuf:"bytes,3,opt,name=block_root,proto3" json:"block_root,omitempty"`
+	KzgCommitments []string                `protobuf:"bytes,4,rep,name=kzg_commitments,proto3" json:"kzg_commitments,omitempty"`
+}
+
+func (x *EventDataColumnSidecar) Reset() {
+	*x = EventDataColumnSidecar{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_events_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventDataColumnSidecar) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventDataColumnSidecar) ProtoMessage() {}
+
+func (x *EventDataColumnSidecar) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_events_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EventDataColumnSidecar.ProtoReflect.Descriptor instead.
+func (*EventDataColumnSidecar) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_events_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *EventDataColumnSidecar) GetSlot() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Slot
+	}
+	return nil
+}
+
+func (x *EventDataColumnSidecar) GetIndex() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Index
+	}
+	return nil
+}
+
+func (x *EventDataColumnSidecar) GetBlockRoot() string {
+	if x != nil {
+		return x.BlockRoot
+	}
+	return ""
+}
+
+func (x *EventDataColumnSidecar) GetKzgCommitments() []string {
+	if x != nil {
+		return x.KzgCommitments
+	}
+	return nil
+}
+
 var File_pkg_proto_eth_v1_events_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_eth_v1_events_proto_rawDesc = []byte{
@@ -1459,10 +1530,23 @@ var file_pkg_proto_eth_v1_events_proto_rawDesc = []byte{
 	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74,
 	0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x14, 0x0a,
 	0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x62, 0x6c,
-	0x6f, 0x63, 0x6b, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61,
-	0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68,
-	0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x63, 0x6b, 0x22, 0xc8, 0x01, 0x0a, 0x16, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x44, 0x61, 0x74,
+	0x61, 0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x53, 0x69, 0x64, 0x65, 0x63, 0x61, 0x72, 0x12, 0x30,
+	0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55,
+	0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74,
+	0x12, 0x32, 0x0a, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x69,
+	0x6e, 0x64, 0x65, 0x78, 0x12, 0x1e, 0x0a, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x6f,
+	0x6f, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
+	0x72, 0x6f, 0x6f, 0x74, 0x12, 0x28, 0x0a, 0x0f, 0x6b, 0x7a, 0x67, 0x5f, 0x63, 0x6f, 0x6d, 0x6d,
+	0x69, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x6b,
+	0x7a, 0x67, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x2e,
+	0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68,
+	0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b,
+	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1477,7 +1561,7 @@ func file_pkg_proto_eth_v1_events_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v1_events_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_pkg_proto_eth_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_pkg_proto_eth_v1_events_proto_goTypes = []any{
 	(*EventHead)(nil),                   // 0: xatu.eth.v1.EventHead
 	(*EventHeadV2)(nil),                 // 1: xatu.eth.v1.EventHeadV2
@@ -1497,34 +1581,37 @@ var file_pkg_proto_eth_v1_events_proto_goTypes = []any{
 	(*EventContributionAndProofV2)(nil), // 15: xatu.eth.v1.EventContributionAndProofV2
 	(*EventBlobSidecar)(nil),            // 16: xatu.eth.v1.EventBlobSidecar
 	(*EventBlockGossip)(nil),            // 17: xatu.eth.v1.EventBlockGossip
-	(*wrapperspb.UInt64Value)(nil),      // 18: google.protobuf.UInt64Value
-	(*SyncCommitteeContribution)(nil),   // 19: xatu.eth.v1.SyncCommitteeContribution
-	(*SyncCommitteeContributionV2)(nil), // 20: xatu.eth.v1.SyncCommitteeContributionV2
+	(*EventDataColumnSidecar)(nil),      // 18: xatu.eth.v1.EventDataColumnSidecar
+	(*wrapperspb.UInt64Value)(nil),      // 19: google.protobuf.UInt64Value
+	(*SyncCommitteeContribution)(nil),   // 20: xatu.eth.v1.SyncCommitteeContribution
+	(*SyncCommitteeContributionV2)(nil), // 21: xatu.eth.v1.SyncCommitteeContributionV2
 }
 var file_pkg_proto_eth_v1_events_proto_depIdxs = []int32{
-	18, // 0: xatu.eth.v1.EventHeadV2.slot:type_name -> google.protobuf.UInt64Value
-	18, // 1: xatu.eth.v1.EventBlockV2.slot:type_name -> google.protobuf.UInt64Value
-	18, // 2: xatu.eth.v1.EventChainReorgV2.slot:type_name -> google.protobuf.UInt64Value
-	18, // 3: xatu.eth.v1.EventChainReorgV2.depth:type_name -> google.protobuf.UInt64Value
-	18, // 4: xatu.eth.v1.EventChainReorgV2.epoch:type_name -> google.protobuf.UInt64Value
-	18, // 5: xatu.eth.v1.EventFinalizedCheckpointV2.epoch:type_name -> google.protobuf.UInt64Value
-	18, // 6: xatu.eth.v1.EventVoluntaryExitMessageV2.epoch:type_name -> google.protobuf.UInt64Value
-	18, // 7: xatu.eth.v1.EventVoluntaryExitMessageV2.validator_index:type_name -> google.protobuf.UInt64Value
+	19, // 0: xatu.eth.v1.EventHeadV2.slot:type_name -> google.protobuf.UInt64Value
+	19, // 1: xatu.eth.v1.EventBlockV2.slot:type_name -> google.protobuf.UInt64Value
+	19, // 2: xatu.eth.v1.EventChainReorgV2.slot:type_name -> google.protobuf.UInt64Value
+	19, // 3: xatu.eth.v1.EventChainReorgV2.depth:type_name -> google.protobuf.UInt64Value
+	19, // 4: xatu.eth.v1.EventChainReorgV2.epoch:type_name -> google.protobuf.UInt64Value
+	19, // 5: xatu.eth.v1.EventFinalizedCheckpointV2.epoch:type_name -> google.protobuf.UInt64Value
+	19, // 6: xatu.eth.v1.EventVoluntaryExitMessageV2.epoch:type_name -> google.protobuf.UInt64Value
+	19, // 7: xatu.eth.v1.EventVoluntaryExitMessageV2.validator_index:type_name -> google.protobuf.UInt64Value
 	8,  // 8: xatu.eth.v1.EventVoluntaryExit.message:type_name -> xatu.eth.v1.EventVoluntaryExitMessage
 	9,  // 9: xatu.eth.v1.EventVoluntaryExitV2.message:type_name -> xatu.eth.v1.EventVoluntaryExitMessageV2
-	19, // 10: xatu.eth.v1.ContributionAndProof.contribution:type_name -> xatu.eth.v1.SyncCommitteeContribution
-	18, // 11: xatu.eth.v1.ContributionAndProofV2.aggregator_index:type_name -> google.protobuf.UInt64Value
-	20, // 12: xatu.eth.v1.ContributionAndProofV2.contribution:type_name -> xatu.eth.v1.SyncCommitteeContributionV2
+	20, // 10: xatu.eth.v1.ContributionAndProof.contribution:type_name -> xatu.eth.v1.SyncCommitteeContribution
+	19, // 11: xatu.eth.v1.ContributionAndProofV2.aggregator_index:type_name -> google.protobuf.UInt64Value
+	21, // 12: xatu.eth.v1.ContributionAndProofV2.contribution:type_name -> xatu.eth.v1.SyncCommitteeContributionV2
 	12, // 13: xatu.eth.v1.EventContributionAndProof.message:type_name -> xatu.eth.v1.ContributionAndProof
 	13, // 14: xatu.eth.v1.EventContributionAndProofV2.message:type_name -> xatu.eth.v1.ContributionAndProofV2
-	18, // 15: xatu.eth.v1.EventBlobSidecar.slot:type_name -> google.protobuf.UInt64Value
-	18, // 16: xatu.eth.v1.EventBlobSidecar.index:type_name -> google.protobuf.UInt64Value
-	18, // 17: xatu.eth.v1.EventBlockGossip.slot:type_name -> google.protobuf.UInt64Value
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	19, // 15: xatu.eth.v1.EventBlobSidecar.slot:type_name -> google.protobuf.UInt64Value
+	19, // 16: xatu.eth.v1.EventBlobSidecar.index:type_name -> google.protobuf.UInt64Value
+	19, // 17: xatu.eth.v1.EventBlockGossip.slot:type_name -> google.protobuf.UInt64Value
+	19, // 18: xatu.eth.v1.EventDataColumnSidecar.slot:type_name -> google.protobuf.UInt64Value
+	19, // 19: xatu.eth.v1.EventDataColumnSidecar.index:type_name -> google.protobuf.UInt64Value
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v1_events_proto_init() }
@@ -1750,6 +1837,18 @@ func file_pkg_proto_eth_v1_events_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_eth_v1_events_proto_msgTypes[18].Exporter = func(v any, i int) any {
+			switch v := v.(*EventDataColumnSidecar); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1757,7 +1856,7 @@ func file_pkg_proto_eth_v1_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v1_events_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -716,6 +716,18 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsDataColumnSidecarData {
+    // Epoch contains the epoch information for the data column sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the data column sidecar.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the data column
+    // sidecar.
+    PropagationV2 propagation = 3;
+  }
+
   message AdditionalEthV1BeaconBlobSidecarData {
     // Epoch contains the epoch information for the blob sidecar.
     EpochV2 epoch = 1;
@@ -1255,6 +1267,9 @@ message ClientMeta {
     // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
     // v1 block gossip event.
     AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+    // AdditionalEthV1EventsDataColumnSidecarData contains additional data about the
+    // eth v1 data column sidecar event.
+    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 68 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1417,6 +1432,7 @@ message Event {
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
     BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
+    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 58;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1563,6 +1579,8 @@ message DecoratedEvent {
 
     xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 58
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   };
 }
 

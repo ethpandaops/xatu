@@ -41,9 +41,9 @@ type Peer struct {
 
 	txProc *processor.BatchItemProcessor[TransactionHashItem]
 
-	network       *networks.Network
-	chainConfig   *params.ChainConfig
-	signer        types.Signer
+	network        *networks.Network
+	chainConfig    *params.ChainConfig
+	signer         types.Signer
 	ethereumConfig *ethereum.Config
 
 	name            string
@@ -193,7 +193,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		} else {
 			p.network = networks.DeriveFromID(status.NetworkID)
 		}
-		
+
 		p.forkID = &xatu.ForkID{
 			Hash: "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
 			Next: fmt.Sprintf("%d", status.ForkID.Next),

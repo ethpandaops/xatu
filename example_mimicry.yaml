@@ -20,6 +20,9 @@ ntpServer: time.google.com
 # when a peer is first connected to.
 captureDelay: 3m
 
+# ethereum:
+#   overrideNetworkName: devnet
+
 coordinator:
   type: static
   config:

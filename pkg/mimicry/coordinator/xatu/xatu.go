@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
 	xatuPeer "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/peer"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	xatupb "github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
@@ -18,9 +19,10 @@ import (
 const Type = "xatu"
 
 type Xatu struct {
-	handlers     *handler.Peer
-	captureDelay time.Duration
-	log          logrus.FieldLogger
+	handlers       *handler.Peer
+	captureDelay   time.Duration
+	ethereumConfig *ethereum.Config
+	log            logrus.FieldLogger
 
 	cache       *cache.SharedCache
 	coordinator *xatuCoordinator.Coordinator
@@ -31,7 +33,7 @@ type Xatu struct {
 	metrics *Metrics
 }
 
-func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, log logrus.FieldLogger) (*Xatu, error) {
+func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -48,14 +50,15 @@ func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, ca
 	handlers.ExecutionStatus = coordinator.HandleExecutionNodeRecordStatus
 
 	return &Xatu{
-		handlers:     handlers,
-		captureDelay: captureDelay,
-		log:          log,
-		cache:        cache.NewSharedCache(),
-		coordinator:  coordinator,
-		mu:           sync.Mutex{},
-		peers:        make(map[string]*xatuPeer.Peer),
-		metrics:      NewMetrics("xatu_mimicry_coordinator_xatu"),
+		handlers:       handlers,
+		captureDelay:   captureDelay,
+		ethereumConfig: ethereumConfig,
+		log:            log,
+		cache:          cache.NewSharedCache(),
+		coordinator:    coordinator,
+		mu:             sync.Mutex{},
+		peers:          make(map[string]*xatuPeer.Peer),
+		metrics:        NewMetrics("xatu_mimicry_coordinator_xatu"),
 	}, nil
 }
 
@@ -164,7 +167,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 
 				for _, record := range res.NodeRecords {
 					if _, ok := x.peers[record]; !ok {
-						x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay)
+						x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay, x.ethereumConfig)
 						if err := x.peers[record].Start(ctx); err != nil {
 							x.log.WithError(err).Error("failed to start peer")
 							delete(x.peers, record)

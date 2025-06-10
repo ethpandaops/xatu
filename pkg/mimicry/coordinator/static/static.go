@@ -22,7 +22,7 @@ type Static struct {
 
 	handlers *handler.Peer
 
-	captureDelay time.Duration
+	captureDelay   time.Duration
 	ethereumConfig *ethereum.Config
 
 	log logrus.FieldLogger

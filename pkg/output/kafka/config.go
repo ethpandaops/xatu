@@ -10,7 +10,7 @@ type Config struct {
 	Topic              string              `yaml:"topic"`
 	TLS                bool                `yaml:"tls" default:"false"`
 	TLSClientConfig    *TLSClientConfig    `yaml:"tlsClientConfig"`
-  SASLConfig         *SASLConfig         `yaml:"sasl"`
+	SASLConfig         *SASLConfig         `yaml:"sasl"`
 	MaxQueueSize       int                 `yaml:"maxQueueSize" default:"51200"`
 	BatchTimeout       time.Duration       `yaml:"batchTimeout" default:"5s"`
 	MaxExportBatchSize int                 `yaml:"maxExportBatchSize" default:"512"`
@@ -22,7 +22,7 @@ type Config struct {
 	Compression        CompressionStrategy `yaml:"compression" default:"none"`
 	RequiredAcks       RequiredAcks        `yaml:"requiredAcks" default:"leader"`
 	Partitioning       PartitionStrategy   `yaml:"partitioning" default:"none"`
-  Version            string              `yaml:"version"`
+	Version            string              `yaml:"version"`
 }
 
 type TLSClientConfig struct {

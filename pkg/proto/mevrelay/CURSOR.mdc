@@ -1,0 +1,22 @@
+---
+description: MEV Relay Protocol Buffers - Defines data structures for MEV relay monitoring
+globs: 
+  - "*.proto"
+  - "*.pb.go"
+alwaysApply: false
+---
+
+# MEV Relay Protocol Buffers
+
+Protocol buffer definitions for MEV relay data structures used by Xatu's relay monitoring component.
+
+## Key Patterns
+- Use `google.protobuf.wrappers` for nullable primitive types to distinguish between zero values and unset values
+- Apply `json_name` field options for consistent JSON serialization with snake_case naming
+- Maintain consistent field naming across related message types (e.g., `block_hash`, `proposer_pubkey`)
+
+## Message Structure
+- **BidTrace**: Core MEV bid information including block details, gas metrics, and builder/proposer keys
+- **ProposerPayloadDelivered**: Payload delivery confirmation with execution metrics
+- **Relay**: Relay endpoint identification (name and URL)
+- **ValidatorRegistration**: Validator registration messages with signatures for MEV relay participation

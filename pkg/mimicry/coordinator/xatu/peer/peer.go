@@ -8,6 +8,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -15,11 +16,12 @@ import (
 )
 
 type Peer struct {
-	log          logrus.FieldLogger
-	handlers     *handler.Peer
-	cache        *cache.SharedCache
-	retryDelay   time.Duration
-	captureDelay time.Duration
+	log            logrus.FieldLogger
+	handlers       *handler.Peer
+	cache          *cache.SharedCache
+	retryDelay     time.Duration
+	captureDelay   time.Duration
+	ethereumConfig *ethereum.Config
 
 	stopped bool
 	mu      sync.Mutex
@@ -27,14 +29,15 @@ type Peer struct {
 	Record *xatu.CoordinatedNodeRecord
 }
 
-func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay, captureDelay time.Duration) *Peer {
+func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay, captureDelay time.Duration, ethereumConfig *ethereum.Config) *Peer {
 	return &Peer{
-		log:          log,
-		handlers:     handlers,
-		cache:        sharedCache,
-		retryDelay:   retryDelay,
-		captureDelay: captureDelay,
-		stopped:      false,
+		log:            log,
+		handlers:       handlers,
+		cache:          sharedCache,
+		retryDelay:     retryDelay,
+		captureDelay:   captureDelay,
+		ethereumConfig: ethereumConfig,
+		stopped:        false,
 		Record: &xatu.CoordinatedNodeRecord{
 			NodeRecord:         record,
 			Connected:          false,
@@ -61,7 +64,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 				p.mu.Unlock()
 
-				peer, err := execution.New(ctx, p.log, p.Record.NodeRecord, p.handlers, p.captureDelay, p.cache)
+				peer, err := execution.New(ctx, p.log, p.Record.NodeRecord, p.handlers, p.captureDelay, p.cache, p.ethereumConfig)
 				if err != nil {
 					return err
 				}

@@ -1,0 +1,22 @@
+---
+description: Iterator - Epoch/slot iteration patterns for cannon data collection
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Iterator Component
+
+Provides epoch and slot iteration patterns for systematic cannon data collection with backfilling and checkpoint coordination.
+
+## Key Patterns
+- **BackfillingCheckpoint Iterator**: Coordinates bidirectional data collection (head + backfill) using checkpoint-based progress tracking
+- **Blockprint Iterator**: Handles slot-based iteration for external service synchronization with wait-and-retry logic
+- **Coordinator Integration**: All iterators maintain state via coordinator client for distributed collection consistency
+
+## Implementation Guidelines  
+- Implement observability tracing for all iterator Next() operations
+- Use phase0.Epoch/phase0.Slot types for time-based operations
+- Handle fork activation constraints - iterators must respect cannon type activation forks
+- Always include look-ahead epoch calculation for efficient batch processing

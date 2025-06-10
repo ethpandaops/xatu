@@ -1,0 +1,21 @@
+---
+description: Event - Type-safe routing system for Ethereum network events with validation and enrichment
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Event Router Rules
+
+Type-safe routing system that dispatches incoming Ethereum network events to versioned handlers with validation and enrichment.
+
+## Key Integration Patterns
+- **Router Registration Pattern**: All event types must register handlers via RegisterHandler() during router initialization
+- **Versioned Event Support**: Supports multiple API versions (v1, v2, v3) of the same event type with separate handlers
+- **Event Interface Contract**: All handlers implement Event interface with Type(), Validate(), Filter(), and AppendServerMeta() methods
+
+## Important Constraints
+- **Handler Registration Required**: Every supported event type must have a registered handler or routing will fail
+- **Type Safety**: Event routing is strictly typed using const Type definitions to prevent runtime errors
+- **Domain Segregation**: Events are organized by domain (beacon, libp2p, mempool, mevrelay, blockprint) with separate handler packages

@@ -1,0 +1,21 @@
+---
+description: Coordinator - gRPC client for distributed cannon coordination
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Coordinator Component
+
+gRPC client for coordinating distributed cannon data collection operations.
+
+## Key Integration Pattern
+- **gRPC Client Design**: Simple wrapper around xatu.CoordinatorClient protocol buffers interface
+- **Location Management**: Handles cannon location retrieval and upsert operations for distributed coordination
+- **Header Authentication**: Supports custom headers for authentication and metadata passing
+
+## Important Constraints
+- Minimal stateless client - no complex state management or caching
+- Always use gzip compression for gRPC calls to optimize network usage
+- TLS configuration must match coordinator server requirements

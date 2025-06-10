@@ -1,0 +1,21 @@
+---
+description: Beacon ETH V1 - Event handlers for Ethereum Beacon API v1 event types
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Beacon ETH V1 Event Handlers
+
+Handles versioned Ethereum Beacon API v1 event types with standardized validation, filtering, and metadata enrichment.
+
+## Key Patterns
+- **Event Handler Interface**: All handlers implement Type(), Validate(), Filter(), and AppendServerMeta() methods for consistent processing
+- **Proto Type Casting**: Each handler validates event data through explicit casting to expected proto message types
+- **Version Evolution**: Supports both v1 and v2 variants of event types to handle API evolution without breaking compatibility
+
+## Implementation Requirements
+- **Type Safety**: Always cast event data to expected proto type in Validate() method with proper error handling
+- **Consistent Logging**: Use structured logging with event type field for debugging and monitoring
+- **Stateless Design**: All methods must be context-based with no persistent state between calls

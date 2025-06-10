@@ -1,0 +1,22 @@
+---
+description: Output - Data output abstraction layer supporting multiple sink types
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Output Package
+
+Data output abstraction layer that supports multiple sink types (HTTP, Kafka, stdout, Xatu) with unified interface and event filtering.
+
+## Key Integration Patterns
+- Use factory pattern via `NewSink()` for all sink instantiation
+- Implement `Sink` interface for new output types with `Start`, `Stop`, `HandleNewDecoratedEvent` methods
+- Leverage `RawMessage` for type-safe sink configuration unmarshaling
+- Apply event filtering through `pxatu.EventFilterConfig` before output processing
+
+## Critical Design Constraints
+- All sinks must be stateless with context-based lifecycle management
+- Configuration validation required via `Validate()` method
+- Support both single and batch event handling via `HandleNewDecoratedEvent` and `HandleNewDecoratedEvents`

@@ -1,0 +1,21 @@
+---
+description: Xatu Coordinator - gRPC client for dynamic boot node discovery
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Xatu Coordinator
+
+gRPC client that fetches dynamic boot nodes from Xatu server for DiscV4/V5 discovery protocols.
+
+## Key Integration Pattern
+- **Scheduled Updates**: Uses gocron to periodically fetch fresh boot nodes from server every restart interval
+- **Dual Protocol**: Simultaneously updates both DiscV4 and DiscV5 with same boot nodes from coordinator
+- **TLS Configuration**: Supports both secure and insecure gRPC connections based on config
+
+## Critical Constraints
+- Must always use gzip compression for coordinator requests to reduce bandwidth
+- Boot node updates are synchronous - both protocols must be restarted with new nodes
+- Error handling must not interrupt the scheduling loop - log errors but continue operation

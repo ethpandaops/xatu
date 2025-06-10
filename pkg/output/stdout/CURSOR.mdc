@@ -1,0 +1,21 @@
+---
+description: Stdout Output Sink - JSON event logging via configurable log levels
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Stdout Output Sink
+
+Standard output sink that serializes Xatu events to JSON and outputs them via configurable logging levels.
+
+## Key Integration Patterns
+- Use protobuf JSON marshaling via `protojson.Marshal()` for event serialization
+- Support configurable logging levels (debug, info, warn, error) with fallback to info
+- Implement batch processing through inherited `ItemExporter` interface
+
+## Important Constraints
+- Events logged as structured JSON with `event` field containing serialized `DecoratedEvent`
+- No actual stdout writes - uses logrus logger with configured level for output control
+- Stateless design with graceful shutdown support via context cancellation

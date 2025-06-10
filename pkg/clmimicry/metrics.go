@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Metrics struct {
@@ -23,62 +22,72 @@ type Metrics struct {
 }
 
 func NewMetrics(namespace string) *Metrics {
-	return &Metrics{
+	m := &Metrics{
 		decoratedEvents: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "decorated_event_total",
 			Help:      "Total number of decorated events received",
 		}, []string{"type", "network_id"}),
-		samplingProcessed: promauto.NewCounterVec(
+		samplingProcessed: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
 				Name:      "sampling_processed_total",
 				Help:      "The number of messages processed after sampling",
 			},
-			[]string{"event_type", "network"},
+			[]string{"type", "network_id"},
 		),
-		samplingSkipped: promauto.NewCounterVec(
+		samplingSkipped: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
 				Name:      "sampling_skipped_total",
 				Help:      "The number of messages skipped due to sampling",
 			},
-			[]string{"event_type", "network"},
+			[]string{"type", "network_id"},
 		),
-		shardDistribution: promauto.NewCounterVec(
+		shardDistribution: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
 				Name:      "shard_distribution_total",
 				Help:      "The distribution of messages across shards",
 			},
-			[]string{"topic", "shard", "network"},
+			[]string{"topic", "shard", "network_id"},
 		),
-		shardProcessed: promauto.NewCounterVec(
+		shardProcessed: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
 				Name:      "shard_processed_total",
 				Help:      "The number of messages processed by shard",
 			},
-			[]string{"topic", "shard", "network"},
+			[]string{"topic", "shard", "network_id"},
 		),
-		shardSkipped: promauto.NewCounterVec(
+		shardSkipped: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
 				Name:      "shard_skipped_total",
 				Help:      "The number of messages skipped by shard",
 			},
-			[]string{"topic", "shard", "network"},
+			[]string{"topic", "shard", "network_id"},
 		),
-		shardDistributionHist: promauto.NewHistogramVec(
+		shardDistributionHist: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: namespace,
 				Name:      "shard_distribution_histogram",
 				Help:      "Histogram of shard distribution",
 				Buckets:   prometheus.LinearBuckets(0, 1, 64), // 64 buckets, one per potential shard
 			},
-			[]string{"topic", "network"},
+			[]string{"topic", "network_id"},
 		),
 	}
+
+	prometheus.MustRegister(m.decoratedEvents)
+	prometheus.MustRegister(m.samplingProcessed)
+	prometheus.MustRegister(m.samplingSkipped)
+	prometheus.MustRegister(m.shardDistribution)
+	prometheus.MustRegister(m.shardProcessed)
+	prometheus.MustRegister(m.shardSkipped)
+	prometheus.MustRegister(m.shardDistributionHist)
+
+	return m
 }
 
 func (m *Metrics) AddDecoratedEvent(count float64, eventType, network string) {

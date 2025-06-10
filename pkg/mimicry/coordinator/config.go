@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/static"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +28,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, log logrus.FieldLogger) (Coordinator, error) {
+func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (Coordinator, error) {
 	if coordinatorType == TypeUnknown {
 		return nil, errors.New("coordinator type is required")
 	}
@@ -44,7 +45,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 			return nil, err
 		}
 
-		return static.New(name, conf, handlers, captureDelay, log)
+		return static.New(name, conf, handlers, captureDelay, ethereumConfig, log)
 	case TypeXatu:
 		conf := &xatuCoordinator.Config{}
 
@@ -56,7 +57,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 			return nil, err
 		}
 
-		return xatu.New(name, conf, handlers, captureDelay, log)
+		return xatu.New(name, conf, handlers, captureDelay, ethereumConfig, log)
 	default:
 		return nil, fmt.Errorf("coordinator type %s is unknown", coordinatorType)
 	}

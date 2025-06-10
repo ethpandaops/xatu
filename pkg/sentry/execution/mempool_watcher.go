@@ -160,10 +160,14 @@ func (w *MempoolWatcher) Start(ctx context.Context) error {
 	}
 
 	// Start periodic fetching of txpool content.
-	w.startPeriodicFetcher()
+	if w.config.TxPoolContentEnabled {
+		w.startPeriodicFetcher()
+	}
 
 	// Start periodic fetching of eth_pendingTransactions.
-	w.startPendingTransactionsFetcher()
+	if w.config.EthPendingTxsEnabled {
+		w.startPendingTransactionsFetcher()
+	}
 
 	// Start periodic summary logging.
 	w.startSummaryLogger()

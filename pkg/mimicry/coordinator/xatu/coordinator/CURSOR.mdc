@@ -1,0 +1,21 @@
+---
+description: Coordinator - gRPC client implementation for Xatu server communication
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Coordinator Implementation
+
+gRPC client that communicates with remote Xatu server for execution node record coordination and status reporting.
+
+## Key Integration Patterns
+- **gRPC with compression**: Always use gzip compression for all server communication
+- **Header-based authentication**: Pass configured headers via gRPC metadata for authentication
+- **Fork ID hex encoding**: Convert fork ID hashes from hex strings to bytes for protobuf requests
+
+## Important Constraints
+- **TLS configuration**: Support both TLS and insecure connections based on config flag
+- **Connection lifecycle**: Properly close gRPC connection during shutdown
+- **Prometheus metrics**: Track node record status events with network ID and fork ID hash labels

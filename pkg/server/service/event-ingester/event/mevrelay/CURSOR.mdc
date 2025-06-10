@@ -1,0 +1,21 @@
+---
+description: MEV Relay - Event handlers for MEV relay network events
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# MEV Relay Event Handlers
+
+MEV relay event handlers for bid traces, payload deliveries, and validator registrations with domain-specific validation.
+
+## Key Integration Patterns
+- **Uniform Event Interface**: All handlers implement Type(), Validate(), Filter(), and AppendServerMeta() methods
+- **Type-Safe Event Casting**: Each handler validates and casts DecoratedEvent data to the correct MEV relay event type
+- **Domain-Specific Validation**: Validator registration requires non-empty pubkey validation beyond basic type checking
+
+## Important Constraints
+- **No Filtering**: All MEV relay events return false from Filter() method (events are never filtered out)
+- **Type Constants**: Use predefined xatu.Event enum constants for event type definitions
+- **Structured Logging**: Include event type in logger field for consistent log correlation

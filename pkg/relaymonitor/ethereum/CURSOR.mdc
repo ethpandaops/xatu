@@ -1,0 +1,21 @@
+---
+description: Ethereum Beacon Chain integration for relay monitor - provides beacon node connectivity and validator data
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Ethereum Beacon Integration
+
+Provides beacon chain connectivity and validator management for MEV relay monitoring operations.
+
+## Key Integration Pattern
+- **Beacon Node Wrapper**: Use BeaconNode.Start() to establish connection with health checking and timeout handling
+- **Wallclock Provider**: Always initialize ethereum wallclock via beacon chain genesis data for accurate slot timing
+- **Validator Query Interface**: Use GetActiveValidators() for relay monitoring validator filtering
+
+## Critical Constraints
+- **5-minute startup timeout**: BeaconNode.Start() has hardcoded 5-minute deadline for readiness
+- **Health check interval**: 3-second health checks with single successful response requirement
+- **Genesis dependency**: Wallclock initialization requires successful beacon node genesis fetch

@@ -1,0 +1,19 @@
+---
+description: Handler - P2P event handling interface for mimicry client
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Handler Component
+
+P2P event handling interface that defines callback functions for mimicry client interactions.
+
+## Key Integration Pattern
+- **Callback interface pattern**: Defines function pointers for event handling, client metadata creation, and execution status reporting
+- **Context-aware operations**: All handler functions accept context for cancellation and timeout control
+
+## Important Constraints  
+- **Interface-only design**: This component only defines the handler interface, implementations are provided by consuming packages
+- **Event decoration**: Uses xatu.DecoratedEvent for structured event processing within the mimicry pipeline

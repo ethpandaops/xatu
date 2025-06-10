@@ -1,0 +1,24 @@
+---
+description: Coordinator - Node record management and client coordination for Ethereum P2P network discovery
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Coordinator Service Rules
+
+Node record management and client coordination service for Ethereum P2P network discovery and execution node monitoring.
+
+## Primary Purpose
+Manages Ethereum node discovery coordination by tracking node records, facilitating client connections, and providing execution node status updates with optional geoIP enrichment.
+
+## Key Integration Patterns
+- **Multi-Client Coordination**: Distributes available node records across multiple discovery clients to prevent overlap
+- **Node Record Lifecycle**: Tracks connection attempts, success rates, and stalled nodes with automatic retry logic
+- **gRPC Service Implementation**: Implements multiple coordinator endpoints (CreateNodeRecords, CoordinateExecutionNodeRecords, ListStalledExecutionNodeRecords)
+
+## Important Constraints
+- **Authentication Integration**: All endpoints validate bearer token auth when enabled via metadata extraction
+- **Rate Limiting**: Connection attempts are limited (max 100 per node) and client coordination respects request limits (max 1000 records)
+- **Persistence Dependency**: Requires persistence client for all database operations (node records, activities, executions)

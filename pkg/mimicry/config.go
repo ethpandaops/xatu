@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
@@ -21,6 +22,9 @@ type Config struct {
 	Name string `yaml:"name"`
 
 	// Ethereum configuration
+	Ethereum ethereum.Config `yaml:"ethereum"`
+
+	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
 
 	// Outputs configuration
@@ -39,6 +43,10 @@ type Config struct {
 func (c *Config) Validate() error {
 	if c.Name == "" {
 		return errors.New("name is required")
+	}
+
+	if err := c.Ethereum.Validate(); err != nil {
+		return err
 	}
 
 	if err := c.Coordinator.Validate(); err != nil {
@@ -91,6 +99,10 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
 
 		c.MetricsAddr = o.MetricsAddr.Value
+	}
+
+	if o.NetworkName.Enabled {
+		c.Ethereum.ApplyOverrides(o.NetworkName.Value, log)
 	}
 
 	return nil

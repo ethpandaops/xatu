@@ -105,17 +105,17 @@ func SipHash(key [16]byte, data []byte) uint64 {
 // - Balanced: Messages are evenly distributed across all shards
 //
 // Parameters:
-//   - msgID: The message identifier (often a hash like "0x1234...abcd")
+//   - shardingKey: The identifier to use for sharding (often a hash like "0x1234...abcd")
 //   - totalShards: The total number of available shards (e.g., 64)
 //
 // Returns:
 //   - The shard number (0 to totalShards-1) where this message should be processed
-func GetShard(msgID string, totalShards uint64) uint64 {
+func GetShard(shardingKey string, totalShards uint64) uint64 {
 	// Use a fixed key for consistent hashing.
 	key := [16]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f}
 
 	// Calculate hash.
-	hash := SipHash(key, []byte(msgID))
+	hash := SipHash(key, []byte(shardingKey))
 
 	// Return shard number.
 	return hash % totalShards

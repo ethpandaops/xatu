@@ -24,6 +24,10 @@ const (
 type Config struct {
 	// Enabled is whether the execution client is enabled.
 	Enabled bool `yaml:"enabled" default:"false"`
+	// EthPendingTxsEnabled is whether we suppliment fetching tx's using eth_pendingTransactions periodically.
+	EthPendingTxsEnabled bool `yaml:"ethPendingTxsEnabled" default:"false"`
+	// TxPoolContentEnabled is whether we suppliment fetching tx's using txpool_content periodically.
+	TxPoolContentEnabled bool `yaml:"txPoolContentEnabled" default:"true"`
 	// WebsocketEnabled is whether the websocket is enabled.
 	WebsocketEnabled bool `yaml:"websocketEnabled" default:"false"`
 	// WSAddress is the WebSocket address of the execution client for subscriptions.

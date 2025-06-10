@@ -3,10 +3,20 @@ package clmimicry
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/probe-lab/hermes/host"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 )
+
+// MockPayload implements the necessary methods to work with getMsgID.
+type MockPayload struct {
+	MsgID string
+}
 
 func TestShouldTraceMessage(t *testing.T) {
 	registry := prometheus.NewRegistry()
@@ -21,7 +31,7 @@ func TestShouldTraceMessage(t *testing.T) {
 		mimicry   *Mimicry
 		msgID     string
 		eventType string
-		network   string
+		networkID uint64
 		expected  bool
 	}{
 		{
@@ -42,7 +52,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     "",
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
 		{
@@ -57,7 +67,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     "0x1234",
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
 		{
@@ -78,7 +88,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     "0x1234",
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
 		{
@@ -99,7 +109,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     msgIDForShard2,
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
 		{
@@ -120,7 +130,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     msgIDForShard4,
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  false,
 		},
 		{
@@ -141,7 +151,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     msgIDForShard2,
 			eventType: "test_event",
-			network:   "",
+			networkID: 0, // unknown
 			expected:  true,
 		},
 		{
@@ -162,7 +172,7 @@ func TestShouldTraceMessage(t *testing.T) {
 			},
 			msgID:     msgIDForShard2,
 			eventType: "test_something",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
 		},
 		{
@@ -187,14 +197,39 @@ func TestShouldTraceMessage(t *testing.T) {
 			// and return true regardless of the actual shard
 			msgID:     "0xdoesntmatter",
 			eventType: "test_event",
-			network:   "mainnet",
+			networkID: networks.DeriveFromID(1).ID, // mainnet
 			expected:  true,
+		},
+		{
+			name: "unshardable event always returns true",
+			mimicry: &Mimicry{
+				Config: &Config{
+					Traces: TracesConfig{
+						Enabled: true,
+						Topics: map[string]TopicConfig{
+							xatu.Event_LIBP2P_TRACE_JOIN.String(): {
+								TotalShards:  64,
+								ActiveShards: []uint64{1, 2, 3}, // Note: shard 0 is not active
+							},
+						},
+					},
+				},
+				metrics: NewMetrics("test9"),
+			},
+			msgID:     msgIDForShard4, // This would normally be filtered out
+			eventType: xatu.Event_LIBP2P_TRACE_JOIN.String(),
+			networkID: networks.DeriveFromID(1).ID, // mainnet
+			expected:  true,                        // Should return true because it's an unshardable event
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.mimicry.ShouldTraceMessage(tt.msgID, tt.eventType, tt.network)
+			// Create mock objects for the new parameter structure
+			event := createMockTraceEvent(tt.msgID)
+			clientMeta := createMockClientMeta(tt.networkID)
+
+			result := tt.mimicry.ShouldTraceMessage(event, clientMeta, tt.eventType)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -303,7 +338,9 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 
 	// Even a message ID that would hash to an inactive shard should return true
 	// because the optimization should skip the hashing entirely.
-	result := m.ShouldTraceMessage("0xanymessage", "test_event", "mainnet")
+	mockEvent := createMockTraceEvent("0xanymessage")
+	mockClientMeta := createMockClientMeta(networks.DeriveFromID(1).ID) // mainnet
+	result := m.ShouldTraceMessage(mockEvent, mockClientMeta, "test_event")
 	assert.True(t, result, "When all shards are active, any message should be processed")
 
 	// Now let's remove one shard and verify the optimization doesn't apply.
@@ -330,8 +367,98 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 	inactiveShard := totalShards - 1
 	msgIDForInactiveShard := findMsgIDForShard(inactiveShard, totalShards)
 
-	result = m.ShouldTraceMessage(msgIDForInactiveShard, "test_event", "mainnet")
+	mockEvent = createMockTraceEvent(msgIDForInactiveShard)
+	result = m.ShouldTraceMessage(mockEvent, mockClientMeta, "test_event")
 	assert.False(t, result, "When not all shards are active, messages for inactive shards should be skipped")
+}
+
+// TestShouldTraceMessageWithDifferentShardingKeys tests the ShouldTraceMessage function
+// with different sharding key configurations.
+func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+
+	testPeerID, _ := peer.Decode("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
+	testTime := time.Now()
+	testMsgID := "test-msg-id"
+
+	// Create a consistent event to test different sharding keys
+	event := &host.TraceEvent{
+		Type:      "TEST_EVENT",
+		Topic:     "test-topic",
+		PeerID:    testPeerID,
+		Timestamp: testTime,
+		Payload:   &MockPayload{MsgID: testMsgID},
+	}
+
+	clientMeta := createMockClientMeta(networks.DeriveFromID(1).ID) // mainnet
+
+	// Create test cases with different sharding key configurations
+	tests := []struct {
+		name         string
+		topicConfig  TopicConfig
+		expectedTrue bool
+	}{
+		{
+			name: "MsgID sharding with active shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{GetShard(testMsgID, 64)}, // The shard for testMsgID
+				ShardingKey:  string(ShardingKeyTypeMsgID),
+			},
+			expectedTrue: true,
+		},
+		{
+			name: "MsgID sharding with inactive shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{(GetShard(testMsgID, 64) + 1) % 64}, // A different shard
+				ShardingKey:  string(ShardingKeyTypeMsgID),
+			},
+			expectedTrue: false,
+		},
+		{
+			name: "PeerID sharding with active shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{GetShard(testPeerID.String(), 64)}, // The shard for testPeerID
+				ShardingKey:  string(ShardingKeyTypePeerID),
+			},
+			expectedTrue: true,
+		},
+		{
+			name: "PeerID sharding with inactive shard",
+			topicConfig: TopicConfig{
+				TotalShards:  64,
+				ActiveShards: []uint64{(GetShard(testPeerID.String(), 64) + 1) % 64}, // A different shard
+				ShardingKey:  string(ShardingKeyTypePeerID),
+			},
+			expectedTrue: false,
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mimicry := &Mimicry{
+				Config: &Config{
+					Traces: TracesConfig{
+						Enabled: true,
+						Topics: map[string]TopicConfig{
+							"TEST_EVENT": tt.topicConfig,
+						},
+					},
+				},
+				metrics: NewMetrics(fmt.Sprintf("test_sharding_key_%d", i)),
+			}
+
+			// Compile the regex patterns
+			err := mimicry.Config.Traces.CompilePatterns()
+			assert.NoError(t, err)
+
+			result := mimicry.ShouldTraceMessage(event, clientMeta, "TEST_EVENT")
+			assert.Equal(t, tt.expectedTrue, result)
+		})
+	}
 }
 
 // findMsgIDForShard finds a message ID that maps to a specific shard.
@@ -345,4 +472,28 @@ func findMsgIDForShard(shard, totalShards uint64) string {
 	}
 
 	return fmt.Sprintf("0xshard%d", shard) // Fallback, though this might not map to the desired shard.
+}
+
+// createMockTraceEvent creates a mock TraceEvent with the given msgID
+func createMockTraceEvent(msgID string) *host.TraceEvent {
+	return &host.TraceEvent{
+		Payload: &MockPayload{
+			MsgID: msgID,
+		},
+	}
+}
+
+// createMockClientMeta creates a mock ClientMeta with the given network ID
+func createMockClientMeta(networkID uint64) *xatu.ClientMeta {
+	return &xatu.ClientMeta{
+		Name:           "test-client",
+		Id:             "test-id",
+		Implementation: "test-impl",
+		Os:             "test-os",
+		Ethereum: &xatu.ClientMeta_Ethereum{
+			Network: &xatu.ClientMeta_Ethereum_Network{
+				Id: networkID,
+			},
+		},
+	}
 }

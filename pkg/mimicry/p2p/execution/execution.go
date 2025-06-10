@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -40,9 +41,10 @@ type Peer struct {
 
 	txProc *processor.BatchItemProcessor[TransactionHashItem]
 
-	network     *networks.Network
-	chainConfig *params.ChainConfig
-	signer      types.Signer
+	network       *networks.Network
+	chainConfig   *params.ChainConfig
+	signer        types.Signer
+	ethereumConfig *ethereum.Config
 
 	name            string
 	protocolVersion uint64
@@ -55,19 +57,20 @@ type Peer struct {
 	ignoreBefore *time.Time
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache) (*Peer, error) {
+func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache, ethereumConfig *ethereum.Config) (*Peer, error) {
 	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
 	if err != nil {
 		return nil, err
 	}
 
 	return &Peer{
-		log:          log.WithField("node_record", nodeRecord),
-		nodeRecord:   nodeRecord,
-		handlers:     handlers,
-		captureDelay: captureDelay,
-		client:       client,
-		sharedCache:  sharedCache,
+		log:            log.WithField("node_record", nodeRecord),
+		nodeRecord:     nodeRecord,
+		handlers:       handlers,
+		captureDelay:   captureDelay,
+		client:         client,
+		sharedCache:    sharedCache,
+		ethereumConfig: ethereumConfig,
 		network: &networks.Network{
 			Name: networks.NetworkNameNone,
 		},
@@ -181,7 +184,16 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		}
 
 		// setup peer network/fork info
-		p.network = networks.DeriveFromID(status.NetworkID)
+		if p.ethereumConfig != nil && p.ethereumConfig.OverrideNetworkName != "" {
+			p.log.WithField("network", p.ethereumConfig.OverrideNetworkName).Info("Using override network name")
+			p.network = &networks.Network{
+				Name: networks.NetworkName(p.ethereumConfig.OverrideNetworkName),
+				ID:   status.NetworkID,
+			}
+		} else {
+			p.network = networks.DeriveFromID(status.NetworkID)
+		}
+		
 		p.forkID = &xatu.ForkID{
 			Hash: "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
 			Next: fmt.Sprintf("%d", status.ForkID.Next),

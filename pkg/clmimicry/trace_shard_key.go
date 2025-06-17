@@ -144,3 +144,72 @@ func getMsgID(payload interface{}) string {
 
 	return msgIDField.String()
 }
+
+// GetGossipTopic extracts the gossip topic from a trace event if available.
+// Returns an empty string if the event type doesn't contain topic information.
+func GetGossipTopic(event *host.TraceEvent) string {
+	if event == nil {
+		return ""
+	}
+
+	// Handle map[string]any payloads (used by some hermes events)
+	if mapPayload, ok := event.Payload.(map[string]any); ok {
+		if topic, found := mapPayload["Topic"]; found {
+			if topicStr, ok := topic.(string); ok {
+				return topicStr
+			}
+		}
+
+		return ""
+	}
+
+	// Use reflection to access the Topic field from protobuf structures
+	if event.Payload == nil {
+		return ""
+	}
+
+	v := reflect.ValueOf(event.Payload)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return ""
+	}
+
+	// Dereference the pointer and check if it's a struct
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return ""
+	}
+
+	// Try to find the Topic field first (most common)
+	topicField := v.FieldByName("Topic")
+	if topicField.IsValid() && !topicField.IsNil() {
+		// Handle *wrapperspb.StringValue fields
+		if topicField.Kind() == reflect.Ptr && !topicField.IsNil() {
+			// Check if it has a GetValue method (wrapperspb.StringValue)
+			getValue := topicField.MethodByName("GetValue")
+			if getValue.IsValid() {
+				results := getValue.Call(nil)
+				if len(results) > 0 && results[0].Kind() == reflect.String {
+					return results[0].String()
+				}
+			}
+		}
+	}
+
+	// Try TopicId field (used in RPC meta events)
+	topicIdField := v.FieldByName("TopicId")
+	if topicIdField.IsValid() && !topicIdField.IsNil() {
+		// Handle *wrapperspb.StringValue fields
+		if topicIdField.Kind() == reflect.Ptr && !topicIdField.IsNil() {
+			// Check if it has a GetValue method (wrapperspb.StringValue)
+			getValue := topicIdField.MethodByName("GetValue")
+			if getValue.IsValid() {
+				results := getValue.Call(nil)
+				if len(results) > 0 && results[0].Kind() == reflect.String {
+					return results[0].String()
+				}
+			}
+		}
+	}
+
+	return ""
+}

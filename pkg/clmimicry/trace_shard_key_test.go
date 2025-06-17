@@ -191,3 +191,132 @@ func TestGetMsgID(t *testing.T) {
 		})
 	}
 }
+
+func TestGetGossipTopic(t *testing.T) {
+	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
+	testTime := time.Now()
+
+	testCases := []struct {
+		name          string
+		event         *host.TraceEvent
+		expectedTopic string
+	}{
+		{
+			name:          "nil event returns empty string",
+			event:         nil,
+			expectedTopic: "",
+		},
+		{
+			name: "event with nil payload returns empty string",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   nil,
+			},
+			expectedTopic: "",
+		},
+		{
+			name: "map payload with Topic field",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: map[string]any{
+					"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
+					"MsgID": "test-msg-id",
+				},
+			},
+			expectedTopic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
+		},
+		{
+			name: "map payload without Topic field",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: map[string]any{
+					"MsgID": "test-msg-id",
+					"Other": "field",
+				},
+			},
+			expectedTopic: "",
+		},
+		{
+			name: "struct payload with Topic field (mock wrapper)",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   &MockPayloadWithTopic{Topic: &MockStringWrapper{Value: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy"}},
+			},
+			expectedTopic: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy",
+		},
+		{
+			name: "struct payload with TopicId field (mock wrapper)",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   &MockPayloadWithTopicId{TopicId: &MockStringWrapper{Value: "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy"}},
+			},
+			expectedTopic: "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy",
+		},
+		{
+			name: "struct payload with nil Topic field",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   &MockPayloadWithTopic{Topic: nil},
+			},
+			expectedTopic: "",
+		},
+		{
+			name: "struct payload without Topic or TopicId field",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   &MockPayload{MsgID: "test-msg-id"},
+			},
+			expectedTopic: "",
+		},
+		{
+			name: "non-struct, non-map payload returns empty string",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   []string{"not", "a", "struct", "or", "map"},
+			},
+			expectedTopic: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetGossipTopic(tc.event)
+			assert.Equal(t, tc.expectedTopic, result)
+		})
+	}
+}
+
+// MockStringWrapper mimics *wrapperspb.StringValue behavior for testing
+type MockStringWrapper struct {
+	Value string
+}
+
+func (m *MockStringWrapper) GetValue() string {
+	return m.Value
+}
+
+// MockPayloadWithTopic mimics a protobuf struct with a Topic field
+type MockPayloadWithTopic struct {
+	Topic *MockStringWrapper
+}
+
+// MockPayloadWithTopicId mimics a protobuf struct with a TopicId field
+type MockPayloadWithTopicId struct {
+	TopicId *MockStringWrapper
+}

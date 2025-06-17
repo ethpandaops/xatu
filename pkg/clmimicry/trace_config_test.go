@@ -9,6 +9,8 @@ import (
 )
 
 func TestFindMatchingTopicConfig(t *testing.T) {
+	uint64Ptr := uint64(64)
+
 	tests := []struct {
 		name      string
 		config    TracesConfig
@@ -21,8 +23,8 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"beacon_block": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 				},
 			},
@@ -35,8 +37,8 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					".*beacon_attestation.*": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 				},
 			},
@@ -49,8 +51,8 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"beacon_block": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 				},
 			},
@@ -63,8 +65,8 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 				Enabled: false,
 				Topics: map[string]TopicConfig{
 					"beacon_block": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 				},
 			},
@@ -84,7 +86,11 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Pre-compile patterns for testing.
+			// Validate and pre-compile patterns for testing.
+			if tt.config.Enabled && len(tt.config.Topics) > 0 {
+				err := tt.config.Validate()
+				require.NoError(t, err)
+			}
 			err := tt.config.CompilePatterns()
 			require.NoError(t, err)
 
@@ -101,6 +107,9 @@ func TestFindMatchingTopicConfig(t *testing.T) {
 }
 
 func TestLogSummary(t *testing.T) {
+	uint64Ptr64 := uint64(64)
+	uint64Ptr1 := uint64(1)
+
 	tests := []struct {
 		name               string
 		config             TracesConfig
@@ -113,8 +122,8 @@ func TestLogSummary(t *testing.T) {
 				Enabled: false,
 				Topics: map[string]TopicConfig{
 					"beacon_block": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr64,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 				},
 			},
@@ -141,12 +150,12 @@ func TestLogSummary(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"beacon_block": {
-						TotalShards:  64,
-						ActiveShards: []uint64{1, 2, 3},
+						TotalShards:     &uint64Ptr64,
+						ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
 					},
 					"beacon_attestation": {
-						TotalShards:  64,
-						ActiveShards: []uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+						TotalShards:     &uint64Ptr64,
+						ActiveShardsRaw: &ActiveShardsConfig{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 					},
 				},
 			},
@@ -163,8 +172,8 @@ func TestLogSummary(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"blob_sidecar": {
-						TotalShards:  1,
-						ActiveShards: []uint64{0},
+						TotalShards:     &uint64Ptr1,
+						ActiveShardsRaw: &ActiveShardsConfig{0},
 					},
 				},
 			},
@@ -179,6 +188,12 @@ func TestLogSummary(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Validate the config to process ActiveShardsRaw into ActiveShards
+			if tt.config.Enabled && len(tt.config.Topics) > 0 {
+				err := tt.config.Validate()
+				require.NoError(t, err)
+			}
+
 			summary := tt.config.LogSummary()
 
 			for _, phrase := range tt.expectedPhrases {
@@ -242,19 +257,26 @@ func TestCompilePatterns(t *testing.T) {
 }
 
 func BenchmarkFindMatchingTopicConfig(b *testing.B) {
+	uint64Ptr := uint64(64)
+
 	config := TracesConfig{
 		Enabled: true,
 		Topics: map[string]TopicConfig{
-			"beacon_block":   {TotalShards: 64, ActiveShards: []uint64{1, 2, 3}},
-			"beacon_.*":      {TotalShards: 64, ActiveShards: []uint64{1, 2, 3}},
-			"sync_committee": {TotalShards: 64, ActiveShards: []uint64{1, 2, 3}},
-			"blob_.*":        {TotalShards: 64, ActiveShards: []uint64{1, 2, 3}},
-			"[a-z]+_[0-9]+":  {TotalShards: 64, ActiveShards: []uint64{1, 2, 3}},
+			"beacon_block":   {TotalShards: &uint64Ptr, ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3}},
+			"beacon_.*":      {TotalShards: &uint64Ptr, ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3}},
+			"sync_committee": {TotalShards: &uint64Ptr, ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3}},
+			"blob_.*":        {TotalShards: &uint64Ptr, ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3}},
+			"[a-z]+_[0-9]+":  {TotalShards: &uint64Ptr, ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3}},
 		},
 	}
 
-	// Pre-compile patterns for optimized version
-	err := config.CompilePatterns()
+	// Validate and pre-compile patterns for optimized version
+	err := config.Validate()
+	if err != nil {
+		b.Fatalf("Failed to validate config: %v", err)
+	}
+
+	err = config.CompilePatterns()
 	if err != nil {
 		b.Fatalf("Failed to compile patterns: %v", err)
 	}
@@ -381,12 +403,15 @@ func TestActiveShardsConfig_ToUint64Slice(t *testing.T) {
 }
 
 func TestTracesConfig_ValidateWithRanges(t *testing.T) {
+	totalShards := uint64(10)
+	activeShards := ActiveShardsConfig{"0-4", 7, "8-9"}
+
 	config := &TracesConfig{
 		Enabled: true,
 		Topics: map[string]TopicConfig{
 			"test_pattern": {
-				TotalShards:     10,
-				ActiveShardsRaw: ActiveShardsConfig{"0-4", 7, "8-9"},
+				TotalShards:     &totalShards,
+				ActiveShardsRaw: &activeShards,
 				ShardingKey:     "MsgID",
 			},
 		},
@@ -410,4 +435,386 @@ func TestTracesConfig_ValidateWithRanges(t *testing.T) {
 			t.Errorf("ActiveShards[%d] = %d, expected %d", i, v, expected[i])
 		}
 	}
+}
+
+// TestHierarchicalTopicConfig tests the new hierarchical gossip topic configuration
+func TestHierarchicalTopicConfig(t *testing.T) {
+	uint64Ptr := uint64(64)
+
+	tests := []struct {
+		name      string
+		config    TracesConfig
+		wantError bool
+		errorMsg  string
+	}{
+		{
+			name: "valid hierarchical config with gossip topics",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     1,
+									ActiveShardsRaw: ActiveShardsConfig{0},
+									ShardingKey:     "MsgID",
+								},
+								".*beacon_attestation.*": {
+									TotalShards:     4,
+									ActiveShardsRaw: ActiveShardsConfig{0, 1},
+									ShardingKey:     "PeerID",
+								},
+							},
+							Fallback: &GossipTopicConfig{
+								TotalShards:     512,
+								ActiveShardsRaw: ActiveShardsConfig{0},
+								ShardingKey:     "MsgID",
+							},
+						},
+					},
+				},
+			},
+			wantError: false,
+		},
+		{
+			name: "valid hierarchical config with only fallback",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*deliver_message.*": {
+						Topics: &TopicsConfig{
+							Fallback: &GossipTopicConfig{
+								TotalShards:     64,
+								ActiveShardsRaw: ActiveShardsConfig{"0-3"},
+								ShardingKey:     "MsgID",
+							},
+						},
+					},
+				},
+			},
+			wantError: false,
+		},
+		{
+			name: "invalid hierarchical config - both simple and hierarchical",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{0, 1},
+						Topics: &TopicsConfig{
+							Fallback: &GossipTopicConfig{
+								TotalShards:     64,
+								ActiveShardsRaw: ActiveShardsConfig{0},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "cannot use both simple and hierarchical configuration",
+		},
+		{
+			name: "invalid hierarchical config - no gossip topics or fallback",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "must have either gossipTopics or fallback",
+		},
+		{
+			name: "invalid gossip topic regex pattern",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								"[unclosed": {
+									TotalShards:     1,
+									ActiveShardsRaw: ActiveShardsConfig{0},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "invalid gossip topic pattern",
+		},
+		{
+			name: "invalid gossip topic config - zero total shards",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     0,
+									ActiveShardsRaw: ActiveShardsConfig{0},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "totalShards must be greater than 0",
+		},
+		{
+			name: "invalid gossip topic config - empty active shards",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     4,
+									ActiveShardsRaw: ActiveShardsConfig{},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "activeShards cannot be empty",
+		},
+		{
+			name: "invalid gossip topic config - active shard out of range",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     4,
+									ActiveShardsRaw: ActiveShardsConfig{0, 5}, // 5 is out of range [0-3]
+								},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "active shard 5 is out of range",
+		},
+		{
+			name: "invalid sharding key",
+			config: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     1,
+									ActiveShardsRaw: ActiveShardsConfig{0},
+									ShardingKey:     "InvalidKey",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  "invalid sharding key 'InvalidKey'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+
+			if tt.wantError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				require.NoError(t, err)
+
+				// Verify that active shards were processed correctly
+				for pattern, topicConfig := range tt.config.Topics {
+					if topicConfig.Topics != nil {
+						if topicConfig.Topics.GossipTopics != nil {
+							for gossipPattern, gossipConfig := range topicConfig.Topics.GossipTopics {
+								assert.NotEmpty(t, gossipConfig.ActiveShards,
+									"Active shards should be processed for pattern %s, gossip pattern %s", pattern, gossipPattern)
+							}
+						}
+						if topicConfig.Topics.Fallback != nil {
+							assert.NotEmpty(t, topicConfig.Topics.Fallback.ActiveShards,
+								"Active shards should be processed for fallback in pattern %s", pattern)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestHierarchicalConfigCompilation tests that hierarchical configs compile correctly
+func TestHierarchicalConfigCompilation(t *testing.T) {
+	uint64Ptr := uint64(64)
+
+	config := TracesConfig{
+		Enabled: true,
+		Topics: map[string]TopicConfig{
+			"(?i).*duplicate_message.*": {
+				Topics: &TopicsConfig{
+					GossipTopics: map[string]GossipTopicConfig{
+						".*beacon_block.*": {
+							TotalShards:     1,
+							ActiveShardsRaw: ActiveShardsConfig{0},
+							ShardingKey:     "MsgID",
+						},
+						".*beacon_attestation.*": {
+							TotalShards:     4,
+							ActiveShardsRaw: ActiveShardsConfig{0, 1},
+							ShardingKey:     "PeerID",
+						},
+					},
+					Fallback: &GossipTopicConfig{
+						TotalShards:     512,
+						ActiveShardsRaw: ActiveShardsConfig{0},
+						ShardingKey:     "MsgID",
+					},
+				},
+			},
+			"(?i).*simple_event.*": {
+				TotalShards:     &uint64Ptr,
+				ActiveShardsRaw: &ActiveShardsConfig{0, 1, 2},
+				ShardingKey:     "MsgID",
+			},
+		},
+	}
+
+	// Validate the config first
+	err := config.Validate()
+	require.NoError(t, err)
+
+	// Compile patterns
+	err = config.CompilePatterns()
+	require.NoError(t, err)
+
+	// Check that patterns were compiled
+	assert.Len(t, config.compiledPatterns, 2)
+	assert.Len(t, config.compiledTopics, 2)
+
+	// Check that gossip topic patterns were compiled
+	for pattern, compiledConfig := range config.compiledTopics {
+		originalConfig := config.Topics[pattern]
+		assert.Equal(t, &originalConfig, compiledConfig.Original)
+
+		if originalConfig.Topics != nil && originalConfig.Topics.GossipTopics != nil {
+			assert.Len(t, compiledConfig.GossipPatterns, len(originalConfig.Topics.GossipTopics))
+		} else {
+			assert.Empty(t, compiledConfig.GossipPatterns)
+		}
+	}
+}
+
+// TestHierarchicalLogSummary tests the log summary for hierarchical configurations
+func TestHierarchicalLogSummary(t *testing.T) {
+	uint64Ptr := uint64(64)
+
+	config := TracesConfig{
+		Enabled: true,
+		Topics: map[string]TopicConfig{
+			"(?i).*duplicate_message.*": {
+				Topics: &TopicsConfig{
+					GossipTopics: map[string]GossipTopicConfig{
+						".*beacon_block.*": {
+							TotalShards:     1,
+							ActiveShardsRaw: ActiveShardsConfig{0},
+							ShardingKey:     "MsgID",
+						},
+						".*beacon_attestation.*": {
+							TotalShards:     4,
+							ActiveShardsRaw: ActiveShardsConfig{0, 1},
+							ShardingKey:     "PeerID",
+						},
+					},
+					Fallback: &GossipTopicConfig{
+						TotalShards:     512,
+						ActiveShardsRaw: ActiveShardsConfig{0},
+						ShardingKey:     "MsgID",
+					},
+				},
+			},
+			"(?i).*simple_event.*": {
+				TotalShards:     &uint64Ptr,
+				ActiveShardsRaw: &ActiveShardsConfig{0, 1, 2},
+				ShardingKey:     "MsgID",
+			},
+		},
+	}
+
+	// Validate first
+	err := config.Validate()
+	require.NoError(t, err)
+
+	summary := config.LogSummary()
+
+	// Check for hierarchical pattern indication
+	assert.Contains(t, summary, "HIERARCHICAL")
+
+	// Check for gossip topic patterns
+	assert.Contains(t, summary, "Gossip Topics:")
+	assert.Contains(t, summary, ".*beacon_block.*")
+	assert.Contains(t, summary, ".*beacon_attestation.*")
+
+	// Check for fallback
+	assert.Contains(t, summary, "Fallback:")
+
+	// Check for simple config
+	assert.Contains(t, summary, "(?i).*simple_event.*")
+	assert.Contains(t, summary, "3/64 shards active")
+
+	// Check sharding key information
+	assert.Contains(t, summary, "sharding on MsgID")
+	assert.Contains(t, summary, "sharding on PeerID")
+}
+
+// TestSimpleConfigBackwardCompatibility tests that old simple configs still work
+func TestSimpleConfigBackwardCompatibility(t *testing.T) {
+	totalShards := uint64(64)
+	activeShards := ActiveShardsConfig{0, 1, 2}
+
+	config := TracesConfig{
+		Enabled: true,
+		Topics: map[string]TopicConfig{
+			"beacon_block": {
+				TotalShards:     &totalShards,
+				ActiveShardsRaw: &activeShards,
+				ShardingKey:     "MsgID",
+			},
+		},
+	}
+
+	// Should validate without error
+	err := config.Validate()
+	require.NoError(t, err)
+
+	// Should compile without error
+	err = config.CompilePatterns()
+	require.NoError(t, err)
+
+	// Should find matching config
+	matchedConfig, found := config.FindMatchingTopicConfig("beacon_block")
+	require.True(t, found)
+	require.NotNil(t, matchedConfig)
+
+	// Should produce expected log summary
+	summary := config.LogSummary()
+	assert.Contains(t, summary, "Pattern 'beacon_block': 3/64 shards active")
+	assert.NotContains(t, summary, "HIERARCHICAL")
 }

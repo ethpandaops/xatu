@@ -36,16 +36,28 @@ func (m *Mimicry) ShouldTraceMessage(
 				return true
 			}
 
+			// Get total shards value (handle both simple and hierarchical configs)
+			var totalShards uint64
+			if topicConfig.TotalShards != nil {
+				totalShards = *topicConfig.TotalShards
+			} else {
+				// For hierarchical config, we'll use different logic in Phase 2
+				// For now, assume we never hit this path with hierarchical configs
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+				return true
+			}
+
 			// If all shards are configured to be active, skip hashing and return true, save some trees.
 			//nolint:gosec // controlled config, no overflow.
-			if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
+			if len(topicConfig.ActiveShards) == int(totalShards) {
 				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 
 				return true
 			}
 
 			// Calculate the shard for this message.
-			shard := GetShard(shardingKey, topicConfig.TotalShards)
+			shard := GetShard(shardingKey, totalShards)
 
 			// Record metrics for all messages to track distribution.
 			m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
@@ -134,9 +146,29 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		return result, nil
 	}
 
+	// Get total shards value (handle both simple and hierarchical configs)
+	var totalShards uint64
+	if topicConfig.TotalShards != nil {
+		totalShards = *topicConfig.TotalShards
+	} else {
+		// For hierarchical config, we'll use different logic in Phase 2
+		// For now, assume we never hit this path with hierarchical configs
+		result := make([]FilteredMessageWithIndex, len(messageIDs))
+		for i, messageID := range messageIDs {
+			result[i] = FilteredMessageWithIndex{
+				MessageID:     messageID,
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			}
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		}
+
+		return result, nil
+	}
+
 	// If all shards are configured to be active, skip filtering
 	//nolint:gosec // controlled config, no overflow.
-	if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
+	if len(topicConfig.ActiveShards) == int(totalShards) {
 		result := make([]FilteredMessageWithIndex, len(messageIDs))
 
 		for i, messageID := range messageIDs {
@@ -161,7 +193,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 		}
 
 		// Calculate the shard for this message ID
-		shard := GetShard(msgID, topicConfig.TotalShards)
+		shard := GetShard(msgID, totalShards)
 
 		// Record metrics for all messages to track distribution
 		m.metrics.AddShardObservation(xatuEventType, shard, networkStr)

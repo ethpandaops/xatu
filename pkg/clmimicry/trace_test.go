@@ -25,6 +25,8 @@ func TestShouldTraceMessage(t *testing.T) {
 	// Find message IDs that map to specific shards for our tests
 	msgIDForShard2 := findMsgIDForShard(2, 64)
 	msgIDForShard4 := findMsgIDForShard(4, 64)
+	uint64Ptr := uint64(64)
+	uint64Ptr4 := uint64(4)
 
 	tests := []struct {
 		name      string
@@ -42,8 +44,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -78,8 +81,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"other_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -99,8 +103,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -120,8 +125,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -141,8 +147,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -162,8 +169,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_.*": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3},
 							},
 						},
 					},
@@ -183,7 +191,8 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							"test_event": {
-								TotalShards: 4,
+								TotalShards:     &uint64Ptr4,
+								ActiveShardsRaw: &ActiveShardsConfig{0, 1, 2, 3},
 								// All shards 0-3 are active
 								ActiveShards: []uint64{0, 1, 2, 3},
 							},
@@ -208,8 +217,9 @@ func TestShouldTraceMessage(t *testing.T) {
 						Enabled: true,
 						Topics: map[string]TopicConfig{
 							xatu.Event_LIBP2P_TRACE_JOIN.String(): {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3}, // Note: shard 0 is not active
+								TotalShards:     &uint64Ptr,
+								ActiveShardsRaw: &ActiveShardsConfig{1, 2, 3},
+								ActiveShards:    []uint64{1, 2, 3}, // Note: shard 0 is not active
 							},
 						},
 					},
@@ -327,7 +337,7 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"test_event": {
-						TotalShards:  totalShards,
+						TotalShards:  &totalShards,
 						ActiveShards: allShards,
 					},
 				},
@@ -354,7 +364,7 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 				Enabled: true,
 				Topics: map[string]TopicConfig{
 					"test_event": {
-						TotalShards:  totalShards,
+						TotalShards:  &totalShards,
 						ActiveShards: partialShards,
 					},
 				},
@@ -381,6 +391,7 @@ func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
 	testPeerID, _ := peer.Decode("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
 	testTime := time.Now()
 	testMsgID := "test-msg-id"
+	uint64Ptr := uint64(64)
 
 	// Create a consistent event to test different sharding keys
 	event := &host.TraceEvent{
@@ -402,7 +413,7 @@ func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
 		{
 			name: "MsgID sharding with active shard",
 			topicConfig: TopicConfig{
-				TotalShards:  64,
+				TotalShards:  &uint64Ptr,
 				ActiveShards: []uint64{GetShard(testMsgID, 64)}, // The shard for testMsgID
 				ShardingKey:  string(ShardingKeyTypeMsgID),
 			},
@@ -411,7 +422,7 @@ func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
 		{
 			name: "MsgID sharding with inactive shard",
 			topicConfig: TopicConfig{
-				TotalShards:  64,
+				TotalShards:  &uint64Ptr,
 				ActiveShards: []uint64{(GetShard(testMsgID, 64) + 1) % 64}, // A different shard
 				ShardingKey:  string(ShardingKeyTypeMsgID),
 			},
@@ -420,7 +431,7 @@ func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
 		{
 			name: "PeerID sharding with active shard",
 			topicConfig: TopicConfig{
-				TotalShards:  64,
+				TotalShards:  &uint64Ptr,
 				ActiveShards: []uint64{GetShard(testPeerID.String(), 64)}, // The shard for testPeerID
 				ShardingKey:  string(ShardingKeyTypePeerID),
 			},
@@ -429,7 +440,7 @@ func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
 		{
 			name: "PeerID sharding with inactive shard",
 			topicConfig: TopicConfig{
-				TotalShards:  64,
+				TotalShards:  &uint64Ptr,
 				ActiveShards: []uint64{(GetShard(testPeerID.String(), 64) + 1) % 64}, // A different shard
 				ShardingKey:  string(ShardingKeyTypePeerID),
 			},

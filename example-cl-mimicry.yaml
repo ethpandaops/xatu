@@ -40,36 +40,68 @@ outputs:
 #   # If true, the root rpc events will be recorded (if sharding config dictates) even if
 #   # there are no rpc meta/control level messages.
 #   alwaysRecordRootRpcEvents: false
+#   
+#   # SHARDING CONFIGURATION TYPES:
+#   # 1. Simple: Same sampling rate for all messages of an event type
+#   # 2. Hierarchical: Different sampling rates based on gossip topic patterns
+#   #    - Use 'topics.gossipTopics' to define per-topic sampling rates
+#   #    - Use 'topics.fallback' for topics that don't match any pattern
 #   topics:
+#     # Simple configuration (backward compatible)
 #     "(?i).*add_peer.*":
 #       shardingKey: "PeerID"
 #       totalShards: 512
 #       activeShards: ["0-255"] # Range syntax - expands to shards 0 through 255
-#     "(?i).*beacon_attestation.*":
-#       shardingKey: "MsgID"
-#       totalShards: 512
-#       activeShards: [0, "10-20", 50] # Mix of individual shards and ranges
-#     # RPC meta control events are depending on recv_rpc, send_rpc or drop_rpc events
+#     
+#     # HIERARCHICAL CONFIGURATION: Allows different sampling rates per gossip topic
+#     # This enables fine-grained control - e.g., 100% beacon blocks, 1% other topics
+#     "(?i).*duplicate_message.*":
+#       topics:
+#         gossipTopics:
+#           # High priority: 100% sampling for beacon blocks
+#           ".*beacon_block.*":
+#             shardingKey: "MsgID"
+#             totalShards: 512
+#             activeShards: ["0-511"] # 100% sampling
+#           # Medium priority: 50% sampling for attestations
+#           ".*beacon_attestation.*":
+#             shardingKey: "MsgID"
+#             totalShards: 512
+#             activeShards: ["0-255"] # 50% sampling
+#           # Low priority: 12.5% sampling for sync committee
+#           ".*sync_committee.*":
+#             shardingKey: "MsgID"
+#             totalShards: 512
+#             activeShards: ["0-63"] # 12.5% sampling
+#         # Fallback for all other gossip topics
+#         fallback:
+#           shardingKey: "MsgID"
+#           totalShards: 512
+#           activeShards: [0] # 1/512 sampling (~0.2%)
+#     
+#     # Hierarchical configuration for RPC events
+#     "(?i).*recv_rpc.*":
+#       topics:
+#         gossipTopics:
+#           # Higher sampling for beacon blocks in RPC messages
+#           ".*beacon_block.*":
+#             shardingKey: "MsgID"
+#             totalShards: 512
+#             activeShards: ["0-255"] # 50% sampling
+#         fallback:
+#           shardingKey: "MsgID"
+#           totalShards: 512
+#           activeShards: ["0-31"] # ~6.25% sampling
+#     
+#     # Simple configuration for other events
 #     "(?i).*rpc_meta_control_ihave.*":
 #       shardingKey: "MsgID"
-#       totalShards: 1
-#       activeShards: [0, 1, 2, 3, 4]
+#       totalShards: 512
+#       activeShards: ["0-63"] # 12.5% sampling
 #     "(?i).*rpc_meta_control_iwant.*":
 #       shardingKey: "MsgID"
-#       totalShards: 1
-#       activeShards: [0]
-#     "(?i).*rpc_meta_control_idontwant.*":
-#       shardingKey: "MsgID"
-#       totalShards: 1
-#       activeShards: [0]
-#     "(?i).*rpc_meta_control_graft.*":
-#       shardingKey: "MsgID"
-#       totalShards: 1
-#       activeShards: [0]
-#     "(?i).*rpc_meta_control_prune.*":
-#       shardingKey: "MsgID"
-#       totalShards: 1
-#       activeShards: [0]
+#       totalShards: 512
+#       activeShards: ["0-31"] # ~6.25% sampling
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

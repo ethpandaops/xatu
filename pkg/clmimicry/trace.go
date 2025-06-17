@@ -2,7 +2,6 @@ package clmimicry
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/probe-lab/hermes/host"
@@ -54,10 +53,14 @@ func (m *Mimicry) ShouldTraceMessage(
 		if found {
 			// Check if this is hierarchical or simple configuration
 			if topicConfig.Topics != nil {
+				// Record hierarchical configuration usage
+				m.metrics.AddConfigTypeUsage(xatuEventType, "hierarchical", networkStr)
 				// Use hierarchical sharding logic
 				return m.shouldTraceWithHierarchicalConfig(event, clientMeta, topicConfig, xatuEventType)
 			}
 
+			// Record simple configuration usage
+			m.metrics.AddConfigTypeUsage(xatuEventType, "simple", networkStr)
 			// Use simple sharding logic (backward compatible)
 			return m.shouldTraceWithSimpleConfig(event, clientMeta, topicConfig, xatuEventType)
 		}
@@ -160,7 +163,7 @@ func (m *Mimicry) shouldTraceRPCMetaMessagesWithMessageIDs(
 	if topicConfig.Topics != nil {
 		// For hierarchical configuration without topic information, use fallback configuration.
 		// Note: For RPC meta messages with topic information, use ShouldTraceRPCMetaMessagesWithTopics instead.
-		gossipConfig, configFound := m.getGossipTopicConfig(topicConfig, "")
+		gossipConfig, configFound := m.getGossipTopicConfig(topicConfig, "", xatuEventType, networkStr)
 		if !configFound {
 			// No fallback config, return empty
 			return []FilteredMessageWithIndex{}, nil
@@ -192,10 +195,11 @@ func (m *Mimicry) shouldTraceWithHierarchicalConfig(
 	gossipTopic := GetGossipTopic(event)
 
 	// Get the appropriate gossip topic configuration
-	gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic)
+	gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic, xatuEventType, networkStr)
 	if !found {
 		// No configuration found, skip this message
 		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "skipped", networkStr)
 
 		return false
 	}
@@ -231,9 +235,11 @@ func (m *Mimicry) shouldTraceWithHierarchicalConfig(
 	if isActive {
 		m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
 		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "processed", networkStr)
 	} else {
 		m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
 		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "skipped", networkStr)
 	}
 
 	return isActive
@@ -379,7 +385,7 @@ func (m *Mimicry) filterRPCMetaMessagesHierarchical(
 		}
 
 		// Get the appropriate gossip topic configuration
-		gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic)
+		gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic, xatuEventType, networkStr)
 		if !found {
 			// No configuration found, skip this message
 			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
@@ -524,29 +530,64 @@ func (m *Mimicry) buildAllMessagesResult(
 
 // getGossipTopicConfig finds the appropriate gossip topic configuration for a given gossip topic.
 // Returns the matched configuration and true if found, or nil and false if no match.
-func (m *Mimicry) getGossipTopicConfig(topicConfig *TopicConfig, gossipTopic string) (*GossipTopicConfig, bool) {
+// Uses pre-compiled regex patterns for optimal performance.
+func (m *Mimicry) getGossipTopicConfig(
+	topicConfig *TopicConfig,
+	gossipTopic,
+	xatuEventType,
+	networkStr string,
+) (*GossipTopicConfig, bool) {
 	if topicConfig.Topics == nil {
 		return nil, false
 	}
 
-	// If we have a gossip topic, try to match it against patterns
-	if gossipTopic != "" && topicConfig.Topics.GossipTopics != nil {
-		// Check each gossip topic pattern directly
-		for gossipPattern, gossipConfig := range topicConfig.Topics.GossipTopics {
-			// Use regexp.MatchString for pattern matching
-			if matched, err := regexp.MatchString(gossipPattern, gossipTopic); err == nil && matched {
-				// Need to make a copy since we're returning a pointer to map value
-				configCopy := gossipConfig
+	// If we have a gossip topic, try to match it against pre-compiled patterns
+	if gossipTopic != "" {
+		// Find the compiled topic config for this event type
+		if compiledConfig := m.findCompiledTopicConfig(xatuEventType); compiledConfig != nil {
+			// Use pre-compiled gossip patterns for matching
+			for compiledPattern, gossipConfig := range compiledConfig.GossipPatterns {
+				if compiledPattern.MatchString(gossipTopic) {
+					// Record successful pattern match
+					m.metrics.AddGossipTopicMatch(xatuEventType, compiledPattern.String(), gossipTopic, networkStr)
 
-				return &configCopy, true
+					return gossipConfig, true
+				}
 			}
 		}
 	}
 
 	// Use fallback configuration if no pattern matched
 	if topicConfig.Topics.Fallback != nil {
+		// Record fallback usage with reason
+		reason := "no_match"
+		if gossipTopic == "" {
+			reason = "no_topic"
+		}
+
+		m.metrics.AddFallbackUsage(xatuEventType, reason, networkStr)
+
 		return topicConfig.Topics.Fallback, true
 	}
 
 	return nil, false
+}
+
+// findCompiledTopicConfig finds the compiled topic configuration for a given event type.
+func (m *Mimicry) findCompiledTopicConfig(eventType string) *CompiledTopicConfig {
+	if !m.Config.Traces.Enabled {
+		return nil
+	}
+
+	// Find the compiled pattern that matches this event type
+	for pattern, compiledPattern := range m.Config.Traces.compiledPatterns {
+		if compiledPattern.MatchString(eventType) {
+			// Return the corresponding compiled topic config
+			if compiledConfig, exists := m.Config.Traces.compiledTopics[pattern]; exists {
+				return compiledConfig
+			}
+		}
+	}
+
+	return nil
 }

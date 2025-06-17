@@ -19,6 +19,12 @@ type Metrics struct {
 	shardProcessed        *prometheus.CounterVec
 	shardSkipped          *prometheus.CounterVec
 	shardDistributionHist *prometheus.HistogramVec
+
+	// Hierarchical sharding metrics.
+	gossipTopicMatches  *prometheus.CounterVec
+	fallbackUsage       *prometheus.CounterVec
+	configTypeUsage     *prometheus.CounterVec
+	gossipTopicSampling *prometheus.CounterVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -77,6 +83,38 @@ func NewMetrics(namespace string) *Metrics {
 			},
 			[]string{"topic", "network_id"},
 		),
+		gossipTopicMatches: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "gossip_topic_pattern_matches_total",
+				Help:      "Number of times each gossip topic pattern was matched",
+			},
+			[]string{"event_type", "gossip_pattern", "gossip_topic", "network_id"},
+		),
+		fallbackUsage: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "hierarchical_fallback_usage_total",
+				Help:      "Number of times hierarchical fallback configuration was used",
+			},
+			[]string{"event_type", "reason", "network_id"}, // reason: no_topic, no_match
+		),
+		configTypeUsage: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "sharding_config_type_usage_total",
+				Help:      "Number of times each configuration type was used",
+			},
+			[]string{"event_type", "config_type", "network_id"}, // config_type: simple, hierarchical
+		),
+		gossipTopicSampling: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "gossip_topic_sampling_total",
+				Help:      "Sampling statistics per gossip topic",
+			},
+			[]string{"event_type", "gossip_topic", "action", "network_id"}, // action: processed, skipped
+		),
 	}
 
 	prometheus.MustRegister(m.decoratedEvents)
@@ -86,6 +124,10 @@ func NewMetrics(namespace string) *Metrics {
 	prometheus.MustRegister(m.shardProcessed)
 	prometheus.MustRegister(m.shardSkipped)
 	prometheus.MustRegister(m.shardDistributionHist)
+	prometheus.MustRegister(m.gossipTopicMatches)
+	prometheus.MustRegister(m.fallbackUsage)
+	prometheus.MustRegister(m.configTypeUsage)
+	prometheus.MustRegister(m.gossipTopicSampling)
 
 	return m
 }
@@ -119,4 +161,24 @@ func (m *Metrics) AddShardProcessed(topic string, shard uint64, network string) 
 func (m *Metrics) AddShardSkipped(topic string, shard uint64, network string) {
 	shardStr := fmt.Sprintf("%d", shard)
 	m.shardSkipped.WithLabelValues(topic, shardStr, network).Inc()
+}
+
+// AddGossipTopicMatch records a successful gossip topic pattern match
+func (m *Metrics) AddGossipTopicMatch(eventType, gossipPattern, gossipTopic, network string) {
+	m.gossipTopicMatches.WithLabelValues(eventType, gossipPattern, gossipTopic, network).Inc()
+}
+
+// AddFallbackUsage records when hierarchical fallback configuration is used
+func (m *Metrics) AddFallbackUsage(eventType, reason, network string) {
+	m.fallbackUsage.WithLabelValues(eventType, reason, network).Inc()
+}
+
+// AddConfigTypeUsage records usage of different configuration types
+func (m *Metrics) AddConfigTypeUsage(eventType, configType, network string) {
+	m.configTypeUsage.WithLabelValues(eventType, configType, network).Inc()
+}
+
+// AddGossipTopicSampling records sampling actions per gossip topic
+func (m *Metrics) AddGossipTopicSampling(eventType, gossipTopic, action, network string) {
+	m.gossipTopicSampling.WithLabelValues(eventType, gossipTopic, action, network).Inc()
 }

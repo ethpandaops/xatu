@@ -1465,12 +1465,17 @@ func (m *Mimicry) parseRPCMetaMessage(
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE
 
-		// Filter message IDs based on trace/sharding config, preserving original indices.
-		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		// Filter messages with topic-aware hierarchical sharding support.
+		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessagesWithTopics(
 			event,
 			clientMeta,
 			eventType.String(),
-			[]*wrapperspb.StringValue{message.MessageId},
+			[]RPCMetaMessageInfo{
+				{
+					MessageID: message.MessageId,
+					Topic:     message.TopicId, // Include topic information for hierarchical filtering
+				},
+			},
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check trace config for message: %w", err)

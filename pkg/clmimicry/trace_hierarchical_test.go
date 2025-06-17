@@ -417,7 +417,7 @@ func TestHierarchicalRPCMetaMessageFiltering(t *testing.T) {
 		Payload:   map[string]any{},
 	}
 
-	result, err := mimicry.ShouldTraceRPCMetaMessagesWithTopics(
+	result, err := mimicry.ShouldTraceRPCMetaMessages(
 		event,
 		clientMeta,
 		xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
@@ -467,6 +467,192 @@ func TestHierarchicalRPCMetaMessageFiltering(t *testing.T) {
 	}
 
 	t.Logf("Processed %d messages, filtered to %d results", len(messages), len(result))
+}
+
+// TestRefactoredDelegationPattern tests that ShouldTraceMessage correctly delegates to hierarchical and simple methods
+func TestRefactoredDelegationPattern(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+
+	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
+	testTime := time.Now()
+	uint64Ptr := uint64(64)
+
+	// Test simple configuration delegation
+	t.Run("simple_config_delegation", func(t *testing.T) {
+		config := &Config{
+			Traces: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						TotalShards:     &uint64Ptr,
+						ActiveShardsRaw: &ActiveShardsConfig{0, 1},
+						ShardingKey:     "MsgID",
+					},
+				},
+			},
+		}
+
+		err := config.Traces.Validate()
+		require.NoError(t, err)
+		err = config.Traces.CompilePatterns()
+		require.NoError(t, err)
+
+		mimicry := &Mimicry{
+			Config:  config,
+			metrics: NewMetrics("test_simple_delegation"),
+		}
+
+		event := &host.TraceEvent{
+			Type:      "DUPLICATE_MESSAGE",
+			PeerID:    testPeerID,
+			Timestamp: testTime,
+			Payload:   map[string]any{"MsgID": "simple_test_msg"},
+		}
+
+		clientMeta := createMockClientMeta(1)
+		result := mimicry.ShouldTraceMessage(event, clientMeta, xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String())
+
+		// Should use simple config logic
+		expectedShard := GetShard("simple_test_msg", 64)
+		expectedResult := expectedShard <= 1
+		assert.Equal(t, expectedResult, result, "Simple config should delegate correctly")
+	})
+
+	// Test hierarchical configuration delegation
+	t.Run("hierarchical_config_delegation", func(t *testing.T) {
+		config := &Config{
+			Traces: TracesConfig{
+				Enabled: true,
+				Topics: map[string]TopicConfig{
+					"(?i).*duplicate_message.*": {
+						Topics: &TopicsConfig{
+							GossipTopics: map[string]GossipTopicConfig{
+								".*beacon_block.*": {
+									TotalShards:     1,
+									ActiveShardsRaw: ActiveShardsConfig{0},
+									ShardingKey:     "MsgID",
+								},
+							},
+							Fallback: &GossipTopicConfig{
+								TotalShards:     512,
+								ActiveShardsRaw: ActiveShardsConfig{0},
+								ShardingKey:     "MsgID",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		err := config.Traces.Validate()
+		require.NoError(t, err)
+		err = config.Traces.CompilePatterns()
+		require.NoError(t, err)
+
+		mimicry := &Mimicry{
+			Config:  config,
+			metrics: NewMetrics("test_hierarchical_delegation"),
+		}
+
+		event := &host.TraceEvent{
+			Type:      "DUPLICATE_MESSAGE",
+			PeerID:    testPeerID,
+			Timestamp: testTime,
+			Payload: map[string]any{
+				"MsgID": "hierarchical_test_msg",
+				"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
+			},
+		}
+
+		clientMeta := createMockClientMeta(1)
+		result := mimicry.ShouldTraceMessage(event, clientMeta, xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String())
+
+		// Should use hierarchical config logic - beacon_block should get 100% sampling
+		assert.True(t, result, "Hierarchical config should delegate correctly and sample beacon_block at 100%")
+	})
+}
+
+// TestConsolidatedRPCMethodInterface tests the unified ShouldTraceRPCMetaMessages interface
+func TestConsolidatedRPCMethodInterface(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+
+	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
+	testTime := time.Now()
+
+	// Create simple configuration for testing
+	uint64Ptr := uint64(4)
+	config := &Config{
+		Traces: TracesConfig{
+			Enabled: true,
+			Topics: map[string]TopicConfig{
+				"(?i).*recv_rpc.*": {
+					TotalShards:     &uint64Ptr,
+					ActiveShardsRaw: &ActiveShardsConfig{0, 1}, // 50% sampling
+					ShardingKey:     "MsgID",
+				},
+			},
+		},
+	}
+
+	err := config.Traces.Validate()
+	require.NoError(t, err)
+	err = config.Traces.CompilePatterns()
+	require.NoError(t, err)
+
+	mimicry := &Mimicry{
+		Config:  config,
+		metrics: NewMetrics("test_consolidated"),
+	}
+
+	clientMeta := createMockClientMeta(1)
+	event := &host.TraceEvent{
+		Type:      "RECV_RPC",
+		PeerID:    testPeerID,
+		Timestamp: testTime,
+		Payload:   map[string]any{},
+	}
+
+	// Test with RPCMetaMessageInfo (new format)
+	t.Run("unified_interface_with_topics", func(t *testing.T) {
+		messages := []RPCMetaMessageInfo{
+			{MessageID: wrapperspb.String("msg_1"), Topic: wrapperspb.String("/eth2/beacon_block")},
+			{MessageID: wrapperspb.String("msg_2"), Topic: wrapperspb.String("/eth2/attestation")},
+		}
+
+		result, err := mimicry.ShouldTraceRPCMetaMessages(event, clientMeta, xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), messages)
+		require.NoError(t, err)
+
+		// Verify that we get results (exact count depends on sharding)
+		assert.LessOrEqual(t, len(result), len(messages), "Should not get more results than input messages")
+		t.Logf("Topic-aware format: filtered %d out of %d messages", len(result), len(messages))
+	})
+
+	// Test with []*wrapperspb.StringValue (message IDs only)
+	t.Run("unified_interface_message_ids", func(t *testing.T) {
+		messageIDs := []*wrapperspb.StringValue{
+			wrapperspb.String("msg_1"),
+			wrapperspb.String("msg_2"),
+		}
+
+		result, err := mimicry.ShouldTraceRPCMetaMessages(event, clientMeta, xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), messageIDs)
+		require.NoError(t, err)
+
+		// Verify that we get results (exact count depends on sharding)
+		assert.LessOrEqual(t, len(result), len(messageIDs), "Should not get more results than input messages")
+		t.Logf("Message IDs format: filtered %d out of %d messages", len(result), len(messageIDs))
+	})
+
+	// Test with invalid type
+	t.Run("unified_interface_invalid_type", func(t *testing.T) {
+		invalidMessages := []string{"invalid", "type"}
+
+		result, err := mimicry.ShouldTraceRPCMetaMessages(event, clientMeta, xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), invalidMessages)
+		assert.Error(t, err, "Should return error for invalid message type")
+		assert.Nil(t, result, "Should return nil result on error")
+		assert.Contains(t, err.Error(), "unsupported message type", "Error should mention unsupported type")
+	})
 }
 
 // TestBackwardCompatibilityWithHierarchical verifies that simple configs still work alongside hierarchical ones

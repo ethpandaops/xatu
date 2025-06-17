@@ -1,12 +1,36 @@
 package clmimicry
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+// FilteredMessageWithIndex represents a filtered message with its original index
+type FilteredMessageWithIndex struct {
+	MessageID     *wrapperspb.StringValue
+	OriginalIndex uint32
+}
+
+// RPCMetaMessageInfo represents a message with its ID and optional topic for RPC meta filtering
+type RPCMetaMessageInfo struct {
+	MessageID *wrapperspb.StringValue
+	Topic     *wrapperspb.StringValue // Optional: gossip topic for the message
+}
+
+// IsShardActive checks if a shard is in the active shards list.
+func IsShardActive(shard uint64, activeShards []uint64) bool {
+	for _, activeShard := range activeShards {
+		if shard == activeShard {
+			return true
+		}
+	}
+
+	return false
+}
 
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
 // in the sample based on the configured trace settings.
@@ -34,51 +58,8 @@ func (m *Mimicry) ShouldTraceMessage(
 				return m.shouldTraceWithHierarchicalConfig(event, clientMeta, topicConfig, xatuEventType)
 			}
 
-			// Simple configuration logic (backward compatible)
-			if topicConfig.TotalShards == nil {
-				// Invalid simple config, should not happen after validation
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-				return true
-			}
-
-			totalShards := *topicConfig.TotalShards
-
-			// Get the appropriate sharding key based on the configuration
-			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey, xatuEventType)
-
-			// If no sharding key, we can't sample. Shouldn't ever happen.
-			if shardingKey == "" {
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-				return true
-			}
-
-			// If all shards are configured to be active, skip hashing and return true, save some trees.
-			//nolint:gosec // controlled config, no overflow.
-			if len(topicConfig.ActiveShards) == int(totalShards) {
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-				return true
-			}
-
-			// Calculate the shard for this message.
-			shard := GetShard(shardingKey, totalShards)
-
-			// Record metrics for all messages to track distribution.
-			m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
-
-			// Check if this shard is in the active shards list.
-			isActive := IsShardActive(shard, topicConfig.ActiveShards)
-
-			// Record processed or skipped metrics.
-			if isActive {
-				m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-			} else {
-				m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
-				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-			}
-
-			return isActive
+			// Use simple sharding logic (backward compatible)
+			return m.shouldTraceWithSimpleConfig(event, clientMeta, topicConfig, xatuEventType)
 		}
 	}
 
@@ -88,20 +69,27 @@ func (m *Mimicry) ShouldTraceMessage(
 	return true
 }
 
-// FilteredMessageWithIndex represents a filtered message with its original index
-type FilteredMessageWithIndex struct {
-	MessageID     *wrapperspb.StringValue
-	OriginalIndex uint32
+// ShouldTraceRPCMetaMessages filters RPC meta messages with support for both simple and hierarchical configurations.
+// It accepts either []RPCMetaMessageInfo (with topic support) or []*wrapperspb.StringValue (legacy format).
+func (m *Mimicry) ShouldTraceRPCMetaMessages(
+	event *host.TraceEvent,
+	clientMeta *xatu.ClientMeta,
+	xatuEventType string,
+	messages interface{}, // []RPCMetaMessageInfo or []*wrapperspb.StringValue
+) ([]FilteredMessageWithIndex, error) {
+	// Delegate to appropriate method based on message type
+	switch msgs := messages.(type) {
+	case []RPCMetaMessageInfo:
+		return m.shouldTraceRPCMetaMessagesWithTopics(event, clientMeta, xatuEventType, msgs)
+	case []*wrapperspb.StringValue:
+		return m.shouldTraceRPCMetaMessagesWithMessageIDs(event, clientMeta, xatuEventType, msgs)
+	default:
+		return nil, fmt.Errorf("unsupported message type: %T", messages)
+	}
 }
 
-// RPCMetaMessageInfo represents a message with its ID and optional topic for RPC meta filtering
-type RPCMetaMessageInfo struct {
-	MessageID *wrapperspb.StringValue
-	Topic     *wrapperspb.StringValue // Optional: gossip topic for the message
-}
-
-// ShouldTraceRPCMetaMessagesWithTopics filters RPC meta messages with hierarchical gossip topic support
-func (m *Mimicry) ShouldTraceRPCMetaMessagesWithTopics(
+// shouldTraceRPCMetaMessagesWithTopics handles topic-aware RPC meta message filtering
+func (m *Mimicry) shouldTraceRPCMetaMessagesWithTopics(
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
@@ -109,52 +97,18 @@ func (m *Mimicry) ShouldTraceRPCMetaMessagesWithTopics(
 ) ([]FilteredMessageWithIndex, error) {
 	networkStr := getNetworkID(clientMeta)
 
-	if !m.Config.Traces.Enabled {
-		// Return all messages with their indices if tracing is not enabled
-		result := make([]FilteredMessageWithIndex, len(messages))
-		for i, msg := range messages {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     msg.MessageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	// If the event type is unshardable, we can move on with life.
-	if isUnshardableEvent(xatuEventType) {
-		result := make([]FilteredMessageWithIndex, len(messages))
-
-		for i, msg := range messages {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     msg.MessageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
+	// Check early exit conditions
+	if shouldSkipFiltering, result := m.shouldSkipRPCFiltering(xatuEventType, networkStr, len(messages), func(i int) *wrapperspb.StringValue {
+		return messages[i].MessageID
+	}); shouldSkipFiltering {
 		return result, nil
 	}
 
 	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
 	if !found {
-		// Return all messages with their indices if no topic config found
-		result := make([]FilteredMessageWithIndex, len(messages))
-
-		for i, msg := range messages {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     msg.MessageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
+		return m.buildAllMessagesResult(len(messages), func(i int) *wrapperspb.StringValue {
+			return messages[i].MessageID
+		}, xatuEventType, networkStr), nil
 	}
 
 	// Check if this is hierarchical or simple configuration
@@ -165,19 +119,9 @@ func (m *Mimicry) ShouldTraceRPCMetaMessagesWithTopics(
 
 	// Simple configuration logic (backward compatible)
 	if topicConfig.TotalShards == nil {
-		// Invalid simple config, return all messages
-		result := make([]FilteredMessageWithIndex, len(messages))
-
-		for i, msg := range messages {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     msg.MessageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
+		return m.buildAllMessagesResult(len(messages), func(i int) *wrapperspb.StringValue {
+			return messages[i].MessageID
+		}, xatuEventType, networkStr), nil
 	}
 
 	// Convert messages to message IDs for simple configuration
@@ -189,7 +133,8 @@ func (m *Mimicry) ShouldTraceRPCMetaMessagesWithTopics(
 	return m.filterRPCMetaMessagesWithSimpleConfig(messageIDs, topicConfig, xatuEventType, networkStr)
 }
 
-func (m *Mimicry) ShouldTraceRPCMetaMessages(
+// shouldTraceRPCMetaMessagesWithMessageIDs handles RPC meta message filtering using message IDs only
+func (m *Mimicry) shouldTraceRPCMetaMessagesWithMessageIDs(
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
@@ -197,57 +142,23 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 ) ([]FilteredMessageWithIndex, error) {
 	networkStr := getNetworkID(clientMeta)
 
-	if !m.Config.Traces.Enabled {
-		// Return all messages with their indices if tracing is not enabled
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	// If the event type is unshardable, we can move on with life.
-	if isUnshardableEvent(xatuEventType) {
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
+	// Check early exit conditions
+	if shouldSkipFiltering, result := m.shouldSkipRPCFiltering(xatuEventType, networkStr, len(messageIDs), func(i int) *wrapperspb.StringValue {
+		return messageIDs[i]
+	}); shouldSkipFiltering {
 		return result, nil
 	}
 
 	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
 	if !found {
-		// Return all messages with their indices if no topic config found
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
+		return m.buildAllMessagesResult(len(messageIDs), func(i int) *wrapperspb.StringValue {
+			return messageIDs[i]
+		}, xatuEventType, networkStr), nil
 	}
 
 	// Check if this is hierarchical or simple configuration
 	if topicConfig.Topics != nil {
-		// For hierarchical configuration with the legacy method, use fallback configuration.
+		// For hierarchical configuration without topic information, use fallback configuration.
 		// Note: For RPC meta messages with topic information, use ShouldTraceRPCMetaMessagesWithTopics instead.
 		gossipConfig, configFound := m.getGossipTopicConfig(topicConfig, "")
 		if !configFound {
@@ -260,112 +171,12 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 
 	// Simple configuration logic (backward compatible)
 	if topicConfig.TotalShards == nil {
-		// Invalid simple config, return all messages
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
+		return m.buildAllMessagesResult(len(messageIDs), func(i int) *wrapperspb.StringValue {
+			return messageIDs[i]
+		}, xatuEventType, networkStr), nil
 	}
 
-	totalShards := *topicConfig.TotalShards
-
-	// If all shards are configured to be active, skip filtering
-	//nolint:gosec // controlled config, no overflow.
-	if len(topicConfig.ActiveShards) == int(totalShards) {
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	var filteredMessages []FilteredMessageWithIndex
-
-	// Check each message ID against the sharding configuration
-	for i, messageID := range messageIDs {
-		msgID := messageID.GetValue()
-		if msgID == "" {
-			continue
-		}
-
-		// Calculate the shard for this message ID
-		shard := GetShard(msgID, totalShards)
-
-		// Record metrics for all messages to track distribution
-		m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
-
-		// Check if this shard is in the active shards list
-		isActive := IsShardActive(shard, topicConfig.ActiveShards)
-
-		if isActive {
-			filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			})
-
-			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		} else {
-			m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
-			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-		}
-	}
-
-	return filteredMessages, nil
-}
-
-// IsShardActive checks if a shard is in the active shards list.
-func IsShardActive(shard uint64, activeShards []uint64) bool {
-	for _, activeShard := range activeShards {
-		if shard == activeShard {
-			return true
-		}
-	}
-
-	return false
-}
-
-// getGossipTopicConfig finds the appropriate gossip topic configuration for a given gossip topic.
-// Returns the matched configuration and true if found, or nil and false if no match.
-func (m *Mimicry) getGossipTopicConfig(topicConfig *TopicConfig, gossipTopic string) (*GossipTopicConfig, bool) {
-	if topicConfig.Topics == nil {
-		return nil, false
-	}
-
-	// If we have a gossip topic, try to match it against patterns
-	if gossipTopic != "" && topicConfig.Topics.GossipTopics != nil {
-		// Check each gossip topic pattern directly
-		for gossipPattern, gossipConfig := range topicConfig.Topics.GossipTopics {
-			// Use regexp.MatchString for pattern matching
-			if matched, err := regexp.MatchString(gossipPattern, gossipTopic); err == nil && matched {
-				// Need to make a copy since we're returning a pointer to map value
-				configCopy := gossipConfig
-
-				return &configCopy, true
-			}
-		}
-	}
-
-	// Use fallback configuration if no pattern matched
-	if topicConfig.Topics.Fallback != nil {
-		return topicConfig.Topics.Fallback, true
-	}
-
-	return nil, false
+	return m.filterRPCMetaMessagesWithSimpleConfig(messageIDs, topicConfig, xatuEventType, networkStr)
 }
 
 // shouldTraceWithHierarchicalConfig determines if an event should be traced using hierarchical configuration.
@@ -415,6 +226,64 @@ func (m *Mimicry) shouldTraceWithHierarchicalConfig(
 
 	// Check if this shard is in the active shards list.
 	isActive := IsShardActive(shard, gossipConfig.ActiveShards)
+
+	// Record processed or skipped metrics.
+	if isActive {
+		m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+	} else {
+		m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
+		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+	}
+
+	return isActive
+}
+
+// shouldTraceWithSimpleConfig determines if an event should be traced using simple configuration.
+func (m *Mimicry) shouldTraceWithSimpleConfig(
+	event *host.TraceEvent,
+	clientMeta *xatu.ClientMeta,
+	topicConfig *TopicConfig,
+	xatuEventType string,
+) bool {
+	networkStr := getNetworkID(clientMeta)
+
+	// Simple configuration logic (backward compatible)
+	if topicConfig.TotalShards == nil {
+		// Invalid simple config, should not happen after validation
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+		return true
+	}
+
+	totalShards := *topicConfig.TotalShards
+
+	// Get the appropriate sharding key based on the configuration
+	shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey, xatuEventType)
+
+	// If no sharding key, we can't sample. Shouldn't ever happen.
+	if shardingKey == "" {
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+		return true
+	}
+
+	// If all shards are configured to be active, skip hashing and return true, save some trees.
+	//nolint:gosec // controlled config, no overflow.
+	if len(topicConfig.ActiveShards) == int(totalShards) {
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+		return true
+	}
+
+	// Calculate the shard for this message.
+	shard := GetShard(shardingKey, totalShards)
+
+	// Record metrics for all messages to track distribution.
+	m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
+
+	// Check if this shard is in the active shards list.
+	isActive := IsShardActive(shard, topicConfig.ActiveShards)
 
 	// Record processed or skipped metrics.
 	if isActive {
@@ -616,4 +485,68 @@ func (m *Mimicry) filterRPCMetaMessagesWithSimpleConfig(
 	}
 
 	return filteredMessages, nil
+}
+
+// shouldSkipRPCFiltering checks if RPC filtering should be skipped and returns early exit result
+func (m *Mimicry) shouldSkipRPCFiltering(
+	xatuEventType string,
+	networkStr string,
+	messageCount int,
+	getMessageID func(int) *wrapperspb.StringValue,
+) (bool, []FilteredMessageWithIndex) {
+	if !m.Config.Traces.Enabled || isUnshardableEvent(xatuEventType) {
+		return true, m.buildAllMessagesResult(messageCount, getMessageID, xatuEventType, networkStr)
+	}
+
+	return false, nil
+}
+
+// buildAllMessagesResult creates a result with all messages (no filtering)
+func (m *Mimicry) buildAllMessagesResult(
+	messageCount int,
+	getMessageID func(int) *wrapperspb.StringValue,
+	xatuEventType string,
+	networkStr string,
+) []FilteredMessageWithIndex {
+	result := make([]FilteredMessageWithIndex, messageCount)
+
+	for i := 0; i < messageCount; i++ {
+		result[i] = FilteredMessageWithIndex{
+			MessageID:     getMessageID(i),
+			OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+		}
+
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+	}
+
+	return result
+}
+
+// getGossipTopicConfig finds the appropriate gossip topic configuration for a given gossip topic.
+// Returns the matched configuration and true if found, or nil and false if no match.
+func (m *Mimicry) getGossipTopicConfig(topicConfig *TopicConfig, gossipTopic string) (*GossipTopicConfig, bool) {
+	if topicConfig.Topics == nil {
+		return nil, false
+	}
+
+	// If we have a gossip topic, try to match it against patterns
+	if gossipTopic != "" && topicConfig.Topics.GossipTopics != nil {
+		// Check each gossip topic pattern directly
+		for gossipPattern, gossipConfig := range topicConfig.Topics.GossipTopics {
+			// Use regexp.MatchString for pattern matching
+			if matched, err := regexp.MatchString(gossipPattern, gossipTopic); err == nil && matched {
+				// Need to make a copy since we're returning a pointer to map value
+				configCopy := gossipConfig
+
+				return &configCopy, true
+			}
+		}
+	}
+
+	// Use fallback configuration if no pattern matched
+	if topicConfig.Topics.Fallback != nil {
+		return topicConfig.Topics.Fallback, true
+	}
+
+	return nil, false
 }

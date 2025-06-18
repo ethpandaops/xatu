@@ -8,6 +8,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
+	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/go-co-op/gocron/v2"
@@ -21,7 +22,8 @@ type Static struct {
 
 	handlers *handler.Peer
 
-	captureDelay time.Duration
+	captureDelay   time.Duration
+	ethereumConfig *ethereum.Config
 
 	log logrus.FieldLogger
 
@@ -32,7 +34,7 @@ type Static struct {
 	metrics *Metrics
 }
 
-func New(name string, config *Config, handlers *handler.Peer, captureDelay time.Duration, log logrus.FieldLogger) (*Static, error) {
+func New(name string, config *Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -42,13 +44,14 @@ func New(name string, config *Config, handlers *handler.Peer, captureDelay time.
 	}
 
 	return &Static{
-		config:       config,
-		handlers:     handlers,
-		captureDelay: captureDelay,
-		log:          log,
-		cache:        cache.NewSharedCache(),
-		peers:        &map[string]bool{},
-		metrics:      NewMetrics("xatu_mimicry_coordinator_static"),
+		config:         config,
+		handlers:       handlers,
+		captureDelay:   captureDelay,
+		ethereumConfig: ethereumConfig,
+		log:            log,
+		cache:          cache.NewSharedCache(),
+		peers:          &map[string]bool{},
+		metrics:        NewMetrics("xatu_mimicry_coordinator_static"),
 	}, nil
 }
 
@@ -62,7 +65,7 @@ func (s *Static) Start(ctx context.Context) error {
 		go func(record string, peers *map[string]bool) {
 			_ = retry.Do(
 				func() error {
-					peer, err := execution.New(ctx, s.log, record, s.handlers, s.captureDelay, s.cache)
+					peer, err := execution.New(ctx, s.log, record, s.handlers, s.captureDelay, s.cache, s.ethereumConfig)
 					if err != nil {
 						return err
 					}

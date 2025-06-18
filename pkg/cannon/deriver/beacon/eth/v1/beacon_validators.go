@@ -209,12 +209,12 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 	)
 	defer span.End()
 
-	spec, err := b.beacon.Node().Spec()
+	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to fetch spec")
 	}
 
-	boundarySlot := phase0.Slot(uint64(epoch) * uint64(spec.SlotsPerEpoch))
+	boundarySlot := phase0.Slot(uint64(epoch) * uint64(sp.SlotsPerEpoch))
 
 	validatorsMap, err := b.beacon.GetValidators(ctx, xatuethv1.SlotAsString(boundarySlot))
 	if err != nil {

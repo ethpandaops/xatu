@@ -14,7 +14,20 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// TestHierarchicalTopicConfig tests the new hierarchical gossip topic configuration
+// TestHierarchicalTopicConfig validates the hierarchical gossip topic configuration system
+// that allows different sampling rates per gossip topic pattern.
+//
+// Hierarchical configuration enables fine-grained control over which Ethereum consensus
+// events to sample at what rates. For example:
+// - Beacon blocks: 100% sampling (critical for consensus)
+// - Attestations: 50% sampling (high volume, medium importance)
+// - Sync committee: 25% sampling (lower priority)
+//
+// This test validates:
+// 1. Proper hierarchical config structure with gossip topics and fallback
+// 2. Rejection of invalid mixed simple+hierarchical configurations
+// 3. Requirement for at least gossip topics OR fallback in hierarchical mode
+// 4. Validation error handling and messaging
 func TestHierarchicalTopicConfig(t *testing.T) {
 	uint64Ptr := uint64(64)
 
@@ -238,7 +251,17 @@ func TestHierarchicalTopicConfig(t *testing.T) {
 	}
 }
 
-// TestHierarchicalConfigCompilation tests that hierarchical configs compile correctly
+// TestHierarchicalConfigCompilation verifies that hierarchical configurations compile
+// their regex patterns correctly and can be used for runtime topic matching.
+//
+// Pattern compilation is a critical step that converts string patterns into compiled
+// regular expressions for efficient runtime matching. This test ensures:
+// 1. Valid hierarchical configs pass compilation without errors
+// 2. Compiled patterns can successfully match expected topic formats
+// 3. The compilation process preserves the hierarchical structure
+//
+// Without proper compilation, the system cannot match incoming gossip topics
+// to their configured sampling rules.
 func TestHierarchicalConfigCompilation(t *testing.T) {
 	uint64Ptr := uint64(64)
 
@@ -299,7 +322,16 @@ func TestHierarchicalConfigCompilation(t *testing.T) {
 	}
 }
 
-// TestHierarchicalLogSummary tests the log summary for hierarchical configurations
+// TestHierarchicalLogSummary validates the human-readable log output that summarizes
+// hierarchical sharding configurations for operational visibility.
+//
+// The log summary is crucial for operators to understand:
+// 1. Which event patterns are configured for hierarchical sharding
+// 2. How many shards are active for each gossip topic pattern
+// 3. Which fallback rules apply to unmatched topics
+//
+// This formatted output helps with debugging configuration issues and verifying
+// that the intended sampling rates are actually being applied.
 func TestHierarchicalLogSummary(t *testing.T) {
 	uint64Ptr := uint64(64)
 
@@ -368,6 +400,16 @@ func TestHierarchicalLogSummary(t *testing.T) {
 // Note: TestHierarchicalRPCMetaFiltering removed - covered by TestComprehensiveEventSharding in trace_integration_test.go
 
 // Note: TestHierarchicalRPCMetaMessageFiltering removed - covered by TestComprehensiveEventSharding in trace_integration_test.go
+// TestRefactoredDelegationPattern verifies that the hierarchical sharding system
+// correctly delegates to different sharding strategies based on configuration type.
+//
+// The delegation pattern is the core architectural component that routes events through
+// the appropriate sharding logic:
+// 1. Simple sharding: uniform sampling across all messages of an event type
+// 2. Hierarchical sharding: topic-aware sampling with different rates per gossip topic
+//
+// This test ensures the delegation logic correctly identifies configuration types
+// and routes events to the appropriate processing path without mixing strategies.
 func TestRefactoredDelegationPattern(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -471,7 +513,17 @@ func TestRefactoredDelegationPattern(t *testing.T) {
 	})
 }
 
-// TestConsolidatedRPCMethodInterface tests the unified ShouldTraceRPCMetaMessages interface
+// TestConsolidatedRPCMethodInterface validates the unified interface for processing
+// RPC meta messages that contain multiple embedded message objects.
+//
+// RPC meta messages are complex structures containing arrays of gossip messages,
+// subscription updates, and control messages. The consolidated interface ensures:
+// 1. Consistent sharding logic across all RPC meta message types
+// 2. Proper extraction and processing of embedded topic information
+// 3. Unified error handling for malformed RPC payloads
+//
+// This consolidation reduces code duplication and ensures consistent behavior
+// across different RPC message processing paths.
 func TestConsolidatedRPCMethodInterface(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -553,7 +605,16 @@ func TestConsolidatedRPCMethodInterface(t *testing.T) {
 	})
 }
 
-// TestBackwardCompatibilityWithHierarchical verifies that simple configs still work alongside hierarchical ones
+// TestBackwardCompatibilityWithHierarchical verifies that simple and hierarchical
+// configurations can coexist in the same system without interference.
+//
+// This mixed-mode operation is essential for gradual migration scenarios where:
+// 1. Some event types use simple sharding (uniform sampling)
+// 2. Other event types use hierarchical sharding (new features)
+// 3. Both configurations operate correctly within the same mimicry instance
+//
+// The test ensures that the delegation logic correctly routes each event type
+// to its appropriate sharding strategy without cross-contamination.
 func TestBackwardCompatibilityWithHierarchical(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -644,8 +705,17 @@ func TestBackwardCompatibilityWithHierarchical(t *testing.T) {
 	t.Logf("Simple config result: %v, Hierarchical config result: %v", simpleResult, hierarchicalResult)
 }
 
-// TestRPCMetaControlHierarchicalSharding tests that RPC meta control messages (IHAVE, GRAFT, PRUNE)
-// now properly support hierarchical sharding using their topic information.
+// TestRPCMetaControlHierarchicalSharding validates that RPC meta control messages
+// (IHAVE, GRAFT, PRUNE) properly support hierarchical sharding using topic information.
+//
+// RPC meta control messages contain topic references that allow hierarchical sharding:
+// - IHAVE: "I have these messages for topic X" - shard by topic pattern
+// - GRAFT: "Add me to mesh for topic X" - shard by topic pattern
+// - PRUNE: "Remove me from mesh for topic X" - shard by topic pattern
+//
+// This enables topic-aware sampling of mesh management operations, allowing
+// different control message sampling rates for beacon blocks vs attestations.
+// Critical for understanding gossipsub mesh dynamics per consensus data type.
 func TestRPCMetaControlHierarchicalSharding(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -858,7 +928,16 @@ func TestRPCMetaControlHierarchicalSharding(t *testing.T) {
 	}
 }
 
-// TestHierarchicalNoFallbackConfig tests hierarchical config scenarios
+// TestHierarchicalNoFallbackConfig tests hierarchical configuration edge cases
+// where no fallback rule is defined and topics don't match specific patterns.
+//
+// This test validates the behavior when:
+// 1. A hierarchical config has only specific gossip topic patterns (no fallback)
+// 2. An incoming message doesn't match any of the defined patterns
+// 3. The system must decide whether to process or skip the unmatched message
+//
+// The expected behavior is to skip unmatched messages when no fallback is configured,
+// allowing for precise control over which topics are processed.
 func TestHierarchicalNoFallbackConfig(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry

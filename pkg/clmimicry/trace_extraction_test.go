@@ -11,6 +11,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestGetShardingKey validates the extraction of sharding keys from various
+// libp2p trace event types and payload structures.
+//
+// Sharding keys are the critical values used for consistent hash-based routing:
+// - MsgID: Uses message identifier for message-based sharding
+// - PeerID: Uses peer identifier for peer-based sharding
+//
+// This test ensures proper key extraction across:
+// 1. Different event types (CONNECTED, RECV_RPC, DUPLICATE_MESSAGE, etc.)
+// 2. Various payload formats (maps, protobuf, RPC structures)
+// 3. Edge cases (missing fields, wrong types, empty values)
+//
+// Correct key extraction is essential for deterministic shard assignment.
 func TestGetShardingKey(t *testing.T) {
 	var (
 		remotePeerIDStr = "16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq"
@@ -127,6 +140,18 @@ func TestGetShardingKey(t *testing.T) {
 	}
 }
 
+// TestGetMsgID validates message ID extraction from various payload structures
+// using Go reflection to handle different data types dynamically.
+//
+// Message IDs are essential for consistent message-based sharding and must be
+// extracted reliably from diverse payload formats:
+// 1. Struct pointers with MsgID fields
+// 2. Map[string]interface{} with "MsgID" keys
+// 3. Map[string]string with string values
+// 4. Missing or nil payloads (should return empty string)
+//
+// The extraction logic uses reflection to handle the dynamic nature of
+// libp2p trace event payloads while maintaining type safety.
 func TestGetMsgID(t *testing.T) {
 	mockMsgID := "test-msg-id-12345"
 
@@ -192,6 +217,18 @@ func TestGetMsgID(t *testing.T) {
 	}
 }
 
+// TestGetGossipTopic validates extraction of Ethereum gossip topic information
+// from libp2p trace events for hierarchical sharding decisions.
+//
+// Gossip topics identify the type of consensus data being transmitted:
+// - "/eth2/4a26c58b/beacon_block/ssz_snappy" (beacon blocks)
+// - "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy" (attestation subnet 0)
+// - "/eth2/4a26c58b/blob_sidecar_1/ssz_snappy" (blob sidecar index 1)
+//
+// This test ensures reliable topic extraction from various event payload formats
+// including maps, protobuf messages, and edge cases like nil or missing data.
+// Topic extraction is critical for hierarchical sharding that applies different
+// sampling rates based on consensus data type.
 func TestGetGossipTopic(t *testing.T) {
 	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
 	testTime := time.Now()

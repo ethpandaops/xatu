@@ -14,11 +14,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockPayload implements the necessary methods to work with getMsgID.
+// MockPayload implements the necessary methods to work with getMsgID during testing.
+// It provides a simple way to create test events with controlled message IDs
+// for verifying sharding behavior without requiring complex libp2p structures.
 type MockPayload struct {
 	MsgID string
 }
 
+// TestShouldTraceMessage verifies the core sharding logic that determines whether
+// a specific message should be processed by this instance based on its shard assignment.
+//
+// This test covers the complete message filtering pipeline:
+// 1. Early returns for disabled traces and empty message IDs
+// 2. Topic pattern matching via compiled regex
+// 3. SipHash-based shard calculation and active shard checking
+// 4. All-shards-active optimization that skips hash calculation
+//
+// The sharding system enables horizontal scaling by distributing messages across
+// multiple instances while ensuring deterministic routing - the same message
+// always goes to the same shard for consistent processing.
 func TestShouldTraceMessage(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -224,7 +238,17 @@ func TestShouldTraceMessage(t *testing.T) {
 	}
 }
 
-// TestSkipsSipHashIfAllShardsActive specifically tests that we skip hashing when all shards are active.
+// TestSkipsSipHashIfAllShardsActive verifies the performance optimization that skips
+// expensive SipHash calculation when all shards are active (100% sampling).
+//
+// When totalShards equals len(activeShards), we know any message will be processed
+// regardless of its hash value, so we can skip the hash calculation entirely.
+// This optimization is critical for high-throughput scenarios with full sampling.
+//
+// The test verifies:
+// 1. All-shards-active case returns true without hashing
+// 2. Partial-shards case still performs proper hash-based filtering
+// 3. Messages that would normally be filtered are correctly handled in each case
 func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -291,7 +315,18 @@ func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
 
 // Note: TestShouldTraceMessageWithDifferentShardingKeys removed - covered by TestComprehensiveEventSharding in trace_integration_test.go
 
-// TestSimpleConfigBackwardCompatibility tests that old simple configs still work
+// TestSimpleConfigBackwardCompatibility ensures that existing simple sharding configurations
+// continue to work without modification when upgrading to hierarchical sharding support.
+//
+// Simple configurations use a single sharding rule for all messages of an event type,
+// while hierarchical configurations allow different sampling rates per gossip topic.
+// This test validates the backward compatibility layer that preserves existing behavior.
+//
+// Validates:
+// 1. Simple config validation and compilation
+// 2. Topic matching with simple patterns
+// 3. Log summary output format for simple configs
+// 4. Absence of hierarchical markers in simple config logs
 func TestSimpleConfigBackwardCompatibility(t *testing.T) {
 	totalShards := uint64(64)
 	activeShards := ActiveShardsConfig{0, 1, 2}
@@ -326,7 +361,18 @@ func TestSimpleConfigBackwardCompatibility(t *testing.T) {
 	assert.NotContains(t, summary, "HIERARCHICAL")
 }
 
-// findMsgIDForShard finds a message ID that maps to a specific shard.
+// findMsgIDForShard finds a message ID that maps to a specific shard using brute force.
+//
+// This helper function is used in tests to create deterministic test cases where we need
+// a message that will hash to a particular shard. It tries sequential message IDs until
+// it finds one that maps to the desired shard via SipHash calculation.
+//
+// Parameters:
+//   - shard: The target shard number (0 to totalShards-1)
+//   - totalShards: The total number of shards in the system
+//
+// Returns:
+//   - A message ID string that will consistently hash to the specified shard
 func findMsgIDForShard(shard, totalShards uint64) string {
 	// Start with a base message ID and increment until we find one that maps to the desired shard.
 	for i := 0; i < 1000; i++ {
@@ -339,7 +385,11 @@ func findMsgIDForShard(shard, totalShards uint64) string {
 	return fmt.Sprintf("0xshard%d", shard) // Fallback, though this might not map to the desired shard.
 }
 
-// createMockTraceEvent creates a mock TraceEvent with the given msgID
+// createMockTraceEvent creates a mock TraceEvent with the given msgID for testing.
+//
+// This helper constructs a minimal but valid TraceEvent that can be used to test
+// the sharding logic without requiring a full libp2p environment. The event
+// contains only the essential fields needed for message ID extraction.
 func createMockTraceEvent(msgID string) *host.TraceEvent {
 	return &host.TraceEvent{
 		Payload: &MockPayload{
@@ -348,7 +398,17 @@ func createMockTraceEvent(msgID string) *host.TraceEvent {
 	}
 }
 
-// createMockClientMeta creates a mock ClientMeta with the given network ID
+// createMockClientMeta creates a mock ClientMeta with the given network ID for testing.
+//
+// ClientMeta contains metadata about the Ethereum network the client is connected to.
+// This helper creates a minimal but valid ClientMeta structure for testing network-aware
+// functionality without requiring actual network connections.
+//
+// Parameters:
+//   - networkID: The Ethereum network ID (1=mainnet, 11155111=sepolia, etc.)
+//
+// Returns:
+//   - A mock ClientMeta with the specified network configuration
 func createMockClientMeta(networkID uint64) *xatu.ClientMeta {
 	return &xatu.ClientMeta{
 		Name:           "test-client",
@@ -363,7 +423,16 @@ func createMockClientMeta(networkID uint64) *xatu.ClientMeta {
 	}
 }
 
-// TestTraceDisabledScenario tests behavior when traces are disabled
+// TestTraceDisabledScenario verifies that the system behaves correctly when tracing
+// is administratively disabled via configuration.
+//
+// When traces are disabled, the system should:
+// 1. Skip all sharding logic and pattern matching
+// 2. Return nil from findCompiledTopicConfig to bypass processing
+// 3. Still allow ShouldTraceMessage to return true (fail-open behavior)
+//
+// This fail-open approach ensures that disabling traces doesn't break the system;
+// it just stops applying sampling rules and processes everything.
 func TestTraceDisabledScenario(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry
@@ -418,7 +487,15 @@ func TestTraceDisabledScenario(t *testing.T) {
 	assert.True(t, shouldTrace, "Should return true when traces are disabled")
 }
 
-// TestNilTotalShardsEdgeCase tests simple config behavior with nil TotalShards
+// TestNilTotalShardsEdgeCase tests the runtime safety checks for corrupted or
+// invalid configuration states where TotalShards becomes nil unexpectedly.
+//
+// While validation should prevent nil TotalShards, this test ensures graceful
+// handling if the configuration becomes corrupted at runtime (e.g., due to
+// concurrent modification or memory corruption).
+//
+// The system should fail-open (return true) rather than crash when encountering
+// nil TotalShards, allowing the service to continue operating while logging errors.
 func TestNilTotalShardsEdgeCase(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	prometheus.DefaultRegisterer = registry

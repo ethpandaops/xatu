@@ -8,6 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestFindMatchingTopicConfig validates the pattern matching logic that maps
+// incoming libp2p trace event types to their configured sharding rules.
+//
+// This test ensures the regex compilation and matching system correctly:
+// 1. Matches exact event type names
+// 2. Handles case-insensitive patterns
+// 3. Supports partial pattern matching with wildcards
+// 4. Returns appropriate results for non-matching patterns
+//
+// Pattern matching is fundamental to the sharding system - events must be
+// correctly mapped to their configuration to apply proper sampling rates.
 func TestFindMatchingTopicConfig(t *testing.T) {
 	uint64Ptr := uint64(64)
 

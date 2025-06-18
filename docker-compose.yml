@@ -396,7 +396,7 @@ services:
   xatu-vector-http-kafka:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: timberio/vector:0.37.1-alpine
     container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml

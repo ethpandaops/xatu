@@ -5,6 +5,8 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,6 +20,9 @@ type Config struct {
 
 	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
+
+	// Outputs configuration
+	Outputs []output.Config `yaml:"outputs"`
 }
 
 func (c *Config) Validate() error {
@@ -27,6 +32,12 @@ func (c *Config) Validate() error {
 
 	if err := c.Coordinator.Validate(); err != nil {
 		return fmt.Errorf("coordinator config error: %w", err)
+	}
+
+	for _, output := range c.Outputs {
+		if err := output.Validate(); err != nil {
+			return fmt.Errorf("output %s: %w", output.Name, err)
+		}
 	}
 
 	return nil
@@ -45,4 +56,31 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 	}
 
 	return nil
+}
+
+// CreateSinks creates the sinks from the configuration.
+func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+	sinks := make([]output.Sink, len(c.Outputs))
+
+	for i, out := range c.Outputs {
+		if out.ShippingMethod == nil {
+			shippingMethod := processor.ShippingMethodAsync
+			out.ShippingMethod = &shippingMethod
+		}
+
+		sink, err := output.NewSink(out.Name,
+			out.SinkType,
+			out.Config,
+			log,
+			out.FilterConfig,
+			*out.ShippingMethod,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create sink %s: %w", out.Name, err)
+		}
+
+		sinks[i] = sink
+	}
+
+	return sinks, nil
 }

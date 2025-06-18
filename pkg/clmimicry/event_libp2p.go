@@ -56,7 +56,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -68,7 +68,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -80,7 +80,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -92,7 +92,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -104,7 +104,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -116,7 +116,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -127,7 +127,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -138,7 +138,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -149,7 +149,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -160,7 +160,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -171,7 +171,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -182,7 +182,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -193,7 +193,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -1005,12 +1005,21 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE
 
+		// Create topic-aware message info for hierarchical sharding support
+		messageInfos := make([]RPCMetaMessageInfo, len(ihave.GetMessageIds()))
+		for i, msgID := range ihave.GetMessageIds() {
+			messageInfos[i] = RPCMetaMessageInfo{
+				MessageID: msgID,
+				Topic:     ihave.GetTopicId(), // Use the topic_id from IHAVE for hierarchical sharding
+			}
+		}
+
 		// Filter message IDs based on trace/sharding config, preserving original indices.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
-			ihave.GetMessageIds(),
+			messageInfos,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check trace config for ihave: %w", err)
@@ -1214,6 +1223,24 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 			continue
 		}
 
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT
+
+		// Create a mock event with GRAFT topic information for sharding decision
+		graftEvent := &host.TraceEvent{
+			Type:      event.Type,
+			PeerID:    event.PeerID,
+			Timestamp: event.Timestamp,
+			Payload: map[string]any{
+				"Topic": graft.GetTopicId().GetValue(),
+			},
+		}
+
+		// Check if we should process this GRAFT event based on trace/sharding config.
+		// GRAFT events can use hierarchical sharding via their topic_id field.
+		if !m.ShouldTraceMessage(graftEvent, clientMeta, eventType.String()) {
+			continue
+		}
+
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{
 				Name:     xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT,
@@ -1265,12 +1292,21 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
 
+		// Create topic-aware peer info for hierarchical sharding support
+		peerInfos := make([]RPCMetaPeerInfo, len(prune.GetPeerIds()))
+		for i, peerID := range prune.GetPeerIds() {
+			peerInfos[i] = RPCMetaPeerInfo{
+				PeerID: peerID,
+				Topic:  prune.GetTopicId(), // Use the topic_id from PRUNE for hierarchical sharding
+			}
+		}
+
 		// Filter peer IDs based on trace/sharding config, preserving original indices.
 		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
-			prune.GetPeerIds(),
+			peerInfos,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check trace config for prune: %w", err)

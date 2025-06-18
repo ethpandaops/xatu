@@ -20,6 +20,12 @@ type RPCMetaMessageInfo struct {
 	Topic     *wrapperspb.StringValue // Optional: gossip topic for the message
 }
 
+// RPCMetaPeerInfo represents a peer with its ID and optional topic for RPC meta filtering
+type RPCMetaPeerInfo struct {
+	PeerID *wrapperspb.StringValue
+	Topic  *wrapperspb.StringValue // Optional: gossip topic for the peer action
+}
+
 // IsShardActive checks if a shard is in the active shards list.
 func IsShardActive(shard uint64, activeShards []uint64) bool {
 	for _, activeShard := range activeShards {
@@ -39,13 +45,6 @@ func (m *Mimicry) ShouldTraceMessage(
 	xatuEventType string,
 ) bool {
 	networkStr := getNetworkID(clientMeta)
-
-	// If the event type is unshardable, we can move on with life.
-	if isUnshardableEvent(xatuEventType) {
-		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-		return true
-	}
 
 	// Check if there's a matching topic config in the trace-based configuration.
 	if m.Config.Traces.Enabled {
@@ -73,17 +72,19 @@ func (m *Mimicry) ShouldTraceMessage(
 }
 
 // ShouldTraceRPCMetaMessages filters RPC meta messages with support for both simple and hierarchical configurations.
-// It accepts either []RPCMetaMessageInfo (with topic support) or []*wrapperspb.StringValue (legacy format).
+// It accepts []RPCMetaMessageInfo (with topic support), []RPCMetaPeerInfo (with topic support), or []*wrapperspb.StringValue (legacy format).
 func (m *Mimicry) ShouldTraceRPCMetaMessages(
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
-	messages interface{}, // []RPCMetaMessageInfo or []*wrapperspb.StringValue
+	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaPeerInfo, or []*wrapperspb.StringValue
 ) ([]FilteredMessageWithIndex, error) {
 	// Delegate to appropriate method based on message type
 	switch msgs := messages.(type) {
 	case []RPCMetaMessageInfo:
 		return m.shouldTraceRPCMetaMessagesWithTopics(event, clientMeta, xatuEventType, msgs)
+	case []RPCMetaPeerInfo:
+		return m.shouldTraceRPCMetaPeersWithTopics(event, clientMeta, xatuEventType, msgs)
 	case []*wrapperspb.StringValue:
 		return m.shouldTraceRPCMetaMessagesWithMessageIDs(event, clientMeta, xatuEventType, msgs)
 	default:
@@ -134,6 +135,51 @@ func (m *Mimicry) shouldTraceRPCMetaMessagesWithTopics(
 	}
 
 	return m.filterRPCMetaMessagesWithSimpleConfig(messageIDs, topicConfig, xatuEventType, networkStr)
+}
+
+// shouldTraceRPCMetaPeersWithTopics handles topic-aware RPC meta peer filtering
+func (m *Mimicry) shouldTraceRPCMetaPeersWithTopics(
+	event *host.TraceEvent,
+	clientMeta *xatu.ClientMeta,
+	xatuEventType string,
+	peers []RPCMetaPeerInfo,
+) ([]FilteredMessageWithIndex, error) {
+	networkStr := getNetworkID(clientMeta)
+
+	// Check early exit conditions
+	if shouldSkipFiltering, result := m.shouldSkipRPCFiltering(xatuEventType, networkStr, len(peers), func(i int) *wrapperspb.StringValue {
+		return peers[i].PeerID
+	}); shouldSkipFiltering {
+		return result, nil
+	}
+
+	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
+	if !found {
+		return m.buildAllMessagesResult(len(peers), func(i int) *wrapperspb.StringValue {
+			return peers[i].PeerID
+		}, xatuEventType, networkStr), nil
+	}
+
+	// Check if this is hierarchical or simple configuration
+	if topicConfig.Topics != nil {
+		// Hierarchical configuration: filter each peer based on its gossip topic
+		return m.filterRPCMetaPeersHierarchical(peers, topicConfig, xatuEventType, networkStr)
+	}
+
+	// Simple configuration logic (backward compatible)
+	if topicConfig.TotalShards == nil {
+		return m.buildAllMessagesResult(len(peers), func(i int) *wrapperspb.StringValue {
+			return peers[i].PeerID
+		}, xatuEventType, networkStr), nil
+	}
+
+	// Convert peers to peer IDs for simple configuration
+	peerIDs := make([]*wrapperspb.StringValue, len(peers))
+	for i, peer := range peers {
+		peerIDs[i] = peer.PeerID
+	}
+
+	return m.filterRPCMetaMessagesWithSimpleConfig(peerIDs, topicConfig, xatuEventType, networkStr)
 }
 
 // shouldTraceRPCMetaMessagesWithMessageIDs handles RPC meta message filtering using message IDs only
@@ -432,6 +478,76 @@ func (m *Mimicry) filterRPCMetaMessagesHierarchical(
 	return filteredMessages, nil
 }
 
+// filterRPCMetaPeersHierarchical filters RPC meta peers using hierarchical configuration
+func (m *Mimicry) filterRPCMetaPeersHierarchical(
+	peers []RPCMetaPeerInfo,
+	topicConfig *TopicConfig,
+	xatuEventType string,
+	networkStr string,
+) ([]FilteredMessageWithIndex, error) {
+	var filteredPeers []FilteredMessageWithIndex
+
+	// Process each peer individually based on its gossip topic
+	for i, peer := range peers {
+		peerID := peer.PeerID.GetValue()
+		if peerID == "" {
+			continue
+		}
+
+		// Extract gossip topic from the peer
+		var gossipTopic string
+		if peer.Topic != nil {
+			gossipTopic = peer.Topic.GetValue()
+		}
+
+		// Get the appropriate gossip topic configuration
+		gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic, xatuEventType, networkStr)
+		if !found {
+			// No configuration found, skip this peer
+			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+
+			continue
+		}
+
+		// If all shards are configured to be active, include the peer
+		//nolint:gosec // controlled config, no overflow.
+		if len(gossipConfig.ActiveShards) == int(gossipConfig.TotalShards) {
+			filteredPeers = append(filteredPeers, FilteredMessageWithIndex{
+				MessageID:     peer.PeerID,
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			})
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+			continue
+		}
+
+		// Calculate the shard for this peer ID
+		shard := GetShard(peerID, gossipConfig.TotalShards)
+
+		// Record metrics for all peers to track distribution
+		m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
+
+		// Check if this shard is in the active shards list
+		isActive := IsShardActive(shard, gossipConfig.ActiveShards)
+
+		if isActive {
+			filteredPeers = append(filteredPeers, FilteredMessageWithIndex{
+				MessageID:     peer.PeerID,
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			})
+
+			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		} else {
+			m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
+			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+		}
+	}
+
+	return filteredPeers, nil
+}
+
 // filterRPCMetaMessagesWithSimpleConfig filters RPC meta messages using simple configuration
 func (m *Mimicry) filterRPCMetaMessagesWithSimpleConfig(
 	messageIDs []*wrapperspb.StringValue,
@@ -500,7 +616,7 @@ func (m *Mimicry) shouldSkipRPCFiltering(
 	messageCount int,
 	getMessageID func(int) *wrapperspb.StringValue,
 ) (bool, []FilteredMessageWithIndex) {
-	if !m.Config.Traces.Enabled || isUnshardableEvent(xatuEventType) {
+	if !m.Config.Traces.Enabled {
 		return true, m.buildAllMessagesResult(messageCount, getMessageID, xatuEventType, networkStr)
 	}
 

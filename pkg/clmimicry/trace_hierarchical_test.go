@@ -1069,3 +1069,172 @@ func TestHierarchicalNoFallbackConfig(t *testing.T) {
 		assert.Empty(t, filteredResult, "Should return empty when messages have unmatched topics and no fallback")
 	})
 }
+
+// TestSelectHighestSamplingConfig tests the core logic for selecting the configuration with the highest sampling rate
+// when multiple gossip topics match different patterns with different sampling rates.
+func TestSelectHighestSamplingConfig(t *testing.T) {
+	// Create a config with different sampling rates for different topic patterns
+	config := &Config{
+		Traces: TracesConfig{
+			Enabled: true,
+			Topics: map[string]TopicConfig{
+				"(?i).*recv_rpc.*": {
+					Topics: &TopicsConfig{
+						GossipTopics: map[string]GossipTopicConfig{
+							// Beacon blocks: 100% sampling (512/512)
+							".*beacon_block.*": {
+								TotalShards:     512,
+								ActiveShardsRaw: generateActiveShards(0, 511), // 100%
+								ShardingKey:     "MsgID",
+							},
+							// Attestations: ~0.2% sampling (1/512)
+							".*beacon_attestation.*": {
+								TotalShards:     512,
+								ActiveShardsRaw: ActiveShardsConfig{0}, // ~0.2%
+								ShardingKey:     "MsgID",
+							},
+							// Sync committee: ~6.25% sampling (32/512)
+							".*sync_committee.*": {
+								TotalShards:     512,
+								ActiveShardsRaw: generateActiveShards(0, 31), // ~6.25%
+								ShardingKey:     "MsgID",
+							},
+							// Blob sidecars: ~12.5% sampling (64/512)
+							".*blob_sidecar.*": {
+								TotalShards:     512,
+								ActiveShardsRaw: generateActiveShards(0, 63), // ~12.5%
+								ShardingKey:     "MsgID",
+							},
+						},
+						Fallback: &GossipTopicConfig{
+							TotalShards:     512,
+							ActiveShardsRaw: generateActiveShards(0, 9), // ~2%
+							ShardingKey:     "MsgID",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := config.Traces.Validate()
+	require.NoError(t, err)
+	err = config.Traces.CompilePatterns()
+	require.NoError(t, err)
+
+	mimicry := &Mimicry{
+		Config:  config,
+		metrics: NewMetrics("test_highest_sampling_config"),
+	}
+
+	tests := []struct {
+		name             string
+		gossipTopics     []string
+		expectedTopic    string
+		expectedSampling float64 // Expected sampling rate (activeShards/totalShards)
+		shouldFind       bool
+	}{
+		{
+			name:             "single beacon block topic - highest sampling",
+			gossipTopics:     []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"},
+			expectedTopic:    "/eth2/4a26c58b/beacon_block/ssz_snappy",
+			expectedSampling: 1.0, // 512/512 = 100%
+			shouldFind:       true,
+		},
+		{
+			name:             "single attestation topic - lowest sampling",
+			gossipTopics:     []string{"/eth2/4a26c58b/beacon_attestation_0/ssz_snappy"},
+			expectedTopic:    "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy",
+			expectedSampling: 1.0 / 512, // 1/512 = ~0.2%
+			shouldFind:       true,
+		},
+		{
+			name:             "beacon block + attestation - should choose beacon block (highest sampling)",
+			gossipTopics:     []string{"/eth2/4a26c58b/beacon_block/ssz_snappy", "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy"},
+			expectedTopic:    "/eth2/4a26c58b/beacon_block/ssz_snappy",
+			expectedSampling: 1.0, // 512/512 = 100%
+			shouldFind:       true,
+		},
+		{
+			name:             "attestation + sync committee - should choose sync committee (higher sampling)",
+			gossipTopics:     []string{"/eth2/4a26c58b/beacon_attestation_0/ssz_snappy", "/eth2/4a26c58b/sync_committee_0/ssz_snappy"},
+			expectedTopic:    "/eth2/4a26c58b/sync_committee_0/ssz_snappy",
+			expectedSampling: 32.0 / 512, // 32/512 = ~6.25%
+			shouldFind:       true,
+		},
+		{
+			name:             "blob sidecar + sync committee - should choose blob sidecar (higher sampling)",
+			gossipTopics:     []string{"/eth2/4a26c58b/blob_sidecar_0/ssz_snappy", "/eth2/4a26c58b/sync_committee_0/ssz_snappy"},
+			expectedTopic:    "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy",
+			expectedSampling: 64.0 / 512, // 64/512 = ~12.5%
+			shouldFind:       true,
+		},
+		{
+			name: "all four topic types - should choose beacon block (highest sampling)",
+			gossipTopics: []string{
+				"/eth2/4a26c58b/beacon_attestation_0/ssz_snappy", // ~0.2%
+				"/eth2/4a26c58b/sync_committee_0/ssz_snappy",     // ~6.25%
+				"/eth2/4a26c58b/blob_sidecar_0/ssz_snappy",       // ~12.5%
+				"/eth2/4a26c58b/beacon_block/ssz_snappy",         // 100%
+			},
+			expectedTopic:    "/eth2/4a26c58b/beacon_block/ssz_snappy",
+			expectedSampling: 1.0, // 512/512 = 100%
+			shouldFind:       true,
+		},
+		{
+			name:             "no matching topics - should use fallback",
+			gossipTopics:     []string{"/eth2/4a26c58b/voluntary_exit/ssz_snappy"},
+			expectedTopic:    "",         // Fallback doesn't have an associated topic
+			expectedSampling: 10.0 / 512, // 10/512 = ~2%
+			shouldFind:       true,
+		},
+		{
+			name:             "empty topics - should use fallback",
+			gossipTopics:     []string{},
+			expectedTopic:    "",
+			expectedSampling: 10.0 / 512, // 10/512 = ~2%
+			shouldFind:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			topicConfig, found := config.Traces.FindMatchingTopicConfig(xatu.Event_LIBP2P_TRACE_RECV_RPC.String())
+			require.True(t, found)
+
+			result, matchedTopic, matchedPattern, foundResult := mimicry.selectHighestSamplingConfig(
+				topicConfig,
+				tt.gossipTopics,
+				xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
+				"1", // networkStr
+			)
+			_ = matchedPattern // Not used in this test
+
+			if tt.shouldFind {
+				assert.True(t, foundResult, "Should find a configuration")
+				assert.NotNil(t, result, "Should return a valid configuration")
+				assert.Equal(t, tt.expectedTopic, matchedTopic, "Should match the expected topic")
+
+				// Calculate actual sampling rate
+				actualSampling := float64(len(result.ActiveShards)) / float64(result.TotalShards)
+				assert.InDelta(t, tt.expectedSampling, actualSampling, 0.001, "Should have expected sampling rate")
+
+				t.Logf("Test: %s, Expected: %.3f%%, Actual: %.3f%%, Topic: %s",
+					tt.name, tt.expectedSampling*100, actualSampling*100, matchedTopic)
+			} else {
+				assert.False(t, foundResult, "Should not find a configuration")
+				assert.Nil(t, result, "Should return nil configuration")
+			}
+		})
+	}
+}
+
+// generateActiveShards is a helper function to generate a range of active shards
+func generateActiveShards(start, end int) ActiveShardsConfig {
+	result := make(ActiveShardsConfig, 0, end-start+1)
+	for i := start; i <= end; i++ {
+		result = append(result, i)
+	}
+
+	return result
+}

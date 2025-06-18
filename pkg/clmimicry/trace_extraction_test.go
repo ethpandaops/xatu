@@ -217,128 +217,6 @@ func TestGetMsgID(t *testing.T) {
 	}
 }
 
-// TestGetGossipTopic validates extraction of Ethereum gossip topic information
-// from libp2p trace events for hierarchical sharding decisions.
-//
-// Gossip topics identify the type of consensus data being transmitted:
-// - "/eth2/4a26c58b/beacon_block/ssz_snappy" (beacon blocks)
-// - "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy" (attestation subnet 0)
-// - "/eth2/4a26c58b/blob_sidecar_1/ssz_snappy" (blob sidecar index 1)
-//
-// This test ensures reliable topic extraction from various event payload formats
-// including maps, protobuf messages, and edge cases like nil or missing data.
-// Topic extraction is critical for hierarchical sharding that applies different
-// sampling rates based on consensus data type.
-func TestGetGossipTopic(t *testing.T) {
-	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
-	testTime := time.Now()
-
-	testCases := []struct {
-		name          string
-		event         *host.TraceEvent
-		expectedTopic string
-	}{
-		{
-			name:          "nil event returns empty string",
-			event:         nil,
-			expectedTopic: "",
-		},
-		{
-			name: "event with nil payload returns empty string",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   nil,
-			},
-			expectedTopic: "",
-		},
-		{
-			name: "map payload with Topic field",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload: map[string]any{
-					"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
-					"MsgID": "test-msg-id",
-				},
-			},
-			expectedTopic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
-		},
-		{
-			name: "map payload without Topic field",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload: map[string]any{
-					"MsgID": "test-msg-id",
-					"Other": "field",
-				},
-			},
-			expectedTopic: "",
-		},
-		{
-			name: "struct payload with Topic field (mock wrapper)",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   &MockPayloadWithTopic{Topic: &MockStringWrapper{Value: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy"}},
-			},
-			expectedTopic: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy",
-		},
-		{
-			name: "struct payload with TopicId field (mock wrapper)",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   &MockPayloadWithTopicId{TopicId: &MockStringWrapper{Value: "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy"}},
-			},
-			expectedTopic: "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy",
-		},
-		{
-			name: "struct payload with nil Topic field",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   &MockPayloadWithTopic{Topic: nil},
-			},
-			expectedTopic: "",
-		},
-		{
-			name: "struct payload without Topic or TopicId field",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   &MockPayload{MsgID: "test-msg-id"},
-			},
-			expectedTopic: "",
-		},
-		{
-			name: "non-struct, non-map payload returns empty string",
-			event: &host.TraceEvent{
-				Type:      "TEST_EVENT",
-				PeerID:    testPeerID,
-				Timestamp: testTime,
-				Payload:   []string{"not", "a", "struct", "or", "map"},
-			},
-			expectedTopic: "",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result := GetGossipTopic(tc.event)
-			assert.Equal(t, tc.expectedTopic, result)
-		})
-	}
-}
-
 // MockStringWrapper mimics *wrapperspb.StringValue behavior for testing
 type MockStringWrapper struct {
 	Value string
@@ -353,7 +231,208 @@ type MockPayloadWithTopic struct {
 	Topic *MockStringWrapper
 }
 
-// MockPayloadWithTopicId mimics a protobuf struct with a TopicId field
-type MockPayloadWithTopicId struct {
-	TopicId *MockStringWrapper
+// TestGetGossipTopics validates extraction of multiple gossip topics from RPC events
+// for multi-topic support in hierarchical sharding decisions.
+//
+// RPC events (recv_rpc, send_rpc, drop_rpc) can contain multiple topics in:
+// - Messages: Each message can have a different topic
+// - Subscriptions: Each subscription has a TopicID
+// - Control Messages: IHave, Graft, Prune each contain TopicID fields
+//
+// This test ensures reliable extraction of ALL topics for pattern matching.
+func TestGetGossipTopics(t *testing.T) {
+	testPeerID, _ := peer.Decode("16Uiu2HAmPjTC9u4nSvufM2weykDx7aYK3SiHoXCqngk3vJ2TR229")
+	testTime := time.Now()
+
+	testCases := []struct {
+		name           string
+		event          *host.TraceEvent
+		expectedTopics []string
+	}{
+		{
+			name:           "nil event returns nil",
+			event:          nil,
+			expectedTopics: nil,
+		},
+		{
+			name: "event with nil payload returns empty slice",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   nil,
+			},
+			expectedTopics: []string{},
+		},
+		{
+			name: "map payload with single Topic field",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: map[string]any{
+					"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
+					"MsgID": "test-msg-id",
+				},
+			},
+			expectedTopics: []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"},
+		},
+		{
+			name: "RPC meta with multiple message topics",
+			event: &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID: testPeerID,
+					Messages: []host.RpcMetaMsg{
+						{Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy", MsgID: "msg1"},
+						{Topic: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy", MsgID: "msg2"},
+						{Topic: "/eth2/4a26c58b/blob_sidecar_0/ssz_snappy", MsgID: "msg3"},
+					},
+				},
+			},
+			expectedTopics: []string{
+				"/eth2/4a26c58b/beacon_block/ssz_snappy",
+				"/eth2/4a26c58b/beacon_attestation_1/ssz_snappy",
+				"/eth2/4a26c58b/blob_sidecar_0/ssz_snappy",
+			},
+		},
+		{
+			name: "RPC meta with subscription topics",
+			event: &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID: testPeerID,
+					Subscriptions: []host.RpcMetaSub{
+						{TopicID: "/eth2/4a26c58b/beacon_block/ssz_snappy", Subscribe: true},
+						{TopicID: "/eth2/4a26c58b/voluntary_exit/ssz_snappy", Subscribe: false},
+					},
+				},
+			},
+			expectedTopics: []string{
+				"/eth2/4a26c58b/beacon_block/ssz_snappy",
+				"/eth2/4a26c58b/voluntary_exit/ssz_snappy",
+			},
+		},
+		{
+			name: "RPC meta with control message topics",
+			event: &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID: testPeerID,
+					Control: &host.RpcMetaControl{
+						IHave: []host.RpcControlIHave{
+							{TopicID: "/eth2/4a26c58b/beacon_attestation_5/ssz_snappy", MsgIDs: []string{"ihave1"}},
+						},
+						Graft: []host.RpcControlGraft{
+							{TopicID: "/eth2/4a26c58b/beacon_block/ssz_snappy"},
+						},
+						Prune: []host.RpcControlPrune{
+							{TopicID: "/eth2/4a26c58b/blob_sidecar_2/ssz_snappy"},
+						},
+					},
+				},
+			},
+			expectedTopics: []string{
+				"/eth2/4a26c58b/beacon_attestation_5/ssz_snappy",
+				"/eth2/4a26c58b/beacon_block/ssz_snappy",
+				"/eth2/4a26c58b/blob_sidecar_2/ssz_snappy",
+			},
+		},
+		{
+			name: "RPC meta with mixed topic sources and duplicates",
+			event: &host.TraceEvent{
+				Type:      "SEND_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID: testPeerID,
+					Messages: []host.RpcMetaMsg{
+						{Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy", MsgID: "msg1"},
+						{Topic: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy", MsgID: "msg2"},
+					},
+					Subscriptions: []host.RpcMetaSub{
+						{TopicID: "/eth2/4a26c58b/beacon_block/ssz_snappy", Subscribe: true}, // Duplicate
+						{TopicID: "/eth2/4a26c58b/voluntary_exit/ssz_snappy", Subscribe: false},
+					},
+					Control: &host.RpcMetaControl{
+						IHave: []host.RpcControlIHave{
+							{TopicID: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy", MsgIDs: []string{"ihave1"}}, // Duplicate
+						},
+						Graft: []host.RpcControlGraft{
+							{TopicID: "/eth2/4a26c58b/blob_sidecar_3/ssz_snappy"},
+						},
+					},
+				},
+			},
+			expectedTopics: []string{
+				"/eth2/4a26c58b/beacon_block/ssz_snappy",
+				"/eth2/4a26c58b/beacon_attestation_1/ssz_snappy",
+				"/eth2/4a26c58b/voluntary_exit/ssz_snappy",
+				"/eth2/4a26c58b/blob_sidecar_3/ssz_snappy",
+			},
+		},
+		{
+			name: "RPC meta with empty topic fields",
+			event: &host.TraceEvent{
+				Type:      "DROP_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID: testPeerID,
+					Messages: []host.RpcMetaMsg{
+						{Topic: "", MsgID: "msg1"}, // Empty topic should be ignored
+						{Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy", MsgID: "msg2"},
+					},
+					Subscriptions: []host.RpcMetaSub{
+						{TopicID: "", Subscribe: true}, // Empty topic should be ignored
+					},
+				},
+			},
+			expectedTopics: []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"},
+		},
+		{
+			name: "RPC meta with no topics",
+			event: &host.TraceEvent{
+				Type:      "RECV_RPC",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload: &host.RpcMeta{
+					PeerID:        testPeerID,
+					Messages:      []host.RpcMetaMsg{},
+					Subscriptions: []host.RpcMetaSub{},
+					Control:       nil,
+				},
+			},
+			expectedTopics: []string{},
+		},
+		{
+			name: "struct payload with Topic field (backward compatibility)",
+			event: &host.TraceEvent{
+				Type:      "TEST_EVENT",
+				PeerID:    testPeerID,
+				Timestamp: testTime,
+				Payload:   &MockPayloadWithTopic{Topic: &MockStringWrapper{Value: "/eth2/4a26c58b/beacon_attestation_1/ssz_snappy"}},
+			},
+			expectedTopics: []string{"/eth2/4a26c58b/beacon_attestation_1/ssz_snappy"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetGossipTopics(tc.event)
+
+			// Sort both slices for comparison since map iteration order is not guaranteed
+			if len(result) > 0 && len(tc.expectedTopics) > 0 {
+				assert.ElementsMatch(t, tc.expectedTopics, result, "Topics should match regardless of order")
+			} else {
+				assert.Equal(t, len(tc.expectedTopics), len(result), "Should have same number of topics")
+			}
+		})
+	}
 }

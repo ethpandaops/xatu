@@ -237,15 +237,19 @@ func (m *Mimicry) shouldTraceWithHierarchicalConfig(
 ) bool {
 	networkStr := getNetworkID(clientMeta)
 
-	// Extract gossip topic from the event
-	gossipTopic := GetGossipTopic(event)
+	// Extract all gossip topics from the event
+	gossipTopics := GetGossipTopics(event)
 
-	// Get the appropriate gossip topic configuration
-	gossipConfig, found := m.getGossipTopicConfig(topicConfig, gossipTopic, xatuEventType, networkStr)
+	// Find the best matching configuration from all topics
+	gossipConfig, matchedTopic, matchedPattern, found := m.selectHighestSamplingConfig(topicConfig, gossipTopics, xatuEventType, networkStr)
+
 	if !found {
-		// No configuration found, skip this message
+		// No configuration found for any topic, skip this message
 		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "skipped", networkStr)
+		// Record metrics for all topics that were checked
+		for _, topic := range gossipTopics {
+			m.metrics.AddGossipTopicSampling(xatuEventType, topic, "skipped", networkStr)
+		}
 
 		return false
 	}
@@ -281,11 +285,15 @@ func (m *Mimicry) shouldTraceWithHierarchicalConfig(
 	if isActive {
 		m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
 		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "processed", networkStr)
+		m.metrics.AddGossipTopicSampling(xatuEventType, matchedTopic, "processed", networkStr)
+		// Record the pattern match only when the event is actually sampled
+		if matchedPattern != "" {
+			m.metrics.AddGossipTopicMatch(xatuEventType, matchedPattern, matchedTopic, networkStr)
+		}
 	} else {
 		m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
 		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-		m.metrics.AddGossipTopicSampling(xatuEventType, gossipTopic, "skipped", networkStr)
+		m.metrics.AddGossipTopicSampling(xatuEventType, matchedTopic, "skipped", networkStr)
 	}
 
 	return isActive
@@ -687,6 +695,96 @@ func (m *Mimicry) getGossipTopicConfig(
 	}
 
 	return nil, false
+}
+
+// selectHighestSamplingConfig finds the gossip topic configuration with the highest sampling rate from multiple topics.
+// Returns the configuration with the most permissive sampling, the matching topic, the pattern used, and true if found.
+// Uses sampling-rate-based matching where higher sampling rates take precedence.
+//
+//nolint:gocritic // named returns not needed.
+func (m *Mimicry) selectHighestSamplingConfig(
+	topicConfig *TopicConfig,
+	gossipTopics []string,
+	xatuEventType,
+	networkStr string,
+) (*GossipTopicConfig, string, string, bool) {
+	if topicConfig.Topics == nil || len(gossipTopics) == 0 {
+		// Check fallback for empty topics
+		if topicConfig.Topics != nil && topicConfig.Topics.Fallback != nil {
+			m.metrics.AddFallbackUsage(xatuEventType, "no_topic", networkStr)
+
+			return topicConfig.Topics.Fallback, "", "", true
+		}
+
+		return nil, "", "", false
+	}
+
+	// Find the compiled topic config for this event type
+	compiledConfig := m.findCompiledTopicConfig(xatuEventType)
+	if compiledConfig == nil {
+		// Check fallback if no compiled config
+		if topicConfig.Topics.Fallback != nil {
+			m.metrics.AddFallbackUsage(xatuEventType, "no_compiled_config", networkStr)
+
+			return topicConfig.Topics.Fallback, "", "", true
+		}
+
+		return nil, "", "", false
+	}
+
+	// Track all matches with their sampling rates for comparison
+	type patternMatch struct {
+		config       *GossipTopicConfig
+		topic        string
+		pattern      string
+		samplingRate float64 // Used to pick the highest sampling rate
+	}
+
+	var matches []patternMatch
+
+	// Check all topics against all patterns
+	for _, topic := range gossipTopics {
+		if topic == "" {
+			continue
+		}
+
+		// Check each compiled pattern
+		for compiledPattern, gossipConfig := range compiledConfig.GossipPatterns {
+			if compiledPattern.MatchString(topic) {
+				// Calculate sampling rate (activeShards / totalShards)
+				samplingRate := float64(len(gossipConfig.ActiveShards)) / float64(gossipConfig.TotalShards)
+
+				matches = append(matches, patternMatch{
+					config:       gossipConfig,
+					topic:        topic,
+					pattern:      compiledPattern.String(),
+					samplingRate: samplingRate,
+				})
+			}
+		}
+	}
+
+	// If we have matches, find the one with the highest sampling rate
+	if len(matches) > 0 {
+		// Find match with highest sampling rate (most permissive sampling)
+		bestMatch := matches[0]
+		for _, match := range matches[1:] {
+			if match.samplingRate > bestMatch.samplingRate {
+				bestMatch = match
+			}
+		}
+
+		return bestMatch.config, bestMatch.topic, bestMatch.pattern, true
+	}
+
+	// Use fallback configuration if no pattern matched
+	if topicConfig.Topics.Fallback != nil {
+		m.metrics.AddFallbackUsage(xatuEventType, "no_match", networkStr)
+
+		return topicConfig.Topics.Fallback, "", "", true
+	}
+
+	return nil, "", "", false
 }
 
 // findCompiledTopicConfig finds the compiled topic configuration for a given event type.

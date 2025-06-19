@@ -38,8 +38,8 @@ type Config struct {
 	// Events is the configuration for the events
 	Events EventConfig `yaml:"events"`
 
-	// Traces is the configuration for the traces.
-	Traces TracesConfig `yaml:"traces"`
+	// Sharding is the configuration for event sharding
+	Sharding ShardingConfig `yaml:"sharding"`
 }
 
 func (c *Config) Validate() error {
@@ -61,8 +61,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid events config: %w", err)
 	}
 
-	if err := c.Traces.Validate(); err != nil {
-		return fmt.Errorf("invalid traces config: %w", err)
+	if err := c.validateSharding(); err != nil {
+		return fmt.Errorf("invalid sharding config: %w", err)
 	}
 
 	return nil
@@ -93,6 +93,30 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 	}
 
 	return sinks, nil
+}
+
+// validateSharding validates the sharding configuration
+func (c *Config) validateSharding() error {
+	// If sharding is not configured, that's fine - we'll use defaults
+	if c.Sharding.Topics == nil {
+		c.Sharding.Topics = make(map[string]*TopicShardingConfig)
+	}
+
+	// Validate topic configurations
+	for pattern, config := range c.Sharding.Topics {
+		if err := config.validate(pattern); err != nil {
+			return err
+		}
+	}
+
+	// Set default for no sharding key events if not specified
+	if c.Sharding.NoShardingKeyEvents == nil {
+		c.Sharding.NoShardingKeyEvents = &NoShardingKeyConfig{
+			Enabled: true,
+		}
+	}
+
+	return nil
 }
 
 // ApplyOverrides applies any overrides to the config.

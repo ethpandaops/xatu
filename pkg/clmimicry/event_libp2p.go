@@ -50,13 +50,18 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 		return nil
 	}
 
+	networkStr := getNetworkID(clientMeta)
+
 	switch xatuEvent {
 	case xatu.Event_LIBP2P_TRACE_ADD_PEER.String():
 		if !m.Config.Events.AddPeerEnabled {
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -68,7 +73,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -80,7 +88,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -92,7 +103,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -104,7 +118,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -116,7 +133,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -127,7 +147,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -138,7 +161,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -149,7 +175,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -160,7 +189,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -171,7 +203,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -182,7 +217,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -193,7 +231,10 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 			return nil
 		}
 
-		// Check if we should process this event based on trace/sharding config..
+		// Record that we received this event
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
@@ -462,18 +503,17 @@ func (m *Mimicry) handleSendRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
-	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+	// Send the root event if there are rpc meta level messages
+	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
-	} else {
-		// If we don't send the root level event, we need to add a metric for it.
-		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), getNetworkID(clientMeta))
 	}
+	// Note: We don't count SEND_RPC as skipped when there are no child events
+	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }
@@ -580,18 +620,17 @@ func (m *Mimicry) handleRecvRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
-	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+	// Send the root event if there are rpc meta level messages
+	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
-	} else {
-		// If we don't send the root level event, we need to add a metric for it.
-		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), getNetworkID(clientMeta))
 	}
+	// Note: We don't count RECV_RPC as skipped when there are no child events
+	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }
@@ -659,18 +698,17 @@ func (m *Mimicry) handleDropRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages OR if alwaysRecordRootRpcEvents is enabled.
-	if len(rpcMetaDecoratedEvents) > 0 || m.Config.Traces.AlwaysRecordRootRpcEvents {
+	// Send the root event if there are rpc meta level messages
+	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
 		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
-	} else {
-		// If we don't send the root level event, we need to add a metric for it.
-		m.metrics.AddSkippedMessage(xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), getNetworkID(clientMeta))
 	}
+	// Note: We don't count DROP_RPC as skipped when there are no child events
+	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }
@@ -894,7 +932,7 @@ func (m *Mimicry) parseRPCMetaControl(
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
 
-	if data.GetControl().GetIhave() != nil {
+	if data.GetControl().GetIhave() != nil && m.Config.Events.RpcMetaControlIHaveEnabled {
 		ihave, err := m.parseRPCMetaControlIHave(
 			rootEventID,
 			peerID,
@@ -910,7 +948,7 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, ihave...)
 	}
 
-	if data.GetControl().GetIwant() != nil {
+	if data.GetControl().GetIwant() != nil && m.Config.Events.RpcMetaControlIWantEnabled {
 		iwant, err := m.parseRPCMetaControlIWant(
 			rootEventID,
 			peerID,
@@ -926,7 +964,7 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, iwant...)
 	}
 
-	if data.GetControl().GetIdontwant() != nil {
+	if data.GetControl().GetIdontwant() != nil && m.Config.Events.RpcMetaControlIDontWantEnabled {
 		idontwant, err := m.parseRPCMetaControlIDontWant(
 			rootEventID,
 			peerID,
@@ -942,7 +980,7 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, idontwant...)
 	}
 
-	if data.GetControl().GetGraft() != nil {
+	if data.GetControl().GetGraft() != nil && m.Config.Events.RpcMetaControlGraftEnabled {
 		graft, err := m.parseRPCMetaControlGraft(
 			rootEventID,
 			peerID,
@@ -958,7 +996,7 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, graft...)
 	}
 
-	if data.GetControl().GetPrune() != nil {
+	if data.GetControl().GetPrune() != nil && m.Config.Events.RpcMetaControlPruneEnabled {
 		prune, err := m.parseRPCMetaControlPrune(
 			rootEventID,
 			peerID,
@@ -999,18 +1037,23 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 	}
 
 	for controlIndex, ihave := range data.GetControl().GetIhave() {
-		if !m.Config.Events.RpcMetaControlIHaveEnabled {
-			continue
-		}
-
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE
+
+		// Create topic-aware message info for hierarchical sharding support
+		messageInfos := make([]RPCMetaMessageInfo, len(ihave.GetMessageIds()))
+		for i, msgID := range ihave.GetMessageIds() {
+			messageInfos[i] = RPCMetaMessageInfo{
+				MessageID: msgID,
+				Topic:     ihave.GetTopicId(), // Use the topic_id from IHAVE for hierarchical sharding
+			}
+		}
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
-			ihave.GetMessageIds(),
+			messageInfos,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check trace config for ihave: %w", err)
@@ -1070,10 +1113,6 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 	}
 
 	for controlIndex, iwant := range data.GetControl().GetIwant() {
-		if !m.Config.Events.RpcMetaControlIWantEnabled {
-			continue
-		}
-
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
@@ -1140,10 +1179,6 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 	}
 
 	for controlIndex, idontwant := range data.GetControl().GetIdontwant() {
-		if !m.Config.Events.RpcMetaControlIDontWantEnabled {
-			continue
-		}
-
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
@@ -1210,7 +1245,21 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 	}
 
 	for controlIndex, graft := range data.GetControl().GetGraft() {
-		if !m.Config.Events.RpcMetaControlGraftEnabled {
+		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT
+
+		// Create a mock event with GRAFT topic information for sharding decision
+		graftEvent := &host.TraceEvent{
+			Type:      event.Type,
+			PeerID:    event.PeerID,
+			Timestamp: event.Timestamp,
+			Payload: map[string]any{
+				"Topic": graft.GetTopicId().GetValue(),
+			},
+		}
+
+		// Check if we should process this GRAFT event based on trace/sharding config.
+		// GRAFT events can use hierarchical sharding via their topic_id field.
+		if !m.ShouldTraceMessage(graftEvent, clientMeta, eventType.String()) {
 			continue
 		}
 
@@ -1258,30 +1307,37 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 		},
 	}
 
-	for controlIndex, prune := range data.GetControl().GetPrune() {
-		if !m.Config.Events.RpcMetaControlPruneEnabled {
-			continue
-		}
+	networkStr := getNetworkID(clientMeta)
 
+	for controlIndex, prune := range data.GetControl().GetPrune() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
 
-		// Filter peer IDs based on trace/sharding config, preserving original indices.
-		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
-			clientMeta,
-			eventType.String(),
-			prune.GetPeerIds(),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check trace config for prune: %w", err)
+		// For Group B events, make ONE sharding decision based on the topic
+		topic := ""
+		if prune.GetTopicId() != nil {
+			topic = prune.GetTopicId().GetValue()
 		}
 
-		// Skip this control message if no peer IDs remain after filtering.
-		if len(filteredPeerIDsWithIndex) == 0 {
+		// Check if we should process this PRUNE message based on its topic
+		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
+		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
+
+		if !shouldProcess {
+			// Skip all peer IDs for this topic
+			for range prune.GetPeerIds() {
+				m.metrics.AddSkippedMessage(eventType.String(), networkStr)
+			}
 			continue
 		}
 
-		for _, peerWithIndex := range filteredPeerIDsWithIndex {
+		// Process ALL peer IDs since the topic passed sharding
+		for peerIndex, prunePeerID := range prune.GetPeerIds() {
+			if prunePeerID == nil || prunePeerID.GetValue() == "" {
+				continue
+			}
+
+			m.metrics.AddProcessedMessage(eventType.String(), networkStr)
+
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -1294,10 +1350,10 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlPrune{
 					Libp2PTraceRpcMetaControlPrune: &libp2p.ControlPruneMetaItem{
 						RootEventId:  wrapperspb.String(rootEventID),
-						GraftPeerId:  peerWithIndex.MessageID,
+						GraftPeerId:  prunePeerID,
 						PeerId:       wrapperspb.String(peerID),
 						Topic:        prune.TopicId,
-						PeerIndex:    wrapperspb.UInt32(peerWithIndex.OriginalIndex),
+						PeerIndex:    wrapperspb.UInt32(uint32(peerIndex)),    //nolint:gosec // conversion fine.
 						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
@@ -1317,6 +1373,11 @@ func (m *Mimicry) parseRPCMetaSubscriptions(
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
+
+	// Check if RPC meta subscriptions are enabled before processing
+	if !m.Config.Events.RpcMetaSubscriptionEnabled {
+		return decoratedEvents, nil
+	}
 
 	if data.GetSubscriptions() != nil {
 		subscriptions, err := m.parseRPCMetaSubscription(
@@ -1358,51 +1419,47 @@ func (m *Mimicry) parseRPCMetaSubscription(
 		},
 	}
 
-	for controlIndex, subscription := range data.GetSubscriptions() {
-		if !m.Config.Events.RpcMetaSubscriptionEnabled {
-			continue
-		}
+	networkStr := getNetworkID(clientMeta)
 
+	for controlIndex, subscription := range data.GetSubscriptions() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION
 
-		// Filter message IDs based on trace/sharding config, preserving original indices.
-		// RPC meta subscriptions don't have a message ID, so we use the peer ID.
-		filteredPeerIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
-			clientMeta,
-			eventType.String(),
-			[]*wrapperspb.StringValue{wrapperspb.String(peerID)},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check trace config for subscription: %w", err)
+		// For Group B events, make ONE sharding decision based on the topic
+		topic := ""
+		if subscription.GetTopicId() != nil {
+			topic = subscription.GetTopicId().GetValue()
 		}
 
-		// Skip this control message if no message IDs remain after filtering.
-		if len(filteredPeerIDsWithIndex) == 0 {
+		// Check if we should process this SUBSCRIPTION based on its topic
+		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
+		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
+
+		if !shouldProcess {
+			m.metrics.AddSkippedMessage(eventType.String(), networkStr)
 			continue
 		}
 
-		for range filteredPeerIDsWithIndex {
-			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
-				Event: &xatu.Event{
-					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
-					Id:       uuid.New().String(),
+		m.metrics.AddProcessedMessage(eventType.String(), networkStr)
+
+		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+			Event: &xatu.Event{
+				Name:     eventType,
+				DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+				Id:       uuid.New().String(),
+			},
+			Meta: &xatu.Meta{
+				Client: metadata,
+			},
+			Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaSubscription{
+				Libp2PTraceRpcMetaSubscription: &libp2p.SubMetaItem{
+					RootEventId:  wrapperspb.String(rootEventID),
+					PeerId:       wrapperspb.String(peerID),
+					TopicId:      subscription.TopicId,
+					Subscribe:    subscription.Subscribe,
+					ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 				},
-				Meta: &xatu.Meta{
-					Client: metadata,
-				},
-				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaSubscription{
-					Libp2PTraceRpcMetaSubscription: &libp2p.SubMetaItem{
-						RootEventId:  wrapperspb.String(rootEventID),
-						PeerId:       wrapperspb.String(peerID),
-						TopicId:      subscription.TopicId,
-						Subscribe:    subscription.Subscribe,
-						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
-					},
-				},
-			})
-		}
+			},
+		})
 	}
 
 	return decoratedEvents, nil
@@ -1417,6 +1474,11 @@ func (m *Mimicry) parseRPCMetaMessages(
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
+
+	// Check if RPC meta messages are enabled before processing
+	if !m.Config.Events.RpcMetaMessageEnabled {
+		return decoratedEvents, nil
+	}
 
 	if data.GetMessages() != nil {
 		messages, err := m.parseRPCMetaMessage(
@@ -1459,18 +1521,19 @@ func (m *Mimicry) parseRPCMetaMessage(
 	}
 
 	for controlIndex, message := range data.GetMessages() {
-		if !m.Config.Events.RpcMetaMessageEnabled {
-			continue
-		}
-
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE
 
-		// Filter message IDs based on trace/sharding config, preserving original indices.
+		// Filter messages with topic-aware hierarchical sharding support.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
 			event,
 			clientMeta,
 			eventType.String(),
-			[]*wrapperspb.StringValue{message.MessageId},
+			[]RPCMetaMessageInfo{
+				{
+					MessageID: message.MessageId,
+					Topic:     message.TopicId, // Include topic information for hierarchical filtering
+				},
+			},
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check trace config for message: %w", err)

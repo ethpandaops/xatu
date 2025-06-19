@@ -42,6 +42,10 @@ func (m *Mimicry) handleHermesRPCEvent(
 			return nil
 		}
 
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
 		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
@@ -53,6 +57,10 @@ func (m *Mimicry) handleHermesRPCEvent(
 		if !m.Config.Events.HandleStatusEnabled {
 			return nil
 		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {

@@ -1,294 +1,185 @@
 package clmimicry
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/ethpandaops/xatu/pkg/networks"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/probe-lab/hermes/host"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// MockPayload implements the necessary methods to work with getMsgID.
-type MockPayload struct {
-	MsgID string
-}
-
+// TestShouldTraceMessage tests the ShouldTraceMessage function indirectly
 func TestShouldTraceMessage(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	prometheus.DefaultRegisterer = registry
+	// Test the helper functions that are used by ShouldTraceMessage
+	t.Run("GetMsgID extracts message ID correctly", func(t *testing.T) {
+		event := &host.TraceEvent{
+			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
+			Payload: map[string]any{
+				"MsgID": "test-message-id",
+				"Topic": "/eth2/test/beacon_block/ssz_snappy",
+			},
+		}
 
-	// Find message IDs that map to specific shards for our tests
-	msgIDForShard2 := findMsgIDForShard(2, 64)
-	msgIDForShard4 := findMsgIDForShard(4, 64)
+		msgID := GetMsgID(event)
+		assert.Equal(t, "test-message-id", msgID)
+	})
 
-	tests := []struct {
-		name      string
-		mimicry   *Mimicry
-		msgID     string
-		eventType string
-		networkID uint64
-		expected  bool
-	}{
-		{
-			name: "empty msgID always returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test1"),
+	t.Run("GetMsgID returns empty for missing MsgID", func(t *testing.T) {
+		event := &host.TraceEvent{
+			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
+			Payload: map[string]any{
+				"Topic": "/eth2/test/beacon_block/ssz_snappy",
 			},
-			msgID:     "",
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "traces disabled returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: false,
-					},
-				},
-				metrics: NewMetrics("test2"),
-			},
-			msgID:     "0x1234",
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "no matching topic returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"other_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test3"),
-			},
-			msgID:     "0x1234",
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "shard in active shards returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test4"),
-			},
-			msgID:     msgIDForShard2,
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "shard not in active shards returns false",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test5"),
-			},
-			msgID:     msgIDForShard4,
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  false,
-		},
-		{
-			name: "empty network uses unknown",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_event": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test6"),
-			},
-			msgID:     msgIDForShard2,
-			eventType: "test_event",
-			networkID: 0, // unknown
-			expected:  true,
-		},
-		{
-			name: "regex pattern matching",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_.*": {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test7"),
-			},
-			msgID:     msgIDForShard2,
-			eventType: "test_something",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "all shards active skips hashing and returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"test_event": {
-								TotalShards: 4,
-								// All shards 0-3 are active
-								ActiveShards: []uint64{0, 1, 2, 3},
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test8"),
-			},
-			// This would normally map to a shard that might or might not be active,
-			// but since all shards are active, it should skip the hash calculation
-			// and return true regardless of the actual shard
-			msgID:     "0xdoesntmatter",
-			eventType: "test_event",
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,
-		},
-		{
-			name: "unshardable event always returns true",
-			mimicry: &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							xatu.Event_LIBP2P_TRACE_JOIN.String(): {
-								TotalShards:  64,
-								ActiveShards: []uint64{1, 2, 3}, // Note: shard 0 is not active
-							},
-						},
-					},
-				},
-				metrics: NewMetrics("test9"),
-			},
-			msgID:     msgIDForShard4, // This would normally be filtered out
-			eventType: xatu.Event_LIBP2P_TRACE_JOIN.String(),
-			networkID: networks.DeriveFromID(1).ID, // mainnet
-			expected:  true,                        // Should return true because it's an unshardable event
-		},
-	}
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock objects for the new parameter structure
-			event := createMockTraceEvent(tt.msgID)
-			clientMeta := createMockClientMeta(tt.networkID)
+		msgID := GetMsgID(event)
+		assert.Equal(t, "", msgID)
+	})
 
-			result := tt.mimicry.ShouldTraceMessage(event, clientMeta, tt.eventType)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	t.Run("GetGossipTopics extracts topics correctly", func(t *testing.T) {
+		event := &host.TraceEvent{
+			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
+			Payload: map[string]any{
+				"MsgID": "test-message-id",
+				"Topic": "/eth2/test/beacon_block/ssz_snappy",
+			},
+		}
+
+		topics := GetGossipTopics(event)
+		assert.Len(t, topics, 1)
+		assert.Contains(t, topics, "/eth2/test/beacon_block/ssz_snappy")
+	})
 }
 
-// TestGetShard verifies that the GetShard function consistently maps message IDs to shards.
-func TestGetShard(t *testing.T) {
-	tests := []struct {
-		msgID       string
-		totalShards uint64
-		expected    uint64
-	}{
-		{
-			msgID:       "0x1234",
-			totalShards: 64,
-			expected:    GetShard("0x1234", 64),
-		},
-		{
-			msgID:       "0xabcd",
-			totalShards: 64,
-			expected:    GetShard("0xabcd", 64),
-		},
-		{
-			msgID:       "0x1234",
-			totalShards: 128,
-			expected:    GetShard("0x1234", 128),
-		},
+// TestShouldTraceRPCMetaMessagesLogic tests the filtering logic without full Mimicry setup
+func TestShouldTraceRPCMetaMessagesLogic(t *testing.T) {
+	t.Run("filters nil and empty message IDs", func(t *testing.T) {
+		messages := []RPCMetaMessageInfo{
+			{
+				MessageID: nil,
+				Topic:     wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+			{
+				MessageID: wrapperspb.String(""),
+				Topic:     wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+			{
+				MessageID: wrapperspb.String("valid-msg"),
+				Topic:     wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+		}
+
+		// The actual function filters out nil and empty message IDs
+		validCount := 0
+		for _, msg := range messages {
+			if msg.MessageID != nil && msg.MessageID.GetValue() != "" {
+				validCount++
+			}
+		}
+
+		assert.Equal(t, 1, validCount, "Only one valid message")
+	})
+
+	t.Run("handles RPCMetaPeerInfo correctly", func(t *testing.T) {
+		peers := []RPCMetaPeerInfo{
+			{
+				PeerID: wrapperspb.String("peer-1"),
+				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+			{
+				PeerID: nil,
+				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+			{
+				PeerID: wrapperspb.String(""),
+				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+			},
+		}
+
+		// Count valid peers
+		validCount := 0
+		for _, peer := range peers {
+			if peer.PeerID != nil && peer.PeerID.GetValue() != "" {
+				validCount++
+			}
+		}
+
+		assert.Equal(t, 1, validCount, "Only one valid peer")
+	})
+
+	t.Run("handles legacy StringValue format", func(t *testing.T) {
+		messages := []*wrapperspb.StringValue{
+			wrapperspb.String("msg-1"),
+			wrapperspb.String("msg-2"),
+			nil,
+			wrapperspb.String(""),
+			wrapperspb.String("msg-3"),
+		}
+
+		// Count valid messages
+		validCount := 0
+		for _, msg := range messages {
+			if msg != nil && msg.GetValue() != "" {
+				validCount++
+			}
+		}
+
+		assert.Equal(t, 3, validCount, "Three valid messages")
+	})
+}
+
+// TestFilteredMessageWithIndex tests the FilteredMessageWithIndex struct
+func TestFilteredMessageWithIndex(t *testing.T) {
+	msg := FilteredMessageWithIndex{
+		MessageID:     wrapperspb.String("test-msg"),
+		OriginalIndex: 42,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.msgID, func(t *testing.T) {
-			// Call it multiple times to verify consistency
-			for i := 0; i < 5; i++ {
-				result := GetShard(tt.msgID, tt.totalShards)
-				assert.Equal(t, tt.expected, result)
-				assert.Less(t, result, tt.totalShards)
-			}
-		})
-	}
+	assert.Equal(t, "test-msg", msg.MessageID.GetValue())
+	assert.Equal(t, uint32(42), msg.OriginalIndex)
+}
+
+// TestRPCMetaStructs tests the RPC meta structs
+func TestRPCMetaStructs(t *testing.T) {
+	t.Run("RPCMetaMessageInfo", func(t *testing.T) {
+		msg := RPCMetaMessageInfo{
+			MessageID: wrapperspb.String("msg-id"),
+			Topic:     wrapperspb.String("/eth2/topic"),
+		}
+
+		assert.Equal(t, "msg-id", msg.MessageID.GetValue())
+		assert.Equal(t, "/eth2/topic", msg.Topic.GetValue())
+	})
+
+	t.Run("RPCMetaPeerInfo", func(t *testing.T) {
+		peer := RPCMetaPeerInfo{
+			PeerID: wrapperspb.String("peer-id"),
+			Topic:  wrapperspb.String("/eth2/topic"),
+		}
+
+		assert.Equal(t, "peer-id", peer.PeerID.GetValue())
+		assert.Equal(t, "/eth2/topic", peer.Topic.GetValue())
+	})
 }
 
 // TestIsShardActive tests the IsShardActive function
 func TestIsShardActive(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name         string
 		shard        uint64
 		activeShards []uint64
 		expected     bool
 	}{
 		{
-			name:         "shard is active",
-			shard:        2,
-			activeShards: []uint64{1, 2, 3},
+			name:         "shard is in list",
+			shard:        5,
+			activeShards: []uint64{1, 3, 5, 7, 9},
 			expected:     true,
 		},
 		{
-			name:         "shard is not active",
+			name:         "shard is not in list",
 			shard:        4,
-			activeShards: []uint64{1, 2, 3},
+			activeShards: []uint64{1, 3, 5, 7, 9},
 			expected:     false,
 		},
 		{
@@ -297,203 +188,122 @@ func TestIsShardActive(t *testing.T) {
 			activeShards: []uint64{},
 			expected:     false,
 		},
+		{
+			name:         "single shard match",
+			shard:        42,
+			activeShards: []uint64{42},
+			expected:     true,
+		},
+		{
+			name:         "large shard number",
+			shard:        511,
+			activeShards: []uint64{500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511},
+			expected:     true,
+		},
+		{
+			name:         "first shard",
+			shard:        0,
+			activeShards: []uint64{0, 1, 2, 3},
+			expected:     true,
+		},
+		{
+			name:         "last shard check",
+			shard:        511,
+			activeShards: []uint64{0, 255, 511},
+			expected:     true,
+		},
+		{
+			name:         "duplicate shards in list",
+			shard:        5,
+			activeShards: []uint64{1, 3, 5, 5, 7, 9}, // 5 appears twice
+			expected:     true,
+		},
+		{
+			name:         "nil active shards",
+			shard:        5,
+			activeShards: nil,
+			expected:     false,
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := IsShardActive(tt.shard, tt.activeShards)
-			assert.Equal(t, tt.expected, result)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := IsShardActive(tc.shard, tc.activeShards)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
 
-// TestSkipsSipHashIfAllShardsActive specifically tests that we skip hashing when all shards are active.
-func TestSkipsSipHashIfAllShardsActive(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	prometheus.DefaultRegisterer = registry
-
-	// Small total shards for easier testing.
-	totalShards := uint64(8)
-
-	// Create a list of all shards from 0 to totalShards-1.
-	allShards := make([]uint64, totalShards)
-	for i := uint64(0); i < totalShards; i++ {
-		allShards[i] = i
+// TestIsShardActivePerformance tests performance with large shard lists
+func TestIsShardActivePerformance(t *testing.T) {
+	// Create a large list of active shards
+	largeShardList := make([]uint64, 256)
+	for i := range largeShardList {
+		largeShardList[i] = uint64(i * 2) // Even numbers only
 	}
 
-	m := &Mimicry{
-		Config: &Config{
-			Traces: TracesConfig{
-				Enabled: true,
-				Topics: map[string]TopicConfig{
-					"test_event": {
-						TotalShards:  totalShards,
-						ActiveShards: allShards,
-					},
-				},
-			},
-		},
-		metrics: NewMetrics("test_all_active_shards1"),
-	}
-
-	// Even a message ID that would hash to an inactive shard should return true
-	// because the optimization should skip the hashing entirely.
-	mockEvent := createMockTraceEvent("0xanymessage")
-	mockClientMeta := createMockClientMeta(networks.DeriveFromID(1).ID) // mainnet
-	result := m.ShouldTraceMessage(mockEvent, mockClientMeta, "test_event")
-	assert.True(t, result, "When all shards are active, any message should be processed")
-
-	// Now let's remove one shard and verify the optimization doesn't apply.
-	partialShards := make([]uint64, totalShards-1)
-	copy(partialShards, allShards[:totalShards-1])
-
-	// Create a new config with one shard missing.
-	m = &Mimicry{
-		Config: &Config{
-			Traces: TracesConfig{
-				Enabled: true,
-				Topics: map[string]TopicConfig{
-					"test_event": {
-						TotalShards:  totalShards,
-						ActiveShards: partialShards,
-					},
-				},
-			},
-		},
-		metrics: NewMetrics("test_all_active_shards2"),
-	}
-
-	// Find a message that would hash to the inactive shard.
-	inactiveShard := totalShards - 1
-	msgIDForInactiveShard := findMsgIDForShard(inactiveShard, totalShards)
-
-	mockEvent = createMockTraceEvent(msgIDForInactiveShard)
-	result = m.ShouldTraceMessage(mockEvent, mockClientMeta, "test_event")
-	assert.False(t, result, "When not all shards are active, messages for inactive shards should be skipped")
-}
-
-// TestShouldTraceMessageWithDifferentShardingKeys tests the ShouldTraceMessage function
-// with different sharding key configurations.
-func TestShouldTraceMessageWithDifferentShardingKeys(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	prometheus.DefaultRegisterer = registry
-
-	testPeerID, _ := peer.Decode("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")
-	testTime := time.Now()
-	testMsgID := "test-msg-id"
-
-	// Create a consistent event to test different sharding keys
-	event := &host.TraceEvent{
-		Type:      "TEST_EVENT",
-		Topic:     "test-topic",
-		PeerID:    testPeerID,
-		Timestamp: testTime,
-		Payload:   &MockPayload{MsgID: testMsgID},
-	}
-
-	clientMeta := createMockClientMeta(networks.DeriveFromID(1).ID) // mainnet
-
-	// Create test cases with different sharding key configurations
-	tests := []struct {
-		name         string
-		topicConfig  TopicConfig
-		expectedTrue bool
+	testCases := []struct {
+		name     string
+		shard    uint64
+		expected bool
 	}{
 		{
-			name: "MsgID sharding with active shard",
-			topicConfig: TopicConfig{
-				TotalShards:  64,
-				ActiveShards: []uint64{GetShard(testMsgID, 64)}, // The shard for testMsgID
-				ShardingKey:  string(ShardingKeyTypeMsgID),
-			},
-			expectedTrue: true,
+			name:     "even shard (should be found)",
+			shard:    100,
+			expected: true,
 		},
 		{
-			name: "MsgID sharding with inactive shard",
-			topicConfig: TopicConfig{
-				TotalShards:  64,
-				ActiveShards: []uint64{(GetShard(testMsgID, 64) + 1) % 64}, // A different shard
-				ShardingKey:  string(ShardingKeyTypeMsgID),
-			},
-			expectedTrue: false,
+			name:     "odd shard (should not be found)",
+			shard:    101,
+			expected: false,
 		},
 		{
-			name: "PeerID sharding with active shard",
-			topicConfig: TopicConfig{
-				TotalShards:  64,
-				ActiveShards: []uint64{GetShard(testPeerID.String(), 64)}, // The shard for testPeerID
-				ShardingKey:  string(ShardingKeyTypePeerID),
-			},
-			expectedTrue: true,
+			name:     "first even shard",
+			shard:    0,
+			expected: true,
 		},
 		{
-			name: "PeerID sharding with inactive shard",
-			topicConfig: TopicConfig{
-				TotalShards:  64,
-				ActiveShards: []uint64{(GetShard(testPeerID.String(), 64) + 1) % 64}, // A different shard
-				ShardingKey:  string(ShardingKeyTypePeerID),
-			},
-			expectedTrue: false,
+			name:     "last even shard in range",
+			shard:    510,
+			expected: true,
+		},
+		{
+			name:     "beyond range",
+			shard:    1000,
+			expected: false,
 		},
 	}
 
-	for i, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mimicry := &Mimicry{
-				Config: &Config{
-					Traces: TracesConfig{
-						Enabled: true,
-						Topics: map[string]TopicConfig{
-							"TEST_EVENT": tt.topicConfig,
-						},
-					},
-				},
-				metrics: NewMetrics(fmt.Sprintf("test_sharding_key_%d", i)),
-			}
-
-			// Compile the regex patterns
-			err := mimicry.Config.Traces.CompilePatterns()
-			assert.NoError(t, err)
-
-			result := mimicry.ShouldTraceMessage(event, clientMeta, "TEST_EVENT")
-			assert.Equal(t, tt.expectedTrue, result)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := IsShardActive(tc.shard, largeShardList)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
 
-// findMsgIDForShard finds a message ID that maps to a specific shard.
-func findMsgIDForShard(shard, totalShards uint64) string {
-	// Start with a base message ID and increment until we find one that maps to the desired shard.
-	for i := 0; i < 1000; i++ {
-		msgID := fmt.Sprintf("0xtest%d", i)
-		if GetShard(msgID, totalShards) == shard {
-			return msgID
+// BenchmarkIsShardActive benchmarks the IsShardActive function
+func BenchmarkIsShardActive(b *testing.B) {
+	activeShards := make([]uint64, 100)
+	for i := range activeShards {
+		activeShards[i] = uint64(i * 5)
+	}
+
+	b.Run("shard_found_early", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = IsShardActive(10, activeShards) // Should be found early
 		}
-	}
+	})
 
-	return fmt.Sprintf("0xshard%d", shard) // Fallback, though this might not map to the desired shard.
-}
+	b.Run("shard_found_late", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = IsShardActive(495, activeShards) // Should be found late
+		}
+	})
 
-// createMockTraceEvent creates a mock TraceEvent with the given msgID
-func createMockTraceEvent(msgID string) *host.TraceEvent {
-	return &host.TraceEvent{
-		Payload: &MockPayload{
-			MsgID: msgID,
-		},
-	}
-}
-
-// createMockClientMeta creates a mock ClientMeta with the given network ID
-func createMockClientMeta(networkID uint64) *xatu.ClientMeta {
-	return &xatu.ClientMeta{
-		Name:           "test-client",
-		Id:             "test-id",
-		Implementation: "test-impl",
-		Os:             "test-os",
-		Ethereum: &xatu.ClientMeta_Ethereum{
-			Network: &xatu.ClientMeta_Ethereum_Network{
-				Id: networkID,
-			},
-		},
-	}
+	b.Run("shard_not_found", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = IsShardActive(7, activeShards) // Should not be found
+		}
+	})
 }

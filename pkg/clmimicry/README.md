@@ -5,7 +5,7 @@ CL-Mimicry is a sophisticated consensus layer P2P network monitoring client that
 ## Table of Contents
 
 - [Overview](#overview)
-- [Sharding System V2](#sharding-system-v2)
+- [Sharding System](#sharding-system)
 - [Event Categorization](#event-categorization)
 - [Configuration](#configuration)
 - [Metrics](#metrics)
@@ -23,11 +23,9 @@ CL-Mimicry connects to Ethereum consensus network nodes and captures libp2p trac
 
 The system uses **consistent hashing** with **SipHash-2-4** algorithm to enable distributed processing across multiple instances while maintaining deterministic message routing.
 
-## Sharding System V2
+## Sharding System
 
-CL-Mimicry V2 introduces a simplified, unified sharding system that replaces the complex hierarchical approach with a streamlined event categorization model.
-
-### Key Changes from V1
+CL-Mimicry uses a simplified, unified sharding system based on a streamlined event categorization model.
 - **Single-level sharding**: No more two-level hierarchical complexity
 - **Event categorization**: Events grouped by sharding capabilities (Groups A-D)
 - **Fixed 512 shards**: Consistent distribution across all configurations
@@ -97,7 +95,7 @@ Events without sharding keys:
 
 ## Configuration
 
-The V2 configuration focuses on topic-based patterns with simplified sharding:
+The configuration focuses on topic-based patterns with simplified sharding:
 
 ### Basic Structure
 
@@ -171,7 +169,7 @@ topics:
 
 ## Metrics
 
-The V2 system provides 5 core metrics for clear observability:
+The system provides 5 core metrics for clear observability:
 
 ### Core Metrics
 
@@ -314,15 +312,15 @@ sharding:
 
 1. **Configuration Structure**:
    - V1: Nested `traces.topics` with event patterns
-   - V2: Flat `sharding.topics` with gossip topic patterns
+   - Current: Flat `sharding.topics` with gossip topic patterns
 
 2. **Event Selection**:
    - V1: Event type patterns in config
-   - V2: Enable/disable events in `events` section
+   - Current: Enable/disable events in `events` section
 
 3. **Sharding Logic**:
    - V1: Two-level (event + topic) sharding
-   - V2: Single-level with event categorization
+   - Current: Single-level with event categorization
 
 ### Migration Example
 
@@ -339,7 +337,7 @@ traces:
             activeShards: ["0-25"]
 ```
 
-**V2 Config:**
+**Current Config:**
 ```yaml
 sharding:
   topics:

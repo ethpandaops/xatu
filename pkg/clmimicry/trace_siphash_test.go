@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -241,51 +239,6 @@ func TestIsShardActive(t *testing.T) {
 			result := clmimicry.IsShardActive(tt.shard, tt.activeShards)
 			assert.Equal(t, tt.expected, result)
 		})
-	}
-}
-
-func TestGetGossipTopics_ReflectionFallback(t *testing.T) {
-	// Test the reflection-based fallback for events with direct Topic fields
-	t.Run("struct with Topic field", func(t *testing.T) {
-		// This test simulates events that have a direct Topic field at the root level
-		// Since we can't easily create a dynamic struct for testing, this test
-		// verifies the reflection logic works with known protobuf types
-
-		// For now, we'll test with the map payload case which is already covered above
-		// In a real scenario, this would be used for protobuf structs with Topic fields
-		event := &host.TraceEvent{
-			Type: "SOME_GOSSIP_EVENT",
-			Payload: map[string]any{
-				"Topic": "/eth2/4a26c58b/some_topic/ssz_snappy",
-			},
-		}
-
-		result := clmimicry.GetGossipTopics(event)
-		assert.Len(t, result, 1)
-		assert.Equal(t, "/eth2/4a26c58b/some_topic/ssz_snappy", result[0])
-	})
-}
-
-func BenchmarkGetGossipTopics(b *testing.B) {
-	// Benchmark the most common case - recv_rpc with messages using host.RpcMeta payload
-	peerID, _ := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
-	event := &host.TraceEvent{
-		Type:   "LIBP2P_TRACE_RECV_RPC",
-		PeerID: peerID,
-		Payload: &host.RpcMeta{
-			PeerID: peerID,
-			Messages: []host.RpcMetaMsg{
-				{
-					MsgID: "msg1",
-					Topic: "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy",
-				},
-			},
-		},
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = clmimicry.GetGossipTopics(event)
 	}
 }
 

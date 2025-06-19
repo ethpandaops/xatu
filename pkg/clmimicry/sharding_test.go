@@ -13,7 +13,7 @@ import (
 
 func TestConfigurableTotalShards(t *testing.T) {
 	// Test configuration with different totalShards values
-	config := &ShardingConfigV2{
+	config := &ShardingConfig{
 		Topics: map[string]*TopicShardingConfig{
 			"small_shards": {
 				TotalShards:  256,
@@ -113,7 +113,7 @@ func TestValidateTotalShards(t *testing.T) {
 func TestUnifiedSharder(t *testing.T) {
 	tests := []struct {
 		name           string
-		config         *ShardingConfigV2
+		config         *ShardingConfig
 		eventType      xatu.Event_Name
 		msgID          string
 		topic          string
@@ -122,7 +122,7 @@ func TestUnifiedSharder(t *testing.T) {
 	}{
 		{
 			name: "Group A event with topic match",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*beacon_block.*": {
 						TotalShards:  512,
@@ -137,7 +137,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group A event without topic config falls back to msgID",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{},
 			},
 			eventType:      xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
@@ -148,7 +148,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group B event with topic match",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*attestation.*": {
 						TotalShards:  512,
@@ -163,7 +163,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group B event without topic config",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{},
 			},
 			eventType:      xatu.Event_LIBP2P_TRACE_LEAVE,
@@ -174,7 +174,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group C event with msgID",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{},
 			},
 			eventType:      xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
@@ -184,7 +184,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group D event with enabled config",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				NoShardingKeyEvents: &NoShardingKeyConfig{
 					Enabled: true,
 				},
@@ -197,7 +197,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Group D event with disabled config",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				NoShardingKeyEvents: &NoShardingKeyConfig{
 					Enabled: false,
 				},
@@ -210,7 +210,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Highest sampling rate selection",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*beacon.*": {
 						TotalShards:  512,
@@ -229,7 +229,7 @@ func TestUnifiedSharder(t *testing.T) {
 		},
 		{
 			name: "Sharding disabled",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*": {
 						TotalShards:  512,
@@ -272,7 +272,7 @@ func TestUnifiedSharder(t *testing.T) {
 }
 
 func TestShardDistribution(t *testing.T) {
-	config := &ShardingConfigV2{
+	config := &ShardingConfig{
 		Topics: map[string]*TopicShardingConfig{
 			".*": {
 				TotalShards:  512,
@@ -431,13 +431,13 @@ func TestEventCategorizer(t *testing.T) {
 func TestConfigValidation(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *ShardingConfigV2
+		config      *ShardingConfig
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name: "Valid config with ranges",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*": {
 						TotalShards:  512,
@@ -449,7 +449,7 @@ func TestConfigValidation(t *testing.T) {
 		},
 		{
 			name: "Invalid shard out of range",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*": {
 						TotalShards:  512,
@@ -462,7 +462,7 @@ func TestConfigValidation(t *testing.T) {
 		},
 		{
 			name: "Empty active shards",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*": {
 						TotalShards:  512,
@@ -475,7 +475,7 @@ func TestConfigValidation(t *testing.T) {
 		},
 		{
 			name: "Invalid regex pattern",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					"[invalid": {
 						TotalShards:  512,
@@ -488,7 +488,7 @@ func TestConfigValidation(t *testing.T) {
 		},
 		{
 			name: "Zero totalShards",
-			config: &ShardingConfigV2{
+			config: &ShardingConfig{
 				Topics: map[string]*TopicShardingConfig{
 					".*": {
 						TotalShards:  0,
@@ -521,7 +521,7 @@ func TestConfigValidation(t *testing.T) {
 }
 
 func TestBatchProcessing(t *testing.T) {
-	config := &ShardingConfigV2{
+	config := &ShardingConfig{
 		Topics: map[string]*TopicShardingConfig{
 			".*attestation.*": {
 				TotalShards:  512,

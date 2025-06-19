@@ -39,7 +39,7 @@ type Config struct {
 	Events EventConfig `yaml:"events"`
 
 	// Sharding is the configuration for event sharding
-	Sharding ShardingConfigV2 `yaml:"sharding"`
+	Sharding ShardingConfig `yaml:"sharding"`
 }
 
 func (c *Config) Validate() error {

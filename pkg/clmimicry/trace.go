@@ -56,7 +56,7 @@ func (m *Mimicry) ShouldTraceMessage(
 	eventType := xatu.Event_Name(xatu.Event_Name_value[xatuEventType])
 
 	// Extract message ID and topics using the existing helper functions
-	msgID := GetShardingKey(event, clientMeta, string(ShardingKeyTypeMsgID), xatuEventType)
+	msgID := GetMsgID(event)
 
 	// Get all topics from the event
 	topics := GetGossipTopics(event)
@@ -139,8 +139,9 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 				topic = peer.Topic.GetValue()
 			}
 
-			// For peers, we use the peer ID as the sharding key
-			shouldProcess, reason := m.sharder.ShouldProcess(eventType, peer.PeerID.GetValue(), topic)
+			// For Group B events (PRUNE), sharding is based on topic only
+			// We pass empty string for msgID since these events don't have message IDs
+			shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
 			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 			if shouldProcess {

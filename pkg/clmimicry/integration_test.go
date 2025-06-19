@@ -25,7 +25,7 @@ func TestIntegration_FullEventFlow(t *testing.T) {
 		Events: EventConfigV2{
 			Enabled: true,
 		},
-		Sharding: ShardingConfigV2{
+		Sharding: ShardingConfig{
 			Topics: map[string]*TopicShardingConfig{
 				".*beacon_block.*": {
 					ActiveShards: generateShardRange(0, 511), // 100% sampling
@@ -111,7 +111,7 @@ func TestIntegration_RPCMetaEventProcessing(t *testing.T) {
 		Events: EventConfigV2{
 			Enabled: true,
 		},
-		Sharding: ShardingConfigV2{
+		Sharding: ShardingConfig{
 			Topics: map[string]*TopicShardingConfig{
 				".*beacon_block.*": {
 					ActiveShards: generateShardRange(0, 511), // 100% sampling

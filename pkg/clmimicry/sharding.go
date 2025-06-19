@@ -18,13 +18,13 @@ const (
 
 // UnifiedSharder provides a single sharding decision point for all events
 type UnifiedSharder struct {
-	config           *ShardingConfigV2
+	config           *ShardingConfig
 	eventCategorizer *EventCategorizer
 	enabled          bool
 }
 
-// ShardingConfigV2 represents the simplified sharding configuration
-type ShardingConfigV2 struct {
+// ShardingConfig represents the sharding configuration
+type ShardingConfig struct {
 	// Topic-based patterns with sampling rates
 	Topics map[string]*TopicShardingConfig `yaml:"topics"`
 
@@ -56,9 +56,9 @@ type CompiledPattern struct {
 }
 
 // NewUnifiedSharder creates a new unified sharder
-func NewUnifiedSharder(config *ShardingConfigV2, enabled bool) (*UnifiedSharder, error) {
+func NewUnifiedSharder(config *ShardingConfig, enabled bool) (*UnifiedSharder, error) {
 	if config == nil {
-		config = &ShardingConfigV2{
+		config = &ShardingConfig{
 			Topics: make(map[string]*TopicShardingConfig),
 			NoShardingKeyEvents: &NoShardingKeyConfig{
 				Enabled: true,
@@ -235,7 +235,7 @@ func (s *UnifiedSharder) GetShardForKey(key string, totalShards uint64) uint64 {
 }
 
 // compilePatterns compiles all regex patterns in the configuration
-func (c *ShardingConfigV2) compilePatterns() error {
+func (c *ShardingConfig) compilePatterns() error {
 	c.compiledPatterns = make(map[string]*CompiledPattern)
 
 	for pattern, config := range c.Topics {
@@ -254,7 +254,7 @@ func (c *ShardingConfigV2) compilePatterns() error {
 }
 
 // validate validates the sharding configuration
-func (c *ShardingConfigV2) validate() error {
+func (c *ShardingConfig) validate() error {
 	// Validate topic configurations
 	for pattern, config := range c.Topics {
 		if err := config.validate(pattern); err != nil {
@@ -388,7 +388,7 @@ func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 }
 
 // LogSummary returns a human-readable summary of the sharding configuration
-func (c *ShardingConfigV2) LogSummary() string {
+func (c *ShardingConfig) LogSummary() string {
 	if len(c.Topics) == 0 {
 		return "Sharding disabled (no topic configurations)"
 	}

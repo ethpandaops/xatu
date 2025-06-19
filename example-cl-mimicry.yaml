@@ -35,73 +35,51 @@ node:
 outputs:
   - name: log
     type: stdout
-# traces:
-#   enabled: true
-#   # If true, the root rpc events will be recorded (if sharding config dictates) even if
-#   # there are no rpc meta/control level messages.
-#   alwaysRecordRootRpcEvents: false
-#   
-#   # SHARDING CONFIGURATION TYPES:
-#   # 1. Simple: Same sampling rate for all messages of an event type
-#   # 2. Hierarchical: Different sampling rates based on gossip topic patterns
-#   #    - Use 'topics.gossipTopics' to define per-topic sampling rates
-#   #    - Use 'topics.fallback' for topics that don't match any pattern
+# sharding:
+#   # Topic-based sharding configuration
+#   # Each topic pattern maps to a specific set of active shards
+#   # The sharder automatically determines the appropriate sharding key (MsgID, Topic, etc.) based on the event type
+#   # Note: totalShards can be configured independently for each topic pattern (e.g., 512, 1024, 256, etc.)
 #   topics:
-#     # Simple configuration (backward compatible)
-#     "(?i).*add_peer.*":
-#       shardingKey: "PeerID"
+#     # High priority: 100% sampling for beacon blocks
+#     ".*beacon_block.*":
 #       totalShards: 512
-#       activeShards: ["0-255"] # Range syntax - expands to shards 0 through 255
-#     
-#     # HIERARCHICAL CONFIGURATION: Allows different sampling rates per gossip topic
-#     # This enables fine-grained control - e.g., 100% beacon blocks, 1% other topics
-#     "(?i).*duplicate_message.*":
-#       topics:
-#         gossipTopics:
-#           # High priority: 100% sampling for beacon blocks
-#           ".*beacon_block.*":
-#             shardingKey: "MsgID"
-#             totalShards: 512
-#             activeShards: ["0-511"] # 100% sampling
-#           # Medium priority: 50% sampling for attestations
-#           ".*beacon_attestation.*":
-#             shardingKey: "MsgID"
-#             totalShards: 512
-#             activeShards: ["0-255"] # 50% sampling
-#           # Low priority: 12.5% sampling for sync committee
-#           ".*sync_committee.*":
-#             shardingKey: "MsgID"
-#             totalShards: 512
-#             activeShards: ["0-63"] # 12.5% sampling
-#         # Fallback for all other gossip topics
-#         fallback:
-#           shardingKey: "MsgID"
-#           totalShards: 512
-#           activeShards: [0] # 1/512 sampling (~0.2%)
-#     
-#     # Hierarchical configuration for RPC events
-#     "(?i).*recv_rpc.*":
-#       topics:
-#         gossipTopics:
-#           # Higher sampling for beacon blocks in RPC messages
-#           ".*beacon_block.*":
-#             shardingKey: "MsgID"
-#             totalShards: 512
-#             activeShards: ["0-255"] # 50% sampling
-#         fallback:
-#           shardingKey: "MsgID"
-#           totalShards: 512
-#           activeShards: ["0-31"] # ~6.25% sampling
-#     
-#     # Simple configuration for other events
-#     "(?i).*rpc_meta_control_ihave.*":
-#       shardingKey: "MsgID"
+#       activeShards: ["0-511"] # 100% sampling (all shards active)
+#
+#     # Medium priority: 50% sampling for attestations
+#     ".*beacon_attestation.*":
 #       totalShards: 512
-#       activeShards: ["0-63"] # 12.5% sampling
-#     "(?i).*rpc_meta_control_iwant.*":
-#       shardingKey: "MsgID"
+#       activeShards: ["0-255"] # 50% sampling (256/512 shards)
+#
+#     # Low priority: 12.5% sampling for sync committee
+#     ".*sync_committee.*":
 #       totalShards: 512
-#       activeShards: ["0-31"] # ~6.25% sampling
+#       activeShards: ["0-63"] # 12.5% sampling (64/512 shards)
+#
+#     # Very low priority: ~0.2% sampling for blob sidecars
+#     ".*blob_sidecar.*":
+#       totalShards: 512
+#       activeShards: [0] # 1/512 sampling (~0.2%)
+#
+#     # Catch-all pattern for any other topics
+#     ".*":
+#       totalShards: 512
+#       activeShards: ["0-31"] # ~6.25% sampling (32/512 shards)
+#
+#     # Example: Using different totalShards for specific use cases
+#     # You could use 1024 shards for finer-grained control
+#     ".*special_topic.*":
+#       totalShards: 1024
+#       activeShards: ["0-127"] # 12.5% sampling (128/1024 shards)
+#
+#     # Example: Mix of ranges and individual shards
+#     ".*mixed_pattern.*":
+#       totalShards: 512
+#       activeShards: ["0-10", "20-30", 100, 200] # Multiple ranges and individual shards
+#
+#   # Configuration for events without sharding keys (Group D events)
+#   noShardingKeyEvents:
+#     enabled: true # Process all events without sharding keys
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

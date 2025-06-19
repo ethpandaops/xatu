@@ -250,8 +250,16 @@ func extractTopicsFromReflection(payload interface{}, topicSet map[string]bool) 
 // extractTopicFromField extracts a topic from a specific struct field using reflection.
 func extractTopicFromField(structValue reflect.Value, fieldName string, topicSet map[string]bool) {
 	topicField := structValue.FieldByName(fieldName)
-	if !topicField.IsValid() || topicField.IsNil() {
+	if !topicField.IsValid() {
 		return
+	}
+	
+	// Check if the field type supports IsNil() before calling it
+	switch topicField.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Interface, reflect.Chan, reflect.Func:
+		if topicField.IsNil() {
+			return
+		}
 	}
 
 	// Handle *wrapperspb.StringValue fields

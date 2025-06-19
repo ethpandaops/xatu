@@ -504,7 +504,6 @@ func (m *Mimicry) handleSendRPCEvent(
 	}
 
 	// Send the root event if there are rpc meta level messages
-	// Note: AlwaysRecordRootRpcEvents is deprecated in the new sharding system
 	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
@@ -622,7 +621,6 @@ func (m *Mimicry) handleRecvRPCEvent(
 	}
 
 	// Send the root event if there are rpc meta level messages
-	// Note: AlwaysRecordRootRpcEvents is deprecated in the new sharding system
 	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
@@ -701,7 +699,6 @@ func (m *Mimicry) handleDropRPCEvent(
 	}
 
 	// Send the root event if there are rpc meta level messages
-	// Note: AlwaysRecordRootRpcEvents is deprecated in the new sharding system
 	if len(rpcMetaDecoratedEvents) > 0 {
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)

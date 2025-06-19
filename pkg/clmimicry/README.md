@@ -5,13 +5,12 @@ CL-Mimicry is a sophisticated consensus layer P2P network monitoring client that
 ## Table of Contents
 
 - [Overview](#overview)
-- [Event Processing](#event-processing)
-- [Sharding System](#sharding-system)
+- [Sharding System V2](#sharding-system-v2)
+- [Event Categorization](#event-categorization)
 - [Configuration](#configuration)
-- [Supported Events](#supported-events)
+- [Metrics](#metrics)
 - [Examples](#examples)
-- [Performance](#performance)
-- [Best Practices](#best-practices)
+- [Migration from V1](#migration-from-v1)
 
 ## Overview
 
@@ -24,116 +23,110 @@ CL-Mimicry connects to Ethereum consensus network nodes and captures libp2p trac
 
 The system uses **consistent hashing** with **SipHash-2-4** algorithm to enable distributed processing across multiple instances while maintaining deterministic message routing.
 
-## Event Processing
+## Sharding System V2
 
-CL-Mimicry processes events through a hierarchical handler system that categorizes events into four main types:
+CL-Mimicry V2 introduces a simplified, unified sharding system that replaces the complex hierarchical approach with a streamlined event categorization model.
 
-### 1. GossipSub Protocol Events
-Events that carry Ethereum consensus data with full **hierarchical sharding support**:
+### Key Changes from V1
+- **Single-level sharding**: No more two-level hierarchical complexity
+- **Event categorization**: Events grouped by sharding capabilities (Groups A-D)
+- **Fixed 512 shards**: Consistent distribution across all configurations
+- **Topic-first design**: Prioritize topic-based sharding where available
+- **Simplified metrics**: Only 5 core metrics for clear observability
 
-- **Beacon Blocks**: Critical consensus events (typically 100% sampled)
-- **Attestations**: Validator votes and consensus participation
-- **Blob Sidecars**: EIP-4844 data availability sampling
-- **Sync Committee Messages**: Light client support data
-
-### 2. LibP2P Pubsub Protocol Level Events
-Message flow events with **hierarchical and simple sharding support**:
-
-- **Message Flow (Hierarchical)**: `PUBLISH_MESSAGE`, `DELIVER_MESSAGE`, `DUPLICATE_MESSAGE`, `REJECT_MESSAGE` 
-- **Topic Management (Hierarchical)**: `JOIN`, `GRAFT`, `PRUNE`
-- **Peer Management (Simple)**: `ADD_PEER`, `REMOVE_PEER`
-- **RPC Communication (Simple)**: `RECV_RPC`, `SEND_RPC`, `DROP_RPC`
-
-### 3. LibP2P Core Networking Events
-Low-level connection events with **simple sharding support**:
-
-- **Connection Lifecycle**: `CONNECTED`, `DISCONNECTED`
-- **Protocol Negotiation**: Transport and stream management
-
-### 4. Request/Response (RPC) Protocol Events
-Ethereum-specific RPC events with **simple sharding support**:
-
-- **Metadata Exchange**: `HANDLE_METADATA`
-- **Status Synchronization**: `HANDLE_STATUS`
-
-## Sharding System
-
-### How Sharding Works
-
-CL-Mimicry uses **SipHash-2-4** consistent hashing to distribute events across shards:
+### How It Works
 
 ```
-Event → Extract Sharding Key → SipHash → Shard Number → Active Check → Process/Skip
+┌─────────────┐
+│Event Arrives│
+└──────┬──────┘
+       │
+       ▼
+┌──────────────┐     ┌─────────────────┐
+│Get Event Info├────►│ Event Category? │
+└──────────────┘     └────────┬────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┬─────────────────────┐
+        ▼                     ▼                     ▼                     ▼
+   ┌─────────┐         ┌─────────┐           ┌─────────┐           ┌─────────┐
+   │ Group A │         │ Group B │           │ Group C │           │ Group D │
+   │Topic+Msg│         │Topic Only│          │Msg Only │           │ No Keys │
+   └────┬────┘         └────┬────┘           └────┬────┘           └────┬────┘
+        │                   │                     │                     │
+        ▼                   ▼                     ▼                     ▼
+   Topic Config?       Topic Config?         Default Shard         Enabled?
+        │                   │                     │                     │
+     Yes/No              Yes/No                   │                  Yes/No
+        │                   │                     │                     │
+        ▼                   ▼                     ▼                     ▼
+   Shard by Msg       Shard by Topic        Shard by Msg         Process/Drop
 ```
 
-**Process Flow:**
-1. **Extract Sharding Key**: Get MsgID or PeerID from event
-2. **Apply SipHash**: `hash = SipHash(key, shardingKey)`
-3. **Calculate Shard**: `shard = hash % totalShards`
-4. **Check Active**: `if shard in activeShards then process`
+## Event Categorization
 
-### Sharding Key Types
+Events are categorized into four groups based on their available sharding keys:
 
-- **MsgID** (default): Uses message ID for consistent message routing
-- **PeerID**: Uses peer ID for peer-based event clustering
+### Group A: Topic + MsgID Events
+Events with both topic and message ID, enabling full sharding flexibility:
+- `PUBLISH_MESSAGE`, `DELIVER_MESSAGE`, `DUPLICATE_MESSAGE`, `REJECT_MESSAGE`
+- `GOSSIPSUB_BEACON_BLOCK`, `GOSSIPSUB_BEACON_ATTESTATION`, `GOSSIPSUB_BLOB_SIDECAR`
+- `RPC_META_MESSAGE`, `RPC_META_CONTROL_IHAVE`
 
-### Benefits
+**Sharding**: Uses message ID for sharding, with topic-based configuration
 
-- **Horizontal Scaling**: Distribute load across multiple instances
-- **Consistent Routing**: Same message always goes to same shard
-- **Load Balancing**: Even distribution across all shards
-- **Fault Tolerance**: Overlap shards for redundancy
+### Group B: Topic-Only Events
+Events with only topic information:
+- `JOIN`, `LEAVE`, `GRAFT`, `PRUNE`
+- `RPC_META_CONTROL_GRAFT`, `RPC_META_CONTROL_PRUNE`, `RPC_META_SUBSCRIPTION`
+
+**Sharding**: Uses topic hash for sharding decisions
+
+### Group C: MsgID-Only Events
+Events with only message ID:
+- `RPC_META_CONTROL_IWANT`, `RPC_META_CONTROL_IDONTWANT`
+
+**Sharding**: Uses message ID with default configuration
+
+### Group D: No Sharding Key Events
+Events without sharding keys:
+- `ADD_PEER`, `REMOVE_PEER`, `CONNECTED`, `DISCONNECTED`
+- `RECV_RPC`, `SEND_RPC`, `DROP_RPC` (parent events only)
+- `HANDLE_METADATA`, `HANDLE_STATUS`
+
+**Sharding**: All-or-nothing based on configuration
 
 ## Configuration
 
-### Simple Configuration
+The V2 configuration focuses on topic-based patterns with simplified sharding:
 
-Uniform sampling across all messages of an event type:
+### Basic Structure
 
 ```yaml
-traces:
-  enabled: true
+sharding:
+  # Topic-based sharding configuration
   topics:
-    "(?i).*duplicate_message.*":
-      shardingKey: "MsgID"
+    ".*beacon_block.*":
+      totalShards: 512          # Always 512 for consistency
+      activeShards: ["0-511"]   # 100% sampling
+
+    ".*beacon_attestation.*":
       totalShards: 512
-      activeShards: ["0-255"]  # 50% sampling
-```
+      activeShards: ["0-25"]    # 26/512 = ~5% sampling
 
-### Hierarchical Configuration
+    ".*":                       # Catch-all pattern
+      totalShards: 512
+      activeShards: ["0-127"]   # 25% sampling
 
-Different sampling rates based on gossip topic patterns:
+  # Events without sharding keys (Group D)
+  noShardingKeyEvents:
+    enabled: true               # Process all Group D events
 
-```yaml
-traces:
-  enabled: true
-  topics:
-    "(?i).*duplicate_message.*":
-      topics:
-        gossipTopics:
-          # Critical: 100% sampling for beacon blocks
-          ".*beacon_block.*":
-            shardingKey: "MsgID"
-            totalShards: 512
-            activeShards: ["0-511"]
-
-          # Important: 50% sampling for attestations
-          ".*beacon_attestation.*":
-            shardingKey: "MsgID"
-            totalShards: 512
-            activeShards: ["0-255"]
-
-          # Medium: 25% sampling for blob sidecars
-          ".*blob_sidecar.*":
-            shardingKey: "MsgID"
-            totalShards: 512
-            activeShards: ["0-127"]
-
-        # Low priority: 1% sampling for unmatched topics
-        fallback:
-          shardingKey: "MsgID"
-          totalShards: 512
-          activeShards: [0]
+events:
+  # Enable/disable specific event types
+  recvRpcEnabled: true
+  gossipSubBeaconBlockEnabled: true
+  gossipSubAttestationEnabled: true
+  # ... etc
 ```
 
 ### Active Shards Syntax
@@ -141,145 +134,227 @@ traces:
 Flexible syntax for specifying which shards to process:
 
 ```yaml
-# Individual shards
-activeShards: [0, 1, 5, 10]
+# Range syntax (recommended)
+activeShards: ["0-255"]         # 256 shards = 50% sampling
 
-# Range syntax (inclusive)
-activeShards: ["0-255"]
+# Individual shards
+activeShards: [0, 1, 5, 10]     # Specific shards only
 
 # Mixed syntax
-activeShards: [0, "10-20", 50, "100-150"]
+activeShards: ["0-10", 50, "100-150"]  # Ranges and individuals
 
-# Single shard (0.2% of 512 total)
-activeShards: [0]
-
-# All shards (100% sampling)
-activeShards: ["0-511"]
+# Common sampling rates with 512 total shards:
+activeShards: ["0-511"]         # 100% (all shards)
+activeShards: ["0-255"]         # 50%  (256 shards)
+activeShards: ["0-127"]         # 25%  (128 shards)
+activeShards: ["0-25"]          # 5%   (26 shards)
+activeShards: ["0-4"]           # 1%   (5 shards)
+activeShards: [0]               # 0.2% (1 shard)
 ```
 
-## Supported Events
+### Pattern Matching
 
-### Hierarchical Sharding Supported
+Topics use regex patterns with highest-match-wins:
 
-Events that include gossip topic information and support topic-based sampling:
+```yaml
+topics:
+  # Most specific patterns first
+  ".*beacon_attestation_[0-9]+.*":  # Subnet-specific
+    activeShards: ["0-12"]          # 2.5% sampling
 
-> **Note**: Message flow events (`DUPLICATE_MESSAGE`, `DELIVER_MESSAGE`, `PUBLISH_MESSAGE`, `REJECT_MESSAGE`) support **both** hierarchical and simple sharding. Use hierarchical when you need different sampling rates per gossip topic, or simple for uniform sampling across all messages.
+  ".*beacon_attestation.*":         # General attestations
+    activeShards: ["0-25"]          # 5% sampling
 
-| Event Type | Topic Information | Primary Use Case |
-|------------|------------------|------------------|
-| `LIBP2P_TRACE_DUPLICATE_MESSAGE` | ✅ Gossip topics | Duplicate detection with topic-aware sampling |
-| `LIBP2P_TRACE_DELIVER_MESSAGE` | ✅ Gossip topics | Message delivery with topic-aware sampling |
-| `LIBP2P_TRACE_PUBLISH_MESSAGE` | ✅ Gossip topics | Message publishing with topic-aware sampling |
-| `LIBP2P_TRACE_REJECT_MESSAGE` | ✅ Gossip topics | Message rejection with topic-aware sampling |
-| `LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION` | ✅ Subnet patterns | Validator participation monitoring |
-| `LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK` | ✅ Network variants | Critical consensus tracking |
-| `LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR` | ✅ Sidecar indices | EIP-4844 data availability |
-| `LIBP2P_TRACE_JOIN` | ✅ Topic patterns | Topic subscription tracking |
-| `LIBP2P_TRACE_LEAVE` | ✅ Topic patterns | Topic unsubscription tracking |
-| `LIBP2P_TRACE_GRAFT` | ✅ Topic patterns | Mesh grafting with topic-aware sampling |
-| `LIBP2P_TRACE_PRUNE` | ✅ Topic patterns | Mesh pruning with topic-aware sampling |
-| `LIBP2P_TRACE_RPC_META_CONTROL_IHAVE` | ✅ Topic patterns | Message availability tracking |
-| `LIBP2P_TRACE_RPC_META_CONTROL_GRAFT` | ✅ Topic patterns | RPC graft control messages |
-| `LIBP2P_TRACE_RPC_META_CONTROL_PRUNE` | ✅ Topic patterns | Peer mesh optimization |
-| `LIBP2P_TRACE_RPC_META_SUBSCRIPTION` | ✅ Topic patterns | Subscription behavior |
-| `LIBP2P_TRACE_RPC_META_MESSAGE` | ✅ Topic patterns | Direct message flow |
+  ".*":                            # Everything else
+    activeShards: ["0-127"]        # 25% sampling
+```
 
-### Simple Sharding Supported
+## Metrics
 
-Events with uniform sampling across the entire event type:
+The V2 system provides 5 core metrics for clear observability:
 
-| Event Type | Available Sharding Keys | Primary Use Case |
-|------------|------------------------|------------------|
-| `LIBP2P_TRACE_ADD_PEER` | PeerID | Peer discovery monitoring |
-| `LIBP2P_TRACE_REMOVE_PEER` | PeerID | Peer churn analysis |
-| `LIBP2P_TRACE_RECV_RPC` | PeerID + Meta Messages | Inbound RPC monitoring |
-| `LIBP2P_TRACE_SEND_RPC` | PeerID + Meta Messages | Outbound RPC monitoring |
-| `LIBP2P_TRACE_DROP_RPC` | PeerID + Meta Messages | RPC failure analysis |
-| `LIBP2P_TRACE_CONNECTED` | PeerID (Remote) | Connection establishment |
-| `LIBP2P_TRACE_DISCONNECTED` | PeerID (Remote) | Connection termination |
-| `LIBP2P_TRACE_HANDLE_METADATA` | PeerID | Metadata exchange |
-| `LIBP2P_TRACE_HANDLE_STATUS` | PeerID | Status synchronization |
-| `LIBP2P_TRACE_RPC_META_CONTROL_IWANT` | MsgID | Message request tracking |
-| `LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT` | MsgID | Message rejection tracking |
+### Core Metrics
 
-> **Note**: All events now support some form of sharding. Events with topic information support hierarchical sharding, while all others support simple sharding via MsgID or PeerID keys.
+```prometheus
+# Total events received by type and network
+xatu_cl_mimicry_events_total{event_type="GOSSIPSUB_BEACON_BLOCK", network="mainnet"}
+
+# Events that passed sharding and were processed
+xatu_cl_mimicry_events_processed_total{event_type="GOSSIPSUB_BEACON_ATTESTATION", network="mainnet"}
+
+# Events filtered out by sharding
+xatu_cl_mimicry_events_filtered_total{event_type="JOIN", network="mainnet"}
+
+# Sharding decisions with reasons
+xatu_cl_mimicry_sharding_decisions_total{event_type="PUBLISH_MESSAGE", reason="group_a_topic_match_true", network="mainnet"}
+
+# Decorated events created (unchanged from V1)
+xatu_cl_mimicry_libp2p_decorated_events_total{event_type="GOSSIPSUB_BEACON_BLOCK", network="mainnet"}
+```
+
+### Common Sharding Decision Reasons
+
+- `sharding_disabled` - Sharding is turned off
+- `group_a_topic_match_true/false` - Group A event matched/didn't match topic config
+- `group_a_no_topic_config` - Group A event with no matching topic pattern
+- `group_b_topic_match_true/false` - Group B event matched/didn't match topic config
+- `group_b_no_config` - Group B event with no topic configuration
+- `group_c_shard_X` - Group C event assigned to shard X
+- `group_d_enabled/disabled` - Group D events enabled or disabled
 
 ## Examples
 
 ### Production Multi-Instance Setup
 
-**Instance 1 (Primary Consensus Monitoring):**
+**Instance 1 - High Priority Events (Critical consensus data):**
 ```yaml
-traces:
-  enabled: true
+sharding:
   topics:
-    # Full consensus event coverage
-    "(?i).*(beacon_block|finalized_checkpoint).*":
-      shardingKey: "MsgID"
+    # 100% of beacon blocks and finalized checkpoints
+    ".*beacon_block.*|.*finalized_checkpoint.*":
       totalShards: 512
       activeShards: ["0-511"]  # 100% sampling
-
-    # High attestation coverage
-    "(?i).*attestation.*":
-      shardingKey: "MsgID"
+    
+    # 10% of attestations (higher than instance 2)
+    ".*beacon_attestation.*":
+      totalShards: 512
+      activeShards: ["0-50"]   # ~10% sampling
+    
+    # 50% of blob sidecars
+    ".*blob_sidecar.*":
       totalShards: 512
       activeShards: ["0-255"]  # 50% sampling
+
+  noShardingKeyEvents:
+    enabled: true  # Capture all peer events
+
+events:
+  # Focus on consensus events
+  gossipSubBeaconBlockEnabled: true
+  gossipSubAttestationEnabled: true
+  gossipSubBlobSidecarEnabled: true
+  publishMessageEnabled: true
+  deliverMessageEnabled: true
 ```
 
-**Instance 2 (Network Analysis):**
+**Instance 2 - Network Analysis (Peer behavior & sampling):**
 ```yaml
-traces:
-  enabled: true
+sharding:
   topics:
-    # Peer behavior analysis
-    "(?i).*(add_peer|remove_peer|connected|disconnected).*":
-      shardingKey: "PeerID"
+    # Skip beacon blocks (handled by instance 1)
+    ".*beacon_block.*":
       totalShards: 512
-      activeShards: ["256-511"]  # Second half, 50% sampling
-
-    # RPC communication analysis
-    "(?i).*(recv_rpc|send_rpc).*":
-      shardingKey: "PeerID"
+      activeShards: []  # 0% - skip entirely
+    
+    # Different attestation shards for redundancy
+    ".*beacon_attestation.*":
       totalShards: 512
-      activeShards: ["128-383"]  # Middle section, 50% sampling
+      activeShards: ["51-76"]  # ~5% sampling, different shards
+    
+    # Catch-all for other topics
+    ".*":
+      totalShards: 512
+      activeShards: ["0-127"]  # 25% sampling
+
+  noShardingKeyEvents:
+    enabled: true
+
+events:
+  # Focus on network events
+  joinEnabled: true
+  leaveEnabled: true
+  graftEnabled: true
+  pruneEnabled: true
+  addPeerEnabled: true
+  removePeerEnabled: true
 ```
 
-### Development and Testing
+### Development Environment
 
-**Local Development (Full Capture):**
+**Local Testing (Minimal sampling):**
+```yaml
+sharding:
+  topics:
+    # Sample everything at 1%
+    ".*":
+      totalShards: 512
+      activeShards: ["0-4"]  # 1% sampling
+  
+  noShardingKeyEvents:
+    enabled: true
+
+events:
+  # Enable all events for testing
+  all_events_enabled: true  # Simplified for example
+```
+
+### Specific Use Cases
+
+**Attestation Subnet Analysis:**
+```yaml
+sharding:
+  topics:
+    # Different sampling per subnet
+    ".*beacon_attestation_0.*":
+      totalShards: 512
+      activeShards: ["0-255"]  # 50% for subnet 0
+    
+    ".*beacon_attestation_1.*":
+      totalShards: 512
+      activeShards: ["0-127"]  # 25% for subnet 1
+    
+    ".*beacon_attestation.*":
+      totalShards: 512
+      activeShards: ["0-25"]   # 5% for other subnets
+```
+
+## Migration from V1
+
+### Key Differences
+
+1. **Configuration Structure**:
+   - V1: Nested `traces.topics` with event patterns
+   - V2: Flat `sharding.topics` with gossip topic patterns
+
+2. **Event Selection**:
+   - V1: Event type patterns in config
+   - V2: Enable/disable events in `events` section
+
+3. **Sharding Logic**:
+   - V1: Two-level (event + topic) sharding
+   - V2: Single-level with event categorization
+
+### Migration Example
+
+**V1 Config:**
 ```yaml
 traces:
   enabled: true
   topics:
-    # Capture everything for development
-    "(?i).*":
-      shardingKey: "MsgID"
-      totalShards: 1
-      activeShards: [0]  # 100% sampling, single shard
-```
-
-**Hierarchical Testing:**
-```yaml
-traces:
-  enabled: true
-  topics:
-    "(?i).*duplicate_message.*":
+    "(?i).*gossipsub_beacon_attestation.*":
       topics:
         gossipTopics:
-          # Test beacon block processing
-          ".*beacon_block.*":
-            totalShards: 4
-            activeShards: ["0-3"]  # 100% of 4 shards
-            shardingKey: "MsgID"
-
-          # Test attestation sampling
-          ".*beacon_attestation.*":
-            totalShards: 4
-            activeShards: [0, 1]   # 50% of 4 shards
-            shardingKey: "MsgID"
-
-        fallback:
-          totalShards: 4
-          activeShards: [0]        # 25% of 4 shards
-          shardingKey: "MsgID"
+          ".*":
+            totalShards: 512
+            activeShards: ["0-25"]
 ```
+
+**V2 Config:**
+```yaml
+sharding:
+  topics:
+    ".*beacon_attestation.*":
+      totalShards: 512
+      activeShards: ["0-25"]
+
+events:
+  gossipSubAttestationEnabled: true
+```
+
+### Migration Steps
+
+1. **Identify topic patterns**: Extract gossip topic patterns from V1 config
+2. **Move to sharding section**: Place patterns under `sharding.topics`
+3. **Enable events**: Set corresponding events to `true` in `events` section
+4. **Test thoroughly**: Verify sharding distribution matches expectations
+5. **Monitor metrics**: Use new metrics to validate behavior

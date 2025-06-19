@@ -12,7 +12,7 @@ func TestEventCategorization(t *testing.T) {
 
 	// Test all events are categorized
 	allEventsByGroup := ec.GetAllEventsByGroup()
-	
+
 	totalEvents := 0
 	for group, events := range allEventsByGroup {
 		totalEvents += len(events)

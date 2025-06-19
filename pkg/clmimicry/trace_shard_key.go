@@ -253,7 +253,7 @@ func extractTopicFromField(structValue reflect.Value, fieldName string, topicSet
 	if !topicField.IsValid() {
 		return
 	}
-	
+
 	// Check if the field type supports IsNil() before calling it
 	switch topicField.Kind() {
 	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Interface, reflect.Chan, reflect.Func:

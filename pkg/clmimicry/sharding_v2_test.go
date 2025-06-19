@@ -319,27 +319,27 @@ func TestShardDistribution(t *testing.T) {
 	// at 0.05 significance level is approximately 564.7
 	// We'll use a more conservative threshold of 600
 	criticalValue := 600.0
-	
+
 	t.Logf("Chi-squared value: %.2f (critical value: %.2f)", chiSquared, criticalValue)
 	t.Logf("Min count: %d, Max count: %d, Expected: %.1f", minCount, maxCount, expectedPerShard)
 	t.Logf("Range spread: %.1f%% of expected", float64(maxCount-minCount)/expectedPerShard*100)
-	
+
 	assert.Less(t, chiSquared, criticalValue,
 		"Distribution is not uniform (chi-squared: %.2f > %.2f)", chiSquared, criticalValue)
-	
+
 	// Check that most shards are within expected bounds
 	// Using 3-sigma rule: 99.7% should be within 3 standard deviations
 	// For binomial distribution: stddev = sqrt(n * p * (1-p))
 	// where p = 1/512 for uniform distribution
 	p := 1.0 / float64(totalShards)
 	stdDev := math.Sqrt(float64(numTests) * p * (1 - p))
-	
+
 	// Count how many shards fall outside different sigma levels
 	outsideOneSigma := 0
 	outsideTwoSigma := 0
 	outsideThreeSigma := 0
 	outsideFourSigma := 0
-	
+
 	for _, count := range shardCounts {
 		deviation := abs(float64(count) - expectedPerShard)
 		if deviation > stdDev {
@@ -355,28 +355,28 @@ func TestShardDistribution(t *testing.T) {
 			outsideFourSigma++
 		}
 	}
-	
+
 	// Expected percentages for normal distribution
 	// Outside 1σ: ~31.7% (162 shards)
 	// Outside 2σ: ~4.6% (24 shards)
 	// Outside 3σ: ~0.3% (1-2 shards)
 	// Outside 4σ: ~0.006% (0 shards)
-	
-	t.Logf("Shards outside 1σ: %d (%.1f%%), expected ~31.7%%", 
+
+	t.Logf("Shards outside 1σ: %d (%.1f%%), expected ~31.7%%",
 		outsideOneSigma, float64(outsideOneSigma)/float64(totalShards)*100)
-	t.Logf("Shards outside 2σ: %d (%.1f%%), expected ~4.6%%", 
+	t.Logf("Shards outside 2σ: %d (%.1f%%), expected ~4.6%%",
 		outsideTwoSigma, float64(outsideTwoSigma)/float64(totalShards)*100)
-	t.Logf("Shards outside 3σ: %d (%.1f%%), expected ~0.3%%", 
+	t.Logf("Shards outside 3σ: %d (%.1f%%), expected ~0.3%%",
 		outsideThreeSigma, float64(outsideThreeSigma)/float64(totalShards)*100)
-	t.Logf("Shards outside 4σ: %d (%.1f%%), expected ~0.006%%", 
+	t.Logf("Shards outside 4σ: %d (%.1f%%), expected ~0.006%%",
 		outsideFourSigma, float64(outsideFourSigma)/float64(totalShards)*100)
-	
+
 	// Allow some tolerance for statistical variance
 	// We expect about 0.3% (1-2 shards) outside 3σ, so allow up to 5 shards (1%)
-	assert.LessOrEqual(t, outsideThreeSigma, 5, 
-		"Too many shards outside 3σ: %d > 5 (%.1f%% > 1%%)", 
+	assert.LessOrEqual(t, outsideThreeSigma, 5,
+		"Too many shards outside 3σ: %d > 5 (%.1f%% > 1%%)",
 		outsideThreeSigma, float64(outsideThreeSigma)/float64(totalShards)*100)
-	
+
 	// Should have essentially no shards outside 4σ
 	assert.LessOrEqual(t, outsideFourSigma, 1,
 		"Too many shards outside 4σ: %d > 1", outsideFourSigma)
@@ -551,12 +551,15 @@ func TestBatchProcessing(t *testing.T) {
 
 	// At least one should be false (since we only have 4 active shards out of 512)
 	hasFalse := false
+
 	for _, result := range results {
 		if !result {
 			hasFalse = true
+
 			break
 		}
 	}
+
 	assert.True(t, hasFalse, "With limited shards, some events should be filtered")
 }
 
@@ -567,6 +570,7 @@ func generateShardRange(start, end uint64) []uint64 {
 	for i := start; i <= end; i++ {
 		result = append(result, i)
 	}
+
 	return result
 }
 
@@ -574,6 +578,7 @@ func abs(x float64) float64 {
 	if x < 0 {
 		return -x
 	}
+
 	return x
 }
 
@@ -607,6 +612,7 @@ activeShards: ["0-10", "20-30", 100, 200]
 				ActiveShards: func() []uint64 {
 					shards := append(generateShardRange(0, 10), generateShardRange(20, 30)...)
 					shards = append(shards, 100, 200)
+
 					return shards
 				}(),
 			},
@@ -646,12 +652,13 @@ activeShards: ["10-5"]
 		t.Run(tt.name, func(t *testing.T) {
 			var config TopicShardingConfig
 			err := yaml.Unmarshal([]byte(tt.yaml), &config)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
+
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected.TotalShards, config.TotalShards)
 			assert.Equal(t, tt.expected.ActiveShards, config.ActiveShards)

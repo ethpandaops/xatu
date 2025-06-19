@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package clmimicry
@@ -45,7 +46,7 @@ func TestIntegration_FullEventFlow(t *testing.T) {
 	// Create components
 	mockSinks := new(MockSinks)
 	clientMeta := &xatu.ClientMeta{
-		Name: "test-client",
+		Name:    "test-client",
 		Version: "1.0.0",
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
@@ -63,7 +64,7 @@ func TestIntegration_FullEventFlow(t *testing.T) {
 	t.Run("Group A Events", func(t *testing.T) {
 		// Beacon block should always be processed (100% sampling)
 		mockSinks.On("HandleNewDecoratedEvent", ctx, mock.AnythingOfType("*xatu.DecoratedEvent")).Return(nil).Once()
-		
+
 		err := processor.ProcessEvent(ctx, xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK, &TraceEventData{
 			Metadata: map[string]interface{}{
 				"msg_id": "block-123",
@@ -77,7 +78,7 @@ func TestIntegration_FullEventFlow(t *testing.T) {
 		// JOIN event with attestation topic (50% sampling)
 		// May or may not be called depending on shard calculation
 		mockSinks.On("HandleNewDecoratedEvent", ctx, mock.AnythingOfType("*xatu.DecoratedEvent")).Return(nil).Maybe()
-		
+
 		err := processor.ProcessEvent(ctx, xatu.Event_LIBP2P_TRACE_JOIN, map[string]interface{}{
 			"topic": "beacon_attestation_1",
 		})
@@ -95,7 +96,7 @@ func TestIntegration_FullEventFlow(t *testing.T) {
 	t.Run("Group D Events", func(t *testing.T) {
 		// ADD_PEER should be processed when enabled
 		mockSinks.On("HandleNewDecoratedEvent", ctx, mock.AnythingOfType("*xatu.DecoratedEvent")).Return(nil).Once()
-		
+
 		err := processor.ProcessEvent(ctx, xatu.Event_LIBP2P_TRACE_ADD_PEER, map[string]interface{}{
 			"peer_id": "12D3KooWTest",
 		})
@@ -136,7 +137,7 @@ func TestIntegration_RPCMetaEventProcessing(t *testing.T) {
 
 	// Simulate RPC event with meta events
 	peerID, _ := peer.Decode("12D3KooWTest")
-	
+
 	// Create a mock RPC message with various meta events
 	metaEvents := []RPCMetaEvent{
 		{
@@ -172,7 +173,7 @@ func TestIntegration_RPCMetaEventProcessing(t *testing.T) {
 func TestIntegration_MetricsCollection(t *testing.T) {
 	// Create a new registry for testing
 	reg := prometheus.NewRegistry()
-	
+
 	// Create metrics with test registry
 	metrics := &MetricsV2{
 		eventsTotal: prometheus.NewCounterVec(
@@ -197,7 +198,7 @@ func TestIntegration_MetricsCollection(t *testing.T) {
 			[]string{"event_type", "network", "reason"},
 		),
 	}
-	
+
 	reg.MustRegister(metrics.eventsTotal, metrics.eventsSampled, metrics.eventsDropped)
 
 	// Simulate event processing
@@ -247,7 +248,7 @@ func TestIntegration_ConfigurationMigration(t *testing.T) {
 		Name:     "old-mimicry",
 		LogLevel: "info",
 		Traces: &TracesConfig{
-			Enabled: true,
+			Enabled:                   true,
 			AlwaysRecordRootRpcEvents: true, // Should be dropped
 			Topics: map[string]TopicConfig{
 				".*duplicate.*": {
@@ -276,18 +277,18 @@ func TestIntegration_ConfigurationMigration(t *testing.T) {
 	// Verify migration
 	assert.Equal(t, "old-mimicry", newConfig.Name)
 	assert.Equal(t, "info", newConfig.LogLevel)
-	
+
 	// Check sharding was migrated correctly
 	assert.Len(t, newConfig.Sharding.Topics, 1) // Only MsgID config migrated
-	
+
 	beaconConfig, exists := newConfig.Sharding.Topics[".*beacon_block.*"]
 	assert.True(t, exists)
 	assert.Len(t, beaconConfig.ActiveShards, 512)
-	
+
 	// PeerID sharding should not be migrated
 	_, exists = newConfig.Sharding.Topics[".*attestation.*"]
 	assert.False(t, exists)
-	
+
 	// AlwaysRecordRootRpcEvents should be gone
 	assert.True(t, newConfig.Sharding.NoShardingKeyEvents.Enabled)
 }

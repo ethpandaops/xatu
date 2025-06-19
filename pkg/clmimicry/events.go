@@ -38,6 +38,7 @@ func NewEventCategorizer() *EventCategorizer {
 		events: make(map[xatu.Event_Name]*EventInfo),
 	}
 	ec.initializeEvents()
+
 	return ec
 }
 
@@ -77,11 +78,6 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_DISCONNECTED, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_METADATA, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_STATUS, GroupD, false, false, false)
-
-	// Unknown validator events - Group D by default
-	// TODO: Add these events to xatu proto if needed
-	// ec.addEvent(xatu.Event_LIBP2P_TRACE_UNKNOWN_CONNECTED, GroupD, false, false, false)
-	// ec.addEvent(xatu.Event_LIBP2P_TRACE_UNKNOWN_DISCONNECTED, GroupD, false, false, false)
 }
 
 // addEvent is a helper to add event information
@@ -98,6 +94,7 @@ func (ec *EventCategorizer) addEvent(eventType xatu.Event_Name, group ShardingGr
 // GetEventInfo returns information about an event type
 func (ec *EventCategorizer) GetEventInfo(eventType xatu.Event_Name) (*EventInfo, bool) {
 	info, exists := ec.events[eventType]
+
 	return info, exists
 }
 
@@ -106,6 +103,7 @@ func (ec *EventCategorizer) GetShardingGroup(eventType xatu.Event_Name) Sharding
 	if info, exists := ec.events[eventType]; exists {
 		return info.ShardingGroup
 	}
+
 	// Default to GroupD for unknown events
 	return GroupD
 }
@@ -115,17 +113,18 @@ func (ec *EventCategorizer) IsMetaEvent(eventType xatu.Event_Name) bool {
 	if info, exists := ec.events[eventType]; exists {
 		return info.IsMeta
 	}
+
 	return false
 }
 
 // GetAllEventsByGroup returns all events categorized by their sharding group
 func (ec *EventCategorizer) GetAllEventsByGroup() map[ShardingGroup][]xatu.Event_Name {
 	result := make(map[ShardingGroup][]xatu.Event_Name)
-	
+
 	for _, info := range ec.events {
 		result[info.ShardingGroup] = append(result[info.ShardingGroup], info.Type)
 	}
-	
+
 	return result
 }
 
@@ -137,6 +136,7 @@ func (ec *EventCategorizer) GetGroupAEvents() []xatu.Event_Name {
 			events = append(events, info.Type)
 		}
 	}
+
 	return events
 }
 
@@ -148,6 +148,7 @@ func (ec *EventCategorizer) GetGroupBEvents() []xatu.Event_Name {
 			events = append(events, info.Type)
 		}
 	}
+
 	return events
 }
 
@@ -159,6 +160,7 @@ func (ec *EventCategorizer) GetGroupCEvents() []xatu.Event_Name {
 			events = append(events, info.Type)
 		}
 	}
+
 	return events
 }
 
@@ -170,5 +172,6 @@ func (ec *EventCategorizer) GetGroupDEvents() []xatu.Event_Name {
 			events = append(events, info.Type)
 		}
 	}
+
 	return events
 }

@@ -1314,17 +1314,17 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 
 	for controlIndex, prune := range data.GetControl().GetPrune() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
-		
+
 		// For Group B events, make ONE sharding decision based on the topic
 		topic := ""
 		if prune.GetTopicId() != nil {
 			topic = prune.GetTopicId().GetValue()
 		}
-		
+
 		// Check if we should process this PRUNE message based on its topic
 		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
 		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
-		
+
 		if !shouldProcess {
 			// Skip all peer IDs for this topic
 			for range prune.GetPeerIds() {
@@ -1338,9 +1338,9 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 			if prunePeerID == nil || prunePeerID.GetValue() == "" {
 				continue
 			}
-			
+
 			m.metrics.AddProcessedMessage(eventType.String(), networkStr)
-			
+
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -1356,7 +1356,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 						GraftPeerId:  prunePeerID,
 						PeerId:       wrapperspb.String(peerID),
 						Topic:        prune.TopicId,
-						PeerIndex:    wrapperspb.UInt32(uint32(peerIndex)),
+						PeerIndex:    wrapperspb.UInt32(uint32(peerIndex)),    //nolint:gosec // conversion fine.
 						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
@@ -1426,22 +1426,22 @@ func (m *Mimicry) parseRPCMetaSubscription(
 
 	for controlIndex, subscription := range data.GetSubscriptions() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION
-		
+
 		// For Group B events, make ONE sharding decision based on the topic
 		topic := ""
 		if subscription.GetTopicId() != nil {
 			topic = subscription.GetTopicId().GetValue()
 		}
-		
+
 		// Check if we should process this SUBSCRIPTION based on its topic
 		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
 		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
-		
+
 		if !shouldProcess {
 			m.metrics.AddSkippedMessage(eventType.String(), networkStr)
 			continue
 		}
-		
+
 		m.metrics.AddProcessedMessage(eventType.String(), networkStr)
 
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{

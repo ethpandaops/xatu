@@ -16,7 +16,6 @@ const (
 	DefaultTotalShards = 512
 )
 
-
 // UnifiedSharder provides a single sharding decision point for all events
 type UnifiedSharder struct {
 	config           *ShardingConfigV2
@@ -28,10 +27,10 @@ type UnifiedSharder struct {
 type ShardingConfigV2 struct {
 	// Topic-based patterns with sampling rates
 	Topics map[string]*TopicShardingConfig `yaml:"topics"`
-	
+
 	// Events without sharding keys (Group D)
 	NoShardingKeyEvents *NoShardingKeyConfig `yaml:"noShardingKeyEvents,omitempty"`
-	
+
 	// Compiled regex patterns for performance
 	compiledPatterns map[string]*CompiledPattern
 }
@@ -85,6 +84,8 @@ func NewUnifiedSharder(config *ShardingConfigV2, enabled bool) (*UnifiedSharder,
 }
 
 // ShouldProcess determines if an event should be processed based on sharding rules
+//
+//nolint:gocritic // named returns unnecessary.
 func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic string) (bool, string) {
 	if !s.enabled {
 		return true, "sharding_disabled"
@@ -104,32 +105,37 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 				shard := s.calculateShard(msgID, config.TotalShards)
 				shouldProcess := s.isShardActive(shard, config.ActiveShards)
 				reason := fmt.Sprintf("group_a_topic_match_%t", shouldProcess)
+
 				return shouldProcess, reason
 			}
 		}
+
 		// Fall back to MsgID sharding with default config
 		if msgID != "" {
 			shard := s.calculateShard(msgID, DefaultTotalShards)
 			// Default to sampling a single shard if no config matches
 			shouldProcess := shard == 0
+
 			return shouldProcess, "group_a_no_topic_config"
 		}
-		return false, "group_a_no_keys"
 
+		return false, "group_a_no_keys"
 	case GroupB: // Topic only
 		if topic == "" {
 			return false, "group_b_no_topic"
 		}
+
 		if config := s.findTopicConfig(topic); config != nil {
 			// Hash the topic itself for sharding
 			topicHash := fmt.Sprintf("topic:%s", topic)
 			shard := s.calculateShard(topicHash, config.TotalShards)
 			shouldProcess := s.isShardActive(shard, config.ActiveShards)
 			reason := fmt.Sprintf("group_b_topic_match_%t", shouldProcess)
+
 			return shouldProcess, reason
 		}
-		return false, "group_b_no_config"
 
+		return false, "group_b_no_config"
 	case GroupC: // MsgID only
 		if msgID == "" {
 			return false, "group_c_no_msgid"
@@ -138,14 +144,14 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 		shard := s.calculateShard(msgID, DefaultTotalShards)
 		// Default to sampling a single shard
 		shouldProcess := shard == 0
-		return shouldProcess, fmt.Sprintf("group_c_shard_%d", shard)
 
+		return shouldProcess, fmt.Sprintf("group_c_shard_%d", shard)
 	case GroupD: // No sharding keys
 		if s.config.NoShardingKeyEvents != nil && s.config.NoShardingKeyEvents.Enabled {
 			return true, "group_d_enabled"
 		}
-		return false, "group_d_disabled"
 
+		return false, "group_d_disabled"
 	default:
 		return true, "unknown_group"
 	}
@@ -160,14 +166,17 @@ func (s *UnifiedSharder) ShouldProcessBatch(eventType xatu.Event_Name, events []
 		for i := range results {
 			results[i] = true
 		}
+
 		return results
 	}
 
 	results := make([]bool, len(events))
+
 	for i, event := range events {
 		shouldProcess, _ := s.ShouldProcess(eventType, event.MsgID, event.Topic)
 		results[i] = shouldProcess
 	}
+
 	return results
 }
 
@@ -185,13 +194,14 @@ func (s *UnifiedSharder) findTopicConfig(topic string) *TopicShardingConfig {
 
 	// Find the best matching pattern (could prioritize by specificity or sampling rate)
 	var bestMatch *TopicShardingConfig
+
 	var bestSamplingRate float64
 
 	for _, compiled := range s.config.compiledPatterns {
 		if compiled.Pattern.MatchString(topic) {
 			// Calculate sampling rate
 			samplingRate := compiled.Config.GetSamplingRate()
-			
+
 			// Use the configuration with the highest sampling rate
 			if bestMatch == nil || samplingRate > bestSamplingRate {
 				bestMatch = compiled.Config
@@ -215,6 +225,7 @@ func (s *UnifiedSharder) isShardActive(shard uint64, activeShards []uint64) bool
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -282,7 +293,7 @@ func (t *TopicShardingConfig) GetSamplingRate() float64 {
 
 // IsFirehose returns true if all shards are active
 func (t *TopicShardingConfig) IsFirehose() bool {
-	return len(t.ActiveShards) == int(t.TotalShards)
+	return len(t.ActiveShards) == int(t.TotalShards) //nolint:gosec // conversion fine.
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling to support range syntax
@@ -302,12 +313,13 @@ func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 
 	// Process activeShards which can contain numbers or ranges
 	var result []uint64
+
 	seen := make(map[uint64]bool)
 
 	for _, item := range raw.ActiveShards {
 		switch v := item.(type) {
 		case int:
-			shard := uint64(v)
+			shard := uint64(v) //nolint:gosec // conversion fine.
 			if !seen[shard] {
 				result = append(result, shard)
 				seen[shard] = true
@@ -371,9 +383,9 @@ func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 	})
 
 	t.ActiveShards = result
+
 	return nil
 }
-
 
 // LogSummary returns a human-readable summary of the sharding configuration
 func (c *ShardingConfigV2) LogSummary() string {
@@ -382,22 +394,22 @@ func (c *ShardingConfigV2) LogSummary() string {
 	}
 
 	summary := fmt.Sprintf("Sharding enabled with %d topic patterns:", len(c.Topics))
-	
+
 	for pattern, config := range c.Topics {
 		if config.IsFirehose() {
 			summary += fmt.Sprintf("\n  - Pattern '%s': FIREHOSE (all %d shards active)", pattern, config.TotalShards)
 		} else {
 			samplingRate := config.GetSamplingRate() * 100.0
-			summary += fmt.Sprintf("\n  - Pattern '%s': %d/%d shards active (%.1f%%)", 
+			summary += fmt.Sprintf("\n  - Pattern '%s': %d/%d shards active (%.1f%%)",
 				pattern, len(config.ActiveShards), config.TotalShards, samplingRate)
 		}
 	}
-	
+
 	if c.NoShardingKeyEvents != nil && c.NoShardingKeyEvents.Enabled {
 		summary += "\n  - Events without sharding keys: ENABLED"
 	} else {
 		summary += "\n  - Events without sharding keys: DISABLED"
 	}
-	
+
 	return summary
 }

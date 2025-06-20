@@ -80,31 +80,28 @@ func TestShouldTraceRPCMetaMessagesLogic(t *testing.T) {
 		assert.Equal(t, 1, validCount, "Only one valid message")
 	})
 
-	t.Run("handles RPCMetaPeerInfo correctly", func(t *testing.T) {
-		peers := []RPCMetaPeerInfo{
+	t.Run("handles RPCMetaTopicInfo correctly", func(t *testing.T) {
+		topics := []RPCMetaTopicInfo{
 			{
-				PeerID: wrapperspb.String("peer-1"),
-				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+				Topic: wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
 			},
 			{
-				PeerID: nil,
-				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+				Topic: nil,
 			},
 			{
-				PeerID: wrapperspb.String(""),
-				Topic:  wrapperspb.String("/eth2/test/beacon_block/ssz_snappy"),
+				Topic: wrapperspb.String(""),
 			},
 		}
 
-		// Count valid peers
+		// Count valid topics
 		validCount := 0
-		for _, peer := range peers {
-			if peer.PeerID != nil && peer.PeerID.GetValue() != "" {
+		for _, topicInfo := range topics {
+			if topicInfo.Topic != nil && topicInfo.Topic.GetValue() != "" {
 				validCount++
 			}
 		}
 
-		assert.Equal(t, 1, validCount, "Only one valid peer")
+		assert.Equal(t, 1, validCount, "Only one valid topic")
 	})
 
 	t.Run("handles legacy StringValue format", func(t *testing.T) {
@@ -151,14 +148,12 @@ func TestRPCMetaStructs(t *testing.T) {
 		assert.Equal(t, "/eth2/topic", msg.Topic.GetValue())
 	})
 
-	t.Run("RPCMetaPeerInfo", func(t *testing.T) {
-		peer := RPCMetaPeerInfo{
-			PeerID: wrapperspb.String("peer-id"),
-			Topic:  wrapperspb.String("/eth2/topic"),
+	t.Run("RPCMetaTopicInfo", func(t *testing.T) {
+		topicInfo := RPCMetaTopicInfo{
+			Topic: wrapperspb.String("/eth2/topic"),
 		}
 
-		assert.Equal(t, "peer-id", peer.PeerID.GetValue())
-		assert.Equal(t, "/eth2/topic", peer.Topic.GetValue())
+		assert.Equal(t, "/eth2/topic", topicInfo.Topic.GetValue())
 	})
 }
 

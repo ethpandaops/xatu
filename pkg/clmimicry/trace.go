@@ -20,10 +20,9 @@ type RPCMetaMessageInfo struct {
 	Topic     *wrapperspb.StringValue // Optional: gossip topic for the message
 }
 
-// RPCMetaPeerInfo represents a peer with its ID and optional topic for RPC meta filtering
-type RPCMetaPeerInfo struct {
-	PeerID *wrapperspb.StringValue
-	Topic  *wrapperspb.StringValue // Optional: gossip topic for the peer action
+// RPCMetaTopicInfo represents a topic-based RPC meta event for filtering
+type RPCMetaTopicInfo struct {
+	Topic *wrapperspb.StringValue // Gossip topic for the event
 }
 
 // IsShardActive checks if a shard is in the active shards list.
@@ -52,15 +51,17 @@ func (m *Mimicry) ShouldTraceMessage(
 		return true
 	}
 
-	// Get the event type from the string
-	eventType := xatu.Event_Name(xatu.Event_Name_value[xatuEventType])
+	var (
+		// Get the event type from the string.
+		eventType = xatu.Event_Name(xatu.Event_Name_value[xatuEventType])
 
-	// Extract message ID and topics using the existing helper functions
-	msgID := GetMsgID(event)
+		// Extract message ID and topics using the existing helper functions.
+		msgID = GetMsgID(event)
 
-	// Get all topics from the event
-	topics := GetGossipTopics(event)
-	topic := ""
+		// Get all topics from the event.
+		topics = GetGossipTopics(event)
+		topic  string
+	)
 
 	if len(topics) > 0 {
 		topic = topics[0] // Use the first topic if available
@@ -84,10 +85,9 @@ func (m *Mimicry) ShouldTraceMessage(
 
 // ShouldTraceRPCMetaMessages filters RPC meta messages based on sharding configuration.
 func (m *Mimicry) ShouldTraceRPCMetaMessages(
-	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
-	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaPeerInfo, or []*wrapperspb.StringValue
+	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaTopicInfo, or []*wrapperspb.StringValue
 ) ([]FilteredMessageWithIndex, error) {
 	if m.sharder == nil || !m.sharder.enabled {
 		// If sharding is disabled, include all messages
@@ -128,25 +128,20 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 			}
 		}
 
-	case []RPCMetaPeerInfo:
-		for i, peer := range msgs {
-			if peer.PeerID == nil || peer.PeerID.GetValue() == "" {
-				continue
-			}
-
+	case []RPCMetaTopicInfo:
+		for i, topicInfo := range msgs {
 			topic := ""
-			if peer.Topic != nil {
-				topic = peer.Topic.GetValue()
+			if topicInfo.Topic != nil {
+				topic = topicInfo.Topic.GetValue()
 			}
 
-			// For Group B events (PRUNE), sharding is based on topic only
-			// We pass empty string for msgID since these events don't have message IDs
+			// For Group B events, sharding is based on topic only. We pass empty string
+			// for msgID since these events don't have message IDs.
 			shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
 			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 			if shouldProcess {
 				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
-					MessageID:     peer.PeerID,
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
@@ -203,18 +198,15 @@ func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventT
 				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			}
 		}
-	case []RPCMetaPeerInfo:
+	case []RPCMetaTopicInfo:
 		result = make([]FilteredMessageWithIndex, 0, len(msgs))
 
-		for i, peer := range msgs {
-			if peer.PeerID != nil {
-				result = append(result, FilteredMessageWithIndex{
-					MessageID:     peer.PeerID,
-					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-				})
+		for i := range msgs {
+			result = append(result, FilteredMessageWithIndex{
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-			}
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		}
 	case []*wrapperspb.StringValue:
 		result = make([]FilteredMessageWithIndex, 0, len(msgs))

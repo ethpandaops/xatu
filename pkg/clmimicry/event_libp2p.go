@@ -1050,7 +1050,6 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
 			clientMeta,
 			eventType.String(),
 			messageInfos,
@@ -1117,7 +1116,6 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
 			clientMeta,
 			eventType.String(),
 			iwant.GetMessageIds(),
@@ -1183,7 +1181,6 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
 			clientMeta,
 			eventType.String(),
 			idontwant.GetMessageIds(),
@@ -1247,19 +1244,24 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 	for controlIndex, graft := range data.GetControl().GetGraft() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT
 
-		// Create a mock event with GRAFT topic information for sharding decision
-		graftEvent := &host.TraceEvent{
-			Type:      event.Type,
-			PeerID:    event.PeerID,
-			Timestamp: event.Timestamp,
-			Payload: map[string]any{
-				"Topic": graft.GetTopicId().GetValue(),
-			},
+		// Create topic info for Group B event sharding (topic-based)
+		topicInfo := RPCMetaTopicInfo{
+			Topic: graft.TopicId,
 		}
 
-		// Check if we should process this GRAFT event based on trace/sharding config.
-		// GRAFT events can use hierarchical sharding via their topic_id field.
-		if !m.ShouldTraceMessage(graftEvent, clientMeta, eventType.String()) {
+		// Filter based on trace/sharding config using the same method as other RPC meta messages.
+		// GRAFT is a Group B event (sharded by topic only).
+		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+			clientMeta,
+			eventType.String(),
+			[]RPCMetaTopicInfo{topicInfo},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for graft: %w", err)
+		}
+
+		// Skip this control message if filtered out.
+		if len(filteredTopicsWithIndex) == 0 {
 			continue
 		}
 
@@ -1307,32 +1309,27 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 		},
 	}
 
-	networkStr := getNetworkID(clientMeta)
-
 	for controlIndex, prune := range data.GetControl().GetPrune() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE
 
-		// For Group B events, make ONE sharding decision based on the topic
-		topic := ""
-		if prune.GetTopicId() != nil {
-			topic = prune.GetTopicId().GetValue()
+		// Create topic info for Group B event sharding (topic-based)
+		topicInfo := RPCMetaTopicInfo{
+			Topic: prune.TopicId,
 		}
 
-		// Check if we should process this PRUNE message based on its topic
-		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
-		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
+		// Filter based on trace/sharding config using the same method as other RPC meta messages.
+		// PRUNE is a Group B event (sharded by topic only).
+		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+			clientMeta,
+			eventType.String(),
+			[]RPCMetaTopicInfo{topicInfo},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for prune: %w", err)
+		}
 
-		if !shouldProcess {
-			// Skip all peer IDs for this topic
-			peerCount := len(prune.GetPeerIds())
-			if peerCount == 0 {
-				peerCount = 1 // Count the prune event itself
-			}
-
-			for i := 0; i < peerCount; i++ {
-				m.metrics.AddSkippedMessage(eventType.String(), networkStr)
-			}
-
+		// Skip this control message if filtered out.
+		if len(filteredTopicsWithIndex) == 0 {
 			continue
 		}
 
@@ -1351,8 +1348,6 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 		peerIds := prune.GetPeerIds()
 		if len(peerIds) == 0 {
 			// No peer IDs present - create a single event with empty GraftPeerId
-			m.metrics.AddProcessedMessage(eventType.String(), networkStr)
-
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
@@ -1379,8 +1374,6 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 				if prunePeerID == nil || prunePeerID.GetValue() == "" {
 					continue
 				}
-
-				m.metrics.AddProcessedMessage(eventType.String(), networkStr)
 
 				decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 					Event: &xatu.Event{
@@ -1464,27 +1457,29 @@ func (m *Mimicry) parseRPCMetaSubscription(
 		},
 	}
 
-	networkStr := getNetworkID(clientMeta)
-
 	for controlIndex, subscription := range data.GetSubscriptions() {
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION
 
-		// For Group B events, make ONE sharding decision based on the topic
-		topic := ""
-		if subscription.GetTopicId() != nil {
-			topic = subscription.GetTopicId().GetValue()
+		// Create topic info for Group B event sharding (topic-based)
+		topicInfo := RPCMetaTopicInfo{
+			Topic: subscription.TopicId,
 		}
 
-		// Check if we should process this SUBSCRIPTION based on its topic
-		shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
-		m.metrics.AddShardingDecision(eventType.String(), reason, networkStr)
+		// Filter based on trace/sharding config using the same method as other RPC meta messages.
+		// SUBSCRIPTION is a Group B event (sharded by topic only).
+		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+			clientMeta,
+			eventType.String(),
+			[]RPCMetaTopicInfo{topicInfo},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check trace config for subscription: %w", err)
+		}
 
-		if !shouldProcess {
-			m.metrics.AddSkippedMessage(eventType.String(), networkStr)
+		// Skip this control message if filtered out.
+		if len(filteredTopicsWithIndex) == 0 {
 			continue
 		}
-
-		m.metrics.AddProcessedMessage(eventType.String(), networkStr)
 
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{
@@ -1570,7 +1565,6 @@ func (m *Mimicry) parseRPCMetaMessage(
 
 		// Filter messages with topic-aware hierarchical sharding support.
 		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
-			event,
 			clientMeta,
 			eventType.String(),
 			[]RPCMetaMessageInfo{

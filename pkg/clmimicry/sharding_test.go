@@ -665,3 +665,166 @@ activeShards: ["10-5"]
 		})
 	}
 }
+
+func TestEventTypeAwareSharding(t *testing.T) {
+	// Test configuration with event-type-specific patterns
+	config := &ShardingConfig{
+		Topics: map[string]*TopicShardingConfig{
+			// Event-specific pattern with high sampling
+			"LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION:.*beacon_attestation.*": {
+				TotalShards:  512,
+				ActiveShards: []uint64{0, 1, 2, 3, 4, 5, 6, 7}, // 8 shards = 1.56%
+			},
+			// Wildcard pattern with medium sampling
+			"LIBP2P_TRACE_RPC_META_*:.*beacon_attestation.*": {
+				TotalShards:  512,
+				ActiveShards: []uint64{0, 1}, // 2 shards = 0.39%
+			},
+			// Default pattern with low sampling
+			".*beacon_attestation.*": {
+				TotalShards:  512,
+				ActiveShards: []uint64{0}, // 1 shard = 0.195%
+			},
+		},
+	}
+
+	sharder, err := NewUnifiedSharder(config, true)
+	require.NoError(t, err)
+
+	topic := "/eth2/12345678/beacon_attestation_1/ssz_snappy"
+
+	tests := []struct {
+		name         string
+		eventType    xatu.Event_Name
+		expectConfig *TopicShardingConfig
+		description  string
+	}{
+		{
+			name:         "Exact event type match",
+			eventType:    xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION,
+			expectConfig: config.Topics["LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION:.*beacon_attestation.*"],
+			description:  "Should match exact event type pattern",
+		},
+		{
+			name:         "Wildcard event type match - IHAVE",
+			eventType:    xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE,
+			expectConfig: config.Topics["LIBP2P_TRACE_RPC_META_*:.*beacon_attestation.*"],
+			description:  "Should match wildcard RPC_META pattern",
+		},
+		{
+			name:         "Wildcard event type match - IWANT",
+			eventType:    xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
+			expectConfig: config.Topics["LIBP2P_TRACE_RPC_META_*:.*beacon_attestation.*"],
+			description:  "Should match wildcard RPC_META pattern",
+		},
+		{
+			name:         "Default pattern match",
+			eventType:    xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
+			expectConfig: config.Topics[".*beacon_attestation.*"],
+			description:  "Should match default pattern without event constraint",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Get the matched config
+			matchedConfig := sharder.findTopicConfig(topic, tt.eventType)
+
+			// Verify we got the expected config by comparing active shards
+			require.NotNil(t, matchedConfig, tt.description)
+			assert.Equal(t, tt.expectConfig.ActiveShards, matchedConfig.ActiveShards, tt.description)
+			assert.Equal(t, tt.expectConfig.TotalShards, matchedConfig.TotalShards, tt.description)
+		})
+	}
+}
+
+func TestEventTypePatternParsing(t *testing.T) {
+	tests := []struct {
+		name                    string
+		pattern                 string
+		expectedEventConstraint string
+		expectedTopicPattern    string
+	}{
+		{
+			name:                    "Pattern with event type",
+			pattern:                 "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK:.*beacon_block.*",
+			expectedEventConstraint: "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK",
+			expectedTopicPattern:    ".*beacon_block.*",
+		},
+		{
+			name:                    "Pattern with wildcard event type",
+			pattern:                 "LIBP2P_TRACE_RPC_META_*:.*attestation.*",
+			expectedEventConstraint: "LIBP2P_TRACE_RPC_META_*",
+			expectedTopicPattern:    ".*attestation.*",
+		},
+		{
+			name:                    "Pattern without event type",
+			pattern:                 ".*beacon_attestation.*",
+			expectedEventConstraint: "",
+			expectedTopicPattern:    ".*beacon_attestation.*",
+		},
+		{
+			name:                    "Pattern with colon in regex",
+			pattern:                 ".*:beacon:.*",
+			expectedEventConstraint: "",
+			expectedTopicPattern:    ".*:beacon:.*",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &ShardingConfig{
+				Topics: map[string]*TopicShardingConfig{
+					tt.pattern: {
+						TotalShards:  512,
+						ActiveShards: []uint64{0},
+					},
+				},
+			}
+
+			err := config.compilePatterns()
+			require.NoError(t, err)
+
+			compiled := config.compiledPatterns[tt.pattern]
+			require.NotNil(t, compiled)
+
+			assert.Equal(t, tt.expectedEventConstraint, compiled.EventTypeConstraint)
+			assert.Equal(t, tt.expectedTopicPattern, compiled.Pattern.String())
+		})
+	}
+}
+
+func TestBackwardCompatibility(t *testing.T) {
+	// Ensure existing configs without event types continue to work
+	config := &ShardingConfig{
+		Topics: map[string]*TopicShardingConfig{
+			".*beacon_block.*": {
+				TotalShards:  512,
+				ActiveShards: []uint64{0, 1, 2, 3},
+			},
+			".*attestation.*": {
+				TotalShards:  512,
+				ActiveShards: []uint64{0, 1},
+			},
+		},
+	}
+
+	sharder, err := NewUnifiedSharder(config, true)
+	require.NoError(t, err)
+
+	// Test that patterns without event constraints match all event types
+	testCases := []xatu.Event_Name{
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK,
+		xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
+		xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE,
+	}
+
+	for _, eventType := range testCases {
+		t.Run(eventType.String(), func(t *testing.T) {
+			blockConfig := sharder.findTopicConfig("/eth2/12345/beacon_block/ssz", eventType)
+			require.NotNil(t, blockConfig)
+			assert.Equal(t, uint64(512), blockConfig.TotalShards)
+			assert.Equal(t, []uint64{0, 1, 2, 3}, blockConfig.ActiveShards)
+		})
+	}
+}

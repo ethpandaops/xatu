@@ -271,6 +271,14 @@ func TestGetGossipTopics(t *testing.T) {
 				expected: []string{},
 			},
 			{
+				name: "gossipsub event with topic in event",
+				event: &host.TraceEvent{
+					Topic:   "/eth2/12345678/beacon_attestation_1/ssz_snappy",
+					Payload: map[string]any{"MsgID": "msg-123"},
+				},
+				expected: []string{"/eth2/12345678/beacon_attestation_1/ssz_snappy"},
+			},
+			{
 				name: "RpcMeta with nil control",
 				event: &host.TraceEvent{
 					Payload: &host.RpcMeta{

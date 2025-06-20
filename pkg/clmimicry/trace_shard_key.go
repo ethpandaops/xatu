@@ -54,6 +54,11 @@ func GetGossipTopics(event *host.TraceEvent) []string {
 
 	topicSet := make(map[string]bool)
 
+	// First check if the event itself has a Topic field (used by gossipsub events)
+	if event.Topic != "" {
+		topicSet[event.Topic] = true
+	}
+
 	// Handle different payload types
 	switch payload := event.Payload.(type) {
 	case *host.RpcMeta:

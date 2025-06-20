@@ -1324,18 +1324,33 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 
 		if !shouldProcess {
 			// Skip all peer IDs for this topic
-			for range prune.GetPeerIds() {
+			peerCount := len(prune.GetPeerIds())
+			if peerCount == 0 {
+				peerCount = 1 // Count the prune event itself
+			}
+
+			for i := 0; i < peerCount; i++ {
 				m.metrics.AddSkippedMessage(eventType.String(), networkStr)
 			}
+
 			continue
 		}
 
-		// Process ALL peer IDs since the topic passed sharding
-		for peerIndex, prunePeerID := range prune.GetPeerIds() {
-			if prunePeerID == nil || prunePeerID.GetValue() == "" {
-				continue
-			}
+		// PRUNE messages may or may not contain peer IDs depending on whether mesh participants
+		// have opted into GossipSub PX (Peer eXchange) and are running v1.1 or higher.
+		//
+		// When peer IDs are present:
+		//   - We create one event per peer ID to maintain granular tracking
+		//   - Each event includes the specific peer ID.
+		//
+		// When peer IDs are absent (most common case):
+		//   - We still need to record the PRUNE event for network analysis
+		//   - We create a single event with an empty GraftPeerId
+		//   - This ensures we capture all PRUNE activity even without PX data
 
+		peerIds := prune.GetPeerIds()
+		if len(peerIds) == 0 {
+			// No peer IDs present - create a single event with empty GraftPeerId
 			m.metrics.AddProcessedMessage(eventType.String(), networkStr)
 
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
@@ -1350,14 +1365,44 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 				Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlPrune{
 					Libp2PTraceRpcMetaControlPrune: &libp2p.ControlPruneMetaItem{
 						RootEventId:  wrapperspb.String(rootEventID),
-						GraftPeerId:  prunePeerID,
+						GraftPeerId:  nil, // Explicitly set to nil when no peer IDs are provided
 						PeerId:       wrapperspb.String(peerID),
 						Topic:        prune.TopicId,
-						PeerIndex:    wrapperspb.UInt32(uint32(peerIndex)),    //nolint:gosec // conversion fine.
+						PeerIndex:    wrapperspb.UInt32(0),                    // Always 0 when no peer IDs
 						ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
 					},
 				},
 			})
+		} else {
+			// Peer IDs present - create one event per peer ID
+			for peerIndex, prunePeerID := range peerIds {
+				if prunePeerID == nil || prunePeerID.GetValue() == "" {
+					continue
+				}
+
+				m.metrics.AddProcessedMessage(eventType.String(), networkStr)
+
+				decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
+					Event: &xatu.Event{
+						Name:     eventType,
+						DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+						Id:       uuid.New().String(),
+					},
+					Meta: &xatu.Meta{
+						Client: metadata,
+					},
+					Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaControlPrune{
+						Libp2PTraceRpcMetaControlPrune: &libp2p.ControlPruneMetaItem{
+							RootEventId:  wrapperspb.String(rootEventID),
+							GraftPeerId:  prunePeerID,
+							PeerId:       wrapperspb.String(peerID),
+							Topic:        prune.TopicId,
+							PeerIndex:    wrapperspb.UInt32(uint32(peerIndex)),    //nolint:gosec // conversion fine.
+							ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
+						},
+					},
+				})
+			}
 		}
 	}
 

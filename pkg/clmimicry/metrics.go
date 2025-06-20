@@ -24,7 +24,7 @@ func NewMetrics(namespace string) *Metrics {
 		decoratedEvents: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "libp2p_decorated_events_total",
+				Name:      "decorated_event_total",
 				Help:      "Counts number of decorated events when we received them. Neither of the sharding layers have been applied.",
 			},
 			[]string{"type", "network_id"},

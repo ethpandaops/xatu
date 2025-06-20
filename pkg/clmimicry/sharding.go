@@ -53,6 +53,11 @@ type NoShardingKeyConfig struct {
 type CompiledPattern struct {
 	Pattern *regexp.Regexp
 	Config  *TopicShardingConfig
+	// EventTypeConstraint specifies which event types this pattern applies to.
+	// Empty string means it applies to all events (backward compatibility).
+	// Can be an exact event name (e.g., "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION")
+	// or a wildcard pattern (e.g., "LIBP2P_TRACE_RPC_META_*")
+	EventTypeConstraint string
 }
 
 // NewUnifiedSharder creates a new unified sharder
@@ -101,7 +106,7 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 	case GroupA: // Topic + MsgID
 		// Try topic-based sharding first
 		if topic != "" {
-			if config := s.findTopicConfig(topic); config != nil {
+			if config := s.findTopicConfig(topic, eventType); config != nil {
 				shard := s.calculateShard(msgID, config.TotalShards)
 				shouldProcess := s.isShardActive(shard, config.ActiveShards)
 				reason := fmt.Sprintf("group_a_topic_match_%t", shouldProcess)
@@ -125,7 +130,7 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 			return false, "group_b_no_topic"
 		}
 
-		if config := s.findTopicConfig(topic); config != nil {
+		if config := s.findTopicConfig(topic, eventType); config != nil {
 			// Hash the topic itself for sharding
 			topicHash := fmt.Sprintf("topic:%s", topic)
 			shard := s.calculateShard(topicHash, config.TotalShards)
@@ -186,27 +191,45 @@ type ShardableEvent struct {
 	Topic string
 }
 
-// findTopicConfig finds the matching topic configuration for a given topic
-func (s *UnifiedSharder) findTopicConfig(topic string) *TopicShardingConfig {
+// findTopicConfig finds the matching topic configuration for a given topic and event type
+func (s *UnifiedSharder) findTopicConfig(topic string, eventType xatu.Event_Name) *TopicShardingConfig {
 	if s.config.compiledPatterns == nil {
 		return nil
 	}
 
 	// Find the best matching pattern (could prioritize by specificity or sampling rate)
 	var bestMatch *TopicShardingConfig
-
 	var bestSamplingRate float64
 
 	for _, compiled := range s.config.compiledPatterns {
-		if compiled.Pattern.MatchString(topic) {
-			// Calculate sampling rate
-			samplingRate := compiled.Config.GetSamplingRate()
+		// Check if topic matches the pattern
+		if !compiled.Pattern.MatchString(topic) {
+			continue
+		}
 
-			// Use the configuration with the highest sampling rate
-			if bestMatch == nil || samplingRate > bestSamplingRate {
-				bestMatch = compiled.Config
-				bestSamplingRate = samplingRate
+		// Check if event type matches the constraint
+		if compiled.EventTypeConstraint != "" {
+			eventTypeName := eventType.String()
+
+			// Check for wildcard match (e.g., "LIBP2P_TRACE_RPC_META_*")
+			if strings.HasSuffix(compiled.EventTypeConstraint, "*") {
+				prefix := strings.TrimSuffix(compiled.EventTypeConstraint, "*")
+				if !strings.HasPrefix(eventTypeName, prefix) {
+					continue
+				}
+			} else if eventTypeName != compiled.EventTypeConstraint {
+				// Exact match required
+				continue
 			}
+		}
+
+		// Calculate sampling rate
+		samplingRate := compiled.Config.GetSamplingRate()
+
+		// Use the configuration with the highest sampling rate
+		if bestMatch == nil || samplingRate > bestSamplingRate {
+			bestMatch = compiled.Config
+			bestSamplingRate = samplingRate
 		}
 	}
 
@@ -239,14 +262,43 @@ func (c *ShardingConfig) compilePatterns() error {
 	c.compiledPatterns = make(map[string]*CompiledPattern)
 
 	for pattern, config := range c.Topics {
-		compiled, err := regexp.Compile(pattern)
+		var (
+			eventTypeConstraint string
+			topicPattern        string
+		)
+
+		// Check if pattern contains event type prefix
+		// Event types always start with uppercase letters and contain underscores
+		if colonIdx := strings.Index(pattern, ":"); colonIdx != -1 {
+			potentialEventType := pattern[:colonIdx]
+			// Check if it looks like an event type (starts with uppercase letter and contains underscore)
+			if potentialEventType != "" &&
+				potentialEventType[0] >= 'A' && potentialEventType[0] <= 'Z' &&
+				strings.Contains(potentialEventType, "_") {
+				// Extract event type constraint and topic pattern
+				eventTypeConstraint = potentialEventType
+				topicPattern = pattern[colonIdx+1:]
+			} else {
+				// Colon is part of the regex pattern, not an event type separator
+				eventTypeConstraint = ""
+				topicPattern = pattern
+			}
+		} else {
+			// No event type prefix, pattern applies to all events
+			eventTypeConstraint = ""
+			topicPattern = pattern
+		}
+
+		// Compile the topic pattern as regex
+		compiled, err := regexp.Compile(topicPattern)
 		if err != nil {
-			return fmt.Errorf("invalid regex pattern '%s': %w", pattern, err)
+			return fmt.Errorf("invalid regex pattern '%s': %w", topicPattern, err)
 		}
 
 		c.compiledPatterns[pattern] = &CompiledPattern{
-			Pattern: compiled,
-			Config:  config,
+			Pattern:             compiled,
+			Config:              config,
+			EventTypeConstraint: eventTypeConstraint,
 		}
 	}
 

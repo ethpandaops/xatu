@@ -183,13 +183,13 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 	)
 	defer span.End()
 
-	spec, err := b.beacon.Node().Spec()
+	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get beacon spec")
 	}
 
 	// Get the beacon committees for this epoch
-	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, fmt.Sprintf("%d", phase0.Slot(epoch)*spec.SlotsPerEpoch), nil)
+	beaconCommittees, err := b.beacon.Node().FetchBeaconCommittees(ctx, fmt.Sprintf("%d", phase0.Slot(epoch)*sp.SlotsPerEpoch), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch beacon committees")
 	}
@@ -211,8 +211,8 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 		return nil, errors.New("multiple epochs found")
 	}
 
-	minSlot := phase0.Slot(epoch) * spec.SlotsPerEpoch
-	maxSlot := (phase0.Slot(epoch) * spec.SlotsPerEpoch) + spec.SlotsPerEpoch - 1
+	minSlot := phase0.Slot(epoch) * sp.SlotsPerEpoch
+	maxSlot := (phase0.Slot(epoch) * sp.SlotsPerEpoch) + sp.SlotsPerEpoch - 1
 
 	for _, committee := range beaconCommittees {
 		if committee.Slot < minSlot || committee.Slot > maxSlot {

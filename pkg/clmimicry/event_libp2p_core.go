@@ -38,6 +38,10 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 			return nil
 		}
 
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
 		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
@@ -49,6 +53,10 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 		if !m.Config.Events.DisconnectedEnabled {
 			return nil
 		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
 		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {

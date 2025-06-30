@@ -55,6 +55,8 @@ type Mimicry struct {
 	beaconConfig  *params.BeaconChainConfig
 
 	ethereum *ethereum.BeaconNode
+
+	sharder *UnifiedSharder
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Mimicry, error) {
@@ -97,6 +99,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, fmt.Errorf("failed to create ethereum client: %w", err)
 	}
 
+	// Create the unified sharder
+	sharder, err := NewUnifiedSharder(&config.Sharding, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create sharder: %w", err)
+	}
+
 	mimicry := &Mimicry{
 		Config:      config,
 		sinks:       sinks,
@@ -106,6 +114,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		metrics:     NewMetrics("xatu_cl_mimicry"),
 		startupTime: time.Now(),
 		ethereum:    client,
+		sharder:     sharder,
 	}
 
 	return mimicry, nil
@@ -226,7 +235,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		WithField("id", m.id.String()).
 		Info("Starting Xatu in consensus layer mimicry mode")
 
-	m.log.Info(m.Config.Traces.LogSummary())
+	m.log.Info(m.Config.Sharding.LogSummary())
 
 	if err := m.startCrons(ctx); err != nil {
 		m.log.WithError(err).Fatal("Failed to start crons")

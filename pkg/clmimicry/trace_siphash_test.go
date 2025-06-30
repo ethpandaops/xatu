@@ -206,6 +206,42 @@ func TestGetShard(t *testing.T) {
 	})
 }
 
+// TestIsShardActive tests the IsShardActive function
+func TestIsShardActive(t *testing.T) {
+	tests := []struct {
+		name         string
+		shard        uint64
+		activeShards []uint64
+		expected     bool
+	}{
+		{
+			name:         "shard is active",
+			shard:        2,
+			activeShards: []uint64{1, 2, 3},
+			expected:     true,
+		},
+		{
+			name:         "shard is not active",
+			shard:        4,
+			activeShards: []uint64{1, 2, 3},
+			expected:     false,
+		},
+		{
+			name:         "empty active shards",
+			shard:        1,
+			activeShards: []uint64{},
+			expected:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := clmimicry.IsShardActive(tt.shard, tt.activeShards)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // generateHashMsgID creates a realistic hash-like message ID for testing.
 //
 // This helper function creates deterministic but realistic message IDs

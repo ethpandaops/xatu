@@ -27,15 +27,6 @@ const (
 	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
 )
 
-var (
-	// Some events dont have anything reasonable to shard on, so we let them all through.
-	UnshardableEventTypes = []string{
-		xatu.Event_LIBP2P_TRACE_JOIN.String(),
-		xatu.Event_LIBP2P_TRACE_LEAVE.String(),
-		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT.String(),
-	}
-)
-
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.
 // To better understand this, here's a breakdown of the events, categorised:
 //
@@ -138,9 +129,4 @@ func isLibp2pEvent(event *host.TraceEvent) bool {
 // isGossipSubEvent checks if the event is a gossipsub event.
 func isGossipSubEvent(event *host.TraceEvent) bool {
 	return slices.Contains(gossipsubEventTypes, event.Type)
-}
-
-// isUnshardableEvent checks if the event type is unshardable.
-func isUnshardableEvent(eventType string) bool {
-	return slices.Contains(UnshardableEventTypes, eventType)
 }

@@ -17,8 +17,8 @@ github.com/IBM/sarama v1.45.1/go.mod h1:qifDhA3VWSrQ1TjSMyxDl3nYL3oX2C83u+G6L79s
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
-github.com/OffchainLabs/prysm/v6 v6.0.2 h1:GrHNvZlOoaPYeA4uL2xoUqplAelImteWxhJDap1yVBs=
-github.com/OffchainLabs/prysm/v6 v6.0.2/go.mod h1:lMkHT3gWiCOqo4rbuhLTU4FoQ/THni9v6z4w9P6FRyU=
+github.com/OffchainLabs/prysm/v6 v6.0.5-0.20250610223352-6087875da526 h1:gDCuYZ1lOBLNhUVGuOuGZDB9a+tlDAgZIRB/X6bWl1s=
+github.com/OffchainLabs/prysm/v6 v6.0.5-0.20250610223352-6087875da526/go.mod h1:ROlX1RFSH7sCgQ2fd2CC1QCBWacEvpvLsPS10qKJu7g=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/VictoriaMetrics/fastcache v1.12.2 h1:N0y9ASrJ0F6h0QaC3o6uJb3NIZ9VKLjCM7NQbSmF7WI=
@@ -241,8 +241,8 @@ github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9 h1:W5S3gzJFhi3
 github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
 github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2 h1:nRthZ1daUWm/92shiyx3YwlkCkr7IKhLZR1++wZx7/w=
-github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2/go.mod h1:btvQ5XIwNLN1xKq0/G4HE+wxa7C93IFnxqfkM4PjMZA=
+github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36 h1:9wzNW36Dj/8L2qy0Qx2gWfIzZPUMnscla/lUiUWBWXg=
+github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36/go.mod h1:NUxTFfHG1H1gjHuzA/7UhoL/F6SKmpUT2bBsBnprXRU=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=

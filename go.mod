@@ -4,13 +4,14 @@ go 1.24.0
 
 toolchain go1.24.1
 
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2
+// Peerdas branch
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36
 
 replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250515124841-1d7c6ee326e4
 
 require (
 	github.com/IBM/sarama v1.45.1
-	github.com/OffchainLabs/prysm/v6 v6.0.2
+	github.com/OffchainLabs/prysm/v6 v6.0.5-0.20250610223352-6087875da526
 	github.com/attestantio/go-eth2-client v0.25.0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3

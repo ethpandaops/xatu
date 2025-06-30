@@ -1,76 +1,12 @@
 package clmimicry
 
 import (
+	"fmt"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
-
-// ShouldTraceMessage determines whether a message with the given MsgID should be included
-// in the sample based on the configured trace settings.
-func (m *Mimicry) ShouldTraceMessage(
-	event *host.TraceEvent,
-	clientMeta *xatu.ClientMeta,
-	xatuEventType string,
-) bool {
-	networkStr := getNetworkID(clientMeta)
-
-	// If the event type is unshardable, we can move on with life.
-	if isUnshardableEvent(xatuEventType) {
-		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-		return true
-	}
-
-	// Check if there's a matching topic config in the trace-based configuration.
-	if m.Config.Traces.Enabled {
-		topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
-		if found {
-			// Get the appropriate sharding key based on the configuration
-			shardingKey := GetShardingKey(event, clientMeta, topicConfig.ShardingKey, xatuEventType)
-
-			// If no sharding key, we can't sample. Shouldn't ever happen.
-			if shardingKey == "" {
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-				return true
-			}
-
-			// If all shards are configured to be active, skip hashing and return true, save some trees.
-			//nolint:gosec // controlled config, no overflow.
-			if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-				return true
-			}
-
-			// Calculate the shard for this message.
-			shard := GetShard(shardingKey, topicConfig.TotalShards)
-
-			// Record metrics for all messages to track distribution.
-			m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
-
-			// Check if this shard is in the active shards list.
-			isActive := IsShardActive(shard, topicConfig.ActiveShards)
-
-			// Record processed or skipped metrics.
-			if isActive {
-				m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-			} else {
-				m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
-				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-			}
-
-			return isActive
-		}
-	}
-
-	// If no trace-based config matched, process all messages for enabled event types.
-	m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-
-	return true
-}
 
 // FilteredMessageWithIndex represents a filtered message with its original index
 type FilteredMessageWithIndex struct {
@@ -78,112 +14,15 @@ type FilteredMessageWithIndex struct {
 	OriginalIndex uint32
 }
 
-func (m *Mimicry) ShouldTraceRPCMetaMessages(
-	event *host.TraceEvent,
-	clientMeta *xatu.ClientMeta,
-	xatuEventType string,
-	messageIDs []*wrapperspb.StringValue,
-) ([]FilteredMessageWithIndex, error) {
-	networkStr := getNetworkID(clientMeta)
+// RPCMetaMessageInfo represents a message with its ID and optional topic for RPC meta filtering
+type RPCMetaMessageInfo struct {
+	MessageID *wrapperspb.StringValue
+	Topic     *wrapperspb.StringValue // Optional: gossip topic for the message
+}
 
-	if !m.Config.Traces.Enabled {
-		// Return all messages with their indices if tracing is not enabled
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	// If the event type is unshardable, we can move on with life.
-	if isUnshardableEvent(xatuEventType) {
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	topicConfig, found := m.Config.Traces.FindMatchingTopicConfig(xatuEventType)
-	if !found {
-		// Return all messages with their indices if no topic config found
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	// If all shards are configured to be active, skip filtering
-	//nolint:gosec // controlled config, no overflow.
-	if len(topicConfig.ActiveShards) == int(topicConfig.TotalShards) {
-		result := make([]FilteredMessageWithIndex, len(messageIDs))
-
-		for i, messageID := range messageIDs {
-			result[i] = FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			}
-
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		}
-
-		return result, nil
-	}
-
-	var filteredMessages []FilteredMessageWithIndex
-
-	// Check each message ID against the sharding configuration
-	for i, messageID := range messageIDs {
-		msgID := messageID.GetValue()
-		if msgID == "" {
-			continue
-		}
-
-		// Calculate the shard for this message ID
-		shard := GetShard(msgID, topicConfig.TotalShards)
-
-		// Record metrics for all messages to track distribution
-		m.metrics.AddShardObservation(xatuEventType, shard, networkStr)
-
-		// Check if this shard is in the active shards list
-		isActive := IsShardActive(shard, topicConfig.ActiveShards)
-
-		if isActive {
-			filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
-				MessageID:     messageID,
-				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
-			})
-
-			m.metrics.AddShardProcessed(xatuEventType, shard, networkStr)
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
-		} else {
-			m.metrics.AddShardSkipped(xatuEventType, shard, networkStr)
-			m.metrics.AddSkippedMessage(xatuEventType, networkStr)
-		}
-	}
-
-	return filteredMessages, nil
+// RPCMetaTopicInfo represents a topic-based RPC meta event for filtering
+type RPCMetaTopicInfo struct {
+	Topic *wrapperspb.StringValue // Gossip topic for the event
 }
 
 // IsShardActive checks if a shard is in the active shards list.
@@ -195,4 +34,194 @@ func IsShardActive(shard uint64, activeShards []uint64) bool {
 	}
 
 	return false
+}
+
+// ShouldTraceMessage determines whether a message with the given MsgID should be included
+// in the sample based on the configured trace settings.
+func (m *Mimicry) ShouldTraceMessage(
+	event *host.TraceEvent,
+	clientMeta *xatu.ClientMeta,
+	xatuEventType string,
+) bool {
+	if m.sharder == nil || !m.sharder.enabled {
+		// If sharding is disabled, process all messages
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+
+		return true
+	}
+
+	var (
+		// Get the event type from the string.
+		eventType = xatu.Event_Name(xatu.Event_Name_value[xatuEventType])
+
+		// Extract message ID and topics using the existing helper functions.
+		msgID = GetMsgID(event)
+
+		// Get all topics from the event.
+		topics = GetGossipTopics(event)
+		topic  string
+	)
+
+	if len(topics) > 0 {
+		topic = topics[0] // Use the first topic if available
+	}
+
+	// Use the unified sharder to determine if we should process this event
+	shouldProcess, reason := m.sharder.ShouldProcess(eventType, msgID, topic)
+
+	// Update metrics
+	networkStr := getNetworkID(clientMeta)
+	m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+
+	if shouldProcess {
+		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+	} else {
+		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+	}
+
+	return shouldProcess
+}
+
+// ShouldTraceRPCMetaMessages filters RPC meta messages based on sharding configuration.
+func (m *Mimicry) ShouldTraceRPCMetaMessages(
+	clientMeta *xatu.ClientMeta,
+	xatuEventType string,
+	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaTopicInfo, or []*wrapperspb.StringValue
+) ([]FilteredMessageWithIndex, error) {
+	if m.sharder == nil || !m.sharder.enabled {
+		// If sharding is disabled, include all messages
+		return m.buildAllMessagesFromInterface(messages, xatuEventType, getNetworkID(clientMeta)), nil
+	}
+
+	// Get the event type from the string
+	eventType := xatu.Event_Name(xatu.Event_Name_value[xatuEventType])
+
+	var filteredMessages []FilteredMessageWithIndex
+	networkStr := getNetworkID(clientMeta)
+
+	// Process based on message type
+	switch msgs := messages.(type) {
+	case []RPCMetaMessageInfo:
+		for i, msg := range msgs {
+			if msg.MessageID == nil || msg.MessageID.GetValue() == "" {
+				continue
+			}
+
+			topic := ""
+			if msg.Topic != nil {
+				topic = msg.Topic.GetValue()
+			}
+
+			shouldProcess, reason := m.sharder.ShouldProcess(eventType, msg.MessageID.GetValue(), topic)
+			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+
+			if shouldProcess {
+				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
+					MessageID:     msg.MessageID,
+					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+				})
+
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			} else {
+				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+			}
+		}
+
+	case []RPCMetaTopicInfo:
+		for i, topicInfo := range msgs {
+			topic := ""
+			if topicInfo.Topic != nil {
+				topic = topicInfo.Topic.GetValue()
+			}
+
+			// For Group B events, sharding is based on topic only. We pass empty string
+			// for msgID since these events don't have message IDs.
+			shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
+			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+
+			if shouldProcess {
+				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
+					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+				})
+
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			} else {
+				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+			}
+		}
+
+	case []*wrapperspb.StringValue:
+		for i, msgID := range msgs {
+			if msgID == nil || msgID.GetValue() == "" {
+				continue
+			}
+
+			// No topic information available for legacy format
+			shouldProcess, reason := m.sharder.ShouldProcess(eventType, msgID.GetValue(), "")
+			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+
+			if shouldProcess {
+				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
+					MessageID:     msgID,
+					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+				})
+
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			} else {
+				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+			}
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported message type: %T", messages)
+	}
+
+	return filteredMessages, nil
+}
+
+// buildAllMessagesFromInterface builds a result with all messages when sharding is disabled
+func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventType, networkStr string) []FilteredMessageWithIndex {
+	var result []FilteredMessageWithIndex
+
+	switch msgs := messages.(type) {
+	case []RPCMetaMessageInfo:
+		result = make([]FilteredMessageWithIndex, 0, len(msgs))
+
+		for i, msg := range msgs {
+			if msg.MessageID != nil {
+				result = append(result, FilteredMessageWithIndex{
+					MessageID:     msg.MessageID,
+					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+				})
+
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			}
+		}
+	case []RPCMetaTopicInfo:
+		result = make([]FilteredMessageWithIndex, 0, len(msgs))
+
+		for i := range msgs {
+			result = append(result, FilteredMessageWithIndex{
+				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+			})
+
+			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		}
+	case []*wrapperspb.StringValue:
+		result = make([]FilteredMessageWithIndex, 0, len(msgs))
+
+		for i, msgID := range msgs {
+			if msgID != nil {
+				result = append(result, FilteredMessageWithIndex{
+					MessageID:     msgID,
+					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
+				})
+
+				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			}
+		}
+	}
+
+	return result
 }

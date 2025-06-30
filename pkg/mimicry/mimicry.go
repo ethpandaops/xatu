@@ -78,7 +78,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	mimicry.coordinator, err = coordinator.NewCoordinator(config.Name, config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
 		CreateNewClientMeta: mimicry.createNewClientMeta,
 		DecoratedEvent:      mimicry.handleNewDecoratedEvent,
-	}, config.CaptureDelay, log)
+	}, config.CaptureDelay, &config.Ethereum, log)
 	if err != nil {
 		return nil, err
 	}

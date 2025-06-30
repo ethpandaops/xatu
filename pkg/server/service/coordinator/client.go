@@ -682,12 +682,12 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 	return &xatu.UpsertCannonLocationResponse{}, nil
 }
 
-func (c *Client) secureRandomInt(n int) (int, error) {
-	if n <= 0 {
-		return 0, fmt.Errorf("invalid range for random int: %d", n)
+func (c *Client) secureRandomInt(input int) (int, error) {
+	if input <= 0 {
+		return 0, fmt.Errorf("invalid range for random int: %d", input)
 	}
 
-	bigIndex, err := crand.Int(crand.Reader, big.NewInt(int64(n)))
+	bigIndex, err := crand.Int(crand.Reader, big.NewInt(int64(input)))
 	if err != nil {
 		return 0, perrors.Wrap(err, "failed to generate secure random number")
 	}

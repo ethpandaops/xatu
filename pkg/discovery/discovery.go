@@ -231,11 +231,11 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
 					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
 					if err != nil {
-						d.log.WithError(err).Error("Failed to list stale node records")
+						d.log.WithError(err).Error("Failed to list stale execution node records")
 
 						return
 					}
-					d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale execution node records to status")
 					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
 				}
 			},
@@ -252,17 +252,17 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 			func(ctx context.Context) {
 				d.log.WithFields(logrus.Fields{
 					"records": d.status.ActiveConsensus(),
-				}).Info("execution records currently trying to dial")
+				}).Info("consensus records currently trying to dial")
 				if d.status.ActiveExecution() == 0 {
-					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
-					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
+					d.log.Info("no active consensus records to dial, requesting stale records from coordinator")
+					nodeRecords, err := d.coordinator.ListStaleConsensusNodeRecords(ctx)
 					if err != nil {
-						d.log.WithError(err).Error("Failed to list stale node records")
+						d.log.WithError(err).Error("Failed to list stale consensus node records")
 
 						return
 					}
-					d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
-					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale consensus node records to status")
+					d.status.AddConsensusNodeRecords(ctx, nodeRecords)
 				}
 			},
 			ctx,

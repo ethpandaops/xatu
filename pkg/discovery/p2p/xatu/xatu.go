@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethpandaops/xatu/pkg/discovery/p2p/discovery"
+	"github.com/ethpandaops/ethcore/pkg/discovery"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"

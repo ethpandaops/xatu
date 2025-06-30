@@ -27,7 +27,7 @@ func NewMetrics(namespace string) *Metrics {
 	return m
 }
 
-func (m *Metrics) AddDialedNodeRecod(count int, result string, layer string) {
+func (m *Metrics) AddDialedNodeRecod(count int, result, layer string) {
 	m.dialedNodeRecordsTotal.WithLabelValues(result, layer).Add(float64(count))
 }
 

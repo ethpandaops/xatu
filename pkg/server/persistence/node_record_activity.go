@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -22,7 +21,7 @@ var availableExecutionNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableExecu
 
 type AvailableConsensusNodeRecord struct {
 	Enr             string    `db:"enr"`
-	ConsensusCount  int64     `db:"consensus_count"`
+	ActiveClients   int64     `db:"active_clients"`
 	LastConnectTime time.Time `db:"last_connect_time"`
 }
 
@@ -237,13 +236,9 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	nodeRecords := make([]*string, 0, limit)
 
 	for rows.Next() {
-		var record struct {
-			Enr               string
-			ActiveClients     int64
-			LastConnectTime   sql.NullTime
-		}
+		var record AvailableConsensusNodeRecord
 
-		err = rows.Scan(&record.Enr, &record.ActiveClients, &record.LastConnectTime)
+		err = rows.Scan(availableConsensusNodeRecordStruct.Addr(&record)...)
 		if err != nil {
 			return nil, err
 		}

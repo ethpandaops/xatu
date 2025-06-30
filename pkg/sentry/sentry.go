@@ -620,9 +620,6 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
-		// TODO: Uncomment when OnDataColumnSidecar is added to beacon.Node interface
-		// Currently requires: github.com/ethpandaops/beacon to add OnDataColumnSidecar method
-		/*
 		s.beacon.Node().OnDataColumnSidecar(ctx, func(ctx context.Context, dataColumnSidecar *beacon.DataColumnSidecarEvent) error {
 			now := time.Now().Add(s.clockDrift)
 
@@ -649,7 +646,6 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
-		*/
 
 		if err := s.startForkChoiceSchedule(ctx); err != nil {
 			return err

@@ -716,6 +716,18 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsDataColumnSidecarData {
+    // Epoch contains the epoch information for the data column sidecar.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the data column sidecar.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the data column
+    // sidecar.
+    PropagationV2 propagation = 3;
+  }
+
   message AdditionalEthV1BeaconBlobSidecarData {
     // Epoch contains the epoch information for the blob sidecar.
     EpochV2 epoch = 1;
@@ -821,17 +833,6 @@ message ClientMeta {
   // AdditionalLibP2PTraceSendRPCData: Holds additional data for a send RPC event in LibP2P tracing.
   message AdditionalLibP2PTraceSendRPCData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
-  }
-
-  message AdditionalEthV1EventsDataColumnSidecarData {
-    // Epoch contains the epoch information for the data column sidecar.
-    EpochV2 epoch = 1;
-
-    // Slot contains the slot information for the data column sidecar.
-    SlotV2 slot = 2;
-
-    // Propagation contains information about the propagation of the data column sidecar.
-    PropagationV2 propagation = 3;
   }
 
   // AdditionalLibP2PTraceDropRPCData: Holds additional data for a drop RPC event in LibP2P tracing.

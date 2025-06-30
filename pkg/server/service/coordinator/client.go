@@ -2,9 +2,10 @@ package coordinator
 
 import (
 	"context"
+	crand "crypto/rand"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net"
 	"strings"
 	"time"
@@ -486,6 +487,7 @@ func (c *Client) CoordinateConsensusNodeRecords(ctx context.Context, req *xatu.C
 		limit = 1000
 	}
 
+	//nolint:gosec // conversion is fine here.
 	limit -= uint32(len(targetedNodes))
 
 	if limit > 0 {
@@ -542,8 +544,12 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 		return nil, status.Errorf(codes.NotFound, "no records found")
 	}
 
-	//nolint:gosec // not a security issue
-	randomRecord := records[rand.Intn(len(records))]
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
 
 	return &xatu.GetDiscoveryNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
@@ -571,8 +577,12 @@ func (c *Client) GetDiscoveryConsensusNodeRecord(ctx context.Context, req *xatu.
 		return nil, status.Errorf(codes.NotFound, "no records found")
 	}
 
-	// Return a random record
-	randomRecord := records[rand.Intn(len(records))]
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
 
 	return &xatu.GetDiscoveryConsensusNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
@@ -600,8 +610,12 @@ func (c *Client) GetDiscoveryExecutionNodeRecord(ctx context.Context, req *xatu.
 		return nil, status.Errorf(codes.NotFound, "no records found")
 	}
 
-	//nolint:gosec // not a security issue
-	randomRecord := records[rand.Intn(len(records))]
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
 
 	return &xatu.GetDiscoveryExecutionNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
@@ -666,4 +680,17 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 	}
 
 	return &xatu.UpsertCannonLocationResponse{}, nil
+}
+
+func (c *Client) secureRandomInt(n int) (int, error) {
+	if n <= 0 {
+		return 0, fmt.Errorf("invalid range for random int: %d", n)
+	}
+
+	bigIndex, err := crand.Int(crand.Reader, big.NewInt(int64(n)))
+	if err != nil {
+		return 0, perrors.Wrap(err, "failed to generate secure random number")
+	}
+
+	return int(bigIndex.Int64()), nil
 }

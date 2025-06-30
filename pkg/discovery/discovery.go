@@ -6,15 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	//nolint:gosec // only exposed if pprofAddr config is set
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
-
-	//nolint:gosec // only exposed if pprofAddr config is set
-	_ "net/http/pprof"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
@@ -285,7 +284,6 @@ func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.Exec
 	decoratedEvent, err := d.createExecutionStatusEvent(ctx, status)
 	if err != nil {
 		d.log.WithError(err).Error("Failed to create execution status event")
-		// Continue processing even if event creation fails
 	} else {
 		for _, sink := range d.sinks {
 			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
@@ -308,7 +306,6 @@ func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.Cons
 	decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
 	if err != nil {
 		d.log.WithError(err).Error("Failed to create consensus status event")
-		// Continue processing even if event creation fails
 	} else {
 		for _, sink := range d.sinks {
 			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
@@ -451,10 +448,11 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	return decoratedEvent, nil
 }
 
-// Helper function to convert bytes to uint64
+// Helper function to convert bytes to uint64.
 func uint64FromBytes(b []byte) uint64 {
 	if len(b) != 8 {
 		return 0
 	}
+
 	return binary.BigEndian.Uint64(b)
 }

@@ -1,113 +1,99 @@
 package clmimicry
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+// Metrics provides simplified metrics for the sharding system
 type Metrics struct {
-	// Events metrics.
+	// Keep decoratedEvents for backward compatibility
 	decoratedEvents *prometheus.CounterVec
 
-	// Sampling metrics.
-	samplingProcessed *prometheus.CounterVec
-	samplingSkipped   *prometheus.CounterVec
+	// Core metrics for event processing
+	eventsTotal     *prometheus.CounterVec
+	eventsProcessed *prometheus.CounterVec
+	eventsFiltered  *prometheus.CounterVec
 
-	// Sharding metrics.
-	shardDistribution     *prometheus.CounterVec
-	shardProcessed        *prometheus.CounterVec
-	shardSkipped          *prometheus.CounterVec
-	shardDistributionHist *prometheus.HistogramVec
+	// Sharding decision metrics
+	shardingDecisions *prometheus.CounterVec
 }
 
+// NewMetrics creates a new metrics instance with simplified metrics
 func NewMetrics(namespace string) *Metrics {
-	return &Metrics{
-		decoratedEvents: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "decorated_event_total",
-			Help:      "Total number of decorated events received",
-		}, []string{"type", "network_id"}),
-		samplingProcessed: promauto.NewCounterVec(
+	m := &Metrics{
+		decoratedEvents: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "sampling_processed_total",
-				Help:      "The number of messages processed after sampling",
+				Name:      "decorated_event_total",
+				Help:      "Counts number of decorated events when we received them. Neither of the sharding layers have been applied.",
 			},
-			[]string{"event_type", "network"},
+			[]string{"type", "network_id"},
 		),
-		samplingSkipped: promauto.NewCounterVec(
+		eventsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "sampling_skipped_total",
-				Help:      "The number of messages skipped due to sampling",
+				Name:      "events_total",
+				Help:      "Total number of events received by type",
 			},
-			[]string{"event_type", "network"},
+			[]string{"event_type", "network_id"},
 		),
-		shardDistribution: promauto.NewCounterVec(
+		eventsProcessed: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "shard_distribution_total",
-				Help:      "The distribution of messages across shards",
+				Name:      "events_processed_total",
+				Help:      "Number of events processed after sharding",
 			},
-			[]string{"topic", "shard", "network"},
+			[]string{"event_type", "network_id"},
 		),
-		shardProcessed: promauto.NewCounterVec(
+		eventsFiltered: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "shard_processed_total",
-				Help:      "The number of messages processed by shard",
+				Name:      "events_filtered_total",
+				Help:      "Number of events filtered out by sharding",
 			},
-			[]string{"topic", "shard", "network"},
+			[]string{"event_type", "network_id"},
 		),
-		shardSkipped: promauto.NewCounterVec(
+		shardingDecisions: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
-				Name:      "shard_skipped_total",
-				Help:      "The number of messages skipped by shard",
+				Name:      "sharding_decisions_total",
+				Help:      "Sharding decisions made by reason",
 			},
-			[]string{"topic", "shard", "network"},
-		),
-		shardDistributionHist: promauto.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Namespace: namespace,
-				Name:      "shard_distribution_histogram",
-				Help:      "Histogram of shard distribution",
-				Buckets:   prometheus.LinearBuckets(0, 1, 64), // 64 buckets, one per potential shard
-			},
-			[]string{"topic", "network"},
+			[]string{"event_type", "reason", "network_id"},
 		),
 	}
+
+	// Register all metrics
+	prometheus.MustRegister(m.decoratedEvents)
+	prometheus.MustRegister(m.eventsTotal)
+	prometheus.MustRegister(m.eventsProcessed)
+	prometheus.MustRegister(m.eventsFiltered)
+	prometheus.MustRegister(m.shardingDecisions)
+
+	return m
 }
 
+// AddEvent records that an event was received
+func (m *Metrics) AddEvent(eventType, network string) {
+	m.eventsTotal.WithLabelValues(eventType, network).Inc()
+}
+
+// AddProcessedMessage records that an event was processed
+func (m *Metrics) AddProcessedMessage(eventType, network string) {
+	m.eventsProcessed.WithLabelValues(eventType, network).Inc()
+}
+
+// AddSkippedMessage records that an event was filtered out
+func (m *Metrics) AddSkippedMessage(eventType, network string) {
+	m.eventsFiltered.WithLabelValues(eventType, network).Inc()
+}
+
+// AddShardingDecision records the reason for a sharding decision
+func (m *Metrics) AddShardingDecision(eventType, reason, network string) {
+	m.shardingDecisions.WithLabelValues(eventType, reason, network).Inc()
+}
+
+// AddDecoratedEvent tracks decorated events (before sharding)
 func (m *Metrics) AddDecoratedEvent(count float64, eventType, network string) {
 	m.decoratedEvents.WithLabelValues(eventType, network).Add(count)
-}
-
-func (m *Metrics) AddProcessedMessage(eventType, network string) {
-	m.samplingProcessed.WithLabelValues(eventType, network).Inc()
-}
-
-func (m *Metrics) AddSkippedMessage(eventType, network string) {
-	m.samplingSkipped.WithLabelValues(eventType, network).Inc()
-}
-
-// AddShardObservation records a message being assigned to a particular shard
-func (m *Metrics) AddShardObservation(topic string, shard uint64, network string) {
-	shardStr := fmt.Sprintf("%d", shard)
-	m.shardDistribution.WithLabelValues(topic, shardStr, network).Inc()
-	m.shardDistributionHist.WithLabelValues(topic, network).Observe(float64(shard))
-}
-
-// AddShardProcessed records a message being processed from a particular shard
-func (m *Metrics) AddShardProcessed(topic string, shard uint64, network string) {
-	shardStr := fmt.Sprintf("%d", shard)
-	m.shardProcessed.WithLabelValues(topic, shardStr, network).Inc()
-}
-
-// AddShardSkipped records a message being skipped from a particular shard
-func (m *Metrics) AddShardSkipped(topic string, shard uint64, network string) {
-	shardStr := fmt.Sprintf("%d", shard)
-	m.shardSkipped.WithLabelValues(topic, shardStr, network).Inc()
 }

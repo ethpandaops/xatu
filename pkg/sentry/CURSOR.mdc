@@ -1,0 +1,21 @@
+---
+description: Sentry - Ethereum beacon chain monitoring client via Beacon API
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Sentry Component
+
+Beacon chain monitoring client that connects to consensus clients via Beacon API to collect real-time Ethereum network data.
+
+## Key Integration Patterns
+- **Multi-client Support**: Supports multiple beacon client implementations through standardized Beacon API
+- **Event-driven Architecture**: Listens to beacon chain events (blocks, attestations, voluntary exits, etc.) and processes them in real-time
+- **Configurable Data Collection**: Modular event collection with granular enable/disable controls per event type
+
+## Design Constraints  
+- **Stateless Design**: Maintains minimal state, relies on beacon client for blockchain state
+- **Output Sink Pattern**: All collected data flows through configured output sinks (file, HTTP, gRPC)
+- **Version-aware Event Handling**: Supports multiple Ethereum specification versions (v1, v2, v3) with backward compatibility

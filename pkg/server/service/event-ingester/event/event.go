@@ -62,13 +62,21 @@ var (
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
+	TypeLibP2PTraceDuplicateMessage             Type = Type(libp2p.TraceDuplicateMessageType)
+	TypeLibP2PTraceDeliverMessage               Type = Type(libp2p.TraceDeliverMessageType)
+	TypeLibP2PTraceRejectMessage                Type = Type(libp2p.TraceRejectMessageType)
+	TypeLibP2PTracePublishMessage               Type = Type(libp2p.TracePublishMessageType)
 	TypeLibP2PTraceAddPeer                      Type = Type(libp2p.TraceAddPeerType)
 	TypeLibP2PTraceConnected                    Type = Type(libp2p.TraceConnectedType)
 	TypeLibP2PTraceJoin                         Type = Type(libp2p.TraceJoinType)
+	TypeLibP2PTraceLeave                        Type = Type(libp2p.TraceLeaveType)
+	TypeLibP2PTraceGraft                        Type = Type(libp2p.TraceGraftType)
+	TypeLibP2PTracePrune                        Type = Type(libp2p.TracePruneType)
 	TypeLibP2PTraceDisconnected                 Type = Type(libp2p.TraceDisconnectedType)
 	TypeLibP2PTraceRemovePeer                   Type = Type(libp2p.TraceRemovePeerType)
 	TypeLibP2PTraceRecvRPC                      Type = Type(libp2p.TraceRecvRPCType)
 	TypeLibP2PTraceSendRPC                      Type = Type(libp2p.TraceSendRPCType)
+	TypeLibP2PTraceDropRPC                      Type = Type(libp2p.TraceDropRPCType)
 	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
@@ -79,6 +87,13 @@ var (
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
 	TypeMEVRelayValidatorRegistration           Type = Type(mevrelay.ValidatorRegistrationType)
 	TypeBeaconETHV3ValidatorBlock               Type = v3.ValidatorBlockType
+	TypeLibP2PTraceRPCMetaControlIHave          Type = Type(libp2p.TraceRPCMetaControlIHaveType)
+	TypeLibP2PTraceRPCMetaControlIWant          Type = Type(libp2p.TraceRPCMetaControlIWantType)
+	TypeLibP2PTraceRPCMetaControlIDontWant      Type = Type(libp2p.TraceRPCMetaControlIDontWantType)
+	TypeLibP2PTraceRPCMetaControlGraft          Type = Type(libp2p.TraceRPCMetaControlGraftType)
+	TypeLibP2PTraceRPCMetaControlPrune          Type = Type(libp2p.TraceRPCMetaControlPruneType)
+	TypeLibP2PTraceRPCMetaSubscription          Type = Type(libp2p.TraceRPCMetaSubscriptionType)
+	TypeLibP2PTraceRPCMetaMessage               Type = Type(libp2p.TraceRPCMetaMessageType)
 )
 
 type Event interface {
@@ -226,6 +241,18 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	router.RegisterHandler(TypeBeaconEthV2BeaconElaboratedAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockElaboratedAttestation(router.log, event), nil
 	})
+	router.RegisterHandler(TypeLibP2PTraceDuplicateMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDuplicateMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDeliverMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDeliverMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRejectMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRejectMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTracePublishMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTracePublishMessage(router.log, event), nil
+	})
 	router.RegisterHandler(TypeLibP2PTraceAddPeer, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceAddPeer(router.log, event), nil
 	})
@@ -234,6 +261,15 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceJoin, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceJoin(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceLeave, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceLeave(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGraft, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGraft(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTracePrune, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTracePrune(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceDisconnected, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceDisconnected(router.log, event, router.geoipProvider), nil
@@ -246,6 +282,30 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceSendRPC, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceSendRPC(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDropRPC, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDropRPC(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIHave, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIHave(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIWant, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIWant(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlIDontWant, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlIDontWant(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlGraft, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlGraft(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaControlPrune, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaControlPrune(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaSubscription, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaSubscription(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceRPCMetaMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceRPCMetaMessage(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceHandleStatus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleStatus(router.log, event), nil

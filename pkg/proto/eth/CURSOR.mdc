@@ -1,0 +1,23 @@
+---
+description: Ethereum protocol buffers - Multi-version beacon block conversion layer
+globs: 
+  - "*.go"
+  - "**/*.proto"
+  - "**/*.pb.go"
+alwaysApply: false
+---
+
+# Ethereum Protocol Buffers
+
+Conversion layer between Ethereum consensus client types and protocol buffer formats supporting all hard fork versions (Phase0, Altair, Bellatrix, Capella, Deneb, Electra).
+
+## Key Integration Patterns
+- Use version-specific conversion functions for each Ethereum hard fork
+- Always handle block signature separately - check for nil and zero values before setting
+- Maintain consistent hex formatting with "0x" prefix for byte arrays
+- Convert all numeric types to wrapped protobuf values for proper null handling
+
+## Important Constraints  
+- Support backwards compatibility across all Ethereum hard fork versions
+- Preserve exact data structure fidelity during conversion
+- Handle optional signatures gracefully (nil-safe operations)

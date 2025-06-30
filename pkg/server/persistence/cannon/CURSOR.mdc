@@ -1,0 +1,20 @@
+---
+description: Cannon Location - Protocol buffer marshal/unmarshal for Ethereum beacon chain location data
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Cannon Location Component Rules
+
+Protocol buffer marshal/unmarshal layer for Ethereum beacon chain location data with type-safe conversion between database and protobuf formats.
+
+## Key Integration Pattern
+- **Type-Safe Conversion**: Bidirectional marshal/unmarshal between database Location struct and xatu.CannonLocation protobuf messages
+- **Switch-Based Type Handling**: Extensive switch statements handle all supported Cannon event types (blocks, attestations, deposits, etc.)
+
+## Critical Design Constraints
+- **Exhaustive Type Coverage**: All xatu.CannonType enum values must have corresponding marshal/unmarshal cases
+- **JSON Serialization**: Uses protojson for consistent proto message serialization to database Value field
+- **Error Wrapping**: All marshal/unmarshal errors are wrapped with component-specific error types

@@ -1,0 +1,20 @@
+---
+description: Execution - Mempool transaction event processing for Sentry
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Execution Event Processing
+
+Mempool transaction event processing component that transforms Ethereum execution layer transactions into structured events.
+
+## Key Patterns
+- **Duplicate Detection**: Uses TTL cache with composite keys (hash:nonce:to_address) to prevent duplicate transaction processing
+- **Fallback Address Resolution**: Prioritizes pre-populated sender addresses from txpool_content, falls back to signature recovery
+- **Blob Transaction Support**: Handles EIP-4844 blob transactions with sidecar data processing and size metrics
+
+## Design Constraints
+- **Signer Dependency**: Requires configured transaction signer for sender address recovery when pre-populated data unavailable
+- **Cache-based Deduplication**: Relies on TTL cache for duplicate transaction filtering with configurable expiration

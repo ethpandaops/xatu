@@ -1,0 +1,20 @@
+---
+description: Relay Client - HTTP client for individual MEV relay API interactions
+globs: 
+  - "*.go"
+alwaysApply: false
+---
+
+# Relay Client Component
+
+HTTP client for individual MEV relay API interactions with built-in metrics and error handling.
+
+## Key Integration Patterns
+- **Standardized API Interface**: All relay endpoints use consistent HTTP patterns and protobuf response conversion
+- **Metrics Integration**: Every API call automatically tracks requests, failures, response times, and data counts via prometheus
+- **Context-aware Requests**: All HTTP operations use context.Context for timeout and cancellation handling
+
+## Critical Constraints
+- **Timeout Enforcement**: All HTTP clients use 10-second timeout for network resilience
+- **Error Classification**: Distinguish between rate limiting (429), validation errors, and network failures
+- **Protobuf Conversion**: Always convert JSON responses to standardized mevrelay protobuf types for consistency

@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -87,7 +88,53 @@ func TraceEventToLeave(event *host.TraceEvent) (*Leave, error) {
 	}, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p Graft.
+func TraceEventToGraft(event *host.TraceEvent) (*Graft, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Graft")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for Graft")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for Graft")
+	}
+
+	return &Graft{
+		Topic:  wrapperspb.String(topic),
+		PeerId: wrapperspb.String(peerID.String()),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p Prune.
+func TraceEventToPrune(event *host.TraceEvent) (*Prune, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Prune")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for Prune")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for Prune")
+	}
+
+	return &Prune{
+		Topic:  wrapperspb.String(topic),
+		PeerId: wrapperspb.String(peerID.String()),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RecvRPC.
 func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -107,7 +154,7 @@ func TraceEventToRecvRPC(event *host.TraceEvent) (*RecvRPC, error) {
 	return r, nil
 }
 
-// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC
+// Helper function to convert a Hermes TraceEvent to a libp2p SendRPC.
 func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	payload, ok := event.Payload.(*host.RpcMeta)
 	if !ok {
@@ -127,21 +174,249 @@ func TraceEventToSendRPC(event *host.TraceEvent) (*SendRPC, error) {
 	return r, nil
 }
 
+// Helper function to convert a Hermes TraceEvent to a libp2p DropRPC.
+func TraceEventToDropRPC(event *host.TraceEvent) (*DropRPC, error) {
+	payload, ok := event.Payload.(*host.RpcMeta)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for rpc")
+	}
+
+	r := &DropRPC{
+		PeerId: wrapperspb.String(payload.PeerID.String()),
+		Meta: &RPCMeta{
+			PeerId:        wrapperspb.String(payload.PeerID.String()),
+			Messages:      convertRPCMessages(payload.Messages),
+			Subscriptions: convertRPCSubscriptions(payload.Subscriptions),
+			Control:       convertRPCControl(payload.Control),
+		},
+	}
+
+	return r, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p PublishMessage.
+func TraceEventToPublishMessage(event *host.TraceEvent) (*PublishMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for PublishMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for PublishMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for PublishMessage")
+	}
+
+	return &PublishMessage{
+		MsgId: wrapperspb.String(msgID),
+		Topic: wrapperspb.String(topic),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p RejectMessage.
+func TraceEventToRejectMessage(event *host.TraceEvent) (*RejectMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for RejectMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for RejectMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for RejectMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for RejectMessage")
+	}
+
+	reason, ok := payload["Reason"].(string)
+	if !ok {
+		return nil, fmt.Errorf("reason is required for RejectMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for RejectMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for RejectMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for RejectMessage")
+	}
+
+	// Parse hex sequence number.
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &RejectMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Reason:    wrapperspb.String(reason),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DuplicateMessage.
+func TraceEventToDuplicateMessage(event *host.TraceEvent) (*DuplicateMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DuplicateMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for DuplicateMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for DuplicateMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for DuplicateMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for DuplicateMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for DuplicateMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for DuplicateMessage")
+	}
+
+	// Parse hex sequence number
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &DuplicateMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
+}
+
+// Helper function to convert a Hermes TraceEvent to a libp2p DeliverMessage.
+func TraceEventToDeliverMessage(event *host.TraceEvent) (*DeliverMessage, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for DeliverMessage")
+	}
+
+	msgID, ok := payload["MsgID"].(string)
+	if !ok {
+		return nil, fmt.Errorf("msgID is required for DeliverMessage")
+	}
+
+	topic, ok := payload["Topic"].(string)
+	if !ok {
+		return nil, fmt.Errorf("topic is required for DeliverMessage")
+	}
+
+	peerID, ok := payload["PeerID"].(peer.ID)
+	if !ok {
+		return nil, fmt.Errorf("peerID is required for DeliverMessage")
+	}
+
+	local, ok := payload["Local"].(bool)
+	if !ok {
+		return nil, fmt.Errorf("local is required for DeliverMessage")
+	}
+
+	msgSize, ok := payload["MsgSize"].(int)
+	if !ok {
+		return nil, fmt.Errorf("msgSize is required for DeliverMessage")
+	}
+
+	seqHex, ok := payload["Seq"].(string)
+	if !ok {
+		return nil, fmt.Errorf("seq is required for DeliverMessage")
+	}
+
+	// Parse hex sequence number
+	seqBytes, err := hex.DecodeString(seqHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Seq hex: %w", err)
+	}
+
+	var seqNumber uint64
+
+	if len(seqBytes) > 0 {
+		for _, b := range seqBytes {
+			seqNumber = (seqNumber << 8) | uint64(b)
+		}
+	}
+
+	return &DeliverMessage{
+		MsgId:     wrapperspb.String(msgID),
+		PeerId:    wrapperspb.String(peerID.String()),
+		Topic:     wrapperspb.String(topic),
+		Local:     wrapperspb.Bool(local),
+		MsgSize:   wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // fine.
+		SeqNumber: wrapperspb.UInt64(seqNumber),
+	}, nil
+}
+
 func convertRPCMessages(messages []host.RpcMetaMsg) []*MessageMeta {
 	ourMessages := make([]*MessageMeta, len(messages))
 
 	for i, msg := range messages {
-		ourMessages[i] = convertRPCMetaMessage(msg)
+		ourMessages[i] = &MessageMeta{
+			MessageId: wrapperspb.String(msg.MsgID),
+			TopicId:   wrapperspb.String(msg.Topic),
+		}
 	}
 
 	return ourMessages
-}
-
-func convertRPCMetaMessage(msg host.RpcMetaMsg) *MessageMeta {
-	return &MessageMeta{
-		MessageId: wrapperspb.String(msg.MsgID),
-		Topic:     wrapperspb.String(msg.Topic),
-	}
 }
 
 func convertRPCSubscriptions(subs []host.RpcMetaSub) []*SubMeta {
@@ -163,10 +438,11 @@ func convertRPCControl(ctrl *host.RpcMetaControl) *ControlMeta {
 	}
 
 	return &ControlMeta{
-		Ihave: convertControlIHaveMeta(ctrl.IHave),
-		Iwant: convertControlIWantMeta(ctrl.IWant),
-		Graft: convertControlGraftMeta(ctrl.Graft),
-		Prune: convertControlPruneMeta(ctrl.Prune),
+		Ihave:     convertControlIHaveMeta(ctrl.IHave),
+		Iwant:     convertControlIWantMeta(ctrl.IWant),
+		Graft:     convertControlGraftMeta(ctrl.Graft),
+		Prune:     convertControlPruneMeta(ctrl.Prune),
+		Idontwant: convertControlIDontWantMeta(ctrl.Idontwant),
 	}
 }
 
@@ -195,6 +471,18 @@ func convertControlIWantMeta(iwant []host.RpcControlIWant) []*ControlIWantMeta {
 	return converted
 }
 
+func convertControlIDontWantMeta(idontwant []host.RpcControlIdontWant) []*ControlIDontWantMeta {
+	converted := make([]*ControlIDontWantMeta, len(idontwant))
+
+	for i, item := range idontwant {
+		converted[i] = &ControlIDontWantMeta{
+			MessageIds: convertStringValues(item.MsgIDs),
+		}
+	}
+
+	return converted
+}
+
 func convertControlGraftMeta(graft []host.RpcControlGraft) []*ControlGraftMeta {
 	converted := make([]*ControlGraftMeta, len(graft))
 
@@ -211,7 +499,7 @@ func convertControlPruneMeta(prune []host.RpcControlPrune) []*ControlPruneMeta {
 	converted := make([]*ControlPruneMeta, len(prune))
 
 	for i, item := range prune {
-		peerIds := make([]string, len(prune))
+		peerIds := make([]string, 0, len(item.PeerIDs))
 		for _, peer := range item.PeerIDs {
 			peerIds = append(peerIds, peer.String())
 		}

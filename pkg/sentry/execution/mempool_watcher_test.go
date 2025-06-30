@@ -1518,3 +1518,159 @@ func TestProcessDroppedTransactions(t *testing.T) {
 		watcher.Stop()
 	})
 }
+
+// TestFetchersBasedOnConfig tests that the fetcher goroutines are started or not
+// based on the configuration flags.
+func TestFetchersBasedOnConfig(t *testing.T) {
+	// Setup test logger that discards output
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
+	log := logger.WithField("component", "test")
+
+	// Create metrics
+	metrics := NewMetrics("test-fetchers-config", "testnet")
+
+	// Create a no-op callback
+	callback := func(ctx context.Context, record *PendingTxRecord, txData json.RawMessage) error {
+		return nil
+	}
+
+	// Setup for monitoring function calls
+	type callCounter struct {
+		sync.Mutex
+		txPoolContentCalls int
+		pendingTxsCalls    int
+	}
+
+	counter := &callCounter{}
+
+	// Test cases
+	testCases := []struct {
+		name              string
+		txPoolEnabled     bool
+		ethPendingEnabled bool
+		expectTxPool      bool
+		expectEthPending  bool
+	}{
+		{
+			name:              "BothEnabled",
+			txPoolEnabled:     true,
+			ethPendingEnabled: true,
+			expectTxPool:      true,
+			expectEthPending:  true,
+		},
+		{
+			name:              "OnlyTxPoolEnabled",
+			txPoolEnabled:     true,
+			ethPendingEnabled: false,
+			expectTxPool:      true,
+			expectEthPending:  false,
+		},
+		{
+			name:              "OnlyEthPendingEnabled",
+			txPoolEnabled:     false,
+			ethPendingEnabled: true,
+			expectTxPool:      false,
+			expectEthPending:  true,
+		},
+		{
+			name:              "BothDisabled",
+			txPoolEnabled:     false,
+			ethPendingEnabled: false,
+			expectTxPool:      false,
+			expectEthPending:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset counters
+			counter.Lock()
+			counter.txPoolContentCalls = 0
+			counter.pendingTxsCalls = 0
+			counter.Unlock()
+
+			// Create mock controller
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// Create mock client with instrumented methods to count calls
+			mockClient := mock.NewMockClientProvider(ctrl)
+
+			// Setup the mock to count calls
+			mockClient.EXPECT().GetTxpoolContent(gomock.Any()).DoAndReturn(
+				func(ctx context.Context) (json.RawMessage, error) {
+					counter.Lock()
+					counter.txPoolContentCalls++
+					counter.Unlock()
+
+					return json.RawMessage(`{"pending":{},"queued":{}}`), nil
+				}).AnyTimes()
+
+			mockClient.EXPECT().GetPendingTransactions(gomock.Any()).DoAndReturn(
+				func(ctx context.Context) ([]json.RawMessage, error) {
+					counter.Lock()
+					counter.pendingTxsCalls++
+					counter.Unlock()
+
+					return []json.RawMessage{}, nil
+				}).AnyTimes()
+
+			// Other required method expectations
+			mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(
+				make(chan string), make(chan error), nil).AnyTimes()
+			mockClient.EXPECT().BatchGetTransactionsByHash(gomock.Any(), gomock.Any()).Return(
+				[]json.RawMessage{}, nil).AnyTimes()
+			mockClient.EXPECT().Close().Return(nil).AnyTimes()
+
+			// Create config with very short intervals for testing
+			config := &Config{
+				QueueSize:            100,
+				PruneDuration:        60,
+				FetchInterval:        1, // 1 second interval to ensure methods are called
+				ProcessingInterval:   500,
+				WebsocketEnabled:     false,
+				TxPoolContentEnabled: tc.txPoolEnabled,
+				EthPendingTxsEnabled: tc.ethPendingEnabled,
+				ProcessorWorkerCount: 2,
+			}
+
+			// Create real watcher.
+			watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
+
+			// Start the watcher.
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			err := watcher.Start(ctx)
+			assert.NoError(t, err)
+
+			// Wait for any fetchers to run at least once.
+			time.Sleep(1500 * time.Millisecond)
+
+			// Stop the watcher
+			watcher.Stop()
+
+			// Check if the methods were called based on configuration.
+			counter.Lock()
+			defer counter.Unlock()
+
+			if tc.expectTxPool {
+				assert.Greater(t, counter.txPoolContentCalls, 0,
+					"txpool_content should be called when TxPoolContentEnabled=true")
+			} else {
+				assert.Equal(t, 0, counter.txPoolContentCalls,
+					"txpool_content should not be called when TxPoolContentEnabled=false")
+			}
+
+			if tc.expectEthPending {
+				assert.Greater(t, counter.pendingTxsCalls, 0,
+					"eth_pendingTransactions should be called when EthPendingTxsEnabled=true")
+			} else {
+				assert.Equal(t, 0, counter.pendingTxsCalls,
+					"eth_pendingTransactions should not be called when EthPendingTxsEnabled=false",
+					"counter.pendingTxsCalls=%d", counter.pendingTxsCalls)
+			}
+		})
+	}
+}

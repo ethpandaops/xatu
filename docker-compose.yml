@@ -285,12 +285,27 @@ services:
           "libp2p-trace-remove-peer"
           "libp2p-trace-recv-rpc"
           "libp2p-trace-send-rpc"
+          "libp2p-trace-drop-rpc"
           "libp2p-trace-join"
+          "libp2p-trace-leave"
+          "libp2p-trace-graft"
+          "libp2p-trace-prune"
+          "libp2p-trace-deliver-message"
+          "libp2p-trace-reject-message"
+          "libp2p-trace-publish-message"
+          "libp2p-trace-duplicate-message"
           "libp2p-trace-handle-metadata"
           "libp2p-trace-handle-status"
           "libp2p-trace-gossipsub-beacon-block"
           "libp2p-trace-gossipsub-beacon-attestation"
           "libp2p-trace-gossipsub-blob-sidecar"
+          "libp2p-trace-rpc-meta-control-prune"
+          "libp2p-trace-rpc-meta-control-graft"
+          "libp2p-trace-rpc-meta-control-idontwant"
+          "libp2p-trace-rpc-meta-control-iwant"
+          "libp2p-trace-rpc-meta-control-ihave"
+          "libp2p-trace-rpc-meta-subscription"
+          "libp2p-trace-rpc-meta-message"
           "beacon-api-eth-v1-beacon-validators"
           "mev-relay-bid-trace-builder-block-submission"
           "mev-relay-proposer-payload-delivered"
@@ -309,6 +324,31 @@ services:
     networks:
       - xatu-net
 
+  xatu-kafka-storage-format:
+    profiles:
+      - ""
+    image: confluentinc/cp-kafka:latest
+    container_name: xatu-kafka-storage-format
+    environment:
+      CLUSTER_ID: WySlHi0zTAmp0tJmzXHSNQ
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@xatu-kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://xatu-kafka:29092,CONTROLLER://xatu-kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://xatu-kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    command: >
+      bash -c "
+        kafka-storage format -t $$CLUSTER_ID -c /etc/kafka/kraft/server.properties || true
+      "
+    networks:
+      - xatu-net
+
   xatu-kafka:
     profiles:
       - ""
@@ -316,10 +356,16 @@ services:
     hostname: xatu-kafka
     container_name: xatu-kafka
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: xatu-kafka-zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@xatu-kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://xatu-kafka:29092,CONTROLLER://xatu-kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://xatu-kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: WySlHi0zTAmp0tJmzXHSNQ
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -328,49 +374,29 @@ services:
     ports:
       - "${KAFKA_ADDRESS:-127.0.0.1}:${KAFKA_PORT:-29092}:29092"
       - "${KAFKA_BROKER_ADDRESS:-127.0.0.1}:${KAFKA_BROKER_PORT:-9092}:9092"
+      - "${KAFKA_CONTROLLER_ADDRESS:-127.0.0.1}:${KAFKA_CONTROLLER_PORT:-29093}:29093"
     networks:
       - xatu-net
     volumes:
       - kafka-data:/var/lib/kafka/data
+    depends_on:
+      xatu-kafka-storage-format:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
-          "CMD",
-          "kafka-broker-api-versions",
-          "--bootstrap-server=localhost:9092",
+          "CMD-SHELL",
+          "kafka-broker-api-versions --bootstrap-server=localhost:9092 || exit 1",
         ]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 5s
-    depends_on:
-      xatu-kafka-zookeeper:
-        condition: service_healthy
-  xatu-kafka-zookeeper:
-    profiles:
-      - ""
-    image: zookeeper
-    container_name: xatu-kafka-zookeeper
-    environment:
-      ZOO_LOG4J_PROP: "ERROR,CONSOLE"
-    ports:
-      - "${KAFKA_ZOOKEEPER_ADDRESS:-127.0.0.1}:${KAFKA_ZOOKEEPER_PORT:-2181}:2181"
-    networks:
-      - xatu-net
-    volumes:
-      - kafka-zookeeper-data:/data
-      - kafka-zookeeper-datalog:/datalog
-    healthcheck:
-      test: ["CMD", "./bin/zkServer.sh", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
+      retries: 10
+      start_period: 30s
 
   xatu-vector-http-kafka:
     profiles:
       - ""
-    image: timberio/vector:0.34.1-alpine
+    image: timberio/vector:0.37.1-alpine
     container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
@@ -594,10 +620,6 @@ volumes:
   clickhouse-zookeeper-03-datalog:
     driver: local
   kafka-data:
-    driver: local
-  kafka-zookeeper-data:
-    driver: local
-  kafka-zookeeper-datalog:
     driver: local
   prometheus-data:
     driver: local

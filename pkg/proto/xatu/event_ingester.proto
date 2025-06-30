@@ -835,8 +835,73 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceDropRPCData: Holds additional data for a drop RPC event in LibP2P tracing.
+  message AdditionalLibP2PTraceDropRPCData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaControlIHaveData: Holds additional data for a RPC meta control i have event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaControlIHaveData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaControlIWantData: Holds additional data for a RPC meta control i want event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaControlIWantData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaControlIDontWantData: Holds additional data for a RPC meta control i dont want event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaControlIDontWantData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaControlGraftData: Holds additional data for a RPC meta control graft event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaControlGraftData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaControlPruneData: Holds additional data for a RPC meta control prune event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaControlPruneData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
   message AdditionalLibP2PTraceJoinData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceLeaveData: Holds additional data for a leave event in LibP2P tracing.
+  message AdditionalLibP2PTraceLeaveData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceGraftData: Holds additional data for a graft event in LibP2P tracing.
+  message AdditionalLibP2PTraceGraftData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTracePruneData: Holds additional data for a prune event in LibP2P tracing.
+  message AdditionalLibP2PTracePruneData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceDuplicateMessageData: Holds additional data for a duplicate message event in LibP2P tracing.
+  message AdditionalLibP2PTraceDuplicateMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceDeliverMessageData: Holds additional data for a deliver message event in LibP2P tracing.
+  message AdditionalLibP2PTraceDeliverMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTracePublishMessageData: Holds additional data for a publish message event in LibP2P tracing.
+  message AdditionalLibP2PTracePublishMessageData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRejectMessageData: Holds additional data for a reject message event in LibP2P tracing.
+  message AdditionalLibP2PTraceRejectMessageData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
@@ -857,6 +922,16 @@ message ClientMeta {
 
   // AdditionalLibP2PTraceHandleStatusData: Holds additional data for a handle status event in LibP2P tracing.
   message AdditionalLibP2PTraceHandleStatusData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaSubscriptionData: Holds additional data for a RPC meta subscription event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaSubscriptionData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
+  // AdditionalLibP2PTraceRPCMetaMessageData: Holds additional data for a RPC meta message event in LibP2P tracing.
+  message AdditionalLibP2PTraceRPCMetaMessageData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
@@ -1263,13 +1338,42 @@ message ClientMeta {
     // AdditionalMevRelayValidatorRegistrationData contains additional data about the mev relay validator registration event.
     AdditionalMevRelayValidatorRegistrationData mev_relay_validator_registration = 66 [ json_name = "MEV_RELAY_VALIDATOR_REGISTRATION" ];
 
-
     // AdditionalEthV1EventsBlockGossipData contains additional data about the eth
     // v1 block gossip event.
     AdditionalEthV1EventsBlockGossipData eth_v1_events_block_gossip = 67 [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
+    // AdditionalLibP2PTraceDropRPCData contains additional data about the drop RPC event.
+    AdditionalLibP2PTraceDropRPCData libp2p_trace_drop_rpc = 68 [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
+    // AdditionalLibP2PTraceLeaveData contains additional data about the leave event.
+    AdditionalLibP2PTraceLeaveData libp2p_trace_leave = 69 [ json_name = "LIBP2P_TRACE_LEAVE" ];
+    // AdditionalLibP2PTraceGraftData contains additional data about the graft event.
+    AdditionalLibP2PTraceGraftData libp2p_trace_graft = 70 [ json_name = "LIBP2P_TRACE_GRAFT" ];
+    // AdditionalLibP2PTracePruneData contains additional data about the prune event.
+    AdditionalLibP2PTracePruneData libp2p_trace_prune = 71 [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    // AdditionalLibP2PTraceDuplicateMessageData contains additional data about the duplicate message event.
+    AdditionalLibP2PTraceDuplicateMessageData libp2p_trace_duplicate_message = 72 [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
+    // AdditionalLibP2PTraceDeliverMessageData contains additional data about the deliver message event.
+    AdditionalLibP2PTraceDeliverMessageData libp2p_trace_deliver_message = 73 [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
+    // AdditionalLibP2PTracePublishMessageData contains additional data about the publish message event.
+    AdditionalLibP2PTracePublishMessageData libp2p_trace_publish_message = 74 [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
+    // AdditionalLibP2PTraceRejectMessageData contains additional data about the reject message event.
+    AdditionalLibP2PTraceRejectMessageData libp2p_trace_reject_message = 75 [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
+    // AdditionalLibP2PTraceRPCMetaControlIHaveData contains additional data about the rpc meta control i have event.
+    AdditionalLibP2PTraceRPCMetaControlIHaveData libp2p_trace_rpc_meta_control_ihave = 76 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE" ];
+    // AdditionalLibP2PTraceRPCMetaControlIWantData contains additional data about the rpc meta control i want event.
+    AdditionalLibP2PTraceRPCMetaControlIWantData libp2p_trace_rpc_meta_control_iwant = 77 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IWANT" ];
+    // AdditionalLibP2PTraceRPCMetaControlIDontWantData contains additional data about the rpc meta control i dont want event.
+    AdditionalLibP2PTraceRPCMetaControlIDontWantData libp2p_trace_rpc_meta_control_idontwant = 78 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT" ];
+    // AdditionalLibP2PTraceRPCMetaControlGraftData contains additional data about the rpc meta control graft event.
+    AdditionalLibP2PTraceRPCMetaControlGraftData libp2p_trace_rpc_meta_control_graft = 79 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT" ];
+    // AdditionalLibP2PTraceRPCMetaControlPruneData contains additional data about the rpc meta control prune event.
+    AdditionalLibP2PTraceRPCMetaControlPruneData libp2p_trace_rpc_meta_control_prune = 80 [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE" ];
+    // AdditionalLibP2PTraceRPCMetaSubscriptionData contains additional data about the rpc meta subscription event.
+    AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
+    // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
+    AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
     // AdditionalEthV1EventsDataColumnSidecarData contains additional data about the
     // eth v1 data column sidecar event.
-    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 68 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
+    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 83 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1432,7 +1536,21 @@ message Event {
     BEACON_API_ETH_V3_VALIDATOR_BLOCK = 55;
     MEV_RELAY_VALIDATOR_REGISTRATION = 56;
     BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP = 57;
-    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 58;
+    LIBP2P_TRACE_LEAVE = 58;
+    LIBP2P_TRACE_GRAFT = 59;
+    LIBP2P_TRACE_PRUNE = 60;
+    LIBP2P_TRACE_DUPLICATE_MESSAGE = 61;
+    LIBP2P_TRACE_DELIVER_MESSAGE = 62;
+    LIBP2P_TRACE_PUBLISH_MESSAGE = 63;
+    LIBP2P_TRACE_REJECT_MESSAGE = 64;
+    LIBP2P_TRACE_RPC_META_CONTROL_IHAVE = 65;
+    LIBP2P_TRACE_RPC_META_CONTROL_IWANT = 66;
+    LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT = 67;
+    LIBP2P_TRACE_RPC_META_CONTROL_GRAFT = 68;
+    LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
+    LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
+    LIBP2P_TRACE_RPC_META_MESSAGE = 71;
+    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 72;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1579,7 +1697,37 @@ message DecoratedEvent {
 
     xatu.eth.v1.EventBlockGossip eth_v1_events_block_gossip = 57
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP" ];
-    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 58
+    xatu.libp2p.DropRPC libp2p_trace_drop_rpc = 58
+        [ json_name = "LIBP2P_TRACE_DROP_RPC" ];
+    xatu.libp2p.Leave libp2p_trace_leave = 59
+        [ json_name = "LIBP2P_TRACE_LEAVE" ];
+    xatu.libp2p.Graft libp2p_trace_graft = 60
+        [ json_name = "LIBP2P_TRACE_GRAFT" ];
+    xatu.libp2p.Prune libp2p_trace_prune = 61
+        [ json_name = "LIBP2P_TRACE_PRUNE" ];
+    xatu.libp2p.DuplicateMessage libp2p_trace_duplicate_message = 62
+        [ json_name = "LIBP2P_TRACE_DUPLICATE_MESSAGE" ];
+    xatu.libp2p.DeliverMessage libp2p_trace_deliver_message = 63
+        [ json_name = "LIBP2P_TRACE_DELIVER_MESSAGE" ];
+    xatu.libp2p.PublishMessage libp2p_trace_publish_message = 64
+        [ json_name = "LIBP2P_TRACE_PUBLISH_MESSAGE" ];
+    xatu.libp2p.RejectMessage libp2p_trace_reject_message = 65
+        [ json_name = "LIBP2P_TRACE_REJECT_MESSAGE" ];
+    xatu.libp2p.ControlIHaveMetaItem libp2p_trace_rpc_meta_control_ihave = 66
+        [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE" ];
+    xatu.libp2p.ControlIWantMetaItem libp2p_trace_rpc_meta_control_iwant = 67
+        [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IWANT" ];
+    xatu.libp2p.ControlIDontWantMetaItem libp2p_trace_rpc_meta_control_idontwant = 68
+        [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT" ];
+    xatu.libp2p.ControlGraftMetaItem libp2p_trace_rpc_meta_control_graft = 69
+        [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_GRAFT" ];
+    xatu.libp2p.ControlPruneMetaItem libp2p_trace_rpc_meta_control_prune = 70
+        [ json_name = "LIBP2P_TRACE_RPC_META_CONTROL_PRUNE" ];
+    xatu.libp2p.SubMetaItem libp2p_trace_rpc_meta_subscription = 71
+        [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
+    xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
+        [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 73
         [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   };
 }

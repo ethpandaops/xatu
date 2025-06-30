@@ -2,14 +2,15 @@ package clmimicry
 
 import (
 	"context"
-	"reflect"
+	"fmt"
+	"slices"
 
-	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/pkg/errors"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -90,56 +91,42 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	}
 }
 
-// getMsgID extracts the MsgID field from any supported payload type.
-// The alternative to using reflection here is a massive switch statement that we
-// would need to manage. If we find CPU issues, we should switch it out, pun intended.
-func getMsgID(payload interface{}) string {
-	// Use reflection to access the MsgID field.
-	if payload == nil {
-		return ""
+// getNetworkID extracts the network ID from the client metadata.
+func getNetworkID(clientMeta *xatu.ClientMeta) string {
+	var (
+		network    = clientMeta.GetEthereum().GetNetwork().GetId()
+		networkStr = fmt.Sprintf("%d", network)
+	)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
 	}
 
-	// Try to access the MsgID field using reflection.
-	v := reflect.ValueOf(payload)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return ""
-	}
-
-	// Dereference the pointer and check if it's a struct.
-	v = v.Elem()
-	if v.Kind() != reflect.Struct {
-		return ""
-	}
-
-	// Try to find the MsgID field.
-	msgIDField := v.FieldByName("MsgID")
-	if !msgIDField.IsValid() || msgIDField.Kind() != reflect.String {
-		return ""
-	}
-
-	return msgIDField.String()
+	return networkStr
 }
 
 // isRpcEvent checks if the event is a RPC event.
 func isRpcEvent(event *host.TraceEvent) bool {
-	return event.Type == TraceEvent_HANDLE_METADATA || event.Type == TraceEvent_HANDLE_STATUS
+	_, exists := rpcToXatuEventMap[event.Type]
+
+	return exists
 }
 
 // isLibp2pCoreEvent checks if the event is a libp2p core event.
 func isLibp2pCoreEvent(event *host.TraceEvent) bool {
-	return event.Type == TraceEvent_CONNECTED || event.Type == TraceEvent_DISCONNECTED
+	_, exists := libp2pCoreToXatuEventMap[event.Type]
+
+	return exists
 }
 
 // isLibp2pEvent checks if the event is a libp2p event.
 func isLibp2pEvent(event *host.TraceEvent) bool {
-	return event.Type == pubsubpb.TraceEvent_ADD_PEER.String() ||
-		event.Type == pubsubpb.TraceEvent_REMOVE_PEER.String() ||
-		event.Type == pubsubpb.TraceEvent_RECV_RPC.String() ||
-		event.Type == pubsubpb.TraceEvent_SEND_RPC.String() ||
-		event.Type == pubsubpb.TraceEvent_JOIN.String()
+	_, exists := libp2pToXatuEventMap[event.Type]
+
+	return exists
 }
 
 // isGossipSubEvent checks if the event is a gossipsub event.
 func isGossipSubEvent(event *host.TraceEvent) bool {
-	return event.Type == TraceEvent_HANDLE_MESSAGE
+	return slices.Contains(gossipsubEventTypes, event.Type)
 }

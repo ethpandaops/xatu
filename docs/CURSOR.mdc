@@ -1,0 +1,24 @@
+---
+description: Docs - Component documentation and user guides for Xatu clients and server
+globs: 
+  - "*.md"
+  - "**/*.md"
+alwaysApply: false
+---
+
+# Docs Component Rules
+
+Component documentation providing user guides for Xatu's monitoring clients and centralized server.
+
+## Primary Purpose
+Provides comprehensive user documentation for all Xatu components including configuration, deployment, and usage instructions.
+
+## Key Integration Patterns
+- **Component-Specific Guides**: Each client (cannon, sentry, discovery, mimicry) and server has dedicated documentation
+- **Configuration-Driven**: All components use YAML configuration with extensive parameter documentation
+- **Modular Architecture**: Documents how components can run independently or as part of larger monitoring setup
+
+## Important Constraints
+- Keep documentation synchronized with actual configuration options and code changes
+- Maintain consistent structure across all component documentation files
+- Include practical examples and usage patterns for each component

@@ -1,0 +1,21 @@
+---
+description: Xatu Coordinator - gRPC-based coordinator for dynamic peer coordination via Xatu server
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Xatu Coordinator
+
+gRPC-based coordinator implementation that connects to a remote Xatu server for dynamic peer coordination and execution node record management.
+
+## Key Integration Patterns
+- **gRPC client coordination**: Implements `CoordinateExecutionNodeRecords` via remote Xatu server for dynamic peer management
+- **Scheduled sync operations**: Uses cron jobs (5-second metrics, 5-minute coordination) to maintain peer state and server synchronization
+- **Peer lifecycle management**: Automatically starts/stops peers based on server coordination responses with retry delay handling
+
+## Important Constraints
+- **Concurrent peer access**: All peer map operations must be mutex-protected due to concurrent cron job access
+- **gRPC compression**: Always use gzip compression for server communication to minimize bandwidth
+- **Execution node status forwarding**: Must forward all execution node status events to coordinator server via handler injection

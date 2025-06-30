@@ -35,12 +35,82 @@ node:
 outputs:
   - name: log
     type: stdout
-# traces:
-#   enabled: true
+# sharding:
+#   # Topic-based sharding configuration
+#   # Each topic pattern maps to a specific set of active shards
+#   # The sharder automatically determines the appropriate sharding key (MsgID, Topic, etc.) based on the event type
+#   # Note: totalShards can be configured independently for each topic pattern (e.g., 512, 1024, 256, etc.)
+#   #
+#   # Event-Type-Aware Patterns:
+#   # You can prefix patterns with specific event types to apply different sampling rates
+#   # Format: "EVENT_TYPE:topic_pattern" or just "topic_pattern" for all events
+#   # Wildcards supported: "LIBP2P_TRACE_RPC_META_*:pattern" matches all RPC_META events
 #   topics:
+#     # Event-specific patterns (new feature)
+#     # 100% sampling for direct gossipsub attestations
+#     "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION:.*beacon_attestation.*":
+#       totalShards: 512
+#       activeShards: ["0-511"] # 100% sampling for gossipsub events
+#
+#     # 5% sampling for RPC meta events on attestation topics
+#     "LIBP2P_TRACE_RPC_META_*:.*beacon_attestation.*":
+#       totalShards: 512
+#       activeShards: ["0-25"] # ~5% sampling for control messages
+#
+#     # Legacy patterns (still supported)
+#     # High priority: 100% sampling for beacon blocks
+#     ".*beacon_block.*":
+#       totalShards: 512
+#       activeShards: ["0-511"] # 100% sampling (all shards active)
+#
+#     # Medium priority: 50% sampling for attestations (default for other event types)
 #     ".*beacon_attestation.*":
-#       totalShards: 64
-#       activeShards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+#       totalShards: 512
+#       activeShards: ["0-255"] # 50% sampling (256/512 shards)
+#
+#     # Low priority: 12.5% sampling for sync committee
+#     ".*sync_committee.*":
+#       totalShards: 512
+#       activeShards: ["0-63"] # 12.5% sampling (64/512 shards)
+#
+#     # Very low priority: ~0.2% sampling for blob sidecars
+#     ".*blob_sidecar.*":
+#       totalShards: 512
+#       activeShards: [0] # 1/512 sampling (~0.2%)
+#
+#     # Catch-all pattern for any other topics
+#     ".*":
+#       totalShards: 512
+#       activeShards: ["0-31"] # ~6.25% sampling (32/512 shards)
+#
+#     # Example: Using different totalShards for specific use cases
+#     # You could use 1024 shards for finer-grained control
+#     ".*special_topic.*":
+#       totalShards: 1024
+#       activeShards: ["0-127"] # 12.5% sampling (128/1024 shards)
+#
+#     # Example: Mix of ranges and individual shards
+#     ".*mixed_pattern.*":
+#       totalShards: 512
+#       activeShards: ["0-10", "20-30", 100, 200] # Multiple ranges and individual shards
+#
+#     # Capture all gossipsub messages (100%)
+#     "LIBP2P_TRACE_GOSSIPSUB_*:.*":
+#       totalShards: 512
+#       activeShards: ["0-511"]
+#
+#     # Different sampling for specific control messages
+#     "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE:.*":
+#       totalShards: 512
+#       activeShards: ["0-50"] # 10% for IHAVE messages
+#
+#     "LIBP2P_TRACE_RPC_META_CONTROL_IWANT:.*":
+#       totalShards: 512
+#       activeShards: ["0-25"] # 5% for IWANT messages
+#
+#   # Configuration for events without sharding keys (Group D events)
+#   noShardingKeyEvents:
+#     enabled: true # Process all events without sharding keys
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

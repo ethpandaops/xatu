@@ -1,0 +1,22 @@
+---
+description: Ethereum v2 protocol buffers - Hard fork specific beacon block definitions
+globs: 
+  - "*.go"
+  - "*.proto"
+  - "*.pb.go"
+alwaysApply: false
+---
+
+# Ethereum v2 Protocol Buffers
+
+Ethereum v2-specific protocol buffer definitions for beacon blocks across multiple hard forks (Altair, Bellatrix, Capella, Deneb, Electra).
+
+## Key Integration Patterns
+- Use fork-specific message types (BeaconBlockAltair, BeaconBlockBellatrix, etc.) for version handling
+- Implement versioned conversion functions between consensus client types and protobuf
+- Handle EventBlock oneof patterns for multi-version block support
+
+## Important Constraints
+- Maintain strict backwards compatibility for all hard fork versions
+- Use consistent json_name annotations for API compatibility
+- Always validate block version before type casting in EventBlock handlers

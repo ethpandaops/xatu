@@ -55,6 +55,8 @@ type Mimicry struct {
 	beaconConfig  *params.BeaconChainConfig
 
 	ethereum *ethereum.BeaconNode
+
+	sharder *UnifiedSharder
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Mimicry, error) {
@@ -97,6 +99,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, fmt.Errorf("failed to create ethereum client: %w", err)
 	}
 
+	// Create the unified sharder
+	sharder, err := NewUnifiedSharder(&config.Sharding, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create sharder: %w", err)
+	}
+
 	mimicry := &Mimicry{
 		Config:      config,
 		sinks:       sinks,
@@ -106,6 +114,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		metrics:     NewMetrics("xatu_cl_mimicry"),
 		startupTime: time.Now(),
 		ethereum:    client,
+		sharder:     sharder,
 	}
 
 	return mimicry, nil
@@ -226,7 +235,7 @@ func (m *Mimicry) Start(ctx context.Context) error {
 		WithField("id", m.id.String()).
 		Info("Starting Xatu in consensus layer mimicry mode")
 
-	m.log.Info(m.Config.Traces.LogSummary())
+	m.log.Info(m.Config.Sharding.LogSummary())
 
 	if err := m.startCrons(ctx); err != nil {
 		m.log.WithError(err).Fatal("Failed to start crons")
@@ -414,6 +423,41 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 	for _, sink := range m.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
 			m.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")
+		}
+	}
+
+	return nil
+}
+
+func (m *Mimicry) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	// Grab the first event and use it to get the network and event type.
+	// Saves us parsing the same data multiple times.
+	var (
+		event      = events[0]
+		network    = event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()
+		networkStr = fmt.Sprintf("%d", network)
+	)
+
+	if networkStr == "" || networkStr == "0" {
+		networkStr = unknown
+	}
+
+	for _, event := range events {
+		eventType := event.GetEvent().GetName().String()
+		if eventType == "" {
+			eventType = unknown
+		}
+
+		m.metrics.AddDecoratedEvent(1, eventType, networkStr)
+	}
+
+	for _, sink := range m.sinks {
+		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
+			m.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send events to sink")
 		}
 	}
 

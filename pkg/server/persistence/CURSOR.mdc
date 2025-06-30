@@ -1,0 +1,21 @@
+---
+description: Persistence - Database abstraction layer with connection pooling and conflict resolution
+globs: 
+  - "*.go"
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Persistence Component Rules
+
+Database abstraction layer that manages connections and provides conflict resolution for Xatu server data persistence.
+
+## Key Integration Patterns
+- **SQL Builder Pattern**: Uses huandu/go-sqlbuilder for type-safe PostgreSQL query construction
+- **Conflict Resolution**: Implements upsert operations with ON CONFLICT clauses for idempotent data insertion
+- **Struct-Based ORM**: Maps Go structs to database tables using sqlbuilder reflection
+
+## Critical Design Constraints
+- **Connection Pooling**: Always configure MaxIdleConns and MaxOpenConns for database performance
+- **Context-Aware Operations**: All database operations must accept and propagate context for cancellation
+- **Idempotent Operations**: Use upsert patterns with conflict resolution rather than insert-only operations

@@ -1,0 +1,23 @@
+---
+description: Processor - Generic batching processor for high-throughput item export
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Processor Package
+
+Generic batching processor that handles high-throughput item export with configurable worker pools and timeouts.
+
+## Key Patterns
+- Use generic `ItemExporter[T]` interface for type-safe batch export operations
+- Implement configurable worker pools with `WithWorkers()` option for concurrent processing
+- Support both sync and async shipping methods via `ShippingMethod` configuration
+- Always include comprehensive Prometheus metrics for monitoring batch operations
+
+## Important Constraints  
+- Queue size must be >= batch size to prevent configuration errors
+- Export operations must honor context timeouts and cancellation
+- Sync mode blocks until all items in batch are processed or failed
+- Workers drain gracefully on shutdown before closing exporter

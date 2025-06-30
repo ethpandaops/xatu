@@ -1,0 +1,21 @@
+---
+description: Services - Core foundational services for Ethereum beacon chain data collection
+globs: 
+  - "*.go"
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Services Component
+
+Core foundational services for Ethereum beacon chain data collection including metadata retrieval, validator duties caching, and client identification.
+
+## Key Integration Patterns
+- **Service Interface Pattern**: All services implement Start/Stop/Ready/OnReady lifecycle with dependency coordination
+- **TTL Caching Strategy**: Use TTL caches with automatic refresh for beacon committees and proposer duties (60-minute TTL)
+- **Event-driven Refresh**: Services react to wallclock epoch changes and beacon sync status for automatic data refresh
+
+## Important Constraints
+- **Exponential Backoff Required**: All beacon API calls must use backoff.RetryWithExponentialBackOff pattern
+- **Thread-safe Caching**: Use mutex locks for concurrent access to cached beacon committee and proposer duty data
+- **Configurable Service Enablement**: Support selective enablement of duties collection (proposerDutiesEnabled, beaconCommitteesEnabled flags)

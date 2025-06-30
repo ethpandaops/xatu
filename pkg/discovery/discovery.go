@@ -2,31 +2,39 @@ package discovery
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"runtime"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/xatu/pkg/discovery/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/proto/noderecord"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Discovery struct {
 	Config *Config
+
+	sinks []output.Sink
 
 	coordinator *coordinator.Client
 
@@ -57,6 +65,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		}
 	}
 
+	sinks, err := config.CreateSinks(log)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := coordinator.New(&config.Coordinator, log)
 	if err != nil {
 		return nil, err
@@ -71,6 +84,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 	return &Discovery{
 		Config:         config,
+		sinks:          sinks,
 		coordinator:    client,
 		log:            log,
 		duplicateCache: duplicateCache,
@@ -117,9 +131,18 @@ func (d *Discovery) Start(ctx context.Context) error {
 	}
 
 	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
+	d.status.OnConsensusStatus(ctx, d.handleConsensusStatus)
 
 	if err := d.startCrons(ctx); err != nil {
 		return err
+	}
+
+	for _, sink := range d.sinks {
+		d.log.WithField("type", sink.Type()).WithField("name", sink.Name()).Info("Starting sink")
+
+		if err := sink.Start(ctx); err != nil {
+			return err
+		}
 	}
 
 	cancel := make(chan os.Signal, 1)
@@ -127,6 +150,14 @@ func (d *Discovery) Start(ctx context.Context) error {
 
 	sig := <-cancel
 	d.log.Printf("Caught signal: %v", sig)
+
+	d.log.Printf("Flushing sinks")
+
+	for _, sink := range d.sinks {
+		if err := sink.Stop(ctx); err != nil {
+			return err
+		}
+	}
 
 	if d.p2p != nil {
 		if err := d.p2p.Stop(ctx); err != nil {
@@ -198,14 +229,40 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 				}).Info("execution records currently trying to dial")
 				if d.status.ActiveExecution() == 0 {
 					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
-					nodeRecords, err := d.coordinator.ListStaleNodeRecords(ctx)
+					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
 					if err != nil {
-						d.log.WithError(err).Error("Failed to list stale node records")
+						d.log.WithError(err).Error("Failed to list stale execution node records")
 
 						return
 					}
-					d.log.WithField("records", len(nodeRecords)).Info("Adding stale node records to status")
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale execution node records to status")
 					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
+				}
+			},
+			ctx,
+		),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	); err != nil {
+		return err
+	}
+
+	if _, err := c.NewJob(
+		gocron.DurationJob(5*time.Second),
+		gocron.NewTask(
+			func(ctx context.Context) {
+				d.log.WithFields(logrus.Fields{
+					"records": d.status.ActiveConsensus(),
+				}).Info("consensus records currently trying to dial")
+				if d.status.ActiveExecution() == 0 {
+					d.log.Info("no active consensus records to dial, requesting stale records from coordinator")
+					nodeRecords, err := d.coordinator.ListStaleConsensusNodeRecords(ctx)
+					if err != nil {
+						d.log.WithError(err).Error("Failed to list stale consensus node records")
+
+						return
+					}
+					d.log.WithField("records", len(nodeRecords)).Info("Adding stale consensus node records to status")
+					d.status.AddConsensusNodeRecords(ctx, nodeRecords)
 				}
 			},
 			ctx,
@@ -221,9 +278,47 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 }
 
 func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "execution", fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
+
+	// Create and send status event for ClickHouse
+	decoratedEvent, err := d.createExecutionStatusEvent(ctx, status)
+	if err != nil {
+		d.log.WithError(err).Error("Failed to create execution status event")
+	} else {
+		for _, sink := range d.sinks {
+			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
+				d.log.
+					WithError(sinkErr).
+					WithField("sink", sink.Type()).
+					WithField("event_type", decoratedEvent.GetEvent().GetName()).
+					Error("Failed to send event to sink")
+			}
+		}
+	}
 
 	return d.coordinator.HandleExecutionNodeRecordStatus(ctx, status)
+}
+
+func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.ConsensusNodeStatus) error {
+	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "consensus", fmt.Sprintf("0x%x", status.GetForkDigest()))
+
+	// Create and send status event for ClickHouse
+	decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
+	if err != nil {
+		d.log.WithError(err).Error("Failed to create consensus status event")
+	} else {
+		for _, sink := range d.sinks {
+			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
+				d.log.
+					WithError(sinkErr).
+					WithField("sink", sink.Type()).
+					WithField("event_type", decoratedEvent.GetEvent().GetName()).
+					Error("Failed to send event to sink")
+			}
+		}
+	}
+
+	return d.coordinator.HandleConsensusNodeRecordStatus(ctx, status)
 }
 
 func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, source string) error {
@@ -253,4 +348,111 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 	d.metrics.AddDiscoveredNodeRecord(1, source)
 
 	return nil
+}
+
+func (d *Discovery) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+	return &xatu.ClientMeta{
+		Name:           "xatu-discovery", // Fixed client name
+		Version:        xatu.Short(),
+		Id:             d.id.String(),
+		Implementation: xatu.Implementation,
+		ModuleName:     xatu.ModuleName_DISCOVERY,
+		Os:             runtime.GOOS,
+	}, nil
+}
+
+func (d *Discovery) createExecutionStatusEvent(ctx context.Context, status *xatu.ExecutionNodeStatus) (*xatu.DecoratedEvent, error) {
+	now := time.Now()
+	eventID := uuid.New()
+
+	meta, err := d.createNewClientMeta(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert ExecutionNodeStatus to noderecord.Execution
+	capabilities := make([]string, 0, len(status.GetCapabilities()))
+	for _, cap := range status.GetCapabilities() {
+		capabilities = append(capabilities, fmt.Sprintf("%s/%d", cap.GetName(), cap.GetVersion()))
+	}
+
+	forkIDHash := fmt.Sprintf("0x%x", status.GetForkId().GetHash())
+	forkIDNext := status.GetForkId().GetNext()
+
+	executionData := &noderecord.Execution{
+		Enr:             &wrapperspb.StringValue{Value: status.GetNodeRecord()},
+		Timestamp:       timestamppb.New(now),
+		Name:            &wrapperspb.StringValue{Value: status.GetName()},
+		Capabilities:    &wrapperspb.StringValue{Value: strings.Join(capabilities, ",")},
+		ProtocolVersion: &wrapperspb.StringValue{Value: fmt.Sprintf("%d", status.GetProtocolVersion())},
+		TotalDifficulty: &wrapperspb.StringValue{Value: status.GetTotalDifficulty()},
+		Head:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHead())},
+		Genesis:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetGenesis())},
+		ForkIdHash:      &wrapperspb.StringValue{Value: forkIDHash},
+		ForkIdNext:      &wrapperspb.StringValue{Value: fmt.Sprintf("%d", forkIDNext)},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_NODE_RECORD_EXECUTION,
+			DateTime: timestamppb.New(now),
+			Id:       eventID.String(),
+		},
+		Meta: &xatu.Meta{
+			Client: meta,
+		},
+		Data: &xatu.DecoratedEvent_NodeRecordExecution{
+			NodeRecordExecution: executionData,
+		},
+	}
+
+	return decoratedEvent, nil
+}
+
+func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu.ConsensusNodeStatus) (*xatu.DecoratedEvent, error) {
+	now := time.Now()
+	eventID := uuid.New()
+
+	meta, err := d.createNewClientMeta(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert ConsensusNodeStatus to noderecord.Consensus
+	consensusData := &noderecord.Consensus{
+		Enr:            &wrapperspb.StringValue{Value: status.GetNodeRecord()},
+		Timestamp:      &wrapperspb.Int64Value{Value: now.Unix()},
+		Name:           &wrapperspb.StringValue{Value: status.GetName()},
+		ForkDigest:     &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetForkDigest())},
+		FinalizedRoot:  &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetFinalizedRoot())},
+		FinalizedEpoch: &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
+		HeadRoot:       &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
+		HeadSlot:       &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
+		Csc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCsc())},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_NODE_RECORD_CONSENSUS,
+			DateTime: timestamppb.New(now),
+			Id:       eventID.String(),
+		},
+		Meta: &xatu.Meta{
+			Client: meta,
+		},
+		Data: &xatu.DecoratedEvent_NodeRecordConsensus{
+			NodeRecordConsensus: consensusData,
+		},
+	}
+
+	return decoratedEvent, nil
+}
+
+// Helper function to convert bytes to uint64.
+func uint64FromBytes(b []byte) uint64 {
+	if len(b) != 8 {
+		return 0
+	}
+
+	return binary.BigEndian.Uint64(b)
 }

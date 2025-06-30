@@ -12,11 +12,36 @@ coordinator:
   exportTimeout: 30s
   maxExportBatchSize: 512
   concurrentExecutionPeers: 100
+  concurrentConsensusPeers: 100
+
+outputs:
+  - name: clickhouse
+    type: xatu
+    config:
+      address: http://localhost:8081
+      headers:
+        authorization: Someb64Value
+  # Example of multiple outputs
+  # - name: local-stdout
+  #   type: stdout
+  # - name: http-server
+  #   type: http
+  #   config:
+  #     address: https://your-webhook-server.com/events
+  #     method: POST
+  #     headers:
+  #       authorization: Bearer your-token
+  # - name: kafka
+  #   type: kafka
+  #   config:
+  #     brokers:
+  #       - localhost:9092
+  #     topic: xatu-events
+  #     compression: snappy
 
 p2p:
   type: static
   config:
-    # Note: both Node Discovery Protocol v4 and v5 can be enabled at the same time
     # enable Node Discovery Protocol v4
     discV4: true
     # enable Node Discovery Protocol v5
@@ -76,4 +101,5 @@ p2p:
   #   discV5: true
   #   restart: 2m
   #   networkIds: [1]
-  #   forkIdHashes: [0xf0afd0e3]
+  #   forkIdHashes: [0xf0afd0e3] # execution layer
+  #   forkDigests: [0x09fb0a12] # consensus layer

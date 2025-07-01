@@ -32,22 +32,20 @@ import (
 )
 
 type Discovery struct {
-	Config *Config
-
-	sinks []output.Sink
-
-	coordinator *coordinator.Client
-
-	p2p    p2p.P2P
-	status *p2p.Status
-
-	log logrus.FieldLogger
-
+	Config         *Config
+	sinks          []output.Sink
+	coordinator    *coordinator.Client
+	p2p            p2p.P2P
+	status         *p2p.Status
+	log            logrus.FieldLogger
 	duplicateCache *cache.DuplicateCache
-
-	id uuid.UUID
-
-	metrics *Metrics
+	id             uuid.UUID
+	metrics        *Metrics
+	scheduler      gocron.Scheduler
+	metricsServer  *http.Server
+	pprofServer    *http.Server
+	ctx            context.Context //nolint:containedctx // requires much larger refactor into channels.
+	cancel         context.CancelFunc
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Discovery, error) {
@@ -94,12 +92,15 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 }
 
 func (d *Discovery) Start(ctx context.Context) error {
-	if err := d.ServeMetrics(ctx); err != nil {
+	// Create a cancellable context for this discovery instance
+	d.ctx, d.cancel = context.WithCancel(ctx)
+
+	if err := d.ServeMetrics(d.ctx); err != nil {
 		return err
 	}
 
 	if d.Config.PProfAddr != nil {
-		if err := d.ServePProf(ctx); err != nil {
+		if err := d.ServePProf(d.ctx); err != nil {
 			return err
 		}
 	}
@@ -109,7 +110,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 		WithField("id", d.id.String()).
 		Info("Starting Xatu in discovery mode")
 
-	if err := d.coordinator.Start(ctx); err != nil {
+	if err := d.coordinator.Start(d.ctx); err != nil {
 		return err
 	}
 
@@ -120,27 +121,32 @@ func (d *Discovery) Start(ctx context.Context) error {
 
 	d.p2p = p2pDisc
 
-	if errP := d.p2p.Start(ctx); errP != nil {
+	if errP := d.p2p.Start(d.ctx); errP != nil {
 		return errP
 	}
 
-	d.status = p2p.NewStatus(ctx, &d.Config.P2P, d.log)
+	status, err := p2p.NewStatus(d.ctx, &d.Config.P2P, d.log, d.Config.BeaconNodeURL)
+	if err != nil {
+		return err
+	}
 
-	if errS := d.status.Start(ctx); errS != nil {
+	d.status = status
+
+	if errS := d.status.Start(d.ctx); errS != nil {
 		return errS
 	}
 
-	d.status.OnExecutionStatus(ctx, d.handleExecutionStatus)
-	d.status.OnConsensusStatus(ctx, d.handleConsensusStatus)
+	d.status.OnExecutionStatus(d.ctx, d.handleExecutionStatus)
+	d.status.OnConsensusStatus(d.ctx, d.handleConsensusStatus)
 
-	if err := d.startCrons(ctx); err != nil {
+	if err := d.startCrons(d.ctx); err != nil {
 		return err
 	}
 
 	for _, sink := range d.sinks {
 		d.log.WithField("type", sink.Type()).WithField("name", sink.Name()).Info("Starting sink")
 
-		if err := sink.Start(ctx); err != nil {
+		if err := sink.Start(d.ctx); err != nil {
 			return err
 		}
 	}
@@ -151,12 +157,48 @@ func (d *Discovery) Start(ctx context.Context) error {
 	sig := <-cancel
 	d.log.Printf("Caught signal: %v", sig)
 
+	// Cancel the context to signal all components to stop
+	if d.cancel != nil {
+		d.cancel()
+	}
+
 	d.log.Printf("Flushing sinks")
 
 	for _, sink := range d.sinks {
 		if err := sink.Stop(ctx); err != nil {
 			return err
 		}
+	}
+
+	// Stop the scheduler
+	if d.scheduler != nil {
+		if err := d.scheduler.Shutdown(); err != nil {
+			d.log.WithError(err).Error("Failed to shutdown scheduler")
+		}
+	}
+
+	// Stop HTTP servers
+	if d.metricsServer != nil {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := d.metricsServer.Shutdown(shutdownCtx); err != nil {
+			d.log.WithError(err).Error("Failed to shutdown metrics server")
+		}
+	}
+
+	if d.pprofServer != nil {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := d.pprofServer.Shutdown(shutdownCtx); err != nil {
+			d.log.WithError(err).Error("Failed to shutdown pprof server")
+		}
+	}
+
+	// Stop duplicate cache
+	if d.duplicateCache != nil {
+		d.duplicateCache.Stop()
 	}
 
 	if d.p2p != nil {
@@ -177,20 +219,20 @@ func (d *Discovery) Start(ctx context.Context) error {
 }
 
 func (d *Discovery) ServeMetrics(ctx context.Context) error {
+	sm := http.NewServeMux()
+	sm.Handle("/metrics", promhttp.Handler())
+
+	d.metricsServer = &http.Server{
+		Addr:              d.Config.MetricsAddr,
+		ReadHeaderTimeout: 15 * time.Second,
+		Handler:           sm,
+	}
+
 	go func() {
-		sm := http.NewServeMux()
-		sm.Handle("/metrics", promhttp.Handler())
-
-		server := &http.Server{
-			Addr:              d.Config.MetricsAddr,
-			ReadHeaderTimeout: 15 * time.Second,
-			Handler:           sm,
-		}
-
 		d.log.Infof("Serving metrics at %s", d.Config.MetricsAddr)
 
-		if err := server.ListenAndServe(); err != nil {
-			d.log.Fatal(err)
+		if err := d.metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			d.log.WithError(err).Error("Metrics server error")
 		}
 	}()
 
@@ -198,7 +240,7 @@ func (d *Discovery) ServeMetrics(ctx context.Context) error {
 }
 
 func (d *Discovery) ServePProf(ctx context.Context) error {
-	pprofServer := &http.Server{
+	d.pprofServer = &http.Server{
 		Addr:              *d.Config.PProfAddr,
 		ReadHeaderTimeout: 120 * time.Second,
 	}
@@ -206,8 +248,8 @@ func (d *Discovery) ServePProf(ctx context.Context) error {
 	go func() {
 		d.log.Infof("Serving pprof at %s", *d.Config.PProfAddr)
 
-		if err := pprofServer.ListenAndServe(); err != nil {
-			d.log.Fatal(err)
+		if err := d.pprofServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			d.log.WithError(err).Error("PProf server error")
 		}
 	}()
 
@@ -215,27 +257,40 @@ func (d *Discovery) ServePProf(ctx context.Context) error {
 }
 
 func (d *Discovery) startCrons(ctx context.Context) error {
-	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
 	if err != nil {
 		return err
 	}
 
-	if _, err := c.NewJob(
+	d.scheduler = scheduler
+
+	if _, err := d.scheduler.NewJob(
 		gocron.DurationJob(5*time.Second),
 		gocron.NewTask(
 			func(ctx context.Context) {
+				// Check if context is cancelled
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
 				d.log.WithFields(logrus.Fields{
 					"records": d.status.ActiveExecution(),
-				}).Info("execution records currently trying to dial")
+				}).Info("Execution records currently trying to dial")
+
 				if d.status.ActiveExecution() == 0 {
-					d.log.Info("no active execution records to dial, requesting stale records from coordinator")
+					d.log.Info("No active execution records to dial, requesting stale records from coordinator")
+
 					nodeRecords, err := d.coordinator.ListStaleExecutionNodeRecords(ctx)
 					if err != nil {
 						d.log.WithError(err).Error("Failed to list stale execution node records")
 
 						return
 					}
+
 					d.log.WithField("records", len(nodeRecords)).Info("Adding stale execution node records to status")
+
 					d.status.AddExecutionNodeRecords(ctx, nodeRecords)
 				}
 			},
@@ -246,22 +301,33 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	if _, err := c.NewJob(
+	if _, err := d.scheduler.NewJob(
 		gocron.DurationJob(5*time.Second),
 		gocron.NewTask(
 			func(ctx context.Context) {
+				// Check if context is cancelled
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
 				d.log.WithFields(logrus.Fields{
 					"records": d.status.ActiveConsensus(),
-				}).Info("consensus records currently trying to dial")
-				if d.status.ActiveExecution() == 0 {
-					d.log.Info("no active consensus records to dial, requesting stale records from coordinator")
+				}).Info("Consensus records currently trying to dial")
+
+				if d.status.ActiveConsensus() == 0 {
+					d.log.Info("No active consensus records to dial, requesting stale records from coordinator")
+
 					nodeRecords, err := d.coordinator.ListStaleConsensusNodeRecords(ctx)
 					if err != nil {
 						d.log.WithError(err).Error("Failed to list stale consensus node records")
 
 						return
 					}
+
 					d.log.WithField("records", len(nodeRecords)).Info("Adding stale consensus node records to status")
+
 					d.status.AddConsensusNodeRecords(ctx, nodeRecords)
 				}
 			},
@@ -272,7 +338,7 @@ func (d *Discovery) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	c.Start()
+	d.scheduler.Start()
 
 	return nil
 }

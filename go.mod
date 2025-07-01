@@ -17,7 +17,7 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/ethpandaops/beacon v0.57.0
-	github.com/ethpandaops/ethcore v0.0.0-20250630021727-5e6c1aedfb85
+	github.com/ethpandaops/ethcore v0.0.0-20250701061457-d06b26ce3502
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v0.1.4
 	github.com/go-co-op/gocron/v2 v2.16.2
@@ -40,6 +40,7 @@ require (
 	github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
+	github.com/protolambda/zrnt v0.34.1
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sony/gobreaker/v2 v2.1.0
@@ -158,6 +159,7 @@ require (
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213 // indirect
+	github.com/kilic/bls12-381 v0.1.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/koron/go-ssdp v0.0.6 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -232,6 +234,8 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/prometheus/prom2json v1.4.1 // indirect
 	github.com/prometheus/prometheus v0.302.1 // indirect
+	github.com/protolambda/bls12-381-util v0.1.0 // indirect
+	github.com/protolambda/ztyp v0.2.2 // indirect
 	github.com/prysmaticlabs/fastssz v0.0.0-20241008181541-518c4ce73516 // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.4-beta.0.20240624100937-73632381301b // indirect

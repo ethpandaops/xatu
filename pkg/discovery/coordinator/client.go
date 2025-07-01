@@ -131,7 +131,6 @@ func (c *Client) ListStaleConsensusNodeRecords(ctx context.Context) ([]string, e
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	records, err := c.pb.ListStalledConsensusNodeRecords(ctx, &req, grpc.UseCompressor(gzip.Name))
-
 	if err != nil {
 		return nil, err
 	}

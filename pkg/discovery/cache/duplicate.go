@@ -9,9 +9,9 @@ import (
 )
 
 type DuplicateCache struct {
-	Node *ttlcache.Cache[string, time.Time]
-
-	metrics *Metrics
+	Node      *ttlcache.Cache[string, time.Time]
+	metrics   *Metrics
+	scheduler gocron.Scheduler
 }
 
 func NewDuplicateCache() *DuplicateCache {
@@ -35,15 +35,21 @@ func (d *DuplicateCache) Start(ctx context.Context) error {
 
 func (d *DuplicateCache) Stop() {
 	d.Node.Stop()
+
+	if d.scheduler != nil {
+		_ = d.scheduler.Shutdown()
+	}
 }
 
 func (d *DuplicateCache) startCrons(ctx context.Context) error {
-	c, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
 	if err != nil {
 		return err
 	}
 
-	if _, err := c.NewJob(
+	d.scheduler = scheduler
+
+	if _, err := d.scheduler.NewJob(
 		gocron.DurationJob(5*time.Second),
 		gocron.NewTask(
 			func(ctx context.Context) {
@@ -60,7 +66,7 @@ func (d *DuplicateCache) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	c.Start()
+	d.scheduler.Start()
 
 	return nil
 }

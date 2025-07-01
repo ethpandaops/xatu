@@ -33,6 +33,8 @@ type Coordinator struct {
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
+
+	scheduler gocron.Scheduler
 }
 
 func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
@@ -102,6 +104,12 @@ func (c *Coordinator) Start(ctx context.Context) error {
 }
 
 func (c *Coordinator) Stop(ctx context.Context) error {
+	if c.scheduler != nil {
+		if err := c.scheduler.Shutdown(); err != nil {
+			c.log.WithError(err).Error("Failed to shutdown scheduler")
+		}
+	}
+
 	if c.config.DiscV4 {
 		if err := c.discV4.Stop(ctx); err != nil {
 			return err
@@ -118,12 +126,14 @@ func (c *Coordinator) Stop(ctx context.Context) error {
 }
 
 func (c *Coordinator) startCrons(ctx context.Context) error {
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
 	if err != nil {
 		return err
 	}
 
-	if _, err := s.NewJob(
+	c.scheduler = scheduler
+
+	if _, err := c.scheduler.NewJob(
 		gocron.DurationJob(c.config.Restart),
 		gocron.NewTask(
 			func(ctx context.Context) {
@@ -171,7 +181,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	if _, err := s.NewJob(
+	if _, err := c.scheduler.NewJob(
 		gocron.DurationJob(c.config.Restart),
 		gocron.NewTask(
 			func(ctx context.Context) {
@@ -219,7 +229,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 		return err
 	}
 
-	s.Start()
+	c.scheduler.Start()
 
 	return nil
 }

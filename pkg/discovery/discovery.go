@@ -79,7 +79,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		TTL: 120 * time.Minute,
 		Metrics: &cache.MetricsConfig{
 			Namespace:      "xatu_discovery",
-			Subsystem:      "cache_duplicate", // This will create metrics like xatu_discovery_cache_duplicate_insertions_total
+			Subsystem:      "cache_duplicate",
 			InstanceLabels: map[string]string{"store": "node"},
 			UpdateInterval: 5 * time.Second,
 			Registerer:     prometheus.DefaultRegisterer,

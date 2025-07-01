@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethpandaops/xatu/pkg/discovery/cache"
+	"github.com/ethpandaops/ethcore/pkg/cache"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -25,6 +25,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -38,7 +39,7 @@ type Discovery struct {
 	p2p            p2p.P2P
 	status         *p2p.Status
 	log            logrus.FieldLogger
-	duplicateCache *cache.DuplicateCache
+	duplicateCache cache.DuplicateCache[string, time.Time]
 	id             uuid.UUID
 	metrics        *Metrics
 	scheduler      gocron.Scheduler
@@ -73,7 +74,19 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, err
 	}
 
-	duplicateCache := cache.NewDuplicateCache()
+	// Configure cache with metrics
+	cacheConfig := cache.Config{
+		TTL: 120 * time.Minute,
+		Metrics: &cache.MetricsConfig{
+			Namespace:      "xatu_discovery",
+			Subsystem:      "cache_duplicate",
+			InstanceLabels: map[string]string{"store": "node"},
+			UpdateInterval: 5 * time.Second,
+			Registerer:     prometheus.DefaultRegisterer,
+		},
+	}
+
+	duplicateCache := cache.NewDuplicateCacheWithConfig[string, time.Time](log, cacheConfig)
 
 	err = duplicateCache.Start(ctx)
 	if err != nil {
@@ -198,7 +211,9 @@ func (d *Discovery) Start(ctx context.Context) error {
 
 	// Stop duplicate cache
 	if d.duplicateCache != nil {
-		d.duplicateCache.Stop()
+		if err := d.duplicateCache.Stop(); err != nil {
+			d.log.WithError(err).Error("Failed to stop duplicate cache")
+		}
 	}
 
 	if d.p2p != nil {
@@ -396,7 +411,7 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 
 	enr := node.String()
 
-	item, retrieved := d.duplicateCache.Node.GetOrSet(enr, time.Now(), ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
+	item, retrieved := d.duplicateCache.GetCache().GetOrSet(enr, time.Now(), ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		d.log.WithFields(logrus.Fields{
 			"enr":                   enr,

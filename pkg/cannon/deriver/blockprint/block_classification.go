@@ -130,10 +130,7 @@ func (b *BlockClassificationDeriver) run(rctx context.Context) {
 				targetEndSlot := phase0.Slot(data.TargetEndSlot)
 
 				// Fetch the range from blockprint using our batch size
-				end := currentSlot + phase0.Slot(b.cfg.BatchSize)
-				if end > targetEndSlot {
-					end = targetEndSlot
-				}
+				end := min(currentSlot+phase0.Slot(b.cfg.BatchSize), targetEndSlot)
 
 				if currentSlot >= end {
 					return "", errors.New("current slot is equal or larger than end slot")

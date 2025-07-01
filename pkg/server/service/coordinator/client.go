@@ -222,8 +222,6 @@ func (c *Client) ListStalledConsensusNodeRecords(ctx context.Context, req *xatu.
 		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get stalled consensus node records from db").Error())
 	}
 
-	fmt.Printf("stalled consensus node records: %v\n", nodeRecords)
-
 	response := &xatu.ListStalledConsensusNodeRecordsResponse{
 		NodeRecords: []string{},
 	}

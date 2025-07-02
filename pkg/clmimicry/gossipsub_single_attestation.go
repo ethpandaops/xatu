@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	ethtypes "github.com/OffchainLabs/prysm/v6/proto/prysm/v1alpha1"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -139,20 +138,9 @@ func (m *Mimicry) createAdditionalGossipSubSingleAttestationData(
 	extra.MessageId = wrapperspb.String(payload.MsgID)
 	extra.MessageSize = wrapperspb.UInt32(uint32(payload.MsgSize))
 
-	// If the attestation is not aggregated, we can append the validator position within the committee.
-	if payload.SingleAttestation.GetAggregationBits().Count() == 1 {
-		validatorIndex, err := m.ethereum.Duties().GetValidatorIndex(
-			phase0.Epoch(epoch.Number()),
-			phase0.Slot(attestationData.GetSlot()),
-			phase0.CommitteeIndex(attestationData.GetCommitteeIndex()),
-			uint64(payload.SingleAttestation.GetAggregationBits().BitIndices()[0]),
-		)
-		if err == nil {
-			extra.AttestingValidator = &xatu.AttestingValidatorV2{
-				CommitteeIndex: &wrapperspb.UInt64Value{Value: uint64(attestationData.GetCommitteeIndex())},
-				Index:          &wrapperspb.UInt64Value{Value: uint64(validatorIndex)},
-			}
-		}
+	extra.AttestingValidator = &xatu.AttestingValidatorV2{
+		CommitteeIndex: &wrapperspb.UInt64Value{Value: uint64(payload.SingleAttestation.CommitteeId)},
+		Index:          &wrapperspb.UInt64Value{Value: uint64(payload.SingleAttestation.AttesterIndex)},
 	}
 
 	return extra, nil

@@ -48,7 +48,7 @@ func NewConsensusCrawler(ctx context.Context, log logrus.FieldLogger, beaconNode
 	// The crawler is noisy, but we want to see INFO logs for debugging
 	// Create a new logger instance specifically for the crawler
 	crawlerLogger := logrus.New()
-	crawlerLogger.SetLevel(logrus.InfoLevel)
+	crawlerLogger.SetLevel(logrus.WarnLevel)
 
 	// Init the crawler.
 	c := crawler.New(crawlerLogger, crawlerConfig, manual)

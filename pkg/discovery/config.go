@@ -15,9 +15,6 @@ type Config struct {
 	MetricsAddr  string  `yaml:"metricsAddr" default:":9090"`
 	PProfAddr    *string `yaml:"pprofAddr"`
 
-	// Beacon node URL for consensus discovery
-	BeaconNodeURL string `yaml:"beaconNodeUrl"`
-
 	// P2P configuration
 	P2P p2p.Config `yaml:"p2p"`
 

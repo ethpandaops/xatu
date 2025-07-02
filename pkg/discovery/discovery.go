@@ -138,7 +138,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return errP
 	}
 
-	status, err := p2p.NewStatus(d.ctx, &d.Config.P2P, d.log, d.Config.BeaconNodeURL)
+	status, err := p2p.NewStatus(d.ctx, &d.Config.P2P, d.log)
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,7 @@ type Status struct {
 	cancel           context.CancelFunc
 }
 
-func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger, beaconNodeURL string) (*Status, error) {
+func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*Status, error) {
 	s := &Status{
 		log:     log.WithField("module", "discovery/p2p"),
 		config:  config,
@@ -39,19 +39,8 @@ func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger, beac
 		metrics: NewMetrics("xatu_discovery"),
 	}
 
-	if beaconNodeURL != "" {
-		entry, ok := log.(*logrus.Entry)
-		if !ok {
-			// If it's a Logger, create an Entry from it
-			if logger, ok := log.(*logrus.Logger); ok {
-				entry = logger.WithFields(logrus.Fields{})
-			} else {
-				// Fallback: create a new entry
-				entry = logrus.NewEntry(logrus.StandardLogger())
-			}
-		}
-
-		// Get the first network ID from config, default to mainnet (1) if not specified
+	if config.BeaconNodeURL != "" {
+		// Get the first network ID from config, default to mainnet (1) if not specified.
 		networkID := uint64(1)
 		networkIDs := config.GetNetworkIDs()
 
@@ -59,7 +48,7 @@ func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger, beac
 			networkID = networkIDs[0]
 		}
 
-		crawler, err := NewConsensusCrawler(ctx, entry, beaconNodeURL, networkID)
+		crawler, err := NewConsensusCrawler(ctx, log, config.BeaconNodeURL, networkID)
 		if err != nil {
 			return nil, err
 		}

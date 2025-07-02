@@ -27,7 +27,7 @@ type ConsensusCrawler struct {
 	mu            sync.RWMutex
 }
 
-func NewConsensusCrawler(ctx context.Context, log *logrus.Entry, beaconNodeURL string, networkID uint64) (*ConsensusCrawler, error) {
+func NewConsensusCrawler(ctx context.Context, log logrus.FieldLogger, beaconNodeURL string, networkID uint64) (*ConsensusCrawler, error) {
 	crawlerConfig := &crawler.Config{
 		Node: &host.Config{
 			IPAddr: net.ParseIP("127.0.0.1"),
@@ -35,10 +35,12 @@ func NewConsensusCrawler(ctx context.Context, log *logrus.Entry, beaconNodeURL s
 		Beacon: &ethereum.Config{
 			BeaconNodeAddress: beaconNodeURL,
 		},
-		DialConcurrency: 10,
-		DialTimeout:     5 * time.Second,
-		CooloffDuration: 10 * time.Second,
-		UserAgent:       xatu.Full(),
+		DialConcurrency:  10,
+		DialTimeout:      5 * time.Second,
+		CooloffDuration:  10 * time.Second,
+		UserAgent:        xatu.Full(),
+		MaxRetryAttempts: 3,
+		RetryBackoff:     10 * time.Second,
 	}
 
 	manual := &discovery.Manual{}
@@ -46,9 +48,7 @@ func NewConsensusCrawler(ctx context.Context, log *logrus.Entry, beaconNodeURL s
 	// The crawler is noisy, but we want to see INFO logs for debugging
 	// Create a new logger instance specifically for the crawler
 	crawlerLogger := logrus.New()
-	crawlerLogger.SetLevel(logrus.WarnLevel)
-	crawlerLogger.SetFormatter(log.Logger.Formatter)
-	crawlerLogger.SetOutput(log.Logger.Out)
+	crawlerLogger.SetLevel(logrus.InfoLevel)
 
 	// Init the crawler.
 	c := crawler.New(crawlerLogger, crawlerConfig, manual)

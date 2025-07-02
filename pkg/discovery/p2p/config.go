@@ -15,6 +15,9 @@ import (
 type Config struct {
 	Type Type `yaml:"type"`
 
+	// Beacon node URL for consensus discovery.
+	BeaconNodeURL string `yaml:"beaconNodeUrl"`
+
 	Config *RawMessage `yaml:"config"`
 }
 

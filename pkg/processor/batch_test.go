@@ -798,7 +798,7 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 		nullLogger(),
 		WithBatchTimeout(10*time.Minute),
 		WithMaxQueueSize(maxQueueSize),
-		WithMaxExportBatchSize(maxQueueSize), // Use same as queue size
+		WithMaxExportBatchSize(maxQueueSize),
 		WithWorkers(1),
 		WithShippingMethod(ShippingMethodAsync),
 		WithMetrics(metrics),

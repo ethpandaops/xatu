@@ -211,7 +211,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 	}
 }
 
-func (s *Status) AddConsensusNodeRecords(ctx context.Context, nodeRecords []string) {
+func (s *Status) AddConsensusNodeRecords(_ context.Context, nodeRecords []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.activeConsensus += len(nodeRecords)
@@ -228,88 +228,82 @@ func (s *Status) AddConsensusNodeRecords(ctx context.Context, nodeRecords []stri
 				return
 			}
 
-			_ = retry.Do(
-				func() error {
-					// Check for cancellation before each attempt
-					select {
-					case <-s.ctx.Done():
-						return retry.Unrecoverable(s.ctx.Err())
-					default:
-					}
+			// Check for cancellation before proceeding
+			select {
+			case <-s.ctx.Done():
+				return
+			default:
+			}
 
-					if s.consensusCrawler == nil {
-						return errors.New("consensus crawler not initialized")
-					}
+			if s.consensusCrawler == nil {
+				s.log.Error("consensus crawler not initialized")
 
-					handler := func(status *xatu.ConsensusNodeStatus) {
-						s.publishConsensusStatus(s.ctx, status)
-					}
+				s.mu.Lock()
 
-					peer, err := NewConsensusPeer(s.ctx, s.log, record, handler, s.consensusCrawler)
-					if err != nil {
-						return err
-					}
+				s.activeConsensus--
+				s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
 
-					var response error
+				s.mu.Unlock()
 
-					connected := false
+				return
+			}
 
-					defer func() {
-						if peer != nil {
-							status := "failed"
+			handler := func(status *xatu.ConsensusNodeStatus) {
+				s.publishConsensusStatus(s.ctx, status)
+			}
 
-							if connected {
-								status = "success"
-							}
+			peer, err := NewConsensusPeer(s.ctx, s.log, record, handler, s.consensusCrawler)
+			if err != nil {
+				s.log.WithError(err).Debug("failed to create consensus peer")
 
-							s.metrics.AddDialedNodeRecod(1, status, "consensus")
+				s.mu.Lock()
 
-							if err = peer.Stop(s.ctx); err != nil {
-								s.log.WithError(err).Warn("failed to stop peer")
-							}
-						}
-					}()
+				s.activeConsensus--
+				s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
 
-					disconnect := peer.Start(s.ctx)
+				s.mu.Unlock()
 
-					// Use context-aware timeout
-					timer := time.NewTimer(30 * time.Second)
-					defer timer.Stop()
+				return
+			}
 
-					select {
-					case response = <-disconnect:
-					case <-timer.C:
-						response = errors.New("timeout")
-					case <-s.ctx.Done():
-						response = s.ctx.Err()
-					}
-
-					if response == nil {
-						connected = true
-					}
-
-					return response
-				},
-				retry.Attempts(5),
-				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					// Check for cancellation during delay
-					select {
-					case <-s.ctx.Done():
-						return 0
-					default:
-						return 5 * time.Second
-					}
-				}),
-				retry.RetryIf(func(err error) bool {
-					// Don't retry if context is cancelled
-					select {
-					case <-s.ctx.Done():
-						return false
-					default:
-						return true
-					}
-				}),
+			var (
+				response  error
+				connected = false
 			)
+
+			defer func() {
+				if peer != nil {
+					status := "failed"
+
+					if connected {
+						status = "success"
+					}
+
+					s.metrics.AddDialedNodeRecod(1, status, "consensus")
+
+					if err = peer.Stop(s.ctx); err != nil {
+						s.log.WithError(err).Warn("failed to stop peer")
+					}
+				}
+			}()
+
+			disconnect := peer.Start(s.ctx)
+
+			// Use context-aware timeout
+			timer := time.NewTimer(30 * time.Second)
+			defer timer.Stop()
+
+			select {
+			case response = <-disconnect:
+			case <-timer.C:
+				response = errors.New("timeout")
+			case <-s.ctx.Done():
+				response = s.ctx.Err()
+			}
+
+			if response == nil {
+				connected = true
+			}
 
 			s.mu.Lock()
 			defer s.mu.Unlock()

@@ -39,8 +39,8 @@ func NewConsensusCrawler(ctx context.Context, log logrus.FieldLogger, beaconNode
 		DialTimeout:      5 * time.Second,
 		CooloffDuration:  10 * time.Second,
 		UserAgent:        xatu.Full(),
-		MaxRetryAttempts: 3,
-		RetryBackoff:     10 * time.Second,
+		MaxRetryAttempts: 1,
+		RetryBackoff:     2 * time.Second,
 	}
 
 	manual := &discovery.Manual{}

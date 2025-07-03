@@ -7,6 +7,7 @@ cl-mimicry.yaml
 el-mimicry.yaml
 cannon.yaml
 sage.yaml
+ethstats.yaml
 dist
 GeoLite2-ASN.mmdb
 GeoLite2-City.mmdb

@@ -15,7 +15,30 @@ import (
 type Config struct {
 	Type Type `yaml:"type"`
 
+	// Beacon node URL for consensus discovery.
+	BeaconNodeURL string `yaml:"beaconNodeUrl"`
+
 	Config *RawMessage `yaml:"config"`
+}
+
+// GetNetworkIDs extracts network IDs from the p2p config based on its type.
+func (c *Config) GetNetworkIDs() []uint64 {
+	if c.Config == nil {
+		return nil
+	}
+
+	switch c.Type {
+	case TypeXatu:
+		conf := &xatu.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return nil
+		}
+
+		return conf.NetworkIds
+	default:
+		// Static and other types don't have network IDs configured
+		return nil
+	}
 }
 
 func (c *Config) Validate() error {

@@ -14,36 +14,80 @@ import (
 
 const (
 	topicExecutionStatus = "execution_status"
+	topicConsensusStatus = "consensus_status"
 )
 
 type Status struct {
-	config *Config
-
-	log logrus.FieldLogger
-
-	broker *emission.Emitter
-
-	activeExecution int
-
-	mu sync.Mutex
-
-	metrics *Metrics
+	config           *Config
+	log              logrus.FieldLogger
+	broker           *emission.Emitter
+	activeExecution  int
+	activeConsensus  int
+	mu               sync.Mutex
+	metrics          *Metrics
+	consensusCrawler *ConsensusCrawler
+	activeWorkers    sync.WaitGroup
+	ctx              context.Context //nolint:containedctx // requires much larger refactor into channels.
+	cancel           context.CancelFunc
 }
 
-func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) *Status {
-	return &Status{
+func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*Status, error) {
+	s := &Status{
 		log:     log.WithField("module", "discovery/p2p"),
 		config:  config,
 		broker:  emission.NewEmitter(),
 		metrics: NewMetrics("xatu_discovery"),
 	}
+
+	if config.BeaconNodeURL != "" {
+		// Get the first network ID from config, default to mainnet (1) if not specified.
+		networkID := uint64(1)
+		networkIDs := config.GetNetworkIDs()
+
+		if len(networkIDs) > 0 {
+			networkID = networkIDs[0]
+		}
+
+		crawler, err := NewConsensusCrawler(ctx, log, config.BeaconNodeURL, networkID)
+		if err != nil {
+			return nil, err
+		}
+
+		s.consensusCrawler = crawler
+	}
+
+	return s, nil
 }
 
 func (s *Status) Start(ctx context.Context) error {
+	s.ctx, s.cancel = context.WithCancel(ctx)
 	return nil
 }
 
 func (s *Status) Stop(ctx context.Context) error {
+	// Cancel the context to signal all workers to stop
+	if s.cancel != nil {
+		s.cancel()
+	}
+
+	// Wait for active workers with timeout
+	done := make(chan struct{})
+	go func() {
+		s.activeWorkers.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		s.log.Info("All active workers finished")
+	case <-time.After(5 * time.Second):
+		s.log.Warn("Timeout waiting for active workers to finish")
+	}
+
+	if s.consensusCrawler != nil {
+		return s.consensusCrawler.Stop(ctx)
+	}
+
 	return nil
 }
 
@@ -54,6 +98,13 @@ func (s *Status) ActiveExecution() int {
 	return s.activeExecution
 }
 
+func (s *Status) ActiveConsensus() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.activeConsensus
+}
+
 func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -61,10 +112,26 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 	s.metrics.SetActiveDialingNodeRecods(s.activeExecution, "execution")
 
 	for _, nodeRecord := range nodeRecords {
+		s.activeWorkers.Add(1)
+
 		go func(record string) {
+			defer s.activeWorkers.Done()
+
+			// Check if context is already cancelled
+			if s.ctx.Err() != nil {
+				return
+			}
+
 			_ = retry.Do(
 				func() error {
-					peer, err := NewPeer(ctx, s.log, record, s.publishExecutionStatus)
+					// Check for cancellation before each attempt
+					select {
+					case <-s.ctx.Done():
+						return retry.Unrecoverable(s.ctx.Err())
+					default:
+					}
+
+					peer, err := NewExecutionPeer(s.ctx, s.log, record, s.publishExecutionStatus)
 					if err != nil {
 						return err
 					}
@@ -81,25 +148,29 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 								status = "success"
 							}
 
-							s.metrics.AddDialedNodeRecod(1, status)
+							s.metrics.AddDialedNodeRecod(1, status, "execution")
 
-							if err = peer.Stop(ctx); err != nil {
+							if err = peer.Stop(s.ctx); err != nil {
 								s.log.WithError(err).Warn("failed to stop peer")
 							}
 						}
 					}()
 
-					disconnect, err := peer.Start(ctx)
+					disconnect, err := peer.Start(s.ctx)
 					if err != nil {
 						return err
 					}
 
-					timeout := time.After(15 * time.Second)
+					// Use context-aware timeout
+					timer := time.NewTimer(15 * time.Second)
+					defer timer.Stop()
 
 					select {
 					case response = <-disconnect:
-					case <-timeout:
+					case <-timer.C:
 						response = errors.New("timeout")
+					case <-s.ctx.Done():
+						response = s.ctx.Err()
 					}
 
 					if response == nil {
@@ -110,9 +181,24 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 				},
 				retry.Attempts(5),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					s.log.WithError(err).Debug("peer failed")
+					// Check for cancellation during delay
+					select {
+					case <-s.ctx.Done():
+						return 0
+					default:
+						s.log.WithError(err).Debug("peer failed")
 
-					return 5 * time.Second
+						return 5 * time.Second
+					}
+				}),
+				retry.RetryIf(func(err error) bool {
+					// Don't retry if context is cancelled
+					select {
+					case <-s.ctx.Done():
+						return false
+					default:
+						return true
+					}
 				}),
 			)
 
@@ -125,8 +211,115 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 	}
 }
 
-func (s *Status) publishExecutionStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) {
+func (s *Status) AddConsensusNodeRecords(_ context.Context, nodeRecords []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.activeConsensus += len(nodeRecords)
+	s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
+
+	for _, nodeRecord := range nodeRecords {
+		s.activeWorkers.Add(1)
+
+		go func(record string) {
+			defer s.activeWorkers.Done()
+
+			// Check if context is already cancelled
+			if s.ctx.Err() != nil {
+				return
+			}
+
+			// Check for cancellation before proceeding
+			select {
+			case <-s.ctx.Done():
+				return
+			default:
+			}
+
+			if s.consensusCrawler == nil {
+				s.log.Error("consensus crawler not initialized")
+
+				s.mu.Lock()
+
+				s.activeConsensus--
+				s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
+
+				s.mu.Unlock()
+
+				return
+			}
+
+			handler := func(status *xatu.ConsensusNodeStatus) {
+				s.publishConsensusStatus(s.ctx, status)
+			}
+
+			peer, err := NewConsensusPeer(s.ctx, s.log, record, handler, s.consensusCrawler)
+			if err != nil {
+				s.log.WithError(err).Debug("failed to create consensus peer")
+
+				s.mu.Lock()
+
+				s.activeConsensus--
+				s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
+
+				s.mu.Unlock()
+
+				return
+			}
+
+			var (
+				response  error
+				connected = false
+			)
+
+			defer func() {
+				if peer != nil {
+					status := "failed"
+
+					if connected {
+						status = "success"
+					}
+
+					s.metrics.AddDialedNodeRecod(1, status, "consensus")
+
+					if err = peer.Stop(s.ctx); err != nil {
+						s.log.WithError(err).Warn("failed to stop peer")
+					}
+				}
+			}()
+
+			disconnect := peer.Start(s.ctx)
+
+			// Use context-aware timeout
+			timer := time.NewTimer(30 * time.Second)
+			defer timer.Stop()
+
+			select {
+			case response = <-disconnect:
+			case <-timer.C:
+				response = errors.New("timeout")
+			case <-s.ctx.Done():
+				response = s.ctx.Err()
+			}
+
+			if response == nil {
+				connected = true
+			}
+
+			s.mu.Lock()
+			defer s.mu.Unlock()
+
+			s.activeConsensus--
+			s.metrics.SetActiveDialingNodeRecods(s.activeConsensus, "consensus")
+		}(nodeRecord)
+	}
+}
+
+func (s *Status) publishExecutionStatus(_ context.Context, status *xatu.ExecutionNodeStatus) {
 	s.broker.Emit(topicExecutionStatus, status)
+}
+
+func (s *Status) publishConsensusStatus(_ context.Context, status *xatu.ConsensusNodeStatus) {
+	s.broker.Emit(topicConsensusStatus, status)
 }
 
 func (s *Status) handleSubscriberError(err error, topic string) {
@@ -138,5 +331,11 @@ func (s *Status) handleSubscriberError(err error, topic string) {
 func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error) {
 	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
 		s.handleSubscriberError(handler(ctx, status), topicExecutionStatus)
+	})
+}
+
+func (s *Status) OnConsensusStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ConsensusNodeStatus) error) {
+	s.broker.On(topicConsensusStatus, func(status *xatu.ConsensusNodeStatus) {
+		s.handleSubscriberError(handler(ctx, status), topicConsensusStatus)
 	})
 }

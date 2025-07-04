@@ -907,7 +907,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate peer id unique key"
@@ -999,7 +999,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate peer id unique key"
@@ -1161,7 +1161,7 @@ transforms:
       .state_root = .data.state_root
       .parent_root = .data.parent_root
 
-      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta.ethereum.network.name
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate peer id unique key"
@@ -1209,7 +1209,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      peer_id_key, err = .data.peer_id + .meta.ethereum.network.name
+      peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate peer id unique key"
@@ -1265,7 +1265,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      peer_id_key, err = .data.peer_id + .meta.ethereum.network.name
+      peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate peer id unique key"

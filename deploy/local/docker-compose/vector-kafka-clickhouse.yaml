@@ -2198,7 +2198,7 @@ transforms:
       .name = .data.name
       # Parse capabilities string into array
       if exists(.data.capabilities) && .data.capabilities != null {
-        .capabilities = split(.data.capabilities, ",")
+        .capabilities = split!(.data.capabilities, ",")
       } else {
         .capabilities = []
       }

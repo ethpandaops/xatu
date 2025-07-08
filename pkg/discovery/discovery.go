@@ -17,6 +17,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/cache"
+	"github.com/ethpandaops/ethcore/pkg/ethereum/networks"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -431,7 +432,15 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 	return nil
 }
 
-func (d *Discovery) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+func (d *Discovery) createNewClientMeta(_ context.Context, networkID uint64) (*xatu.ClientMeta, error) {
+	var (
+		network     = networks.DeriveFromID(networkID)
+		networkMeta = &xatu.ClientMeta_Ethereum_Network{
+			Name: string(network.Name),
+			Id:   network.ID,
+		}
+	)
+
 	return &xatu.ClientMeta{
 		Name:           "xatu-discovery", // Fixed client name
 		Version:        xatu.Short(),
@@ -439,6 +448,9 @@ func (d *Discovery) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, 
 		Implementation: xatu.Implementation,
 		ModuleName:     xatu.ModuleName_DISCOVERY,
 		Os:             runtime.GOOS,
+		Ethereum: &xatu.ClientMeta_Ethereum{
+			Network: networkMeta,
+		},
 	}, nil
 }
 
@@ -446,7 +458,7 @@ func (d *Discovery) createExecutionStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx)
+	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +506,7 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx)
+	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}

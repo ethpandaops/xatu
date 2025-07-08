@@ -319,6 +319,8 @@ func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.
 
 	st := node.Consensus{
 		Enr:            req.Status.NodeRecord,
+		NodeID:         req.Status.NodeId,
+		PeerID:         req.Status.PeerId,
 		CreateTime:     time.Now(),
 		Name:           req.Status.Name,
 		ForkDigest:     req.Status.ForkDigest,
@@ -326,7 +328,7 @@ func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.
 		FinalizedEpoch: req.Status.FinalizedEpoch,
 		HeadRoot:       req.Status.HeadRoot,
 		HeadSlot:       req.Status.HeadSlot,
-		CSC:            req.Status.Csc,
+		CGC:            req.Status.Cgc,
 		NetworkID:      fmt.Sprintf("%v", req.Status.NetworkId),
 	}
 
@@ -348,7 +350,7 @@ func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.
 		Enr:                     req.Status.NodeRecord,
 		LastConnectTime:         sql.NullTime{Time: time.Now(), Valid: true},
 		ConsecutiveDialAttempts: 0,
-		CSC:                     &req.Status.Csc,
+		CGC:                     &req.Status.Cgc,
 	}
 
 	err = c.persistence.UpdateNodeRecord(ctx, nodeRecord)

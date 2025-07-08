@@ -2,12 +2,13 @@
 ALTER TABLE node_record ALTER COLUMN enr TYPE VARCHAR(1000);
 ALTER TABLE node_record_execution ALTER COLUMN enr TYPE VARCHAR(1000);
 ALTER TABLE node_record_activity ALTER COLUMN enr TYPE VARCHAR(1000);
-
-ALTER TABLE node_record ADD COLUMN csc BYTEA;
+ALTER TABLE node_record ADD COLUMN cgc BYTEA;
 
 CREATE TABLE node_record_consensus (
   consensus_id SERIAL PRIMARY KEY,
   enr VARCHAR(1000) NOT NULL,
+  node_id VARCHAR(128),
+  peer_id VARCHAR(128),
   create_time TIMESTAMPTZ NOT NULL DEFAULT now(),
   name VARCHAR(256),
   fork_digest BYTEA,
@@ -15,7 +16,7 @@ CREATE TABLE node_record_consensus (
   finalized_epoch BYTEA,
   head_root BYTEA,
   head_slot BYTEA,
-  csc BYTEA,
+  cgc BYTEA,
   network_id VARCHAR(256),
   CONSTRAINT fk_node_record FOREIGN KEY (enr) REFERENCES node_record(enr)
 );

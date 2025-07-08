@@ -502,6 +502,8 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	// Convert ConsensusNodeStatus to noderecord.Consensus
 	consensusData := &noderecord.Consensus{
 		Enr:            &wrapperspb.StringValue{Value: status.GetNodeRecord()},
+		NodeId:         &wrapperspb.StringValue{Value: status.GetNodeId()},
+		PeerId:         &wrapperspb.StringValue{Value: status.GetPeerId()},
 		Timestamp:      &wrapperspb.Int64Value{Value: now.Unix()},
 		Name:           &wrapperspb.StringValue{Value: status.GetName()},
 		ForkDigest:     &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetForkDigest())},
@@ -509,7 +511,7 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 		FinalizedEpoch: &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
 		HeadRoot:       &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
 		HeadSlot:       &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
-		Csc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCsc())},
+		Cgc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCgc())},
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{

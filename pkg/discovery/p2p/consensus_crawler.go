@@ -117,8 +117,20 @@ func (c *ConsensusCrawler) handleSuccessfulCrawl(peerID peer.ID, enr *enode.Node
 		return
 	}
 
+	// Extract node_id and peer_id.
+	var (
+		nodeID    string
+		peerIDStr = peerID.String()
+	)
+
+	if enr != nil {
+		nodeID = enr.ID().String()
+	}
+
 	nodeStatus := &xatu.ConsensusNodeStatus{
 		NodeRecord:     nodeRecord,
+		NodeId:         nodeID,
+		PeerId:         peerIDStr,
 		Name:           agentVersion,
 		ForkDigest:     status.ForkDigest[:],
 		FinalizedRoot:  status.FinalizedRoot[:],

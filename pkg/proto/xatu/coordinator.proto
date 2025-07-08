@@ -99,8 +99,10 @@ message ConsensusNodeStatus {
   bytes finalized_epoch = 5;
   bytes head_root = 6;
   bytes head_slot = 7;
-  bytes csc = 8;
+  bytes cgc = 8;
   uint64 network_id = 9;
+  string node_id = 10;
+  string peer_id = 11;
 }
 
 message ListStalledConsensusNodeRecordsRequest { int32 page_size = 1; }

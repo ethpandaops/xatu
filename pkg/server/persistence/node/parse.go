@@ -37,10 +37,6 @@ func Parse(record string) (*Record, error) {
 		return nil, fmt.Errorf("failed to parse enr: %w", err)
 	}
 
-	fmt.Printf("Here we are1: %v\n", record)
-	fmt.Printf("Here we are2: %v\n", n)
-	fmt.Printf("Here we are3: %v\n", n.ID().String())
-
 	return &Record{
 		Enr:       record,
 		Signature: parseSignature(n),

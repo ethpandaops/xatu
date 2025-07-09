@@ -2162,7 +2162,7 @@ transforms:
       }
 
       # Handle potentially null peer_id
-      if exists(.data.peer_id) && .data.peer_id != null {
+      if exists(.data.peer_id) && .data.peer_id != null && .data.peer_id != "" {
         peer_id_key, err = .data.peer_id + .meta.client.ethereum.network.name
         if err != null {
           .error = err
@@ -2180,7 +2180,7 @@ transforms:
       .enr = .data.enr
 
       # Handle potentially null node_id
-      if exists(.data.node_id) && .data.node_id != null {
+      if exists(.data.node_id) && .data.node_id != null && .data.node_id != "" {
         .node_id = .data.node_id
       } else {
         .node_id = null

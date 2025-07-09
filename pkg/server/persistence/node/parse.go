@@ -27,9 +27,9 @@ type syncnets []byte
 
 func (syncnets) ENRKey() string { return "syncnets" }
 
-type csc []byte
+type cgc []byte
 
-func (csc) ENRKey() string { return "csc" }
+func (cgc) ENRKey() string { return "cgc" }
 
 func Parse(record string) (*Record, error) {
 	n, err := enode.Parse(enode.ValidSchemes, record)
@@ -52,7 +52,7 @@ func Parse(record string) (*Record, error) {
 		ETH2:      parseETH2(n),
 		Attnets:   parseAttnets(n),
 		Syncnets:  parseSyncnets(n),
-		CSC:       parseCSC(n),
+		CGC:       parseCGC(n),
 		NodeID:    parseNodeID(n),
 		PeerID:    parsePeerID(n),
 	}, nil
@@ -214,8 +214,8 @@ func parseSyncnets(node *enode.Node) *[]byte {
 	return &f
 }
 
-func parseCSC(node *enode.Node) *[]byte {
-	field := csc{}
+func parseCGC(node *enode.Node) *[]byte {
+	field := cgc{}
 
 	err := node.Record().Load(&field)
 

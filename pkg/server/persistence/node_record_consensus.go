@@ -15,6 +15,8 @@ func (c *Client) InsertNodeRecordConsensus(ctx context.Context, record *node.Con
 	items := []interface{}{
 		sqlbuilder.Raw("DEFAULT"),
 		record.Enr,
+		record.NodeID,
+		record.PeerID,
 		record.CreateTime,
 		record.Name,
 		record.ForkDigest,
@@ -22,7 +24,7 @@ func (c *Client) InsertNodeRecordConsensus(ctx context.Context, record *node.Con
 		record.FinalizedEpoch,
 		record.HeadRoot,
 		record.HeadSlot,
-		record.CSC,
+		record.CGC,
 		record.NetworkID,
 	}
 

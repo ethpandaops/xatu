@@ -9,12 +9,14 @@ import "google/protobuf/timestamp.proto";
 
 message Consensus {
   google.protobuf.StringValue enr = 1;
-  google.protobuf.Int64Value timestamp = 2;
-  google.protobuf.StringValue name = 3;
-  google.protobuf.StringValue fork_digest = 4 [json_name = "fork_digest"];
-  google.protobuf.StringValue finalized_root = 5 [json_name = "finalized_root"];
-  google.protobuf.UInt64Value finalized_epoch = 6 [json_name = "finalized_epoch"];
-  google.protobuf.StringValue head_root = 7 [json_name = "head_root"];
-  google.protobuf.UInt64Value head_slot = 8 [json_name = "head_slot"];
-  google.protobuf.StringValue csc = 9;
+  google.protobuf.StringValue node_id = 2 [json_name = "node_id"];
+  google.protobuf.StringValue peer_id = 3 [json_name = "peer_id"];
+  google.protobuf.Int64Value timestamp = 4;
+  google.protobuf.StringValue name = 5;
+  google.protobuf.StringValue fork_digest = 6 [json_name = "fork_digest"];
+  google.protobuf.StringValue finalized_root = 7 [json_name = "finalized_root"];
+  google.protobuf.UInt64Value finalized_epoch = 8 [json_name = "finalized_epoch"];
+  google.protobuf.StringValue head_root = 9 [json_name = "head_root"];
+  google.protobuf.UInt64Value head_slot = 10 [json_name = "head_slot"];
+  google.protobuf.StringValue cgc = 11;
 }

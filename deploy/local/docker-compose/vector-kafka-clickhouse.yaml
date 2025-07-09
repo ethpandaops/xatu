@@ -2135,7 +2135,7 @@ transforms:
       }
 
       .relay_name = .meta.client.additional_data.relay.name
-   
+
 
       .updated_date_time = to_unix_timestamp(now())
 
@@ -2160,7 +2160,32 @@ transforms:
         .error_description = "failed to parse event date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+
+      # Handle potentially null peer_id
+      if exists(.data.peer_id) && .data.peer_id != null && .data.peer_id != "" {
+        peer_id_key, err = .data.peer_id + .meta.client.ethereum.network.name
+        if err != null {
+          .error = err
+          .error_description = "failed to generate peer id unique key"
+          log(., level: "error", rate_limit_secs: 60)
+        } else {
+          .peer_id_unique_key = seahash(peer_id_key)
+        }
+        .peer_id = .data.peer_id
+      } else {
+        .peer_id = null
+        .peer_id_unique_key = null
+      }
+
       .enr = .data.enr
+
+      # Handle potentially null node_id
+      if exists(.data.node_id) && .data.node_id != null && .data.node_id != "" {
+        .node_id = .data.node_id
+      } else {
+        .node_id = null
+      }
+
       .timestamp = .data.timestamp
       .name = .data.name
       .fork_digest = .data.fork_digest
@@ -2168,7 +2193,7 @@ transforms:
       .finalized_epoch = .data.finalized_epoch
       .head_root = .data.head_root
       .head_slot = .data.head_slot
-      .csc = .data.csc
+      .cgc = .data.cgc
       .updated_date_time = to_unix_timestamp(now())
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id

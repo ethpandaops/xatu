@@ -17,6 +17,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/cache"
+	"github.com/ethpandaops/ethcore/pkg/ethereum/networks"
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -431,7 +432,15 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 	return nil
 }
 
-func (d *Discovery) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+func (d *Discovery) createNewClientMeta(_ context.Context, networkID uint64) (*xatu.ClientMeta, error) {
+	var (
+		network     = networks.DeriveFromID(networkID)
+		networkMeta = &xatu.ClientMeta_Ethereum_Network{
+			Name: string(network.Name),
+			Id:   network.ID,
+		}
+	)
+
 	return &xatu.ClientMeta{
 		Name:           "xatu-discovery", // Fixed client name
 		Version:        xatu.Short(),
@@ -439,6 +448,9 @@ func (d *Discovery) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, 
 		Implementation: xatu.Implementation,
 		ModuleName:     xatu.ModuleName_DISCOVERY,
 		Os:             runtime.GOOS,
+		Ethereum: &xatu.ClientMeta_Ethereum{
+			Network: networkMeta,
+		},
 	}, nil
 }
 
@@ -446,7 +458,7 @@ func (d *Discovery) createExecutionStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx)
+	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +506,7 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx)
+	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}
@@ -502,6 +514,8 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	// Convert ConsensusNodeStatus to noderecord.Consensus
 	consensusData := &noderecord.Consensus{
 		Enr:            &wrapperspb.StringValue{Value: status.GetNodeRecord()},
+		NodeId:         &wrapperspb.StringValue{Value: status.GetNodeId()},
+		PeerId:         &wrapperspb.StringValue{Value: status.GetPeerId()},
 		Timestamp:      &wrapperspb.Int64Value{Value: now.Unix()},
 		Name:           &wrapperspb.StringValue{Value: status.GetName()},
 		ForkDigest:     &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetForkDigest())},
@@ -509,7 +523,7 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 		FinalizedEpoch: &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
 		HeadRoot:       &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
 		HeadSlot:       &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
-		Csc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCsc())},
+		Cgc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCgc())},
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{

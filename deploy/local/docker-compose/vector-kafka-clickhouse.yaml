@@ -2178,12 +2178,14 @@ transforms:
       }
 
       .enr = .data.enr
+
       # Handle potentially null node_id
       if exists(.data.node_id) && .data.node_id != null {
         .node_id = .data.node_id
       } else {
         .node_id = null
       }
+
       .timestamp = .data.timestamp
       .name = .data.name
       .fork_digest = .data.fork_digest

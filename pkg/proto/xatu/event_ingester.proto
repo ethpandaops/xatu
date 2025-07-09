@@ -31,6 +31,9 @@ import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
 
+import "pkg/proto/noderecord/consensus.proto";
+import "pkg/proto/noderecord/execution.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -1132,6 +1135,16 @@ message ClientMeta {
     google.protobuf.UInt64Value validator_index = 6 [ json_name = "validator_index" ];
   }
 
+  // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+  message AdditionalNodeRecordConsensusData {
+    // FinalizedEpoch is the epoch the node record consensus was received for.
+    EpochV2 finalized_epoch = 2;
+    // HeadSlot is the slot the node record consensus was received for.
+    SlotV2 head_slot = 3;
+    // HeadEpoch is the epoch the node record consensus was received for.
+    EpochV2 head_epoch = 4;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1359,6 +1372,9 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+  
+    // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+    AdditionalNodeRecordConsensusData node_record_consensus = 83 [ json_name = "NODE_RECORD_CONSENSUS" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1535,6 +1551,8 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
     LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
     LIBP2P_TRACE_RPC_META_MESSAGE = 71;
+    NODE_RECORD_CONSENSUS = 72;
+    NODE_RECORD_EXECUTION = 73;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1711,6 +1729,11 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+
+    xatu.noderecord.Consensus node_record_consensus = 73
+        [ json_name = "NODE_RECORD_CONSENSUS" ];
+    xatu.noderecord.Execution node_record_execution = 74
+        [ json_name = "NODE_RECORD_EXECUTION" ];
   };
 }
 

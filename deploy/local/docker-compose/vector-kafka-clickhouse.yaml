@@ -2154,7 +2154,7 @@ transforms:
     source: |-
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time)
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
       } else {
         .error = err
         .error_description = "failed to parse event date time"

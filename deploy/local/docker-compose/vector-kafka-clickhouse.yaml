@@ -2213,20 +2213,23 @@ transforms:
     source: |-
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time)
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
       } else {
         .error = err
         .error_description = "failed to parse event date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+
       .enr = .data.enr
       .name = .data.name
+
       # Parse capabilities string into array
       if exists(.data.capabilities) && .data.capabilities != null {
         .capabilities = split!(.data.capabilities, ",")
       } else {
         .capabilities = []
       }
+      
       .protocol_version = .data.protocol_version
       .total_difficulty = .data.total_difficulty
       .head = .data.head

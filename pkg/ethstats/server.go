@@ -154,18 +154,28 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Log connection attempt
 	s.log.WithFields(logrus.Fields{
-		"ip":     ip,
-		"uri":    r.RequestURI,
-		"origin": r.Header.Get("Origin"),
-	}).Debug("WebSocket connection attempt")
+		"ip":      ip,
+		"uri":     r.RequestURI,
+		"path":    r.URL.Path,
+		"origin":  r.Header.Get("Origin"),
+		"headers": r.Header,
+	}).Info("WebSocket connection attempt")
 
 	// Upgrade to WebSocket
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.log.WithError(err).Error("Failed to upgrade connection")
+		s.log.WithError(err).WithFields(logrus.Fields{
+			"headers": r.Header,
+			"method":  r.Method,
+		}).Error("Failed to upgrade connection")
 
 		return
 	}
+
+	s.log.WithFields(logrus.Fields{
+		"remote_addr": conn.RemoteAddr().String(),
+		"local_addr":  conn.LocalAddr().String(),
+	}).Info("WebSocket upgrade successful")
 
 	// Create client
 	client := connection.NewClient(conn, ip)
@@ -178,14 +188,36 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle client in goroutine
-	go s.handleClient(r.Context(), client)
+	s.log.WithFields(logrus.Fields{
+		"client_id": client.ID(),
+		"ip":        ip,
+	}).Info("Client connected")
+
+	// Handle client in goroutine with background context
+	// Don't use r.Context() as it gets cancelled when the HTTP handler returns
+	go s.handleClient(context.Background(), client)
 }
 
 func (s *Server) handleClient(ctx context.Context, client *connection.Client) {
+	// Store the initial temporary ID assigned by the manager
+	tempID := fmt.Sprintf("temp_%p", client)
+	s.log.WithField("temp_id", tempID).Info("Starting client handler")
+
 	defer func() {
+		clientID := client.ID()
+		// Use the actual client ID if set, otherwise use the temp ID
+		removeID := clientID
+		if removeID == "" {
+			removeID = tempID
+		}
+
+		s.log.WithFields(logrus.Fields{
+			"client_id": clientID,
+			"temp_id":   tempID,
+			"remove_id": removeID,
+		}).Info("Cleaning up client")
 		client.Close()
-		s.manager.RemoveClient(client.ID())
+		s.manager.RemoveClient(removeID)
 	}()
 
 	// Create client context
@@ -220,8 +252,12 @@ func (s *Server) readPump(ctx context.Context, client *connection.Client) {
 			// Read message
 			_, message, err := conn.ReadMessage()
 			if err != nil {
+				// Check if this is a normal close or an error we should log
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					s.log.WithError(err).Debug("WebSocket read error")
+					s.log.WithError(err).Warn("WebSocket unexpected close error")
+				} else if !strings.Contains(err.Error(), "use of closed network connection") {
+					// Only log if it's not the expected "use of closed network connection" error
+					s.log.WithError(err).Debug("WebSocket connection closed")
 				}
 
 				return
@@ -231,6 +267,17 @@ func (s *Server) readPump(ctx context.Context, client *connection.Client) {
 			client.UpdateLastSeen()
 
 			_ = conn.SetReadDeadline(time.Now().Add(s.config.ReadTimeout))
+
+			clientID := client.ID()
+			if clientID == "" {
+				clientID = "unauthenticated"
+			}
+
+			s.log.WithFields(logrus.Fields{
+				"client_id": clientID,
+				"size":      len(message),
+				"preview":   string(message[:minInt(100, len(message))]),
+			}).Info("Received message")
 
 			// Handle message
 			if err := s.handler.HandleMessage(ctx, client, message); err != nil {
@@ -288,4 +335,12 @@ func (s *Server) extractIPAddress(r *http.Request) string {
 	}
 
 	return host
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+
+	return b
 }

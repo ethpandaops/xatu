@@ -17,3 +17,7 @@ sage.yaml
 .goreleaser.yaml.new
 .aider*
 relay-monitor.yaml
+
+# Development tools binaries
+bin/
+tools/ethstats-client/ethstats-client

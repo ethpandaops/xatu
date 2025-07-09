@@ -63,17 +63,38 @@ func (m *Manager) RemoveClient(id string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// First check using the provided ID
 	client, exists := m.clients[id]
 	if !exists {
-		return
+		// If not found by ID, it might be a temporary ID
+		// Search through all clients to find one that might have been closed
+		for tempID, c := range m.clients {
+			if c.ID() == id || tempID == id {
+				client = c
+				id = tempID
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			return
+		}
 	}
 
 	// Remove from clients map
 	delete(m.clients, id)
 
-	// Remove from IP map
+	// Remove from IP map - check all possible IDs
 	if ipClients, exists := m.clientsByIP[client.ip]; exists {
+		// Remove by the temp ID
 		delete(ipClients, id)
+
+		// Also remove by the actual client ID if different
+		actualID := client.ID()
+		if actualID != "" && actualID != id {
+			delete(ipClients, actualID)
+		}
 
 		if len(ipClients) == 0 {
 			delete(m.clientsByIP, client.ip)
@@ -95,10 +116,11 @@ func (m *Manager) RemoveClient(id string) {
 	}
 
 	m.log.WithFields(logrus.Fields{
-		"id":       id,
-		"ip":       client.ip,
-		"username": client.username,
-		"group":    client.group,
+		"id":        id,
+		"client_id": client.ID(),
+		"ip":        client.ip,
+		"username":  client.username,
+		"group":     client.group,
 	}).Info("Client disconnected")
 }
 

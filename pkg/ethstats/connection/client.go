@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -68,6 +69,11 @@ func (c *Client) UpdateLastSeen() {
 func (c *Client) SendMessage(msg []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Set write deadline
+	if err := c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
+		return fmt.Errorf("failed to set write deadline: %w", err)
+	}
 
 	return c.conn.WriteMessage(websocket.TextMessage, msg)
 }

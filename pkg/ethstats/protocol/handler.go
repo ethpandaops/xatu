@@ -25,6 +25,12 @@ func NewHandler(log logrus.FieldLogger, metrics MetricsInterface, auth AuthInter
 }
 
 func (h *Handler) HandleMessage(ctx context.Context, client ClientInterface, data []byte) error {
+	h.log.WithFields(logrus.Fields{
+		"client_id": client.ID(),
+		"data_size": len(data),
+		"data":      string(data),
+	}).Debug("Handling message")
+
 	// Parse base message
 	msg, err := ParseMessage(data)
 	if err != nil {
@@ -52,7 +58,8 @@ func (h *Handler) HandleMessage(ctx context.Context, client ClientInterface, dat
 	h.log.WithFields(logrus.Fields{
 		"type":      msgType,
 		"client_id": client.ID(),
-	}).Debug("Received message")
+		"emit_len":  len(msg.Emit),
+	}).Info("Processing message")
 
 	// Handle message based on type
 	switch msgType {
@@ -115,6 +122,8 @@ func (h *Handler) HandleMessage(ctx context.Context, client ClientInterface, dat
 }
 
 func (h *Handler) handleHello(ctx context.Context, client ClientInterface, emit []interface{}) error {
+	h.log.Debug("Processing hello message")
+
 	hello, err := ParseHelloMessage(emit)
 	if err != nil {
 		h.metrics.IncProtocolError("invalid_hello")
@@ -122,13 +131,33 @@ func (h *Handler) handleHello(ctx context.Context, client ClientInterface, emit 
 		return fmt.Errorf("failed to parse hello message: %w", err)
 	}
 
+	h.log.WithFields(logrus.Fields{
+		"node_id":    hello.ID,
+		"node_name":  hello.Info.Name,
+		"client":     hello.Info.Client,
+		"network":    hello.Info.Net,
+		"secret_len": len(hello.Secret),
+	}).Info("Received hello message")
+
 	// Authorize client
 	username, group, err := h.auth.AuthorizeSecret(hello.Secret)
 	if err != nil {
 		h.metrics.IncAuthentication("failed", "")
 		h.log.WithError(err).WithField("node", hello.ID).Warn("Authentication failed")
 
-		return fmt.Errorf("authentication failed: %w", err)
+		// Don't immediately close or respond on auth failure
+		// Instead, schedule a delayed close to prevent timing attacks
+		go func() {
+			time.Sleep(5 * time.Second)
+			h.log.WithField("node", hello.ID).Info("Closing connection after authentication failure")
+
+			if closer, ok := client.(interface{ Close() error }); ok {
+				_ = closer.Close()
+			}
+		}()
+
+		// Return nil to prevent immediate error response
+		return nil
 	}
 
 	// Set client as authenticated
@@ -146,11 +175,24 @@ func (h *Handler) handleHello(ctx context.Context, client ClientInterface, emit 
 
 	// Send ready message
 	readyMsg := FormatReadyMessage()
+
+	h.log.WithFields(logrus.Fields{
+		"client_id": client.ID(),
+		"message":   string(readyMsg),
+	}).Debug("Sending ready message")
+
 	if err := client.SendMessage(readyMsg); err != nil {
+		h.log.WithError(err).Error("Failed to send ready message")
+
 		return fmt.Errorf("failed to send ready message: %w", err)
 	}
 
 	h.metrics.IncMessagesSent("ready")
+	h.log.WithFields(logrus.Fields{
+		"client_id":     client.ID(),
+		"message_size":  len(readyMsg),
+		"authenticated": client.IsAuthenticated(),
+	}).Info("Ready message sent successfully")
 
 	return nil
 }

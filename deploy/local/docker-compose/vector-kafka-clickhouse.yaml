@@ -2193,7 +2193,21 @@ transforms:
       .finalized_epoch = .data.finalized_epoch
       .head_root = .data.head_root
       .head_slot = .data.head_slot
-      .cgc = .data.cgc
+
+      # Handle potentially null cgc
+      if exists(.data.cgc) && .data.cgc != null {
+        .cgc = .data.cgc
+      } else {
+        .cgc = null
+      }
+
+      # Handle potentially null next_fork_digest
+      if exists(.data.next_fork_digest) && .data.next_fork_digest != null {
+        .next_fork_digest = .data.next_fork_digest
+      } else {
+        .next_fork_digest = null
+      }
+      
       .updated_date_time = to_unix_timestamp(now())
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -2229,7 +2243,7 @@ transforms:
       } else {
         .capabilities = []
       }
-      
+
       .protocol_version = .data.protocol_version
       .total_difficulty = .data.total_difficulty
       .head = .data.head

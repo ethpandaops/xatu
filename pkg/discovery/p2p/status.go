@@ -3,11 +3,14 @@ package p2p
 import (
 	"context"
 	"errors"
+	"net"
 	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/chuckpreslar/emission"
+	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/crawler"
+	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/host"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
@@ -39,21 +42,26 @@ func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*St
 		metrics: NewMetrics("xatu_discovery"),
 	}
 
-	if config.BeaconNodeURL != "" {
-		// Get the first network ID from config, default to mainnet (1) if not specified.
-		networkID := uint64(1)
-		networkIDs := config.GetNetworkIDs()
-
-		if len(networkIDs) > 0 {
-			networkID = networkIDs[0]
+	if config.Ethereum != nil {
+		cfg := &crawler.Config{
+			Node: &host.Config{
+				IPAddr: net.ParseIP("127.0.0.1"),
+			},
+			Beacon:           config.Ethereum,
+			DialConcurrency:  10,
+			DialTimeout:      5 * time.Second,
+			CooloffDuration:  10 * time.Second,
+			UserAgent:        xatu.Full(),
+			MaxRetryAttempts: 1,
+			RetryBackoff:     2 * time.Second,
 		}
 
-		crawler, err := NewConsensusCrawler(ctx, log, config.BeaconNodeURL, networkID)
+		c, err := NewConsensusCrawler(ctx, log, cfg)
 		if err != nil {
 			return nil, err
 		}
 
-		s.consensusCrawler = crawler
+		s.consensusCrawler = c
 	}
 
 	return s, nil

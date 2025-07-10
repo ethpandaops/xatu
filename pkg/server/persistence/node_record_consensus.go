@@ -20,6 +20,7 @@ func (c *Client) InsertNodeRecordConsensus(ctx context.Context, record *node.Con
 		record.CreateTime,
 		record.Name,
 		record.ForkDigest,
+		record.NextForkDigest,
 		record.FinalizedRoot,
 		record.FinalizedEpoch,
 		record.HeadRoot,

@@ -6,6 +6,11 @@ toolchain go1.24.1
 
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2
 
+// replace github.com/ethpandaops/ethcore => /Users/matty/go/src/github.com/ethpandaops/ethcore
+
+// Use PK's fork supporting fulu spec, until upstream is updated (https://github.com/pk910/go-eth2-client/pull/2)
+// replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627
+
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/OffchainLabs/prysm/v6 v6.0.4
@@ -16,8 +21,8 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.15.11
-	github.com/ethpandaops/beacon v0.61.0
-	github.com/ethpandaops/ethcore v0.0.0-20250704053935-1583744db4f0
+	github.com/ethpandaops/beacon v0.62.0
+	github.com/ethpandaops/ethcore v0.0.0-20250710062942-b0214985d557
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v0.1.4
 	github.com/go-co-op/gocron/v2 v2.16.2
@@ -40,7 +45,6 @@ require (
 	github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
-	github.com/protolambda/zrnt v0.34.1
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sony/gobreaker/v2 v2.1.0
@@ -235,6 +239,7 @@ require (
 	github.com/prometheus/prom2json v1.4.1 // indirect
 	github.com/prometheus/prometheus v0.302.1 // indirect
 	github.com/protolambda/bls12-381-util v0.1.0 // indirect
+	github.com/protolambda/zrnt v0.34.1 // indirect
 	github.com/protolambda/ztyp v0.2.2 // indirect
 	github.com/prysmaticlabs/fastssz v0.0.0-20241008181541-518c4ce73516 // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect

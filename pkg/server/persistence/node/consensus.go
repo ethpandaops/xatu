@@ -17,6 +17,8 @@ type Consensus struct {
 	Name string `json:"name" db:"name" fieldopt:"omitempty"`
 	// ForkDigest is the fork digest of the node.
 	ForkDigest []byte `json:"forkDigest" db:"fork_digest" fieldopt:"omitempty"`
+	// NextForkDigest is the next fork digest of the next scheduled fork.
+	NextForkDigest []byte `json:"nextForkDigest" db:"next_fork_digest" fieldopt:"omitempty"`
 	// FinalizedRoot is the finalized root of the node.
 	FinalizedRoot []byte `json:"finalizedRoot" db:"finalized_root" fieldopt:"omitempty"`
 	// FinalizedEpoch is the finalized epoch of the node.

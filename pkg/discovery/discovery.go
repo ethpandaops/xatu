@@ -432,7 +432,33 @@ func (d *Discovery) handleNewNodeRecord(ctx context.Context, node *enode.Node, s
 	return nil
 }
 
-func (d *Discovery) createNewClientMeta(_ context.Context, networkID uint64) (*xatu.ClientMeta, error) {
+func (d *Discovery) createNewConsensusClientMeta(_ context.Context, networkID uint64) (*xatu.ClientMeta, error) {
+	var (
+		network     = networks.DeriveFromID(networkID)
+		networkMeta = &xatu.ClientMeta_Ethereum_Network{
+			Name: string(network.Name),
+			Id:   network.ID,
+		}
+	)
+
+	if d.Config.P2P.Ethereum.NetworkOverride != "" {
+		networkMeta.Name = d.Config.P2P.Ethereum.NetworkOverride
+	}
+
+	return &xatu.ClientMeta{
+		Name:           "xatu-discovery", // Fixed client name
+		Version:        xatu.Short(),
+		Id:             d.id.String(),
+		Implementation: xatu.Implementation,
+		ModuleName:     xatu.ModuleName_DISCOVERY,
+		Os:             runtime.GOOS,
+		Ethereum: &xatu.ClientMeta_Ethereum{
+			Network: networkMeta,
+		},
+	}, nil
+}
+
+func (d *Discovery) createNewExecutionClientMeta(_ context.Context, networkID uint64) (*xatu.ClientMeta, error) {
 	var (
 		network     = networks.DeriveFromID(networkID)
 		networkMeta = &xatu.ClientMeta_Ethereum_Network{
@@ -458,7 +484,7 @@ func (d *Discovery) createExecutionStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
+	meta, err := d.createNewExecutionClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}
@@ -506,7 +532,7 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 	now := time.Now()
 	eventID := uuid.New()
 
-	meta, err := d.createNewClientMeta(ctx, status.GetNetworkId())
+	meta, err := d.createNewConsensusClientMeta(ctx, status.GetNetworkId())
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +549,14 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 		FinalizedEpoch: &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
 		HeadRoot:       &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
 		HeadSlot:       &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
-		Cgc:            &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCgc())},
+	}
+
+	if status.GetCgc() != nil {
+		consensusData.Cgc = &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetCgc())}
+	}
+
+	if status.GetNextForkDigest() != nil {
+		consensusData.NextForkDigest = &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetNextForkDigest())}
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{

@@ -6,11 +6,6 @@ toolchain go1.24.1
 
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2
 
-// replace github.com/ethpandaops/ethcore => /Users/matty/go/src/github.com/ethpandaops/ethcore
-
-// Use PK's fork supporting fulu spec, until upstream is updated (https://github.com/pk910/go-eth2-client/pull/2)
-// replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627
-
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/OffchainLabs/prysm/v6 v6.0.4

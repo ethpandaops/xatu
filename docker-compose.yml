@@ -207,6 +207,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000}
       CLICKHOUSE_USER_READONLY_PASSWORD: ${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
     volumes:
       - ./deploy/local/docker-compose/grafana/datasources:/etc/grafana/provisioning/datasources

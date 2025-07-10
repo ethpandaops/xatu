@@ -7,6 +7,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethpandaops/ethcore/pkg/ethereum"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/xatu"
 	"github.com/sirupsen/logrus"
@@ -15,8 +16,8 @@ import (
 type Config struct {
 	Type Type `yaml:"type"`
 
-	// Beacon node URL for consensus discovery.
-	BeaconNodeURL string `yaml:"beaconNodeUrl"`
+	// Ethereum configuration.
+	Ethereum *ethereum.Config `yaml:"ethereum"`
 
 	Config *RawMessage `yaml:"config"`
 }
@@ -44,6 +45,14 @@ func (c *Config) GetNetworkIDs() []uint64 {
 func (c *Config) Validate() error {
 	if c.Type == TypeUnknown {
 		return errors.New("p2p type is required")
+	}
+
+	if c.Ethereum == nil {
+		return errors.New("p2p ethereum config is required")
+	}
+
+	if err := c.Ethereum.Validate(); err != nil {
+		return fmt.Errorf("p2p ethereum config error: %w", err)
 	}
 
 	return nil

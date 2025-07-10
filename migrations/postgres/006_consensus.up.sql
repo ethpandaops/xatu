@@ -3,6 +3,7 @@ ALTER TABLE node_record ALTER COLUMN enr TYPE VARCHAR(1000);
 ALTER TABLE node_record_execution ALTER COLUMN enr TYPE VARCHAR(1000);
 ALTER TABLE node_record_activity ALTER COLUMN enr TYPE VARCHAR(1000);
 ALTER TABLE node_record ADD COLUMN cgc BYTEA;
+ALTER TABLE node_record ADD COLUMN next_fork_digest BYTEA;
 
 CREATE TABLE node_record_consensus (
   consensus_id SERIAL PRIMARY KEY,
@@ -12,6 +13,7 @@ CREATE TABLE node_record_consensus (
   create_time TIMESTAMPTZ NOT NULL DEFAULT now(),
   name VARCHAR(256),
   fork_digest BYTEA,
+  next_fork_digest BYTEA,
   finalized_root BYTEA,
   finalized_epoch BYTEA,
   head_root BYTEA,

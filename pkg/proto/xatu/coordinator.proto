@@ -95,14 +95,15 @@ message ConsensusNodeStatus {
   string node_record = 1;
   string name = 2;
   bytes fork_digest = 3;
-  bytes finalized_root = 4;
-  bytes finalized_epoch = 5;
-  bytes head_root = 6;
-  bytes head_slot = 7;
-  bytes cgc = 8;
-  uint64 network_id = 9;
-  string node_id = 10;
-  string peer_id = 11;
+  bytes next_fork_digest = 4;
+  bytes finalized_root = 5;
+  bytes finalized_epoch = 6;
+  bytes head_root = 7;
+  bytes head_slot = 8;
+  bytes cgc = 9;
+  uint64 network_id = 10;
+  string node_id = 11;
+  string peer_id = 12;
 }
 
 message ListStalledConsensusNodeRecordsRequest { int32 page_size = 1; }

@@ -324,6 +324,7 @@ func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.
 		CreateTime:     time.Now(),
 		Name:           req.Status.Name,
 		ForkDigest:     req.Status.ForkDigest,
+		NextForkDigest: req.Status.NextForkDigest,
 		FinalizedRoot:  req.Status.FinalizedRoot,
 		FinalizedEpoch: req.Status.FinalizedEpoch,
 		HeadRoot:       req.Status.HeadRoot,

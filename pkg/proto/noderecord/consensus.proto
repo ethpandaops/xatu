@@ -14,9 +14,10 @@ message Consensus {
   google.protobuf.Int64Value timestamp = 4;
   google.protobuf.StringValue name = 5;
   google.protobuf.StringValue fork_digest = 6 [json_name = "fork_digest"];
-  google.protobuf.StringValue finalized_root = 7 [json_name = "finalized_root"];
-  google.protobuf.UInt64Value finalized_epoch = 8 [json_name = "finalized_epoch"];
-  google.protobuf.StringValue head_root = 9 [json_name = "head_root"];
-  google.protobuf.UInt64Value head_slot = 10 [json_name = "head_slot"];
-  google.protobuf.StringValue cgc = 11;
+  google.protobuf.StringValue next_fork_digest = 7 [json_name = "next_fork_digest"];
+  google.protobuf.StringValue finalized_root = 8 [json_name = "finalized_root"];
+  google.protobuf.UInt64Value finalized_epoch = 9 [json_name = "finalized_epoch"];
+  google.protobuf.StringValue head_root = 10 [json_name = "head_root"];
+  google.protobuf.UInt64Value head_slot = 11 [json_name = "head_slot"];
+  google.protobuf.StringValue cgc = 12;
 }

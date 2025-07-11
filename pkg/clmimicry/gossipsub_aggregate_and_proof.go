@@ -16,6 +16,21 @@ import (
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// deriveCommitteeIndexFromBits finds the committee index from committee bits
+// For Electra aggregates, only one committee bit should be set
+func deriveCommitteeIndexFromBits(committeeBits []byte) uint64 {
+	for i := 0; i < len(committeeBits)*8; i++ {
+		byteIndex := i / 8
+		bitIndex := i % 8
+
+		if byteIndex < len(committeeBits) && (committeeBits[byteIndex]&(1<<bitIndex)) != 0 {
+			return uint64(i) //nolint:gosec // i is always in valid range for uint64
+		}
+	}
+
+	return 0 // Default fallback if no bit is set
+}
+
 func (m *Mimicry) handleGossipAggregateAndProof(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
@@ -52,30 +67,28 @@ func (m *Mimicry) handleAggregateAndProofFromAttestation(
 
 	attestationData := attestation.GetData()
 
-	// Create the aggregate and proof message using the actual payload data
-	aggregateAndProof := &v1.SignedAggregateAttestationAndProof{
-		Message: &v1.AggregateAttestationAndProof{
-			AggregatorIndex: uint64(message.GetAggregatorIndex()),
-			SelectionProof:  fmt.Sprintf("0x%x", message.GetSelectionProof()),
-			Aggregate: &v1.Attestation{
+	// Create the aggregate and proof message using the actual payload data with V2 types
+	aggregateAndProof := &v1.SignedAggregateAttestationAndProofV2{
+		Message: &v1.AggregateAttestationAndProofV2{
+			AggregatorIndex: wrapperspb.UInt64(uint64(message.GetAggregatorIndex())),
+			Aggregate: &v1.AttestationV2{
 				AggregationBits: fmt.Sprintf("0x%x", attestation.GetAggregationBits().Bytes()),
-				Data: &v1.AttestationData{
-					Slot:            uint64(attestationData.GetSlot()),
+				Data: &v1.AttestationDataV2{
+					Slot:            wrapperspb.UInt64(uint64(attestationData.GetSlot())),
 					BeaconBlockRoot: fmt.Sprintf("0x%x", attestationData.GetBeaconBlockRoot()),
-					Source: &v1.Checkpoint{
-						Epoch: uint64(attestationData.GetSource().GetEpoch()),
+					Source: &v1.CheckpointV2{
+						Epoch: wrapperspb.UInt64(uint64(attestationData.GetSource().GetEpoch())),
 						Root:  fmt.Sprintf("0x%x", attestationData.GetSource().GetRoot()),
 					},
-					Target: &v1.Checkpoint{
-						Epoch: uint64(attestationData.GetTarget().GetEpoch()),
+					Target: &v1.CheckpointV2{
+						Epoch: wrapperspb.UInt64(uint64(attestationData.GetTarget().GetEpoch())),
 						Root:  fmt.Sprintf("0x%x", attestationData.GetTarget().GetRoot()),
 					},
-					Index: uint64(attestationData.GetCommitteeIndex()),
+					Index: wrapperspb.UInt64(uint64(attestationData.GetCommitteeIndex())),
 				},
 				Signature: fmt.Sprintf("0x%x", attestation.GetSignature()),
 			},
 		},
-		Signature: fmt.Sprintf("0x%x", aggregate.GetSignature()),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -129,30 +142,29 @@ func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
 
 	attestationData := attestation.GetData()
 
-	// Create the aggregate and proof message using the actual payload data
-	aggregateAndProof := &v1.SignedAggregateAttestationAndProof{
-		Message: &v1.AggregateAttestationAndProof{
-			AggregatorIndex: uint64(message.GetAggregatorIndex()),
-			SelectionProof:  fmt.Sprintf("0x%x", message.GetSelectionProof()),
-			Aggregate: &v1.Attestation{
+	// Create the aggregate and proof message using the actual payload data with V2 types
+	aggregateAndProof := &v1.SignedAggregateAttestationAndProofV2{
+		Message: &v1.AggregateAttestationAndProofV2{
+			AggregatorIndex: wrapperspb.UInt64(uint64(message.GetAggregatorIndex())),
+			Aggregate: &v1.AttestationV2{
 				AggregationBits: fmt.Sprintf("0x%x", attestation.GetAggregationBits().Bytes()),
-				Data: &v1.AttestationData{
-					Slot:            uint64(attestationData.GetSlot()),
+				Data: &v1.AttestationDataV2{
+					Slot:            wrapperspb.UInt64(uint64(attestationData.GetSlot())),
 					BeaconBlockRoot: fmt.Sprintf("0x%x", attestationData.GetBeaconBlockRoot()),
-					Source: &v1.Checkpoint{
-						Epoch: uint64(attestationData.GetSource().GetEpoch()),
+					Source: &v1.CheckpointV2{
+						Epoch: wrapperspb.UInt64(uint64(attestationData.GetSource().GetEpoch())),
 						Root:  fmt.Sprintf("0x%x", attestationData.GetSource().GetRoot()),
 					},
-					Target: &v1.Checkpoint{
-						Epoch: uint64(attestationData.GetTarget().GetEpoch()),
+					Target: &v1.CheckpointV2{
+						Epoch: wrapperspb.UInt64(uint64(attestationData.GetTarget().GetEpoch())),
 						Root:  fmt.Sprintf("0x%x", attestationData.GetTarget().GetRoot()),
 					},
-					Index: uint64(attestationData.GetCommitteeIndex()),
+					// For Electra, derive committee index from committee bits
+					Index: wrapperspb.UInt64(deriveCommitteeIndexFromBits(attestation.GetCommitteeBits())),
 				},
 				Signature: fmt.Sprintf("0x%x", attestation.GetSignature()),
 			},
 		},
-		Signature: fmt.Sprintf("0x%x", aggregate.GetSignature()),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -189,7 +201,7 @@ func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
 func (m *Mimicry) createAdditionalGossipSubAggregateAndProofData(
 	ctx context.Context,
 	event *host.TraceEvent,
-	aggregateAndProof *v1.SignedAggregateAttestationAndProof,
+	aggregateAndProof *v1.SignedAggregateAttestationAndProofV2,
 	slotNumber phase0.Slot,
 	aggregatorIndex uint64,
 	peerID string,
@@ -202,13 +214,12 @@ func (m *Mimicry) createAdditionalGossipSubAggregateAndProofData(
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
-	// Add Clock Drift
+	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
+	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))
 	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
 
-	aggregateSlot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
-
 	// Calculate propagation timing
-	diff := timestampAdjusted.Sub(aggregateSlot.TimeWindow().Start()).Milliseconds()
+	diff := timestampAdjusted.Sub(slot.TimeWindow().Start()).Milliseconds()
 
 	var propagationSlotStartDiff uint64
 
@@ -217,17 +228,30 @@ func (m *Mimicry) createAdditionalGossipSubAggregateAndProofData(
 	}
 
 	extra := &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData{
-		Peer: &libp2p.Peer{
-			Id: peerID,
+		Epoch: &xatu.EpochV2{
+			Number:        wrapperspb.UInt64(epoch.Number()),
+			StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 		},
-		WallclockSlot:            timestamppb.New(wallclockSlot.TimeWindow().Start()),
-		WallclockEpoch:           timestamppb.New(wallclockEpoch.TimeWindow().Start()),
-		PropagationSlotStartDiff: wrapperspb.UInt64(propagationSlotStartDiff),
-		AggregatorIndex:          wrapperspb.UInt64(aggregatorIndex),
-		SelectionProof:           aggregateAndProof.Message.SelectionProof,
-		Topic:                    wrapperspb.String(topic),
-		MessageSize:              wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // int -> uint32 common conversion pattern in xatu.
-		MessageId:                wrapperspb.String(msgID),
+		Slot: &xatu.SlotV2{
+			Number:        wrapperspb.UInt64(uint64(slotNumber)),
+			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+		},
+		WallclockEpoch: &xatu.EpochV2{
+			Number:        wrapperspb.UInt64(wallclockEpoch.Number()),
+			StartDateTime: timestamppb.New(wallclockEpoch.TimeWindow().Start()),
+		},
+		WallclockSlot: &xatu.SlotV2{
+			Number:        wrapperspb.UInt64(wallclockSlot.Number()),
+			StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
+		},
+		Propagation: &xatu.PropagationV2{
+			SlotStartDiff: wrapperspb.UInt64(propagationSlotStartDiff),
+		},
+		AggregatorIndex: wrapperspb.UInt64(aggregatorIndex),
+		Metadata:        &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(peerID)},
+		Topic:           wrapperspb.String(topic),
+		MessageSize:     wrapperspb.UInt32(uint32(msgSize)), //nolint:gosec // int -> uint32 common conversion pattern in xatu.
+		MessageId:       wrapperspb.String(msgID),
 	}
 
 	return extra, nil

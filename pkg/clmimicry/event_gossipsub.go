@@ -137,15 +137,8 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 			return nil
 		}
 
-		// For now, aggregate and proof messages come through as attestation events
-		// This will be updated when the correct TraceEvent type is available
-		switch payload := event.Payload.(type) {
-		case *eth.TraceEventAttestation:
-			if err := m.handleGossipAggregateAndProof(ctx, clientMeta, event, payload); err != nil {
-				return errors.Wrap(err, "failed to handle gossipsub aggregate and proof")
-			}
-		default:
-			return fmt.Errorf("invalid payload type for aggregate and proof HandleMessage event: %T", event.Payload)
+		if err := m.handleGossipAggregateAndProof(ctx, clientMeta, event, event.Payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub aggregate and proof")
 		}
 
 	default:

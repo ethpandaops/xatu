@@ -22,7 +22,6 @@ CREATE TABLE libp2p_gossipsub_aggregate_and_proof_local ON CLUSTER '{cluster}' (
     topic_encoding LowCardinality(String) COMMENT 'Encoding used for the topic',
     -- Aggregator specific fields
     aggregator_index UInt32 COMMENT 'Index of the validator who created this aggregate' CODEC(DoubleDelta, ZSTD(1)),
-    selection_proof FixedString(194) COMMENT 'BLS signature proving the validator was selected as aggregator' CODEC(ZSTD(1)),
     -- Embedded attestation fields
     committee_index LowCardinality(String) COMMENT 'Committee index from the attestation',
     aggregation_bits String COMMENT 'Bitfield of aggregated attestation' CODEC(ZSTD(1)),
@@ -31,7 +30,6 @@ CREATE TABLE libp2p_gossipsub_aggregate_and_proof_local ON CLUSTER '{cluster}' (
     source_root FixedString(66) COMMENT 'Source root from the attestation' CODEC(ZSTD(1)),
     target_epoch UInt32 COMMENT 'Target epoch from the attestation' CODEC(DoubleDelta, ZSTD(1)),
     target_root FixedString(66) COMMENT 'Target root from the attestation' CODEC(ZSTD(1)),
-    signature FixedString(194) COMMENT 'Aggregated BLS signature' CODEC(ZSTD(1)),
     -- Standard metadata fields
     meta_client_name LowCardinality(String) COMMENT 'Name of the client that generated the event',
     meta_client_id String COMMENT 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.' CODEC(ZSTD(1)),

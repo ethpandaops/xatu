@@ -1006,32 +1006,35 @@ message ClientMeta {
   }
 
   message AdditionalLibP2PTraceGossipSubAggregateAndProofData {
-    // Peer contains peer info for the peer that sent the aggregate and proof event.
-    libp2p.Peer peer = 1;
+    // Epoch contains the epoch information for the aggregate and proof.
+    EpochV2 epoch = 1;
 
-    // WallclockSlot contains the wallclock slot when the aggregate and proof was received.
-    google.protobuf.Timestamp wallclock_slot = 2 [ json_name = "wallclock_slot" ];
+    // Slot contains the slot information for the aggregate and proof.
+    SlotV2 slot = 2;
 
-    // WallclockEpoch contains the wallclock epoch when the aggregate and proof was received.
-    google.protobuf.Timestamp wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    // WallclockEpoch contains the epoch information for the aggregate and proof in the wall clock time.
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
 
-    // PropagationSlotStartDiff contains the difference between the slot start time and the aggregate and proof received time.
-    google.protobuf.UInt64Value propagation_slot_start_diff = 4 [ json_name = "propagation_slot_start_diff" ];
+    // WallclockSlot contains the slot information for the aggregate and proof in the wall clock time.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // Propagation contains information about the propagation of the aggregate and proof.
+    PropagationV2 propagation = 5;
 
     // AggregatorIndex contains the index of the validator who created this aggregate.
-    google.protobuf.UInt64Value aggregator_index = 5 [ json_name = "aggregator_index" ];
+    google.protobuf.UInt64Value aggregator_index = 6 [ json_name = "aggregator_index" ];
 
-    // SelectionProof contains the BLS signature proving the validator was selected as aggregator.
-    string selection_proof = 6 [ json_name = "selection_proof" ];
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 7;
 
     // Topic is the gossip sub topic the aggregate and proof was received on.
-    google.protobuf.StringValue topic = 7;
+    google.protobuf.StringValue topic = 8;
 
     // MessageSize is the size of the aggregate and proof message in bytes.
-    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.UInt32Value message_size = 9 [ json_name = "message_size" ];
 
     // MessageID is a unique identifier for the aggregate and proof message.
-    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+    google.protobuf.StringValue message_id = 10 [ json_name = "message_id" ];
   }
 
   message AdditionalLibP2PTraceGossipSubBlobSidecarData {
@@ -1743,7 +1746,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
-    xatu.eth.v1.SignedAggregateAttestationAndProof libp2p_trace_gossipsub_aggregate_and_proof = 73
+    xatu.eth.v1.SignedAggregateAttestationAndProofV2 libp2p_trace_gossipsub_aggregate_and_proof = 73
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
   };
 }

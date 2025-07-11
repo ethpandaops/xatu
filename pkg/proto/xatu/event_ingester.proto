@@ -1005,6 +1005,35 @@ message ClientMeta {
     google.protobuf.StringValue message_id = 12 [ json_name = "message_id" ];
   }
 
+  message AdditionalLibP2PTraceGossipSubAggregateAndProofData {
+    // Peer contains peer info for the peer that sent the aggregate and proof event.
+    libp2p.Peer peer = 1;
+
+    // WallclockSlot contains the wallclock slot when the aggregate and proof was received.
+    google.protobuf.Timestamp wallclock_slot = 2 [ json_name = "wallclock_slot" ];
+
+    // WallclockEpoch contains the wallclock epoch when the aggregate and proof was received.
+    google.protobuf.Timestamp wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    // PropagationSlotStartDiff contains the difference between the slot start time and the aggregate and proof received time.
+    google.protobuf.UInt64Value propagation_slot_start_diff = 4 [ json_name = "propagation_slot_start_diff" ];
+
+    // AggregatorIndex contains the index of the validator who created this aggregate.
+    google.protobuf.UInt64Value aggregator_index = 5 [ json_name = "aggregator_index" ];
+
+    // SelectionProof contains the BLS signature proving the validator was selected as aggregator.
+    string selection_proof = 6 [ json_name = "selection_proof" ];
+
+    // Topic is the gossip sub topic the aggregate and proof was received on.
+    google.protobuf.StringValue topic = 7;
+
+    // MessageSize is the size of the aggregate and proof message in bytes.
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+
+    // MessageID is a unique identifier for the aggregate and proof message.
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
   message AdditionalLibP2PTraceGossipSubBlobSidecarData {
     // Epoch contains the epoch information for the blob sidecar.
     EpochV2 epoch = 1;
@@ -1359,6 +1388,8 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    // AdditionalLibP2PTraceGossipSubAggregateAndProofData contains additional data about the gossip sub aggregate and proof event.
+    AdditionalLibP2PTraceGossipSubAggregateAndProofData libp2p_trace_gossipsub_aggregate_and_proof = 83 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1535,6 +1566,7 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
     LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
     LIBP2P_TRACE_RPC_META_MESSAGE = 71;
+    LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 72;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1711,6 +1743,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    xatu.eth.v1.SignedAggregateAttestationAndProof libp2p_trace_gossipsub_aggregate_and_proof = 73
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
   };
 }
 

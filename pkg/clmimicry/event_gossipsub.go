@@ -21,9 +21,10 @@ var gossipsubEventTypes = []string{
 
 // Map of gossipsub topic substrings to Xatu event types.
 var gossipsubTopicToXatuEventMap = map[string]string{
-	p2p.GossipAttestationMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
-	p2p.GossipBlockMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
-	p2p.GossipBlobSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	p2p.GossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
+	p2p.GossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
+	p2p.GossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	p2p.GossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
 }
 
 // handleHermesGossipSubEvent handles GossipSub protocol events.
@@ -120,6 +121,31 @@ func (m *Mimicry) handleHermesGossipSubEvent(
 
 		if err := m.handleGossipBlobSidecar(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub blob sidecar")
+		}
+
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String():
+		if !m.Config.Events.GossipSubAggregateAndProofEnabled {
+			return nil
+		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		m.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this message based on trace/sharding config.
+		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		// For now, aggregate and proof messages come through as attestation events
+		// This will be updated when the correct TraceEvent type is available
+		switch payload := event.Payload.(type) {
+		case *eth.TraceEventAttestation:
+			if err := m.handleGossipAggregateAndProof(ctx, clientMeta, event, payload); err != nil {
+				return errors.Wrap(err, "failed to handle gossipsub aggregate and proof")
+			}
+		default:
+			return fmt.Errorf("invalid payload type for aggregate and proof HandleMessage event: %T", event.Payload)
 		}
 
 	default:

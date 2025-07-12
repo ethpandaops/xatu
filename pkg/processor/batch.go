@@ -132,11 +132,7 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log log
 	maxExportBatchSize := DefaultMaxExportBatchSize
 
 	if maxExportBatchSize > maxQueueSize {
-		if DefaultMaxExportBatchSize > maxQueueSize {
-			maxExportBatchSize = maxQueueSize
-		} else {
-			maxExportBatchSize = DefaultMaxExportBatchSize
-		}
+		maxExportBatchSize = min(DefaultMaxExportBatchSize, maxQueueSize)
 	}
 
 	o := BatchItemProcessorOptions{
@@ -230,10 +226,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	// batch.
 	batchSize := bvp.o.Workers * bvp.o.MaxExportBatchSize
 	for start := 0; start < len(s); start += batchSize {
-		end := start + batchSize
-		if end > len(s) {
-			end = len(s)
-		}
+		end := min(start+batchSize, len(s))
 
 		prepared := []*TraceableItem[T]{}
 

@@ -1372,7 +1372,7 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
-  
+
     // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
     AdditionalNodeRecordConsensusData node_record_consensus = 83 [ json_name = "NODE_RECORD_CONSENSUS" ];
   }
@@ -1446,6 +1446,8 @@ message ServerMeta {
 
   message AdditionalLibp2PTraceDisconnectedData { Peer peer = 1; }
 
+  message AdditionalNodeRecordConsensusData { Geo geo = 1; }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
@@ -1467,6 +1469,10 @@ message ServerMeta {
     // geo location
     AdditionalLibp2PTraceDisconnectedData LIBP2P_TRACE_DISCONNECTED = 5
         [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
+    // AdditionalNodeRecordConsensus contains additional data on consensus
+    // node geo location
+    AdditionalNodeRecordConsensusData NODE_RECORD_CONSENSUS = 6
+        [ json_name = "NODE_RECORD_CONSENSUS" ];
   }
 }
 

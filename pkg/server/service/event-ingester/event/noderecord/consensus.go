@@ -3,7 +3,6 @@ package noderecord
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 
 	coreenr "github.com/ethpandaops/ethcore/pkg/ethereum/node/enr"
@@ -49,7 +48,7 @@ func (b *Consensus) Filter(ctx context.Context) bool {
 }
 
 func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
-	// Extract ENR from the consensus event data
+	// Extract ENR from the consensus event data.
 	consensusData := b.event.GetNodeRecordConsensus()
 	if consensusData == nil {
 		b.log.Error("failed to get consensus data from event")
@@ -57,7 +56,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Get ENR string from the proto data
+	// Get ENR string from the proto data.
 	enrString := ""
 	if consensusData.GetEnr() != nil {
 		enrString = consensusData.GetEnr().GetValue()
@@ -69,7 +68,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Parse ENR to extract IP address
+	// Parse ENR to extract IP address.
 	parsedENR, err := coreenr.Parse(enrString)
 	if err != nil {
 		b.log.WithError(err).WithField("enr", enrString).Error("failed to parse ENR")
@@ -77,7 +76,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Try to get IP from ENR (IPv4 first, then IPv6)
+	// Try to get IP from ENR (IPv4 first, then IPv6).
 	var ipString string
 	if parsedENR.IP4 != nil {
 		ipString = *parsedENR.IP4
@@ -91,7 +90,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Validate and parse IP address
+	// Validate and parse IP address.
 	ip := net.ParseIP(ipString)
 	if ip == nil {
 		b.log.WithField("ip", ipString).Error("failed to parse IP address")
@@ -99,16 +98,11 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Populate IP field in consensus event data (core node record information)
+	// Populate IP field in consensus event data.
 	consensusData.Ip = wrapperspb.String(ipString)
 
-	b.log.WithField("ip", ipString).Debug("populated IP field in consensus event data")
-	fmt.Print("Geo nil or not!!!!! \n\n", b.geoipProvider)
-
-	// Perform GeoIP lookup if provider is available
+	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {
-		fmt.Print("Geo initialised!!!!! \n\n")
-
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip)
 		if err != nil {
 			b.log.WithField("ip", ipString).WithError(err).Warn("failed to lookup geoip data")
@@ -116,10 +110,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 			return meta
 		}
 
-		fmt.Printf("Geo result: %v!!!!! \n\n", geoipResult)
-
 		if geoipResult != nil {
-			// Add geo data to ServerMeta (server-computed metadata)
 			meta.AdditionalData = &xatu.ServerMeta_NODE_RECORD_CONSENSUS{
 				NODE_RECORD_CONSENSUS: &xatu.ServerMeta_AdditionalNodeRecordConsensusData{
 					Geo: &xatu.ServerMeta_Geo{

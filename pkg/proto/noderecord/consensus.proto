@@ -20,4 +20,5 @@ message Consensus {
   google.protobuf.StringValue head_root = 10 [json_name = "head_root"];
   google.protobuf.UInt64Value head_slot = 11 [json_name = "head_slot"];
   google.protobuf.StringValue cgc = 12;
+  google.protobuf.StringValue ip = 13;
 }

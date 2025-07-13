@@ -334,7 +334,7 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 		return noderecord.NewExecution(router.log, event), nil
 	})
 	router.RegisterHandler(TypeNodeRecordConsensus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
-		return noderecord.NewConsensus(router.log, event), nil
+		return noderecord.NewConsensus(router.log, event, router.geoipProvider), nil
 	})
 
 	return router

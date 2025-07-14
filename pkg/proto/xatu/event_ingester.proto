@@ -1403,11 +1403,11 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    // AdditionalLibP2PTraceGossipSubAggregateAndProofData contains additional data about the gossip sub aggregate and proof event.
+    AdditionalLibP2PTraceGossipSubAggregateAndProofData libp2p_trace_gossipsub_aggregate_and_proof = 83 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
     // AdditionalEthV1EventsDataColumnSidecarData contains additional data about the
     // eth v1 data column sidecar event.
-    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 83 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
-    // AdditionalLibP2PTraceGossipSubAggregateAndProofData contains additional data about the gossip sub aggregate and proof event.
-    AdditionalLibP2PTraceGossipSubAggregateAndProofData libp2p_trace_gossipsub_aggregate_and_proof = 84 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
+    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 84 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1584,8 +1584,8 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
     LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
     LIBP2P_TRACE_RPC_META_MESSAGE = 71;
-    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 72;
-    LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 73;
+    LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 72;
+    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 73;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1762,10 +1762,10 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
-    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 73
-        [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
-    xatu.eth.v1.SignedAggregateAttestationAndProofV2 libp2p_trace_gossipsub_aggregate_and_proof = 74
+    xatu.eth.v1.SignedAggregateAttestationAndProofV2 libp2p_trace_gossipsub_aggregate_and_proof = 73
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
+    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 74
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   };
 }
 

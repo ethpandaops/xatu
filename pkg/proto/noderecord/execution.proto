@@ -23,5 +23,4 @@ message Execution {
   google.protobuf.StringValue ip = 12;
   google.protobuf.UInt32Value tcp = 13;
   google.protobuf.UInt32Value udp = 14;
-  google.protobuf.StringValue client_id = 15 [json_name = "client_id"];
 }

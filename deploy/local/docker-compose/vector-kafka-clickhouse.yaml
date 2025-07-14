@@ -2393,7 +2393,6 @@ transforms:
       .fork_id_next = .data.fork_id_next
       # Parsed ENR fields
       .node_id = .data.node_id
-      .client_id = .data.client_id
 
       # Handle execution node IP from event data
       if exists(.data.ip) && is_string(.data.ip) && .data.ip != null && .data.ip != "" {

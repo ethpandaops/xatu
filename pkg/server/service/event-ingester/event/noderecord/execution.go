@@ -83,6 +83,8 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 
 	var udpPort uint32
 
+	hasIPv6 := false
+
 	if parsedENR.IP4 != nil {
 		ipString = *parsedENR.IP4
 		tcpPort = *parsedENR.TCP4
@@ -91,6 +93,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		ipString = *parsedENR.IP6
 		tcpPort = *parsedENR.TCP6
 		udpPort = *parsedENR.UDP6
+		hasIPv6 = true
 	}
 
 	if ipString == "" {
@@ -111,6 +114,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	executionData.Ip = wrapperspb.String(ipString)
 	executionData.Tcp = wrapperspb.UInt32(tcpPort)
 	executionData.Udp = wrapperspb.UInt32(udpPort)
+	executionData.HasIpv6 = wrapperspb.Bool(hasIPv6)
 
 	// Populate node ID field in execution event data.
 	executionData.NodeId = wrapperspb.String(*parsedENR.NodeID)

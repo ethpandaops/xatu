@@ -19,6 +19,7 @@ CREATE TABLE default.node_record_execution_local ON CLUSTER '{cluster}' (
     `ip` Nullable(IPv6) COMMENT 'IP address of the execution node' CODEC(ZSTD(1)),
     `tcp` Nullable(UInt16) COMMENT 'TCP port from ENR' CODEC(DoubleDelta, ZSTD(1)),
     `udp` Nullable(UInt16) COMMENT 'UDP port from ENR' CODEC(DoubleDelta, ZSTD(1)),
+    `has_ipv6` Bool COMMENT 'Whether the execution node has an IPv6 address' CODEC(ZSTD(1)),
     `geo_city` LowCardinality(String) COMMENT 'City of the execution node' CODEC(ZSTD(1)),
     `geo_country` LowCardinality(String) COMMENT 'Country of the execution node' CODEC(ZSTD(1)),
     `geo_country_code` LowCardinality(String) COMMENT 'Country code of the execution node' CODEC(ZSTD(1)),

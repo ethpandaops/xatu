@@ -2344,12 +2344,8 @@ transforms:
           implementation, err = downcase(agent[0])
           if err == null {
             .implementation = implementation
-            # handle weird cases
-            if agent[0] == agent[1] {
-              # Besu: besu/besu/v1.1.1
-              .version = agent[2]
-            } else if length(agent) > 2 && starts_with(agent[2], "v") {
-              # CoreGeth and similar: CoreGeth/ETCMCgethNode/v1.12.19-stable-78c91330/windows-amd64/go1.20.7
+            # handle coregeth case
+            if implementation == "coregeth" {
               .version = agent[2]
             } else {
               .version = agent[1]

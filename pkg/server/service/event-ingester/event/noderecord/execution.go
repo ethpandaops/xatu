@@ -128,8 +128,8 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		}
 
 		if geoipResult != nil {
-			meta.AdditionalData = &xatu.ServerMeta_NODE_RECORD_CONSENSUS{
-				NODE_RECORD_CONSENSUS: &xatu.ServerMeta_AdditionalNodeRecordConsensusData{
+			meta.AdditionalData = &xatu.ServerMeta_NODE_RECORD_EXECUTION{
+				NODE_RECORD_EXECUTION: &xatu.ServerMeta_AdditionalNodeRecordExecutionData{
 					Geo: &xatu.ServerMeta_Geo{
 						Country:                      geoipResult.CountryName,
 						CountryCode:                  geoipResult.CountryCode,
@@ -147,7 +147,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 				"ip":      executionData.Ip.GetValue(),
 				"country": geoipResult.CountryName,
 				"city":    geoipResult.CityName,
-			}).Debug("successfully updated server meta with consensus node geo information")
+			}).Debug("successfully updated server meta with execution node geo information")
 		}
 	}
 

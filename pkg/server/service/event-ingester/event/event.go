@@ -331,7 +331,7 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 		return mevrelay.NewValidatorRegistration(router.log, event), nil
 	})
 	router.RegisterHandler(TypeNodeRecordExecution, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
-		return noderecord.NewExecution(router.log, event), nil
+		return noderecord.NewExecution(router.log, event, router.geoipProvider), nil
 	})
 	router.RegisterHandler(TypeNodeRecordConsensus, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return noderecord.NewConsensus(router.log, event, router.geoipProvider), nil

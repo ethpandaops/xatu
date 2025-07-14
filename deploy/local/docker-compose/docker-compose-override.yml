@@ -1,0 +1,9 @@
+# This file is used to override xatu-server configuration when GeoIP databases are present
+# To use: docker-compose -f docker-compose.yml -f deploy/local/docker-compose/docker-compose-override.yml up
+
+services:
+  xatu-server:
+    volumes:
+      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config-template.yaml
+      - ./GeoLite2-City.mmdb:/geoip/GeoLite2-City.mmdb:ro
+      - ./GeoLite2-ASN.mmdb:/geoip/GeoLite2-ASN.mmdb:ro

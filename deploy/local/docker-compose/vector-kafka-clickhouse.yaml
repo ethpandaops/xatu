@@ -2286,6 +2286,10 @@ transforms:
         .ip = null
       }
 
+      .tcp = .data.tcp
+      .udp = .data.udp
+      .quic = .data.quic
+
       # Handle consensus node geo fields from ServerMeta
       if exists(.meta.server.additional_data.geo) {
         .geo_city = .meta.server.additional_data.geo.city
@@ -2307,7 +2311,7 @@ transforms:
         .geo_autonomous_system_number = null
         .geo_autonomous_system_organization = null
       }
-      
+
       .updated_date_time = to_unix_timestamp(now())
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id

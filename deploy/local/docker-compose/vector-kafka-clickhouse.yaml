@@ -2188,6 +2188,49 @@ transforms:
 
       .timestamp = .data.timestamp
       .name = .data.name
+
+      # Parse consensus client version information from name (user agent)
+      if exists(.data.name) && is_string(.data.name) {
+        agent, err = split(.data.name, "/", limit: 4)
+        if err == null && length(agent) > 1 {
+          implementation, err = downcase(agent[0])
+          if err == null {
+            .implementation = implementation
+            # handle teku case with teku/teku/v1.1.1
+            if agent[0] == agent[1] {
+              .version = agent[2]
+            } else {
+              .version = agent[1]
+            }
+          }
+        }
+        if is_string(.version) {
+          semantic_version, err = split(.version, ".", limit: 3)
+          if err == null {
+            if semantic_version[0] != null {
+              version_major, err = replace(semantic_version[0], "v", "", count: 1)
+              if err == null {
+                .version_major = version_major
+                .version_minor = semantic_version[1]
+                if semantic_version[2] != null {
+                  version_patch, err = replace(semantic_version[2], r'[-+ ](.*)', "")
+                  if err == null {
+                    .version_patch = version_patch
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      # Set defaults for version fields if parsing failed
+      if !exists(.version) { .version = "" }
+      if !exists(.version_major) { .version_major = "" }
+      if !exists(.version_minor) { .version_minor = "" }
+      if !exists(.version_patch) { .version_patch = "" }
+      if !exists(.implementation) { .implementation = "" }
+
       .fork_digest = .data.fork_digest
       .finalized_root = .data.finalized_root
       .finalized_epoch = .data.finalized_epoch

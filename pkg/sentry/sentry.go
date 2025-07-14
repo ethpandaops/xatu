@@ -620,7 +620,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
-		s.beacon.Node().OnDataColumnSidecar(ctx, func(ctx context.Context, dataColumnSidecar *beacon.DataColumnSidecarEvent) error {
+		s.beacon.Node().OnDataColumnSidecar(ctx, func(ctx context.Context, dataColumnSidecar *eth2v1.DataColumnSidecarEvent) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)

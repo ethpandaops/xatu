@@ -103,6 +103,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	ip := net.ParseIP(ipString)
 	if ip == nil {
 		b.log.WithField("ip", ipString).Error("failed to parse IP address")
+
 		return meta
 	}
 

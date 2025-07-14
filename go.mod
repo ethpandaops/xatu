@@ -6,6 +6,9 @@ toolchain go1.24.1
 
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250513093811-320c1c3ee6e2
 
+// Use PK's fulu fork, until upstream is updated (https://github.com/pk910/go-eth2-client/pull/2)
+replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627
+
 require (
 	github.com/IBM/sarama v1.45.1
 	github.com/OffchainLabs/prysm/v6 v6.0.2
@@ -16,7 +19,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.15.11
-	github.com/ethpandaops/beacon v0.62.0
+	github.com/ethpandaops/beacon v0.64.0
 	github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v0.1.4

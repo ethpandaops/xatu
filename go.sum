@@ -47,8 +47,6 @@ github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hC
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a/go.mod h1:DAHtR1m6lCRdSC2Tm3DSWRPvIPr6xNKyeHdqDQSQT+A=
-github.com/attestantio/go-eth2-client v0.26.0 h1:oDWKvIUJfvr1EBi/w9L6mawYZHOCymjHkml7fZplT20=
-github.com/attestantio/go-eth2-client v0.26.0/go.mod h1:fvULSL9WtNskkOB4i+Yyr6BKpNHXvmpGZj9969fCrfY=
 github.com/avast/retry-go/v4 v4.6.1 h1:VkOLRubHdisGrHnTu89g08aQEWEgRU7LVEop3GbIcMk=
 github.com/avast/retry-go/v4 v4.6.1/go.mod h1:V6oF8njAwxJ5gRo1Q7Cxab24xs5NCWZBeaHHBklR8mA=
 github.com/aws/aws-lambda-go v1.13.3/go.mod h1:4UKl9IzQMoD+QF79YdCuzCwp8VbmG4VAQwij/eHl5CU=
@@ -237,8 +235,8 @@ github.com/ethereum/go-ethereum v1.15.11 h1:JK73WKeu0WC0O1eyX+mdQAVHUV+UR1a9VB/d
 github.com/ethereum/go-ethereum v1.15.11/go.mod h1:mf8YiHIb0GR4x4TipcvBUPxJLw1mFdmxzoDi11sDRoI=
 github.com/ethereum/go-verkle v0.2.2 h1:I2W0WjnrFUIzzVPwm8ykY+7pL2d4VhlsePn4j7cnFk8=
 github.com/ethereum/go-verkle v0.2.2/go.mod h1:M3b90YRnzqKyyzBEWJGqj8Qff4IDeXnzFw0P9bFw3uk=
-github.com/ethpandaops/beacon v0.62.0 h1:wFNiucoU0rwc/Taiw9097QUnHJfMehe+jHb3GZ5LWyc=
-github.com/ethpandaops/beacon v0.62.0/go.mod h1:82iIWMAU89F4OKAvNCESJRPDp8JUC22yHu3P7vY883o=
+github.com/ethpandaops/beacon v0.64.0 h1:sNYEhd86aC6XEL8rYus1NJB8/lzd6bcW4Xo8NtNUB8o=
+github.com/ethpandaops/beacon v0.64.0/go.mod h1:WopgtcqWZR+FNQCjFlLqHAdzNCYQyxXOnB6YD+/MS6I=
 github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9 h1:W5S3gzJFhi30QaOCZVL3is+qd8AFQtcypAFNmDIeFeU=
 github.com/ethpandaops/ethcore v0.0.0-20250317181755-3b229dede7c9/go.mod h1:ZvKqL6CKxiraefdXPHeJurV2pDD/f2HF2uklDVdrry8=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
@@ -788,6 +786,8 @@ github.com/pion/webrtc/v4 v4.0.13 h1:XuUaWTjRufsiGJRC+G71OgiSMe7tl7mQ0kkd4bAqIaQ
 github.com/pion/webrtc/v4 v4.0.13/go.mod h1:Fadzxm0CbY99YdCEfxrgiVr0L4jN1l8bf8DBkPPpJbs=
 github.com/pk910/dynamic-ssz v0.0.6 h1:Tu97LSc2TtCyqRfoSbhG9XuR/FbA7CkKeAnlkgUydFY=
 github.com/pk910/dynamic-ssz v0.0.6/go.mod h1:b6CrLaB2X7pYA+OSEEbkgXDEcRnjLOZIxZTsMuO/Y9c=
+github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627 h1:P1UAXoDHe5GeFv7dQCD8rjvTPR5+uHlnyxhO4vcrQAM=
+github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627/go.mod h1:fvULSL9WtNskkOB4i+Yyr6BKpNHXvmpGZj9969fCrfY=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

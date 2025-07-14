@@ -72,7 +72,7 @@ func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
 	payload *eth.TraceEventBlobSidecar,
 	timestamp time.Time,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().Now()
+	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}

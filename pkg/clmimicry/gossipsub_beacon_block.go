@@ -54,6 +54,11 @@ func (m *Mimicry) handleGossipBeaconBlock(
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
+	// TODO(fulu): Add Fulu blocks in Hermes
+	// case *eth.TraceEventFuluBlock:
+	// 	root, err = evt.Block.GetBlock().HashTreeRoot()
+	// 	slot = evt.Block.GetBlock().GetSlot()
+	// 	proposerIndex = evt.Block.GetBlock().GetProposerIndex()
 	default:
 		return fmt.Errorf("handleGossipBeaconBlock(): called with unknown block type")
 	}
@@ -105,7 +110,7 @@ func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(
 	slotNumber primitives.Slot,
 	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().Now()
+	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(event.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
@@ -174,6 +179,12 @@ func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
+	// TODO(fulu): Add Fulu blocks in Hermes
+	// case *eth.TraceEventFuluBlock:
+	// 	extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
+	// 	extra.Topic = wrapperspb.String(evt.Topic)
+	// 	extra.MessageId = wrapperspb.String(evt.MsgID)
+	// 	extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
 	default:
 		return nil, fmt.Errorf("createAdditionalGossipSubBeaconBlockData(): called with unknown block type")
 	}

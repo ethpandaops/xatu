@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	eth2client "github.com/attestantio/go-eth2-client"
@@ -55,22 +54,26 @@ func (b *BeaconNode) Wallclock() *ethwallclock.EthereumBeaconChain {
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
-	// Start a 5min deadling timer to wait for the beacon node to be ready
+	// Start a 5min deadline timer to wait for the beacon node to be ready
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	wg := sync.WaitGroup{}
+	ready := make(chan struct{})
 
-	wg.Add(1)
 	b.node.OnReady(ctx, func(ctx context.Context, event *beacon.ReadyEvent) error {
-		wg.Done()
+		close(ready)
 
 		return nil
 	})
 
 	b.node.StartAsync(ctx)
 
-	wg.Wait()
+	select {
+	case <-ready:
+		// Beacon node is ready
+	case <-ctx.Done():
+		return errors.Wrap(ctx.Err(), "beacon node failed to start within timeout")
+	}
 
 	spec, err := b.node.Spec()
 	if err != nil {

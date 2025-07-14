@@ -65,6 +65,16 @@ message SignedAggregateAttestationAndProof {
   string signature = 2;
 }
 
+message AggregateAttestationAndProofV2 {
+  google.protobuf.UInt64Value aggregator_index = 1 [ json_name = "aggregator_index" ];
+
+  AttestationV2 aggregate = 2;
+}
+
+message SignedAggregateAttestationAndProofV2 {
+  AggregateAttestationAndProofV2 message = 1;
+}
+
 message ElaboratedAttestation {
   string signature = 1;
 

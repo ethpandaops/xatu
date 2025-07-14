@@ -58,6 +58,7 @@ var (
 	TypeBeaconEthV2BeaconWithdrawal             Type = v2.BeaconBlockWithdrawalType
 	TypeBlockprintBlockClassification           Type = blockprint.BlockClassificationType
 	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
+	TypeBeaconETHV1EventsDataColumnSidecar      Type = v1.EventsDataColumnSidecarType
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
@@ -81,6 +82,7 @@ var (
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
 	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
+	TypeLibP2PTraceGossipSubAggregateAndProof   Type = Type(libp2p.TraceGossipSubAggregateAndProofType)
 	TypeLibP2PTraceGossipSubBlobSidecar         Type = Type(libp2p.TraceGossipSubBlobSidecarType)
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
 	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
@@ -125,6 +127,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubBeaconAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubBeaconAttestation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubAggregateAndProof, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubAggregateAndProof(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV1BeaconValidators, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconValidators(router.log, event), nil
@@ -230,6 +235,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsBlobSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsBlobSidecar(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsDataColumnSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsDataColumnSidecar(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV1BeaconBlobSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconBlobSidecar(router.log, event), nil

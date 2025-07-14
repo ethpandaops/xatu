@@ -2411,6 +2411,7 @@ transforms:
 
       .tcp = .data.tcp
       .udp = .data.udp
+      .has_ipv6 = .data.has_ipv6
 
       # Handle execution node geo fields from ServerMeta
       if exists(.meta.server.additional_data.geo) {

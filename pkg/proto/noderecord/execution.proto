@@ -23,4 +23,5 @@ message Execution {
   google.protobuf.StringValue ip = 12;
   google.protobuf.UInt32Value tcp = 13;
   google.protobuf.UInt32Value udp = 14;
+  google.protobuf.BoolValue has_ipv6 = 15 [json_name = "has_ipv6"];
 }

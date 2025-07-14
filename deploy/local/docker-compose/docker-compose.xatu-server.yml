@@ -1,0 +1,10 @@
+# Extended configuration for xatu-server with GeoIP support
+services:
+  xatu-server:
+    entrypoint: ["/bin/sh", "/xatu-server-entrypoint.sh"]
+    volumes:
+      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config-template.yaml
+      - ./deploy/local/docker-compose/xatu-server-entrypoint.sh:/xatu-server-entrypoint.sh:ro
+      # Mount GeoIP databases if they exist (these mounts will be ignored if files don't exist)
+      - ${PWD}/GeoLite2-City.mmdb:/geoip/GeoLite2-City.mmdb:ro
+      - ${PWD}/GeoLite2-ASN.mmdb:/geoip/GeoLite2-ASN.mmdb:ro

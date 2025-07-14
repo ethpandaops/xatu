@@ -2394,12 +2394,43 @@ transforms:
       # Parsed ENR fields
       .node_id = .data.node_id
       .client_id = .data.client_id
-      .ip4 = .data.ip4
-      .ip6 = .data.ip6
-      .tcp4 = .data.tcp4
-      .tcp6 = .data.tcp6
-      .udp4 = .data.udp4
-      .udp6 = .data.udp6
+
+      # Handle execution node IP from event data
+      if exists(.data.ip) && is_string(.data.ip) && .data.ip != null && .data.ip != "" {
+        if is_ipv4!(.data.ip) {
+          .ip = ip_to_ipv6!(.data.ip)
+        } else if is_ipv6!(.data.ip) {
+          .ip = .data.ip
+        }
+      } else {
+        .ip = null
+      }
+
+      .tcp = .data.tcp
+      .udp = .data.udp
+
+      # Handle execution node geo fields from ServerMeta
+      if exists(.meta.server.additional_data.geo) {
+        .geo_city = .meta.server.additional_data.geo.city
+        .geo_country = .meta.server.additional_data.geo.country
+        .geo_country_code = .meta.server.additional_data.geo.country_code
+        .geo_continent_code = .meta.server.additional_data.geo.continent_code
+        .geo_longitude = .meta.server.additional_data.geo.longitude
+        .geo_latitude = .meta.server.additional_data.geo.latitude
+        .geo_autonomous_system_number = .meta.server.additional_data.geo.autonomous_system_number
+        .geo_autonomous_system_organization = .meta.server.additional_data.geo.autonomous_system_organization
+      } else {
+        # Set defaults if no geo data available
+        .geo_city = ""
+        .geo_country = ""
+        .geo_country_code = ""
+        .geo_continent_code = ""
+        .geo_longitude = null
+        .geo_latitude = null
+        .geo_autonomous_system_number = null
+        .geo_autonomous_system_organization = null
+      }
+
       .updated_date_time = to_unix_timestamp(now())
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id

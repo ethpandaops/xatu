@@ -1448,6 +1448,8 @@ message ServerMeta {
 
   message AdditionalNodeRecordConsensusData { Geo geo = 1; }
 
+  message AdditionalNodeRecordExecutionData { Geo geo = 1; }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
@@ -1473,6 +1475,10 @@ message ServerMeta {
     // node geo location
     AdditionalNodeRecordConsensusData NODE_RECORD_CONSENSUS = 6
         [ json_name = "NODE_RECORD_CONSENSUS" ];
+    // AdditionalNodeRecordExecution contains additional data on execution
+    // node geo location
+    AdditionalNodeRecordExecutionData NODE_RECORD_EXECUTION = 7
+        [ json_name = "NODE_RECORD_EXECUTION" ];
   }
 }
 

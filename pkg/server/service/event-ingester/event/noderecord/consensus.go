@@ -77,36 +77,55 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	// Try to get IP + port(s) from ENR (IPv4 first, then IPv6).
-	ipString, ports := extractPorts(parsedENR)
-	tcpPort := ports.tcp
-	udpPort := ports.udp
-	quicPort := ports.quic
+	if parsedENR.IP4 != nil {
+		consensusData.Ip = wrapperspb.String(*parsedENR.IP4)
 
-	if ipString == "" {
+		if parsedENR.TCP4 != nil {
+			consensusData.Tcp = wrapperspb.UInt32(*parsedENR.TCP4)
+		}
+
+		if parsedENR.UDP4 != nil {
+			consensusData.Udp = wrapperspb.UInt32(*parsedENR.UDP4)
+		}
+
+		if parsedENR.QUIC4 != nil {
+			consensusData.Quic = wrapperspb.UInt32(*parsedENR.QUIC4)
+		}
+	} else if parsedENR.IP6 != nil {
+		consensusData.Ip = wrapperspb.String(*parsedENR.IP6)
+
+		if parsedENR.TCP6 != nil {
+			consensusData.Tcp = wrapperspb.UInt32(*parsedENR.TCP6)
+		}
+
+		if parsedENR.UDP6 != nil {
+			consensusData.Udp = wrapperspb.UInt32(*parsedENR.UDP6)
+		}
+
+		if parsedENR.QUIC6 != nil {
+			consensusData.Quic = wrapperspb.UInt32(*parsedENR.QUIC6)
+		}
+	}
+
+	if consensusData.Ip == nil {
 		b.log.Debug("no IP address found in ENR")
 
 		return meta
 	}
 
 	// Validate and parse IP address.
-	ip := net.ParseIP(ipString)
+	ip := net.ParseIP(consensusData.Ip.GetValue())
 	if ip == nil {
-		b.log.WithField("ip", ipString).Error("failed to parse IP address")
+		b.log.WithField("ip", consensusData.Ip.GetValue()).Error("failed to parse IP address")
 
 		return meta
 	}
-
-	// Populate IP + port fields in consensus event data.
-	consensusData.Ip = wrapperspb.String(ipString)
-	consensusData.Tcp = wrapperspb.UInt32(tcpPort)
-	consensusData.Udp = wrapperspb.UInt32(udpPort)
-	consensusData.Quic = wrapperspb.UInt32(quicPort)
 
 	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip)
 		if err != nil {
-			b.log.WithField("ip", ipString).WithError(err).Warn("failed to lookup geoip data")
+			b.log.WithField("ip", consensusData.Ip.GetValue()).WithError(err).Warn("failed to lookup geoip data")
 
 			return meta
 		}
@@ -128,7 +147,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 			}
 
 			b.log.WithFields(logrus.Fields{
-				"ip":      ipString,
+				"ip":      consensusData.Ip.GetValue(),
 				"country": geoipResult.CountryName,
 				"city":    geoipResult.CityName,
 			}).Debug("successfully updated server meta with consensus node geo information")
@@ -136,38 +155,4 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	return meta
-}
-
-type portConfig struct {
-	tcp, udp, quic uint32
-}
-
-func extractPorts(parsedENR *coreenr.ENR) (ipString string, ports portConfig) {
-	if parsedENR.IP4 != nil {
-		return *parsedENR.IP4, portConfig{
-			tcp:  safeDeref(parsedENR.TCP4),
-			udp:  safeDeref(parsedENR.UDP4),
-			quic: safeDeref(parsedENR.QUIC4),
-		}
-	}
-
-	if parsedENR.IP6 != nil {
-		return *parsedENR.IP6, portConfig{
-			tcp:  safeDeref(parsedENR.TCP6),
-			udp:  safeDeref(parsedENR.UDP6),
-			quic: safeDeref(parsedENR.QUIC6),
-		}
-	}
-
-	return "", portConfig{}
-}
-
-func safeDeref[T any](ptr *T) T {
-	if ptr != nil {
-		return *ptr
-	}
-
-	var zero T
-
-	return zero
 }

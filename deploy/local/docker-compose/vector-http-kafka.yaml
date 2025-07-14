@@ -27,6 +27,7 @@ transforms:
       eth_v1_events_attestation_v2: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2"
       eth_v1_events_attestation: .event.name == "BEACON_API_ETH_V1_EVENTS_ATTESTATION"
       eth_v1_events_blob_sidecar: .event.name == "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR"
+      eth_v1_events_data_column_sidecar: .event.name == "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR"
       eth_v1_events_block_v2: .event.name == "BEACON_API_ETH_V1_EVENTS_BLOCK_V2"
       eth_v1_events_block: .event.name == "BEACON_API_ETH_V1_EVENTS_BLOCK"
       eth_v1_events_block_gossip: .event.name == "BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP"
@@ -153,6 +154,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-events-blob-sidecar
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  beacon_api_eth_v1_events_data_column_sidecar_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.eth_v1_events_data_column_sidecar
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v1-events-data-column-sidecar
     compression: snappy
     healthcheck:
       enabled: true

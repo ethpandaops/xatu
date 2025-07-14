@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	beacon "github.com/ethpandaops/beacon/pkg/beacon"
+	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -22,14 +22,14 @@ type EventsDataColumnSidecar struct {
 
 	now time.Time
 
-	event          *beacon.DataColumnSidecarEvent
+	event          *apiv1.DataColumnSidecarEvent
 	beacon         *ethereum.BeaconNode
 	duplicateCache *ttlcache.Cache[string, time.Time]
 	clientMeta     *xatu.ClientMeta
 	id             uuid.UUID
 }
 
-func NewEventsDataColumnSidecar(log logrus.FieldLogger, event *beacon.DataColumnSidecarEvent, now time.Time, beaconNode *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsDataColumnSidecar {
+func NewEventsDataColumnSidecar(log logrus.FieldLogger, event *apiv1.DataColumnSidecarEvent, now time.Time, beaconNode *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsDataColumnSidecar {
 	return &EventsDataColumnSidecar{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR"),
 		now:            now,
@@ -56,7 +56,7 @@ func (e *EventsDataColumnSidecar) Decorate(ctx context.Context) (*xatu.Decorated
 				Slot:           &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 				Index:          &wrapperspb.UInt64Value{Value: e.event.Index},
 				BlockRoot:      e.event.BlockRoot.String(),
-				KzgCommitments: e.event.KZGCommitments,
+				KzgCommitments: e.convertKZGCommitments(),
 			},
 		},
 	}
@@ -122,4 +122,13 @@ func (e *EventsDataColumnSidecar) getAdditionalData(_ context.Context) (*xatu.Cl
 	}
 
 	return extra, nil
+}
+
+func (e *EventsDataColumnSidecar) convertKZGCommitments() []string {
+	commitments := make([]string, len(e.event.KZGCommitments))
+	for i, commitment := range e.event.KZGCommitments {
+		commitments[i] = fmt.Sprintf("%#x", commitment)
+	}
+
+	return commitments
 }

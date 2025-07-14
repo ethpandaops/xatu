@@ -258,6 +258,7 @@ services:
           "beacon-api-eth-v1-events-chain-reorg-v2"
           "beacon-api-eth-v1-events-contribution-and-proof"
           "beacon-api-eth-v1-events-contribution-and-proof-v2"
+          "beacon-api-eth-v1-events-data-column-sidecar"
           "beacon-api-eth-v1-events-finalized-checkpoint"
           "beacon-api-eth-v1-events-finalized-checkpoint-v2"
           "beacon-api-eth-v1-events-head"

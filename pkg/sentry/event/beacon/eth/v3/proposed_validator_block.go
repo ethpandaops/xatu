@@ -182,12 +182,30 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 		addTxData(denebTxs)
 	case spec.DataVersionElectra:
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Electra.Block.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute electra block size")
+		}
+
 		electraTxs := make([][]byte, len(e.event.Electra.Block.Body.ExecutionPayload.Transactions))
 		for i, tx := range e.event.Electra.Block.Body.ExecutionPayload.Transactions {
 			electraTxs[i] = tx
 		}
 
 		addTxData(electraTxs)
+	case spec.DataVersionFulu:
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Fulu.Block.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute fulu block size")
+		}
+
+		fuluTxs := make([][]byte, len(e.event.Fulu.Block.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Fulu.Block.Body.ExecutionPayload.Transactions {
+			fuluTxs[i] = tx
+		}
+
+		addTxData(fuluTxs)
+
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")
 	}

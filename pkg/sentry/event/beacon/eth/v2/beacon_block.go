@@ -180,35 +180,16 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 		}
 	}
 
-	switch e.event.Version {
-	case spec.DataVersionBellatrix:
-		bellatrixTxs := make([][]byte, len(e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions))
-		for i, tx := range e.event.Bellatrix.Message.Body.ExecutionPayload.Transactions {
-			bellatrixTxs[i] = tx
+	transactions, err := e.event.ExecutionTransactions()
+	if err != nil {
+		e.log.WithError(err).Warn("Failed to get execution transactions")
+	} else {
+		txs := make([][]byte, len(transactions))
+		for i, tx := range transactions {
+			txs[i] = tx
 		}
 
-		addTxData(bellatrixTxs)
-	case spec.DataVersionCapella:
-		capellaTxs := make([][]byte, len(e.event.Capella.Message.Body.ExecutionPayload.Transactions))
-		for i, tx := range e.event.Capella.Message.Body.ExecutionPayload.Transactions {
-			capellaTxs[i] = tx
-		}
-
-		addTxData(capellaTxs)
-	case spec.DataVersionDeneb:
-		denebTxs := make([][]byte, len(e.event.Deneb.Message.Body.ExecutionPayload.Transactions))
-		for i, tx := range e.event.Deneb.Message.Body.ExecutionPayload.Transactions {
-			denebTxs[i] = tx
-		}
-
-		addTxData(denebTxs)
-	case spec.DataVersionElectra:
-		electraTxs := make([][]byte, len(e.event.Electra.Message.Body.ExecutionPayload.Transactions))
-		for i, tx := range e.event.Electra.Message.Body.ExecutionPayload.Transactions {
-			electraTxs[i] = tx
-		}
-
-		addTxData(electraTxs)
+		addTxData(txs)
 	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
@@ -235,6 +216,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Deneb.Message, nil
 	case spec.DataVersionElectra:
 		return block.Electra.Message, nil
+	case spec.DataVersionFulu:
+		return block.Fulu.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

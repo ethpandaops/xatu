@@ -1,0 +1,37 @@
+  node_record_consensus_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_consensus
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      # Fix: Access data from NODE_RECORD_CONSENSUS field instead of data field
+      .enr = .NODE_RECORD_CONSENSUS.enr
+      .timestamp = .NODE_RECORD_CONSENSUS.timestamp
+      .name = .NODE_RECORD_CONSENSUS.name
+      .fork_digest = .NODE_RECORD_CONSENSUS.fork_digest
+      .finalized_root = .NODE_RECORD_CONSENSUS.finalized_root
+      .finalized_epoch = .NODE_RECORD_CONSENSUS.finalized_epoch
+      .head_root = .NODE_RECORD_CONSENSUS.head_root
+      .head_slot = .NODE_RECORD_CONSENSUS.head_slot
+      .csc = .NODE_RECORD_CONSENSUS.csc
+      # Calculate enr_id from enr (this field is required by ClickHouse but not provided)
+      .enr_id = encode_base64(sha2(.enr, variant: "SHA256"))
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.NODE_RECORD_CONSENSUS)

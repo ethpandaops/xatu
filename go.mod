@@ -7,8 +7,7 @@ toolchain go1.24.1
 // Peerdas branch
 replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36
 
-// Use PK's fulu fork, until upstream is updated (https://github.com/pk910/go-eth2-client/pull/2)
-replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20250603065335-ce8ba1e2c627
+replace github.com/attestantio/go-eth2-client => github.com/samcm/go-eth2-client v0.15.13-0.20250714032458-b02c75e9831d
 
 require (
 	github.com/IBM/sarama v1.45.1

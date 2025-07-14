@@ -112,6 +112,9 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	executionData.Tcp = wrapperspb.UInt32(tcpPort)
 	executionData.Udp = wrapperspb.UInt32(udpPort)
 
+	// Populate node ID field in execution event data.
+	executionData.NodeId = wrapperspb.String(*parsedENR.NodeID)
+
 	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip)

@@ -86,7 +86,14 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 	case spec.DataVersionElectra.String():
 		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_ElectraBlock).ElectraBlock.StateRoot
 	case spec.DataVersionFulu.String():
-		hash = data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_FuluBlock).FuluBlock.StateRoot
+		fuluBlock, ok := data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_FuluBlock)
+		if !ok {
+			b.log.Error("failed to cast message to FuluBlock")
+
+			return true
+		}
+
+		hash = fuluBlock.FuluBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

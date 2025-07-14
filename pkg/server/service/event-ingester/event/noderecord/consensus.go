@@ -76,12 +76,24 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Try to get IP from ENR (IPv4 first, then IPv6).
-	var ipString string
+	// Try to get IP + port(s) from ENR (IPv4 first, then IPv6).
+	var (
+		ipString string
+		tcpPort  uint32
+		udpPort  uint32
+		quicPort uint32
+	)
+
 	if parsedENR.IP4 != nil {
 		ipString = *parsedENR.IP4
+		tcpPort = *parsedENR.TCP4
+		udpPort = *parsedENR.UDP4
+		quicPort = *parsedENR.QUIC4
 	} else if parsedENR.IP6 != nil {
 		ipString = *parsedENR.IP6
+		tcpPort = *parsedENR.TCP6
+		udpPort = *parsedENR.UDP6
+		quicPort = *parsedENR.QUIC6
 	}
 
 	if ipString == "" {
@@ -98,8 +110,11 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Populate IP field in consensus event data.
+	// Populate IP + port fields in consensus event data.
 	consensusData.Ip = wrapperspb.String(ipString)
+	consensusData.Tcp = wrapperspb.UInt32(tcpPort)
+	consensusData.Udp = wrapperspb.UInt32(udpPort)
+	consensusData.Quic = wrapperspb.UInt32(quicPort)
 
 	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {

@@ -23,4 +23,7 @@ message Consensus {
   google.protobuf.Timestamp head_slot_start_date_time = 13 [ json_name = "head_slot_start_date_time" ];
   google.protobuf.StringValue cgc = 14;
   google.protobuf.StringValue ip = 15;
+  google.protobuf.UInt32Value tcp = 16;
+  google.protobuf.UInt32Value udp = 17;
+  google.protobuf.UInt32Value quic = 18;
 }

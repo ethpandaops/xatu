@@ -539,16 +539,18 @@ func (d *Discovery) createConsensusStatusEvent(ctx context.Context, status *xatu
 
 	// Convert ConsensusNodeStatus to noderecord.Consensus
 	consensusData := &noderecord.Consensus{
-		Enr:            &wrapperspb.StringValue{Value: status.GetNodeRecord()},
-		NodeId:         &wrapperspb.StringValue{Value: status.GetNodeId()},
-		PeerId:         &wrapperspb.StringValue{Value: status.GetPeerId()},
-		Timestamp:      &wrapperspb.Int64Value{Value: now.Unix()},
-		Name:           &wrapperspb.StringValue{Value: status.GetName()},
-		ForkDigest:     &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetForkDigest())},
-		FinalizedRoot:  &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetFinalizedRoot())},
-		FinalizedEpoch: &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
-		HeadRoot:       &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
-		HeadSlot:       &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
+		Enr:                         &wrapperspb.StringValue{Value: status.GetNodeRecord()},
+		NodeId:                      &wrapperspb.StringValue{Value: status.GetNodeId()},
+		PeerId:                      &wrapperspb.StringValue{Value: status.GetPeerId()},
+		Timestamp:                   &wrapperspb.Int64Value{Value: now.Unix()},
+		Name:                        &wrapperspb.StringValue{Value: status.GetName()},
+		ForkDigest:                  &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetForkDigest())},
+		FinalizedRoot:               &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetFinalizedRoot())},
+		FinalizedEpoch:              &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetFinalizedEpoch())},
+		FinalizedEpochStartDateTime: status.FinalizedEpochStartDateTime,
+		HeadRoot:                    &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", status.GetHeadRoot())},
+		HeadSlot:                    &wrapperspb.UInt64Value{Value: uint64FromBytes(status.GetHeadSlot())},
+		HeadSlotStartDateTime:       status.HeadSlotStartDateTime,
 	}
 
 	if status.GetCgc() != nil {

@@ -11,6 +11,7 @@ import (
 	coreenr "github.com/ethpandaops/ethcore/pkg/ethereum/node/enr"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type ConsensusCrawler struct {
@@ -136,19 +137,34 @@ func (c *ConsensusCrawler) createNodeStatus(crawl *crawler.SuccessfulCrawl) (*xa
 		return nil, fmt.Errorf("failed to parse ENR record: %w", err)
 	}
 
+	var (
+		finalizedEpochStart *timestamppb.Timestamp
+		headSlotStart       *timestamppb.Timestamp
+	)
+
+	if crawl.FinalizedEpochStartDateTime != nil {
+		finalizedEpochStart = timestamppb.New(*crawl.FinalizedEpochStartDateTime)
+	}
+
+	if crawl.HeadSlotStartDateTime != nil {
+		headSlotStart = timestamppb.New(*crawl.HeadSlotStartDateTime)
+	}
+
 	return &xatu.ConsensusNodeStatus{
-		NodeRecord:     nodeRecord,
-		NodeId:         crawl.NodeID,
-		PeerId:         crawl.PeerID.String(),
-		Name:           crawl.AgentVersion,
-		ForkDigest:     crawl.Status.ForkDigest[:],
-		NextForkDigest: extractNFD(enrRecord),
-		FinalizedRoot:  crawl.Status.FinalizedRoot[:],
-		FinalizedEpoch: encodeUint64ToBytes(uint64(crawl.Status.FinalizedEpoch)),
-		HeadRoot:       crawl.Status.HeadRoot[:],
-		HeadSlot:       encodeUint64ToBytes(uint64(crawl.Status.HeadSlot)),
-		Cgc:            extractCGC(enrRecord),
-		NetworkId:      crawl.NetworkID,
+		NodeRecord:                  nodeRecord,
+		NodeId:                      crawl.NodeID,
+		PeerId:                      crawl.PeerID.String(),
+		Name:                        crawl.AgentVersion,
+		ForkDigest:                  crawl.Status.ForkDigest[:],
+		NextForkDigest:              extractNFD(enrRecord),
+		FinalizedRoot:               crawl.Status.FinalizedRoot[:],
+		FinalizedEpoch:              encodeUint64ToBytes(uint64(crawl.Status.FinalizedEpoch)),
+		FinalizedEpochStartDateTime: finalizedEpochStart,
+		HeadRoot:                    crawl.Status.HeadRoot[:],
+		HeadSlot:                    encodeUint64ToBytes(uint64(crawl.Status.HeadSlot)),
+		HeadSlotStartDateTime:       headSlotStart,
+		Cgc:                         extractCGC(enrRecord),
+		NetworkId:                   crawl.NetworkID,
 	}, nil
 }
 

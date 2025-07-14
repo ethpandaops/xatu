@@ -4,6 +4,8 @@ package xatu;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
 
+import "google/protobuf/timestamp.proto";
+
 service Coordinator {
   rpc CreateNodeRecords(CreateNodeRecordsRequest)
       returns (CreateNodeRecordsResponse) {}
@@ -98,12 +100,14 @@ message ConsensusNodeStatus {
   bytes next_fork_digest = 4;
   bytes finalized_root = 5;
   bytes finalized_epoch = 6;
-  bytes head_root = 7;
-  bytes head_slot = 8;
-  bytes cgc = 9;
-  uint64 network_id = 10;
-  string node_id = 11;
-  string peer_id = 12;
+  google.protobuf.Timestamp finalized_epoch_start_date_time = 7 [ json_name = "finalized_epoch_start_date_time" ];
+  bytes head_root = 8;
+  bytes head_slot = 9;
+  google.protobuf.Timestamp head_slot_start_date_time = 10 [ json_name = "head_slot_start_date_time" ];
+  bytes cgc = 11;
+  uint64 network_id = 12;
+  string node_id = 13;
+  string peer_id = 14;
 }
 
 message ListStalledConsensusNodeRecordsRequest { int32 page_size = 1; }

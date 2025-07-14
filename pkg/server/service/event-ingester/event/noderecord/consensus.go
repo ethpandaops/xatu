@@ -77,24 +77,10 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	// Try to get IP + port(s) from ENR (IPv4 first, then IPv6).
-	var (
-		ipString string
-		tcpPort  uint32
-		udpPort  uint32
-		quicPort uint32
-	)
-
-	if parsedENR.IP4 != nil {
-		ipString = *parsedENR.IP4
-		tcpPort = *parsedENR.TCP4
-		udpPort = *parsedENR.UDP4
-		quicPort = *parsedENR.QUIC4
-	} else if parsedENR.IP6 != nil {
-		ipString = *parsedENR.IP6
-		tcpPort = *parsedENR.TCP6
-		udpPort = *parsedENR.UDP6
-		quicPort = *parsedENR.QUIC6
-	}
+	ipString, ports := extractPorts(parsedENR)
+	tcpPort := ports.tcp
+	udpPort := ports.udp
+	quicPort := ports.quic
 
 	if ipString == "" {
 		b.log.Debug("no IP address found in ENR")
@@ -150,4 +136,38 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	return meta
+}
+
+type portConfig struct {
+	tcp, udp, quic uint32
+}
+
+func extractPorts(parsedENR *coreenr.ENR) (ipString string, ports portConfig) {
+	if parsedENR.IP4 != nil {
+		return *parsedENR.IP4, portConfig{
+			tcp:  safeDeref(parsedENR.TCP4),
+			udp:  safeDeref(parsedENR.UDP4),
+			quic: safeDeref(parsedENR.QUIC4),
+		}
+	}
+
+	if parsedENR.IP6 != nil {
+		return *parsedENR.IP6, portConfig{
+			tcp:  safeDeref(parsedENR.TCP6),
+			udp:  safeDeref(parsedENR.UDP6),
+			quic: safeDeref(parsedENR.QUIC6),
+		}
+	}
+
+	return "", portConfig{}
+}
+
+func safeDeref[T any](ptr *T) T {
+	if ptr != nil {
+		return *ptr
+	}
+
+	var zero T
+
+	return zero
 }

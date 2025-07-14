@@ -2239,9 +2239,9 @@ transforms:
 
       # Handle finalized_epoch_start_date_time timestamp
       if exists(.data.finalized_epoch_start_date_time) && .data.finalized_epoch_start_date_time != null {
-        finalized_epoch_start_date_time, err = parse_timestamp(.data.finalized_epoch_start_date_time, format: "%+");
+        finalized_epoch_start_date_time, err = parse_timestamp(.data.finalized_epoch_start_date_time, format: "%+")
         if err == null {
-          .finalized_epoch_start_date_time = to_unix_timestamp(finalized_epoch_start_date_time, unit: "milliseconds")
+          .finalized_epoch_start_date_time = to_unix_timestamp(finalized_epoch_start_date_time)
         } else {
           .finalized_epoch_start_date_time = null
         }
@@ -2251,9 +2251,9 @@ transforms:
 
       # Handle head_slot_start_date_time timestamp
       if exists(.data.head_slot_start_date_time) && .data.head_slot_start_date_time != null {
-        head_slot_start_date_time, err = parse_timestamp(.data.head_slot_start_date_time, format: "%+");
+        head_slot_start_date_time, err = parse_timestamp(.data.head_slot_start_date_time, format: "%+")
         if err == null {
-          .head_slot_start_date_time = to_unix_timestamp(head_slot_start_date_time, unit: "milliseconds")
+          .head_slot_start_date_time = to_unix_timestamp(head_slot_start_date_time)
         } else {
           .head_slot_start_date_time = null
         }

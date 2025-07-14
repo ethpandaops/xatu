@@ -105,6 +105,8 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		if parsedENR.QUIC6 != nil {
 			consensusData.Quic = wrapperspb.UInt32(*parsedENR.QUIC6)
 		}
+
+		consensusData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
 	if consensusData.Ip == nil {

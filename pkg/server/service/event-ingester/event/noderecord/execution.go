@@ -100,14 +100,16 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		if parsedENR.UDP6 != nil {
 			executionData.Udp = wrapperspb.UInt32(*parsedENR.UDP6)
 		}
-
-		executionData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
 	if executionData.Ip == nil {
 		b.log.Debug("no IP address found in ENR")
 
 		return meta
+	}
+
+	if parsedENR.IP6 != nil {
+		executionData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
 	// Validate and parse IP address.

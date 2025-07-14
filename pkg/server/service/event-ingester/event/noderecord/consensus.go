@@ -105,14 +105,16 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		if parsedENR.QUIC6 != nil {
 			consensusData.Quic = wrapperspb.UInt32(*parsedENR.QUIC6)
 		}
-
-		consensusData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
 	if consensusData.Ip == nil {
 		b.log.Debug("no IP address found in ENR")
 
 		return meta
+	}
+
+	if parsedENR.IP6 != nil {
+		consensusData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
 	// Validate and parse IP address.

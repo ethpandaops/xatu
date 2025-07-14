@@ -26,4 +26,5 @@ message Consensus {
   google.protobuf.UInt32Value tcp = 16;
   google.protobuf.UInt32Value udp = 17;
   google.protobuf.UInt32Value quic = 18;
+  google.protobuf.BoolValue has_ipv6 = 19 [json_name = "has_ipv6"];
 }

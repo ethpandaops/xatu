@@ -76,54 +76,53 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 		return meta
 	}
 
-	// Try to get IP + ports from ENR (IPv4 first, then IPv6).
-	var ipString string
+	// Populate node ID field in execution event data.
+	executionData.NodeId = wrapperspb.String(*parsedENR.NodeID)
 
-	var tcpPort uint32
-
-	var udpPort uint32
-
-	hasIPv6 := false
-
+	// Try to get IP + port(s) from ENR (IPv4 first, then IPv6).
 	if parsedENR.IP4 != nil {
-		ipString = *parsedENR.IP4
-		tcpPort = *parsedENR.TCP4
-		udpPort = *parsedENR.UDP4
+		executionData.Ip = wrapperspb.String(*parsedENR.IP4)
+
+		if parsedENR.TCP4 != nil {
+			executionData.Tcp = wrapperspb.UInt32(*parsedENR.TCP4)
+		}
+
+		if parsedENR.UDP4 != nil {
+			executionData.Udp = wrapperspb.UInt32(*parsedENR.UDP4)
+		}
 	} else if parsedENR.IP6 != nil {
-		ipString = *parsedENR.IP6
-		tcpPort = *parsedENR.TCP6
-		udpPort = *parsedENR.UDP6
-		hasIPv6 = true
+		executionData.Ip = wrapperspb.String(*parsedENR.IP6)
+
+		if parsedENR.TCP6 != nil {
+			executionData.Tcp = wrapperspb.UInt32(*parsedENR.TCP6)
+		}
+
+		if parsedENR.UDP6 != nil {
+			executionData.Udp = wrapperspb.UInt32(*parsedENR.UDP6)
+		}
+
+		executionData.HasIpv6 = wrapperspb.Bool(true)
 	}
 
-	if ipString == "" {
+	if executionData.Ip == nil {
 		b.log.Debug("no IP address found in ENR")
 
 		return meta
 	}
 
 	// Validate and parse IP address.
-	ip := net.ParseIP(ipString)
+	ip := net.ParseIP(executionData.Ip.GetValue())
 	if ip == nil {
-		b.log.WithField("ip", ipString).Error("failed to parse IP address")
+		b.log.WithField("ip", executionData.Ip.GetValue()).Error("failed to parse IP address")
 
 		return meta
 	}
-
-	// Populate IP + ports field in execution event data.
-	executionData.Ip = wrapperspb.String(ipString)
-	executionData.Tcp = wrapperspb.UInt32(tcpPort)
-	executionData.Udp = wrapperspb.UInt32(udpPort)
-	executionData.HasIpv6 = wrapperspb.Bool(hasIPv6)
-
-	// Populate node ID field in execution event data.
-	executionData.NodeId = wrapperspb.String(*parsedENR.NodeID)
 
 	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip)
 		if err != nil {
-			b.log.WithField("ip", ipString).WithError(err).Warn("failed to lookup geoip data")
+			b.log.WithField("ip", executionData.Ip.GetValue()).WithError(err).Warn("failed to lookup geoip data")
 
 			return meta
 		}
@@ -145,7 +144,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 			}
 
 			b.log.WithFields(logrus.Fields{
-				"ip":      ipString,
+				"ip":      executionData.Ip.GetValue(),
 				"country": geoipResult.CountryName,
 				"city":    geoipResult.CityName,
 			}).Debug("successfully updated server meta with execution node geo information")

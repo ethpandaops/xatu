@@ -2289,6 +2289,7 @@ transforms:
       .tcp = .data.tcp
       .udp = .data.udp
       .quic = .data.quic
+      .has_ipv6 = .data.has_ipv6
 
       # Handle consensus node geo fields from ServerMeta
       if exists(.meta.server.additional_data.geo) {

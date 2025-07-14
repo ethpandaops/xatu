@@ -24,6 +24,7 @@ CREATE TABLE default.node_record_consensus_local ON CLUSTER '{cluster}' (
     `tcp` Nullable(UInt16) COMMENT 'TCP port from ENR' CODEC(DoubleDelta, ZSTD(1)),
     `udp` Nullable(UInt16) COMMENT 'UDP port from ENR' CODEC(DoubleDelta, ZSTD(1)),
     `quic` Nullable(UInt16) COMMENT 'QUIC port from ENR' CODEC(DoubleDelta, ZSTD(1)),
+    `has_ipv6` Bool COMMENT 'Whether the consensus node has an IPv6 address' CODEC(ZSTD(1)),
     `geo_city` LowCardinality(String) COMMENT 'City of the consensus node' CODEC(ZSTD(1)),
     `geo_country` LowCardinality(String) COMMENT 'Country of the consensus node' CODEC(ZSTD(1)),
     `geo_country_code` LowCardinality(String) COMMENT 'Country code of the consensus node' CODEC(ZSTD(1)),

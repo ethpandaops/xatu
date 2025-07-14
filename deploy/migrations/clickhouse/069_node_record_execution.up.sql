@@ -16,7 +16,6 @@ CREATE TABLE default.node_record_execution_local ON CLUSTER '{cluster}' (
     `fork_id_hash` String COMMENT 'Fork ID hash' CODEC(ZSTD(1)),
     `fork_id_next` String COMMENT 'Fork ID next block' CODEC(ZSTD(1)),
     `node_id` String COMMENT 'Node ID from ENR' CODEC(ZSTD(1)),
-    `client_id` String COMMENT 'Client identifier from ENR' CODEC(ZSTD(1)),
     `ip` Nullable(IPv6) COMMENT 'IP address of the execution node' CODEC(ZSTD(1)),
     `tcp` Nullable(UInt16) COMMENT 'TCP port from ENR' CODEC(DoubleDelta, ZSTD(1)),
     `udp` Nullable(UInt16) COMMENT 'UDP port from ENR' CODEC(DoubleDelta, ZSTD(1)),

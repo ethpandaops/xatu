@@ -75,6 +75,15 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_DenebBlock).DenebBlock.GetStateRoot()
 	case "electra":
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_ElectraBlock).ElectraBlock.GetStateRoot()
+	case "fulu":
+		fuluBlock, ok := data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_FuluBlock)
+		if !ok {
+			b.log.Error("failed to cast message to FuluBlock")
+
+			return true
+		}
+
+		hash = fuluBlock.FuluBlock.GetStateRoot()
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

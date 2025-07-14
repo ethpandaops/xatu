@@ -33,6 +33,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromDeneb(proposal.Deneb.Block, nil)
 	case spec.DataVersionElectra:
 		data = NewEventBlockFromElectra(proposal.Electra.Block, nil)
+	case spec.DataVersionFulu:
+		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -56,6 +58,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromDeneb(block.Deneb.Message, &block.Deneb.Signature)
 	case spec.DataVersionElectra:
 		data = NewEventBlockFromElectra(block.Electra.Message, &block.Electra.Signature)
+	case spec.DataVersionFulu:
+		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -336,6 +340,73 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 				ParentRoot:    block.ParentRoot.String(),
 				StateRoot:     block.StateRoot.String(),
 				Body: &v2.BeaconBlockBodyElectra{
+					RandaoReveal: block.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					ExecutionPayload: &v1.ExecutionPayloadElectra{
+						ParentHash:    block.Body.ExecutionPayload.ParentHash.String(),
+						FeeRecipient:  block.Body.ExecutionPayload.FeeRecipient.String(),
+						StateRoot:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.StateRoot[:]),
+						ReceiptsRoot:  fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ReceiptsRoot[:]),
+						LogsBloom:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.LogsBloom[:]),
+						PrevRandao:    fmt.Sprintf("0x%x", block.Body.ExecutionPayload.PrevRandao[:]),
+						BlockNumber:   &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.BlockNumber},
+						GasLimit:      &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasLimit},
+						GasUsed:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
+						Timestamp:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
+						ExtraData:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
+						BaseFeePerGas: block.Body.ExecutionPayload.BaseFeePerGas.String(),
+						BlockHash:     block.Body.ExecutionPayload.BlockHash.String(),
+						Transactions:  getTransactions(block.Body.ExecutionPayload.Transactions),
+						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Body.ExecutionPayload.Withdrawals),
+						BlobGasUsed:   &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.BlobGasUsed},
+						ExcessBlobGas: &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.ExcessBlobGas},
+					},
+					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
+					BlobKzgCommitments:    kzgCommitments,
+					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
+}
+
+// Note: Fulu and electra blocks are identical.
+func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
+	kzgCommitments := []string{}
+
+	for _, commitment := range block.Body.BlobKZGCommitments {
+		kzgCommitments = append(kzgCommitments, commitment.String())
+	}
+
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_FULU,
+		Message: &v2.EventBlockV2_FuluBlock{
+			FuluBlock: &v2.BeaconBlockFulu{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyFulu{
 					RandaoReveal: block.Body.RANDAOReveal.String(),
 					Eth1Data: &v1.Eth1Data{
 						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),

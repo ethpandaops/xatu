@@ -1,11 +1,15 @@
 package clmimicry
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"slices"
 
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/probe-lab/hermes/host"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -45,6 +49,43 @@ const (
 // 3. Request/Response (RPC) protocol events:
 //   - "HANDLE_METADATA": Processing of metadata requests
 //   - "HANDLE_STATUS": Processing of status requests
+
+// HandleHermesEvent processes a Hermes trace event and routes it to the appropriate handler
+func (p *Processor) HandleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
+	if event == nil {
+		return errors.New("event is nil")
+	}
+
+	p.log.WithField("type", event.Type).Trace("Received Hermes event")
+
+	traceMeta := &libp2p.TraceEventMetadata{
+		PeerId: wrapperspb.String(event.PeerID.String()),
+	}
+
+	// Route the event to the appropriate handler based on its category.
+	switch {
+	// GossipSub protocol events.
+	case isGossipSubEvent(event):
+		return p.handleHermesGossipSubEvent(ctx, event, p.clientMeta, traceMeta)
+
+	// libp2p pubsub protocol level events.
+	case isLibp2pEvent(event):
+		return p.handleHermesLibp2pEvent(ctx, event, p.clientMeta, traceMeta)
+
+	// libp2p core networking events.
+	case isLibp2pCoreEvent(event):
+		return p.handleHermesLibp2pCoreEvent(ctx, event, p.clientMeta, traceMeta)
+
+	// Request/Response (RPC) protocol events.
+	case isRpcEvent(event):
+		return p.handleHermesRPCEvent(ctx, event, p.clientMeta, traceMeta)
+
+	default:
+		p.log.WithField("type", event.Type).Trace("unsupported Hermes event")
+
+		return nil
+	}
+}
 
 // getNetworkID extracts the network ID from the client metadata.
 func getNetworkID(clientMeta *xatu.ClientMeta) string {

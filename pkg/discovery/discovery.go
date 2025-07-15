@@ -388,19 +388,17 @@ func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.Cons
 	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "consensus", fmt.Sprintf("0x%x", status.GetForkDigest()))
 
 	// Create and send status event for ClickHouse
-	if d.Config.P2P.Type == p2p.TypeXatu {
-		decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
-		if err != nil {
-			d.log.WithError(err).Error("Failed to create consensus status event")
-		} else {
-			for _, sink := range d.sinks {
-				if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
-					d.log.
-						WithError(sinkErr).
-						WithField("sink", sink.Type()).
-						WithField("event_type", decoratedEvent.GetEvent().GetName()).
-						Error("Failed to send event to sink")
-				}
+	decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
+	if err != nil {
+		d.log.WithError(err).Error("Failed to create consensus status event")
+	} else {
+		for _, sink := range d.sinks {
+			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
+				d.log.
+					WithError(sinkErr).
+					WithField("sink", sink.Type()).
+					WithField("event_type", decoratedEvent.GetEvent().GetName()).
+					Error("Failed to send event to sink")
 			}
 		}
 	}

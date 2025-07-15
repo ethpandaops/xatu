@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/output/mock"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -2750,7 +2751,7 @@ func validateEventCounts(t *testing.T, events []*xatu.DecoratedEvent, assertions
 func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry {
 	t.Helper()
 
-	return &Mimicry{
+	mimicry := &Mimicry{
 		Config:  config,
 		sinks:   []output.Sink{sink},
 		log:     logrus.NewEntry(logrus.New()),
@@ -2762,6 +2763,25 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 			enabled:          false, // Disable sharding for tests
 		},
 	}
+
+	// Initialize processor for tests
+	clientMeta := createTestClientMeta()
+	wallclock := &ethwallclock.EthereumBeaconChain{}
+
+	mimicry.processor = NewProcessor(
+		mimicry,               // DutiesProvider
+		mimicry,               // OutputHandler
+		mimicry.metrics,       // MetricsCollector
+		mimicry.sharder,       // UnifiedSharder
+		NewEventCategorizer(), // EventCategorizer
+		wallclock,             // EthereumBeaconChain
+		time.Duration(0),      // clockDrift
+		config.Events,         // EventConfig
+		clientMeta,            // ClientMeta
+		mimicry.log.WithField("component", "processor"),
+	)
+
+	return mimicry
 }
 
 // Helper to create a mock expectation that validates event counts

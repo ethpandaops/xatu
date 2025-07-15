@@ -35,6 +35,8 @@ var libp2pToXatuEventMap = map[string]string{
 }
 
 // handleHermesLibp2pEvent handles libp2p pubsub protocol level events.
+//
+//nolint:gocyclo // This function handles multiple event types and is intentionally complex
 func (p *Processor) handleHermesLibp2pEvent(
 	ctx context.Context,
 	event *host.TraceEvent,

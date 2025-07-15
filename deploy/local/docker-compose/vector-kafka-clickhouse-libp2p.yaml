@@ -1138,7 +1138,7 @@ transforms:
       .signature = .data.message.aggregate.signature
 
       .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
-      
+
       .slot = .data.message.aggregate.data.slot
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {
@@ -1447,13 +1447,14 @@ transforms:
         }
       }
 
-      key, err = rootEventKey + "rpc_meta_control_ihave" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
+      key, err = to_string(rootEventKey) + "_rpc_meta_control_ihave_" + to_string(.data.control_index) + "_" + to_string(.data.message_index)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
-          "index": .data.message_index,
+          "message_index": .data.message_index,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_control_ihave"
       }
       .unique_key = seahash(key)
@@ -1497,13 +1498,14 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      key, err = rootEventKey + "rpc_meta_control_iwant" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
+      key, err = to_string(rootEventKey) + "_rpc_meta_control_iwant_" + to_string(.data.control_index) + "_" + to_string(.data.message_index)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
-          "index": .data.message_index,
+          "message_index": .data.message_index,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_control_iwant"
       }
       .unique_key = seahash(key)
@@ -1547,13 +1549,14 @@ transforms:
       }
       .peer_id_unique_key = seahash(peer_id_key)
 
-      key, err = rootEventKey + "rpc_meta_control_idontwant" +to_string(.data.control_index)+ "_" + to_string(.data.message_index)
+      key, err = to_string(rootEventKey) + "_rpc_meta_control_idontwant_" + to_string(.data.control_index) + "_" + to_string(.data.message_index)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
-          "index": .data.message_index,
+          "message_index": .data.message_index,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_control_idontwant"
       }
       .unique_key = seahash(key)
@@ -1614,13 +1617,14 @@ transforms:
         }
       }
 
-      key, err = rootEventKey + "rpc_meta_control_graft" +to_string(.data.control_index)+ "_" + to_string(.data.topic)
+      key, err = to_string(rootEventKey) + "_rpc_meta_control_graft_" + to_string(.data.control_index) + "_" + to_string(.data.topic)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
           "topic": .data.topic,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_control_graft"
       }
       .unique_key = seahash(key)
@@ -1687,13 +1691,14 @@ transforms:
       }
       .graft_peer_id_unique_key = seahash(graft_peer_id_key)
 
-      key, err = rootEventKey + "rpc_meta_control_prune" +to_string(.data.control_index)+ "_" + to_string(.data.peer_index)
+      key, err = to_string(rootEventKey) + "_rpc_meta_control_prune_" + to_string(.data.control_index) + "_" + to_string(.data.peer_index)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
           "peer_index": .data.peer_index,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_control_prune"
       }
       .unique_key = seahash(key)
@@ -1753,13 +1758,14 @@ transforms:
         }
       }
 
-      key, err = rootEventKey + "rpc_meta_subscription" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      key, err = to_string(rootEventKey) + "_rpc_meta_subscription_" + to_string(.data.control_index) + "_" + to_string(.data.topic_id)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
           "topic_id": .data.topic_id,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_subscription"
       }
       .unique_key = seahash(key)
@@ -1819,13 +1825,14 @@ transforms:
         }
       }
 
-      key, err = rootEventKey + "rpc_meta_message" +to_string(.data.control_index)+ "_" + to_string(.data.topic_id)
+      key, err = to_string(rootEventKey) + "_rpc_meta_message_" + to_string(.data.control_index) + "_" + to_string(.data.topic_id)
       if err != null {
         .errDebug = {
           "root_event_key": rootEventKey,
           "topic_id": .data.topic_id,
+          "control_index": .data.control_index,
         }
-        .error = err
+        .error = "failed to generate unique key"
         .error_description = "failed to generate unique key for rpc_meta_message"
       }
       .unique_key = seahash(key)

@@ -3,7 +3,9 @@ package p2p
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+	"slices"
 	"sync"
 	"time"
 
@@ -336,8 +338,22 @@ func (s *Status) handleSubscriberError(err error, topic string) {
 	}
 }
 
-func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error) {
+func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context.Context, status *xatu.ExecutionNodeStatus) error, networkIds []uint64, forkIdHashes []string) {
 	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
+		// exclude execution status for network ids that are not in the list
+		if len(networkIds) > 0 && !slices.Contains(networkIds, status.NetworkId) {
+			s.log.WithField("network_id", status.NetworkId).Warn("skipping execution status for network id")
+
+			return
+		}
+
+		// exclude execution status for fork id hashes that are not in the list
+		if len(forkIdHashes) > 0 && !slices.Contains(forkIdHashes, fmt.Sprintf("0x%x", status.ForkId.Hash)) {
+			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.ForkId.Hash)).Warn("skipping execution status for fork id hash")
+
+			return
+		}
+
 		s.handleSubscriberError(handler(ctx, status), topicExecutionStatus)
 	})
 }

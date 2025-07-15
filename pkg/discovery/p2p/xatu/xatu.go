@@ -233,3 +233,15 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 
 	return nil
 }
+
+func (c *Coordinator) GetNetworkIds() []uint64 {
+	return c.config.NetworkIds
+}
+
+func (c *Coordinator) GetForkIdHashes() []string {
+	return c.config.ForkIDHashes
+}
+
+func (c *Coordinator) GetForkDigests() []string {
+	return c.config.ForkDigests
+}

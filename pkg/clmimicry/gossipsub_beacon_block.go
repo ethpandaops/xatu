@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-func (m *Mimicry) handleGossipBeaconBlock(
+func (p *Processor) handleGossipBeaconBlock(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
@@ -78,7 +78,7 @@ func (m *Mimicry) handleGossipBeaconBlock(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubBeaconBlockData(payload, slot, event)
+	additionalData, err := p.createAdditionalGossipSubBeaconBlockData(payload, slot, event)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -90,7 +90,7 @@ func (m *Mimicry) handleGossipBeaconBlock(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -101,16 +101,16 @@ func (m *Mimicry) handleGossipBeaconBlock(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
-func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(
+func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 	payload any,
 	slotNumber primitives.Slot,
 	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(event.Timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
@@ -127,10 +127,10 @@ func (m *Mimicry) createAdditionalGossipSubBeaconBlockData(
 	}
 
 	// Add Clock Drift
-	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
+	timestampAdjusted := event.Timestamp.Add(p.clockDrift)
 
-	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
-	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))
+	slot := p.wallclock.Slots().FromNumber(uint64(slotNumber))
+	epoch := p.wallclock.Epochs().FromSlot(uint64(slotNumber))
 
 	extra.Slot = &xatu.SlotV2{
 		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),

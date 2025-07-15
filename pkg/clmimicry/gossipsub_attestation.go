@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-func (m *Mimicry) handleGossipAttestation(
+func (p *Processor) handleGossipAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
@@ -51,7 +51,7 @@ func (m *Mimicry) handleGossipAttestation(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubAttestationData(payload, attestationData, event)
+	additionalData, err := p.createAdditionalGossipSubAttestationData(payload, attestationData, event)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -63,7 +63,7 @@ func (m *Mimicry) handleGossipAttestation(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -74,25 +74,25 @@ func (m *Mimicry) handleGossipAttestation(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
-func (m *Mimicry) createAdditionalGossipSubAttestationData(
+func (p *Processor) createAdditionalGossipSubAttestationData(
 	payload *eth.TraceEventAttestation,
 	attestationData *ethtypes.AttestationData,
 	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(event.Timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
 	// Add Clock Drift
-	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
+	timestampAdjusted := event.Timestamp.Add(p.clockDrift)
 
-	attestionSlot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(attestationData.GetSlot()))
-	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(attestationData.GetSlot()))
+	attestionSlot := p.wallclock.Slots().FromNumber(uint64(attestationData.GetSlot()))
+	epoch := p.wallclock.Epochs().FromSlot(uint64(attestationData.GetSlot()))
 
 	extra := &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{
 		WallclockSlot: &xatu.SlotV2{
@@ -118,7 +118,7 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(
 		},
 	}
 
-	targetEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestationData.GetTarget().GetEpoch()))
+	targetEpoch := p.wallclock.Epochs().FromNumber(uint64(attestationData.GetTarget().GetEpoch()))
 	extra.Target = &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: targetEpoch.Number()},
@@ -126,7 +126,7 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(
 		},
 	}
 
-	sourceEpoch := m.ethereum.Metadata().Wallclock().Epochs().FromNumber(uint64(attestationData.GetSource().GetEpoch()))
+	sourceEpoch := p.wallclock.Epochs().FromNumber(uint64(attestationData.GetSource().GetEpoch()))
 	extra.Source = &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData{
 		Epoch: &xatu.EpochV2{
 			Number:        &wrapperspb.UInt64Value{Value: sourceEpoch.Number()},
@@ -141,7 +141,7 @@ func (m *Mimicry) createAdditionalGossipSubAttestationData(
 
 	// If the attestation is not aggregated, we can append the validator position within the committee.
 	if payload.Attestation.GetAggregationBits().Count() == 1 {
-		validatorIndex, err := m.ethereum.Duties().GetValidatorIndex(
+		validatorIndex, err := p.duties.GetValidatorIndex(
 			phase0.Epoch(epoch.Number()),
 			phase0.Slot(attestationData.GetSlot()),
 			phase0.CommitteeIndex(attestationData.GetCommitteeIndex()),

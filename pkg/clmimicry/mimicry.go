@@ -19,7 +19,9 @@ import (
 	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p/encoder"
 	"github.com/OffchainLabs/prysm/v6/config/params"
 	"github.com/OffchainLabs/prysm/v6/time/slots"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
+	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -57,6 +59,8 @@ type Mimicry struct {
 	ethereum *ethereum.BeaconNode
 
 	sharder *UnifiedSharder
+
+	processor *Processor
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Mimicry, error) {
@@ -147,6 +151,29 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	m.networkConfig = c.Network
 	m.beaconConfig = c.Beacon
 
+	// Initialize the processor now that beaconConfig is available
+	m.log.Info("Initializing processor..")
+
+	clientMeta, err := m.createNewClientMeta(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create client meta: %w", err)
+	}
+
+	m.processor = NewProcessor(
+		m,                                 // DutiesProvider
+		m,                                 // OutputHandler
+		m.metrics,                         // MetricsCollector
+		m.sharder,                         // UnifiedSharder
+		NewEventCategorizer(),             // EventCategorizer
+		m.ethereum.Metadata().Wallclock(), // EthereumBeaconChain
+		m.clockDrift,                      // clockDrift
+		m.Config.Events,                   // EventConfig
+		clientMeta,                        // ClientMeta
+		m.log.WithField("component", "processor"),
+	)
+
+	m.log.Info("Processor initialized successfully")
+
 	genesisRoot := c.Genesis.GenesisValidatorRoot
 	genesisTime := c.Genesis.GenesisTime
 
@@ -199,7 +226,7 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	}
 
 	node.OnEvent(func(ctx context.Context, event *host.TraceEvent) {
-		if err := m.handleHermesEvent(ctx, event); err != nil {
+		if err := m.processor.HandleHermesEvent(ctx, event); err != nil {
 			m.log.WithError(err).Error("Failed to handle hermes event")
 		}
 	})
@@ -462,4 +489,39 @@ func (m *Mimicry) handleNewDecoratedEvents(ctx context.Context, events []*xatu.D
 	}
 
 	return nil
+}
+
+// Implement MetadataProvider interface
+func (m *Mimicry) Wallclock() *ethwallclock.EthereumBeaconChain {
+	return m.ethereum.Metadata().Wallclock()
+}
+
+func (m *Mimicry) ClockDrift() *time.Duration {
+	return &m.clockDrift
+}
+
+func (m *Mimicry) Network() *xatu.ClientMeta_Ethereum_Network {
+	return &xatu.ClientMeta_Ethereum_Network{
+		Name: m.Config.Ethereum.Network,
+		Id:   m.beaconConfig.DepositNetworkID,
+	}
+}
+
+// Implement DutiesProvider interface
+func (m *Mimicry) GetValidatorIndex(epoch phase0.Epoch, slot phase0.Slot, committeeIndex phase0.CommitteeIndex, position uint64) (phase0.ValidatorIndex, error) {
+	return m.ethereum.Duties().GetValidatorIndex(epoch, slot, committeeIndex, position)
+}
+
+// Implement OutputHandler interface
+func (m *Mimicry) HandleDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	return m.handleNewDecoratedEvent(ctx, event)
+}
+
+func (m *Mimicry) HandleDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	return m.handleNewDecoratedEvents(ctx, events)
+}
+
+// GetProcessor returns the processor for testing purposes
+func (m *Mimicry) GetProcessor() *Processor {
+	return m.processor
 }

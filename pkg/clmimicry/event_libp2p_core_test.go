@@ -236,7 +236,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pCoreEvent which routes to handleConnectedEvent
-			err := mimicry.handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -421,7 +421,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pCoreEvent which routes to handleDisconnectedEvent
-			err := mimicry.handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -614,7 +614,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pCoreEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)

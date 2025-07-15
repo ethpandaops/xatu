@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 	"os"
@@ -150,7 +151,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return errS
 	}
 
-	d.status.OnExecutionStatus(d.ctx, d.handleExecutionStatus)
+	d.status.OnExecutionStatus(d.ctx, d.handleExecutionStatus, d.p2p.GetNetworkIds(), d.p2p.GetForkIdHashes())
 	d.status.OnConsensusStatus(d.ctx, d.handleConsensusStatus)
 
 	if err := d.startCrons(d.ctx); err != nil {
@@ -363,17 +364,19 @@ func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.Exec
 	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "execution", fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
 
 	// Create and send status event for ClickHouse
-	decoratedEvent, err := d.createExecutionStatusEvent(ctx, status)
-	if err != nil {
-		d.log.WithError(err).Error("Failed to create execution status event")
-	} else {
-		for _, sink := range d.sinks {
-			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
-				d.log.
-					WithError(sinkErr).
-					WithField("sink", sink.Type()).
-					WithField("event_type", decoratedEvent.GetEvent().GetName()).
-					Error("Failed to send event to sink")
+	if d.Config.P2P.Type == p2p.TypeXatu {
+		decoratedEvent, err := d.createExecutionStatusEvent(ctx, status)
+		if err != nil {
+			d.log.WithError(err).Error("Failed to create execution status event")
+		} else {
+			for _, sink := range d.sinks {
+				if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
+					d.log.
+						WithError(sinkErr).
+						WithField("sink", sink.Type()).
+						WithField("event_type", decoratedEvent.GetEvent().GetName()).
+						Error("Failed to send event to sink")
+				}
 			}
 		}
 	}
@@ -385,17 +388,19 @@ func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.Cons
 	d.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), "consensus", fmt.Sprintf("0x%x", status.GetForkDigest()))
 
 	// Create and send status event for ClickHouse
-	decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
-	if err != nil {
-		d.log.WithError(err).Error("Failed to create consensus status event")
-	} else {
-		for _, sink := range d.sinks {
-			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
-				d.log.
-					WithError(sinkErr).
-					WithField("sink", sink.Type()).
-					WithField("event_type", decoratedEvent.GetEvent().GetName()).
-					Error("Failed to send event to sink")
+	if d.Config.P2P.Type == p2p.TypeXatu {
+		decoratedEvent, err := d.createConsensusStatusEvent(ctx, status)
+		if err != nil {
+			d.log.WithError(err).Error("Failed to create consensus status event")
+		} else {
+			for _, sink := range d.sinks {
+				if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
+					d.log.
+						WithError(sinkErr).
+						WithField("sink", sink.Type()).
+						WithField("event_type", decoratedEvent.GetEvent().GetName()).
+						Error("Failed to send event to sink")
+				}
 			}
 		}
 	}

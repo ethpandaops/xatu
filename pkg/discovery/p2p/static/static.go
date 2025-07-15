@@ -92,3 +92,15 @@ func (s *Static) Stop(ctx context.Context) error {
 
 	return nil
 }
+
+func (s *Static) GetNetworkIds() []uint64 {
+	return []uint64{}
+}
+
+func (s *Static) GetForkIdHashes() []string {
+	return []string{}
+}
+
+func (s *Static) GetForkDigests() []string {
+	return []string{}
+}

@@ -22,11 +22,11 @@ var libp2pCoreToXatuEventMap = map[string]string{
 
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
 // This includes CONNECTED and DISCONNECTED events from libp2p's network.Notify system.
-func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
+func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
 	// Map libp2p core event to Xatu event.
 	xatuEvent, err := mapLibp2pCoreEventToXatuEvent(event.Type)
 	if err != nil {
-		m.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pCoreEvent event")
+		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pCoreEvent event")
 
 		//nolint:nilerr // we don't want to return an error here.
 		return nil
@@ -34,42 +34,42 @@ func (m *Mimicry) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.T
 
 	switch xatuEvent {
 	case xatu.Event_LIBP2P_TRACE_CONNECTED.String():
-		if !m.Config.Events.ConnectedEnabled {
+		if !p.events.ConnectedEnabled {
 			return nil
 		}
 
 		// Record that we received this event
 		networkStr := getNetworkID(clientMeta)
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_DISCONNECTED.String():
-		if !m.Config.Events.DisconnectedEnabled {
+		if !p.events.DisconnectedEnabled {
 			return nil
 		}
 
 		// Record that we received this event
 		networkStr := getNetworkID(clientMeta)
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
 }
 
-func (m *Mimicry) handleConnectedEvent(ctx context.Context,
+func (p *Processor) handleConnectedEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -93,7 +93,7 @@ func (m *Mimicry) handleConnectedEvent(ctx context.Context,
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_CONNECTED,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -104,10 +104,10 @@ func (m *Mimicry) handleConnectedEvent(ctx context.Context,
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
+func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -131,7 +131,7 @@ func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DISCONNECTED,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -142,7 +142,7 @@ func (m *Mimicry) handleDisconnectedEvent(ctx context.Context,
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 func mapLibp2pCoreEventToXatuEvent(event string) (string, error) {

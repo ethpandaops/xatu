@@ -35,7 +35,9 @@ var libp2pToXatuEventMap = map[string]string{
 }
 
 // handleHermesLibp2pEvent handles libp2p pubsub protocol level events.
-func (m *Mimicry) handleHermesLibp2pEvent(
+//
+//nolint:gocyclo // This function handles multiple event types and is intentionally complex
+func (p *Processor) handleHermesLibp2pEvent(
 	ctx context.Context,
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
@@ -44,7 +46,7 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 	// Map libp2p event to Xatu event.
 	xatuEvent, err := mapLibp2pEventToXatuEvent(event.Type)
 	if err != nil {
-		m.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pEvent event")
+		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pEvent event")
 
 		//nolint:nilerr // we don't want to return an error here.
 		return nil
@@ -54,198 +56,198 @@ func (m *Mimicry) handleHermesLibp2pEvent(
 
 	switch xatuEvent {
 	case xatu.Event_LIBP2P_TRACE_ADD_PEER.String():
-		if !m.Config.Events.AddPeerEnabled {
+		if !p.events.AddPeerEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_RECV_RPC.String():
-		if !m.Config.Events.RecvRPCEnabled {
+		if !p.events.RecvRPCEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_DROP_RPC.String():
-		if !m.Config.Events.DropRPCEnabled {
+		if !p.events.DropRPCEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleDropRPCEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleDropRPCEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_SEND_RPC.String():
-		if !m.Config.Events.SendRPCEnabled {
+		if !p.events.SendRPCEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String():
-		if !m.Config.Events.RemovePeerEnabled {
+		if !p.events.RemovePeerEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_JOIN.String():
-		if !m.Config.Events.JoinEnabled {
+		if !p.events.JoinEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleJoinEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleJoinEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_LEAVE.String():
-		if !m.Config.Events.LeaveEnabled {
+		if !p.events.LeaveEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleLeaveEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleLeaveEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_GRAFT.String():
-		if !m.Config.Events.GraftEnabled {
+		if !p.events.GraftEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleGraftEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleGraftEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_PRUNE.String():
-		if !m.Config.Events.PruneEnabled {
+		if !p.events.PruneEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handlePruneEvent(ctx, clientMeta, traceMeta, event)
+		return p.handlePruneEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE.String():
-		if !m.Config.Events.PublishMessageEnabled {
+		if !p.events.PublishMessageEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handlePublishMessageEvent(ctx, clientMeta, traceMeta, event)
+		return p.handlePublishMessageEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String():
-		if !m.Config.Events.RejectMessageEnabled {
+		if !p.events.RejectMessageEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleRejectMessageEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleRejectMessageEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String():
-		if !m.Config.Events.DuplicateMessageEnabled {
+		if !p.events.DuplicateMessageEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleDuplicateMessageEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleDuplicateMessageEvent(ctx, clientMeta, traceMeta, event)
 	case xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String():
-		if !m.Config.Events.DeliverMessageEnabled {
+		if !p.events.DeliverMessageEnabled {
 			return nil
 		}
 
 		// Record that we received this event
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleDeliverMessageEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleDeliverMessageEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
 }
 
-func (m *Mimicry) handleRemovePeerEvent(
+func (p *Processor) handleRemovePeerEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -270,7 +272,7 @@ func (m *Mimicry) handleRemovePeerEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_REMOVE_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -281,10 +283,10 @@ func (m *Mimicry) handleRemovePeerEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleJoinEvent(
+func (p *Processor) handleJoinEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -309,7 +311,7 @@ func (m *Mimicry) handleJoinEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_JOIN,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -320,10 +322,10 @@ func (m *Mimicry) handleJoinEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleLeaveEvent(
+func (p *Processor) handleLeaveEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -348,7 +350,7 @@ func (m *Mimicry) handleLeaveEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_LEAVE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -359,10 +361,10 @@ func (m *Mimicry) handleLeaveEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleGraftEvent(
+func (p *Processor) handleGraftEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -387,7 +389,7 @@ func (m *Mimicry) handleGraftEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GRAFT,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -398,10 +400,10 @@ func (m *Mimicry) handleGraftEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handlePruneEvent(
+func (p *Processor) handlePruneEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -426,7 +428,7 @@ func (m *Mimicry) handlePruneEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_PRUNE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -437,10 +439,10 @@ func (m *Mimicry) handlePruneEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleSendRPCEvent(
+func (p *Processor) handleSendRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -471,7 +473,7 @@ func (m *Mimicry) handleSendRPCEvent(
 	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_SEND_RPC,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
@@ -491,7 +493,7 @@ func (m *Mimicry) handleSendRPCEvent(
 	}
 
 	// 2. RPC meta level messages.
-	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
 		data.GetPeerId().String(),
 		clientMeta,
@@ -508,7 +510,7 @@ func (m *Mimicry) handleSendRPCEvent(
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
@@ -518,7 +520,7 @@ func (m *Mimicry) handleSendRPCEvent(
 	return nil
 }
 
-func (m *Mimicry) handleAddPeerEvent(
+func (p *Processor) handleAddPeerEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -543,7 +545,7 @@ func (m *Mimicry) handleAddPeerEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_ADD_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -554,10 +556,10 @@ func (m *Mimicry) handleAddPeerEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleRecvRPCEvent(
+func (p *Processor) handleRecvRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -588,7 +590,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_RECV_RPC,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
@@ -608,7 +610,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 	}
 
 	// 2. RPC meta level messages.
-	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
 		data.GetPeerId().String(),
 		clientMeta,
@@ -625,7 +627,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
@@ -635,7 +637,7 @@ func (m *Mimicry) handleRecvRPCEvent(
 	return nil
 }
 
-func (m *Mimicry) handleDropRPCEvent(
+func (p *Processor) handleDropRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -666,7 +668,7 @@ func (m *Mimicry) handleDropRPCEvent(
 	rootRPCEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DROP_RPC,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       rootEventID,
 		},
 		Meta: &xatu.Meta{
@@ -686,7 +688,7 @@ func (m *Mimicry) handleDropRPCEvent(
 	}
 
 	// 2. RPC meta level messages.
-	rpcMetaDecoratedEvents, err := m.parseRPCMeta(
+	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
 		data.GetPeerId().String(),
 		clientMeta,
@@ -703,7 +705,7 @@ func (m *Mimicry) handleDropRPCEvent(
 		decoratedEvents = append(decoratedEvents, rootRPCEvent)
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := m.handleNewDecoratedEvents(ctx, decoratedEvents); err != nil {
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
 			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
@@ -713,7 +715,7 @@ func (m *Mimicry) handleDropRPCEvent(
 	return nil
 }
 
-func (m *Mimicry) handlePublishMessageEvent(
+func (p *Processor) handlePublishMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -738,7 +740,7 @@ func (m *Mimicry) handlePublishMessageEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -749,10 +751,10 @@ func (m *Mimicry) handlePublishMessageEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleRejectMessageEvent(
+func (p *Processor) handleRejectMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -777,7 +779,7 @@ func (m *Mimicry) handleRejectMessageEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -788,10 +790,10 @@ func (m *Mimicry) handleRejectMessageEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleDuplicateMessageEvent(
+func (p *Processor) handleDuplicateMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -816,7 +818,7 @@ func (m *Mimicry) handleDuplicateMessageEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -827,10 +829,10 @@ func (m *Mimicry) handleDuplicateMessageEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleDeliverMessageEvent(
+func (p *Processor) handleDeliverMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
@@ -855,7 +857,7 @@ func (m *Mimicry) handleDeliverMessageEvent(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -866,10 +868,10 @@ func (m *Mimicry) handleDeliverMessageEvent(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) parseRPCMeta(
+func (p *Processor) parseRPCMeta(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -879,7 +881,7 @@ func (m *Mimicry) parseRPCMeta(
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
 
-	controlEvents, err := m.parseRPCMetaControl(
+	controlEvents, err := p.parseRPCMetaControl(
 		rootEventID,
 		peerID,
 		clientMeta,
@@ -891,7 +893,7 @@ func (m *Mimicry) parseRPCMeta(
 		return nil, errors.Wrapf(err, "failed to parse rpc meta control")
 	}
 
-	subscriptionEvents, err := m.parseRPCMetaSubscriptions(
+	subscriptionEvents, err := p.parseRPCMetaSubscriptions(
 		rootEventID,
 		peerID,
 		clientMeta,
@@ -903,7 +905,7 @@ func (m *Mimicry) parseRPCMeta(
 		return nil, errors.Wrapf(err, "failed to parse rpc meta subscription")
 	}
 
-	messageEvents, err := m.parseRPCMetaMessages(
+	messageEvents, err := p.parseRPCMetaMessages(
 		rootEventID,
 		peerID,
 		clientMeta,
@@ -922,7 +924,7 @@ func (m *Mimicry) parseRPCMeta(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControl(
+func (p *Processor) parseRPCMetaControl(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -932,8 +934,8 @@ func (m *Mimicry) parseRPCMetaControl(
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
 
-	if data.GetControl().GetIhave() != nil && m.Config.Events.RpcMetaControlIHaveEnabled {
-		ihave, err := m.parseRPCMetaControlIHave(
+	if data.GetControl().GetIhave() != nil && p.events.RpcMetaControlIHaveEnabled {
+		ihave, err := p.parseRPCMetaControlIHave(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -948,8 +950,8 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, ihave...)
 	}
 
-	if data.GetControl().GetIwant() != nil && m.Config.Events.RpcMetaControlIWantEnabled {
-		iwant, err := m.parseRPCMetaControlIWant(
+	if data.GetControl().GetIwant() != nil && p.events.RpcMetaControlIWantEnabled {
+		iwant, err := p.parseRPCMetaControlIWant(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -964,8 +966,8 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, iwant...)
 	}
 
-	if data.GetControl().GetIdontwant() != nil && m.Config.Events.RpcMetaControlIDontWantEnabled {
-		idontwant, err := m.parseRPCMetaControlIDontWant(
+	if data.GetControl().GetIdontwant() != nil && p.events.RpcMetaControlIDontWantEnabled {
+		idontwant, err := p.parseRPCMetaControlIDontWant(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -980,8 +982,8 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, idontwant...)
 	}
 
-	if data.GetControl().GetGraft() != nil && m.Config.Events.RpcMetaControlGraftEnabled {
-		graft, err := m.parseRPCMetaControlGraft(
+	if data.GetControl().GetGraft() != nil && p.events.RpcMetaControlGraftEnabled {
+		graft, err := p.parseRPCMetaControlGraft(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -996,8 +998,8 @@ func (m *Mimicry) parseRPCMetaControl(
 		decoratedEvents = append(decoratedEvents, graft...)
 	}
 
-	if data.GetControl().GetPrune() != nil && m.Config.Events.RpcMetaControlPruneEnabled {
-		prune, err := m.parseRPCMetaControlPrune(
+	if data.GetControl().GetPrune() != nil && p.events.RpcMetaControlPruneEnabled {
+		prune, err := p.parseRPCMetaControlPrune(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -1015,7 +1017,7 @@ func (m *Mimicry) parseRPCMetaControl(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControlIHave(
+func (p *Processor) parseRPCMetaControlIHave(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1049,7 +1051,7 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 		}
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
-		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredMsgIDsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			messageInfos,
@@ -1067,7 +1069,7 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 					Id:       uuid.New().String(),
 				},
 				Meta: &xatu.Meta{
@@ -1090,7 +1092,7 @@ func (m *Mimicry) parseRPCMetaControlIHave(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControlIWant(
+func (p *Processor) parseRPCMetaControlIWant(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1115,7 +1117,7 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
-		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredMsgIDsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			iwant.GetMessageIds(),
@@ -1133,7 +1135,7 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 					Id:       uuid.New().String(),
 				},
 				Meta: &xatu.Meta{
@@ -1155,7 +1157,7 @@ func (m *Mimicry) parseRPCMetaControlIWant(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControlIDontWant(
+func (p *Processor) parseRPCMetaControlIDontWant(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1180,7 +1182,7 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT
 
 		// Filter message IDs based on trace/sharding config, preserving original indices.
-		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredMsgIDsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			idontwant.GetMessageIds(),
@@ -1198,7 +1200,7 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 					Id:       uuid.New().String(),
 				},
 				Meta: &xatu.Meta{
@@ -1220,7 +1222,7 @@ func (m *Mimicry) parseRPCMetaControlIDontWant(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControlGraft(
+func (p *Processor) parseRPCMetaControlGraft(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1251,7 +1253,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 
 		// Filter based on trace/sharding config using the same method as other RPC meta messages.
 		// GRAFT is a Group B event (sharded by topic only).
-		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredTopicsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			[]RPCMetaTopicInfo{topicInfo},
@@ -1268,7 +1270,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{
 				Name:     xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT,
-				DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+				DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 				Id:       uuid.New().String(),
 			},
 			Meta: &xatu.Meta{
@@ -1288,7 +1290,7 @@ func (m *Mimicry) parseRPCMetaControlGraft(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaControlPrune(
+func (p *Processor) parseRPCMetaControlPrune(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1319,7 +1321,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 
 		// Filter based on trace/sharding config using the same method as other RPC meta messages.
 		// PRUNE is a Group B event (sharded by topic only).
-		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredTopicsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			[]RPCMetaTopicInfo{topicInfo},
@@ -1351,7 +1353,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 					Id:       uuid.New().String(),
 				},
 				Meta: &xatu.Meta{
@@ -1378,7 +1380,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 				decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 					Event: &xatu.Event{
 						Name:     eventType,
-						DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+						DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 						Id:       uuid.New().String(),
 					},
 					Meta: &xatu.Meta{
@@ -1402,7 +1404,7 @@ func (m *Mimicry) parseRPCMetaControlPrune(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaSubscriptions(
+func (p *Processor) parseRPCMetaSubscriptions(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1413,12 +1415,12 @@ func (m *Mimicry) parseRPCMetaSubscriptions(
 	var decoratedEvents []*xatu.DecoratedEvent
 
 	// Check if RPC meta subscriptions are enabled before processing
-	if !m.Config.Events.RpcMetaSubscriptionEnabled {
+	if !p.events.RpcMetaSubscriptionEnabled {
 		return decoratedEvents, nil
 	}
 
 	if data.GetSubscriptions() != nil {
-		subscriptions, err := m.parseRPCMetaSubscription(
+		subscriptions, err := p.parseRPCMetaSubscription(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -1436,7 +1438,7 @@ func (m *Mimicry) parseRPCMetaSubscriptions(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaSubscription(
+func (p *Processor) parseRPCMetaSubscription(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1467,7 +1469,7 @@ func (m *Mimicry) parseRPCMetaSubscription(
 
 		// Filter based on trace/sharding config using the same method as other RPC meta messages.
 		// SUBSCRIPTION is a Group B event (sharded by topic only).
-		filteredTopicsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredTopicsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			[]RPCMetaTopicInfo{topicInfo},
@@ -1484,7 +1486,7 @@ func (m *Mimicry) parseRPCMetaSubscription(
 		decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 			Event: &xatu.Event{
 				Name:     eventType,
-				DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+				DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 				Id:       uuid.New().String(),
 			},
 			Meta: &xatu.Meta{
@@ -1505,7 +1507,7 @@ func (m *Mimicry) parseRPCMetaSubscription(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaMessages(
+func (p *Processor) parseRPCMetaMessages(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1516,12 +1518,12 @@ func (m *Mimicry) parseRPCMetaMessages(
 	var decoratedEvents []*xatu.DecoratedEvent
 
 	// Check if RPC meta messages are enabled before processing
-	if !m.Config.Events.RpcMetaMessageEnabled {
+	if !p.events.RpcMetaMessageEnabled {
 		return decoratedEvents, nil
 	}
 
 	if data.GetMessages() != nil {
-		messages, err := m.parseRPCMetaMessage(
+		messages, err := p.parseRPCMetaMessage(
 			rootEventID,
 			peerID,
 			clientMeta,
@@ -1539,7 +1541,7 @@ func (m *Mimicry) parseRPCMetaMessages(
 	return decoratedEvents, nil
 }
 
-func (m *Mimicry) parseRPCMetaMessage(
+func (p *Processor) parseRPCMetaMessage(
 	rootEventID,
 	peerID string,
 	clientMeta *xatu.ClientMeta,
@@ -1564,7 +1566,7 @@ func (m *Mimicry) parseRPCMetaMessage(
 		eventType := xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE
 
 		// Filter messages with topic-aware hierarchical sharding support.
-		filteredMsgIDsWithIndex, err := m.ShouldTraceRPCMetaMessages(
+		filteredMsgIDsWithIndex, err := p.ShouldTraceRPCMetaMessages(
 			clientMeta,
 			eventType.String(),
 			[]RPCMetaMessageInfo{
@@ -1587,7 +1589,7 @@ func (m *Mimicry) parseRPCMetaMessage(
 			decoratedEvents = append(decoratedEvents, &xatu.DecoratedEvent{
 				Event: &xatu.Event{
 					Name:     eventType,
-					DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+					DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 					Id:       uuid.New().String(),
 				},
 				Meta: &xatu.Meta{

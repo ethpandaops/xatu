@@ -240,8 +240,8 @@ github.com/ethpandaops/ethcore v0.0.0-20250714031100-d656d160cf25 h1:P07h/fQdqPx
 github.com/ethpandaops/ethcore v0.0.0-20250714031100-d656d160cf25/go.mod h1:/eC8UJUaheFdJ0Fw3+G3CP0yEFOrHX6545uD6UYhuDo=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
 github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36 h1:9wzNW36Dj/8L2qy0Qx2gWfIzZPUMnscla/lUiUWBWXg=
-github.com/ethpandaops/hermes v0.0.4-0.20250611092645-698d84939d36/go.mod h1:NUxTFfHG1H1gjHuzA/7UhoL/F6SKmpUT2bBsBnprXRU=
+github.com/ethpandaops/hermes v0.0.4-0.20250715094801-db6021d1c703 h1:kgbDt5VGaukBMVRFlNOKKCwYyJp7rt9ZVhom/MY8sOA=
+github.com/ethpandaops/hermes v0.0.4-0.20250715094801-db6021d1c703/go.mod h1:btvQ5XIwNLN1xKq0/G4HE+wxa7C93IFnxqfkM4PjMZA=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=

@@ -9,7 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -31,27 +31,27 @@ func deriveCommitteeIndexFromBits(committeeBits []byte) uint64 {
 	return 0 // Default fallback if no bit is set
 }
 
-func (m *Mimicry) handleGossipAggregateAndProof(
+func (p *Processor) handleGossipAggregateAndProof(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
 	payload any,
 ) error {
 	switch evt := payload.(type) {
-	case *eth.TraceEventSignedAggregateAttestationAndProof:
-		return m.handleAggregateAndProofFromAttestation(ctx, clientMeta, event, evt)
-	case *eth.TraceEventSignedAggregateAttestationAndProofElectra:
-		return m.handleAggregateAndProofFromAttestationElectra(ctx, clientMeta, event, evt)
+	case *events.TraceEventSignedAggregateAttestationAndProof:
+		return p.handleAggregateAndProofFromAttestation(ctx, clientMeta, event, evt)
+	case *events.TraceEventSignedAggregateAttestationAndProofElectra:
+		return p.handleAggregateAndProofFromAttestationElectra(ctx, clientMeta, event, evt)
 	default:
 		return fmt.Errorf("unsupported payload type for aggregate and proof: %T", payload)
 	}
 }
 
-func (m *Mimicry) handleAggregateAndProofFromAttestation(
+func (p *Processor) handleAggregateAndProofFromAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventSignedAggregateAttestationAndProof,
+	payload *events.TraceEventSignedAggregateAttestationAndProof,
 ) error {
 	if payload.SignedAggregateAttestationAndProof == nil || payload.SignedAggregateAttestationAndProof.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestation() called with nil aggregate attestation and proof")
@@ -96,7 +96,7 @@ func (m *Mimicry) handleAggregateAndProofFromAttestation(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(message.GetAggregatorIndex()), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
+	additionalData, err := p.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(message.GetAggregatorIndex()), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -108,7 +108,7 @@ func (m *Mimicry) handleAggregateAndProofFromAttestation(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -119,14 +119,14 @@ func (m *Mimicry) handleAggregateAndProofFromAttestation(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
+func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventSignedAggregateAttestationAndProofElectra,
+	payload *events.TraceEventSignedAggregateAttestationAndProofElectra,
 ) error {
 	if payload.SignedAggregateAttestationAndProofElectra == nil || payload.SignedAggregateAttestationAndProofElectra.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestationElectra() called with nil aggregate attestation and proof")
@@ -172,7 +172,7 @@ func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(message.GetAggregatorIndex()), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
+	additionalData, err := p.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(message.GetAggregatorIndex()), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -184,7 +184,7 @@ func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -195,10 +195,10 @@ func (m *Mimicry) handleAggregateAndProofFromAttestationElectra(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) createAdditionalGossipSubAggregateAndProofData(
+func (p *Processor) createAdditionalGossipSubAggregateAndProofData(
 	ctx context.Context,
 	event *host.TraceEvent,
 	aggregateAndProof *v1.SignedAggregateAttestationAndProofV2,
@@ -209,14 +209,14 @@ func (m *Mimicry) createAdditionalGossipSubAggregateAndProofData(
 	msgID string,
 	msgSize int,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(event.Timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
-	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
-	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))
-	timestampAdjusted := event.Timestamp.Add(m.clockDrift)
+	slot := p.wallclock.Slots().FromNumber(uint64(slotNumber))
+	epoch := p.wallclock.Epochs().FromSlot(uint64(slotNumber))
+	timestampAdjusted := event.Timestamp.Add(p.clockDrift)
 
 	// Calculate propagation timing
 	diff := timestampAdjusted.Sub(slot.TimeWindow().Start()).Milliseconds()

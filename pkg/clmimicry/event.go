@@ -2,15 +2,14 @@ package clmimicry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
-	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/host"
-	"google.golang.org/protobuf/types/known/wrapperspb"
-
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/probe-lab/hermes/host"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -50,17 +49,14 @@ const (
 // 3. Request/Response (RPC) protocol events:
 //   - "HANDLE_METADATA": Processing of metadata requests
 //   - "HANDLE_STATUS": Processing of status requests
-func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
+
+// HandleHermesEvent processes a Hermes trace event and routes it to the appropriate handler
+func (p *Processor) HandleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
 	if event == nil {
 		return errors.New("event is nil")
 	}
 
-	m.log.WithField("type", event.Type).Trace("Received Hermes event")
-
-	clientMeta, err := m.createNewClientMeta(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create new client meta")
-	}
+	p.log.WithField("type", event.Type).Trace("Received Hermes event")
 
 	traceMeta := &libp2p.TraceEventMetadata{
 		PeerId: wrapperspb.String(event.PeerID.String()),
@@ -70,22 +66,22 @@ func (m *Mimicry) handleHermesEvent(ctx context.Context, event *host.TraceEvent)
 	switch {
 	// GossipSub protocol events.
 	case isGossipSubEvent(event):
-		return m.handleHermesGossipSubEvent(ctx, event, clientMeta, traceMeta)
+		return p.handleHermesGossipSubEvent(ctx, event, p.clientMeta, traceMeta)
 
 	// libp2p pubsub protocol level events.
 	case isLibp2pEvent(event):
-		return m.handleHermesLibp2pEvent(ctx, event, clientMeta, traceMeta)
+		return p.handleHermesLibp2pEvent(ctx, event, p.clientMeta, traceMeta)
 
 	// libp2p core networking events.
 	case isLibp2pCoreEvent(event):
-		return m.handleHermesLibp2pCoreEvent(ctx, event, clientMeta, traceMeta)
+		return p.handleHermesLibp2pCoreEvent(ctx, event, p.clientMeta, traceMeta)
 
 	// Request/Response (RPC) protocol events.
 	case isRpcEvent(event):
-		return m.handleHermesRPCEvent(ctx, event, clientMeta, traceMeta)
+		return p.handleHermesRPCEvent(ctx, event, p.clientMeta, traceMeta)
 
 	default:
-		m.log.WithField("type", event.Type).Trace("unsupported Hermes event")
+		p.log.WithField("type", event.Type).Debug("unsupported Hermes event")
 
 		return nil
 	}

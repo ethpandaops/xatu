@@ -38,15 +38,15 @@ func IsShardActive(shard uint64, activeShards []uint64) bool {
 
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
 // in the sample based on the configured trace settings.
-func (m *Mimicry) ShouldTraceMessage(
+func (p *Processor) ShouldTraceMessage(
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 ) bool {
-	if m.sharder == nil || !m.sharder.enabled {
+	if p.unifiedSharder == nil || !p.unifiedSharder.enabled {
 		// If sharding is disabled, process all messages
 		networkStr := getNetworkID(clientMeta)
-		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 
 		return true
 	}
@@ -68,30 +68,30 @@ func (m *Mimicry) ShouldTraceMessage(
 	}
 
 	// Use the unified sharder to determine if we should process this event
-	shouldProcess, reason := m.sharder.ShouldProcess(eventType, msgID, topic)
+	shouldProcess, reason := p.unifiedSharder.ShouldProcess(eventType, msgID, topic)
 
 	// Update metrics
 	networkStr := getNetworkID(clientMeta)
-	m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+	p.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 	if shouldProcess {
-		m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+		p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 	} else {
-		m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+		p.metrics.AddSkippedMessage(xatuEventType, networkStr)
 	}
 
 	return shouldProcess
 }
 
-// ShouldTraceRPCMetaMessages filters RPC meta messages based on sharding configuration.
-func (m *Mimicry) ShouldTraceRPCMetaMessages(
+// ShouldTraceRPCMetaMessages determines which RPC meta messages should be processed based on sharding configuration
+func (p *Processor) ShouldTraceRPCMetaMessages(
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaTopicInfo, or []*wrapperspb.StringValue
 ) ([]FilteredMessageWithIndex, error) {
-	if m.sharder == nil || !m.sharder.enabled {
+	if p.unifiedSharder == nil || !p.unifiedSharder.enabled {
 		// If sharding is disabled, include all messages
-		return m.buildAllMessagesFromInterface(messages, xatuEventType, getNetworkID(clientMeta)), nil
+		return p.buildAllMessagesFromInterface(messages, xatuEventType, getNetworkID(clientMeta)), nil
 	}
 
 	// Get the event type from the string
@@ -113,8 +113,8 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 				topic = msg.Topic.GetValue()
 			}
 
-			shouldProcess, reason := m.sharder.ShouldProcess(eventType, msg.MessageID.GetValue(), topic)
-			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+			shouldProcess, reason := p.unifiedSharder.ShouldProcess(eventType, msg.MessageID.GetValue(), topic)
+			p.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 			if shouldProcess {
 				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
@@ -122,9 +122,9 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+				p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			} else {
-				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+				p.metrics.AddSkippedMessage(xatuEventType, networkStr)
 			}
 		}
 
@@ -137,17 +137,17 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 
 			// For Group B events, sharding is based on topic only. We pass empty string
 			// for msgID since these events don't have message IDs.
-			shouldProcess, reason := m.sharder.ShouldProcess(eventType, "", topic)
-			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+			shouldProcess, reason := p.unifiedSharder.ShouldProcess(eventType, "", topic)
+			p.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 			if shouldProcess {
 				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+				p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			} else {
-				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+				p.metrics.AddSkippedMessage(xatuEventType, networkStr)
 			}
 		}
 
@@ -158,8 +158,8 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 			}
 
 			// No topic information available for legacy format
-			shouldProcess, reason := m.sharder.ShouldProcess(eventType, msgID.GetValue(), "")
-			m.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
+			shouldProcess, reason := p.unifiedSharder.ShouldProcess(eventType, msgID.GetValue(), "")
+			p.metrics.AddShardingDecision(xatuEventType, reason, networkStr)
 
 			if shouldProcess {
 				filteredMessages = append(filteredMessages, FilteredMessageWithIndex{
@@ -167,9 +167,9 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+				p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			} else {
-				m.metrics.AddSkippedMessage(xatuEventType, networkStr)
+				p.metrics.AddSkippedMessage(xatuEventType, networkStr)
 			}
 		}
 
@@ -181,7 +181,7 @@ func (m *Mimicry) ShouldTraceRPCMetaMessages(
 }
 
 // buildAllMessagesFromInterface builds a result with all messages when sharding is disabled
-func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventType, networkStr string) []FilteredMessageWithIndex {
+func (p *Processor) buildAllMessagesFromInterface(messages interface{}, xatuEventType, networkStr string) []FilteredMessageWithIndex {
 	var result []FilteredMessageWithIndex
 
 	switch msgs := messages.(type) {
@@ -195,7 +195,7 @@ func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventT
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+				p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			}
 		}
 	case []RPCMetaTopicInfo:
@@ -206,7 +206,7 @@ func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventT
 				OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 			})
 
-			m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+			p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 		}
 	case []*wrapperspb.StringValue:
 		result = make([]FilteredMessageWithIndex, 0, len(msgs))
@@ -218,7 +218,7 @@ func (m *Mimicry) buildAllMessagesFromInterface(messages interface{}, xatuEventT
 					OriginalIndex: uint32(i), //nolint:gosec // conversion fine.
 				})
 
-				m.metrics.AddProcessedMessage(xatuEventType, networkStr)
+				p.metrics.AddProcessedMessage(xatuEventType, networkStr)
 			}
 		}
 	}

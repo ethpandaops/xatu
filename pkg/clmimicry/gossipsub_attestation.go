@@ -10,7 +10,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -21,7 +21,7 @@ func (p *Processor) handleGossipAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventAttestation,
+	payload *events.TraceEventAttestation,
 ) error {
 	if payload.Attestation == nil || payload.Attestation.GetData() == nil {
 		return fmt.Errorf("handleGossipAttestation() called with nil attestation")
@@ -79,7 +79,7 @@ func (p *Processor) handleGossipAttestation(
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
 func (p *Processor) createAdditionalGossipSubAttestationData(
-	payload *eth.TraceEventAttestation,
+	payload *events.TraceEventAttestation,
 	attestationData *ethtypes.AttestationData,
 	event *host.TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData, error) {

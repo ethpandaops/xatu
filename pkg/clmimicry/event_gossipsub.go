@@ -7,7 +7,7 @@ import (
 
 	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -70,11 +70,11 @@ func (p *Processor) handleHermesGossipSubEvent(
 		}
 
 		switch payload := event.Payload.(type) {
-		case *eth.TraceEventAttestation:
+		case *events.TraceEventAttestation:
 			if err := p.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
 				return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
 			}
-		case *eth.TraceEventSingleAttestation:
+		case *events.TraceEventSingleAttestation:
 			if err := p.handleGossipSingleAttestation(ctx, clientMeta, event, payload); err != nil {
 				return errors.Wrap(err, "failed to handle gossipsub single beacon attestation")
 			}
@@ -114,7 +114,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 			return nil
 		}
 
-		payload, ok := event.Payload.(*eth.TraceEventBlobSidecar)
+		payload, ok := event.Payload.(*events.TraceEventBlobSidecar)
 		if !ok {
 			return errors.New("invalid payload type for HandleMessage event")
 		}

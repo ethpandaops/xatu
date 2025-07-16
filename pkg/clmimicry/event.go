@@ -81,7 +81,7 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *host.TraceEven
 		return p.handleHermesRPCEvent(ctx, event, p.clientMeta, traceMeta)
 
 	default:
-		p.log.WithField("type", event.Type).Trace("unsupported Hermes event")
+		p.log.WithField("type", event.Type).Debug("unsupported Hermes event")
 
 		return nil
 	}

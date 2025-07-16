@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -22,7 +22,7 @@ func (p *Processor) handleGossipBlobSidecar(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventBlobSidecar,
+	payload *events.TraceEventBlobSidecar,
 ) error {
 	if payload.BlobSidecar == nil {
 		return fmt.Errorf("handleGossipBlobSidecar() called with nil blob sidecar")
@@ -69,7 +69,7 @@ func (p *Processor) handleGossipBlobSidecar(
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
 func (p *Processor) createAdditionalGossipSubBlobSidecarData(
-	payload *eth.TraceEventBlobSidecar,
+	payload *events.TraceEventBlobSidecar,
 	timestamp time.Time,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData, error) {
 	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(timestamp)

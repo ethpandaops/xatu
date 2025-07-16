@@ -9,7 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -38,9 +38,9 @@ func (p *Processor) handleGossipAggregateAndProof(
 	payload any,
 ) error {
 	switch evt := payload.(type) {
-	case *eth.TraceEventSignedAggregateAttestationAndProof:
+	case *events.TraceEventSignedAggregateAttestationAndProof:
 		return p.handleAggregateAndProofFromAttestation(ctx, clientMeta, event, evt)
-	case *eth.TraceEventSignedAggregateAttestationAndProofElectra:
+	case *events.TraceEventSignedAggregateAttestationAndProofElectra:
 		return p.handleAggregateAndProofFromAttestationElectra(ctx, clientMeta, event, evt)
 	default:
 		return fmt.Errorf("unsupported payload type for aggregate and proof: %T", payload)
@@ -51,7 +51,7 @@ func (p *Processor) handleAggregateAndProofFromAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventSignedAggregateAttestationAndProof,
+	payload *events.TraceEventSignedAggregateAttestationAndProof,
 ) error {
 	if payload.SignedAggregateAttestationAndProof == nil || payload.SignedAggregateAttestationAndProof.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestation() called with nil aggregate attestation and proof")
@@ -126,7 +126,7 @@ func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventSignedAggregateAttestationAndProofElectra,
+	payload *events.TraceEventSignedAggregateAttestationAndProofElectra,
 ) error {
 	if payload.SignedAggregateAttestationAndProofElectra == nil || payload.SignedAggregateAttestationAndProofElectra.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestationElectra() called with nil aggregate attestation and proof")

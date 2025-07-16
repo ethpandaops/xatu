@@ -1,5 +1,5 @@
 // Package auth provides Basic HTTP authentication for the contributoor service.
-// It supports simple username/password validation without complex group-based permissions.
+// It supports simple username/password validation.
 package auth
 
 import (
@@ -53,7 +53,7 @@ func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Auth
 }
 
 // Start initializes the authorization system and logs the number of configured users.
-func (a *Authorization) Start(ctx context.Context) error {
+func (a *Authorization) Start(_ context.Context) error {
 	a.log.WithField("users", len(a.users.Usernames())).Info("Loaded users for authorization")
 
 	return nil

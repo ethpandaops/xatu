@@ -2,7 +2,7 @@ package contributoor
 
 var (
 	// DefaultSubscriptionTopics defines the standard beacon chain topics
-	// that clients should subscribe to for comprehensive network monitoring.
+	// that contributoor clients should subscribe to.
 	DefaultSubscriptionTopics = []string{
 		"block",
 		"block_gossip",
@@ -13,7 +13,7 @@ var (
 		"beacon_attestation",
 	}
 	// MaxAttestationSubnetSubscriptions is the default maximum number of
-	// attestation subnets a client should subscribe to.
+	// attestation subnets that contributoor should forward data for.
 	MaxAttestationSubnetSubscriptions = 2
 )
 

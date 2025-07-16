@@ -65,7 +65,7 @@ func (c *Config) Validate() error {
 
 // ToProtoForUser converts BootConfigration to protobuf message types, filtering user data for the specified user.
 // Only the authenticated user's configuration is included in the user section of the response.
-// If authenticatedUsername is empty, all user configurations are included.
+// If authenticatedUsername is empty, any user configurations are omitted.
 func (y *BootConfigration) ToProtoForUser(authenticatedUsername string) *xatu.ContributoorConfiguration {
 	// Convert user configs - only include the authenticated user's config.
 	userConfigs := make(map[string]*xatu.UserConfig)

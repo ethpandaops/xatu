@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package xatu;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+
+import "google/protobuf/timestamp.proto";
+
+service Contributoor {
+  // GetConfiguration returns the current contributoor configuration for contributoor clients.
+  // The response includes global settings, user-specific overrides (filtered by authenticated user),
+  // and network-specific configurations. Requires Basic Auth when authentication is enabled.
+  rpc GetConfiguration(GetConfigurationRequest) returns (GetConfigurationResponse) {}
+}
+
+// GetConfigurationRequest is the request message for retrieving contributoor configuration.
+// Currently empty as no parameters are required - authentication is handled via HTTP headers.
+message GetConfigurationRequest {}
+
+// GetConfigurationResponse contains the contributoor configuration data along with metadata.
+message GetConfigurationResponse {
+  // Version is the configuration version identifier (e.g., "1.0")
+  string version = 1;
+  // UpdatedAt is the timestamp when this configuration response was generated
+  google.protobuf.Timestamp updated_at = 2;
+  // ContributoorConfiguration contains the actual beacon monitoring configuration data
+  ContributoorConfiguration configuration = 3;
+}
+
+// ContributoorConfiguration defines the complete configuration structure for beacon monitoring.
+message ContributoorConfiguration {
+  // GlobalConfig contains the default configuration settings that apply to all users
+  GlobalConfig global = 1;
+  // UserConfig contains user-specific configuration overrides, filtered by authenticated user
+  // Key is the username, value is their specific configuration
+  map<string, UserConfig> user = 2;
+  // NetworkConfig contains network-specific configuration settings for different Ethereum networks
+  // Key is the network name (e.g., "mainnet", "holesky"), value is the network configuration
+  map<string, NetworkConfig> network = 3;
+}
+
+// GlobalConfig defines the default beacon chain monitoring configuration.
+// These settings apply to all users unless overridden by user-specific configurations.
+message GlobalConfig {
+  // BeaconSubscriptionsConfig defines which beacon chain topics to monitor and attestation settings
+  BeaconSubscriptionsConfig beacon_subscriptions = 1;
+}
+
+// BeaconSubscriptionsConfig defines which beacon chain events to subscribe to and attestation monitoring settings.
+message BeaconSubscriptionsConfig {
+  // Topics is a list of beacon chain event types to subscribe to
+  // eg: "block", "block_gossip", "head", etc.
+  repeated string topics = 1;
+  // AttestationConfig defines how many and which attestation subnets to monitor
+  AttestationConfig attestation_config = 2;
+}
+
+// AttestationConfig defines how attestation subnet monitoring should be configured.
+message AttestationConfig {
+  // MaxSubnets is the maximum number of attestation subnets to subscribe to
+  // Typical values range from 1-64 depending on monitoring requirements and resources
+  int32 max_subnets = 1;
+  // SubnetSelectionStrategy defines how to choose which subnets to monitor
+  // Common values: "random", "sequential", "specific" (when using specific_subnets)
+  string subnet_selection_strategy = 2;
+  // SpecificSubnets is a list of specific subnet IDs to monitor
+  // Only used when subnet_selection_strategy is "specific"
+  repeated int32 specific_subnets = 3;
+}
+
+// UserConfig defines user-specific overrides for beacon chain monitoring.
+// These settings take precedence over global configuration for the specific user.
+message UserConfig {
+  // BeaconSubscriptionsConfig defines user-specific beacon subscription settings
+  // Any fields specified here will override the corresponding global settings
+  BeaconSubscriptionsConfig beacon_subscriptions = 1;
+}
+
+// NetworkConfig defines network-specific beacon chain monitoring settings.
+// Different Ethereum networks may require different monitoring configurations.
+message NetworkConfig {
+  // BeaconSubscriptionsConfig defines network-specific beacon subscription settings
+  // These can vary based on network characteristics (e.g., mainnet vs hoodi)
+  BeaconSubscriptionsConfig beacon_subscriptions = 1;
+}

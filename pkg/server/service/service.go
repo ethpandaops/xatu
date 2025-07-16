@@ -7,6 +7,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
+	"github.com/ethpandaops/xatu/pkg/server/service/contributoor"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -29,6 +30,7 @@ const (
 	ServiceTypeUnknown       Type = "unknown"
 	ServiceTypeEventIngester Type = eventingester.ServiceType
 	ServiceTypeCoordinator   Type = coordinator.ServiceType
+	ServiceTypeContributoor  Type = contributoor.ServiceType
 )
 
 func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider, healthServer *health.Server) ([]GRPCService, error) {
@@ -53,6 +55,23 @@ func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config
 		}
 
 		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p, g, healthServer)
+		if err != nil {
+			return nil, err
+		}
+
+		services = append(services, service)
+	}
+
+	if cfg.Contributoor.Enabled {
+		if err := defaults.Set(&cfg.Contributoor); err != nil {
+			return nil, err
+		}
+
+		if err := cfg.Contributoor.Validate(); err != nil {
+			return nil, err
+		}
+
+		service, err := contributoor.NewClient(ctx, log, &cfg.Contributoor, healthServer)
 		if err != nil {
 			return nil, err
 		}

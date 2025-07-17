@@ -5,8 +5,6 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/sirupsen/logrus"
-
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Processor encapsulates all event processing logic for Hermes events
@@ -30,9 +28,6 @@ type Processor struct {
 	// Configuration
 	events EventConfig
 
-	// Client metadata
-	clientMeta *xatu.ClientMeta
-
 	// Logging
 	log logrus.FieldLogger
 }
@@ -42,6 +37,7 @@ func NewProcessor(
 	duties DutiesProvider,
 	output OutputHandler,
 	metrics MetricsCollector,
+	metaProvider MetaProvider,
 	unifiedSharder *UnifiedSharder,
 	eventCategorizer *EventCategorizer,
 	wallclock *ethwallclock.EthereumBeaconChain,

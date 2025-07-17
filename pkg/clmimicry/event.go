@@ -62,23 +62,28 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *host.TraceEven
 		PeerId: wrapperspb.String(event.PeerID.String()),
 	}
 
+	clientMeta, err := p.metaProvider.GetClientMeta(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get client meta: %w", err)
+	}
+
 	// Route the event to the appropriate handler based on its category.
 	switch {
 	// GossipSub protocol events.
 	case isGossipSubEvent(event):
-		return p.handleHermesGossipSubEvent(ctx, event, p.clientMeta, traceMeta)
+		return p.handleHermesGossipSubEvent(ctx, event, clientMeta, traceMeta)
 
 	// libp2p pubsub protocol level events.
 	case isLibp2pEvent(event):
-		return p.handleHermesLibp2pEvent(ctx, event, p.clientMeta, traceMeta)
+		return p.handleHermesLibp2pEvent(ctx, event, clientMeta, traceMeta)
 
 	// libp2p core networking events.
 	case isLibp2pCoreEvent(event):
-		return p.handleHermesLibp2pCoreEvent(ctx, event, p.clientMeta, traceMeta)
+		return p.handleHermesLibp2pCoreEvent(ctx, event, clientMeta, traceMeta)
 
 	// Request/Response (RPC) protocol events.
 	case isRpcEvent(event):
-		return p.handleHermesRPCEvent(ctx, event, p.clientMeta, traceMeta)
+		return p.handleHermesRPCEvent(ctx, event, clientMeta, traceMeta)
 
 	default:
 		p.log.WithField("type", event.Type).Debug("unsupported Hermes event")

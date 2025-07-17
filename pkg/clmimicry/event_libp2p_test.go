@@ -2772,7 +2772,7 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 		mimicry.metrics,       // MetricsCollector
 		mimicry,               // MetaProvider
 		mimicry.sharder,       // UnifiedSharder
-		NewEventCategorizer(), // EventCatego	rizer
+		NewEventCategorizer(), // EventCategorizer
 		wallclock,             // EthereumBeaconChain
 		time.Duration(0),      // clockDrift
 		config.Events,         // EventConfig

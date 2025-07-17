@@ -14,5 +14,5 @@ enum ModuleName {
   CL_MIMICRY = 5;
   EL_MIMICRY = 6;
   RELAY_MONITOR = 7;
-  TYPES = 8;
+  TYSM = 8;
 }

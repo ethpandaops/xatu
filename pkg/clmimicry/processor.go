@@ -49,6 +49,7 @@ func NewProcessor(
 		duties:           duties,
 		output:           output,
 		metrics:          metrics,
+		metaProvider:     metaProvider,
 		unifiedSharder:   unifiedSharder,
 		eventCategorizer: eventCategorizer,
 		wallclock:        wallclock,

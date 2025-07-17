@@ -12,9 +12,10 @@ import (
 // Processor encapsulates all event processing logic for Hermes events
 type Processor struct {
 	// Interface dependencies (for other projects to implement)
-	duties  DutiesProvider
-	output  OutputHandler
-	metrics MetricsCollector
+	duties       DutiesProvider
+	output       OutputHandler
+	metrics      MetricsCollector
+	metaProvider MetaProvider
 
 	// Shared dependencies
 	unifiedSharder   *UnifiedSharder
@@ -46,7 +47,6 @@ func NewProcessor(
 	wallclock *ethwallclock.EthereumBeaconChain,
 	clockDrift time.Duration,
 	events EventConfig,
-	clientMeta *xatu.ClientMeta,
 	log logrus.FieldLogger,
 ) *Processor {
 	return &Processor{
@@ -58,7 +58,6 @@ func NewProcessor(
 		wallclock:        wallclock,
 		clockDrift:       clockDrift,
 		events:           events,
-		clientMeta:       clientMeta,
 		log:              log,
 	}
 }

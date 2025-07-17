@@ -2764,20 +2764,18 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 		},
 	}
 
-	// Initialize processor for tests
-	clientMeta := createTestClientMeta()
 	wallclock := &ethwallclock.EthereumBeaconChain{}
 
 	mimicry.processor = NewProcessor(
 		mimicry,               // DutiesProvider
 		mimicry,               // OutputHandler
 		mimicry.metrics,       // MetricsCollector
+		mimicry,               // MetaProvider
 		mimicry.sharder,       // UnifiedSharder
-		NewEventCategorizer(), // EventCategorizer
+		NewEventCategorizer(), // EventCatego	rizer
 		wallclock,             // EthereumBeaconChain
 		time.Duration(0),      // clockDrift
 		config.Events,         // EventConfig
-		clientMeta,            // ClientMeta
 		mimicry.log.WithField("component", "processor"),
 	)
 

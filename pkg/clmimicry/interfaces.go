@@ -35,3 +35,8 @@ type MetricsCollector interface {
 	AddShardingDecision(eventType, reason, network string)
 	AddDecoratedEvent(count float64, eventType, network string)
 }
+
+// MetaProvider provides client metadata
+type MetaProvider interface {
+	GetClientMeta(ctx context.Context) (*xatu.ClientMeta, error)
+}

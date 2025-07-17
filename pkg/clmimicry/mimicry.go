@@ -154,21 +154,16 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 	// Initialize the processor now that beaconConfig is available
 	m.log.Info("Initializing processor..")
 
-	clientMeta, err := m.createNewClientMeta(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to create client meta: %w", err)
-	}
-
 	m.processor = NewProcessor(
 		m,                                 // DutiesProvider
 		m,                                 // OutputHandler
 		m.metrics,                         // MetricsCollector
+		m,                                 // MetaProvider
 		m.sharder,                         // UnifiedSharder
 		NewEventCategorizer(),             // EventCategorizer
 		m.ethereum.Metadata().Wallclock(), // EthereumBeaconChain
 		m.clockDrift,                      // clockDrift
 		m.Config.Events,                   // EventConfig
-		clientMeta,                        // ClientMeta
 		m.log.WithField("component", "processor"),
 	)
 
@@ -365,6 +360,10 @@ func (m *Mimicry) ServeProbe(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+func (m *Mimicry) GetClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {
+	return m.createNewClientMeta(ctx)
 }
 
 func (m *Mimicry) createNewClientMeta(ctx context.Context) (*xatu.ClientMeta, error) {

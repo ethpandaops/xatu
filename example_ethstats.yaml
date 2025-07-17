@@ -1,0 +1,38 @@
+# Ethstats server configuration example
+enabled: true
+addr: ":8081"
+metricsAddr: ":9090"
+logging: "info"
+
+# WebSocket configuration
+maxMessageSize: 15728640  # 15MB (go-ethereum requirement)
+readTimeout: 60s
+writeTimeout: 10s
+pingInterval: 30s
+
+# Authentication configuration
+auth:
+  enabled: true
+  groups:
+    mainnet:
+      users:
+        node1:
+          password: "securepassword1"
+        node2:
+          password: "securepassword2"
+    testnet:
+      users:
+        testnode1:
+          password: "testpass1"
+
+# Rate limiting configuration
+rateLimit:
+  enabled: true
+  connectionsPerIp: 10
+  windowDuration: 1m
+  failuresBeforeWarn: 5
+
+# Labels for metrics
+labels:
+  environment: production
+  service: ethstats

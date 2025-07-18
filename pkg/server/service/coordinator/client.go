@@ -2,9 +2,10 @@ package coordinator
 
 import (
 	"context"
+	crand "crypto/rand"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net"
 	"strings"
 	"time"
@@ -195,6 +196,43 @@ func (c *Client) ListStalledExecutionNodeRecords(ctx context.Context, req *xatu.
 	return response, nil
 }
 
+func (c *Client) ListStalledConsensusNodeRecords(ctx context.Context, req *xatu.ListStalledConsensusNodeRecordsRequest) (*xatu.ListStalledConsensusNodeRecordsResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	pageSize := int(req.PageSize)
+	if pageSize == 0 {
+		pageSize = 100
+	}
+
+	if pageSize > 1000 {
+		pageSize = 1000
+	}
+
+	nodeRecords, err := c.persistence.CheckoutStalledConsensusNodeRecords(ctx, pageSize)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get stalled consensus node records from db").Error())
+	}
+
+	response := &xatu.ListStalledConsensusNodeRecordsResponse{
+		NodeRecords: []string{},
+	}
+
+	for _, record := range nodeRecords {
+		response.NodeRecords = append(response.NodeRecords, record.Enr)
+	}
+
+	return response, nil
+}
+
 func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.CreateExecutionNodeRecordStatusRequest) (*xatu.CreateExecutionNodeRecordStatusResponse, error) {
 	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -261,6 +299,67 @@ func (c *Client) CreateExecutionNodeRecordStatus(ctx context.Context, req *xatu.
 	}
 
 	return &xatu.CreateExecutionNodeRecordStatusResponse{}, nil
+}
+
+func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.CreateConsensusNodeRecordStatusRequest) (*xatu.CreateConsensusNodeRecordStatusResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	if req.Status == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "status is required")
+	}
+
+	st := node.Consensus{
+		Enr:            req.Status.NodeRecord,
+		NodeID:         req.Status.NodeId,
+		PeerID:         req.Status.PeerId,
+		CreateTime:     time.Now(),
+		Name:           req.Status.Name,
+		ForkDigest:     req.Status.ForkDigest,
+		NextForkDigest: req.Status.NextForkDigest,
+		FinalizedRoot:  req.Status.FinalizedRoot,
+		FinalizedEpoch: req.Status.FinalizedEpoch,
+		HeadRoot:       req.Status.HeadRoot,
+		HeadSlot:       req.Status.HeadSlot,
+		CGC:            req.Status.Cgc,
+		NetworkID:      fmt.Sprintf("%v", req.Status.NetworkId),
+	}
+
+	result := "error"
+
+	defer func() {
+		// TODO(sam.calder-mason): Derive client id/name from the request jwt
+		c.metrics.AddConsensusNodeRecordStatusReceived(1, "unknown", result, st.NetworkID, fmt.Sprintf("0x%x", st.ForkDigest))
+	}()
+
+	err := c.persistence.InsertNodeRecordConsensus(ctx, &st)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to insert node record consensus").Error())
+	}
+
+	result = "success"
+
+	nodeRecord := &node.Record{
+		Enr:                     req.Status.NodeRecord,
+		LastConnectTime:         sql.NullTime{Time: time.Now(), Valid: true},
+		ConsecutiveDialAttempts: 0,
+		CGC:                     &req.Status.Cgc,
+	}
+
+	err = c.persistence.UpdateNodeRecord(ctx, nodeRecord)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to update node record").Error())
+	}
+
+	return &xatu.CreateConsensusNodeRecordStatusResponse{}, nil
 }
 
 func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
@@ -344,6 +443,89 @@ func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.C
 	}, nil
 }
 
+func (c *Client) CoordinateConsensusNodeRecords(ctx context.Context, req *xatu.CoordinateConsensusNodeRecordsRequest) (*xatu.CoordinateConsensusNodeRecordsResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	targetedNodes := []string{}
+	ignoredNodeRecords := []string{}
+	activities := []*node.Activity{}
+
+	if req.ClientId == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "client id is required")
+	}
+
+	for _, record := range req.NodeRecords {
+		activity := &node.Activity{
+			Enr:        record.NodeRecord,
+			ClientID:   req.ClientId,
+			UpdateTime: time.Now(),
+			Connected:  record.Connected,
+		}
+
+		activities = append(activities, activity)
+
+		// ignore nodes that have been connected to too many times
+		if record.ConnectionAttempts < 100 {
+			targetedNodes = append(targetedNodes, record.NodeRecord)
+		}
+
+		ignoredNodeRecords = append(ignoredNodeRecords, record.NodeRecord)
+	}
+
+	limit := req.Limit
+	if limit == 0 {
+		limit = 100
+	}
+
+	if limit > 1000 {
+		limit = 1000
+	}
+
+	//nolint:gosec // conversion is fine here.
+	limit -= uint32(len(targetedNodes))
+
+	if limit > 0 {
+		// Note: fork_id_hashes field will not be used for consensus nodes
+		newNodeRecords, err := c.persistence.ListAvailableConsensusNodeRecords(ctx, req.ClientId, ignoredNodeRecords, req.NetworkIds, nil, int(limit))
+		if err != nil {
+			return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get available consensus node records from db").Error())
+		}
+
+		for _, record := range newNodeRecords {
+			activity := &node.Activity{
+				Enr:        *record,
+				ClientID:   req.ClientId,
+				UpdateTime: time.Now(),
+				Connected:  false,
+			}
+
+			activities = append(activities, activity)
+			targetedNodes = append(targetedNodes, *record)
+		}
+	}
+
+	if len(activities) != 0 {
+		err := c.persistence.UpsertNodeRecordActivities(ctx, activities)
+		if err != nil {
+			return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to upsert node record activities to db").Error())
+		}
+	}
+
+	return &xatu.CoordinateConsensusNodeRecordsResponse{
+		NodeRecords: targetedNodes,
+		RetryDelay:  5,
+	}, nil
+}
+
 func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscoveryNodeRecordRequest) (*xatu.GetDiscoveryNodeRecordResponse, error) {
 	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -365,10 +547,80 @@ func (c *Client) GetDiscoveryNodeRecord(ctx context.Context, req *xatu.GetDiscov
 		return nil, status.Errorf(codes.NotFound, "no records found")
 	}
 
-	//nolint:gosec // not a security issue
-	randomRecord := records[rand.Intn(len(records))]
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
 
 	return &xatu.GetDiscoveryNodeRecordResponse{
+		NodeRecord: randomRecord.Enr,
+	}, nil
+}
+
+func (c *Client) GetDiscoveryConsensusNodeRecord(ctx context.Context, req *xatu.GetDiscoveryConsensusNodeRecordRequest) (*xatu.GetDiscoveryConsensusNodeRecordResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	records, err := c.persistence.ListNodeRecordConsensus(ctx, req.NetworkIds, req.ForkDigests, 100)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to list node record consensus from db").Error())
+	}
+
+	if len(records) == 0 {
+		return nil, status.Errorf(codes.NotFound, "no records found")
+	}
+
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
+
+	return &xatu.GetDiscoveryConsensusNodeRecordResponse{
+		NodeRecord: randomRecord.Enr,
+	}, nil
+}
+
+func (c *Client) GetDiscoveryExecutionNodeRecord(ctx context.Context, req *xatu.GetDiscoveryExecutionNodeRecordRequest) (*xatu.GetDiscoveryExecutionNodeRecordResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	records, err := c.persistence.ListNodeRecordExecutions(ctx, req.NetworkIds, req.ForkIdHashes, 100)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get discovery node records from db").Error())
+	}
+
+	if len(records) == 0 {
+		return nil, status.Errorf(codes.NotFound, "no records found")
+	}
+
+	randomIndex, err := c.secureRandomInt(len(records))
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to generate random index").Error())
+	}
+
+	randomRecord := records[randomIndex]
+
+	return &xatu.GetDiscoveryExecutionNodeRecordResponse{
 		NodeRecord: randomRecord.Enr,
 	}, nil
 }
@@ -431,4 +683,17 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 	}
 
 	return &xatu.UpsertCannonLocationResponse{}, nil
+}
+
+func (c *Client) secureRandomInt(input int) (int, error) {
+	if input <= 0 {
+		return 0, fmt.Errorf("invalid range for random int: %d", input)
+	}
+
+	bigIndex, err := crand.Int(crand.Reader, big.NewInt(int64(input)))
+	if err != nil {
+		return 0, perrors.Wrap(err, "failed to generate secure random number")
+	}
+
+	return int(bigIndex.Int64()), nil
 }

@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethpandaops/xatu/pkg/discovery/p2p/discovery"
+	"github.com/ethpandaops/ethcore/pkg/discovery"
 	"github.com/sirupsen/logrus"
 )
 
@@ -91,4 +91,16 @@ func (s *Static) Stop(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Static) GetNetworkIds() []uint64 {
+	return []uint64{}
+}
+
+func (s *Static) GetForkIdHashes() []string {
+	return []string{}
+}
+
+func (s *Static) GetForkDigests() []string {
+	return []string{}
 }

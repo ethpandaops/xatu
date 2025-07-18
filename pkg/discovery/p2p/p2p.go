@@ -19,4 +19,7 @@ type P2P interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 	Type() string
+	GetNetworkIds() []uint64
+	GetForkIdHashes() []string
+	GetForkDigests() []string
 }

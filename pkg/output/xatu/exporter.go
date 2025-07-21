@@ -18,7 +18,6 @@ import (
 	grpc_codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 )
@@ -123,7 +122,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*pb.DecoratedEv
 	var err error
 
 	opts := []grpc.CallOption{
-		grpc.UseCompressor(gzip.Name),
+		//grpc.UseCompressor(gzip.Name),
 	}
 
 	startTime := time.Now()

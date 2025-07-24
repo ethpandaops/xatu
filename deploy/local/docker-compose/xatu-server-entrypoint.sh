@@ -3,8 +3,8 @@
 # Copy the template config
 cp /etc/xatu-server/config-template.yaml /etc/xatu-server/config.yaml
 
-# Check if GeoIP databases exist
-if [ -f /geoip/GeoLite2-City.mmdb ] && [ -f /geoip/GeoLite2-ASN.mmdb ]; then
+# Check if GeoIP databases exist and are not empty
+if [ -s /geoip/GeoLite2-City.mmdb ] && [ -s /geoip/GeoLite2-ASN.mmdb ]; then
     echo "GeoIP databases found. Enabling GeoIP..."
     
     # Create a temporary file with the geoip configuration

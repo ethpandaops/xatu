@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package xatu.noderecord;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/noderecord";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+message Execution {
+  google.protobuf.StringValue enr = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.StringValue name = 3;
+  google.protobuf.StringValue capabilities = 4;
+  google.protobuf.StringValue protocol_version = 5 [json_name = "protocol_version"];
+  google.protobuf.StringValue total_difficulty = 6 [json_name = "total_difficulty"];
+  google.protobuf.StringValue head = 7;
+  google.protobuf.StringValue genesis = 8;
+  google.protobuf.StringValue fork_id_hash = 9 [json_name = "fork_id_hash"];
+  google.protobuf.StringValue fork_id_next = 10 [json_name = "fork_id_next"];
+  // Parsed ENR fields
+  google.protobuf.StringValue node_id = 11 [json_name = "node_id"];
+  google.protobuf.StringValue ip = 12;
+  google.protobuf.UInt32Value tcp = 13;
+  google.protobuf.UInt32Value udp = 14;
+  google.protobuf.BoolValue has_ipv6 = 15 [json_name = "has_ipv6"];
+}

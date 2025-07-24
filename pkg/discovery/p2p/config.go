@@ -7,6 +7,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethpandaops/ethcore/pkg/ethereum"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/xatu"
 	"github.com/sirupsen/logrus"
@@ -15,12 +16,43 @@ import (
 type Config struct {
 	Type Type `yaml:"type"`
 
+	// Ethereum configuration.
+	Ethereum *ethereum.Config `yaml:"ethereum"`
+
 	Config *RawMessage `yaml:"config"`
+}
+
+// GetNetworkIDs extracts network IDs from the p2p config based on its type.
+func (c *Config) GetNetworkIDs() []uint64 {
+	if c.Config == nil {
+		return nil
+	}
+
+	switch c.Type {
+	case TypeXatu:
+		conf := &xatu.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return nil
+		}
+
+		return conf.NetworkIds
+	default:
+		// Static and other types don't have network IDs configured
+		return nil
+	}
 }
 
 func (c *Config) Validate() error {
 	if c.Type == TypeUnknown {
 		return errors.New("p2p type is required")
+	}
+
+	if c.Ethereum == nil {
+		return errors.New("p2p ethereum config is required")
+	}
+
+	if err := c.Ethereum.Validate(); err != nil {
+		return fmt.Errorf("p2p ethereum config error: %w", err)
 	}
 
 	return nil

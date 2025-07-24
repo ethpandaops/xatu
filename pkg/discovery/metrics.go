@@ -18,7 +18,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "node_record_statuses_total",
 			Help:      "Total number of node record statuses",
-		}, []string{"network_id", "forkIDHash"}),
+		}, []string{"network_id", "layer", "fork"}),
 	}
 
 	prometheus.MustRegister(m.discoveredNodeRecordsTotal)
@@ -31,6 +31,6 @@ func (m *Metrics) AddDiscoveredNodeRecord(count int, protocol string) {
 	m.discoveredNodeRecordsTotal.WithLabelValues(protocol).Add(float64(count))
 }
 
-func (m *Metrics) AddNodeRecordStatus(count int, networkID, forkIDHash string) {
-	m.nodeRecordStatusesTotal.WithLabelValues(networkID, forkIDHash).Add(float64(count))
+func (m *Metrics) AddNodeRecordStatus(count int, networkID, layer, fork string) {
+	m.nodeRecordStatusesTotal.WithLabelValues(networkID, layer, fork).Add(float64(count))
 }

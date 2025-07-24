@@ -154,7 +154,7 @@ services:
   xatu-server:
     profiles:
       - ""
-    command: server --config /etc/xatu-server/config.yaml
+    entrypoint: ["/bin/sh", "/xatu-server-entrypoint.sh"]
     container_name: xatu-server
     hostname: xatu-server
     build:
@@ -167,7 +167,21 @@ services:
       # SERVER_EVENT_INGESTER_BASIC_AUTH_PASSWORD: ${SERVER_EVENT_INGESTER_BASIC_AUTH_PASSWORD:-example}
       # SERVER_COORDINATOR_AUTH_SECRET: ${SERVER_COORDINATOR_AUTH_SECRET:-super_secret}
     volumes:
-      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config.yaml
+      - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config-template.yaml
+      - ./deploy/local/docker-compose/xatu-server-entrypoint.sh:/xatu-server-entrypoint.sh:ro
+      # GeoIP databases - will be mounted if they exist
+      - type: bind
+        source: ./GeoLite2-City.mmdb
+        target: /geoip/GeoLite2-City.mmdb
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./GeoLite2-ASN.mmdb
+        target: /geoip/GeoLite2-ASN.mmdb
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
       - xatu-net
 
@@ -176,6 +190,8 @@ services:
       - ""
     image: postgres:17
     container_name: xatu-postgres
+    ports:
+      - "${POSTGRES_ADDRESS:-0.0.0.0}:${POSTGRES_PORT:-5432}:5432"
     hostname: xatu-postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -314,6 +330,8 @@ services:
           "mev-relay-proposer-payload-delivered"
           "beacon-api-eth-v3-validator-block"
           "mev-relay-validator-registration"
+          "node-record-consensus"
+          "node-record-execution"
         )
         for topic in "$${topics[@]}"; do
           echo "Creating topic: $$topic";

@@ -4,6 +4,8 @@ package xatu;
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
 
+import "google/protobuf/timestamp.proto";
+
 service Coordinator {
   rpc CreateNodeRecords(CreateNodeRecordsRequest)
       returns (CreateNodeRecordsResponse) {}
@@ -13,8 +15,18 @@ service Coordinator {
       returns (CreateExecutionNodeRecordStatusResponse) {}
   rpc CoordinateExecutionNodeRecords(CoordinateExecutionNodeRecordsRequest)
       returns (CoordinateExecutionNodeRecordsResponse) {}
+  rpc ListStalledConsensusNodeRecords(ListStalledConsensusNodeRecordsRequest)
+      returns (ListStalledConsensusNodeRecordsResponse) {}
+  rpc CreateConsensusNodeRecordStatus(CreateConsensusNodeRecordStatusRequest)
+      returns (CreateConsensusNodeRecordStatusResponse) {}
+  rpc CoordinateConsensusNodeRecords(CoordinateConsensusNodeRecordsRequest)
+      returns (CoordinateConsensusNodeRecordsResponse) {}
   rpc GetDiscoveryNodeRecord(GetDiscoveryNodeRecordRequest)
       returns (GetDiscoveryNodeRecordResponse) {}
+  rpc GetDiscoveryExecutionNodeRecord(GetDiscoveryExecutionNodeRecordRequest)
+      returns (GetDiscoveryExecutionNodeRecordResponse) {}
+  rpc GetDiscoveryConsensusNodeRecord(GetDiscoveryConsensusNodeRecordRequest)
+      returns (GetDiscoveryConsensusNodeRecordResponse) {}
 
   rpc GetCannonLocation(GetCannonLocationRequest)
       returns (GetCannonLocationResponse) {}
@@ -80,12 +92,78 @@ message CoordinateExecutionNodeRecordsResponse {
   uint32 retry_delay = 2;
 }
 
+
+message ConsensusNodeStatus {
+  string node_record = 1;
+  string name = 2;
+  bytes fork_digest = 3;
+  bytes next_fork_digest = 4;
+  bytes finalized_root = 5;
+  bytes finalized_epoch = 6;
+  google.protobuf.Timestamp finalized_epoch_start_date_time = 7 [ json_name = "finalized_epoch_start_date_time" ];
+  bytes head_root = 8;
+  bytes head_slot = 9;
+  google.protobuf.Timestamp head_slot_start_date_time = 10 [ json_name = "head_slot_start_date_time" ];
+  bytes cgc = 11;
+  uint64 network_id = 12;
+  string node_id = 13;
+  string peer_id = 14;
+}
+
+message ListStalledConsensusNodeRecordsRequest { int32 page_size = 1; }
+
+message ListStalledConsensusNodeRecordsResponse {
+  repeated string node_records = 1;
+}
+
+message CreateConsensusNodeRecordStatusRequest {
+  ConsensusNodeStatus status = 1;
+}
+
+message CreateConsensusNodeRecordStatusResponse {}
+
+message CoordinateConsensusNodeRecordsRequest {
+  repeated CoordinatedNodeRecord node_records = 1;
+  uint32 limit = 2;
+  repeated uint64 network_ids = 3;
+  repeated bytes fork_id_hashes = 4;
+  string client_id = 5;
+  repeated string capabilities = 6;
+}
+
+message CoordinateConsensusNodeRecordsResponse {
+  repeated string node_records = 1;
+  uint32 retry_delay = 2;
+}
+
 message GetDiscoveryNodeRecordRequest {
+  option deprecated = true;
   repeated uint64 network_ids = 1;
   repeated bytes fork_id_hashes = 2;
 }
 
-message GetDiscoveryNodeRecordResponse { string node_record = 1; }
+message GetDiscoveryNodeRecordResponse {
+  option deprecated = true;
+  string node_record = 1;
+}
+
+message GetDiscoveryExecutionNodeRecordRequest {
+  repeated uint64 network_ids = 1;
+  repeated bytes fork_id_hashes = 2;
+}
+
+message GetDiscoveryExecutionNodeRecordResponse {
+  string node_record = 1;
+}
+
+message GetDiscoveryConsensusNodeRecordRequest {
+  repeated uint64 network_ids = 1;
+  repeated bytes fork_digests = 2;
+}
+
+message GetDiscoveryConsensusNodeRecordResponse {
+  string node_record = 1;
+}
 
 enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT = 0;

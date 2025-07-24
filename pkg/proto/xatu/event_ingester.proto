@@ -31,6 +31,9 @@ import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
 
+import "pkg/proto/noderecord/consensus.proto";
+import "pkg/proto/noderecord/execution.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -1176,6 +1179,16 @@ message ClientMeta {
     google.protobuf.UInt64Value validator_index = 6 [ json_name = "validator_index" ];
   }
 
+  // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+  message AdditionalNodeRecordConsensusData {
+    // FinalizedEpoch is the epoch the node record consensus was received for.
+    EpochV2 finalized_epoch = 2;
+    // HeadSlot is the slot the node record consensus was received for.
+    SlotV2 head_slot = 3;
+    // HeadEpoch is the epoch the node record consensus was received for.
+    EpochV2 head_epoch = 4;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1403,11 +1416,13 @@ message ClientMeta {
     AdditionalLibP2PTraceRPCMetaSubscriptionData libp2p_trace_rpc_meta_subscription = 81 [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     // AdditionalLibP2PTraceRPCMetaMessageData contains additional data about the rpc meta message event.
     AdditionalLibP2PTraceRPCMetaMessageData libp2p_trace_rpc_meta_message = 82 [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
+    // AdditionalNodeRecordConsensusData contains additional data about the node record consensus event.
+    AdditionalNodeRecordConsensusData node_record_consensus = 83 [ json_name = "NODE_RECORD_CONSENSUS" ];
     // AdditionalLibP2PTraceGossipSubAggregateAndProofData contains additional data about the gossip sub aggregate and proof event.
-    AdditionalLibP2PTraceGossipSubAggregateAndProofData libp2p_trace_gossipsub_aggregate_and_proof = 83 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
+    AdditionalLibP2PTraceGossipSubAggregateAndProofData libp2p_trace_gossipsub_aggregate_and_proof = 84 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
     // AdditionalEthV1EventsDataColumnSidecarData contains additional data about the
     // eth v1 data column sidecar event.
-    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 84 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
+    AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 85 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1479,6 +1494,10 @@ message ServerMeta {
 
   message AdditionalLibp2PTraceDisconnectedData { Peer peer = 1; }
 
+  message AdditionalNodeRecordConsensusData { Geo geo = 1; }
+
+  message AdditionalNodeRecordExecutionData { Geo geo = 1; }
+
   // Event contains information about the event from the server's perspective.
   Event event = 1;
 
@@ -1500,6 +1519,14 @@ message ServerMeta {
     // geo location
     AdditionalLibp2PTraceDisconnectedData LIBP2P_TRACE_DISCONNECTED = 5
         [ json_name = "LIBP2P_TRACE_DISCONNECTED" ];
+    // AdditionalNodeRecordConsensus contains additional data on consensus
+    // node geo location
+    AdditionalNodeRecordConsensusData NODE_RECORD_CONSENSUS = 6
+        [ json_name = "NODE_RECORD_CONSENSUS" ];
+    // AdditionalNodeRecordExecution contains additional data on execution
+    // node geo location
+    AdditionalNodeRecordExecutionData NODE_RECORD_EXECUTION = 7
+        [ json_name = "NODE_RECORD_EXECUTION" ];
   }
 }
 
@@ -1584,8 +1611,10 @@ message Event {
     LIBP2P_TRACE_RPC_META_CONTROL_PRUNE = 69;
     LIBP2P_TRACE_RPC_META_SUBSCRIPTION = 70;
     LIBP2P_TRACE_RPC_META_MESSAGE = 71;
-    LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 72;
-    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 73;
+    NODE_RECORD_CONSENSUS = 72;
+    NODE_RECORD_EXECUTION = 73;
+    LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 74;
+    BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 75;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1762,9 +1791,13 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_META_SUBSCRIPTION" ];
     xatu.libp2p.MessageMetaItem libp2p_trace_rpc_meta_message = 72
         [ json_name = "LIBP2P_TRACE_RPC_META_MESSAGE" ];
-    xatu.eth.v1.SignedAggregateAttestationAndProofV2 libp2p_trace_gossipsub_aggregate_and_proof = 73
+    xatu.noderecord.Consensus node_record_consensus = 73
+        [ json_name = "NODE_RECORD_CONSENSUS" ];
+    xatu.noderecord.Execution node_record_execution = 74
+        [ json_name = "NODE_RECORD_EXECUTION" ];
+    xatu.eth.v1.SignedAggregateAttestationAndProofV2 libp2p_trace_gossipsub_aggregate_and_proof = 75
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF" ];
-    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 74
+    xatu.eth.v1.EventDataColumnSidecar eth_v1_events_data_column_sidecar = 76
         [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
   };
 }

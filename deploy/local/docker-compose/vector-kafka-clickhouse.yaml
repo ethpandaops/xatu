@@ -135,6 +135,18 @@ sources:
       - "beacon-api-eth-v3-validator-block"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  node_record_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    auto_offset_reset: earliest
+    group_id: xatu-vector-kafka-clickhouse-node-record
+    key_field: "event.id"
+    decoding:
+      codec: json
+    topics:
+      - "^node-record-.+"
+    librdkafka_options:
+      message.max.bytes: "10485760" # 10MB
 transforms:
   xatu_server_events_meta:
     type: remap
@@ -150,6 +162,7 @@ transforms:
       - beacon_api_eth_v1_beacon_validators_kafka
       - mev_relay_kafka
       - beacon_api_eth_v3_validator_block_kafka
+      - node_record_kafka
     source: |-
       .meta_client_name = .meta.client.name
       .meta_client_id = .meta.client.id
@@ -372,6 +385,8 @@ transforms:
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
       mev_relay_validator_registration: .event.name == "MEV_RELAY_VALIDATOR_REGISTRATION"
+      node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
+      node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -417,6 +432,8 @@ transforms:
       - xatu_server_events_router.mev_relay_proposer_payload_delivered
       - xatu_server_events_router.eth_v3_validator_block
       - xatu_server_events_router.mev_relay_validator_registration
+      - xatu_server_events_router.node_record_consensus
+      - xatu_server_events_router.node_record_execution
     metrics:
       - type: counter
         field: event.name
@@ -2159,7 +2176,7 @@ transforms:
       }
 
       .relay_name = .meta.client.additional_data.relay.name
-   
+
 
       .updated_date_time = to_unix_timestamp(now())
 
@@ -2168,6 +2185,307 @@ transforms:
       del(.meta_network_id)
 
 
+      del(.event)
+      del(.meta)
+      del(.data)
+  node_record_consensus_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_consensus
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      # Handle potentially null peer_id
+      if exists(.data.peer_id) && .data.peer_id != null && .data.peer_id != "" {
+        peer_id_key, err = .data.peer_id + .meta.client.ethereum.network.name
+        if err != null {
+          .error = err
+          .error_description = "failed to generate peer id unique key"
+          log(., level: "error", rate_limit_secs: 60)
+        } else {
+          .peer_id_unique_key = seahash(peer_id_key)
+        }
+        .peer_id = .data.peer_id
+      } else {
+        .peer_id = null
+        .peer_id_unique_key = null
+      }
+
+      .enr = .data.enr
+
+      # Handle potentially null node_id
+      if exists(.data.node_id) && .data.node_id != null && .data.node_id != "" {
+        .node_id = .data.node_id
+      } else {
+        .node_id = null
+      }
+
+      .timestamp = .data.timestamp
+      .name = .data.name
+
+      # Parse consensus client version information from name (user agent)
+      if exists(.data.name) && is_string(.data.name) {
+        agent, err = split(.data.name, "/", limit: 4)
+        if err == null && length(agent) > 1 {
+          implementation, err = downcase(agent[0])
+          if err == null {
+            .implementation = implementation
+            # handle teku case with teku/teku/v1.1.1
+            if agent[0] == agent[1] {
+              .version = agent[2]
+            } else {
+              .version = agent[1]
+            }
+          }
+        }
+        if is_string(.version) {
+          semantic_version, err = split(.version, ".", limit: 3)
+          if err == null {
+            if semantic_version[0] != null {
+              version_major, err = replace(semantic_version[0], "v", "", count: 1)
+              if err == null {
+                .version_major = version_major
+                .version_minor = semantic_version[1]
+                if semantic_version[2] != null {
+                  version_patch, err = replace(semantic_version[2], r'[-+ ](.*)', "")
+                  if err == null {
+                    .version_patch = version_patch
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      # Set defaults for version fields if parsing failed
+      if !exists(.version) { .version = "" }
+      if !exists(.version_major) { .version_major = "" }
+      if !exists(.version_minor) { .version_minor = "" }
+      if !exists(.version_patch) { .version_patch = "" }
+      if !exists(.implementation) { .implementation = "" }
+
+      .fork_digest = .data.fork_digest
+      .finalized_root = .data.finalized_root
+      .finalized_epoch = .data.finalized_epoch
+      .head_root = .data.head_root
+      .head_slot = .data.head_slot
+
+      # Handle finalized_epoch_start_date_time timestamp
+      if exists(.data.finalized_epoch_start_date_time) && .data.finalized_epoch_start_date_time != null {
+        finalized_epoch_start_date_time, err = parse_timestamp(.data.finalized_epoch_start_date_time, format: "%+")
+        if err == null {
+          .finalized_epoch_start_date_time = to_unix_timestamp(finalized_epoch_start_date_time)
+        } else {
+          .finalized_epoch_start_date_time = null
+        }
+      } else {
+        .finalized_epoch_start_date_time = null
+      }
+
+      # Handle head_slot_start_date_time timestamp
+      if exists(.data.head_slot_start_date_time) && .data.head_slot_start_date_time != null {
+        head_slot_start_date_time, err = parse_timestamp(.data.head_slot_start_date_time, format: "%+")
+        if err == null {
+          .head_slot_start_date_time = to_unix_timestamp(head_slot_start_date_time)
+        } else {
+          .head_slot_start_date_time = null
+        }
+      } else {
+        .head_slot_start_date_time = null
+      }
+
+      # Handle potentially null cgc
+      if exists(.data.cgc) && .data.cgc != null {
+        .cgc = .data.cgc
+      } else {
+        .cgc = null
+      }
+
+      # Handle potentially null next_fork_digest
+      if exists(.data.next_fork_digest) && .data.next_fork_digest != null {
+        .next_fork_digest = .data.next_fork_digest
+      } else {
+        .next_fork_digest = null
+      }
+
+      # Handle consensus node IP from event data
+      if exists(.data.ip) && is_string(.data.ip) && .data.ip != null && .data.ip != "" {
+        if is_ipv4!(.data.ip) {
+          .ip = ip_to_ipv6!(.data.ip)
+        } else if is_ipv6!(.data.ip) {
+          .ip = .data.ip
+        }
+      } else {
+        .ip = null
+      }
+
+      .tcp = .data.tcp
+      .udp = .data.udp
+      .quic = .data.quic
+      .has_ipv6 = .data.has_ipv6
+
+      # Handle consensus node geo fields from ServerMeta
+      if exists(.meta.server.additional_data.geo) {
+        .geo_city = .meta.server.additional_data.geo.city
+        .geo_country = .meta.server.additional_data.geo.country
+        .geo_country_code = .meta.server.additional_data.geo.country_code
+        .geo_continent_code = .meta.server.additional_data.geo.continent_code
+        .geo_longitude = .meta.server.additional_data.geo.longitude
+        .geo_latitude = .meta.server.additional_data.geo.latitude
+        .geo_autonomous_system_number = .meta.server.additional_data.geo.autonomous_system_number
+        .geo_autonomous_system_organization = .meta.server.additional_data.geo.autonomous_system_organization
+      } else {
+        # Set defaults if no geo data available
+        .geo_city = ""
+        .geo_country = ""
+        .geo_country_code = ""
+        .geo_continent_code = ""
+        .geo_longitude = null
+        .geo_latitude = null
+        .geo_autonomous_system_number = null
+        .geo_autonomous_system_organization = null
+      }
+
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
+      del(.event)
+      del(.meta)
+      del(.data)
+  node_record_execution_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.node_record_execution
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .enr = .data.enr
+      .name = .data.name
+
+      # Parse execution client version information from name (user agent)
+      if exists(.data.name) && is_string(.data.name) {
+        agent, err = split(.data.name, "/", limit: 4)
+        if err == null && length(agent) > 1 {
+          implementation, err = downcase(agent[0])
+          if err == null {
+            .implementation = implementation
+            # handle coregeth case
+            if implementation == "coregeth" {
+              .version = agent[2]
+            } else {
+              .version = agent[1]
+            }
+          }
+        }
+        if is_string(.version) {
+          semantic_version, err = split(.version, ".", limit: 3)
+          if err == null {
+            if semantic_version[0] != null {
+              version_major, err = replace(semantic_version[0], "v", "", count: 1)
+              if err == null {
+                .version_major = version_major
+                .version_minor = semantic_version[1]
+                if semantic_version[2] != null {
+                  version_patch, err = replace(semantic_version[2], r'[-+ ](.*)', "")
+                  if err == null {
+                    .version_patch = version_patch
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      # Set defaults for version fields if parsing failed
+      if !exists(.version) { .version = "" }
+      if !exists(.version_major) { .version_major = "" }
+      if !exists(.version_minor) { .version_minor = "" }
+      if !exists(.version_patch) { .version_patch = "" }
+      if !exists(.implementation) { .implementation = "" }
+
+      # Parse capabilities string into array
+      if exists(.data.capabilities) && .data.capabilities != null {
+        .capabilities = split!(.data.capabilities, ",")
+      } else {
+        .capabilities = []
+      }
+
+      .protocol_version = .data.protocol_version
+      .total_difficulty = .data.total_difficulty
+      .head = .data.head
+      .genesis = .data.genesis
+      .fork_id_hash = .data.fork_id_hash
+      .fork_id_next = .data.fork_id_next
+      # Parsed ENR fields
+      .node_id = .data.node_id
+
+      # Handle execution node IP from event data
+      if exists(.data.ip) && is_string(.data.ip) && .data.ip != null && .data.ip != "" {
+        if is_ipv4!(.data.ip) {
+          .ip = ip_to_ipv6!(.data.ip)
+        } else if is_ipv6!(.data.ip) {
+          .ip = .data.ip
+        }
+      } else {
+        .ip = null
+      }
+
+      .tcp = .data.tcp
+      .udp = .data.udp
+      .has_ipv6 = .data.has_ipv6
+
+      # Handle execution node geo fields from ServerMeta
+      if exists(.meta.server.additional_data.geo) {
+        .geo_city = .meta.server.additional_data.geo.city
+        .geo_country = .meta.server.additional_data.geo.country
+        .geo_country_code = .meta.server.additional_data.geo.country_code
+        .geo_continent_code = .meta.server.additional_data.geo.continent_code
+        .geo_longitude = .meta.server.additional_data.geo.longitude
+        .geo_latitude = .meta.server.additional_data.geo.latitude
+        .geo_autonomous_system_number = .meta.server.additional_data.geo.autonomous_system_number
+        .geo_autonomous_system_organization = .meta.server.additional_data.geo.autonomous_system_organization
+      } else {
+        # Set defaults if no geo data available
+        .geo_city = ""
+        .geo_country = ""
+        .geo_country_code = ""
+        .geo_continent_code = ""
+        .geo_longitude = null
+        .geo_latitude = null
+        .geo_autonomous_system_number = null
+        .geo_autonomous_system_organization = null
+      }
+
+      .updated_date_time = to_unix_timestamp(now())
+      .meta_client_name = .meta.client.name
+      .meta_client_id = .meta.client.id
+      .meta_client_version = .meta.client.version
+      .meta_client_implementation = .meta.client.implementation
+      .meta_client_os = .meta.client.os
+      .meta_network_id = .meta.client.ethereum.network.id
+      .meta_network_name = .meta.client.ethereum.network.name
+      .meta_labels = .meta.client.labels
       del(.event)
       del(.meta)
       del(.data)
@@ -2879,5 +3197,43 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-
-
+  node_record_consensus_clickhouse:
+    type: clickhouse
+    inputs:
+      - node_record_consensus_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: node_record_consensus
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  node_record_execution_clickhouse:
+    type: clickhouse
+    inputs:
+      - node_record_execution_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: node_record_execution
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false

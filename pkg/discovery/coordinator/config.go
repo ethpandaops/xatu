@@ -14,6 +14,7 @@ type Config struct {
 	ExportTimeout            time.Duration     `yaml:"exportTimeout" default:"30s"`
 	MaxExportBatchSize       int               `yaml:"maxExportBatchSize" default:"512"`
 	ConcurrentExecutionPeers int32             `yaml:"concurrentExecutionPeers" default:"100"`
+	ConcurrentConsensusPeers int32             `yaml:"concurrentConsensusPeers" default:"100"`
 }
 
 func (c *Config) Validate() error {

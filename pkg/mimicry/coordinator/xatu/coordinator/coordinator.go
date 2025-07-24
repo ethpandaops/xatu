@@ -125,5 +125,7 @@ func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, statu
 		c.metrics.AddNodeRecordStatus(1, fmt.Sprintf("%d", status.GetNetworkId()), fmt.Sprintf("0x%x", status.GetForkId().GetHash()))
 	}
 
+	// TODO: create and send status event for clickhouse
+
 	return err
 }

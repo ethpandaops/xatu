@@ -62,4 +62,8 @@ type Record struct {
 	NodeID *string `json:"nodeId" db:"node_id" fieldopt:"omitempty"`
 	// PeerID is the peer ID of the node record.
 	PeerID *string `json:"peerId" db:"peer_id" fieldopt:"omitempty"`
+	// CGC is the custody group count of the node record.
+	CGC *[]byte `json:"cgc" db:"cgc" fieldopt:"omitempty"`
+	// NextForkDigest is the next fork digest of the next scheduled fork.
+	NextForkDigest *[]byte `json:"nextForkDigest" db:"next_fork_digest" fieldopt:"omitempty"`
 }

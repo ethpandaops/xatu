@@ -169,19 +169,9 @@ services:
     volumes:
       - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config-template.yaml
       - ./deploy/local/docker-compose/xatu-server-entrypoint.sh:/xatu-server-entrypoint.sh:ro
-      # GeoIP databases - will be mounted if they exist
-      - type: bind
-        source: ./GeoLite2-City.mmdb
-        target: /geoip/GeoLite2-City.mmdb
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./GeoLite2-ASN.mmdb
-        target: /geoip/GeoLite2-ASN.mmdb
-        read_only: true
-        bind:
-          create_host_path: false
+      # GeoIP databases - create empty files if they don't exist
+      - ./GeoLite2-City.mmdb:/geoip/GeoLite2-City.mmdb:ro
+      - ./GeoLite2-ASN.mmdb:/geoip/GeoLite2-ASN.mmdb:ro
     networks:
       - xatu-net
 

@@ -169,7 +169,7 @@ services:
     volumes:
       - ./deploy/local/docker-compose/xatu-server.yaml:/etc/xatu-server/config-template.yaml
       - ./deploy/local/docker-compose/xatu-server-entrypoint.sh:/xatu-server-entrypoint.sh:ro
-      # GeoIP databases - create empty files if they don't exist
+      # GeoIP databases - Docker will create directories if files don't exist, script handles this
       - ./GeoLite2-City.mmdb:/geoip/GeoLite2-City.mmdb:ro
       - ./GeoLite2-ASN.mmdb:/geoip/GeoLite2-ASN.mmdb:ro
     networks:

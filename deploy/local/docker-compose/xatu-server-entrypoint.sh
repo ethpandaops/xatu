@@ -1,24 +1,10 @@
 #!/bin/sh
 
-# Copy the template config
-cp /etc/xatu-server/config-template.yaml /etc/xatu-server/config.yaml
-
-# Check if GeoIP databases exist and are not empty
-if [ -s /geoip/GeoLite2-City.mmdb ] && [ -s /geoip/GeoLite2-ASN.mmdb ]; then
+# Check if GeoIP databases are valid non-empty files (not directories or empty files)
+if [ -f /geoip/GeoLite2-City.mmdb ] && [ -s /geoip/GeoLite2-City.mmdb ] && [ -f /geoip/GeoLite2-ASN.mmdb ] && [ -s /geoip/GeoLite2-ASN.mmdb ]; then
     echo "GeoIP databases found. Enabling GeoIP..."
     
-    # Create a temporary file with the geoip configuration
-    cat > /tmp/geoip-config.yaml << 'EOF'
-geoip:
-  enabled: true
-  type: maxmind
-  config:
-    database:
-      city: /geoip/GeoLite2-City.mmdb
-      asn: /geoip/GeoLite2-ASN.mmdb
-EOF
-    
-    # Replace the geoip section in the config
+    # Replace the geoip section in the config to enable it
     awk '
     /^geoip:/ {
         print "geoip:"
@@ -28,14 +14,27 @@ EOF
         print "    database:"
         print "      city: /geoip/GeoLite2-City.mmdb"
         print "      asn: /geoip/GeoLite2-ASN.mmdb"
-        # Skip the next line (enabled: false)
-        getline
+        # Skip lines until we find the next top-level section
+        while (getline && $0 !~ /^[a-zA-Z]/) {
+            # Skip nested geoip config lines
+        }
+        # Print the line we just read (start of next section)
+        if (NF > 0) print
         next
     }
     { print }
     ' /etc/xatu-server/config-template.yaml > /etc/xatu-server/config.yaml
 else
-    echo "GeoIP databases not found. GeoIP will be disabled."
+    # Check what we actually have and log it for debugging
+    if [ -d /geoip/GeoLite2-City.mmdb ] || [ -d /geoip/GeoLite2-ASN.mmdb ]; then
+        echo "GeoIP paths are directories (Docker created them). GeoIP will be disabled."
+    elif [ -f /geoip/GeoLite2-City.mmdb ] || [ -f /geoip/GeoLite2-ASN.mmdb ]; then
+        echo "GeoIP files exist but are empty. GeoIP will be disabled."
+    else
+        echo "GeoIP files not found. GeoIP will be disabled."
+    fi
+    # Just copy the template as-is (geoip.enabled: false)
+    cp /etc/xatu-server/config-template.yaml /etc/xatu-server/config.yaml
 fi
 
 # Start the server

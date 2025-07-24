@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth"
+	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -18,11 +18,11 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-func (m *Mimicry) handleGossipBlobSidecar(
+func (p *Processor) handleGossipBlobSidecar(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *host.TraceEvent,
-	payload *eth.TraceEventBlobSidecar,
+	payload *events.TraceEventBlobSidecar,
 ) error {
 	if payload.BlobSidecar == nil {
 		return fmt.Errorf("handleGossipBlobSidecar() called with nil blob sidecar")
@@ -41,7 +41,7 @@ func (m *Mimicry) handleGossipBlobSidecar(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := m.createAdditionalGossipSubBlobSidecarData(payload, event.Timestamp)
+	additionalData, err := p.createAdditionalGossipSubBlobSidecarData(payload, event.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -53,7 +53,7 @@ func (m *Mimicry) handleGossipBlobSidecar(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -64,23 +64,23 @@ func (m *Mimicry) handleGossipBlobSidecar(
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
-func (m *Mimicry) createAdditionalGossipSubBlobSidecarData(
-	payload *eth.TraceEventBlobSidecar,
+func (p *Processor) createAdditionalGossipSubBlobSidecarData(
+	payload *events.TraceEventBlobSidecar,
 	timestamp time.Time,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData, error) {
-	wallclockSlot, wallclockEpoch, err := m.ethereum.Metadata().Wallclock().FromTime(timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
 	slotNumber := payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetSlot()
-	slot := m.ethereum.Metadata().Wallclock().Slots().FromNumber(uint64(slotNumber))
-	epoch := m.ethereum.Metadata().Wallclock().Epochs().FromSlot(uint64(slotNumber))
-	timestampAdjusted := timestamp.Add(m.clockDrift)
+	slot := p.wallclock.Slots().FromNumber(uint64(slotNumber))
+	epoch := p.wallclock.Epochs().FromSlot(uint64(slotNumber))
+	timestampAdjusted := timestamp.Add(p.clockDrift)
 
 	return &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{
 		WallclockSlot: &xatu.SlotV2{

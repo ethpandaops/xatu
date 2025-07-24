@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/output/mock"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -762,7 +763,7 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.handleRecvRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleRecvRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -945,7 +946,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleAddPeerEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1050,7 +1051,7 @@ func Test_handleRemovePeerEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleRemovePeerEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1153,7 +1154,7 @@ func Test_handleJoinEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleJoinEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1256,7 +1257,7 @@ func Test_handleLeaveEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleLeaveEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1384,7 +1385,7 @@ func Test_handleGraftEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleGraftEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1512,7 +1513,7 @@ func Test_handlePruneEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handlePruneEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1636,7 +1637,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handlePublishMessageEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1766,7 +1767,7 @@ func Test_handleRejectMessageEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleRejectMessageEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1892,7 +1893,7 @@ func Test_handleDeliverMessageEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleDeliverMessageEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2018,7 +2019,7 @@ func Test_handleDuplicateMessageEvent(t *testing.T) {
 			traceMeta := createTestTraceMeta()
 
 			// Call handleHermesLibp2pEvent which routes to handleDuplicateMessageEvent
-			err := mimicry.handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
+			err := mimicry.GetProcessor().handleHermesLibp2pEvent(context.Background(), tt.event, clientMeta, traceMeta)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2325,7 +2326,7 @@ func Test_handleSendRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.handleSendRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleSendRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2684,7 +2685,7 @@ func Test_handleDropRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.handleDropRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleDropRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2750,7 +2751,7 @@ func validateEventCounts(t *testing.T, events []*xatu.DecoratedEvent, assertions
 func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry {
 	t.Helper()
 
-	return &Mimicry{
+	mimicry := &Mimicry{
 		Config:  config,
 		sinks:   []output.Sink{sink},
 		log:     logrus.NewEntry(logrus.New()),
@@ -2762,6 +2763,23 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 			enabled:          false, // Disable sharding for tests
 		},
 	}
+
+	wallclock := &ethwallclock.EthereumBeaconChain{}
+
+	mimicry.processor = NewProcessor(
+		mimicry,               // DutiesProvider
+		mimicry,               // OutputHandler
+		mimicry.metrics,       // MetricsCollector
+		mimicry,               // MetaProvider
+		mimicry.sharder,       // UnifiedSharder
+		NewEventCategorizer(), // EventCategorizer
+		wallclock,             // EthereumBeaconChain
+		time.Duration(0),      // clockDrift
+		config.Events,         // EventConfig
+		mimicry.log.WithField("component", "processor"),
+	)
+
+	return mimicry
 }
 
 // Helper to create a mock expectation that validates event counts

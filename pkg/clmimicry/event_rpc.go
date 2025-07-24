@@ -21,7 +21,7 @@ var rpcToXatuEventMap = map[string]string{
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
-func (m *Mimicry) handleHermesRPCEvent(
+func (p *Processor) handleHermesRPCEvent(
 	ctx context.Context,
 	event *host.TraceEvent,
 	clientMeta *xatu.ClientMeta,
@@ -30,7 +30,7 @@ func (m *Mimicry) handleHermesRPCEvent(
 	// Map libp2p event to Xatu event.
 	xatuEvent, err := mapRPCEventToXatuEvent(event.Type)
 	if err != nil {
-		m.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesRPCEvent event")
+		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesRPCEvent event")
 
 		//nolint:nilerr // we don't want to return an error here.
 		return nil
@@ -38,42 +38,42 @@ func (m *Mimicry) handleHermesRPCEvent(
 
 	switch xatuEvent {
 	case xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String():
-		if !m.Config.Events.HandleMetadataEnabled {
+		if !p.events.HandleMetadataEnabled {
 			return nil
 		}
 
 		// Record that we received this event
 		networkStr := getNetworkID(clientMeta)
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String():
-		if !m.Config.Events.HandleStatusEnabled {
+		if !p.events.HandleStatusEnabled {
 			return nil
 		}
 
 		// Record that we received this event
 		networkStr := getNetworkID(clientMeta)
-		m.metrics.AddEvent(xatuEvent, networkStr)
+		p.metrics.AddEvent(xatuEvent, networkStr)
 
 		// Check if we should process this event based on trace/sharding config.
-		if !m.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
 			return nil
 		}
 
-		return m.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
 }
 
-func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,
+func (p *Processor) handleHandleMetadataEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -97,7 +97,7 @@ func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -108,10 +108,10 @@ func (m *Mimicry) handleHandleMetadataEvent(ctx context.Context,
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
+func (p *Processor) handleHandleStatusEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
@@ -135,7 +135,7 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
-			DateTime: timestamppb.New(event.Timestamp.Add(m.clockDrift)),
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -146,7 +146,7 @@ func (m *Mimicry) handleHandleStatusEvent(ctx context.Context,
 		},
 	}
 
-	return m.handleNewDecoratedEvent(ctx, decoratedEvent)
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 func mapRPCEventToXatuEvent(event string) (string, error) {

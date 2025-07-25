@@ -32,8 +32,10 @@ jobs:
               cl_type: lighthouse
             - el_type: reth
               cl_type: lodestar
-            - el_type: ethereumjs
+            - el_type: geth
               cl_type: nimbus
+              cl_extra_params:
+                - --subscribe-all-subnets
           additional_services: []
           network_params:
             genesis_delay: 180
@@ -43,6 +45,7 @@ jobs:
             xatu_sentry_image: ethpandaops/xatu:local
             beacon_subscriptions:
             - attestation
+            - single_attestation
             - block
             - block_gossip
             - chain_reorg

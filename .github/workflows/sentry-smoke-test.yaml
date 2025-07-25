@@ -32,7 +32,7 @@ jobs:
               cl_type: lighthouse
             - el_type: reth
               cl_type: lodestar
-            - el_type: ethereumjs
+            - el_type: geth
               cl_type: nimbus
               cl_extra_params:
                 - --subscribe-all-subnets

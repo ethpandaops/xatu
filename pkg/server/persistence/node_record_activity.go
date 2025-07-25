@@ -28,6 +28,11 @@ type AvailableConsensusNodeRecord struct {
 var availableConsensusNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableConsensusNodeRecord)).For(sqlbuilder.PostgreSQL)
 
 func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
+	// Return early if there are no activities to upsert
+	if len(activities) == 0 {
+		return nil
+	}
+
 	values := make([]interface{}, len(activities))
 
 	for i, activity := range activities {
@@ -85,8 +90,6 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	)
 	sbsub.GroupBy("enr")
 
-	subQuery, subArgs := sbsub.Build()
-
 	sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	sb.Select(
 		"nre.enr as enr",
@@ -96,7 +99,7 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	sb.From("node_record_execution as nre")
 	sb.JoinWithOption(
 		"LEFT",
-		"("+subQuery+") as nra",
+		sb.BuilderAs(sbsub, "nra"),
 		"nra.enr = nre.enr",
 	)
 
@@ -132,8 +135,6 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	sb.Limit(limit)
 
 	sqlQuery, args := sb.Build()
-
-	args[0] = subArgs[0]
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
@@ -181,8 +182,6 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	psb.Where(psb.GreaterThan("nra.update_time", sqlbuilder.Raw("now() - interval '12 hours'")))
 	psb.GroupBy("nra.enr")
 
-	subQuery, subArgs := psb.Build()
-
 	// main query: get node records that are available
 	sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
 
@@ -194,7 +193,7 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	sb.From("node_record_consensus as nrc")
 	sb.Join("node_record as nr", "nr.enr = nrc.enr")
 	sb.JoinWithOption(sqlbuilder.LeftJoin,
-		"("+subQuery+") as nra",
+		sb.BuilderAs(psb, "nra"),
 		"nra.enr = nrc.enr",
 	)
 
@@ -219,13 +218,11 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	}
 
 	sb.Where(where...)
-	sb.GroupBy("nrc.enr", "active_clients", "last_connect_time")
-	sb.OrderBy("last_connect_time ASC")
+	sb.GroupBy("nrc.enr", "nra.active_clients", "nra.last_connect_time", "nr.last_connect_time")
+	sb.OrderBy("COALESCE(nra.last_connect_time, nr.last_connect_time) ASC")
 	sb.Limit(limit)
 
 	sqlQuery, args := sb.Build()
-
-	args[0] = subArgs[0]
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {

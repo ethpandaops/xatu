@@ -440,6 +440,273 @@ func TestPersistenceIntegration(t *testing.T) {
 			assert.Error(t, err, "Should fail due to foreign key constraint")
 		})
 	})
+
+	// Test node record activity operations
+	t.Run("NodeRecordActivityOperations", func(t *testing.T) {
+		t.Run("UpsertNodeRecordActivities", func(t *testing.T) {
+			// First insert parent node records
+			records := []*node.Record{
+				createTestNodeRecord("enr:-IS4QActivity1-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk"),
+				createTestNodeRecord("enr:-IS4QActivity2-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk"),
+				createTestNodeRecord("enr:-IS4QActivity3-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk"),
+			}
+
+			err := tc.Client.InsertNodeRecords(ctx, records)
+			require.NoError(t, err)
+
+			// Create activities
+			activities := []*node.Activity{
+				{
+					Enr:       "enr:-IS4QActivity1-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk",
+					ClientID:  "client-1",
+					Connected: true,
+				},
+				{
+					Enr:       "enr:-IS4QActivity2-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk",
+					ClientID:  "client-1",
+					Connected: false,
+				},
+				{
+					Enr:       "enr:-IS4QActivity3-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijk",
+					ClientID:  "client-2",
+					Connected: true,
+				},
+			}
+
+			// Insert activities
+			err = tc.Client.UpsertNodeRecordActivities(ctx, activities)
+			require.NoError(t, err)
+
+			// Test upsert (should update existing records)
+			activities[0].Connected = false
+			activities[1].Connected = true
+
+			err = tc.Client.UpsertNodeRecordActivities(ctx, activities[:2])
+			require.NoError(t, err)
+		})
+
+		t.Run("UpsertActivityWithoutNodeRecord", func(t *testing.T) {
+			// Try to insert activity for non-existent node record
+			activity := &node.Activity{
+				Enr:       "enr:-IS4QNonExistentActivity-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abc",
+				ClientID:  "test-client",
+				Connected: true,
+			}
+
+			err := tc.Client.UpsertNodeRecordActivities(ctx, []*node.Activity{activity})
+			assert.Error(t, err, "Should fail due to foreign key constraint")
+		})
+
+		t.Run("EmptyActivitiesList", func(t *testing.T) {
+			// Test upserting empty activities list
+			err := tc.Client.UpsertNodeRecordActivities(ctx, []*node.Activity{})
+			require.NoError(t, err, "Empty list should not cause error")
+		})
+
+		t.Run("ListAvailableExecutionNodeRecords", func(t *testing.T) {
+			// Create execution node records with different characteristics
+			testData := []struct {
+				enr          string
+				networkID    string
+				forkIDHash   []byte
+				capabilities string
+				clientID     string
+				connected    bool
+			}{
+				{
+					enr:          "enr:-IS4QExecAvail1-network1-fork1-caps1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+					networkID:    "1",
+					forkIDHash:   []byte{0x01, 0x01, 0x01, 0x01},
+					capabilities: "eth/66,eth/67",
+					clientID:     "test-client-1",
+					connected:    true,
+				},
+				{
+					enr:          "enr:-IS4QExecAvail2-network1-fork2-caps2-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+					networkID:    "1",
+					forkIDHash:   []byte{0x02, 0x02, 0x02, 0x02},
+					capabilities: "eth/67,eth/68",
+					clientID:     "test-client-2",
+					connected:    false,
+				},
+				{
+					enr:          "enr:-IS4QExecAvail3-network2-fork1-caps1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+					networkID:    "2",
+					forkIDHash:   []byte{0x01, 0x01, 0x01, 0x01},
+					capabilities: "eth/66",
+					clientID:     "test-client-3",
+					connected:    true,
+				},
+			}
+
+			// Insert node records and execution records
+			for _, td := range testData {
+				nodeRecord := createTestNodeRecord(td.enr)
+				nodeRecord.ETH2 = nil // Make it an execution node
+				err := tc.Client.InsertNodeRecords(ctx, []*node.Record{nodeRecord})
+				require.NoError(t, err)
+
+				execRecord := createTestExecutionRecord(td.enr)
+				execRecord.NetworkID = td.networkID
+				execRecord.ForkIDHash = td.forkIDHash
+				execRecord.Capabilities = td.capabilities
+				err = tc.Client.InsertNodeRecordExecution(ctx, execRecord)
+				require.NoError(t, err)
+
+				// Insert activity
+				activity := &node.Activity{
+					Enr:       td.enr,
+					ClientID:  td.clientID,
+					Connected: td.connected,
+				}
+				err = tc.Client.UpsertNodeRecordActivities(ctx, []*node.Activity{activity})
+				require.NoError(t, err)
+			}
+
+			// Test listing available execution nodes
+			available, err := tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client", []string{}, []uint64{1}, nil, nil, 10)
+			require.NoError(t, err)
+			assert.GreaterOrEqual(t, len(available), 1)
+
+			// Test with ignored node records
+			available, err = tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client",
+				[]string{"enr:-IS4QExecAvail1-network1-fork1-caps1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456"},
+				[]uint64{1}, nil, nil, 10)
+			require.NoError(t, err)
+			// Should not include the ignored record
+			for _, enr := range available {
+				assert.NotEqual(t, *enr, "enr:-IS4QExecAvail1-network1-fork1-caps1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456")
+			}
+
+			// Test with fork ID filter
+			available, err = tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client",
+				[]string{}, []uint64{1}, [][]byte{{0x01, 0x01, 0x01, 0x01}}, nil, 10)
+			require.NoError(t, err)
+			assert.GreaterOrEqual(t, len(available), 1)
+
+			// Test with capability filter
+			available, err = tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client",
+				[]string{}, []uint64{1}, nil, []string{"eth/67"}, 10)
+			require.NoError(t, err)
+			assert.GreaterOrEqual(t, len(available), 1)
+		})
+
+		t.Run("ListAvailableConsensusNodeRecords", func(t *testing.T) {
+			// Create consensus node records with different characteristics
+			testData := []struct {
+				enr        string
+				networkID  string
+				forkDigest []byte
+				clientID   string
+				connected  bool
+			}{
+				{
+					enr:        "enr:-IS4QConsAvail1-network1-fork1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					networkID:  "1",
+					forkDigest: []byte{0x01, 0x01, 0x01, 0x01},
+					clientID:   "test-client-1",
+					connected:  true,
+				},
+				{
+					enr:        "enr:-IS4QConsAvail2-network1-fork2-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					networkID:  "1",
+					forkDigest: []byte{0x02, 0x02, 0x02, 0x02},
+					clientID:   "test-client-2",
+					connected:  false,
+				},
+				{
+					enr:        "enr:-IS4QConsAvail3-network2-fork1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					networkID:  "2",
+					forkDigest: []byte{0x01, 0x01, 0x01, 0x01},
+					clientID:   "test-client-3",
+					connected:  true,
+				},
+			}
+
+			// Insert node records and consensus records
+			eth2Key := []byte{0x01, 0x02, 0x03, 0x04}
+			for _, td := range testData {
+				nodeRecord := createTestNodeRecord(td.enr)
+				nodeRecord.ETH2 = &eth2Key // Make it a consensus node
+				err := tc.Client.InsertNodeRecords(ctx, []*node.Record{nodeRecord})
+				require.NoError(t, err)
+
+				consRecord := createTestConsensusRecord(td.enr)
+				consRecord.NetworkID = td.networkID
+				consRecord.ForkDigest = td.forkDigest
+				err = tc.Client.InsertNodeRecordConsensus(ctx, consRecord)
+				require.NoError(t, err)
+
+				// Insert activity
+				activity := &node.Activity{
+					Enr:       td.enr,
+					ClientID:  td.clientID,
+					Connected: td.connected,
+				}
+				err = tc.Client.UpsertNodeRecordActivities(ctx, []*node.Activity{activity})
+				require.NoError(t, err)
+			}
+
+			// Test listing available consensus nodes
+			available, err := tc.Client.ListAvailableConsensusNodeRecords(ctx, "requesting-client", []string{}, []uint64{1}, nil, 10)
+			require.NoError(t, err)
+			assert.GreaterOrEqual(t, len(available), 1)
+
+			// Test with ignored node records
+			available, err = tc.Client.ListAvailableConsensusNodeRecords(ctx, "requesting-client",
+				[]string{"enr:-IS4QConsAvail1-network1-fork1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"},
+				[]uint64{1}, nil, 10)
+			require.NoError(t, err)
+			// Should not include the ignored record
+			for _, enr := range available {
+				assert.NotEqual(t, *enr, "enr:-IS4QConsAvail1-network1-fork1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+			}
+
+			// Test with fork digest filter
+			available, err = tc.Client.ListAvailableConsensusNodeRecords(ctx, "requesting-client",
+				[]string{}, []uint64{1}, [][]byte{{0x01, 0x01, 0x01, 0x01}}, 10)
+			require.NoError(t, err)
+			assert.GreaterOrEqual(t, len(available), 1)
+		})
+
+		t.Run("MultipleClientsPerNode", func(t *testing.T) {
+			// Test scenario where a node has multiple clients connected
+			enr := "enr:-IS4QMultiClient2-test-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefg"
+
+			// Create execution node
+			nodeRecord := createTestNodeRecord(enr)
+			nodeRecord.ETH2 = nil
+			err := tc.Client.InsertNodeRecords(ctx, []*node.Record{nodeRecord})
+			require.NoError(t, err)
+
+			execRecord := createTestExecutionRecord(enr)
+			execRecord.NetworkID = "1"
+			err = tc.Client.InsertNodeRecordExecution(ctx, execRecord)
+			require.NoError(t, err)
+
+			// Add activities from 3 different clients (making it unavailable)
+			activities := make([]*node.Activity, 3)
+			for i := 0; i < 3; i++ {
+				activities[i] = &node.Activity{
+					Enr:       enr,
+					ClientID:  string(rune('a' + i)),
+					Connected: true,
+				}
+			}
+
+			err = tc.Client.UpsertNodeRecordActivities(ctx, activities)
+			require.NoError(t, err)
+
+			// This node should not be available since it has >= 2 active clients
+			available, err := tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client", []string{}, []uint64{1}, nil, nil, 10)
+			require.NoError(t, err)
+
+			// Verify this specific ENR is not in the available list
+			for _, availableEnr := range available {
+				assert.NotEqual(t, *availableEnr, enr)
+			}
+		})
+	})
 }
 
 // setupTestContainer creates a new PostgreSQL test container with migrations applied

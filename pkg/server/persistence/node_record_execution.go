@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
@@ -31,6 +32,8 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 	ib.Cols(nodeRecordExecutionStruct.Columns()...).Values(items...)
 
 	sql, args := ib.Build()
+
+	fmt.Printf("sql: %s - %s\n", sql, args)
 
 	_, err := c.db.ExecContext(ctx, sql, args...)
 

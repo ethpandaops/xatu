@@ -28,6 +28,11 @@ type AvailableConsensusNodeRecord struct {
 var availableConsensusNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableConsensusNodeRecord)).For(sqlbuilder.PostgreSQL)
 
 func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
+	// Return early if there are no activities to upsert
+	if len(activities) == 0 {
+		return nil
+	}
+
 	values := make([]interface{}, len(activities))
 
 	for i, activity := range activities {
@@ -133,7 +138,13 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 
 	sqlQuery, args := sb.Build()
 
-	args[0] = subArgs[0]
+	// Replace the first argument with the subquery argument if it exists
+	if len(args) > 0 && len(subArgs) > 0 {
+		args[0] = subArgs[0]
+	} else if len(subArgs) > 0 {
+		// If main query has no args but subquery does, prepend subquery args
+		args = append(subArgs, args...)
+	}
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
@@ -219,13 +230,19 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	}
 
 	sb.Where(where...)
-	sb.GroupBy("nrc.enr", "active_clients", "last_connect_time")
-	sb.OrderBy("last_connect_time ASC")
+	sb.GroupBy("nrc.enr", "nra.active_clients", "nra.last_connect_time", "nr.last_connect_time")
+	sb.OrderBy("COALESCE(nra.last_connect_time, nr.last_connect_time) ASC")
 	sb.Limit(limit)
 
 	sqlQuery, args := sb.Build()
 
-	args[0] = subArgs[0]
+	// Replace the first argument with the subquery argument if it exists
+	if len(args) > 0 && len(subArgs) > 0 {
+		args[0] = subArgs[0]
+	} else if len(subArgs) > 0 {
+		// If main query has no args but subquery does, prepend subquery args
+		args = append(subArgs, args...)
+	}
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {

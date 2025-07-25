@@ -1013,6 +1013,91 @@ func (*CreateConsensusNodeRecordStatusResponse) Descriptor() ([]byte, []int) {
 	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{14}
 }
 
+type CreateConsensusNodeRecordStatusesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Statuses []*ConsensusNodeStatus `protobuf:"bytes,1,rep,name=statuses,proto3" json:"statuses,omitempty"`
+}
+
+func (x *CreateConsensusNodeRecordStatusesRequest) Reset() {
+	*x = CreateConsensusNodeRecordStatusesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateConsensusNodeRecordStatusesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateConsensusNodeRecordStatusesRequest) ProtoMessage() {}
+
+func (x *CreateConsensusNodeRecordStatusesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateConsensusNodeRecordStatusesRequest.ProtoReflect.Descriptor instead.
+func (*CreateConsensusNodeRecordStatusesRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateConsensusNodeRecordStatusesRequest) GetStatuses() []*ConsensusNodeStatus {
+	if x != nil {
+		return x.Statuses
+	}
+	return nil
+}
+
+type CreateConsensusNodeRecordStatusesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *CreateConsensusNodeRecordStatusesResponse) Reset() {
+	*x = CreateConsensusNodeRecordStatusesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateConsensusNodeRecordStatusesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateConsensusNodeRecordStatusesResponse) ProtoMessage() {}
+
+func (x *CreateConsensusNodeRecordStatusesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateConsensusNodeRecordStatusesResponse.ProtoReflect.Descriptor instead.
+func (*CreateConsensusNodeRecordStatusesResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{16}
+}
+
 type CoordinateConsensusNodeRecordsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1029,7 +1114,7 @@ type CoordinateConsensusNodeRecordsRequest struct {
 func (x *CoordinateConsensusNodeRecordsRequest) Reset() {
 	*x = CoordinateConsensusNodeRecordsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[15]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1042,7 +1127,7 @@ func (x *CoordinateConsensusNodeRecordsRequest) String() string {
 func (*CoordinateConsensusNodeRecordsRequest) ProtoMessage() {}
 
 func (x *CoordinateConsensusNodeRecordsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[15]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1055,7 +1140,7 @@ func (x *CoordinateConsensusNodeRecordsRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use CoordinateConsensusNodeRecordsRequest.ProtoReflect.Descriptor instead.
 func (*CoordinateConsensusNodeRecordsRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{15}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CoordinateConsensusNodeRecordsRequest) GetNodeRecords() []*CoordinatedNodeRecord {
@@ -1112,7 +1197,7 @@ type CoordinateConsensusNodeRecordsResponse struct {
 func (x *CoordinateConsensusNodeRecordsResponse) Reset() {
 	*x = CoordinateConsensusNodeRecordsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[16]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1125,7 +1210,7 @@ func (x *CoordinateConsensusNodeRecordsResponse) String() string {
 func (*CoordinateConsensusNodeRecordsResponse) ProtoMessage() {}
 
 func (x *CoordinateConsensusNodeRecordsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[16]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1223,7 @@ func (x *CoordinateConsensusNodeRecordsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use CoordinateConsensusNodeRecordsResponse.ProtoReflect.Descriptor instead.
 func (*CoordinateConsensusNodeRecordsResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{16}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CoordinateConsensusNodeRecordsResponse) GetNodeRecords() []string {
@@ -1168,7 +1253,7 @@ type GetDiscoveryNodeRecordRequest struct {
 func (x *GetDiscoveryNodeRecordRequest) Reset() {
 	*x = GetDiscoveryNodeRecordRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[17]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1181,7 +1266,7 @@ func (x *GetDiscoveryNodeRecordRequest) String() string {
 func (*GetDiscoveryNodeRecordRequest) ProtoMessage() {}
 
 func (x *GetDiscoveryNodeRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[17]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1194,7 +1279,7 @@ func (x *GetDiscoveryNodeRecordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiscoveryNodeRecordRequest.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryNodeRecordRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{17}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetDiscoveryNodeRecordRequest) GetNetworkIds() []uint64 {
@@ -1223,7 +1308,7 @@ type GetDiscoveryNodeRecordResponse struct {
 func (x *GetDiscoveryNodeRecordResponse) Reset() {
 	*x = GetDiscoveryNodeRecordResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[18]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1236,7 +1321,7 @@ func (x *GetDiscoveryNodeRecordResponse) String() string {
 func (*GetDiscoveryNodeRecordResponse) ProtoMessage() {}
 
 func (x *GetDiscoveryNodeRecordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[18]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1249,7 +1334,7 @@ func (x *GetDiscoveryNodeRecordResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiscoveryNodeRecordResponse.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryNodeRecordResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{18}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetDiscoveryNodeRecordResponse) GetNodeRecord() string {
@@ -1271,7 +1356,7 @@ type GetDiscoveryExecutionNodeRecordRequest struct {
 func (x *GetDiscoveryExecutionNodeRecordRequest) Reset() {
 	*x = GetDiscoveryExecutionNodeRecordRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[19]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1284,7 +1369,7 @@ func (x *GetDiscoveryExecutionNodeRecordRequest) String() string {
 func (*GetDiscoveryExecutionNodeRecordRequest) ProtoMessage() {}
 
 func (x *GetDiscoveryExecutionNodeRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[19]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1382,7 @@ func (x *GetDiscoveryExecutionNodeRecordRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetDiscoveryExecutionNodeRecordRequest.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryExecutionNodeRecordRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{19}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetDiscoveryExecutionNodeRecordRequest) GetNetworkIds() []uint64 {
@@ -1325,7 +1410,7 @@ type GetDiscoveryExecutionNodeRecordResponse struct {
 func (x *GetDiscoveryExecutionNodeRecordResponse) Reset() {
 	*x = GetDiscoveryExecutionNodeRecordResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[20]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1338,7 +1423,7 @@ func (x *GetDiscoveryExecutionNodeRecordResponse) String() string {
 func (*GetDiscoveryExecutionNodeRecordResponse) ProtoMessage() {}
 
 func (x *GetDiscoveryExecutionNodeRecordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[20]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1351,7 +1436,7 @@ func (x *GetDiscoveryExecutionNodeRecordResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GetDiscoveryExecutionNodeRecordResponse.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryExecutionNodeRecordResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{20}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetDiscoveryExecutionNodeRecordResponse) GetNodeRecord() string {
@@ -1373,7 +1458,7 @@ type GetDiscoveryConsensusNodeRecordRequest struct {
 func (x *GetDiscoveryConsensusNodeRecordRequest) Reset() {
 	*x = GetDiscoveryConsensusNodeRecordRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[21]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1386,7 +1471,7 @@ func (x *GetDiscoveryConsensusNodeRecordRequest) String() string {
 func (*GetDiscoveryConsensusNodeRecordRequest) ProtoMessage() {}
 
 func (x *GetDiscoveryConsensusNodeRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[21]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1399,7 +1484,7 @@ func (x *GetDiscoveryConsensusNodeRecordRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetDiscoveryConsensusNodeRecordRequest.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryConsensusNodeRecordRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{21}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetDiscoveryConsensusNodeRecordRequest) GetNetworkIds() []uint64 {
@@ -1427,7 +1512,7 @@ type GetDiscoveryConsensusNodeRecordResponse struct {
 func (x *GetDiscoveryConsensusNodeRecordResponse) Reset() {
 	*x = GetDiscoveryConsensusNodeRecordResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[22]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1440,7 +1525,7 @@ func (x *GetDiscoveryConsensusNodeRecordResponse) String() string {
 func (*GetDiscoveryConsensusNodeRecordResponse) ProtoMessage() {}
 
 func (x *GetDiscoveryConsensusNodeRecordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[22]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1453,7 +1538,7 @@ func (x *GetDiscoveryConsensusNodeRecordResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GetDiscoveryConsensusNodeRecordResponse.ProtoReflect.Descriptor instead.
 func (*GetDiscoveryConsensusNodeRecordResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{22}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetDiscoveryConsensusNodeRecordResponse) GetNodeRecord() string {
@@ -1475,7 +1560,7 @@ type BackfillingCheckpointMarker struct {
 func (x *BackfillingCheckpointMarker) Reset() {
 	*x = BackfillingCheckpointMarker{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[23]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1488,7 +1573,7 @@ func (x *BackfillingCheckpointMarker) String() string {
 func (*BackfillingCheckpointMarker) ProtoMessage() {}
 
 func (x *BackfillingCheckpointMarker) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[23]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1501,7 +1586,7 @@ func (x *BackfillingCheckpointMarker) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackfillingCheckpointMarker.ProtoReflect.Descriptor instead.
 func (*BackfillingCheckpointMarker) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{23}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *BackfillingCheckpointMarker) GetFinalizedEpoch() uint64 {
@@ -1529,7 +1614,7 @@ type CannonLocationEthV2BeaconBlockVoluntaryExit struct {
 func (x *CannonLocationEthV2BeaconBlockVoluntaryExit) Reset() {
 	*x = CannonLocationEthV2BeaconBlockVoluntaryExit{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[24]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1542,7 +1627,7 @@ func (x *CannonLocationEthV2BeaconBlockVoluntaryExit) String() string {
 func (*CannonLocationEthV2BeaconBlockVoluntaryExit) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockVoluntaryExit) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[24]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1555,7 +1640,7 @@ func (x *CannonLocationEthV2BeaconBlockVoluntaryExit) ProtoReflect() protoreflec
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockVoluntaryExit.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockVoluntaryExit) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{24}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CannonLocationEthV2BeaconBlockVoluntaryExit) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1576,7 +1661,7 @@ type CannonLocationEthV2BeaconBlockProposerSlashing struct {
 func (x *CannonLocationEthV2BeaconBlockProposerSlashing) Reset() {
 	*x = CannonLocationEthV2BeaconBlockProposerSlashing{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[25]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1589,7 +1674,7 @@ func (x *CannonLocationEthV2BeaconBlockProposerSlashing) String() string {
 func (*CannonLocationEthV2BeaconBlockProposerSlashing) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockProposerSlashing) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[25]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1602,7 +1687,7 @@ func (x *CannonLocationEthV2BeaconBlockProposerSlashing) ProtoReflect() protoref
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockProposerSlashing.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockProposerSlashing) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{25}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CannonLocationEthV2BeaconBlockProposerSlashing) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1623,7 +1708,7 @@ type CannonLocationEthV2BeaconBlockDeposit struct {
 func (x *CannonLocationEthV2BeaconBlockDeposit) Reset() {
 	*x = CannonLocationEthV2BeaconBlockDeposit{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[26]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1636,7 +1721,7 @@ func (x *CannonLocationEthV2BeaconBlockDeposit) String() string {
 func (*CannonLocationEthV2BeaconBlockDeposit) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockDeposit) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[26]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1649,7 +1734,7 @@ func (x *CannonLocationEthV2BeaconBlockDeposit) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockDeposit.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockDeposit) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{26}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *CannonLocationEthV2BeaconBlockDeposit) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1670,7 +1755,7 @@ type CannonLocationEthV2BeaconBlockAttesterSlashing struct {
 func (x *CannonLocationEthV2BeaconBlockAttesterSlashing) Reset() {
 	*x = CannonLocationEthV2BeaconBlockAttesterSlashing{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[27]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1683,7 +1768,7 @@ func (x *CannonLocationEthV2BeaconBlockAttesterSlashing) String() string {
 func (*CannonLocationEthV2BeaconBlockAttesterSlashing) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockAttesterSlashing) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[27]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1696,7 +1781,7 @@ func (x *CannonLocationEthV2BeaconBlockAttesterSlashing) ProtoReflect() protoref
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockAttesterSlashing.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockAttesterSlashing) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{27}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *CannonLocationEthV2BeaconBlockAttesterSlashing) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1717,7 +1802,7 @@ type CannonLocationEthV2BeaconBlockBlsToExecutionChange struct {
 func (x *CannonLocationEthV2BeaconBlockBlsToExecutionChange) Reset() {
 	*x = CannonLocationEthV2BeaconBlockBlsToExecutionChange{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[28]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1730,7 +1815,7 @@ func (x *CannonLocationEthV2BeaconBlockBlsToExecutionChange) String() string {
 func (*CannonLocationEthV2BeaconBlockBlsToExecutionChange) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockBlsToExecutionChange) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[28]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1743,7 +1828,7 @@ func (x *CannonLocationEthV2BeaconBlockBlsToExecutionChange) ProtoReflect() prot
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockBlsToExecutionChange.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockBlsToExecutionChange) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{28}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CannonLocationEthV2BeaconBlockBlsToExecutionChange) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1764,7 +1849,7 @@ type CannonLocationEthV2BeaconBlockExecutionTransaction struct {
 func (x *CannonLocationEthV2BeaconBlockExecutionTransaction) Reset() {
 	*x = CannonLocationEthV2BeaconBlockExecutionTransaction{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[29]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1777,7 +1862,7 @@ func (x *CannonLocationEthV2BeaconBlockExecutionTransaction) String() string {
 func (*CannonLocationEthV2BeaconBlockExecutionTransaction) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockExecutionTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[29]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1790,7 +1875,7 @@ func (x *CannonLocationEthV2BeaconBlockExecutionTransaction) ProtoReflect() prot
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockExecutionTransaction.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockExecutionTransaction) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{29}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CannonLocationEthV2BeaconBlockExecutionTransaction) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1811,7 +1896,7 @@ type CannonLocationEthV2BeaconBlockWithdrawal struct {
 func (x *CannonLocationEthV2BeaconBlockWithdrawal) Reset() {
 	*x = CannonLocationEthV2BeaconBlockWithdrawal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[30]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1824,7 +1909,7 @@ func (x *CannonLocationEthV2BeaconBlockWithdrawal) String() string {
 func (*CannonLocationEthV2BeaconBlockWithdrawal) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockWithdrawal) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[30]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1837,7 +1922,7 @@ func (x *CannonLocationEthV2BeaconBlockWithdrawal) ProtoReflect() protoreflect.M
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockWithdrawal.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockWithdrawal) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{30}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *CannonLocationEthV2BeaconBlockWithdrawal) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1858,7 +1943,7 @@ type CannonLocationEthV2BeaconBlock struct {
 func (x *CannonLocationEthV2BeaconBlock) Reset() {
 	*x = CannonLocationEthV2BeaconBlock{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[31]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1871,7 +1956,7 @@ func (x *CannonLocationEthV2BeaconBlock) String() string {
 func (*CannonLocationEthV2BeaconBlock) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlock) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[31]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1884,7 +1969,7 @@ func (x *CannonLocationEthV2BeaconBlock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CannonLocationEthV2BeaconBlock.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlock) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{31}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *CannonLocationEthV2BeaconBlock) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -1906,7 +1991,7 @@ type CannonLocationBlockprintBlockClassification struct {
 func (x *CannonLocationBlockprintBlockClassification) Reset() {
 	*x = CannonLocationBlockprintBlockClassification{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[32]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1919,7 +2004,7 @@ func (x *CannonLocationBlockprintBlockClassification) String() string {
 func (*CannonLocationBlockprintBlockClassification) ProtoMessage() {}
 
 func (x *CannonLocationBlockprintBlockClassification) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[32]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1932,7 +2017,7 @@ func (x *CannonLocationBlockprintBlockClassification) ProtoReflect() protoreflec
 
 // Deprecated: Use CannonLocationBlockprintBlockClassification.ProtoReflect.Descriptor instead.
 func (*CannonLocationBlockprintBlockClassification) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{32}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *CannonLocationBlockprintBlockClassification) GetSlot() uint64 {
@@ -1960,7 +2045,7 @@ type CannonLocationEthV1BeaconBlobSidecar struct {
 func (x *CannonLocationEthV1BeaconBlobSidecar) Reset() {
 	*x = CannonLocationEthV1BeaconBlobSidecar{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[33]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1973,7 +2058,7 @@ func (x *CannonLocationEthV1BeaconBlobSidecar) String() string {
 func (*CannonLocationEthV1BeaconBlobSidecar) ProtoMessage() {}
 
 func (x *CannonLocationEthV1BeaconBlobSidecar) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[33]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1986,7 +2071,7 @@ func (x *CannonLocationEthV1BeaconBlobSidecar) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use CannonLocationEthV1BeaconBlobSidecar.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV1BeaconBlobSidecar) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{33}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *CannonLocationEthV1BeaconBlobSidecar) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -2007,7 +2092,7 @@ type CannonLocationEthV1BeaconProposerDuty struct {
 func (x *CannonLocationEthV1BeaconProposerDuty) Reset() {
 	*x = CannonLocationEthV1BeaconProposerDuty{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[34]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2020,7 +2105,7 @@ func (x *CannonLocationEthV1BeaconProposerDuty) String() string {
 func (*CannonLocationEthV1BeaconProposerDuty) ProtoMessage() {}
 
 func (x *CannonLocationEthV1BeaconProposerDuty) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[34]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2033,7 +2118,7 @@ func (x *CannonLocationEthV1BeaconProposerDuty) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use CannonLocationEthV1BeaconProposerDuty.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV1BeaconProposerDuty) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{34}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *CannonLocationEthV1BeaconProposerDuty) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -2054,7 +2139,7 @@ type CannonLocationEthV2BeaconBlockElaboratedAttestation struct {
 func (x *CannonLocationEthV2BeaconBlockElaboratedAttestation) Reset() {
 	*x = CannonLocationEthV2BeaconBlockElaboratedAttestation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[35]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2067,7 +2152,7 @@ func (x *CannonLocationEthV2BeaconBlockElaboratedAttestation) String() string {
 func (*CannonLocationEthV2BeaconBlockElaboratedAttestation) ProtoMessage() {}
 
 func (x *CannonLocationEthV2BeaconBlockElaboratedAttestation) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[35]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2080,7 +2165,7 @@ func (x *CannonLocationEthV2BeaconBlockElaboratedAttestation) ProtoReflect() pro
 
 // Deprecated: Use CannonLocationEthV2BeaconBlockElaboratedAttestation.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV2BeaconBlockElaboratedAttestation) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{35}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CannonLocationEthV2BeaconBlockElaboratedAttestation) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -2101,7 +2186,7 @@ type CannonLocationEthV1BeaconValidators struct {
 func (x *CannonLocationEthV1BeaconValidators) Reset() {
 	*x = CannonLocationEthV1BeaconValidators{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[36]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2114,7 +2199,7 @@ func (x *CannonLocationEthV1BeaconValidators) String() string {
 func (*CannonLocationEthV1BeaconValidators) ProtoMessage() {}
 
 func (x *CannonLocationEthV1BeaconValidators) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[36]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2127,7 +2212,7 @@ func (x *CannonLocationEthV1BeaconValidators) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use CannonLocationEthV1BeaconValidators.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV1BeaconValidators) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{36}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *CannonLocationEthV1BeaconValidators) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -2148,7 +2233,7 @@ type CannonLocationEthV1BeaconCommittee struct {
 func (x *CannonLocationEthV1BeaconCommittee) Reset() {
 	*x = CannonLocationEthV1BeaconCommittee{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[37]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2161,7 +2246,7 @@ func (x *CannonLocationEthV1BeaconCommittee) String() string {
 func (*CannonLocationEthV1BeaconCommittee) ProtoMessage() {}
 
 func (x *CannonLocationEthV1BeaconCommittee) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[37]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2174,7 +2259,7 @@ func (x *CannonLocationEthV1BeaconCommittee) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use CannonLocationEthV1BeaconCommittee.ProtoReflect.Descriptor instead.
 func (*CannonLocationEthV1BeaconCommittee) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{37}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *CannonLocationEthV1BeaconCommittee) GetBackfillingCheckpointMarker() *BackfillingCheckpointMarker {
@@ -2213,7 +2298,7 @@ type CannonLocation struct {
 func (x *CannonLocation) Reset() {
 	*x = CannonLocation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[38]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[40]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2226,7 +2311,7 @@ func (x *CannonLocation) String() string {
 func (*CannonLocation) ProtoMessage() {}
 
 func (x *CannonLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[38]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[40]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2239,7 +2324,7 @@ func (x *CannonLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CannonLocation.ProtoReflect.Descriptor instead.
 func (*CannonLocation) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{38}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *CannonLocation) GetNetworkId() string {
@@ -2461,7 +2546,7 @@ type GetCannonLocationRequest struct {
 func (x *GetCannonLocationRequest) Reset() {
 	*x = GetCannonLocationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[39]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[41]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2474,7 +2559,7 @@ func (x *GetCannonLocationRequest) String() string {
 func (*GetCannonLocationRequest) ProtoMessage() {}
 
 func (x *GetCannonLocationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[39]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[41]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2487,7 +2572,7 @@ func (x *GetCannonLocationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCannonLocationRequest.ProtoReflect.Descriptor instead.
 func (*GetCannonLocationRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{39}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetCannonLocationRequest) GetNetworkId() string {
@@ -2515,7 +2600,7 @@ type GetCannonLocationResponse struct {
 func (x *GetCannonLocationResponse) Reset() {
 	*x = GetCannonLocationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[40]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[42]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2528,7 +2613,7 @@ func (x *GetCannonLocationResponse) String() string {
 func (*GetCannonLocationResponse) ProtoMessage() {}
 
 func (x *GetCannonLocationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[40]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[42]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2541,7 +2626,7 @@ func (x *GetCannonLocationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCannonLocationResponse.ProtoReflect.Descriptor instead.
 func (*GetCannonLocationResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{40}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetCannonLocationResponse) GetLocation() *CannonLocation {
@@ -2562,7 +2647,7 @@ type UpsertCannonLocationRequest struct {
 func (x *UpsertCannonLocationRequest) Reset() {
 	*x = UpsertCannonLocationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[41]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2575,7 +2660,7 @@ func (x *UpsertCannonLocationRequest) String() string {
 func (*UpsertCannonLocationRequest) ProtoMessage() {}
 
 func (x *UpsertCannonLocationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[41]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2588,7 +2673,7 @@ func (x *UpsertCannonLocationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertCannonLocationRequest.ProtoReflect.Descriptor instead.
 func (*UpsertCannonLocationRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{41}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *UpsertCannonLocationRequest) GetLocation() *CannonLocation {
@@ -2607,7 +2692,7 @@ type UpsertCannonLocationResponse struct {
 func (x *UpsertCannonLocationResponse) Reset() {
 	*x = UpsertCannonLocationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[42]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2620,7 +2705,7 @@ func (x *UpsertCannonLocationResponse) String() string {
 func (*UpsertCannonLocationResponse) ProtoMessage() {}
 
 func (x *UpsertCannonLocationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[42]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2633,7 +2718,7 @@ func (x *UpsertCannonLocationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertCannonLocationResponse.ProtoReflect.Descriptor instead.
 func (*UpsertCannonLocationResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{42}
+	return file_pkg_proto_xatu_coordinator_proto_rawDescGZIP(), []int{44}
 }
 
 type ExecutionNodeStatus_Capability struct {
@@ -2648,7 +2733,7 @@ type ExecutionNodeStatus_Capability struct {
 func (x *ExecutionNodeStatus_Capability) Reset() {
 	*x = ExecutionNodeStatus_Capability{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[43]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2661,7 +2746,7 @@ func (x *ExecutionNodeStatus_Capability) String() string {
 func (*ExecutionNodeStatus_Capability) ProtoMessage() {}
 
 func (x *ExecutionNodeStatus_Capability) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[43]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2703,7 +2788,7 @@ type ExecutionNodeStatus_ForkID struct {
 func (x *ExecutionNodeStatus_ForkID) Reset() {
 	*x = ExecutionNodeStatus_ForkID{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[44]
+		mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2716,7 +2801,7 @@ func (x *ExecutionNodeStatus_ForkID) String() string {
 func (*ExecutionNodeStatus_ForkID) ProtoMessage() {}
 
 func (x *ExecutionNodeStatus_ForkID) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[44]
+	mi := &file_pkg_proto_xatu_coordinator_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2893,6 +2978,15 @@ var file_pkg_proto_xatu_coordinator_proto_rawDesc = []byte{
 	0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x29, 0x0a, 0x27,
 	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e,
 	0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x61, 0x0a, 0x28, 0x43, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65,
+	0x63, 0x6f, 0x72, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x35, 0x0a, 0x08, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6f, 0x6e,
+	0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x52, 0x08, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x22, 0x2b, 0x0a, 0x29, 0x43, 0x72,
+	0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64,
+	0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x85, 0x02, 0x0a, 0x25, 0x43, 0x6f, 0x6f, 0x72,
 	0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e,
 	0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
@@ -3275,7 +3369,7 @@ var file_pkg_proto_xatu_coordinator_proto_rawDesc = []byte{
 	0x4e, 0x5f, 0x56, 0x41, 0x4c, 0x49, 0x44, 0x41, 0x54, 0x4f, 0x52, 0x53, 0x10, 0x0c, 0x12, 0x26,
 	0x0a, 0x22, 0x42, 0x45, 0x41, 0x43, 0x4f, 0x4e, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x45, 0x54, 0x48,
 	0x5f, 0x56, 0x31, 0x5f, 0x42, 0x45, 0x41, 0x43, 0x4f, 0x4e, 0x5f, 0x43, 0x4f, 0x4d, 0x4d, 0x49,
-	0x54, 0x54, 0x45, 0x45, 0x10, 0x0d, 0x32, 0x95, 0x0b, 0x0a, 0x0b, 0x43, 0x6f, 0x6f, 0x72, 0x64,
+	0x54, 0x54, 0x45, 0x45, 0x10, 0x0d, 0x32, 0x9e, 0x0c, 0x0a, 0x0b, 0x43, 0x6f, 0x6f, 0x72, 0x64,
 	0x69, 0x6e, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x56, 0x0a, 0x11, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
 	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1e, 0x2e, 0x78, 0x61,
 	0x74, 0x75, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63,
@@ -3322,53 +3416,61 @@ var file_pkg_proto_xatu_coordinator_proto_rawDesc = []byte{
 	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
 	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e,
 	0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x7d, 0x0a, 0x1e, 0x43, 0x6f, 0x6f,
-	0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73,
-	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x2b, 0x2e, 0x78, 0x61,
-	0x74, 0x75, 0x2e, 0x43, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x86, 0x01, 0x0a, 0x21, 0x43, 0x72,
+	0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64,
+	0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x12,
+	0x2e, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e,
 	0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
-	0x43, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e,
-	0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x65, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x44,
-	0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f,
-	0x72, 0x64, 0x12, 0x23, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73,
-	0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47,
-	0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52,
-	0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x80, 0x01, 0x0a, 0x1f, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x2f, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e,
+	0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x7d, 0x0a, 0x1e, 0x43, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65,
+	0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63,
+	0x6f, 0x72, 0x64, 0x73, 0x12, 0x2b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6f, 0x6f, 0x72,
+	0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e,
+	0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e,
+	0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65,
+	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x12, 0x65, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72,
+	0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12, 0x23, 0x2e, 0x78, 0x61,
+	0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x4e,
+	0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x24, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f,
+	0x76, 0x65, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80, 0x01, 0x0a, 0x1f, 0x47, 0x65, 0x74,
+	0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12, 0x2c, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79,
 	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63,
-	0x6f, 0x72, 0x64, 0x12, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69,
-	0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
-	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x2d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63,
-	0x6f, 0x76, 0x65, 0x72, 0x79, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x6f,
-	0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x80, 0x01, 0x0a, 0x1f, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76,
+	0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x45, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80, 0x01, 0x0a, 0x1f,
+	0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x73,
+	0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12,
+	0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76,
 	0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65,
-	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65,
-	0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e,
-	0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44,
-	0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75,
-	0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x43, 0x61, 0x6e, 0x6e,
-	0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x2e, 0x78, 0x61, 0x74,
-	0x75, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x78, 0x61, 0x74,
-	0x75, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5f, 0x0a,
-	0x14, 0x55, 0x70, 0x73, 0x65, 0x72, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x55, 0x70, 0x73,
-	0x65, 0x72, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
-	0x55, 0x70, 0x73, 0x65, 0x72, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2c,
-	0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68,
-	0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e,
+	0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72,
+	0x79, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65,
+	0x63, 0x6f, 0x72, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56,
+	0x0a, 0x11, 0x47, 0x65, 0x74, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x61,
+	0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x61,
+	0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5f, 0x0a, 0x14, 0x55, 0x70, 0x73, 0x65, 0x72, 0x74,
+	0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x21,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x55, 0x70, 0x73, 0x65, 0x72, 0x74, 0x43, 0x61, 0x6e, 0x6e,
+	0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x22, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x55, 0x70, 0x73, 0x65, 0x72, 0x74, 0x43,
+	0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70,
+	0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2f, 0x78, 0x61, 0x74, 0x75, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3384,7 +3486,7 @@ func file_pkg_proto_xatu_coordinator_proto_rawDescGZIP() []byte {
 }
 
 var file_pkg_proto_xatu_coordinator_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pkg_proto_xatu_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_pkg_proto_xatu_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
 var file_pkg_proto_xatu_coordinator_proto_goTypes = []any{
 	(CannonType)(0),                                             // 0: xatu.CannonType
 	(*CreateNodeRecordsRequest)(nil),                            // 1: xatu.CreateNodeRecordsRequest
@@ -3402,107 +3504,112 @@ var file_pkg_proto_xatu_coordinator_proto_goTypes = []any{
 	(*ListStalledConsensusNodeRecordsResponse)(nil),             // 13: xatu.ListStalledConsensusNodeRecordsResponse
 	(*CreateConsensusNodeRecordStatusRequest)(nil),              // 14: xatu.CreateConsensusNodeRecordStatusRequest
 	(*CreateConsensusNodeRecordStatusResponse)(nil),             // 15: xatu.CreateConsensusNodeRecordStatusResponse
-	(*CoordinateConsensusNodeRecordsRequest)(nil),               // 16: xatu.CoordinateConsensusNodeRecordsRequest
-	(*CoordinateConsensusNodeRecordsResponse)(nil),              // 17: xatu.CoordinateConsensusNodeRecordsResponse
-	(*GetDiscoveryNodeRecordRequest)(nil),                       // 18: xatu.GetDiscoveryNodeRecordRequest
-	(*GetDiscoveryNodeRecordResponse)(nil),                      // 19: xatu.GetDiscoveryNodeRecordResponse
-	(*GetDiscoveryExecutionNodeRecordRequest)(nil),              // 20: xatu.GetDiscoveryExecutionNodeRecordRequest
-	(*GetDiscoveryExecutionNodeRecordResponse)(nil),             // 21: xatu.GetDiscoveryExecutionNodeRecordResponse
-	(*GetDiscoveryConsensusNodeRecordRequest)(nil),              // 22: xatu.GetDiscoveryConsensusNodeRecordRequest
-	(*GetDiscoveryConsensusNodeRecordResponse)(nil),             // 23: xatu.GetDiscoveryConsensusNodeRecordResponse
-	(*BackfillingCheckpointMarker)(nil),                         // 24: xatu.BackfillingCheckpointMarker
-	(*CannonLocationEthV2BeaconBlockVoluntaryExit)(nil),         // 25: xatu.CannonLocationEthV2BeaconBlockVoluntaryExit
-	(*CannonLocationEthV2BeaconBlockProposerSlashing)(nil),      // 26: xatu.CannonLocationEthV2BeaconBlockProposerSlashing
-	(*CannonLocationEthV2BeaconBlockDeposit)(nil),               // 27: xatu.CannonLocationEthV2BeaconBlockDeposit
-	(*CannonLocationEthV2BeaconBlockAttesterSlashing)(nil),      // 28: xatu.CannonLocationEthV2BeaconBlockAttesterSlashing
-	(*CannonLocationEthV2BeaconBlockBlsToExecutionChange)(nil),  // 29: xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange
-	(*CannonLocationEthV2BeaconBlockExecutionTransaction)(nil),  // 30: xatu.CannonLocationEthV2BeaconBlockExecutionTransaction
-	(*CannonLocationEthV2BeaconBlockWithdrawal)(nil),            // 31: xatu.CannonLocationEthV2BeaconBlockWithdrawal
-	(*CannonLocationEthV2BeaconBlock)(nil),                      // 32: xatu.CannonLocationEthV2BeaconBlock
-	(*CannonLocationBlockprintBlockClassification)(nil),         // 33: xatu.CannonLocationBlockprintBlockClassification
-	(*CannonLocationEthV1BeaconBlobSidecar)(nil),                // 34: xatu.CannonLocationEthV1BeaconBlobSidecar
-	(*CannonLocationEthV1BeaconProposerDuty)(nil),               // 35: xatu.CannonLocationEthV1BeaconProposerDuty
-	(*CannonLocationEthV2BeaconBlockElaboratedAttestation)(nil), // 36: xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation
-	(*CannonLocationEthV1BeaconValidators)(nil),                 // 37: xatu.CannonLocationEthV1BeaconValidators
-	(*CannonLocationEthV1BeaconCommittee)(nil),                  // 38: xatu.CannonLocationEthV1BeaconCommittee
-	(*CannonLocation)(nil),                                      // 39: xatu.CannonLocation
-	(*GetCannonLocationRequest)(nil),                            // 40: xatu.GetCannonLocationRequest
-	(*GetCannonLocationResponse)(nil),                           // 41: xatu.GetCannonLocationResponse
-	(*UpsertCannonLocationRequest)(nil),                         // 42: xatu.UpsertCannonLocationRequest
-	(*UpsertCannonLocationResponse)(nil),                        // 43: xatu.UpsertCannonLocationResponse
-	(*ExecutionNodeStatus_Capability)(nil),                      // 44: xatu.ExecutionNodeStatus.Capability
-	(*ExecutionNodeStatus_ForkID)(nil),                          // 45: xatu.ExecutionNodeStatus.ForkID
-	(*timestamppb.Timestamp)(nil),                               // 46: google.protobuf.Timestamp
+	(*CreateConsensusNodeRecordStatusesRequest)(nil),            // 16: xatu.CreateConsensusNodeRecordStatusesRequest
+	(*CreateConsensusNodeRecordStatusesResponse)(nil),           // 17: xatu.CreateConsensusNodeRecordStatusesResponse
+	(*CoordinateConsensusNodeRecordsRequest)(nil),               // 18: xatu.CoordinateConsensusNodeRecordsRequest
+	(*CoordinateConsensusNodeRecordsResponse)(nil),              // 19: xatu.CoordinateConsensusNodeRecordsResponse
+	(*GetDiscoveryNodeRecordRequest)(nil),                       // 20: xatu.GetDiscoveryNodeRecordRequest
+	(*GetDiscoveryNodeRecordResponse)(nil),                      // 21: xatu.GetDiscoveryNodeRecordResponse
+	(*GetDiscoveryExecutionNodeRecordRequest)(nil),              // 22: xatu.GetDiscoveryExecutionNodeRecordRequest
+	(*GetDiscoveryExecutionNodeRecordResponse)(nil),             // 23: xatu.GetDiscoveryExecutionNodeRecordResponse
+	(*GetDiscoveryConsensusNodeRecordRequest)(nil),              // 24: xatu.GetDiscoveryConsensusNodeRecordRequest
+	(*GetDiscoveryConsensusNodeRecordResponse)(nil),             // 25: xatu.GetDiscoveryConsensusNodeRecordResponse
+	(*BackfillingCheckpointMarker)(nil),                         // 26: xatu.BackfillingCheckpointMarker
+	(*CannonLocationEthV2BeaconBlockVoluntaryExit)(nil),         // 27: xatu.CannonLocationEthV2BeaconBlockVoluntaryExit
+	(*CannonLocationEthV2BeaconBlockProposerSlashing)(nil),      // 28: xatu.CannonLocationEthV2BeaconBlockProposerSlashing
+	(*CannonLocationEthV2BeaconBlockDeposit)(nil),               // 29: xatu.CannonLocationEthV2BeaconBlockDeposit
+	(*CannonLocationEthV2BeaconBlockAttesterSlashing)(nil),      // 30: xatu.CannonLocationEthV2BeaconBlockAttesterSlashing
+	(*CannonLocationEthV2BeaconBlockBlsToExecutionChange)(nil),  // 31: xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange
+	(*CannonLocationEthV2BeaconBlockExecutionTransaction)(nil),  // 32: xatu.CannonLocationEthV2BeaconBlockExecutionTransaction
+	(*CannonLocationEthV2BeaconBlockWithdrawal)(nil),            // 33: xatu.CannonLocationEthV2BeaconBlockWithdrawal
+	(*CannonLocationEthV2BeaconBlock)(nil),                      // 34: xatu.CannonLocationEthV2BeaconBlock
+	(*CannonLocationBlockprintBlockClassification)(nil),         // 35: xatu.CannonLocationBlockprintBlockClassification
+	(*CannonLocationEthV1BeaconBlobSidecar)(nil),                // 36: xatu.CannonLocationEthV1BeaconBlobSidecar
+	(*CannonLocationEthV1BeaconProposerDuty)(nil),               // 37: xatu.CannonLocationEthV1BeaconProposerDuty
+	(*CannonLocationEthV2BeaconBlockElaboratedAttestation)(nil), // 38: xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation
+	(*CannonLocationEthV1BeaconValidators)(nil),                 // 39: xatu.CannonLocationEthV1BeaconValidators
+	(*CannonLocationEthV1BeaconCommittee)(nil),                  // 40: xatu.CannonLocationEthV1BeaconCommittee
+	(*CannonLocation)(nil),                                      // 41: xatu.CannonLocation
+	(*GetCannonLocationRequest)(nil),                            // 42: xatu.GetCannonLocationRequest
+	(*GetCannonLocationResponse)(nil),                           // 43: xatu.GetCannonLocationResponse
+	(*UpsertCannonLocationRequest)(nil),                         // 44: xatu.UpsertCannonLocationRequest
+	(*UpsertCannonLocationResponse)(nil),                        // 45: xatu.UpsertCannonLocationResponse
+	(*ExecutionNodeStatus_Capability)(nil),                      // 46: xatu.ExecutionNodeStatus.Capability
+	(*ExecutionNodeStatus_ForkID)(nil),                          // 47: xatu.ExecutionNodeStatus.ForkID
+	(*timestamppb.Timestamp)(nil),                               // 48: google.protobuf.Timestamp
 }
 var file_pkg_proto_xatu_coordinator_proto_depIdxs = []int32{
-	44, // 0: xatu.ExecutionNodeStatus.capabilities:type_name -> xatu.ExecutionNodeStatus.Capability
-	45, // 1: xatu.ExecutionNodeStatus.fork_id:type_name -> xatu.ExecutionNodeStatus.ForkID
+	46, // 0: xatu.ExecutionNodeStatus.capabilities:type_name -> xatu.ExecutionNodeStatus.Capability
+	47, // 1: xatu.ExecutionNodeStatus.fork_id:type_name -> xatu.ExecutionNodeStatus.ForkID
 	5,  // 2: xatu.CreateExecutionNodeRecordStatusRequest.status:type_name -> xatu.ExecutionNodeStatus
 	8,  // 3: xatu.CoordinateExecutionNodeRecordsRequest.node_records:type_name -> xatu.CoordinatedNodeRecord
-	46, // 4: xatu.ConsensusNodeStatus.finalized_epoch_start_date_time:type_name -> google.protobuf.Timestamp
-	46, // 5: xatu.ConsensusNodeStatus.head_slot_start_date_time:type_name -> google.protobuf.Timestamp
+	48, // 4: xatu.ConsensusNodeStatus.finalized_epoch_start_date_time:type_name -> google.protobuf.Timestamp
+	48, // 5: xatu.ConsensusNodeStatus.head_slot_start_date_time:type_name -> google.protobuf.Timestamp
 	11, // 6: xatu.CreateConsensusNodeRecordStatusRequest.status:type_name -> xatu.ConsensusNodeStatus
-	8,  // 7: xatu.CoordinateConsensusNodeRecordsRequest.node_records:type_name -> xatu.CoordinatedNodeRecord
-	24, // 8: xatu.CannonLocationEthV2BeaconBlockVoluntaryExit.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 9: xatu.CannonLocationEthV2BeaconBlockProposerSlashing.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 10: xatu.CannonLocationEthV2BeaconBlockDeposit.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 11: xatu.CannonLocationEthV2BeaconBlockAttesterSlashing.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 12: xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 13: xatu.CannonLocationEthV2BeaconBlockExecutionTransaction.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 14: xatu.CannonLocationEthV2BeaconBlockWithdrawal.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 15: xatu.CannonLocationEthV2BeaconBlock.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 16: xatu.CannonLocationEthV1BeaconBlobSidecar.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 17: xatu.CannonLocationEthV1BeaconProposerDuty.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 18: xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 19: xatu.CannonLocationEthV1BeaconValidators.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	24, // 20: xatu.CannonLocationEthV1BeaconCommittee.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
-	0,  // 21: xatu.CannonLocation.type:type_name -> xatu.CannonType
-	25, // 22: xatu.CannonLocation.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.CannonLocationEthV2BeaconBlockVoluntaryExit
-	26, // 23: xatu.CannonLocation.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.CannonLocationEthV2BeaconBlockProposerSlashing
-	27, // 24: xatu.CannonLocation.eth_v2_beacon_block_deposit:type_name -> xatu.CannonLocationEthV2BeaconBlockDeposit
-	28, // 25: xatu.CannonLocation.eth_v2_beacon_block_attester_slashing:type_name -> xatu.CannonLocationEthV2BeaconBlockAttesterSlashing
-	29, // 26: xatu.CannonLocation.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange
-	30, // 27: xatu.CannonLocation.eth_v2_beacon_block_execution_transaction:type_name -> xatu.CannonLocationEthV2BeaconBlockExecutionTransaction
-	31, // 28: xatu.CannonLocation.eth_v2_beacon_block_withdrawal:type_name -> xatu.CannonLocationEthV2BeaconBlockWithdrawal
-	32, // 29: xatu.CannonLocation.eth_v2_beacon_block:type_name -> xatu.CannonLocationEthV2BeaconBlock
-	33, // 30: xatu.CannonLocation.blockprint_block_classification:type_name -> xatu.CannonLocationBlockprintBlockClassification
-	34, // 31: xatu.CannonLocation.eth_v1_beacon_blob_sidecar:type_name -> xatu.CannonLocationEthV1BeaconBlobSidecar
-	35, // 32: xatu.CannonLocation.eth_v1_beacon_proposer_duty:type_name -> xatu.CannonLocationEthV1BeaconProposerDuty
-	36, // 33: xatu.CannonLocation.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation
-	37, // 34: xatu.CannonLocation.eth_v1_beacon_validators:type_name -> xatu.CannonLocationEthV1BeaconValidators
-	38, // 35: xatu.CannonLocation.eth_v1_beacon_committee:type_name -> xatu.CannonLocationEthV1BeaconCommittee
-	0,  // 36: xatu.GetCannonLocationRequest.type:type_name -> xatu.CannonType
-	39, // 37: xatu.GetCannonLocationResponse.location:type_name -> xatu.CannonLocation
-	39, // 38: xatu.UpsertCannonLocationRequest.location:type_name -> xatu.CannonLocation
-	1,  // 39: xatu.Coordinator.CreateNodeRecords:input_type -> xatu.CreateNodeRecordsRequest
-	3,  // 40: xatu.Coordinator.ListStalledExecutionNodeRecords:input_type -> xatu.ListStalledExecutionNodeRecordsRequest
-	6,  // 41: xatu.Coordinator.CreateExecutionNodeRecordStatus:input_type -> xatu.CreateExecutionNodeRecordStatusRequest
-	9,  // 42: xatu.Coordinator.CoordinateExecutionNodeRecords:input_type -> xatu.CoordinateExecutionNodeRecordsRequest
-	12, // 43: xatu.Coordinator.ListStalledConsensusNodeRecords:input_type -> xatu.ListStalledConsensusNodeRecordsRequest
-	14, // 44: xatu.Coordinator.CreateConsensusNodeRecordStatus:input_type -> xatu.CreateConsensusNodeRecordStatusRequest
-	16, // 45: xatu.Coordinator.CoordinateConsensusNodeRecords:input_type -> xatu.CoordinateConsensusNodeRecordsRequest
-	18, // 46: xatu.Coordinator.GetDiscoveryNodeRecord:input_type -> xatu.GetDiscoveryNodeRecordRequest
-	20, // 47: xatu.Coordinator.GetDiscoveryExecutionNodeRecord:input_type -> xatu.GetDiscoveryExecutionNodeRecordRequest
-	22, // 48: xatu.Coordinator.GetDiscoveryConsensusNodeRecord:input_type -> xatu.GetDiscoveryConsensusNodeRecordRequest
-	40, // 49: xatu.Coordinator.GetCannonLocation:input_type -> xatu.GetCannonLocationRequest
-	42, // 50: xatu.Coordinator.UpsertCannonLocation:input_type -> xatu.UpsertCannonLocationRequest
-	2,  // 51: xatu.Coordinator.CreateNodeRecords:output_type -> xatu.CreateNodeRecordsResponse
-	4,  // 52: xatu.Coordinator.ListStalledExecutionNodeRecords:output_type -> xatu.ListStalledExecutionNodeRecordsResponse
-	7,  // 53: xatu.Coordinator.CreateExecutionNodeRecordStatus:output_type -> xatu.CreateExecutionNodeRecordStatusResponse
-	10, // 54: xatu.Coordinator.CoordinateExecutionNodeRecords:output_type -> xatu.CoordinateExecutionNodeRecordsResponse
-	13, // 55: xatu.Coordinator.ListStalledConsensusNodeRecords:output_type -> xatu.ListStalledConsensusNodeRecordsResponse
-	15, // 56: xatu.Coordinator.CreateConsensusNodeRecordStatus:output_type -> xatu.CreateConsensusNodeRecordStatusResponse
-	17, // 57: xatu.Coordinator.CoordinateConsensusNodeRecords:output_type -> xatu.CoordinateConsensusNodeRecordsResponse
-	19, // 58: xatu.Coordinator.GetDiscoveryNodeRecord:output_type -> xatu.GetDiscoveryNodeRecordResponse
-	21, // 59: xatu.Coordinator.GetDiscoveryExecutionNodeRecord:output_type -> xatu.GetDiscoveryExecutionNodeRecordResponse
-	23, // 60: xatu.Coordinator.GetDiscoveryConsensusNodeRecord:output_type -> xatu.GetDiscoveryConsensusNodeRecordResponse
-	41, // 61: xatu.Coordinator.GetCannonLocation:output_type -> xatu.GetCannonLocationResponse
-	43, // 62: xatu.Coordinator.UpsertCannonLocation:output_type -> xatu.UpsertCannonLocationResponse
-	51, // [51:63] is the sub-list for method output_type
-	39, // [39:51] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	11, // 7: xatu.CreateConsensusNodeRecordStatusesRequest.statuses:type_name -> xatu.ConsensusNodeStatus
+	8,  // 8: xatu.CoordinateConsensusNodeRecordsRequest.node_records:type_name -> xatu.CoordinatedNodeRecord
+	26, // 9: xatu.CannonLocationEthV2BeaconBlockVoluntaryExit.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 10: xatu.CannonLocationEthV2BeaconBlockProposerSlashing.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 11: xatu.CannonLocationEthV2BeaconBlockDeposit.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 12: xatu.CannonLocationEthV2BeaconBlockAttesterSlashing.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 13: xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 14: xatu.CannonLocationEthV2BeaconBlockExecutionTransaction.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 15: xatu.CannonLocationEthV2BeaconBlockWithdrawal.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 16: xatu.CannonLocationEthV2BeaconBlock.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 17: xatu.CannonLocationEthV1BeaconBlobSidecar.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 18: xatu.CannonLocationEthV1BeaconProposerDuty.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 19: xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 20: xatu.CannonLocationEthV1BeaconValidators.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	26, // 21: xatu.CannonLocationEthV1BeaconCommittee.backfilling_checkpoint_marker:type_name -> xatu.BackfillingCheckpointMarker
+	0,  // 22: xatu.CannonLocation.type:type_name -> xatu.CannonType
+	27, // 23: xatu.CannonLocation.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.CannonLocationEthV2BeaconBlockVoluntaryExit
+	28, // 24: xatu.CannonLocation.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.CannonLocationEthV2BeaconBlockProposerSlashing
+	29, // 25: xatu.CannonLocation.eth_v2_beacon_block_deposit:type_name -> xatu.CannonLocationEthV2BeaconBlockDeposit
+	30, // 26: xatu.CannonLocation.eth_v2_beacon_block_attester_slashing:type_name -> xatu.CannonLocationEthV2BeaconBlockAttesterSlashing
+	31, // 27: xatu.CannonLocation.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.CannonLocationEthV2BeaconBlockBlsToExecutionChange
+	32, // 28: xatu.CannonLocation.eth_v2_beacon_block_execution_transaction:type_name -> xatu.CannonLocationEthV2BeaconBlockExecutionTransaction
+	33, // 29: xatu.CannonLocation.eth_v2_beacon_block_withdrawal:type_name -> xatu.CannonLocationEthV2BeaconBlockWithdrawal
+	34, // 30: xatu.CannonLocation.eth_v2_beacon_block:type_name -> xatu.CannonLocationEthV2BeaconBlock
+	35, // 31: xatu.CannonLocation.blockprint_block_classification:type_name -> xatu.CannonLocationBlockprintBlockClassification
+	36, // 32: xatu.CannonLocation.eth_v1_beacon_blob_sidecar:type_name -> xatu.CannonLocationEthV1BeaconBlobSidecar
+	37, // 33: xatu.CannonLocation.eth_v1_beacon_proposer_duty:type_name -> xatu.CannonLocationEthV1BeaconProposerDuty
+	38, // 34: xatu.CannonLocation.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.CannonLocationEthV2BeaconBlockElaboratedAttestation
+	39, // 35: xatu.CannonLocation.eth_v1_beacon_validators:type_name -> xatu.CannonLocationEthV1BeaconValidators
+	40, // 36: xatu.CannonLocation.eth_v1_beacon_committee:type_name -> xatu.CannonLocationEthV1BeaconCommittee
+	0,  // 37: xatu.GetCannonLocationRequest.type:type_name -> xatu.CannonType
+	41, // 38: xatu.GetCannonLocationResponse.location:type_name -> xatu.CannonLocation
+	41, // 39: xatu.UpsertCannonLocationRequest.location:type_name -> xatu.CannonLocation
+	1,  // 40: xatu.Coordinator.CreateNodeRecords:input_type -> xatu.CreateNodeRecordsRequest
+	3,  // 41: xatu.Coordinator.ListStalledExecutionNodeRecords:input_type -> xatu.ListStalledExecutionNodeRecordsRequest
+	6,  // 42: xatu.Coordinator.CreateExecutionNodeRecordStatus:input_type -> xatu.CreateExecutionNodeRecordStatusRequest
+	9,  // 43: xatu.Coordinator.CoordinateExecutionNodeRecords:input_type -> xatu.CoordinateExecutionNodeRecordsRequest
+	12, // 44: xatu.Coordinator.ListStalledConsensusNodeRecords:input_type -> xatu.ListStalledConsensusNodeRecordsRequest
+	14, // 45: xatu.Coordinator.CreateConsensusNodeRecordStatus:input_type -> xatu.CreateConsensusNodeRecordStatusRequest
+	16, // 46: xatu.Coordinator.CreateConsensusNodeRecordStatuses:input_type -> xatu.CreateConsensusNodeRecordStatusesRequest
+	18, // 47: xatu.Coordinator.CoordinateConsensusNodeRecords:input_type -> xatu.CoordinateConsensusNodeRecordsRequest
+	20, // 48: xatu.Coordinator.GetDiscoveryNodeRecord:input_type -> xatu.GetDiscoveryNodeRecordRequest
+	22, // 49: xatu.Coordinator.GetDiscoveryExecutionNodeRecord:input_type -> xatu.GetDiscoveryExecutionNodeRecordRequest
+	24, // 50: xatu.Coordinator.GetDiscoveryConsensusNodeRecord:input_type -> xatu.GetDiscoveryConsensusNodeRecordRequest
+	42, // 51: xatu.Coordinator.GetCannonLocation:input_type -> xatu.GetCannonLocationRequest
+	44, // 52: xatu.Coordinator.UpsertCannonLocation:input_type -> xatu.UpsertCannonLocationRequest
+	2,  // 53: xatu.Coordinator.CreateNodeRecords:output_type -> xatu.CreateNodeRecordsResponse
+	4,  // 54: xatu.Coordinator.ListStalledExecutionNodeRecords:output_type -> xatu.ListStalledExecutionNodeRecordsResponse
+	7,  // 55: xatu.Coordinator.CreateExecutionNodeRecordStatus:output_type -> xatu.CreateExecutionNodeRecordStatusResponse
+	10, // 56: xatu.Coordinator.CoordinateExecutionNodeRecords:output_type -> xatu.CoordinateExecutionNodeRecordsResponse
+	13, // 57: xatu.Coordinator.ListStalledConsensusNodeRecords:output_type -> xatu.ListStalledConsensusNodeRecordsResponse
+	15, // 58: xatu.Coordinator.CreateConsensusNodeRecordStatus:output_type -> xatu.CreateConsensusNodeRecordStatusResponse
+	17, // 59: xatu.Coordinator.CreateConsensusNodeRecordStatuses:output_type -> xatu.CreateConsensusNodeRecordStatusesResponse
+	19, // 60: xatu.Coordinator.CoordinateConsensusNodeRecords:output_type -> xatu.CoordinateConsensusNodeRecordsResponse
+	21, // 61: xatu.Coordinator.GetDiscoveryNodeRecord:output_type -> xatu.GetDiscoveryNodeRecordResponse
+	23, // 62: xatu.Coordinator.GetDiscoveryExecutionNodeRecord:output_type -> xatu.GetDiscoveryExecutionNodeRecordResponse
+	25, // 63: xatu.Coordinator.GetDiscoveryConsensusNodeRecord:output_type -> xatu.GetDiscoveryConsensusNodeRecordResponse
+	43, // 64: xatu.Coordinator.GetCannonLocation:output_type -> xatu.GetCannonLocationResponse
+	45, // 65: xatu.Coordinator.UpsertCannonLocation:output_type -> xatu.UpsertCannonLocationResponse
+	53, // [53:66] is the sub-list for method output_type
+	40, // [40:53] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_xatu_coordinator_proto_init() }
@@ -3692,7 +3799,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*CoordinateConsensusNodeRecordsRequest); i {
+			switch v := v.(*CreateConsensusNodeRecordStatusesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3704,7 +3811,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*CoordinateConsensusNodeRecordsResponse); i {
+			switch v := v.(*CreateConsensusNodeRecordStatusesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3716,7 +3823,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryNodeRecordRequest); i {
+			switch v := v.(*CoordinateConsensusNodeRecordsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3728,7 +3835,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryNodeRecordResponse); i {
+			switch v := v.(*CoordinateConsensusNodeRecordsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3740,7 +3847,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[19].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryExecutionNodeRecordRequest); i {
+			switch v := v.(*GetDiscoveryNodeRecordRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3752,7 +3859,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[20].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryExecutionNodeRecordResponse); i {
+			switch v := v.(*GetDiscoveryNodeRecordResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3764,7 +3871,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[21].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryConsensusNodeRecordRequest); i {
+			switch v := v.(*GetDiscoveryExecutionNodeRecordRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3776,7 +3883,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[22].Exporter = func(v any, i int) any {
-			switch v := v.(*GetDiscoveryConsensusNodeRecordResponse); i {
+			switch v := v.(*GetDiscoveryExecutionNodeRecordResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3788,7 +3895,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[23].Exporter = func(v any, i int) any {
-			switch v := v.(*BackfillingCheckpointMarker); i {
+			switch v := v.(*GetDiscoveryConsensusNodeRecordRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3800,7 +3907,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[24].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockVoluntaryExit); i {
+			switch v := v.(*GetDiscoveryConsensusNodeRecordResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3812,7 +3919,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[25].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockProposerSlashing); i {
+			switch v := v.(*BackfillingCheckpointMarker); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3824,7 +3931,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[26].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockDeposit); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockVoluntaryExit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3836,7 +3943,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[27].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockAttesterSlashing); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockProposerSlashing); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3848,7 +3955,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[28].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockBlsToExecutionChange); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockDeposit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3860,7 +3967,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[29].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockExecutionTransaction); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockAttesterSlashing); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3872,7 +3979,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[30].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockWithdrawal); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockBlsToExecutionChange); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3884,7 +3991,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[31].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlock); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockExecutionTransaction); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3896,7 +4003,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[32].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationBlockprintBlockClassification); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockWithdrawal); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3908,7 +4015,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[33].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV1BeaconBlobSidecar); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlock); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3920,7 +4027,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[34].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV1BeaconProposerDuty); i {
+			switch v := v.(*CannonLocationBlockprintBlockClassification); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3932,7 +4039,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[35].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV2BeaconBlockElaboratedAttestation); i {
+			switch v := v.(*CannonLocationEthV1BeaconBlobSidecar); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3944,7 +4051,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[36].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV1BeaconValidators); i {
+			switch v := v.(*CannonLocationEthV1BeaconProposerDuty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3956,7 +4063,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[37].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocationEthV1BeaconCommittee); i {
+			switch v := v.(*CannonLocationEthV2BeaconBlockElaboratedAttestation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3968,7 +4075,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[38].Exporter = func(v any, i int) any {
-			switch v := v.(*CannonLocation); i {
+			switch v := v.(*CannonLocationEthV1BeaconValidators); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3980,7 +4087,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[39].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCannonLocationRequest); i {
+			switch v := v.(*CannonLocationEthV1BeaconCommittee); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3992,7 +4099,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[40].Exporter = func(v any, i int) any {
-			switch v := v.(*GetCannonLocationResponse); i {
+			switch v := v.(*CannonLocation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4004,7 +4111,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[41].Exporter = func(v any, i int) any {
-			switch v := v.(*UpsertCannonLocationRequest); i {
+			switch v := v.(*GetCannonLocationRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4016,7 +4123,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[42].Exporter = func(v any, i int) any {
-			switch v := v.(*UpsertCannonLocationResponse); i {
+			switch v := v.(*GetCannonLocationResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4028,7 +4135,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[43].Exporter = func(v any, i int) any {
-			switch v := v.(*ExecutionNodeStatus_Capability); i {
+			switch v := v.(*UpsertCannonLocationRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4040,6 +4147,30 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_coordinator_proto_msgTypes[44].Exporter = func(v any, i int) any {
+			switch v := v.(*UpsertCannonLocationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_xatu_coordinator_proto_msgTypes[45].Exporter = func(v any, i int) any {
+			switch v := v.(*ExecutionNodeStatus_Capability); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_xatu_coordinator_proto_msgTypes[46].Exporter = func(v any, i int) any {
 			switch v := v.(*ExecutionNodeStatus_ForkID); i {
 			case 0:
 				return &v.state
@@ -4052,7 +4183,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			}
 		}
 	}
-	file_pkg_proto_xatu_coordinator_proto_msgTypes[38].OneofWrappers = []any{
+	file_pkg_proto_xatu_coordinator_proto_msgTypes[40].OneofWrappers = []any{
 		(*CannonLocation_EthV2BeaconBlockVoluntaryExit)(nil),
 		(*CannonLocation_EthV2BeaconBlockProposerSlashing)(nil),
 		(*CannonLocation_EthV2BeaconBlockDeposit)(nil),
@@ -4074,7 +4205,7 @@ func file_pkg_proto_xatu_coordinator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_xatu_coordinator_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   45,
+			NumMessages:   47,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

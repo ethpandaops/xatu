@@ -19,6 +19,8 @@ service Coordinator {
       returns (ListStalledConsensusNodeRecordsResponse) {}
   rpc CreateConsensusNodeRecordStatus(CreateConsensusNodeRecordStatusRequest)
       returns (CreateConsensusNodeRecordStatusResponse) {}
+  rpc CreateConsensusNodeRecordStatuses(CreateConsensusNodeRecordStatusesRequest)
+      returns (CreateConsensusNodeRecordStatusesResponse) {}
   rpc CoordinateConsensusNodeRecords(CoordinateConsensusNodeRecordsRequest)
       returns (CoordinateConsensusNodeRecordsResponse) {}
   rpc GetDiscoveryNodeRecord(GetDiscoveryNodeRecordRequest)
@@ -121,6 +123,12 @@ message CreateConsensusNodeRecordStatusRequest {
 }
 
 message CreateConsensusNodeRecordStatusResponse {}
+
+message CreateConsensusNodeRecordStatusesRequest {
+  repeated ConsensusNodeStatus statuses = 1;
+}
+
+message CreateConsensusNodeRecordStatusesResponse {}
 
 message CoordinateConsensusNodeRecordsRequest {
   repeated CoordinatedNodeRecord node_records = 1;

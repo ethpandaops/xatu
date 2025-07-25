@@ -61,13 +61,13 @@ jobs:
         # Generate seeding commands
         echo "Generating seeding commands..."
         SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh .github/cannon/seeding.yaml)
-        
+
         echo "Seeding data prepared."
 
         echo "SEEDING_COMMANDS: $SEEDING_COMMANDS"
-        
+
         docker exec xatu-postgres psql -U user -d xatu -c "$SEEDING_COMMANDS"
-        
+
         echo "Seeding completed successfully."
     - name: Show the state of the database
       run: |
@@ -128,7 +128,7 @@ jobs:
         cat /tmp/cannon_config.yaml
     - name: Set authorization header
       run: |
-        sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION }}/' /tmp/cannon_config.yaml
+        sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION_2 }}/' /tmp/cannon_config.yaml
     - name: Start Xatu cannon
       run: |
         docker run -d --network xatu_xatu-net --name xatu-cannon -v /tmp/cannon_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local cannon --config /etc/xatu/config.yaml

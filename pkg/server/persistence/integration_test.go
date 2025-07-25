@@ -216,6 +216,126 @@ func TestPersistenceIntegration(t *testing.T) {
 			}
 			assert.GreaterOrEqual(t, forkDigest1Count, 2)
 		})
+
+		t.Run("BulkInsertNodeRecordConsensus", func(t *testing.T) {
+			// Create test data for bulk insert
+			bulkTestData := []struct {
+				enr       string
+				networkID string
+				name      string
+			}{
+				{"enr:-IS4QBulk1-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij", "1", "Prysm"},
+				{"enr:-IS4QBulk2-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij", "5", "Lighthouse"},
+				{"enr:-IS4QBulk3-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij", "1", "Teku"},
+				{"enr:-IS4QBulk4-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij", "5", "Nimbus"},
+				{"enr:-IS4QBulk5-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghij", "1", "Lodestar"},
+			}
+
+			// First insert parent node records
+			nodeRecords := make([]*node.Record, len(bulkTestData))
+			for i, td := range bulkTestData {
+				nodeRecords[i] = createTestNodeRecord(td.enr)
+			}
+			err := tc.Client.InsertNodeRecords(ctx, nodeRecords)
+			require.NoError(t, err)
+
+			// Create consensus records for bulk insert
+			consensusRecords := make([]*node.Consensus, len(bulkTestData))
+			for i, td := range bulkTestData {
+				consensusRecord := createTestConsensusRecord(td.enr)
+				consensusRecord.NetworkID = td.networkID
+				consensusRecord.Name = td.name
+				consensusRecords[i] = consensusRecord
+			}
+
+			// Perform bulk insert
+			err = tc.Client.BulkInsertNodeRecordConsensus(ctx, consensusRecords)
+			require.NoError(t, err)
+
+			// Verify all records were inserted
+			allRecords, err := tc.Client.ListNodeRecordConsensus(ctx, []uint64{1, 5}, nil, 100)
+			require.NoError(t, err)
+
+			// Count inserted records by checking ENR prefix
+			bulkRecordCount := 0
+			clientNames := make(map[string]int)
+			for _, record := range allRecords {
+				if strings.HasPrefix(record.Enr, "enr:-IS4QBulk") {
+					bulkRecordCount++
+					clientNames[record.Name]++
+				}
+			}
+
+			assert.Equal(t, len(bulkTestData), bulkRecordCount, "All bulk records should be inserted")
+			assert.Equal(t, 1, clientNames["Prysm"])
+			assert.Equal(t, 1, clientNames["Lighthouse"])
+			assert.Equal(t, 1, clientNames["Teku"])
+			assert.Equal(t, 1, clientNames["Nimbus"])
+			assert.Equal(t, 1, clientNames["Lodestar"])
+
+			// Test bulk insert with empty slice (should not error)
+			err = tc.Client.BulkInsertNodeRecordConsensus(ctx, []*node.Consensus{})
+			require.NoError(t, err)
+
+			// Test bulk insert with records that reference non-existent ENR (should fail due to foreign key)
+			invalidRecords := []*node.Consensus{
+				createTestConsensusRecord("enr:-IS4QInvalid-consensus-record-that-does-not-exist-in-node-record-table-ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+			}
+			err = tc.Client.BulkInsertNodeRecordConsensus(ctx, invalidRecords)
+			assert.Error(t, err, "Should fail due to foreign key constraint")
+
+			// Test bulk insert with more than 500 records (should work due to batching)
+			t.Run("LargeBatch", func(t *testing.T) {
+				// Create 600 records to test batching
+				largeENRs := make([]string, 600)
+				for i := 0; i < 600; i++ {
+					largeENRs[i] = fmt.Sprintf("enr:-IS4QLarge%04d-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abc", i)
+				}
+
+				// First insert parent node records
+				largeNodeRecords := make([]*node.Record, len(largeENRs))
+				for i, enr := range largeENRs {
+					largeNodeRecords[i] = createTestNodeRecord(enr)
+				}
+
+				// Insert node records in batches to avoid overwhelming the test
+				batchSize := 100
+				for i := 0; i < len(largeNodeRecords); i += batchSize {
+					end := i + batchSize
+					if end > len(largeNodeRecords) {
+						end = len(largeNodeRecords)
+					}
+					err := tc.Client.InsertNodeRecords(ctx, largeNodeRecords[i:end])
+					require.NoError(t, err)
+				}
+
+				// Create consensus records
+				largeConsensusRecords := make([]*node.Consensus, len(largeENRs))
+				for i, enr := range largeENRs {
+					consensusRecord := createTestConsensusRecord(enr)
+					consensusRecord.Name = fmt.Sprintf("Client-%d", i%5) // Vary the client names
+					largeConsensusRecords[i] = consensusRecord
+				}
+
+				// Perform bulk insert (should handle batching internally)
+				err := tc.Client.BulkInsertNodeRecordConsensus(ctx, largeConsensusRecords)
+				require.NoError(t, err)
+
+				// Verify all records were inserted
+				allRecords, err := tc.Client.ListNodeRecordConsensus(ctx, []uint64{1}, nil, 1000)
+				require.NoError(t, err)
+
+				// Count large batch records
+				largeBatchCount := 0
+				for _, record := range allRecords {
+					if strings.HasPrefix(record.Enr, "enr:-IS4QLarge") {
+						largeBatchCount++
+					}
+				}
+
+				assert.Equal(t, 600, largeBatchCount, "All 600 records should be inserted via batching")
+			})
+		})
 	})
 
 	// Test execution record operations

@@ -19,18 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Coordinator_CreateNodeRecords_FullMethodName               = "/xatu.Coordinator/CreateNodeRecords"
-	Coordinator_ListStalledExecutionNodeRecords_FullMethodName = "/xatu.Coordinator/ListStalledExecutionNodeRecords"
-	Coordinator_CreateExecutionNodeRecordStatus_FullMethodName = "/xatu.Coordinator/CreateExecutionNodeRecordStatus"
-	Coordinator_CoordinateExecutionNodeRecords_FullMethodName  = "/xatu.Coordinator/CoordinateExecutionNodeRecords"
-	Coordinator_ListStalledConsensusNodeRecords_FullMethodName = "/xatu.Coordinator/ListStalledConsensusNodeRecords"
-	Coordinator_CreateConsensusNodeRecordStatus_FullMethodName = "/xatu.Coordinator/CreateConsensusNodeRecordStatus"
-	Coordinator_CoordinateConsensusNodeRecords_FullMethodName  = "/xatu.Coordinator/CoordinateConsensusNodeRecords"
-	Coordinator_GetDiscoveryNodeRecord_FullMethodName          = "/xatu.Coordinator/GetDiscoveryNodeRecord"
-	Coordinator_GetDiscoveryExecutionNodeRecord_FullMethodName = "/xatu.Coordinator/GetDiscoveryExecutionNodeRecord"
-	Coordinator_GetDiscoveryConsensusNodeRecord_FullMethodName = "/xatu.Coordinator/GetDiscoveryConsensusNodeRecord"
-	Coordinator_GetCannonLocation_FullMethodName               = "/xatu.Coordinator/GetCannonLocation"
-	Coordinator_UpsertCannonLocation_FullMethodName            = "/xatu.Coordinator/UpsertCannonLocation"
+	Coordinator_CreateNodeRecords_FullMethodName                 = "/xatu.Coordinator/CreateNodeRecords"
+	Coordinator_ListStalledExecutionNodeRecords_FullMethodName   = "/xatu.Coordinator/ListStalledExecutionNodeRecords"
+	Coordinator_CreateExecutionNodeRecordStatus_FullMethodName   = "/xatu.Coordinator/CreateExecutionNodeRecordStatus"
+	Coordinator_CoordinateExecutionNodeRecords_FullMethodName    = "/xatu.Coordinator/CoordinateExecutionNodeRecords"
+	Coordinator_ListStalledConsensusNodeRecords_FullMethodName   = "/xatu.Coordinator/ListStalledConsensusNodeRecords"
+	Coordinator_CreateConsensusNodeRecordStatus_FullMethodName   = "/xatu.Coordinator/CreateConsensusNodeRecordStatus"
+	Coordinator_CreateConsensusNodeRecordStatuses_FullMethodName = "/xatu.Coordinator/CreateConsensusNodeRecordStatuses"
+	Coordinator_CoordinateConsensusNodeRecords_FullMethodName    = "/xatu.Coordinator/CoordinateConsensusNodeRecords"
+	Coordinator_GetDiscoveryNodeRecord_FullMethodName            = "/xatu.Coordinator/GetDiscoveryNodeRecord"
+	Coordinator_GetDiscoveryExecutionNodeRecord_FullMethodName   = "/xatu.Coordinator/GetDiscoveryExecutionNodeRecord"
+	Coordinator_GetDiscoveryConsensusNodeRecord_FullMethodName   = "/xatu.Coordinator/GetDiscoveryConsensusNodeRecord"
+	Coordinator_GetCannonLocation_FullMethodName                 = "/xatu.Coordinator/GetCannonLocation"
+	Coordinator_UpsertCannonLocation_FullMethodName              = "/xatu.Coordinator/UpsertCannonLocation"
 )
 
 // CoordinatorClient is the client API for Coordinator service.
@@ -43,6 +44,7 @@ type CoordinatorClient interface {
 	CoordinateExecutionNodeRecords(ctx context.Context, in *CoordinateExecutionNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateExecutionNodeRecordsResponse, error)
 	ListStalledConsensusNodeRecords(ctx context.Context, in *ListStalledConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*ListStalledConsensusNodeRecordsResponse, error)
 	CreateConsensusNodeRecordStatus(ctx context.Context, in *CreateConsensusNodeRecordStatusRequest, opts ...grpc.CallOption) (*CreateConsensusNodeRecordStatusResponse, error)
+	CreateConsensusNodeRecordStatuses(ctx context.Context, in *CreateConsensusNodeRecordStatusesRequest, opts ...grpc.CallOption) (*CreateConsensusNodeRecordStatusesResponse, error)
 	CoordinateConsensusNodeRecords(ctx context.Context, in *CoordinateConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateConsensusNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(ctx context.Context, in *GetDiscoveryNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryNodeRecordResponse, error)
 	GetDiscoveryExecutionNodeRecord(ctx context.Context, in *GetDiscoveryExecutionNodeRecordRequest, opts ...grpc.CallOption) (*GetDiscoveryExecutionNodeRecordResponse, error)
@@ -119,6 +121,16 @@ func (c *coordinatorClient) CreateConsensusNodeRecordStatus(ctx context.Context,
 	return out, nil
 }
 
+func (c *coordinatorClient) CreateConsensusNodeRecordStatuses(ctx context.Context, in *CreateConsensusNodeRecordStatusesRequest, opts ...grpc.CallOption) (*CreateConsensusNodeRecordStatusesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateConsensusNodeRecordStatusesResponse)
+	err := c.cc.Invoke(ctx, Coordinator_CreateConsensusNodeRecordStatuses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *coordinatorClient) CoordinateConsensusNodeRecords(ctx context.Context, in *CoordinateConsensusNodeRecordsRequest, opts ...grpc.CallOption) (*CoordinateConsensusNodeRecordsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CoordinateConsensusNodeRecordsResponse)
@@ -189,6 +201,7 @@ type CoordinatorServer interface {
 	CoordinateExecutionNodeRecords(context.Context, *CoordinateExecutionNodeRecordsRequest) (*CoordinateExecutionNodeRecordsResponse, error)
 	ListStalledConsensusNodeRecords(context.Context, *ListStalledConsensusNodeRecordsRequest) (*ListStalledConsensusNodeRecordsResponse, error)
 	CreateConsensusNodeRecordStatus(context.Context, *CreateConsensusNodeRecordStatusRequest) (*CreateConsensusNodeRecordStatusResponse, error)
+	CreateConsensusNodeRecordStatuses(context.Context, *CreateConsensusNodeRecordStatusesRequest) (*CreateConsensusNodeRecordStatusesResponse, error)
 	CoordinateConsensusNodeRecords(context.Context, *CoordinateConsensusNodeRecordsRequest) (*CoordinateConsensusNodeRecordsResponse, error)
 	GetDiscoveryNodeRecord(context.Context, *GetDiscoveryNodeRecordRequest) (*GetDiscoveryNodeRecordResponse, error)
 	GetDiscoveryExecutionNodeRecord(context.Context, *GetDiscoveryExecutionNodeRecordRequest) (*GetDiscoveryExecutionNodeRecordResponse, error)
@@ -222,6 +235,9 @@ func (UnimplementedCoordinatorServer) ListStalledConsensusNodeRecords(context.Co
 }
 func (UnimplementedCoordinatorServer) CreateConsensusNodeRecordStatus(context.Context, *CreateConsensusNodeRecordStatusRequest) (*CreateConsensusNodeRecordStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateConsensusNodeRecordStatus not implemented")
+}
+func (UnimplementedCoordinatorServer) CreateConsensusNodeRecordStatuses(context.Context, *CreateConsensusNodeRecordStatusesRequest) (*CreateConsensusNodeRecordStatusesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateConsensusNodeRecordStatuses not implemented")
 }
 func (UnimplementedCoordinatorServer) CoordinateConsensusNodeRecords(context.Context, *CoordinateConsensusNodeRecordsRequest) (*CoordinateConsensusNodeRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CoordinateConsensusNodeRecords not implemented")
@@ -370,6 +386,24 @@ func _Coordinator_CreateConsensusNodeRecordStatus_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_CreateConsensusNodeRecordStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateConsensusNodeRecordStatusesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).CreateConsensusNodeRecordStatuses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_CreateConsensusNodeRecordStatuses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).CreateConsensusNodeRecordStatuses(ctx, req.(*CreateConsensusNodeRecordStatusesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Coordinator_CoordinateConsensusNodeRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CoordinateConsensusNodeRecordsRequest)
 	if err := dec(in); err != nil {
@@ -508,6 +542,10 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateConsensusNodeRecordStatus",
 			Handler:    _Coordinator_CreateConsensusNodeRecordStatus_Handler,
+		},
+		{
+			MethodName: "CreateConsensusNodeRecordStatuses",
+			Handler:    _Coordinator_CreateConsensusNodeRecordStatuses_Handler,
 		},
 		{
 			MethodName: "CoordinateConsensusNodeRecords",

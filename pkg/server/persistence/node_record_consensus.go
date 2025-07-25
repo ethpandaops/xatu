@@ -90,3 +90,55 @@ func (c *Client) ListNodeRecordConsensus(ctx context.Context, networkIds []uint6
 
 	return records, nil
 }
+
+func (c *Client) BulkInsertNodeRecordConsensus(ctx context.Context, records []*node.Consensus) error {
+	if len(records) == 0 {
+		return nil
+	}
+
+	const maxBatchSize = 500 // Conservative batch size to avoid any psql parameter limits.
+
+	// Process in batches if necessary.
+	for i := 0; i < len(records); i += maxBatchSize {
+		end := i + maxBatchSize
+		if end > len(records) {
+			end = len(records)
+		}
+
+		var (
+			batch = records[i:end]
+			ib    = nodeRecordConsensusStruct.InsertInto("node_record_consensus")
+		)
+
+		ib.Cols(nodeRecordConsensusStruct.Columns()...)
+
+		for _, record := range batch {
+			values := []interface{}{
+				sqlbuilder.Raw("DEFAULT"),
+				record.Enr,
+				record.NodeID,
+				record.PeerID,
+				record.CreateTime,
+				record.Name,
+				record.ForkDigest,
+				record.NextForkDigest,
+				record.FinalizedRoot,
+				record.FinalizedEpoch,
+				record.HeadRoot,
+				record.HeadSlot,
+				record.CGC,
+				record.NetworkID,
+			}
+			ib.Values(values...)
+		}
+
+		sql, args := ib.Build()
+		if _, err := c.db.ExecContext(ctx, sql, args...); err != nil {
+			c.log.WithError(err).Errorf("failed to bulk insert node record consensus batch %d-%d", i, end-1)
+
+			return err
+		}
+	}
+
+	return nil
+}

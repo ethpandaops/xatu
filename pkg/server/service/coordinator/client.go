@@ -362,6 +362,82 @@ func (c *Client) CreateConsensusNodeRecordStatus(ctx context.Context, req *xatu.
 	return &xatu.CreateConsensusNodeRecordStatusResponse{}, nil
 }
 
+func (c *Client) CreateConsensusNodeRecordStatuses(
+	ctx context.Context,
+	req *xatu.CreateConsensusNodeRecordStatusesRequest,
+) (*xatu.CreateConsensusNodeRecordStatusesResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	// Prepare consensus records and node records for bulk operations.
+	var (
+		consensusRecords = make([]*node.Consensus, 0, len(req.Statuses))
+		nodeRecords      = make([]*node.Record, 0, len(req.Statuses))
+		now              = time.Now()
+	)
+
+	for _, st := range req.Statuses {
+		if st == nil {
+			continue
+		}
+
+		consensusRecords = append(consensusRecords, &node.Consensus{
+			Enr:            st.NodeRecord,
+			NodeID:         st.NodeId,
+			PeerID:         st.PeerId,
+			CreateTime:     now,
+			Name:           st.Name,
+			ForkDigest:     st.ForkDigest,
+			NextForkDigest: st.NextForkDigest,
+			FinalizedRoot:  st.FinalizedRoot,
+			FinalizedEpoch: st.FinalizedEpoch,
+			HeadRoot:       st.HeadRoot,
+			HeadSlot:       st.HeadSlot,
+			CGC:            st.Cgc,
+			NetworkID:      fmt.Sprintf("%v", st.NetworkId),
+		})
+
+		nodeRecords = append(nodeRecords, &node.Record{
+			Enr:                     st.NodeRecord,
+			LastConnectTime:         sql.NullTime{Time: now, Valid: true},
+			ConsecutiveDialAttempts: 0,
+			CGC:                     &st.Cgc,
+		})
+	}
+
+	// Bulk insert consensus records.
+	if len(consensusRecords) > 0 {
+		if err := c.persistence.BulkInsertNodeRecordConsensus(ctx, consensusRecords); err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				perrors.Wrap(err, "failed to bulk insert node record consensus").Error(),
+			)
+		}
+
+		// Update metrics for all successfully inserted records.
+		for _, record := range consensusRecords {
+			c.metrics.AddConsensusNodeRecordStatusReceived(1, "unknown", "success", record.NetworkID, fmt.Sprintf("0x%x", record.ForkDigest))
+		}
+
+		// Update node records individually.
+		for _, nodeRecord := range nodeRecords {
+			if err := c.persistence.UpdateNodeRecord(ctx, nodeRecord); err != nil {
+				return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to update node record").Error())
+			}
+		}
+	}
+
+	return &xatu.CreateConsensusNodeRecordStatusesResponse{}, nil
+}
+
 func (c *Client) CoordinateExecutionNodeRecords(ctx context.Context, req *xatu.CoordinateExecutionNodeRecordsRequest) (*xatu.CoordinateExecutionNodeRecordsResponse, error) {
 	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
 		md, ok := metadata.FromIncomingContext(ctx)

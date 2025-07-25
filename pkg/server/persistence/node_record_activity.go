@@ -90,8 +90,6 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	)
 	sbsub.GroupBy("enr")
 
-	subQuery, subArgs := sbsub.Build()
-
 	sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	sb.Select(
 		"nre.enr as enr",
@@ -101,7 +99,7 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	sb.From("node_record_execution as nre")
 	sb.JoinWithOption(
 		"LEFT",
-		"("+subQuery+") as nra",
+		sb.BuilderAs(sbsub, "nra"),
 		"nra.enr = nre.enr",
 	)
 
@@ -137,14 +135,6 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	sb.Limit(limit)
 
 	sqlQuery, args := sb.Build()
-
-	// Replace the first argument with the subquery argument if it exists
-	if len(args) > 0 && len(subArgs) > 0 {
-		args[0] = subArgs[0]
-	} else if len(subArgs) > 0 {
-		// If main query has no args but subquery does, prepend subquery args
-		args = append(subArgs, args...)
-	}
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
@@ -192,8 +182,6 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	psb.Where(psb.GreaterThan("nra.update_time", sqlbuilder.Raw("now() - interval '12 hours'")))
 	psb.GroupBy("nra.enr")
 
-	subQuery, subArgs := psb.Build()
-
 	// main query: get node records that are available
 	sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
 
@@ -205,7 +193,7 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	sb.From("node_record_consensus as nrc")
 	sb.Join("node_record as nr", "nr.enr = nrc.enr")
 	sb.JoinWithOption(sqlbuilder.LeftJoin,
-		"("+subQuery+") as nra",
+		sb.BuilderAs(psb, "nra"),
 		"nra.enr = nrc.enr",
 	)
 
@@ -235,14 +223,6 @@ func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID
 	sb.Limit(limit)
 
 	sqlQuery, args := sb.Build()
-
-	// Replace the first argument with the subquery argument if it exists
-	if len(args) > 0 && len(subArgs) > 0 {
-		args[0] = subArgs[0]
-	} else if len(subArgs) > 0 {
-		// If main query has no args but subquery does, prepend subquery args
-		args = append(subArgs, args...)
-	}
 
 	rows, err := c.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {

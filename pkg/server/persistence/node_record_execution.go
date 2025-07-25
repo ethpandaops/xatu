@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"

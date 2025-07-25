@@ -169,8 +169,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 			if status != nil {
 				s.NetworkId = status.NetworkID
-				s.TotalDifficulty = status.TD.String()
-				s.Head = status.Head[:]
+				s.Head = status.LatestBlockHash[:]
 				s.Genesis = status.Genesis[:]
 				s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
 					Hash: status.ForkID.Hash[:],

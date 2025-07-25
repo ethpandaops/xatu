@@ -33,8 +33,6 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 
 	sql, args := ib.Build()
 
-	fmt.Printf("sql: %s - %s\n", sql, args)
-
 	_, err := c.db.ExecContext(ctx, sql, args...)
 
 	if err != nil {

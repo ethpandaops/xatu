@@ -45,6 +45,7 @@ jobs:
             xatu_sentry_image: ethpandaops/xatu:local
             beacon_subscriptions:
             - attestation
+            - single_attestation
             - block
             - block_gossip
             - chain_reorg

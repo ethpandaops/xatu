@@ -15,4 +15,5 @@ enum ModuleName {
   EL_MIMICRY = 6;
   RELAY_MONITOR = 7;
   TYSM = 8;
+  SIDECAR = 9;
 }

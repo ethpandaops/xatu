@@ -54,11 +54,10 @@ func (p *Processor) handleGossipBeaconBlock(
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	// TODO(fulu): Add Fulu blocks in Hermes
-	// case *eth.TraceEventFuluBlock:
-	// 	root, err = evt.Block.GetBlock().HashTreeRoot()
-	// 	slot = evt.Block.GetBlock().GetSlot()
-	// 	proposerIndex = evt.Block.GetBlock().GetProposerIndex()
+	case *events.TraceEventFuluBlock:
+		root, err = evt.Block.GetBlock().HashTreeRoot()
+		slot = evt.Block.GetBlock().GetSlot()
+		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
 	default:
 		return fmt.Errorf("handleGossipBeaconBlock(): called with unknown block type")
 	}

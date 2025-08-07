@@ -31,7 +31,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/holiman/uint256 v1.3.2
+	github.com/holiman/uint256 877b21601e12d92e03747642c00561968415afcf
 	github.com/huandu/go-sqlbuilder v1.36.0
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/klauspost/compress v1.18.0

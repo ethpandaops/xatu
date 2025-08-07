@@ -24,6 +24,7 @@ var gossipsubTopicToXatuEventMap = map[string]string{
 	p2p.GossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
 	p2p.GossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
 	p2p.GossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	p2p.GossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
 	p2p.GossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
 }
 
@@ -122,6 +123,25 @@ func (p *Processor) handleHermesGossipSubEvent(
 		if err := p.handleGossipBlobSidecar(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub blob sidecar")
 		}
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String():
+		// Data column sidecars are currently always enabled
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this message based on trace/sharding config.
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*events.TraceEventDataColumnSidecar)
+		if !ok {
+			return errors.New("invalid payload type for data column sidecar HandleMessage event")
+		}
+
+		if err := p.handleGossipDataColumnSidecar(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub data column sidecar")
+		}
 
 	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String():
 		if !p.events.GossipSubAggregateAndProofEnabled {
@@ -142,7 +162,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 		}
 
 	default:
-		p.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
+		p.log.WithField("topic", topic).Debug("Unsupported topic in HandleMessage event")
 	}
 
 	return nil

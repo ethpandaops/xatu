@@ -46,12 +46,11 @@ func SetupOTelSDK(ctx context.Context, tracerProvider *trace.TracerProvider) (sh
 }
 
 func NewResource(serviceName, serviceVersion string) (*resource.Resource, error) {
-	return resource.Merge(resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
-			semconv.ServiceVersion(serviceVersion),
-		),
-	)
+	// Create resource without schema URL to avoid conflicts
+	return resource.NewWithAttributes("",
+		semconv.ServiceName(serviceName),
+		semconv.ServiceVersion(serviceVersion),
+	), nil
 }
 
 func NewHTTPTraceProvider(ctx context.Context, res *resource.Resource, httpOpts []otlptracehttp.Option, opts ...trace.TracerProviderOption) (*trace.TracerProvider, error) {

@@ -225,6 +225,7 @@ transforms:
       libp2p_trace_gossipsub_beacon_attestation: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION"
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
+      libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
       libp2p_trace_rpc_meta_control_idontwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT"
@@ -256,6 +257,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_beacon_attestation
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
+      - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_idontwant
@@ -1262,6 +1264,101 @@ transforms:
       .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
       .proposer_index = .data.proposer_index
       .blob_index = .data.index
+      .state_root = .data.state_root
+      .parent_root = .data.parent_root
+
+      peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
+      if err != null {
+        .error = err
+        .error_description = "failed to generate peer id unique key"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .peer_id_unique_key = seahash(peer_id_key)
+      .message_id = .meta.client.additional_data.message_id
+      .message_size = .meta.client.additional_data.message_size
+
+      topicParts, err = split(.meta.client.additional_data.topic, "/")
+      if err != null {
+          .error = err
+          .error_description = "failed to split topic"
+      } else {
+        if length(topicParts) != 5 {
+            .errDebug = {
+                "topic": .meta.client.additional_data.topic,
+            }
+            .error_description = "failed to split topic"
+            log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      .topic_layer = topicParts[1]
+      .topic_fork_digest_value = topicParts[2]
+      .topic_name = topicParts[3]
+      .topic_encoding = topicParts[4]
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
+  libp2p_trace_gossipsub_data_column_sidecar_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .wallclock_slot = .meta.client.additional_data.wallclock_slot.number
+      wallclock_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_slot_start_date_time = to_unix_timestamp(wallclock_slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .wallclock_epoch = .meta.client.additional_data.epoch.number
+      wallclock_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+      if err == null {
+        .wallclock_epoch_start_date_time = to_unix_timestamp(wallclock_epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse wallclock epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .propagation_slot_start_diff = .meta.client.additional_data.propagation.slot_start_diff
+      .proposer_index = .data.proposer_index
+      .column_index = .data.index
+      .kzg_commitments_count = .data.kzg_commitments_count
       .state_root = .data.state_root
       .parent_root = .data.parent_root
 
@@ -2467,6 +2564,26 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: libp2p_gossipsub_blob_sidecar
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_gossipsub_data_column_sidecar_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_gossipsub_data_column_sidecar_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_gossipsub_data_column_sidecar
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

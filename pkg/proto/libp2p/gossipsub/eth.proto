@@ -26,4 +26,5 @@ message DataColumnSidecar {
     google.protobuf.UInt64Value proposer_index = 3 [json_name = "proposer_index"];
     google.protobuf.StringValue state_root = 4 [json_name = "state_root"];
     google.protobuf.StringValue parent_root = 5 [json_name = "parent_root"];
+    google.protobuf.UInt32Value kzg_commitments_count = 6 [json_name = "kzg_commitments_count"];
 }

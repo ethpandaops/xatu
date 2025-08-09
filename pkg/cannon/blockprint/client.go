@@ -52,10 +52,10 @@ func (c *Client) get(ctx context.Context, path string) (json.RawMessage, error) 
 
 	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
 
-	resp := new(json.RawMessage)
+	var resp json.RawMessage
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, err
 	}
 
-	return *resp, nil
+	return resp, nil
 }

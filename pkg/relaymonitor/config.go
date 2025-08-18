@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
@@ -42,6 +43,9 @@ type Config struct {
 	FetchProposerPayloadDelivered bool `yaml:"fetchProposerPayloadDelivered" default:"true"`
 
 	ValidatorRegistrations registrations.Config `yaml:"validatorRegistrations"`
+
+	// Coordinator configuration for persistence
+	Coordinator *coordinator.Config `yaml:"coordinator"`
 
 	// Backfill configuration for historical slot data
 	Backfill *BackfillConfig `yaml:"backfill"`
@@ -102,55 +106,16 @@ type BackfillConfig struct {
 	// Enabled controls whether backfill is active
 	Enabled bool `yaml:"enabled" default:"false"`
 
-	// To configures how far back to backfill
-	To BackfillTo `yaml:"to"`
+	// MinimumSlot is the minimum slot to backfill to (0 for genesis)
+	MinimumSlot uint64 `yaml:"minimumSlot" default:"0"`
 
-	// RateLimit controls backfill speed
-	RateLimit BackfillRateLimit `yaml:"rateLimit"`
-}
-
-// BackfillTo specifies the backfill target
-type BackfillTo struct {
-	// Epoch number to backfill to (-1 for genesis)
-	Epoch *int64 `yaml:"epoch"`
-
-	// Fork name to backfill to (e.g., "bellatrix", "capella", "deneb")
-	Fork *string `yaml:"fork"`
-}
-
-// BackfillRateLimit controls backfill request rate
-type BackfillRateLimit struct {
-	// RequestsPerSecond limits API requests per second per relay
-	RequestsPerSecond int `yaml:"requestsPerSecond" default:"2"`
-
-	// SlotsPerRequest controls how many slots to fetch per request
-	SlotsPerRequest int `yaml:"slotsPerRequest" default:"10"`
-
-	// DelayBetweenRelays adds delay between different relay requests (in milliseconds)
-	DelayBetweenRelays human.Duration `yaml:"delayBetweenRelays" default:"100ms"`
+	// CheckEveryDuration is how often to check for new work
+	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"30s"`
 }
 
 func (c *BackfillConfig) Validate() error {
 	if !c.Enabled {
 		return nil
-	}
-
-	// Validate target configuration
-	if c.To.Epoch == nil && c.To.Fork == nil {
-		// Default to genesis if nothing specified
-		return nil
-	}
-
-	if c.To.Epoch != nil && c.To.Fork != nil {
-		return errors.New("cannot specify both epoch and fork for backfill target")
-	}
-
-	if c.RateLimit.RequestsPerSecond <= 0 {
-		return errors.New("requestsPerSecond must be greater than 0")
-	}
-
-	if c.RateLimit.SlotsPerRequest <= 0 {
-		return errors.New("slotsPerRequest must be greater than 0")
 	}
 
 	return nil

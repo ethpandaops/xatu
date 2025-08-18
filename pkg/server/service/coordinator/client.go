@@ -17,6 +17,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/cannon"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/relaymonitor"
 	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -759,6 +760,66 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 	}
 
 	return &xatu.UpsertCannonLocationResponse{}, nil
+}
+
+func (c *Client) GetRelayMonitorLocation(ctx context.Context, req *xatu.GetRelayMonitorLocationRequest) (*xatu.GetRelayMonitorLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	location, err := c.persistence.GetRelayMonitorLocationByNetworkIDTypeAndRelay(ctx, req.MetaNetworkName, req.MetaClientName, req.Type.Enum().String(), req.RelayName)
+	if err != nil && err != persistence.ErrRelayMonitorLocationNotFound {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get relay monitor location from db").Error())
+	}
+
+	rsp := &xatu.GetRelayMonitorLocationResponse{}
+
+	if location == nil {
+		return rsp, nil
+	}
+
+	protoLoc, err := location.Unmarshal()
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to unmarshal relay monitor location").Error())
+	}
+
+	return &xatu.GetRelayMonitorLocationResponse{
+		Location: protoLoc,
+	}, nil
+}
+
+func (c *Client) UpsertRelayMonitorLocation(ctx context.Context, req *xatu.UpsertRelayMonitorLocationRequest) (*xatu.UpsertRelayMonitorLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	newLocation := &relaymonitor.Location{}
+
+	err := newLocation.Marshal(req.Location)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, perrors.Wrap(err, "failed to marshal relay monitor location").Error())
+	}
+
+	err = c.persistence.UpsertRelayMonitorLocation(ctx, newLocation)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to upsert relay monitor location to db").Error())
+	}
+
+	return &xatu.UpsertRelayMonitorLocationResponse{}, nil
 }
 
 func (c *Client) secureRandomInt(input int) (int, error) {

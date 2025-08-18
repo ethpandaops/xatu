@@ -55,6 +55,8 @@ type RelayMonitor struct {
 	validatorRegistrationMonitor *registrations.ValidatorMonitor
 
 	regestationEventsCh chan *registrations.ValidatorRegistrationEvent
+
+	backfillManager *BackfillManager
 }
 
 const (
@@ -115,6 +117,11 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		bidCache:                     NewDuplicateBidCache(time.Minute * 13),
 		regestationEventsCh:          regestationEventsCh,
 		validatorRegistrationMonitor: registrations.NewValidatorMonitor(log, &config.ValidatorRegistrations, relays, client, regestationEventsCh),
+	}
+
+	// Initialize backfill manager if configured
+	if config.Backfill != nil {
+		relayMonitor.backfillManager = NewBackfillManager(relayMonitor)
 	}
 
 	return relayMonitor, nil
@@ -180,11 +187,23 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 		}
 	}
 
+	// Start backfill manager if configured
+	if r.backfillManager != nil {
+		if err := r.backfillManager.Start(ctx); err != nil {
+			r.log.WithError(err).Error("Failed to start backfill manager")
+		}
+	}
+
 	cancel := make(chan os.Signal, 1)
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
 	r.log.Printf("Caught signal: %v", sig)
+
+	// Stop backfill manager if running
+	if r.backfillManager != nil {
+		r.backfillManager.Stop()
+	}
 
 	r.log.Printf("Flushing sinks")
 

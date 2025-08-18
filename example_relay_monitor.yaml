@@ -67,6 +67,21 @@ schedule:
     - "4s"
     - "12s"
 
+# Backfill configuration (optional)
+# Enables historical slot data backfilling from relays
+# This is disabled by default
+backfill:
+  enabled: false  # Set to true to enable backfilling
+  to:
+    # Choose one of the following:
+    # epoch: 0       # Backfill to specific epoch (use -1 for genesis)
+    # fork: "deneb"  # Backfill to a specific fork (phase0, altair, bellatrix, capella, deneb)
+    # If neither is specified, backfills to genesis
+  rateLimit:
+    requestsPerSecond: 2      # API requests per second per relay
+    slotsPerRequest: 10       # Number of slots to fetch per request
+    delayBetweenRelays: 100ms # Delay between different relay requests
+
 outputs:
 - name: xatu
   type: xatu

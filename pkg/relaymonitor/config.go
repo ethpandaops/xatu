@@ -42,6 +42,9 @@ type Config struct {
 	FetchProposerPayloadDelivered bool `yaml:"fetchProposerPayloadDelivered" default:"true"`
 
 	ValidatorRegistrations registrations.Config `yaml:"validatorRegistrations"`
+
+	// Backfill configuration for historical slot data
+	Backfill *BackfillConfig `yaml:"backfill"`
 }
 
 func (c *Config) Validate() error {
@@ -73,6 +76,12 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid validator registrations config: %w", err)
 	}
 
+	if c.Backfill != nil {
+		if err := c.Backfill.Validate(); err != nil {
+			return fmt.Errorf("invalid backfill config: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -83,6 +92,65 @@ type Schedule struct {
 func (s *Schedule) Validate() error {
 	if len(s.AtSlotTimes) == 0 {
 		return errors.New("atSlotTimes must be provided")
+	}
+
+	return nil
+}
+
+// BackfillConfig configures historical slot data backfilling
+type BackfillConfig struct {
+	// Enabled controls whether backfill is active
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	// To configures how far back to backfill
+	To BackfillTo `yaml:"to"`
+
+	// RateLimit controls backfill speed
+	RateLimit BackfillRateLimit `yaml:"rateLimit"`
+}
+
+// BackfillTo specifies the backfill target
+type BackfillTo struct {
+	// Epoch number to backfill to (-1 for genesis)
+	Epoch *int64 `yaml:"epoch"`
+
+	// Fork name to backfill to (e.g., "bellatrix", "capella", "deneb")
+	Fork *string `yaml:"fork"`
+}
+
+// BackfillRateLimit controls backfill request rate
+type BackfillRateLimit struct {
+	// RequestsPerSecond limits API requests per second per relay
+	RequestsPerSecond int `yaml:"requestsPerSecond" default:"2"`
+
+	// SlotsPerRequest controls how many slots to fetch per request
+	SlotsPerRequest int `yaml:"slotsPerRequest" default:"10"`
+
+	// DelayBetweenRelays adds delay between different relay requests (in milliseconds)
+	DelayBetweenRelays human.Duration `yaml:"delayBetweenRelays" default:"100ms"`
+}
+
+func (c *BackfillConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+
+	// Validate target configuration
+	if c.To.Epoch == nil && c.To.Fork == nil {
+		// Default to genesis if nothing specified
+		return nil
+	}
+
+	if c.To.Epoch != nil && c.To.Fork != nil {
+		return errors.New("cannot specify both epoch and fork for backfill target")
+	}
+
+	if c.RateLimit.RequestsPerSecond <= 0 {
+		return errors.New("requestsPerSecond must be greater than 0")
+	}
+
+	if c.RateLimit.SlotsPerRequest <= 0 {
+		return errors.New("slotsPerRequest must be greater than 0")
 	}
 
 	return nil

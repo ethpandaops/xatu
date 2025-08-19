@@ -63,8 +63,8 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	var currentSlot uint64
 
 	if location == nil {
-		// Start from slot 0 if no location exists
-		currentSlot = 0
+		// Start from current wallclock slot if no location exists
+		currentSlot = wallclockSlot.Number()
 	} else {
 		slot, err := f.getSlot(location)
 		if err != nil {
@@ -139,8 +139,10 @@ func (f *ForwardFillIterator) getSlot(location *xatu.RelayMonitorLocation) (uint
 		}
 
 		if data.SlotMarker == nil {
-			// Start from slot 0
-			return 0, nil
+			// Start from current wallclock slot
+			wallclockSlot := f.wallclock.Slots().Current()
+
+			return wallclockSlot.Number(), nil
 		}
 
 		return data.SlotMarker.CurrentSlot, nil
@@ -152,8 +154,10 @@ func (f *ForwardFillIterator) getSlot(location *xatu.RelayMonitorLocation) (uint
 		}
 
 		if data.SlotMarker == nil {
-			// Start from slot 0
-			return 0, nil
+			// Start from current wallclock slot
+			wallclockSlot := f.wallclock.Slots().Current()
+
+			return wallclockSlot.Number(), nil
 		}
 
 		return data.SlotMarker.CurrentSlot, nil

@@ -495,7 +495,7 @@ func (p *Processor) handleSendRPCEvent(
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
-		data.GetPeerId().String(),
+		data.GetPeerId().GetValue(),
 		clientMeta,
 		traceMeta,
 		event,
@@ -612,7 +612,7 @@ func (p *Processor) handleRecvRPCEvent(
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
-		data.GetPeerId().String(),
+		data.GetPeerId().GetValue(),
 		clientMeta,
 		traceMeta,
 		event,
@@ -690,7 +690,7 @@ func (p *Processor) handleDropRPCEvent(
 	// 2. RPC meta level messages.
 	rpcMetaDecoratedEvents, err := p.parseRPCMeta(
 		rootEventID,
-		data.GetPeerId().String(),
+		data.GetPeerId().GetValue(),
 		clientMeta,
 		traceMeta,
 		event,

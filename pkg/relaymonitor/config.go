@@ -104,12 +104,12 @@ func (s *Schedule) Validate() error {
 // ConsistencyConfig configures background processes to ensure complete slot data
 type ConsistencyConfig struct {
 	// CheckEveryDuration is how often to check for new work
-	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"5s"`
+	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"1s"`
 
 	// RateLimitPerRelay is the maximum requests per second per relay
 	// Supports fractional rates (e.g., 0.5 = 1 request every 2 seconds)
 	// Both forward fill and backfill share this limit, with forward fill getting priority
-	RateLimitPerRelay float64 `yaml:"rateLimitPerRelay" default:"10"`
+	RateLimitPerRelay float64 `yaml:"rateLimitPerRelay" default:"0.5"`
 
 	// Backfill configuration for historical data
 	Backfill *BackfillConfig `yaml:"backfill"`
@@ -127,9 +127,6 @@ func (c *ConsistencyConfig) Validate() error {
 	if c.RateLimitPerRelay <= 0 {
 		return errors.New("rateLimitPerRelay must be positive (supports decimals, e.g., 0.5 for 1 req/2s)")
 	}
-
-	// No validation needed for Backfill and ForwardFill configs
-	// They only contain simple boolean and uint64 fields
 
 	return nil
 }

@@ -43,10 +43,9 @@ func (r *RelayMonitor) startConsistencyProcesses(ctx context.Context) error {
 	rateLimiters := make(map[string]*rate.Limiter)
 
 	for _, relayClient := range r.relays {
-		// Single shared rate limiter - full capacity available to both processes
 		limiter := rate.NewLimiter(
 			rate.Limit(r.Config.Consistency.RateLimitPerRelay),
-			1, // No bursting - steady rate only to avoid relay bans
+			1, // No bursting
 		)
 		rateLimiters[relayClient.Name()] = limiter
 	}
@@ -245,7 +244,7 @@ func (r *RelayMonitor) runForwardFillIterator(ctx context.Context, relayClient *
 			// Apply rate limiting (forward fill has priority)
 			err = limiter.Wait(ctx)
 			if err != nil {
-				log.WithError(err).Error("Rate limiter error")
+				log.WithError(err).Debug("Rate limiter error")
 
 				continue
 			}

@@ -79,7 +79,8 @@ func (b *BackfillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	// Check if we've reached the target
 	if backfillSlot <= uint64(b.toSlot) {
 		b.log.Debug("Backfill complete")
-		return nil, nil
+
+		return nil, nil //nolint:nilnil // nil slot indicates backfill complete
 	}
 
 	// Return the next slot to backfill (working backwards)

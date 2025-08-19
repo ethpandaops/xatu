@@ -135,7 +135,7 @@ func (r *RelayMonitor) runBackfillIterator(ctx context.Context, relayClient *rel
 
 			// Update metrics
 			metrics.SetCurrentSlot("backfill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, uint64(*nextSlot))
-			lag := int64(*nextSlot) - int64(r.Config.Consistency.Backfill.ToSlot)
+			lag := int64(*nextSlot) - int64(r.Config.Consistency.Backfill.ToSlot) //nolint:gosec // slots won't overflow int64
 			metrics.SetLag("backfill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, lag)
 
 			// Process the slot
@@ -235,7 +235,7 @@ func (r *RelayMonitor) runForwardFillIterator(ctx context.Context, relayClient *
 			// Update metrics
 			wallclockSlot := r.ethereum.Wallclock().Slots().Current()
 			metrics.SetCurrentSlot("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, uint64(*nextSlot))
-			lag := int64(wallclockSlot.Number()) - int64(*nextSlot)
+			lag := int64(wallclockSlot.Number()) - int64(*nextSlot) //nolint:gosec // slots won't overflow int64
 			metrics.SetLag("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, lag)
 
 			// Process the slot

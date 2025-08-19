@@ -299,7 +299,7 @@ func (r *RelayMonitor) createNewClientMeta(ctx context.Context) (*xatu.ClientMet
 		Implementation: xatu.Implementation,
 		ModuleName:     xatu.ModuleName_RELAY_MONITOR,
 		Os:             runtime.GOOS,
-		ClockDrift:     uint64(r.clockDrift.Milliseconds()),
+		ClockDrift:     uint64(r.clockDrift.Milliseconds()), //nolint:gosec // drift won't overflow
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
 				Name: r.Config.Ethereum.Network,

@@ -77,7 +77,7 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	// Check if we're caught up
 	if currentSlot >= wallclockSlot.Number() {
 		// We're caught up, nothing to do
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil slot indicates no work available
 	}
 
 	// Return the next slot to process (working forward)

@@ -126,6 +126,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create coordinator client: %w", err)
 		}
+
 		relayMonitor.coordinatorClient = coordinatorClient
 	}
 
@@ -198,9 +199,9 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 			r.log.WithError(err).Error("Failed to start coordinator client")
 		}
 
-		// Start backfilling if configured
-		if err := r.startBackfilling(ctx); err != nil {
-			r.log.WithError(err).Error("Failed to start backfilling")
+		// Start consistency processes if configured
+		if err := r.startConsistencyProcesses(ctx); err != nil {
+			r.log.WithError(err).Error("Failed to start consistency processes")
 		}
 	}
 

@@ -47,8 +47,8 @@ type Config struct {
 	// Coordinator configuration for persistence
 	Coordinator *coordinator.Config `yaml:"coordinator"`
 
-	// Backfill configuration for historical slot data
-	Backfill *BackfillConfig `yaml:"backfill"`
+	// Consistency configuration for ensuring complete slot data
+	Consistency *ConsistencyConfig `yaml:"consistency"`
 }
 
 func (c *Config) Validate() error {
@@ -80,9 +80,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid validator registrations config: %w", err)
 	}
 
-	if c.Backfill != nil {
-		if err := c.Backfill.Validate(); err != nil {
-			return fmt.Errorf("invalid backfill config: %w", err)
+	if c.Consistency != nil {
+		if err := c.Consistency.Validate(); err != nil {
+			return fmt.Errorf("invalid consistency config: %w", err)
 		}
 	}
 
@@ -101,24 +101,52 @@ func (s *Schedule) Validate() error {
 	return nil
 }
 
+// ConsistencyConfig configures background processes to ensure complete slot data
+type ConsistencyConfig struct {
+	// CheckEveryDuration is how often to check for new work
+	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"5s"`
+
+	// RateLimitPerRelay is the maximum requests per second per relay
+	// Supports fractional rates (e.g., 0.5 = 1 request every 2 seconds)
+	// Both forward fill and backfill share this limit, with forward fill getting priority
+	RateLimitPerRelay float64 `yaml:"rateLimitPerRelay" default:"10"`
+
+	// Backfill configuration for historical data
+	Backfill *BackfillConfig `yaml:"backfill"`
+
+	// ForwardFill configuration for catching up gaps
+	ForwardFill *ForwardFillConfig `yaml:"forwardFill"`
+}
+
+func (c *ConsistencyConfig) Validate() error {
+	// Ensure we have a valid check interval
+	if c.CheckEveryDuration.Duration <= 0 {
+		return errors.New("checkEveryDuration must be positive")
+	}
+
+	if c.RateLimitPerRelay <= 0 {
+		return errors.New("rateLimitPerRelay must be positive (supports decimals, e.g., 0.5 for 1 req/2s)")
+	}
+
+	// No validation needed for Backfill and ForwardFill configs
+	// They only contain simple boolean and uint64 fields
+
+	return nil
+}
+
 // BackfillConfig configures historical slot data backfilling
 type BackfillConfig struct {
 	// Enabled controls whether backfill is active
 	Enabled bool `yaml:"enabled" default:"false"`
 
-	// MinimumSlot is the minimum slot to backfill to (0 for genesis)
-	MinimumSlot uint64 `yaml:"minimumSlot" default:"0"`
-
-	// CheckEveryDuration is how often to check for new work
-	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"30s"`
+	// ToSlot is the minimum slot to backfill to (0 for genesis)
+	ToSlot uint64 `yaml:"toSlot" default:"0"`
 }
 
-func (c *BackfillConfig) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
-
-	return nil
+// ForwardFillConfig configures forward filling to catch up gaps
+type ForwardFillConfig struct {
+	// Enabled controls whether forward fill is active
+	Enabled bool `yaml:"enabled" default:"false"`
 }
 
 func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {

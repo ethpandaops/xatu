@@ -18,12 +18,10 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/ethwallclock"
-	aBlockprint "github.com/ethpandaops/xatu/pkg/cannon/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
-	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -394,14 +392,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 		backfillingCheckpointIteratorMetrics := iterator.NewBackfillingCheckpointMetrics("xatu_cannon")
 
-		blockprintIteratorMetrics := iterator.NewBlockprintMetrics("xatu_cannon")
-
 		finalizedCheckpoint := "finalized"
-
-		blockprintClient := aBlockprint.NewClient(
-			c.Config.Derivers.BlockClassificationConfig.Endpoint,
-			c.Config.Derivers.BlockClassificationConfig.Headers,
-		)
 
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
@@ -555,22 +546,6 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				),
 				c.beacon,
 				clientMeta,
-			),
-			blockprint.NewBlockClassificationDeriver(
-				c.log,
-				&c.Config.Derivers.BlockClassificationConfig,
-				iterator.NewBlockprintIterator(
-					c.log,
-					networkName,
-					networkID,
-					xatu.CannonType_BLOCKPRINT_BLOCK_CLASSIFICATION,
-					c.coordinatorClient,
-					&blockprintIteratorMetrics,
-					blockprintClient,
-				),
-				c.beacon,
-				clientMeta,
-				blockprintClient,
 			),
 			v1.NewBeaconBlobDeriver(
 				c.log,

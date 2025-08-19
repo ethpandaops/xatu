@@ -6,7 +6,6 @@ import (
 	"github.com/attestantio/go-eth2-client/spec"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
-	"github.com/ethpandaops/xatu/pkg/cannon/deriver/blockprint"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -30,7 +29,6 @@ var _ EventDeriver = &v2.ExecutionTransactionDeriver{}
 var _ EventDeriver = &v2.BLSToExecutionChangeDeriver{}
 var _ EventDeriver = &v2.WithdrawalDeriver{}
 var _ EventDeriver = &v2.BeaconBlockDeriver{}
-var _ EventDeriver = &blockprint.BlockClassificationDeriver{}
 var _ EventDeriver = &v2.ElaboratedAttestationDeriver{}
 var _ EventDeriver = &v1.ProposerDutyDeriver{}
 var _ EventDeriver = &v1.BeaconBlobDeriver{}

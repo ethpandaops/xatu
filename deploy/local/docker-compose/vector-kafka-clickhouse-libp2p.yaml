@@ -1537,7 +1537,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1610,7 +1612,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1666,7 +1670,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1722,7 +1728,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1793,7 +1801,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1873,7 +1883,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
@@ -1945,7 +1957,9 @@ transforms:
 
       # Extract peer_id from protobuf wrapper format if present
       if starts_with(string!(.data.peer_id), "value:") {
-        .data.peer_id = parse_regex!(string!(.data.peer_id), r'value:"([^"]+)"').captures[0]
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
       }
 
       peer_id_key, err = .data.peer_id + .meta_network_name

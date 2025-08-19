@@ -326,10 +326,11 @@ enum RelayMonitorType {
   RELAY_MONITOR_PAYLOAD_DELIVERED = 1;
 }
 
-// Track current slot and backfill progress
+// Track current slot for consistency processes
+// Each process type (backfill/forward-fill) uses a unique relay_name suffix
+// to maintain separate records and avoid race conditions
 message RelayMonitorSlotMarker {
-  uint64 current_slot = 1;  // Current/head slot being processed
-  int64 backfill_slot = 2;  // Backfill slot being processed
+  uint64 current_slot = 1;  // Current slot being processed
 }
 
 message RelayMonitorLocationBidTrace {
@@ -343,7 +344,7 @@ message RelayMonitorLocationPayloadDelivered {
 message RelayMonitorLocation {
   string meta_network_name = 1;  // Network name (e.g., "mainnet", "holesky")
   string meta_client_name = 2;   // Client instance name for multi-instance support
-  string relay_name = 3;         // Relay being monitored
+  string relay_name = 3;         // Relay being monitored (includes process suffix)
   RelayMonitorType type = 4;
   oneof Data {
     RelayMonitorLocationBidTrace bid_trace = 5
@@ -356,7 +357,7 @@ message RelayMonitorLocation {
 message GetRelayMonitorLocationRequest {
   string meta_network_name = 1;  // Network name
   string meta_client_name = 2;   // Client instance name
-  string relay_name = 3;         // Relay name
+  string relay_name = 3;         // Relay name (includes process suffix)
   RelayMonitorType type = 4;
 }
 

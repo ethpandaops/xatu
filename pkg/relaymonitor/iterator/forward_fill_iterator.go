@@ -33,6 +33,9 @@ func NewForwardFillIterator(
 	wallclock *ethwallclock.EthereumBeaconChain,
 	checkInterval time.Duration,
 ) *ForwardFillIterator {
+	// Append ":forward_fill" suffix to relay name to create unique record
+	relayNameWithSuffix := relayName + ":forward_fill"
+
 	return &ForwardFillIterator{
 		log: log.
 			WithField("module", "relaymonitor/iterator/forward_fill").
@@ -41,7 +44,7 @@ func NewForwardFillIterator(
 		networkName:      networkName,
 		clientName:       clientName,
 		relayMonitorType: relayMonitorType,
-		relayName:        relayName,
+		relayName:        relayNameWithSuffix,
 		coordinator:      *coordinatorClient,
 		wallclock:        wallclock,
 		checkInterval:    checkInterval,
@@ -57,69 +60,52 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 		return nil, errors.Wrap(err, "failed to get relay monitor location")
 	}
 
+	var currentSlot uint64
+
 	if location == nil {
-		// Start from current slot if no location exists
-		slot := phase0.Slot(wallclockSlot.Number())
+		// Start from slot 0 if no location exists
+		currentSlot = 0
+	} else {
+		slot, err := f.getSlot(location)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get slot from location")
+		}
 
-		return &slot, nil
-	}
-
-	marker, err := f.getMarker(location)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get marker from location")
+		currentSlot = slot
 	}
 
 	// Check if we're caught up
-	if marker.CurrentSlot >= wallclockSlot.Number() {
+	if currentSlot >= wallclockSlot.Number() {
 		// We're caught up, nothing to do
 		return nil, nil
 	}
 
-	// Return the next slot to process
-	nextSlot := phase0.Slot(marker.CurrentSlot + 1)
+	// Return the next slot to process (working forward)
+	nextSlot := phase0.Slot(currentSlot + 1)
 
 	return &nextSlot, nil
 }
 
 func (f *ForwardFillIterator) UpdateLocation(ctx context.Context, slot phase0.Slot) error {
-	// Get current location
-	location, err := f.coordinator.GetRelayMonitorLocation(ctx, f.relayMonitorType, f.networkName, f.clientName, f.relayName)
-	if err != nil {
-		return errors.Wrap(err, "failed to get relay monitor location")
-	}
-
-	var backfillSlot int64
-	if location == nil {
-		// Initialize with current slot
-		backfillSlot = int64(slot)
-	} else {
-		marker, err := f.getMarker(location)
-		if err != nil {
-			return errors.Wrap(err, "failed to get marker from location")
-		}
-
-		backfillSlot = marker.BackfillSlot
-	}
-
-	// Create new location with updated current slot
-	newLocation := f.createLocation(uint64(slot), backfillSlot)
+	// Create new location with updated slot
+	newLocation := f.createLocation(uint64(slot))
 
 	f.log.WithField("slot", slot).Debug("Updating forward fill location")
 
 	return f.coordinator.UpsertRelayMonitorLocation(ctx, newLocation)
 }
 
-func (f *ForwardFillIterator) createLocation(currentSlot uint64, backfillSlot int64) *xatu.RelayMonitorLocation {
+func (f *ForwardFillIterator) createLocation(slot uint64) *xatu.RelayMonitorLocation {
 	location := &xatu.RelayMonitorLocation{
 		MetaNetworkName: f.networkName,
 		MetaClientName:  f.clientName,
-		RelayName:       f.relayName,
+		RelayName:       f.relayName, // Already includes ":forward_fill" suffix
 		Type:            f.relayMonitorType,
 	}
 
+	// For forward fill, we only use current_slot field
 	marker := &xatu.RelayMonitorSlotMarker{
-		CurrentSlot:  currentSlot,
-		BackfillSlot: backfillSlot,
+		CurrentSlot: slot,
 	}
 
 	switch f.relayMonitorType {
@@ -140,47 +126,39 @@ func (f *ForwardFillIterator) createLocation(currentSlot uint64, backfillSlot in
 	return location
 }
 
-func (f *ForwardFillIterator) getMarker(location *xatu.RelayMonitorLocation) (*xatu.RelayMonitorSlotMarker, error) {
+func (f *ForwardFillIterator) getSlot(location *xatu.RelayMonitorLocation) (uint64, error) {
 	if location == nil {
-		return nil, errors.New("location is nil")
+		return 0, errors.New("location is nil")
 	}
 
 	switch f.relayMonitorType {
 	case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
 		data := location.GetBidTrace()
 		if data == nil {
-			return nil, errors.New("bid trace data is nil")
+			return 0, errors.New("bid trace data is nil")
 		}
 
 		if data.SlotMarker == nil {
-			wallclockSlot := f.wallclock.Slots().Current()
-
-			return &xatu.RelayMonitorSlotMarker{
-				CurrentSlot:  wallclockSlot.Number(),
-				BackfillSlot: int64(wallclockSlot.Number()),
-			}, nil
+			// Start from slot 0
+			return 0, nil
 		}
 
-		return data.SlotMarker, nil
+		return data.SlotMarker.CurrentSlot, nil
 
 	case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
 		data := location.GetPayloadDelivered()
 		if data == nil {
-			return nil, errors.New("payload delivered data is nil")
+			return 0, errors.New("payload delivered data is nil")
 		}
 
 		if data.SlotMarker == nil {
-			wallclockSlot := f.wallclock.Slots().Current()
-
-			return &xatu.RelayMonitorSlotMarker{
-				CurrentSlot:  wallclockSlot.Number(),
-				BackfillSlot: int64(wallclockSlot.Number()),
-			}, nil
+			// Start from slot 0
+			return 0, nil
 		}
 
-		return data.SlotMarker, nil
+		return data.SlotMarker.CurrentSlot, nil
 
 	default:
-		return nil, fmt.Errorf("unknown relay monitor type: %s", f.relayMonitorType)
+		return 0, fmt.Errorf("unknown relay monitor type: %s", f.relayMonitorType)
 	}
 }

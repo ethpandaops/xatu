@@ -201,12 +201,15 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 
 	if err != nil {
 		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
+
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
+
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -227,6 +230,7 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 
 	if err := json.NewDecoder(resp.Body).Decode(&rawPayloads); err != nil {
 		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
+
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
@@ -281,8 +285,10 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 
 	if err != nil {
 		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
+
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -319,6 +325,7 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 
 	if errr := json.NewDecoder(resp.Body).Decode(&rawRegistrations); errr != nil {
 		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
+
 		return nil, fmt.Errorf("failed to decode response: %w", errr)
 	}
 

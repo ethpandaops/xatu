@@ -2123,7 +2123,6 @@ transforms:
       .meta_client_geo_country_code = .meta_client_geo_country_code || ""
       .meta_client_geo_continent_code = .meta_client_geo_continent_code || ""
 
-      .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)

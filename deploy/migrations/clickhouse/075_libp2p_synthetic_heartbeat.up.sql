@@ -1,7 +1,6 @@
 -- Creating local and distributed tables for libp2p_synthetic_heartbeat
 CREATE TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
 (
-    unique_key Int64,
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     remote_peer_id_unique_key Int64,
@@ -37,13 +36,22 @@ CREATE TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
     meta_client_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String)
-) Engine = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
+) Engine = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}',
+    '{replica}',
+    updated_date_time
+)
 PARTITION BY toYYYYMM(event_date_time)
-ORDER BY (event_date_time, unique_key, meta_network_name, meta_client_name);
+ORDER BY (
+    event_date_time,
+    meta_network_name,
+    meta_client_name,
+    remote_peer_id_unique_key,
+    updated_date_time
+);
 
 ALTER TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains heartbeat events from libp2p peers',
-COMMENT COLUMN unique_key 'Unique identifier for each record',
 COMMENT COLUMN updated_date_time 'Timestamp when the record was last updated',
 COMMENT COLUMN event_date_time 'Timestamp of the heartbeat event',
 COMMENT COLUMN remote_peer_id_unique_key 'Unique key of the remote peer',
@@ -81,4 +89,15 @@ COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
 CREATE TABLE libp2p_synthetic_heartbeat ON CLUSTER '{cluster}' AS libp2p_synthetic_heartbeat_local
-ENGINE = Distributed('{cluster}', default, libp2p_synthetic_heartbeat_local, unique_key);
+ENGINE = Distributed(
+    '{cluster}',
+    default,
+    libp2p_synthetic_heartbeat_local,
+    cityHash64(
+        event_date_time,
+        meta_network_name,
+        meta_client_name,
+        remote_peer_id_unique_key,
+        updated_date_time
+    )
+);

@@ -16,9 +16,9 @@ import (
 
 // Map of libp2p core event types to Xatu event types
 var libp2pCoreToXatuEventMap = map[string]string{
-	TraceEvent_CONNECTED:    xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
-	TraceEvent_DISCONNECTED: xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
-	TraceEvent_HEARTBEAT:    xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String(),
+	TraceEvent_CONNECTED:           xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
+	TraceEvent_DISCONNECTED:        xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
+	TraceEvent_SYNTHETIC_HEARTBEAT: xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String(),
 }
 
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.

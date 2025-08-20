@@ -16,6 +16,7 @@ type EventConfig struct {
 	RemovePeerEnabled                 bool `yaml:"removePeerEnabled" default:"true"`
 	ConnectedEnabled                  bool `yaml:"connectedEnabled" default:"true"`
 	DisconnectedEnabled               bool `yaml:"disconnectedEnabled" default:"true"`
+	HeartbeatEnabled                  bool `yaml:"heartbeatEnabled" default:"true"`
 	JoinEnabled                       bool `yaml:"joinEnabled" default:"true"`
 	LeaveEnabled                      bool `yaml:"leaveEnabled" default:"false"`
 	GraftEnabled                      bool `yaml:"graftEnabled" default:"false"`

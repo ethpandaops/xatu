@@ -35,6 +35,7 @@ enum EventType {
   RPC_META_CONTROL_PRUNE = 22;
   RPC_META_SUBSCRIPTION = 23;
   RPC_META_MESSAGE = 24;
+  HEARTBEAT = 25;
 }
 
 message AddPeer {
@@ -153,6 +154,17 @@ message HandleMetadata {
   google.protobuf.StringValue error = 3;
   google.protobuf.FloatValue latency = 4;
   xatu.libp2p.Metadata metadata = 5;
+}
+
+message Heartbeat {
+  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.StringValue remote_peer = 2 [json_name = "remote_peer"];
+  google.protobuf.StringValue remote_maddrs = 3 [json_name = "remote_maddrs"];
+  google.protobuf.Int64Value latency_ms = 4 [json_name = "latency_ms"];
+  google.protobuf.StringValue agent_version = 5 [json_name = "agent_version"];
+  google.protobuf.UInt32Value direction = 6;
+  repeated string protocols = 7;
+  google.protobuf.Int64Value connection_age_ns = 8 [json_name = "connection_age_ns"];
 }
 
 // RPCMeta represents the RPC meta data for a peer. This is used to represent the highest level of

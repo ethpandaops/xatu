@@ -18,6 +18,7 @@ import (
 var libp2pCoreToXatuEventMap = map[string]string{
 	TraceEvent_CONNECTED:    xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
 	TraceEvent_DISCONNECTED: xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
+	TraceEvent_HEARTBEAT:    xatu.Event_LIBP2P_TRACE_HEARTBEAT.String(),
 }
 
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
@@ -64,6 +65,22 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host
 		}
 
 		return p.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
+
+	case xatu.Event_LIBP2P_TRACE_HEARTBEAT.String():
+		if !p.events.HeartbeatEnabled {
+			return nil
+		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleHeartbeatEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
@@ -139,6 +156,44 @@ func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceDisconnected{
 			Libp2PTraceDisconnected: data,
+		},
+	}
+
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (p *Processor) handleHeartbeatEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *host.TraceEvent,
+) error {
+	data, err := libp2p.TraceEventToHeartbeat(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to heartbeat event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHeartbeat{
+		Libp2PTraceHeartbeat: &xatu.ClientMeta_AdditionalLibP2PTraceHeartbeatData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_HEARTBEAT,
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceHeartbeat{
+			Libp2PTraceHeartbeat: data,
 		},
 	}
 

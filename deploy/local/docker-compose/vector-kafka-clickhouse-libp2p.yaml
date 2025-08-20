@@ -2037,7 +2037,6 @@ transforms:
     inputs:
       - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
     source: |-
-      log(., level: "info")
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
         .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
@@ -2098,17 +2097,45 @@ transforms:
         .remote_geo_autonomous_system_organization = .meta.server.additional_data.peer.geo.autonomous_system_organization
       }
 
-      # Agent version parsing
-      if is_string(.data.agent_version) && .data.agent_version != "" {
+      if is_string(.data.agent_version) {
         agent_version_cleaned = replace(to_string!(.data.agent_version), "teku/teku", "teku", count: 1)
         agent_version = split(agent_version_cleaned, "/", limit: 4)
         if length(agent_version) > 0 {
           if is_string(agent_version[0]) {
-            .agent_version = agent_version[0]
+            implementation, err = downcase(agent_version[0])
+            if err == null {
+              .remote_agent_implementation = implementation
+            }
           }
         }
-      } else {
-        .agent_version = ""
+        if length(agent_version) > 1 {
+          if is_string(agent_version[1]) {
+            .remote_agent_version = agent_version[1]
+            if is_string(.remote_agent_version) {
+              sematic_version, err = split(.remote_agent_version, ".", limit: 3)
+              if err == null {
+                if sematic_version[0] != null {
+                  version_major, err = replace(sematic_version[0], "v", "", count: 1)
+                  if err == null {
+                    .remote_agent_version_major = version_major
+                    .remote_agent_version_minor = sematic_version[1]
+                    if sematic_version[2] != null {
+                      version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                      if err == null {
+                        .remote_agent_version_patch = version_patch
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if length(agent_version) > 2 {
+          if is_string(agent_version[2]) && .remote_agent_implementation != "prysm" {
+            .remote_agent_platform = agent_version[2]
+          }
+        }
       }
 
       # Ensure all required LowCardinality geo fields have values (not null/undefined)

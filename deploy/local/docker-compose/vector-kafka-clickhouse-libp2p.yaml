@@ -290,9 +290,25 @@ transforms:
     inputs:
       - xatu_server_events_router.libp2p_trace_connected
       - xatu_server_events_router.libp2p_trace_disconnected
+      - xatu_server_events_router.libp2p_trace_add_peer
+      - xatu_server_events_router.libp2p_trace_remove_peer
+      - xatu_server_events_router.libp2p_trace_recv_rpc
+      - xatu_server_events_router.libp2p_trace_send_rpc
+      - xatu_server_events_router.libp2p_trace_drop_rpc
+      - xatu_server_events_router.libp2p_trace_graft
+      - xatu_server_events_router.libp2p_trace_prune
     source: |-
-      .peer_id = .data.remote_peer
-      key, err = .data.remote_peer + .meta_network_name
+      # Handle different peer_id field names
+      if exists(.data.remote_peer) {
+        .peer_id = .data.remote_peer
+      } else if exists(.data.peer_id) {
+        .peer_id = .data.peer_id
+      } else {
+        .error = "No peer_id field found"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      
+      key, err = .peer_id + .meta_network_name
       if err != null {
         .error = err
         .error_description = "failed to generate unique key"
@@ -1519,6 +1535,13 @@ transforms:
       }
       .rpc_meta_unique_key = rootEventKey
 
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1587,6 +1610,13 @@ transforms:
       }
       .rpc_meta_unique_key = rootEventKey
 
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1638,6 +1668,13 @@ transforms:
       }
       .rpc_meta_unique_key = rootEventKey
 
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1688,6 +1725,13 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .rpc_meta_unique_key = rootEventKey
+
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
@@ -1754,6 +1798,13 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .rpc_meta_unique_key = rootEventKey
+
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
@@ -1830,6 +1881,13 @@ transforms:
       }
       .rpc_meta_unique_key = rootEventKey
 
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
+
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1896,6 +1954,13 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .rpc_meta_unique_key = rootEventKey
+
+      # Extract peer_id from protobuf wrapper format if present
+      if starts_with(string!(.data.peer_id), "value:") {
+        # Remove the 'value:"' prefix and the trailing '"'
+        peer_id_temp = replace(string!(.data.peer_id), "value:\"", "")
+        .data.peer_id = replace(peer_id_temp, "\"", "")
+      }
 
       peer_id_key, err = .data.peer_id + .meta_network_name
       if err != null {

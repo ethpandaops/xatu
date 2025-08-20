@@ -1197,7 +1197,7 @@ sinks:
       - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
-    topic: libp2p-trace-heartbeat
+    topic: libp2p-trace-synthetic-heartbeat
     compression: snappy
     healthcheck:
       enabled: true

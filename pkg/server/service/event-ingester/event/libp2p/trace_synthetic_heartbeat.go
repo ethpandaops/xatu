@@ -3,7 +3,6 @@ package libp2p
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 
@@ -33,9 +32,13 @@ func (th *TraceSyntheticHeartbeat) Type() string {
 }
 
 func (th *TraceSyntheticHeartbeat) Validate(ctx context.Context) error {
-	_, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
+	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
 	if !ok {
 		return errors.New("failed to cast event data to TraceSyntheticHeartbeat")
+	}
+
+	if data.Libp2PTraceSyntheticHeartbeat.GetRemotePeer() == nil {
+		return errors.New("remote peer is nil")
 	}
 
 	return nil
@@ -46,8 +49,6 @@ func (th *TraceSyntheticHeartbeat) Filter(ctx context.Context) bool {
 }
 
 func (th *TraceSyntheticHeartbeat) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
-	fmt.Printf("APPENDING META TO SYNTHETIC HEARTBEAT: %s - %v\n", meta, th.event.Data)
-
 	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
 	if !ok {
 		th.log.Error("failed to get remote maddrs")

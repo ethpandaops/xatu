@@ -1847,7 +1847,7 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.gossipsub.eth.DataColumnSidecar libp2p_trace_gossipsub_data_column_sidecar = 77
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
-    xatu.libp2p.Heartbeat libp2p_trace_synthetic_heartbeat = 78
+    xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
   };
 }

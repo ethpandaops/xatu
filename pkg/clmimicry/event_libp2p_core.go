@@ -67,7 +67,7 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host
 		return p.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String():
-		if !p.events.HeartbeatEnabled {
+		if !p.events.SyntheticHeartbeatEnabled {
 			return nil
 		}
 
@@ -80,7 +80,7 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host
 			return nil
 		}
 
-		return p.handleHeartbeatEvent(ctx, clientMeta, traceMeta, event)
+		return p.handleSyntheticHeartbeatEvent(ctx, clientMeta, traceMeta, event)
 	}
 
 	return nil
@@ -162,12 +162,12 @@ func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (p *Processor) handleHeartbeatEvent(ctx context.Context,
+func (p *Processor) handleSyntheticHeartbeatEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToHeartbeat(event)
+	data, err := libp2p.TraceEventToSyntheticHeartbeat(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to heartbeat event")
 	}

@@ -18,7 +18,7 @@ import (
 var libp2pCoreToXatuEventMap = map[string]string{
 	TraceEvent_CONNECTED:    xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
 	TraceEvent_DISCONNECTED: xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
-	TraceEvent_HEARTBEAT:    xatu.Event_LIBP2P_TRACE_HEARTBEAT.String(),
+	TraceEvent_HEARTBEAT:    xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String(),
 }
 
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
@@ -66,7 +66,7 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host
 
 		return p.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
 
-	case xatu.Event_LIBP2P_TRACE_HEARTBEAT.String():
+	case xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String():
 		if !p.events.HeartbeatEnabled {
 			return nil
 		}
@@ -177,23 +177,23 @@ func (p *Processor) handleHeartbeatEvent(ctx context.Context,
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceHeartbeat{
-		Libp2PTraceHeartbeat: &xatu.ClientMeta_AdditionalLibP2PTraceHeartbeatData{
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceSyntheticHeartbeat{
+		Libp2PTraceSyntheticHeartbeat: &xatu.ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{
 			Metadata: traceMeta,
 		},
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_HEARTBEAT,
+			Name:     xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
 			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceHeartbeat{
-			Libp2PTraceHeartbeat: data,
+		Data: &xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat{
+			Libp2PTraceSyntheticHeartbeat: data,
 		},
 	}
 

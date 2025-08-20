@@ -1,5 +1,5 @@
--- Creating local and distributed tables for libp2p_heartbeat
-CREATE TABLE libp2p_heartbeat_local ON CLUSTER '{cluster}'
+-- Creating local and distributed tables for libp2p_synthetic_heartbeat
+CREATE TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
 (
     unique_key Int64,
     updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
@@ -41,7 +41,7 @@ CREATE TABLE libp2p_heartbeat_local ON CLUSTER '{cluster}'
 PARTITION BY toYYYYMM(event_date_time)
 ORDER BY (event_date_time, unique_key, meta_network_name, meta_client_name);
 
-ALTER TABLE libp2p_heartbeat_local ON CLUSTER '{cluster}'
+ALTER TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains heartbeat events from libp2p peers',
 COMMENT COLUMN unique_key 'Unique identifier for each record',
 COMMENT COLUMN updated_date_time 'Timestamp when the record was last updated',
@@ -80,5 +80,5 @@ COMMENT COLUMN meta_client_geo_autonomous_system_organization 'AS organization o
 COMMENT COLUMN meta_network_id 'Ethereum network ID',
 COMMENT COLUMN meta_network_name 'Ethereum network name';
 
-CREATE TABLE libp2p_heartbeat ON CLUSTER '{cluster}' AS libp2p_heartbeat_local
-ENGINE = Distributed('{cluster}', default, libp2p_heartbeat_local, unique_key);
+CREATE TABLE libp2p_synthetic_heartbeat ON CLUSTER '{cluster}' AS libp2p_synthetic_heartbeat_local
+ENGINE = Distributed('{cluster}', default, libp2p_synthetic_heartbeat_local, unique_key);

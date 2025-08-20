@@ -226,7 +226,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
-      libp2p_trace_heartbeat: .event.name == "LIBP2P_TRACE_HEARTBEAT"
+      libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
       libp2p_trace_rpc_meta_control_idontwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT"
@@ -259,7 +259,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
-      - xatu_server_events_router.libp2p_trace_heartbeat
+      - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_idontwant
@@ -2032,10 +2032,10 @@ transforms:
       del(.data)
       del(.path)
 
-  libp2p_trace_heartbeat_formatted:
+  libp2p_trace_synthetic_heartbeat_formatted:
     type: remap
     inputs:
-      - xatu_server_events_router.libp2p_trace_heartbeat
+      - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
     source: |-
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
@@ -2699,13 +2699,13 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-  libp2p_trace_heartbeat_clickhouse:
+  libp2p_trace_synthetic_heartbeat_clickhouse:
     type: clickhouse
     inputs:
-      - libp2p_trace_heartbeat_formatted
+      - libp2p_trace_synthetic_heartbeat_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: libp2p_heartbeat
+    table: libp2p_synthetic_heartbeat
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

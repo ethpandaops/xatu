@@ -18,9 +18,9 @@ const (
 	TraceEvent_HANDLE_MESSAGE = "HANDLE_MESSAGE"
 
 	// libp2p core networking events.
-	TraceEvent_CONNECTED    = "CONNECTED"
-	TraceEvent_DISCONNECTED = "DISCONNECTED"
-	TraceEvent_HEARTBEAT    = "HEARTBEAT"
+	TraceEvent_CONNECTED           = "CONNECTED"
+	TraceEvent_DISCONNECTED        = "DISCONNECTED"
+	TraceEvent_SYNTHETIC_HEARTBEAT = "SYNTHETIC_HEARTBEAT"
 
 	// RPC events.
 	TraceEvent_HANDLE_METADATA = "HANDLE_METADATA"

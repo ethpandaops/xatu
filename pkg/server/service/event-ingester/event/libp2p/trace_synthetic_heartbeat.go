@@ -3,7 +3,6 @@ package libp2p
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 
@@ -12,50 +11,52 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var TraceHeartbeatType = xatu.Event_LIBP2P_TRACE_HEARTBEAT.String()
+var TraceSyntheticHeartbeatType = xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String()
 
-type TraceHeartbeat struct {
+type TraceSyntheticHeartbeat struct {
 	log           logrus.FieldLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewTraceHeartbeat(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceHeartbeat {
-	return &TraceHeartbeat{
-		log:           log.WithField("event", TraceHeartbeatType),
+func NewTraceSyntheticHeartbeat(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceSyntheticHeartbeat {
+	return &TraceSyntheticHeartbeat{
+		log:           log.WithField("event", TraceSyntheticHeartbeatType),
 		event:         event,
 		geoipProvider: geoipProvider,
 	}
 }
 
-func (th *TraceHeartbeat) Type() string {
-	return TraceHeartbeatType
+func (th *TraceSyntheticHeartbeat) Type() string {
+	return TraceSyntheticHeartbeatType
 }
 
-func (th *TraceHeartbeat) Validate(ctx context.Context) error {
-	_, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceHeartbeat)
+func (th *TraceSyntheticHeartbeat) Validate(ctx context.Context) error {
+	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
 	if !ok {
-		return errors.New("failed to cast event data to TraceHeartbeat")
+		return errors.New("failed to cast event data to TraceSyntheticHeartbeat")
+	}
+
+	if data.Libp2PTraceSyntheticHeartbeat.GetRemotePeer() == nil {
+		return errors.New("remote peer is nil")
 	}
 
 	return nil
 }
 
-func (th *TraceHeartbeat) Filter(ctx context.Context) bool {
+func (th *TraceSyntheticHeartbeat) Filter(ctx context.Context) bool {
 	return false
 }
 
-func (th *TraceHeartbeat) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
-	fmt.Printf("APPENDING META TO HEARTBEAT: %s - %v\n", meta, th.event.Data)
-
-	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceHeartbeat)
+func (th *TraceSyntheticHeartbeat) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
+	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
 	if !ok {
 		th.log.Error("failed to get remote maddrs")
 
 		return meta
 	}
 
-	multiaddr := data.Libp2PTraceHeartbeat.GetRemoteMaddrs().GetValue()
+	multiaddr := data.Libp2PTraceSyntheticHeartbeat.GetRemoteMaddrs().GetValue()
 	if multiaddr == "" {
 		return meta
 	}
@@ -76,8 +77,8 @@ func (th *TraceHeartbeat) AppendServerMeta(ctx context.Context, meta *xatu.Serve
 			}
 
 			if geoipLookupResult != nil {
-				meta.AdditionalData = &xatu.ServerMeta_LIBP2P_TRACE_HEARTBEAT{
-					LIBP2P_TRACE_HEARTBEAT: &xatu.ServerMeta_AdditionalLibP2PTraceHeartbeatData{
+				meta.AdditionalData = &xatu.ServerMeta_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT{
+					LIBP2P_TRACE_SYNTHETIC_HEARTBEAT: &xatu.ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{
 						Peer: &xatu.ServerMeta_Peer{
 							Geo: &xatu.ServerMeta_Geo{
 								Country:                      geoipLookupResult.CountryName,

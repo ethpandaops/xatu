@@ -35,7 +35,7 @@ enum EventType {
   RPC_META_CONTROL_PRUNE = 22;
   RPC_META_SUBSCRIPTION = 23;
   RPC_META_MESSAGE = 24;
-  HEARTBEAT = 25;
+  SYNTHETIC_HEARTBEAT = 25;
 }
 
 message AddPeer {
@@ -156,7 +156,7 @@ message HandleMetadata {
   xatu.libp2p.Metadata metadata = 5;
 }
 
-message Heartbeat {
+message SyntheticHeartbeat {
   google.protobuf.Timestamp timestamp = 1;
   google.protobuf.StringValue remote_peer = 2 [json_name = "remote_peer"];
   google.protobuf.StringValue remote_maddrs = 3 [json_name = "remote_maddrs"];

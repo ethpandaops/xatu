@@ -703,8 +703,8 @@ func parseStatus(data map[string]any) (*statusFields, error) {
 	return status, nil
 }
 
-// TraceEventToHeartbeat converts a Hermes TraceEvent to a Heartbeat protobuf message
-func TraceEventToHeartbeat(event *host.TraceEvent) (*Heartbeat, error) {
+// TraceEventToSyntheticHeartbeat converts a Hermes TraceEvent to a SyntheticHeartbeat protobuf message
+func TraceEventToSyntheticHeartbeat(event *host.TraceEvent) (*SyntheticHeartbeat, error) {
 	// The payload structure for heartbeat events from Hermes
 	payload, ok := event.Payload.(struct {
 		RemotePeer      string
@@ -716,10 +716,10 @@ func TraceEventToHeartbeat(event *host.TraceEvent) (*Heartbeat, error) {
 		ConnectionAgeNs int64
 	})
 	if !ok {
-		return nil, fmt.Errorf("invalid payload type for Heartbeat")
+		return nil, fmt.Errorf("invalid payload type for SyntheticHeartbeat")
 	}
 
-	return &Heartbeat{
+	return &SyntheticHeartbeat{
 		Timestamp:       timestamppb.New(event.Timestamp),
 		RemotePeer:      wrapperspb.String(payload.RemotePeer),
 		RemoteMaddrs:    wrapperspb.String(payload.RemoteMaddrs.String()),

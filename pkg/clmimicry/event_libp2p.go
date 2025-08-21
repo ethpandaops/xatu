@@ -71,49 +71,19 @@ func (p *Processor) handleHermesLibp2pEvent(
 		return p.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_RECV_RPC.String():
-		if !p.events.RecvRPCEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event)
+		// Always process RPC events to extract child events, even if parent is disabled
+		// This allows child events (like IHAVE) to be captured independently
+		return p.handleRecvRPCEvent(ctx, clientMeta, traceMeta, event, xatuEvent, networkStr)
 
 	case xatu.Event_LIBP2P_TRACE_DROP_RPC.String():
-		if !p.events.DropRPCEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleDropRPCEvent(ctx, clientMeta, traceMeta, event)
+		// Always process RPC events to extract child events, even if parent is disabled
+		// This allows child events (like IHAVE) to be captured independently
+		return p.handleDropRPCEvent(ctx, clientMeta, traceMeta, event, xatuEvent, networkStr)
 
 	case xatu.Event_LIBP2P_TRACE_SEND_RPC.String():
-		if !p.events.SendRPCEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleSendRPCEvent(ctx, clientMeta, traceMeta, event)
+		// Always process RPC events to extract child events, even if parent is disabled
+		// This allows child events (like IHAVE) to be captured independently
+		return p.handleSendRPCEvent(ctx, clientMeta, traceMeta, event, xatuEvent, networkStr)
 
 	case xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String():
 		if !p.events.RemovePeerEnabled {
@@ -447,6 +417,8 @@ func (p *Processor) handleSendRPCEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
+	xatuEvent string,
+	networkStr string,
 ) error {
 	var (
 		rootEventID     = uuid.New().String()
@@ -505,17 +477,27 @@ func (p *Processor) handleSendRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages
-	if len(rpcMetaDecoratedEvents) > 0 {
-		decoratedEvents = append(decoratedEvents, rootRPCEvent)
+	// Determine if parent event should be processed
+	var shouldProcessParent bool
+
+	if p.events.SendRPCEnabled {
+		p.metrics.AddEvent(xatuEvent, networkStr)
+		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
+	}
+
+	// Send events only if they should be processed
+	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
+		if shouldProcessParent {
+			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+		}
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-			return errors.Wrapf(err, "failed to handle decorated events")
+		if len(decoratedEvents) > 0 {
+			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+				return errors.Wrapf(err, "failed to handle decorated events")
+			}
 		}
 	}
-	// Note: We don't count SEND_RPC as skipped when there are no child events
-	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }
@@ -564,6 +546,8 @@ func (p *Processor) handleRecvRPCEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
+	xatuEvent string,
+	networkStr string,
 ) error {
 	var (
 		rootEventID     = uuid.New().String()
@@ -622,17 +606,27 @@ func (p *Processor) handleRecvRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages
-	if len(rpcMetaDecoratedEvents) > 0 {
-		decoratedEvents = append(decoratedEvents, rootRPCEvent)
+	// Determine if parent event should be processed
+	var shouldProcessParent bool
+
+	if p.events.RecvRPCEnabled {
+		p.metrics.AddEvent(xatuEvent, networkStr)
+		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
+	}
+
+	// Send events only if they should be processed
+	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
+		if shouldProcessParent {
+			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+		}
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-			return errors.Wrapf(err, "failed to handle decorated events")
+		if len(decoratedEvents) > 0 {
+			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+				return errors.Wrapf(err, "failed to handle decorated events")
+			}
 		}
 	}
-	// Note: We don't count RECV_RPC as skipped when there are no child events
-	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }
@@ -642,6 +636,8 @@ func (p *Processor) handleDropRPCEvent(
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 	event *host.TraceEvent,
+	xatuEvent string,
+	networkStr string,
 ) error {
 	var (
 		rootEventID     = uuid.New().String()
@@ -700,17 +696,27 @@ func (p *Processor) handleDropRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Send the root event if there are rpc meta level messages
-	if len(rpcMetaDecoratedEvents) > 0 {
-		decoratedEvents = append(decoratedEvents, rootRPCEvent)
+	// Determine if parent event should be processed
+	var shouldProcessParent bool
+
+	if p.events.DropRPCEnabled {
+		p.metrics.AddEvent(xatuEvent, networkStr)
+		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
+	}
+
+	// Send events only if they should be processed
+	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
+		if shouldProcessParent {
+			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+		}
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-			return errors.Wrapf(err, "failed to handle decorated events")
+		if len(decoratedEvents) > 0 {
+			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+				return errors.Wrapf(err, "failed to handle decorated events")
+			}
 		}
 	}
-	// Note: We don't count DROP_RPC as skipped when there are no child events
-	// because it was already counted as processed in ShouldTraceMessage
 
 	return nil
 }

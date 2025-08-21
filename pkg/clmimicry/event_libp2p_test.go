@@ -763,7 +763,7 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.GetProcessor().handleRecvRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleRecvRPCEvent(context.Background(), clientMeta, traceMeta, tt.event, xatu.Event_LIBP2P_TRACE_RECV_RPC.String(), "1")
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2326,7 +2326,7 @@ func Test_handleSendRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.GetProcessor().handleSendRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleSendRPCEvent(context.Background(), clientMeta, traceMeta, tt.event, xatu.Event_LIBP2P_TRACE_SEND_RPC.String(), "1")
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2685,7 +2685,7 @@ func Test_handleDropRPCEvent(t *testing.T) {
 			clientMeta := createTestClientMeta()
 			traceMeta := createTestTraceMeta()
 
-			err := mimicry.GetProcessor().handleDropRPCEvent(context.Background(), clientMeta, traceMeta, tt.event)
+			err := mimicry.GetProcessor().handleDropRPCEvent(context.Background(), clientMeta, traceMeta, tt.event, xatu.Event_LIBP2P_TRACE_DROP_RPC.String(), "1")
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -2751,17 +2751,31 @@ func validateEventCounts(t *testing.T, events []*xatu.DecoratedEvent, assertions
 func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry {
 	t.Helper()
 
+	// Create sharder from config if sharding is configured, otherwise disable it
+	var sharder *UnifiedSharder
+	if config.Sharding.Topics != nil || config.Sharding.NoShardingKeyEvents != nil {
+		// Use sharding from config
+		var err error
+		sharder, err = NewUnifiedSharder(&config.Sharding, true)
+		if err != nil {
+			t.Fatalf("Failed to create sharder: %v", err)
+		}
+	} else {
+		// Disable sharding for tests that don't configure it
+		sharder = &UnifiedSharder{
+			config:           &ShardingConfig{},
+			eventCategorizer: NewEventCategorizer(),
+			enabled:          false,
+		}
+	}
+
 	mimicry := &Mimicry{
 		Config:  config,
 		sinks:   []output.Sink{sink},
 		log:     logrus.NewEntry(logrus.New()),
 		id:      uuid.New(),
 		metrics: NewMetrics(t.Name()),
-		sharder: &UnifiedSharder{
-			config:           &ShardingConfig{},
-			eventCategorizer: NewEventCategorizer(),
-			enabled:          false, // Disable sharding for tests
-		},
+		sharder: sharder,
 	}
 
 	wallclock := &ethwallclock.EthereumBeaconChain{}

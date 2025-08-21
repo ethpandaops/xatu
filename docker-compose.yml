@@ -284,7 +284,6 @@ services:
           "beacon-api-eth-v2-beacon-block-withdrawal"
           "beacon-api-eth-v2-beacon-block-elaborated-attestation"
           "beacon-p2p-attestation"
-          "blockprint-block-classification"
           "mempool-transaction"
           "mempool-transaction-v2"
           "libp2p-trace-connected"

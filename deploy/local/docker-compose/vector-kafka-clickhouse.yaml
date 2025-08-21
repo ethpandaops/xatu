@@ -65,16 +65,6 @@ sources:
       - "^beacon-api-eth-v2-beacon-block.+"
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
-  blockprint_block_classification_events_kafka:
-    type: kafka
-    bootstrap_servers: "${KAFKA_BROKERS}"
-    group_id: xatu-vector-kafka-clickhouse-blockprint-block-classification-events
-    key_field: "event.id"
-    auto_offset_reset: earliest
-    decoding:
-      codec: json
-    topics:
-      - "blockprint-block-classification"
   beacon_api_eth_v1_beacon_blob_sidecar_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -156,7 +146,6 @@ transforms:
       - beacon_api_eth_v1_validator_kafka
       - mempool_transaction_events_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
-      - blockprint_block_classification_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
       - beacon_api_eth_v1_beacon_validators_kafka
@@ -343,7 +332,6 @@ transforms:
     inputs:
       - xatu_server_events_meta
     route:
-      blockprint_block_classification: .event.name == "BLOCKPRINT_BLOCK_CLASSIFICATION"
       canonical_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
       canonical_beacon_block_attester_slashing: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
       canonical_beacon_block_elaborated_attestation: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION"
@@ -390,7 +378,6 @@ transforms:
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
-      - xatu_server_events_router.blockprint_block_classification
       - xatu_server_events_router.canonical_beacon_blob_sidecar
       - xatu_server_events_router.canonical_beacon_validators
       - xatu_server_events_router.canonical_beacon_block
@@ -1648,65 +1635,6 @@ transforms:
           })
       }
       . = events
-  blockprint_block_classification_formatted:
-    type: remap
-    inputs:
-      - xatu_server_events_router.blockprint_block_classification
-    source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
-      } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .slot = .data.slot
-      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
-      if err == null {
-        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse slot start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      .epoch = .meta.client.additional_data.epoch.number
-      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
-      if err == null {
-        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse epoch start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-      best_guess_single, err = downcase(.data.best_guess_single)
-      if err != null {
-        .error = err
-        .error_description = "failed to downcase best_guess_single"
-        log(., level: "error", rate_limit_secs: 60)
-        best_guess_single = .data.best_guess_single
-      }
-      .best_guess_single = best_guess_single
-      best_guess_multi, err = downcase(.data.best_guess_multi)
-      if err != null {
-        .error = err
-        .error_description = "failed to downcase best_guess_multi"
-        log(., level: "error", rate_limit_secs: 60)
-        best_guess_multi = .data.best_guess_multi
-      }
-      .best_guess_multi = best_guess_multi
-      .client_probability_uncertain = .data.client_probability.uncertain
-      .client_probability_prysm = .data.client_probability.prysm
-      .client_probability_teku = .data.client_probability.teku
-      .client_probability_nimbus = .data.client_probability.nimbus
-      .client_probability_lodestar = .data.client_probability.lodestar
-      .client_probability_grandine = .data.client_probability.grandine
-      .client_probability_lighthouse = .data.client_probability.lighthouse
-      .proposer_index  = .data.proposer_index
-      .updated_date_time = to_unix_timestamp(now())
-      del(.event)
-      del(.meta)
-      del(.data)
   canonical_beacon_proposer_duty_formatted:
     type: remap
     inputs:
@@ -2964,26 +2892,6 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: canonical_beacon_blob_sidecar
-    auth:
-      strategy: basic
-      user: "${CLICKHOUSE_USER}"
-      password: "${CLICKHOUSE_PASSWORD}"
-    batch:
-      max_bytes: 52428800
-      max_events: 200000
-      timeout_secs: 1
-    buffer:
-      max_events: 200000
-    healthcheck:
-      enabled: true
-    skip_unknown_fields: false
-  blockprint_block_classification_clickhouse:
-    type: clickhouse
-    inputs:
-      - blockprint_block_classification_formatted
-    database: default
-    endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: beacon_block_classification
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

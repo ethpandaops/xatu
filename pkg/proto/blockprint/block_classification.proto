@@ -1,3 +1,4 @@
+// Deprecated: Blockprint is no longer supported
 syntax = "proto3";
 
 package xatu.blockprint;

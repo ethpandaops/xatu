@@ -665,6 +665,7 @@ message ClientMeta {
     BlockIdentifier block = 1;
   }
 
+  // Deprecated: Blockprint is no longer supported
   message AdditionalBlockprintBlockClassificationData {
     // Epoch contains the epoch information for the block classification.
     EpochV2 epoch = 1;
@@ -1366,6 +1367,7 @@ message ClientMeta {
     // eth v1 blob sidecar event.
     AdditionalEthV1EventsBlobSidecarData eth_v1_events_blob_sidecar = 42
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
+    // Deprecated: Blockprint is no longer supported
     // AdditionalBlockprintBlockClassification contains additional data on
     // blockprint block classifications.
     AdditionalBlockprintBlockClassificationData
@@ -1616,7 +1618,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 30;
     BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 31;
     BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR = 32;
-    BLOCKPRINT_BLOCK_CLASSIFICATION = 33;
+    BLOCKPRINT_BLOCK_CLASSIFICATION = 33; // Deprecated: Blockprint is no longer supported
     BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 34;
     BEACON_P2P_ATTESTATION = 35;
     BEACON_API_ETH_V1_PROPOSER_DUTY = 36;
@@ -1759,6 +1761,7 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
     xatu.eth.v1.EventBlobSidecar eth_v1_events_blob_sidecar = 34
         [ json_name = "BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR" ];
+    // Deprecated: Blockprint is no longer supported
     xatu.blockprint.BlockClassification blockprint_block_classification = 35
         [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
     xatu.eth.v1.BlobSidecar eth_v1_beacon_block_blob_sidecar = 36

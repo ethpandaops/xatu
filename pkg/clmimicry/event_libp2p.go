@@ -477,25 +477,22 @@ func (p *Processor) handleSendRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Determine if parent event should be processed
-	var shouldProcessParent bool
+	// Only send events if there are child events to send
+	// The parent event is only sent alongside child events, not standalone
+	if len(rpcMetaDecoratedEvents) > 0 {
+		// Check if parent event should also be included
+		if p.events.SendRPCEnabled {
+			p.metrics.AddEvent(xatuEvent, networkStr)
 
-	if p.events.SendRPCEnabled {
-		p.metrics.AddEvent(xatuEvent, networkStr)
-		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
-	}
-
-	// Send events only if they should be processed
-	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
-		if shouldProcessParent {
-			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			if p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+				decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			}
 		}
+
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if len(decoratedEvents) > 0 {
-			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-				return errors.Wrapf(err, "failed to handle decorated events")
-			}
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
 
@@ -606,25 +603,22 @@ func (p *Processor) handleRecvRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Determine if parent event should be processed
-	var shouldProcessParent bool
+	// Only send events if there are child events to send
+	// The parent event is only sent alongside child events, not standalone
+	if len(rpcMetaDecoratedEvents) > 0 {
+		// Check if parent event should also be included
+		if p.events.RecvRPCEnabled {
+			p.metrics.AddEvent(xatuEvent, networkStr)
 
-	if p.events.RecvRPCEnabled {
-		p.metrics.AddEvent(xatuEvent, networkStr)
-		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
-	}
-
-	// Send events only if they should be processed
-	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
-		if shouldProcessParent {
-			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			if p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+				decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			}
 		}
+
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if len(decoratedEvents) > 0 {
-			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-				return errors.Wrapf(err, "failed to handle decorated events")
-			}
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
 
@@ -696,25 +690,22 @@ func (p *Processor) handleDropRPCEvent(
 		return errors.Wrapf(err, "failed to parse rpc meta")
 	}
 
-	// Determine if parent event should be processed
-	var shouldProcessParent bool
+	// Only send events if there are child events to send
+	// The parent event is only sent alongside child events, not standalone
+	if len(rpcMetaDecoratedEvents) > 0 {
+		// Check if parent event should also be included
+		if p.events.DropRPCEnabled {
+			p.metrics.AddEvent(xatuEvent, networkStr)
 
-	if p.events.DropRPCEnabled {
-		p.metrics.AddEvent(xatuEvent, networkStr)
-		shouldProcessParent = p.ShouldTraceMessage(event, clientMeta, xatuEvent)
-	}
-
-	// Send events only if they should be processed
-	if len(rpcMetaDecoratedEvents) > 0 || shouldProcessParent {
-		if shouldProcessParent {
-			decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			if p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+				decoratedEvents = append(decoratedEvents, rootRPCEvent)
+			}
 		}
+
 		decoratedEvents = append(decoratedEvents, rpcMetaDecoratedEvents...)
 
-		if len(decoratedEvents) > 0 {
-			if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
-				return errors.Wrapf(err, "failed to handle decorated events")
-			}
+		if err := p.output.HandleDecoratedEvents(ctx, decoratedEvents); err != nil {
+			return errors.Wrapf(err, "failed to handle decorated events")
 		}
 	}
 

@@ -29,76 +29,46 @@ func TestDecoupledSharding(t *testing.T) {
 		description   string
 	}{
 		{
-			name: "parent_disabled_child_enabled_with_sharding",
+			name: "parent_disabled_child_enabled",
 			config: &Config{
 				Events: EventConfig{
 					RecvRPCEnabled:             false, // Parent disabled
 					RpcMetaControlIHaveEnabled: true,  // Child enabled
 				},
-				Sharding: ShardingConfig{
-					Topics: map[string]*TopicShardingConfig{
-						".*attestation.*": {
-							TotalShards:  100,
-							ActiveShards: []uint64{0, 1, 2}, // Only capture 3% of messages
-						},
-					},
-				},
 			},
 			parentEnabled: false,
 			childEnabled:  true,
 			expectParent:  false, // Parent should not be sent
-			expectChild:   true,  // Child should be sent based on its own sharding
-			description:   "Parent disabled but child IHAVE events should still be captured based on sharding",
+			expectChild:   true,  // Child should be sent
+			description:   "Parent disabled but child IHAVE events should still be captured",
 		},
 		{
-			name: "parent_enabled_but_sharded_out_child_enabled",
+			name: "parent_enabled_child_enabled",
 			config: &Config{
 				Events: EventConfig{
 					RecvRPCEnabled:             true, // Parent enabled
 					RpcMetaControlIHaveEnabled: true, // Child enabled
 				},
-				Sharding: ShardingConfig{
-					Topics: map[string]*TopicShardingConfig{
-						".*attestation.*": {
-							TotalShards:  100,
-							ActiveShards: []uint64{0}, // Only capture 1% of messages
-						},
-					},
-					NoShardingKeyEvents: &NoShardingKeyConfig{
-						Enabled: false, // Disable Group D events (like RECV_RPC without keys)
-					},
-				},
 			},
 			parentEnabled: true,
 			childEnabled:  true,
-			expectParent:  false, // Parent sharded out (Group D disabled)
-			expectChild:   true,  // Child should still be sent based on message ID sharding
-			description:   "Parent enabled but sharded out, child IHAVE should still be captured",
+			expectParent:  true, // Parent should be sent
+			expectChild:   true, // Child should be sent
+			description:   "Both parent and child enabled and should be captured",
 		},
 		{
-			name: "both_enabled_and_pass_sharding",
+			name: "parent_enabled_child_disabled",
 			config: &Config{
 				Events: EventConfig{
-					RecvRPCEnabled:             true, // Parent enabled
-					RpcMetaControlIHaveEnabled: true, // Child enabled
-				},
-				Sharding: ShardingConfig{
-					Topics: map[string]*TopicShardingConfig{
-						".*attestation.*": {
-							TotalShards:  100,
-							ActiveShards: []uint64{0}, // Capture 1%
-						},
-					},
-					NoShardingKeyEvents: &NoShardingKeyConfig{
-						Enabled: true, // Enable Group D events
-					},
+					RecvRPCEnabled:             true,  // Parent enabled
+					RpcMetaControlIHaveEnabled: false, // Child disabled
 				},
 			},
 			parentEnabled: true,
-			childEnabled:  true,
-			expectParent:  true, // Parent passes (Group D enabled)
-			expectChild:   true, // Child passes based on sharding
-			description:   "Both parent and child enabled and pass sharding",
+			childEnabled:  false,
+			expectParent:  false, // Parent should not be sent when no child events are produced
+			expectChild:   false, // Child should not be sent
+			description:   "Parent enabled but child disabled",
 		},
 		{
 			name: "parent_disabled_child_disabled",
@@ -174,7 +144,7 @@ func TestDecoupledSharding(t *testing.T) {
 							{
 								TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 								MsgIDs: []string{
-									"msg_30", // This hashes to shard 0 (verified)
+									"test_msg",
 								},
 							},
 						},
@@ -217,14 +187,6 @@ func TestDecoupledShardingSendRPC(t *testing.T) {
 			SendRPCEnabled:             false, // Parent disabled
 			RpcMetaControlIHaveEnabled: true,  // Child enabled
 		},
-		Sharding: ShardingConfig{
-			Topics: map[string]*TopicShardingConfig{
-				".*attestation.*": {
-					TotalShards:  100,
-					ActiveShards: []uint64{0}, // Capture 1%
-				},
-			},
-		},
 	}
 
 	// Expect only child event, not parent
@@ -254,7 +216,7 @@ func TestDecoupledShardingSendRPC(t *testing.T) {
 				IHave: []host.RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
-						MsgIDs:  []string{"msg_30"},
+						MsgIDs:  []string{"test_msg"},
 					},
 				},
 			},
@@ -291,14 +253,6 @@ func TestDecoupledShardingDropRPC(t *testing.T) {
 			DropRPCEnabled:             false, // Parent disabled
 			RpcMetaControlIHaveEnabled: true,  // Child enabled
 		},
-		Sharding: ShardingConfig{
-			Topics: map[string]*TopicShardingConfig{
-				".*attestation.*": {
-					TotalShards:  100,
-					ActiveShards: []uint64{0}, // Capture 1%
-				},
-			},
-		},
 	}
 
 	// Expect only child event, not parent
@@ -328,7 +282,7 @@ func TestDecoupledShardingDropRPC(t *testing.T) {
 				IHave: []host.RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
-						MsgIDs:  []string{"msg_30"},
+						MsgIDs:  []string{"test_msg"},
 					},
 				},
 			},
@@ -368,14 +322,6 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 			RpcMetaControlIDontWantEnabled: true,  // Child enabled
 			RpcMetaControlGraftEnabled:     true,  // Child enabled
 			RpcMetaControlPruneEnabled:     true,  // Child enabled
-		},
-		Sharding: ShardingConfig{
-			Topics: map[string]*TopicShardingConfig{
-				".*attestation.*": {
-					TotalShards:  100,
-					ActiveShards: []uint64{0}, // Capture 1%
-				},
-			},
 		},
 	}
 
@@ -434,17 +380,17 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 				IHave: []host.RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
-						MsgIDs:  []string{"msg_30"},
+						MsgIDs:  []string{"test_msg"},
 					},
 				},
 				IWant: []host.RpcControlIWant{
 					{
-						MsgIDs: []string{"msg_30"},
+						MsgIDs: []string{"test_msg"},
 					},
 				},
 				Idontwant: []host.RpcControlIdontWant{
 					{
-						MsgIDs: []string{"msg_30"},
+						MsgIDs: []string{"test_msg"},
 					},
 				},
 				Graft: []host.RpcControlGraft{

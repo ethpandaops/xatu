@@ -76,6 +76,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_DROP_RPC, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_CONNECTED, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_DISCONNECTED, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_METADATA, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_STATUS, GroupD, false, false, false)
 }

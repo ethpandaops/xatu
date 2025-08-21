@@ -83,6 +83,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
+      libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       beacon_api_eth_v1_beacon_validators: .event.name == "BEACON_API_ETH_V1_BEACON_VALIDATORS"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
@@ -1164,6 +1165,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: libp2p-trace-gossipsub-data-column-sidecar
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  libp2p_trace_synthetic_heartbeat_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: libp2p-trace-synthetic-heartbeat
     compression: snappy
     healthcheck:
       enabled: true

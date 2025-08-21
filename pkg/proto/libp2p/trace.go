@@ -702,3 +702,31 @@ func parseStatus(data map[string]any) (*statusFields, error) {
 
 	return status, nil
 }
+
+// TraceEventToSyntheticHeartbeat converts a Hermes TraceEvent to a SyntheticHeartbeat protobuf message
+func TraceEventToSyntheticHeartbeat(event *host.TraceEvent) (*SyntheticHeartbeat, error) {
+	// The payload structure for heartbeat events from Hermes
+	payload, ok := event.Payload.(struct {
+		RemotePeer      string
+		RemoteMaddrs    ma.Multiaddr
+		LatencyMs       int64
+		AgentVersion    string
+		Direction       uint32
+		Protocols       []string
+		ConnectionAgeNs int64
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for SyntheticHeartbeat")
+	}
+
+	return &SyntheticHeartbeat{
+		Timestamp:       timestamppb.New(event.Timestamp),
+		RemotePeer:      wrapperspb.String(payload.RemotePeer),
+		RemoteMaddrs:    wrapperspb.String(payload.RemoteMaddrs.String()),
+		LatencyMs:       wrapperspb.Int64(payload.LatencyMs),
+		AgentVersion:    wrapperspb.String(payload.AgentVersion),
+		Direction:       wrapperspb.UInt32(payload.Direction),
+		Protocols:       payload.Protocols,
+		ConnectionAgeNs: wrapperspb.Int64(payload.ConnectionAgeNs),
+	}, nil
+}

@@ -1,0 +1,113 @@
+-- Creating local and distributed tables for libp2p_synthetic_heartbeat
+CREATE TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
+(
+    updated_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
+    event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
+    remote_peer_id_unique_key Int64,
+    remote_maddrs String CODEC(ZSTD(1)),
+    latency_ms Nullable(Int64) CODEC(ZSTD(1)),
+    direction LowCardinality(String),
+    protocols Array(String) CODEC(ZSTD(1)),
+    connection_age_ms Nullable(Int64) CODEC(ZSTD(1)),
+    remote_agent_implementation LowCardinality(String),
+    remote_agent_version LowCardinality(String),
+    remote_agent_version_major LowCardinality(String),
+    remote_agent_version_minor LowCardinality(String),
+    remote_agent_version_patch LowCardinality(String),
+    remote_agent_platform LowCardinality(String),
+    remote_ip Nullable(IPv6) CODEC(ZSTD(1)),
+    remote_port Nullable(UInt16) CODEC(ZSTD(1)),
+    remote_geo_city LowCardinality(String) CODEC(ZSTD(1)),
+    remote_geo_country LowCardinality(String) CODEC(ZSTD(1)),
+    remote_geo_country_code LowCardinality(String) CODEC(ZSTD(1)),
+    remote_geo_continent_code LowCardinality(String) CODEC(ZSTD(1)),
+    remote_geo_longitude Nullable(Float64) CODEC(ZSTD(1)),
+    remote_geo_latitude Nullable(Float64) CODEC(ZSTD(1)),
+    remote_geo_autonomous_system_number Nullable(UInt32) CODEC(ZSTD(1)),
+    remote_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
+    meta_client_name LowCardinality(String),
+    meta_client_id String CODEC(ZSTD(1)),
+    meta_client_version LowCardinality(String),
+    meta_client_implementation LowCardinality(String),
+    meta_client_os LowCardinality(String),
+    meta_client_ip Nullable(IPv6) CODEC(ZSTD(1)),
+    meta_client_geo_city LowCardinality(String) CODEC(ZSTD(1)),
+    meta_client_geo_country LowCardinality(String) CODEC(ZSTD(1)),
+    meta_client_geo_country_code LowCardinality(String) CODEC(ZSTD(1)),
+    meta_client_geo_continent_code LowCardinality(String) CODEC(ZSTD(1)),
+    meta_client_geo_longitude Nullable(Float64) CODEC(ZSTD(1)),
+    meta_client_geo_latitude Nullable(Float64) CODEC(ZSTD(1)),
+    meta_client_geo_autonomous_system_number Nullable(UInt32) CODEC(ZSTD(1)),
+    meta_client_geo_autonomous_system_organization Nullable(String) CODEC(ZSTD(1)),
+    meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
+    meta_network_name LowCardinality(String)
+) Engine = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}',
+    '{replica}',
+    updated_date_time
+)
+PARTITION BY toYYYYMM(event_date_time)
+ORDER BY (
+    event_date_time,
+    meta_network_name,
+    meta_client_name,
+    remote_peer_id_unique_key,
+    updated_date_time
+);
+
+ALTER TABLE libp2p_synthetic_heartbeat_local ON CLUSTER '{cluster}'
+MODIFY COMMENT 'Contains heartbeat events from libp2p peers',
+COMMENT COLUMN updated_date_time 'Timestamp when the record was last updated',
+COMMENT COLUMN event_date_time 'Timestamp of the heartbeat event',
+COMMENT COLUMN remote_peer_id_unique_key 'Unique key of the remote peer',
+COMMENT COLUMN remote_maddrs 'Multiaddress of the remote peer',
+COMMENT COLUMN latency_ms 'EWMA latency in milliseconds (0 if unavailable)',
+COMMENT COLUMN direction 'Connection direction (Unknown/Inbound/Outbound)',
+COMMENT COLUMN protocols 'List of supported protocols',
+COMMENT COLUMN connection_age_ms 'Connection age in milliseconds',
+COMMENT COLUMN remote_agent_implementation 'Implementation of the remote peer',
+COMMENT COLUMN remote_agent_version 'Version of the remote peer',
+COMMENT COLUMN remote_agent_version_major 'Major version of the remote peer',
+COMMENT COLUMN remote_agent_version_minor 'Minor version of the remote peer',
+COMMENT COLUMN remote_agent_version_patch 'Patch version of the remote peer',
+COMMENT COLUMN remote_agent_platform 'Platform of the remote peer',
+COMMENT COLUMN remote_ip 'IP address of the remote peer',
+COMMENT COLUMN remote_port 'Port of the remote peer',
+COMMENT COLUMN remote_geo_city 'City of the remote peer',
+COMMENT COLUMN remote_geo_country 'Country of the remote peer',
+COMMENT COLUMN remote_geo_country_code 'Country code of the remote peer',
+COMMENT COLUMN remote_geo_continent_code 'Continent code of the remote peer',
+COMMENT COLUMN remote_geo_longitude 'Longitude of the remote peer',
+COMMENT COLUMN remote_geo_latitude 'Latitude of the remote peer',
+COMMENT COLUMN remote_geo_autonomous_system_number 'ASN of the remote peer',
+COMMENT COLUMN remote_geo_autonomous_system_organization 'AS organization of the remote peer',
+COMMENT COLUMN meta_client_name 'Name of the client that generated the event',
+COMMENT COLUMN meta_client_id 'Unique Session ID of the client',
+COMMENT COLUMN meta_client_version 'Version of the client',
+COMMENT COLUMN meta_client_implementation 'Implementation of the client',
+COMMENT COLUMN meta_client_os 'Operating system of the client',
+COMMENT COLUMN meta_client_ip 'IP address of the client',
+COMMENT COLUMN meta_client_geo_city 'City of the client',
+COMMENT COLUMN meta_client_geo_country 'Country of the client',
+COMMENT COLUMN meta_client_geo_country_code 'Country code of the client',
+COMMENT COLUMN meta_client_geo_continent_code 'Continent code of the client',
+COMMENT COLUMN meta_client_geo_longitude 'Longitude of the client',
+COMMENT COLUMN meta_client_geo_latitude 'Latitude of the client',
+COMMENT COLUMN meta_client_geo_autonomous_system_number 'ASN of the client',
+COMMENT COLUMN meta_client_geo_autonomous_system_organization 'AS organization of the client',
+COMMENT COLUMN meta_network_id 'Ethereum network ID',
+COMMENT COLUMN meta_network_name 'Ethereum network name';
+
+CREATE TABLE libp2p_synthetic_heartbeat ON CLUSTER '{cluster}' AS libp2p_synthetic_heartbeat_local
+ENGINE = Distributed(
+    '{cluster}',
+    default,
+    libp2p_synthetic_heartbeat_local,
+    cityHash64(
+        event_date_time,
+        meta_network_name,
+        meta_client_name,
+        remote_peer_id_unique_key,
+        updated_date_time
+    )
+);

@@ -97,6 +97,7 @@ var (
 	TypeLibP2PTraceRPCMetaMessage               Type = Type(libp2p.TraceRPCMetaMessageType)
 	TypeNodeRecordExecution                     Type = Type(noderecord.ExecutionType)
 	TypeNodeRecordConsensus                     Type = Type(noderecord.ConsensusType)
+	TypeLibP2PTraceSyntheticHeartbeat           Type = Type(libp2p.TraceSyntheticHeartbeatType)
 )
 
 type Event interface {
@@ -324,6 +325,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubDataColumnSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubDataColumnSidecar(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceSyntheticHeartbeat, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceSyntheticHeartbeat(router.log, event, router.geoipProvider), nil
 	})
 	router.RegisterHandler(TypeMEVRelayBidTraceBuilderBlockSubmission, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mevrelay.NewBidTraceBuilderBlockSubmission(router.log, event), nil

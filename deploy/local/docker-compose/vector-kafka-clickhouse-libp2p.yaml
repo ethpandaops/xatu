@@ -226,6 +226,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
+      libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
       libp2p_trace_rpc_meta_control_idontwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT"
@@ -258,6 +259,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
+      - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_idontwant
@@ -2094,6 +2096,133 @@ transforms:
       del(.meta)
       del(.data)
       del(.path)
+
+  libp2p_trace_synthetic_heartbeat_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        log("failed to parse event date time: " + string!(err), level: "error", rate_limit_secs: 60)
+      }
+      peer_id_key, err = .data.remote_peer + .meta_network_name
+      if err != null {
+        log("failed to generate peer id unique key: " + string!(err), level: "error", rate_limit_secs: 60)
+      }
+      .remote_peer_id_unique_key = seahash(peer_id_key)
+      .remote_maddrs = .data.remote_maddrs
+      .latency_ms = to_int!(.data.latency_ms)
+      .direction = if .data.direction == 1 {
+        "inbound"
+      } else if .data.direction == 2 {
+        "outbound"
+      } else {
+        "unknown"
+      }
+      .protocols = .data.protocols || []
+
+      # Convert connection_age_ns from nanoseconds to milliseconds
+      connection_age_ns = .data.connection_age_ns
+      if connection_age_ns != null {
+        # connection_age_ns is a Go time.Duration (int64 nanoseconds)
+        # Convert to milliseconds by dividing by 1,000,000
+        # Split on decimal point and take integer part only
+        ns_value = to_int!(connection_age_ns)
+        ms_float = ns_value / 1000000
+        ms_str = to_string(ms_float)
+        ms_parts = split(ms_str, ".")
+        .connection_age_ms = to_int!(ms_parts[0])
+      }
+
+      # Extract IP and port from multiaddr if available
+      addrParts, err = split(.data.remote_maddrs, "/")
+      if err != null {
+        log("failed to split remote_maddrs: " + string!(err), level: "error", rate_limit_secs: 60)
+      } else {
+        if length(addrParts) >= 5 {
+          .remote_ip = addrParts[2]
+          .remote_port = to_int!(addrParts[4])
+        } else {
+          log("failed to extract IP from remote_maddrs", level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      # Remote peer geo data from server metadata
+      if exists(.meta.server.additional_data.peer.geo) {
+        .remote_geo_city = .meta.server.additional_data.peer.geo.city
+        .remote_geo_country = .meta.server.additional_data.peer.geo.country
+        .remote_geo_country_code = .meta.server.additional_data.peer.geo.country_code
+        .remote_geo_continent_code = .meta.server.additional_data.peer.geo.continent_code
+        .remote_geo_longitude = .meta.server.additional_data.peer.geo.longitude
+        .remote_geo_latitude = .meta.server.additional_data.peer.geo.latitude
+        .remote_geo_autonomous_system_number = .meta.server.additional_data.peer.geo.autonomous_system_number
+        .remote_geo_autonomous_system_organization = .meta.server.additional_data.peer.geo.autonomous_system_organization
+      }
+
+      if is_string(.data.agent_version) {
+        agent_version_cleaned = replace(to_string!(.data.agent_version), "teku/teku", "teku", count: 1)
+        agent_version = split(agent_version_cleaned, "/", limit: 4)
+        if length(agent_version) > 0 {
+          if is_string(agent_version[0]) {
+            implementation, err = downcase(agent_version[0])
+            if err == null {
+              .remote_agent_implementation = implementation
+            }
+          }
+        }
+        if length(agent_version) > 1 {
+          if is_string(agent_version[1]) {
+            .remote_agent_version = agent_version[1]
+            if is_string(.remote_agent_version) {
+              sematic_version, err = split(.remote_agent_version, ".", limit: 3)
+              if err == null {
+                if sematic_version[0] != null {
+                  version_major, err = replace(sematic_version[0], "v", "", count: 1)
+                  if err == null {
+                    .remote_agent_version_major = version_major
+                    .remote_agent_version_minor = sematic_version[1]
+                    if sematic_version[2] != null {
+                      version_patch, err = replace(sematic_version[2], r'[-+ ](.*)', "")
+                      if err == null {
+                        .remote_agent_version_patch = version_patch
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if length(agent_version) > 2 {
+          if is_string(agent_version[2]) && .remote_agent_implementation != "prysm" {
+            .remote_agent_platform = agent_version[2]
+          }
+        }
+      }
+
+      # Ensure all required LowCardinality geo fields have values (not null/undefined)
+      # Remote geo fields (these come from server-side geo enrichment)
+      .remote_geo_city = .remote_geo_city || ""
+      .remote_geo_country = .remote_geo_country || ""
+      .remote_geo_country_code = .remote_geo_country_code || ""
+      .remote_geo_continent_code = .remote_geo_continent_code || ""
+
+      # Client geo fields (these come from global xatu_server_events_meta transform)
+      .meta_client_geo_city = .meta_client_geo_city || ""
+      .meta_client_geo_country = .meta_client_geo_country || ""
+      .meta_client_geo_country_code = .meta_client_geo_country_code || ""
+      .meta_client_geo_continent_code = .meta_client_geo_continent_code || ""
+
+      .updated_date_time = to_unix_timestamp(now(), unit: "seconds")
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
 sinks:
   metrics:
     type: prometheus_exporter
@@ -2649,6 +2778,26 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: libp2p_gossipsub_data_column_sidecar
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_synthetic_heartbeat_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_synthetic_heartbeat_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_synthetic_heartbeat
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

@@ -919,6 +919,11 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceSyntheticHeartbeatData: Holds additional data for a synthetic heartbeat event in LibP2P tracing.
+  message AdditionalLibP2PTraceSyntheticHeartbeatData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceHandleMetadataData: Holds additional data for a handle metadata event in LibP2P tracing.
   message AdditionalLibP2PTraceHandleMetadataData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1456,6 +1461,8 @@ message ClientMeta {
     AdditionalEthV1EventsDataColumnSidecarData eth_v1_events_data_column_sidecar = 85 [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
     // AdditionalLibP2PTraceGossipSubDataColumnSidecarData contains additional data about the gossip sub data column sidecar event.
     AdditionalLibP2PTraceGossipSubDataColumnSidecarData libp2p_trace_gossipsub_data_column_sidecar = 86 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
+    // AdditionalLibP2PTraceSyntheticHeartbeatData contains additional data about the libp2p trace synthetic heartbeat event.
+    AdditionalLibP2PTraceSyntheticHeartbeatData libp2p_trace_synthetic_heartbeat = 87 [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1527,6 +1534,8 @@ message ServerMeta {
 
   message AdditionalLibp2PTraceDisconnectedData { Peer peer = 1; }
 
+  message AdditionalLibP2PTraceSyntheticHeartbeatData { Peer peer = 1; }
+
   message AdditionalNodeRecordConsensusData { Geo geo = 1; }
 
   message AdditionalNodeRecordExecutionData { Geo geo = 1; }
@@ -1560,6 +1569,10 @@ message ServerMeta {
     // node geo location
     AdditionalNodeRecordExecutionData NODE_RECORD_EXECUTION = 7
         [ json_name = "NODE_RECORD_EXECUTION" ];
+    // AdditionalLibP2PTraceSyntheticHeartbeat contains additional data on synthetic heartbeat
+    // event peer geo location
+    AdditionalLibP2PTraceSyntheticHeartbeatData LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 42
+        [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
   }
 }
 
@@ -1649,6 +1662,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF = 74;
     BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 75;
     LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR = 76;
+    LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1836,6 +1850,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.gossipsub.eth.DataColumnSidecar libp2p_trace_gossipsub_data_column_sidecar = 77
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
+    xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
+        [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
   };
 }
 

@@ -20,7 +20,7 @@ func TestEventCategorization(t *testing.T) {
 	}
 
 	// We should have categorized all 28 known events
-	assert.Equal(t, totalEvents, 28, "Should have exactly 27 events categorized")
+	assert.Equal(t, totalEvents, 28, "Should have exactly 28 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
@@ -171,6 +171,7 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_DISCONNECTED,
 		xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
 		xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
+		xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
 	}
 
 	// Check all events are properly categorized

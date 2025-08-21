@@ -22,13 +22,12 @@ jobs:
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: ${{ matrix.go_version }}
-        
-      - name: run tests
-        run: go test -json ./... > test.json
 
-      - name: Annotate tests
-        if: always()
-        uses: guyarb/golang-test-annotations@2941118d7ef622b1b3771d1ff6eae9e90659eb26 # v0.8.0
-        with:
-          test-results: test.json
-         
+      - name: run tests
+        run: go test -v ./...
+
+#      - name: Annotate tests
+#        if: always()
+#        uses: guyarb/golang-test-annotations@2941118d7ef622b1b3771d1ff6eae9e90659eb26 # v0.8.0
+#        with:
+#          test-results: test.json

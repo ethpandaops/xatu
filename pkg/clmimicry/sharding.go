@@ -145,7 +145,18 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 		if msgID == "" {
 			return false, "group_c_no_msgid"
 		}
-		// Always use default sharding for Group C
+
+		// For GroupC events, check if there's a configuration matching the event type
+		// (since they have no topic, we use empty string for topic)
+		if config := s.findTopicConfig("", eventType); config != nil {
+			shard := s.calculateShard(msgID, config.TotalShards)
+			shouldProcess := s.isShardActive(shard, config.ActiveShards)
+			reason := fmt.Sprintf("group_c_configured_%t_shard_%d", shouldProcess, shard)
+
+			return shouldProcess, reason
+		}
+
+		// Fall back to default sharding for Group C
 		shard := s.calculateShard(msgID, DefaultTotalShards)
 		// Default to sampling a single shard
 		shouldProcess := shard == 0
@@ -195,6 +206,16 @@ type ShardableEvent struct {
 func (s *UnifiedSharder) findTopicConfig(topic string, eventType xatu.Event_Name) *TopicShardingConfig {
 	if s.config.compiledPatterns == nil {
 		return nil
+	}
+
+	// Special handling for GroupC events with no topic (e.g., IDONTWANT, IWANT)
+	// These events only have MsgID and need to match by event type name directly
+	if topic == "" {
+		eventTypeName := eventType.String()
+		// Try exact match on event type name in the Topics map
+		if config, exists := s.config.Topics[eventTypeName]; exists {
+			return config
+		}
 	}
 
 	// Find the best matching pattern (could prioritize by specificity or sampling rate)

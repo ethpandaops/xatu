@@ -828,3 +828,78 @@ func TestBackwardCompatibility(t *testing.T) {
 		})
 	}
 }
+
+// TestIDONTWANTShardingFix verifies that IDONTWANT events can be configured with 100% sampling
+// This test specifically addresses the issue where IDONTWANT messages were falling back to
+// default sharding (0.2% sampling) despite having a configuration that should capture 100%
+func TestIDONTWANTShardingFix(t *testing.T) {
+	// Configuration exactly as used in production
+	config := &ShardingConfig{
+		Topics: map[string]*TopicShardingConfig{
+			"LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT": {
+				TotalShards:  1,
+				ActiveShards: []uint64{0},
+			},
+		},
+	}
+
+	sharder, err := NewUnifiedSharder(config, true)
+	require.NoError(t, err)
+
+	// Test with multiple message IDs to verify 100% sampling
+	processedCount := 0
+	totalCount := 1000
+
+	for i := 0; i < totalCount; i++ {
+		msgID := fmt.Sprintf("msgid-%d", i)
+		shouldProcess, reason := sharder.ShouldProcess(
+			xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT,
+			msgID,
+			"", // No topic for IDONTWANT
+		)
+		if shouldProcess {
+			processedCount++
+		}
+		// Log first few for debugging
+		if i < 5 {
+			t.Logf("Message %d: shouldProcess=%v, reason=%s", i, shouldProcess, reason)
+		}
+	}
+
+	samplingRate := float64(processedCount) / float64(totalCount) * 100
+	t.Logf("IDONTWANT: Processed %d/%d messages (%.2f%% sampling)", processedCount, totalCount, samplingRate)
+
+	// With the fix, all messages should be processed (100% sampling)
+	assert.Equal(t, totalCount, processedCount,
+		"Expected 100%% sampling for IDONTWANT with configured pattern, got %.2f%%", samplingRate)
+
+	// Also test IWANT to ensure consistency
+	t.Run("IWANT_100%_sampling", func(t *testing.T) {
+		iwantConfig := &ShardingConfig{
+			Topics: map[string]*TopicShardingConfig{
+				"LIBP2P_TRACE_RPC_META_CONTROL_IWANT": {
+					TotalShards:  1,
+					ActiveShards: []uint64{0},
+				},
+			},
+		}
+
+		iwantSharder, err := NewUnifiedSharder(iwantConfig, true)
+		require.NoError(t, err)
+
+		iwantProcessed := 0
+		for i := 0; i < 100; i++ {
+			msgID := fmt.Sprintf("iwant-msg-%d", i)
+			shouldProcess, _ := iwantSharder.ShouldProcess(
+				xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
+				msgID,
+				"",
+			)
+			if shouldProcess {
+				iwantProcessed++
+			}
+		}
+
+		assert.Equal(t, 100, iwantProcessed, "IWANT should also have 100%% sampling")
+	})
+}

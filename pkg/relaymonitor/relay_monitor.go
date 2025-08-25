@@ -24,6 +24,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
@@ -55,6 +56,8 @@ type RelayMonitor struct {
 	validatorRegistrationMonitor *registrations.ValidatorMonitor
 
 	regestationEventsCh chan *registrations.ValidatorRegistrationEvent
+
+	coordinatorClient *coordinator.Client
 }
 
 const (
@@ -115,6 +118,16 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		bidCache:                     NewDuplicateBidCache(time.Minute * 13),
 		regestationEventsCh:          regestationEventsCh,
 		validatorRegistrationMonitor: registrations.NewValidatorMonitor(log, &config.ValidatorRegistrations, relays, client, regestationEventsCh),
+	}
+
+	// Initialize coordinator client if configured
+	if config.Coordinator != nil {
+		coordinatorClient, err := coordinator.New(config.Coordinator, log)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create coordinator client: %w", err)
+		}
+
+		relayMonitor.coordinatorClient = coordinatorClient
 	}
 
 	return relayMonitor, nil
@@ -180,11 +193,30 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 		}
 	}
 
+	// Start coordinator client if configured
+	if r.coordinatorClient != nil {
+		if err := r.coordinatorClient.Start(ctx); err != nil {
+			r.log.WithError(err).Error("Failed to start coordinator client")
+		}
+
+		// Start consistency processes if configured
+		if err := r.startConsistencyProcesses(ctx); err != nil {
+			r.log.WithError(err).Error("Failed to start consistency processes")
+		}
+	}
+
 	cancel := make(chan os.Signal, 1)
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
 	r.log.Printf("Caught signal: %v", sig)
+
+	// Stop coordinator client if running
+	if r.coordinatorClient != nil {
+		if err := r.coordinatorClient.Stop(ctx); err != nil {
+			r.log.WithError(err).Error("Failed to stop coordinator client")
+		}
+	}
 
 	r.log.Printf("Flushing sinks")
 
@@ -267,7 +299,7 @@ func (r *RelayMonitor) createNewClientMeta(ctx context.Context) (*xatu.ClientMet
 		Implementation: xatu.Implementation,
 		ModuleName:     xatu.ModuleName_RELAY_MONITOR,
 		Os:             runtime.GOOS,
-		ClockDrift:     uint64(r.clockDrift.Milliseconds()),
+		ClockDrift:     uint64(r.clockDrift.Milliseconds()), //nolint:gosec // drift won't overflow
 		Ethereum: &xatu.ClientMeta_Ethereum{
 			Network: &xatu.ClientMeta_Ethereum_Network{
 				Name: r.Config.Ethereum.Network,

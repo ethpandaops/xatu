@@ -4,10 +4,11 @@ import (
 	"sort"
 	"sync"
 
+	"math/rand/v2"
+
 	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/rand"
 )
 
 // ValidatorSetWalker is a struct that walks through the validator set and returns the next validator index to register
@@ -112,7 +113,7 @@ func (v *ValidatorSetWalker) Update(validators map[phase0.ValidatorIndex]*apiv1.
 	if v.marker == nil {
 		// First time we're updating the validator set, so we start at a random point
 		//nolint:gosec // not concerned about this in reality
-		index := phase0.ValidatorIndex(rand.Intn(int(v.max-v.min)) + int(v.min))
+		index := phase0.ValidatorIndex(rand.IntN(int(v.max-v.min)) + int(v.min))
 		v.marker = &index
 	} else if *v.marker < v.min || *v.marker >= v.max {
 		*v.marker = v.min

@@ -136,8 +136,8 @@ func (r *RelayMonitor) createAdditionalMevRelayProposerPayloadDeliveredData(
 	wallclockSlot := r.ethereum.Wallclock().Slots().FromTime(requestedAt)
 	wallclockEpoch := r.ethereum.Wallclock().Epochs().FromTime(requestedAt)
 
-	requestedAtDiff := uint64(requestedAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
-	responseAtDiff := uint64(responseAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
+	requestedAtDiff := uint64(requestedAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds()) //nolint:gosec // time diffs won't overflow
+	responseAtDiff := uint64(responseAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())   //nolint:gosec // time diffs won't overflow
 
 	return &xatu.ClientMeta_AdditionalMevRelayPayloadDeliveredData{
 		Relay: &mevrelay.Relay{
@@ -255,8 +255,8 @@ func (r *RelayMonitor) createAdditionalMevRelayBidTraceData(
 	wallclockSlot := r.ethereum.Wallclock().Slots().FromTime(requestedAt)
 	wallclockEpoch := r.ethereum.Wallclock().Epochs().FromTime(requestedAt)
 
-	requestedAtDiff := uint64(requestedAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
-	responseAtDiff := uint64(responseAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())
+	requestedAtDiff := uint64(requestedAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds()) //nolint:gosec // time diffs won't overflow
+	responseAtDiff := uint64(responseAt.Sub(wallclockSlot.TimeWindow().Start()).Milliseconds())   //nolint:gosec // time diffs won't overflow
 
 	return &xatu.ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData{
 		Relay: &mevrelay.Relay{

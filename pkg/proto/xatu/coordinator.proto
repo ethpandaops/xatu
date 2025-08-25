@@ -34,6 +34,11 @@ service Coordinator {
       returns (GetCannonLocationResponse) {}
   rpc UpsertCannonLocation(UpsertCannonLocationRequest)
       returns (UpsertCannonLocationResponse) {}
+
+  rpc GetRelayMonitorLocation(GetRelayMonitorLocationRequest)
+      returns (GetRelayMonitorLocationResponse) {}
+  rpc UpsertRelayMonitorLocation(UpsertRelayMonitorLocationRequest)
+      returns (UpsertRelayMonitorLocationResponse) {}
 }
 
 message CreateNodeRecordsRequest { repeated string node_records = 1; }
@@ -316,3 +321,50 @@ message GetCannonLocationResponse { CannonLocation location = 1; }
 message UpsertCannonLocationRequest { CannonLocation location = 1; }
 
 message UpsertCannonLocationResponse {}
+
+// RelayMonitor types
+enum RelayMonitorType {
+  RELAY_MONITOR_BID_TRACE = 0;
+  RELAY_MONITOR_PAYLOAD_DELIVERED = 1;
+}
+
+// Track current slot for consistency processes
+// Each process type (backfill/forward-fill) uses a unique relay_name suffix
+// to maintain separate records and avoid race conditions
+message RelayMonitorSlotMarker {
+  uint64 current_slot = 1;  // Current slot being processed
+}
+
+message RelayMonitorLocationBidTrace {
+  RelayMonitorSlotMarker slot_marker = 1;
+}
+
+message RelayMonitorLocationPayloadDelivered {
+  RelayMonitorSlotMarker slot_marker = 1;
+}
+
+message RelayMonitorLocation {
+  string meta_network_name = 1;  // Network name (e.g., "mainnet", "holesky")
+  string meta_client_name = 2;   // Client instance name for multi-instance support
+  string relay_name = 3;         // Relay being monitored (includes process suffix)
+  RelayMonitorType type = 4;
+  oneof Data {
+    RelayMonitorLocationBidTrace bid_trace = 5
+        [ json_name = "RELAY_MONITOR_BID_TRACE" ];
+    RelayMonitorLocationPayloadDelivered payload_delivered = 6
+        [ json_name = "RELAY_MONITOR_PAYLOAD_DELIVERED" ];
+  }
+}
+
+message GetRelayMonitorLocationRequest {
+  string meta_network_name = 1;  // Network name
+  string meta_client_name = 2;   // Client instance name
+  string relay_name = 3;         // Relay name (includes process suffix)
+  RelayMonitorType type = 4;
+}
+
+message GetRelayMonitorLocationResponse { RelayMonitorLocation location = 1; }
+
+message UpsertRelayMonitorLocationRequest { RelayMonitorLocation location = 1; }
+
+message UpsertRelayMonitorLocationResponse {}

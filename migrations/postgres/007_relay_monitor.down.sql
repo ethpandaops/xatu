@@ -1,0 +1,1 @@
+DROP TABLE relay_monitor_location;

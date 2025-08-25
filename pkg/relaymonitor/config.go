@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
@@ -42,6 +43,12 @@ type Config struct {
 	FetchProposerPayloadDelivered bool `yaml:"fetchProposerPayloadDelivered" default:"true"`
 
 	ValidatorRegistrations registrations.Config `yaml:"validatorRegistrations"`
+
+	// Coordinator configuration for persistence
+	Coordinator *coordinator.Config `yaml:"coordinator"`
+
+	// Consistency configuration for ensuring complete slot data
+	Consistency *ConsistencyConfig `yaml:"consistency"`
 }
 
 func (c *Config) Validate() error {
@@ -73,6 +80,12 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid validator registrations config: %w", err)
 	}
 
+	if c.Consistency != nil {
+		if err := c.Consistency.Validate(); err != nil {
+			return fmt.Errorf("invalid consistency config: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -86,6 +99,51 @@ func (s *Schedule) Validate() error {
 	}
 
 	return nil
+}
+
+// ConsistencyConfig configures background processes to ensure complete slot data
+type ConsistencyConfig struct {
+	// CheckEveryDuration is how often to check for new work
+	CheckEveryDuration human.Duration `yaml:"checkEveryDuration" default:"1s"`
+
+	// RateLimitPerRelay is the maximum requests per second per relay
+	// Supports fractional rates (e.g., 0.5 = 1 request every 2 seconds)
+	// Both forward fill and backfill share this limit, with forward fill getting priority
+	RateLimitPerRelay float64 `yaml:"rateLimitPerRelay" default:"0.5"`
+
+	// Backfill configuration for historical data
+	Backfill *BackfillConfig `yaml:"backfill"`
+
+	// ForwardFill configuration for catching up gaps
+	ForwardFill *ForwardFillConfig `yaml:"forwardFill"`
+}
+
+func (c *ConsistencyConfig) Validate() error {
+	// Ensure we have a valid check interval
+	if c.CheckEveryDuration.Duration <= 0 {
+		return errors.New("checkEveryDuration must be positive")
+	}
+
+	if c.RateLimitPerRelay <= 0 {
+		return errors.New("rateLimitPerRelay must be positive (supports decimals, e.g., 0.5 for 1 req/2s)")
+	}
+
+	return nil
+}
+
+// BackfillConfig configures historical slot data backfilling
+type BackfillConfig struct {
+	// Enabled controls whether backfill is active
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	// ToSlot is the minimum slot to backfill to (0 for genesis)
+	ToSlot uint64 `yaml:"toSlot" default:"0"`
+}
+
+// ForwardFillConfig configures forward filling to catch up gaps
+type ForwardFillConfig struct {
+	// Enabled controls whether forward fill is active
+	Enabled bool `yaml:"enabled" default:"false"`
 }
 
 func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {

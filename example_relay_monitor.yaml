@@ -67,6 +67,29 @@ schedule:
     - "4s"
     - "12s"
 
+# Coordinator configuration (optional)
+# Enables persistence and coordination with xatu server
+coordinator:
+  address: localhost:8080  # Coordinator server address
+  headers:                 # Optional headers for authentication
+    # authorization: "Bearer YOUR_TOKEN"
+  tls: false              # Enable TLS for coordinator connection
+
+# Consistency configuration (optional)
+# Ensures complete slot data through background processes
+# Requires coordinator to be configured for persistence
+consistency:
+  checkEveryDuration: 5s  # How often to check for new work
+  
+  # Backfill configuration - work backwards from start point
+  backfill:
+    enabled: false  # Set to true to enable backfilling
+    toSlot: 0      # Target slot to backfill to (0 for genesis)
+  
+  # Forward fill configuration - catch up gaps to current slot
+  forwardFill:
+    enabled: false  # Set to true to enable forward filling
+
 outputs:
 - name: xatu
   type: xatu

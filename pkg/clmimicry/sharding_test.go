@@ -828,3 +828,80 @@ func TestBackwardCompatibility(t *testing.T) {
 		})
 	}
 }
+
+// TestGroupCEventTypeOnlyPatterns verifies that GroupC events (which have MsgID but no topic)
+// can be configured using event-type-only patterns in the Topics configuration.
+// This includes events like IDONTWANT and IWANT that need to match by event type name directly.
+func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
+	// Test IDONTWANT with event-type-only pattern
+	t.Run("IDONTWANT_event_type_pattern", func(t *testing.T) {
+		config := &ShardingConfig{
+			Topics: map[string]*TopicShardingConfig{
+				"LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT": {
+					TotalShards:  1,
+					ActiveShards: []uint64{0},
+				},
+			},
+		}
+
+		sharder, err := NewUnifiedSharder(config, true)
+		require.NoError(t, err)
+
+		// Test with multiple message IDs to verify 100% sampling
+		processedCount := 0
+		totalCount := 1000
+
+		for i := 0; i < totalCount; i++ {
+			msgID := fmt.Sprintf("msgid-%d", i)
+			shouldProcess, reason := sharder.ShouldProcess(
+				xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT,
+				msgID,
+				"", // No topic for GroupC events
+			)
+			if shouldProcess {
+				processedCount++
+			}
+			// Log first few for debugging
+			if i < 5 {
+				t.Logf("Message %d: shouldProcess=%v, reason=%s", i, shouldProcess, reason)
+			}
+		}
+
+		samplingRate := float64(processedCount) / float64(totalCount) * 100
+		t.Logf("IDONTWANT: Processed %d/%d messages (%.2f%% sampling)", processedCount, totalCount, samplingRate)
+
+		// GroupC events configured by event type should have 100% sampling
+		assert.Equal(t, totalCount, processedCount,
+			"Expected 100%% sampling for GroupC event with event-type pattern, got %.2f%%", samplingRate)
+	})
+
+	// Test IWANT with event-type-only pattern
+	t.Run("IWANT_event_type_pattern", func(t *testing.T) {
+		iwantConfig := &ShardingConfig{
+			Topics: map[string]*TopicShardingConfig{
+				"LIBP2P_TRACE_RPC_META_CONTROL_IWANT": {
+					TotalShards:  1,
+					ActiveShards: []uint64{0},
+				},
+			},
+		}
+
+		iwantSharder, err := NewUnifiedSharder(iwantConfig, true)
+		require.NoError(t, err)
+
+		iwantProcessed := 0
+		for i := 0; i < 100; i++ {
+			msgID := fmt.Sprintf("iwant-msg-%d", i)
+			shouldProcess, _ := iwantSharder.ShouldProcess(
+				xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
+				msgID,
+				"",
+			)
+			if shouldProcess {
+				iwantProcessed++
+			}
+		}
+
+		assert.Equal(t, 100, iwantProcessed, "GroupC event IWANT should have 100%% sampling with event-type pattern")
+	})
+}

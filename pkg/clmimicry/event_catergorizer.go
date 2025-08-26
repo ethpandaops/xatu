@@ -52,6 +52,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE, GroupA, true, true, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE, GroupA, true, true, true)
 

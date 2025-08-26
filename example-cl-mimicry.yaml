@@ -78,6 +78,11 @@ outputs:
 #       totalShards: 512
 #       activeShards: [0] # 1/512 sampling (~0.2%)
 #
+#     # Very low priority: ~0.2% sampling for data column sidecars
+#     ".*data_column_sidecar.*":
+#       totalShards: 512
+#       activeShards: [0] # 1/512 sampling (~0.2%)
+#
 #     # Catch-all pattern for any other topics
 #     ".*":
 #       totalShards: 512
@@ -124,3 +129,4 @@ outputs:
 #   gossipSubBeaconBlockEnabled: false
 #   gossipSubAttestationEnabled: false
 #   gossipSubBlobSidecarEnabled: false
+#   gossipSubDataColumnSidecarEnabled: false

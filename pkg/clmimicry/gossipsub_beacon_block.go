@@ -54,11 +54,10 @@ func (p *Processor) handleGossipBeaconBlock(
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	// TODO(fulu): Add Fulu blocks in Hermes
-	// case *eth.TraceEventFuluBlock:
-	// 	root, err = evt.Block.GetBlock().HashTreeRoot()
-	// 	slot = evt.Block.GetBlock().GetSlot()
-	// 	proposerIndex = evt.Block.GetBlock().GetProposerIndex()
+	case *events.TraceEventFuluBlock:
+		root, err = evt.Block.GetBlock().HashTreeRoot()
+		slot = evt.Block.GetBlock().GetSlot()
+		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
 	default:
 		return fmt.Errorf("handleGossipBeaconBlock(): called with unknown block type")
 	}
@@ -179,12 +178,11 @@ func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	// TODO(fulu): Add Fulu blocks in Hermes
-	// case *eth.TraceEventFuluBlock:
-	// 	extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
-	// 	extra.Topic = wrapperspb.String(evt.Topic)
-	// 	extra.MessageId = wrapperspb.String(evt.MsgID)
-	// 	extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
+	case *events.TraceEventFuluBlock:
+		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
+		extra.Topic = wrapperspb.String(evt.Topic)
+		extra.MessageId = wrapperspb.String(evt.MsgID)
+		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
 	default:
 		return nil, fmt.Errorf("createAdditionalGossipSubBeaconBlockData(): called with unknown block type")
 	}

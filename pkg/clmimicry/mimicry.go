@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 	"os"
@@ -15,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/OffchainLabs/prysm/v6/beacon-chain/core/signing"
 	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p/encoder"
 	"github.com/OffchainLabs/prysm/v6/config/params"
 	"github.com/OffchainLabs/prysm/v6/time/slots"
@@ -169,11 +167,10 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 
 	m.log.Info("Processor initialized successfully")
 
-	genesisRoot := c.Genesis.GenesisValidatorRoot
 	genesisTime := c.Genesis.GenesisTime
 
 	// compute fork version and fork digest
-	currentSlot := slots.Since(genesisTime)
+	currentSlot := slots.CurrentSlot(genesisTime)
 	currentEpoch := slots.ToEpoch(currentSlot)
 
 	currentForkVersion, err := eth.GetCurrentForkVersion(currentEpoch, m.beaconConfig)
@@ -181,12 +178,9 @@ func (m *Mimicry) startHermes(ctx context.Context) error {
 		return fmt.Errorf("compute fork version for epoch %d: %w", currentEpoch, err)
 	}
 
-	forkDigest, err := signing.ComputeForkDigest(currentForkVersion[:], genesisRoot)
-	if err != nil {
-		return fmt.Errorf("create fork digest (%s, %x): %w", genesisTime, genesisRoot, err)
-	}
+	forkDigest := params.ForkDigest(currentEpoch)
 
-	// Overriding configuration so that functions like ComputForkDigest take the
+	// Overriding configuration so that functions like params.ForkDigest take the
 	// correct input data from the global configuration.
 	params.OverrideBeaconConfig(m.beaconConfig)
 	params.OverrideBeaconNetworkConfig(m.networkConfig)

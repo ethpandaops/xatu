@@ -149,12 +149,11 @@ func (r *RelayMonitor) runBackfillIterator(ctx context.Context, relayClient *rel
 			cancel()
 
 			if err != nil {
-				if err == context.DeadlineExceeded {
-					// Rate limiter busy, yield to forward fill
-					continue
+				// Context deadline exceeded is expected for backfill - it yields to forward fill
+				// Only log unexpected rate limiter errors
+				if err != context.DeadlineExceeded {
+					log.WithError(err).Error("Rate limiter error")
 				}
-
-				log.WithError(err).Error("Rate limiter error")
 
 				continue
 			}
@@ -201,6 +200,7 @@ func (r *RelayMonitor) runForwardFillIterator(ctx context.Context, relayClient *
 		r.coordinatorClient,
 		r.ethereum.Wallclock(),
 		checkInterval,
+		r.Config.Consistency.ForwardFill.TrailDistance,
 	)
 
 	log.Info("Starting forward fill iterator")
@@ -235,7 +235,14 @@ func (r *RelayMonitor) runForwardFillIterator(ctx context.Context, relayClient *
 			// Update metrics
 			wallclockSlot := r.ethereum.Wallclock().Slots().Current()
 			metrics.SetCurrentSlot("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, uint64(*nextSlot))
-			lag := int64(wallclockSlot.Number()) - int64(*nextSlot) //nolint:gosec // slots won't overflow int64
+
+			// Calculate lag considering trail distance
+			maxProcessableSlot := wallclockSlot.Number()
+			if wallclockSlot.Number() > r.Config.Consistency.ForwardFill.TrailDistance {
+				maxProcessableSlot = wallclockSlot.Number() - r.Config.Consistency.ForwardFill.TrailDistance
+			}
+
+			lag := int64(maxProcessableSlot) - int64(*nextSlot) //nolint:gosec // slots won't overflow int64
 			metrics.SetLag("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, lag)
 
 			// Process the slot

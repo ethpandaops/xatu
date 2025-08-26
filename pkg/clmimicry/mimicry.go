@@ -27,9 +27,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/probe-lab/hermes/eth"
 	"github.com/probe-lab/hermes/host"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	prometheus_otel "go.opentelemetry.io/otel/exporters/prometheus"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
 const unknown = "unknown"
@@ -296,6 +299,25 @@ func (m *Mimicry) Start(ctx context.Context) error {
 
 func (m *Mimicry) ServeMetrics(ctx context.Context) error {
 	go func() {
+		// Set up OpenTelemetry meter provider with Prometheus exporter for Hermes metrics.
+		// Hermes uses OpenTelemetry API (meter.Int64Counter, etc.) while our existing metrics
+		// use native Prometheus client (prometheus.NewCounterVec, etc.). This creates a bridge
+		// that converts Hermes' OpenTelemetry metrics to Prometheus format and registers them
+		// to the same prometheus.DefaultRegisterer that our native metrics use, so both types
+		// of metrics get exposed on the same /metrics endpoint.
+		exporter, err := prometheus_otel.New(
+			prometheus_otel.WithRegisterer(prometheus.DefaultRegisterer),
+			prometheus_otel.WithNamespace("hermes"),
+		)
+		if err != nil {
+			m.log.WithError(err).Fatal("Failed to create Prometheus exporter for OpenTelemetry")
+		}
+
+		meterProvider := sdkmetric.NewMeterProvider(
+			sdkmetric.WithReader(exporter),
+		)
+		otel.SetMeterProvider(meterProvider)
+
 		sm := http.NewServeMux()
 		sm.Handle("/metrics", promhttp.Handler())
 

@@ -128,6 +128,17 @@ func (c *ConsistencyConfig) Validate() error {
 		return errors.New("rateLimitPerRelay must be positive (supports decimals, e.g., 0.5 for 1 req/2s)")
 	}
 
+	// Validate ForwardFill configuration if present
+	if c.ForwardFill != nil && c.ForwardFill.Enabled {
+		if c.ForwardFill.TrailDistance == 0 {
+			return errors.New("forwardFill.trailDistance must be greater than 0 when forward fill is enabled")
+		}
+
+		if c.ForwardFill.TrailDistance > 1000 {
+			return errors.New("forwardFill.trailDistance exceeds maximum allowed value of 1000 slots (~3.3 hours)")
+		}
+	}
+
 	return nil
 }
 
@@ -144,6 +155,10 @@ type BackfillConfig struct {
 type ForwardFillConfig struct {
 	// Enabled controls whether forward fill is active
 	Enabled bool `yaml:"enabled" default:"false"`
+
+	// TrailDistance is how many slots behind the head slot we will trail
+	// This prevents attempting to fetch data for slots that may not yet be available
+	TrailDistance uint64 `yaml:"trailDistance" default:"32"`
 }
 
 func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {

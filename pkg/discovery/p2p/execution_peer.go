@@ -45,7 +45,7 @@ func (p *ExecutionPeer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnStatus(ctx, func(ctx context.Context, status *mimicry.Status) error {
+	p.client.OnStatus(ctx, func(ctx context.Context, status mimicry.Status) error {
 		s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
 
 		if p.hello != nil {
@@ -63,12 +63,12 @@ func (p *ExecutionPeer) Start(ctx context.Context) (<-chan error, error) {
 		}
 
 		if status != nil {
-			s.NetworkId = status.NetworkID
-			s.Head = status.LatestBlockHash[:]
-			s.Genesis = status.Genesis[:]
+			s.NetworkId = status.GetNetworkID()
+			s.Head = status.GetHead()
+			s.Genesis = status.GetGenesis()
 			s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
-				Hash: status.ForkID.Hash[:],
-				Next: status.ForkID.Next,
+				Hash: status.GetForkIDHash(),
+				Next: status.GetForkIDNext(),
 			}
 		}
 

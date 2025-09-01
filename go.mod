@@ -7,6 +7,8 @@ replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20
 
 replace github.com/attestantio/go-eth2-client => github.com/attestantio/go-eth2-client v0.26.1-0.20250721122214-dc2928832acc
 
+replace github.com/ethpandaops/ethcore => ../ethcore
+
 require (
 	github.com/IBM/sarama v1.45.2
 	github.com/OffchainLabs/prysm/v6 v6.0.5-rc.1.0.20250825143102-240cd1d0588a
@@ -18,7 +20,7 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.16.1
 	github.com/ethpandaops/beacon v0.64.0
-	github.com/ethpandaops/ethcore v0.0.0-20250725045026-0717f4bc918b
+	github.com/ethpandaops/ethcore v0.0.0-20250901052647-6bbde4bce006
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v0.1.4
 	github.com/go-co-op/gocron/v2 v2.16.2
@@ -51,7 +53,9 @@ require (
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.37.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.57.0
 	go.opentelemetry.io/otel/sdk v1.37.0
+	go.opentelemetry.io/otel/sdk/metric v1.37.0
 	go.opentelemetry.io/otel/trace v1.37.0
 	go.uber.org/mock v0.5.2
 	golang.org/x/sync v0.16.0
@@ -294,9 +298,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0 // indirect
-	go.opentelemetry.io/otel/exporters/prometheus v0.57.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect

@@ -151,7 +151,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.client.OnStatus(ctx, func(ctx context.Context, status *mimicry.Status) error {
+	p.client.OnStatus(ctx, func(ctx context.Context, status mimicry.Status) error {
 		if p.handlers.ExecutionStatus != nil {
 			s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
 
@@ -167,14 +167,12 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 				}
 			}
 
-			if status != nil {
-				s.NetworkId = status.NetworkID
-				s.Head = status.LatestBlockHash[:]
-				s.Genesis = status.Genesis[:]
-				s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
-					Hash: status.ForkID.Hash[:],
-					Next: status.ForkID.Next,
-				}
+			s.NetworkId = status.GetNetworkID()
+			s.Head = status.GetHead()
+			s.Genesis = status.GetGenesis()
+			s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
+				Hash: status.GetForkIDHash(),
+				Next: status.GetForkIDNext(),
 			}
 
 			if serr := p.handlers.ExecutionStatus(ctx, s); serr != nil {
@@ -182,20 +180,19 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			}
 		}
 
-		// setup peer network/fork info
 		if p.ethereumConfig != nil && p.ethereumConfig.OverrideNetworkName != "" {
 			p.log.WithField("network", p.ethereumConfig.OverrideNetworkName).Info("Using override network name")
 			p.network = &networks.Network{
 				Name: networks.NetworkName(p.ethereumConfig.OverrideNetworkName),
-				ID:   status.NetworkID,
+				ID:   status.GetNetworkID(),
 			}
 		} else {
-			p.network = networks.DeriveFromID(status.NetworkID)
+			p.network = networks.DeriveFromID(status.GetNetworkID())
 		}
 
 		p.forkID = &xatu.ForkID{
-			Hash: "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
-			Next: fmt.Sprintf("%d", status.ForkID.Next),
+			Hash: "0x" + fmt.Sprintf("%x", status.GetForkIDHash()),
+			Next: fmt.Sprintf("%d", status.GetForkIDNext()),
 		}
 
 		// setup signer
@@ -215,8 +212,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 		p.log.WithFields(logrus.Fields{
 			"network":      p.network.Name,
-			"fork_id_hash": "0x" + fmt.Sprintf("%x", status.ForkID.Hash),
-			"fork_id_next": fmt.Sprintf("%d", status.ForkID.Next),
+			"fork_id_hash": "0x" + fmt.Sprintf("%x", status.GetForkIDHash()),
+			"fork_id_next": fmt.Sprintf("%d", status.GetForkIDNext()),
 		}).Debug("got client status")
 
 		// This is the avoid the initial deluge of transactions when a peer is first connected to.

@@ -7,8 +7,6 @@ replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20
 
 replace github.com/attestantio/go-eth2-client => github.com/attestantio/go-eth2-client v0.26.1-0.20250721122214-dc2928832acc
 
-replace github.com/ethpandaops/ethcore => ../ethcore
-
 require (
 	github.com/IBM/sarama v1.45.2
 	github.com/OffchainLabs/prysm/v6 v6.0.5-rc.1.0.20250825143102-240cd1d0588a

@@ -3,7 +3,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    image: "docker.ethquokkaops.io/dh/clickhouse/clickhouse-server:${CHVER:-latest}"
     container_name: xatu-clickhouse-01
     hostname: xatu-clickhouse-01
     user: 101:101
@@ -42,7 +42,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    image: "docker.ethquokkaops.io/dh/clickhouse/clickhouse-server:${CHVER:-latest}"
     container_name: xatu-clickhouse-02
     hostname: xatu-clickhouse-02
     user: 101:101
@@ -81,7 +81,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: zookeeper:3.9
+    image: docker.ethquokkaops.io/dh/zookeeper:3.9
     container_name: xatu-clickhouse-zookeeper-01
     hostname: xatu-clickhouse-zookeeper-01
     networks:
@@ -105,7 +105,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: zookeeper:3.9
+    image: docker.ethquokkaops.io/dh/zookeeper:3.9
     container_name: xatu-clickhouse-zookeeper-02
     hostname: xatu-clickhouse-zookeeper-02
     networks:
@@ -129,7 +129,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: zookeeper:3.9
+    image: docker.ethquokkaops.io/dh/zookeeper:3.9
     container_name: xatu-clickhouse-zookeeper-03
     hostname: xatu-clickhouse-zookeeper-03
     networks:
@@ -176,7 +176,7 @@ services:
   xatu-postgres:
     profiles:
       - ""
-    image: postgres:17
+    image: docker.ethquokkaops.io/dh/postgres:17
     container_name: xatu-postgres
     ports:
       - "${POSTGRES_ADDRESS:-0.0.0.0}:${POSTGRES_PORT:-5432}:5432"
@@ -199,7 +199,7 @@ services:
   xatu-grafana:
     profiles:
       - ""
-    image: grafana/grafana:latest
+    image: docker.ethquokkaops.io/dh/grafana/grafana:latest
     container_name: xatu-grafana
     ports:
       - "${GRAFANA_ADDRESS:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
@@ -225,7 +225,7 @@ services:
   xatu-prometheus:
     profiles:
       - ""
-    image: prom/prometheus:latest
+    image: docker.ethquokkaops.io/dh/prom/prometheus:latest
     ports:
       - "${PROMETHEUS_ADDRESS:-127.0.0.1}:${PROMETHEUS_PORT:-9090}:9090"
     networks:
@@ -237,7 +237,7 @@ services:
   xatu-init-kafka:
     profiles:
       - ""
-    image: confluentinc/cp-kafka:latest
+    image: docker.ethquokkaops.io/dh/confluentinc/cp-kafka:latest
     hostname: xatu-init-kafka
     container_name: xatu-init-kafka
     entrypoint:
@@ -337,7 +337,7 @@ services:
   xatu-kafka-storage-format:
     profiles:
       - ""
-    image: confluentinc/cp-kafka:latest
+    image: docker.ethquokkaops.io/dh/confluentinc/cp-kafka:latest
     container_name: xatu-kafka-storage-format
     environment:
       CLUSTER_ID: WySlHi0zTAmp0tJmzXHSNQ
@@ -362,7 +362,7 @@ services:
   xatu-kafka:
     profiles:
       - ""
-    image: confluentinc/cp-kafka:latest
+    image: docker.ethquokkaops.io/dh/confluentinc/cp-kafka:latest
     hostname: xatu-kafka
     container_name: xatu-kafka
     environment:
@@ -406,7 +406,7 @@ services:
   xatu-vector-http-kafka:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.37.1-alpine
     container_name: xatu-vector-http-kafka
     volumes:
       - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
@@ -431,7 +431,7 @@ services:
   xatu-vector-kafka-clickhouse:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.37.1-alpine
     container_name: xatu-vector-kafka-clickhouse
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
@@ -464,7 +464,7 @@ services:
   xatu-vector-kafka-clickhouse-libp2p:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
+    image: docker.ethquokkaops.io/dh/timberio/vector:0.37.1-alpine
     volumes:
       - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
     networks:
@@ -494,7 +494,7 @@ services:
   xatu-postgres-migrator:
     profiles:
       - ""
-    image: migrate/migrate
+    image: docker.ethquokkaops.io/dh/migrate/migrate
     container_name: xatu-postgres-migrator
     volumes:
       - ./migrations/postgres:/migrations
@@ -515,7 +515,7 @@ services:
     profiles:
       - clickhouse
       - ""
-    image: migrate/migrate
+    image: docker.ethquokkaops.io/dh/migrate/migrate
     container_name: xatu-clickhouse-migrator
     volumes:
       - ./deploy/migrations/clickhouse:/migrations
@@ -535,7 +535,7 @@ services:
     networks:
       - xatu-net
   tempo-init:
-    image: &tempoImage grafana/tempo:latest
+    image: &tempoImage docker.ethquokkaops.io/dh/grafana/tempo:latest
     user: root
     entrypoint:
       - "chown"
@@ -569,7 +569,7 @@ services:
   xatu-nginx:
     profiles:
       - ""
-    image: nginx:1.27.4-bookworm
+    image: docker.ethquokkaops.io/dh/nginx:1.27.4-bookworm
     container_name: xatu-nginx
     ports:
       - "${NGINX_ADDRESS:-127.0.0.1}:${NGINX_PORT:-8044}:80"

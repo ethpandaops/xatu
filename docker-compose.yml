@@ -13,7 +13,6 @@ services:
       - clickhouse-01-data:/var/lib/clickhouse/
       - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
-      - ./deploy/local/docker-compose/clickhouse/clickhouse-01/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
       - "${CLICKHOUSE_01_HTTP_ADDRESS:-127.0.0.1}:${CLICKHOUSE_01_HTTP_PORT:-8123}:8123"
       - "${CLICKHOUSE_01_NATIVE_ADDRESS:-127.0.0.1}:${CLICKHOUSE_01_NATIVE_PORT:-9000}:9000"
@@ -37,7 +36,7 @@ services:
     environment:
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
       - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-supersecret}
       - CLICKHOUSE_USER_READONLY_PASSWORD=${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
   xatu-clickhouse-02:
     profiles:
@@ -53,7 +52,6 @@ services:
       - clickhouse-02-data:/var/lib/clickhouse/
       - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
-      - ./deploy/local/docker-compose/clickhouse/clickhouse-02/etc/clickhouse-server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
       - "${CLICKHOUSE_02_HTTP_ADDRESS:-127.0.0.1}:${CLICKHOUSE_02_HTTP_PORT:-8124}:8123"
       - "${CLICKHOUSE_02_NATIVE_ADDRESS:-127.0.0.1}:${CLICKHOUSE_02_NATIVE_PORT:-9001}:9000"
@@ -444,7 +442,7 @@ services:
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -474,7 +472,7 @@ services:
     environment:
       CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-supersecret}
       KAFKA_BROKERS: "xatu-kafka:29092"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
@@ -526,7 +524,7 @@ services:
         "-path",
         "/migrations",
         "-database",
-        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD}&database=default&x-multi-statement=true",
+        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD:-supersecret}&database=default&x-multi-statement=true",
         "up",
       ]
     depends_on:

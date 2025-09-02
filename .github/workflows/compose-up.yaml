@@ -22,7 +22,7 @@ jobs:
       - name: Run Docker Compose in remote repo
         # Until https://github.com/ClickHouse/ClickHouse/issues/86434 is resolved, dont use latest.
         env:
-          CHVER: 24.12.0-ubuntu
+          CHVER: 25.6.3.116
         run: |
           cd xatu
           docker compose --profile clickhouse up -d

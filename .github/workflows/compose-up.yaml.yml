@@ -1,0 +1,47 @@
+name: docker-compose
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout local repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout remote repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: "ethpandaops/xatu"
+          path: "xatu"
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+      - name: Run Docker Compose in remote repo
+        run: |
+          cd xatu
+          docker compose --profile clickhouse up -d
+      - name: Wait for service on port 8123 to be up
+        run: |
+          timeout=60 # wait for up to 60 seconds
+          while ! curl --output /dev/null --silent --head --fail http://localhost:8123; do
+            printf '.'
+            timeout=$((timeout-1))
+            if [ "$timeout" -le 0 ]; then
+              echo "Service did not become available on port 8123 in time"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "Service is up on port 8123"
+      - name: Wait for docker container xatu-clickhouse-migrator to exit 0
+        run: |
+          set -e # This will cause the script to exit on the first error
+          EXIT_CODE=$(docker wait xatu-clickhouse-migrator)
+          echo "Exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Container exited with code $EXIT_CODE, failing the job."
+            exit 1
+          fi

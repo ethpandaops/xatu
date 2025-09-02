@@ -1,4 +1,4 @@
-name: Cannon Smoke Test
+name: cannon-smoke-test
 
 on:
   pull_request:

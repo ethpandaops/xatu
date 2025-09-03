@@ -106,10 +106,6 @@ func loadRelayMonitorConfigFromFile(file string) (*relaymonitor.Config, error) {
 
 	config := &relaymonitor.Config{}
 
-	if err := defaults.Set(config); err != nil {
-		return nil, err
-	}
-
 	yamlFile, err := os.ReadFile(file)
 
 	if err != nil {
@@ -119,6 +115,10 @@ func loadRelayMonitorConfigFromFile(file string) (*relaymonitor.Config, error) {
 	type plain relaymonitor.Config
 
 	if err := yaml.Unmarshal(yamlFile, (*plain)(config)); err != nil {
+		return nil, err
+	}
+
+	if err := defaults.Set(config); err != nil {
 		return nil, err
 	}
 

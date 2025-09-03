@@ -22,6 +22,7 @@ type ForwardFillIterator struct {
 	clientName       string
 	relayName        string
 	checkInterval    time.Duration
+	trailDistance    uint64
 }
 
 func NewForwardFillIterator(
@@ -32,6 +33,7 @@ func NewForwardFillIterator(
 	coordinatorClient *coordinator.Client,
 	wallclock *ethwallclock.EthereumBeaconChain,
 	checkInterval time.Duration,
+	trailDistance uint64,
 ) *ForwardFillIterator {
 	// Append ":forward_fill" suffix to relay name to create unique record
 	relayNameWithSuffix := relayName + ":forward_fill"
@@ -48,11 +50,21 @@ func NewForwardFillIterator(
 		coordinator:      *coordinatorClient,
 		wallclock:        wallclock,
 		checkInterval:    checkInterval,
+		trailDistance:    trailDistance,
 	}
 }
 
 func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	wallclockSlot := f.wallclock.Slots().Current()
+
+	// Calculate the maximum slot we should process (head slot - trail distance)
+	var maxSlot uint64
+	if wallclockSlot.Number() > f.trailDistance {
+		maxSlot = wallclockSlot.Number() - f.trailDistance
+	} else {
+		// If wallclock is less than trail distance, we don't process anything
+		return nil, nil //nolint:nilnil // nil slot indicates no work available
+	}
 
 	// Get current location from coordinator
 	location, err := f.coordinator.GetRelayMonitorLocation(ctx, f.relayMonitorType, f.networkName, f.clientName, f.relayName)
@@ -63,8 +75,13 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	var currentSlot uint64
 
 	if location == nil {
-		// Start from current wallclock slot if no location exists
-		currentSlot = wallclockSlot.Number()
+		// Start processing from the beginning of the trail window
+		// We subtract 1 to ensure we process at least maxSlot on the first iteration
+		if maxSlot > 0 {
+			currentSlot = maxSlot - 1
+		} else {
+			currentSlot = 0
+		}
 	} else {
 		slot, err := f.getSlot(location)
 		if err != nil {
@@ -74,8 +91,8 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 		currentSlot = slot
 	}
 
-	// Check if we're caught up
-	if currentSlot >= wallclockSlot.Number() {
+	// Check if we're caught up (considering trail distance)
+	if currentSlot >= maxSlot {
 		// We're caught up, nothing to do
 		return nil, nil //nolint:nilnil // nil slot indicates no work available
 	}
@@ -139,10 +156,13 @@ func (f *ForwardFillIterator) getSlot(location *xatu.RelayMonitorLocation) (uint
 		}
 
 		if data.SlotMarker == nil {
-			// Start from current wallclock slot
+			// Start from current wallclock slot minus trail distance
 			wallclockSlot := f.wallclock.Slots().Current()
+			if wallclockSlot.Number() > f.trailDistance {
+				return wallclockSlot.Number() - f.trailDistance, nil
+			}
 
-			return wallclockSlot.Number(), nil
+			return 0, nil
 		}
 
 		return data.SlotMarker.CurrentSlot, nil
@@ -154,10 +174,13 @@ func (f *ForwardFillIterator) getSlot(location *xatu.RelayMonitorLocation) (uint
 		}
 
 		if data.SlotMarker == nil {
-			// Start from current wallclock slot
+			// Start from current wallclock slot minus trail distance
 			wallclockSlot := f.wallclock.Slots().Current()
+			if wallclockSlot.Number() > f.trailDistance {
+				return wallclockSlot.Number() - f.trailDistance, nil
+			}
 
-			return wallclockSlot.Number(), nil
+			return 0, nil
 		}
 
 		return data.SlotMarker.CurrentSlot, nil

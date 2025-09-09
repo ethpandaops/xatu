@@ -42,6 +42,7 @@ ORDER BY
         meta_network_name,
         meta_client_name,
         block_root,
+        column_index
     ) COMMENT 'Contains beacon API eventstream "data_column_sidecar" data from each sentry client attached to a beacon node.';
 
 CREATE TABLE default.beacon_api_eth_v1_events_data_column_sidecar ON CLUSTER '{cluster}' AS default.beacon_api_eth_v1_events_data_column_sidecar_local ENGINE = Distributed(

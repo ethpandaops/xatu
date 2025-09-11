@@ -71,15 +71,152 @@ services:
       #       user_b:
       #         password: password
     outputs:
-    - name: general
-      type: http
-      shippingMethod: async
-      config:
-        address: http://xatu-vector-http-kafka:9005
-        maxQueueSize: 102400
-        batchTimeout: 3s
-        exportTimeout: 30s
-        maxExportBatchSize: 64
-        compression: zstd
-        keepAlive: true
-        workers: 50
+      - name: general
+        type: http
+        shippingMethod: async
+        filter:
+          modules:
+            - SENTRY
+            - RELAY_MONITOR
+            - EL_MIMICRY
+            - DISCOVERY
+          eventNames:
+            - BEACON_API_ETH_V1_BEACON_COMMITTEE
+            - BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR
+            - BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR
+            - BEACON_API_ETH_V1_EVENTS_BLOCK
+            - BEACON_API_ETH_V1_EVENTS_BLOCK_V2
+            - BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP
+            - BEACON_API_ETH_V1_EVENTS_CHAIN_REORG
+            - BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2
+            - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT
+            - BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2
+            - BEACON_API_ETH_V1_EVENTS_HEAD
+            - BEACON_API_ETH_V1_EVENTS_HEAD_V2
+            - BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT
+            - BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2
+            - BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF
+            - BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2
+            - BEACON_API_ETH_V1_PROPOSER_DUTY
+            - BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA
+            - MEMPOOL_TRANSACTION
+            - MEMPOOL_TRANSACTION_V2
+            - BEACON_API_ETH_V2_BEACON_BLOCK
+            - BEACON_API_ETH_V2_BEACON_BLOCK_V2
+            - MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION
+            - MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED
+            - MEV_RELAY_VALIDATOR_REGISTRATION
+            - BEACON_API_ETH_V3_VALIDATOR_BLOCK
+            - NODE_RECORD_CONSENSUS
+            - NODE_RECORD_EXECUTION
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 302400
+          batchTimeout: 5s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 500
+      - name: attestation
+        type: http
+        shippingMethod: async
+        filter:
+          modules:
+            - SENTRY
+          eventNames:
+            - BEACON_API_ETH_V1_EVENTS_ATTESTATION
+            - BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 302400
+          batchTimeout: 5s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: true
+          workers: 4000
+      - name: fork-choice
+        type: http
+        shippingMethod: async
+        filter:
+          modules:
+            - SENTRY
+          eventNames:
+            - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE
+            - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2
+            - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG
+            - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: 1s
+          exportTimeout: 30s
+          maxExportBatchSize: 4
+          compression: gzip
+          keepAlive: false
+          workers: 10
+      - name: libp2p
+        type: http
+        shippingMethod: async
+        filter:
+          modules:
+            - CL_MIMICRY
+            - TYSM
+            - SIDECAR
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 500000
+          batchTimeout: 1s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 4000
+      - name: cannon
+        type: http
+        shippingMethod: sync
+        filter:
+          modules:
+            - CANNON
+          eventNames:
+            - BLOCKPRINT_BLOCK_CLASSIFICATION
+            - BEACON_API_ETH_V1_BEACON_COMMITTEE
+            - BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
+            - BEACON_API_ETH_V1_PROPOSER_DUTY
+            - BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
+            - BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
+            - BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
+            - BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
+            - BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
+            - BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
+            - BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
+            - BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION
+            - BEACON_API_ETH_V2_BEACON_BLOCK
+            - BEACON_API_ETH_V2_BEACON_BLOCK_V2
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: .1s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 100
+      - name: cannon-vals
+        type: http
+        shippingMethod: sync
+        filter:
+          modules:
+            - CANNON
+          eventNames:
+            - BEACON_API_ETH_V1_BEACON_VALIDATORS
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: .1s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 400

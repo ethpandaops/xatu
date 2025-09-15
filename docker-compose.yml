@@ -247,13 +247,22 @@ services:
       - -c
     command:
       - |
-        topics=(
+        # Topics that need larger message sizes (10MB)
+        large_message_topics=(
           "beacon-api-eth-v1-beacon-blob-sidecar"
-          "beacon-api-eth-v1-beacon-committee"
           "beacon-api-eth-v1-debug-fork-choice"
           "beacon-api-eth-v1-debug-fork-choice-reorg"
           "beacon-api-eth-v1-debug-fork-choice-reorg-v2"
           "beacon-api-eth-v1-debug-fork-choice-v2"
+          "beacon-api-eth-v2-beacon-block"
+          "beacon-api-eth-v2-beacon-block-v2"
+          "beacon-api-eth-v2-beacon-block-execution-transaction"
+          "mempool-transaction-v2"
+        )
+        
+        # Regular topics
+        regular_topics=(
+          "beacon-api-eth-v1-beacon-committee"
           "beacon-api-eth-v1-events-attestation"
           "beacon-api-eth-v1-events-attestation-v2"
           "beacon-api-eth-v1-events-blob-sidecar"
@@ -273,19 +282,15 @@ services:
           "beacon-api-eth-v1-events-voluntary-exit-v2"
           "beacon-api-eth-v1-proposer-duty"
           "beacon-api-eth-v1-validator-attestation-data"
-          "beacon-api-eth-v2-beacon-block"
           "beacon-api-eth-v2-beacon-block-attester-slashing"
           "beacon-api-eth-v2-beacon-block-bls-to-execution-change"
           "beacon-api-eth-v2-beacon-block-deposit"
-          "beacon-api-eth-v2-beacon-block-execution-transaction"
           "beacon-api-eth-v2-beacon-block-proposer-slashing"
-          "beacon-api-eth-v2-beacon-block-v2"
           "beacon-api-eth-v2-beacon-block-voluntary-exit"
           "beacon-api-eth-v2-beacon-block-withdrawal"
           "beacon-api-eth-v2-beacon-block-elaborated-attestation"
           "beacon-p2p-attestation"
           "mempool-transaction"
-          "mempool-transaction-v2"
           "libp2p-trace-connected"
           "libp2p-trace-disconnected"
           "libp2p-trace-add-peer"
@@ -324,9 +329,17 @@ services:
           "node-record-consensus"
           "node-record-execution"
         )
-        for topic in "$${topics[@]}"; do
+        
+        # Create topics with 10MB message size limit
+        for topic in "$${large_message_topics[@]}"; do
+          echo "Creating topic with 10MB message limit: $$topic";
+          kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=delete --config retention.ms=259200000 --config compression.type=snappy --config segment.bytes=536870912 --config max.message.bytes=10485760 --topic "$$topic"
+        done
+        
+        # Create regular topics
+        for topic in "$${regular_topics[@]}"; do
           echo "Creating topic: $$topic";
-          kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=compact --config retention.ms=300000 --topic "$$topic"
+          kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=delete --config retention.ms=259200000 --config compression.type=snappy --config segment.bytes=536870912 --topic "$$topic"
         done
 
         sleep 3;
@@ -383,6 +396,9 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG4J_LOGGERS: "kafka.controller=ERROR,kafka.producer.async.DefaultEventHandler=ERROR,state.change.logger=ERROR"
+      # Message size limits - 10MB
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
     ports:
       - "${KAFKA_ADDRESS:-127.0.0.1}:${KAFKA_PORT:-29092}:29092"
       - "${KAFKA_BROKER_ADDRESS:-127.0.0.1}:${KAFKA_BROKER_PORT:-9092}:9092"

@@ -216,6 +216,7 @@ services:
       GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000}
       CLICKHOUSE_USER_READONLY_PASSWORD: ${CLICKHOUSE_USER_READONLY_PASSWORD:-readonly}
     volumes:
+      - grafana-data:/var/lib/grafana
       - ./deploy/local/docker-compose/grafana/datasources:/etc/grafana/provisioning/datasources
       - ./deploy/local/docker-compose/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./deploy/local/docker-compose/grafana/dashboards:/var/lib/grafana/dashboards
@@ -652,4 +653,6 @@ volumes:
   prometheus-data:
     driver: local
   tempo-data:
+    driver: local
+  grafana-data:
     driver: local

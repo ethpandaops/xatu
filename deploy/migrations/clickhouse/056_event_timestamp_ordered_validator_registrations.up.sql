@@ -1,4 +1,3 @@
--- Create temporary table with new partitioning and ordering
 CREATE TABLE IF NOT EXISTS tmp.mev_relay_validator_registration_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `event_date_time` DateTime64(3) COMMENT 'When the registration was fetched' CODEC(DoubleDelta, ZSTD(1)),
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS tmp.mev_relay_validator_registration_local ON CLUSTER
     `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name',
     `meta_labels` Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
 ) ENGINE = ReplicatedReplacingMergeTree(
-    '/clickhouse/{installation}/{cluster}/default/tables/{table}-v2/{shard}',
+    '/clickhouse/{installation}/{cluster}/default/tables/{table}/{shard}',
     '{replica}',
     updated_date_time
 ) PARTITION BY toStartOfMonth(event_date_time)
@@ -53,7 +52,7 @@ DROP TABLE IF EXISTS default.mev_relay_validator_registration ON CLUSTER '{clust
 INSERT INTO tmp.mev_relay_validator_registration_local SELECT * FROM default.mev_relay_validator_registration_local;
 
 -- Rename old tables to temporary names
-RENAME TABLE default.mev_relay_validator_registration_local TO tmp.mev_relay_validator_registration_local_old_v2 ON CLUSTER '{cluster}';
+RENAME TABLE default.mev_relay_validator_registration_local TO tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';
 
 -- Rename tmp table to final name
 RENAME TABLE tmp.mev_relay_validator_registration_local TO default.mev_relay_validator_registration_local ON CLUSTER '{cluster}';
@@ -68,3 +67,6 @@ CREATE TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}' AS 
         meta_network_name
     )
 );
+
+-- Delete the old table
+DROP TABLE IF EXISTS tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';

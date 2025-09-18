@@ -1,4 +1,3 @@
--- Create temporary table with old partitioning and ordering
 CREATE TABLE IF NOT EXISTS tmp.mev_relay_validator_registration_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `event_date_time` DateTime64(3) COMMENT 'When the registration was fetched' CODEC(DoubleDelta, ZSTD(1)),
@@ -68,3 +67,6 @@ CREATE TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}' AS 
         meta_network_name
     )
 );
+
+-- Delete the old table
+DROP TABLE IF EXISTS tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';

@@ -1,8 +1,11 @@
-CREATE TABLE IF NOT EXISTS tmp.mev_relay_validator_registration_local ON CLUSTER '{cluster}' (
+DROP TABLE IF EXISTS mev_relay_validator_registration ON CLUSTER '{cluster}' SYNC;
+DROP TABLE IF EXISTS mev_relay_validator_registration_local ON CLUSTER '{cluster}' SYNC;
+
+CREATE TABLE default.mev_relay_validator_registration_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
-    `event_date_time` DateTime64(3) COMMENT 'When the registration was fetched' CODEC(DoubleDelta, ZSTD(1)),
-    `timestamp` Int64 COMMENT 'The timestamp of the registration' CODEC(DoubleDelta, ZSTD(1)),
-    `relay_name` String COMMENT 'The relay that the registration was fetched from' CODEC(ZSTD(1)),
+    `event_date_time` DateTime64(3) COMMENT 'When the bid was fetched' CODEC(DoubleDelta, ZSTD(1)),
+    `timestamp` Int64 COMMENT 'The timestamp of the bid' CODEC(DoubleDelta, ZSTD(1)),
+    `relay_name` String COMMENT 'The relay that the bid was fetched from' CODEC(ZSTD(1)),
     `validator_index` UInt32 COMMENT 'The validator index of the validator registration' CODEC(ZSTD(1)),
     `gas_limit` UInt64 COMMENT 'The gas limit of the validator registration' CODEC(DoubleDelta, ZSTD(1)),
     `fee_recipient` String COMMENT 'The fee recipient of the validator registration' CODEC(ZSTD(1)),
@@ -45,19 +48,6 @@ ORDER BY
         timestamp
     ) COMMENT 'Contains MEV relay validator registrations data.';
 
--- Drop distributed table
-DROP TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}';
-
--- Copy data from current table to temporary table
-INSERT INTO tmp.mev_relay_validator_registration_local SELECT * FROM default.mev_relay_validator_registration_local;
-
--- Rename current table to old
-RENAME TABLE default.mev_relay_validator_registration_local TO tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';
-
--- Rename temporary table to final name
-RENAME TABLE tmp.mev_relay_validator_registration_local TO default.mev_relay_validator_registration_local ON CLUSTER '{cluster}';
-
--- Recreate distributed table with original settings
 CREATE TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}' AS default.mev_relay_validator_registration_local ENGINE = Distributed(
     '{cluster}',
     default,
@@ -67,6 +57,3 @@ CREATE TABLE default.mev_relay_validator_registration ON CLUSTER '{cluster}' AS 
         meta_network_name
     )
 );
-
--- Delete the old table
-DROP TABLE IF EXISTS tmp.mev_relay_validator_registration_local_old ON CLUSTER '{cluster}';

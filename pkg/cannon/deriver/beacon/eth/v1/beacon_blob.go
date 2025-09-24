@@ -274,7 +274,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.Slot)},
 				Blob:            fmt.Sprintf("0x%s", hex.EncodeToString(blob.Blob[:])),
 				Index:           &wrapperspb.UInt64Value{Value: uint64(blob.Index)},
-				BlockRoot:       fmt.Sprintf("%#x", blockRoot),
+				BlockRoot:       fmt.Sprintf("0x%s", hex.EncodeToString(blockRoot[:])),
 				BlockParentRoot: blob.SignedBlockHeader.Message.ParentRoot.String(),
 				ProposerIndex:   &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.ProposerIndex)},
 				KzgCommitment:   blob.KZGCommitment.String(),

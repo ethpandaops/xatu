@@ -309,7 +309,7 @@ transforms:
         .error = "No peer_id field found"
         log(., level: "error", rate_limit_secs: 60)
       }
-      
+
       key, err = .peer_id + .meta_network_name
       if err != null {
         .error = err
@@ -1284,6 +1284,7 @@ transforms:
       .blob_index = .data.index
       .state_root = .data.state_root
       .parent_root = .data.parent_root
+      .beacon_block_root = .data.block_root
 
       peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
       if err != null {
@@ -1379,6 +1380,7 @@ transforms:
       .kzg_commitments_count = .data.kzg_commitments_count
       .state_root = .data.state_root
       .parent_root = .data.parent_root
+      .beacon_block_root = .data.block_root
 
       peer_id_key, err = .meta.client.additional_data.metadata.peer_id + .meta_network_name
       if err != null {

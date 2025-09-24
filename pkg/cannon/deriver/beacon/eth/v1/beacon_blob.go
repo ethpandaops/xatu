@@ -255,6 +255,11 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 		return nil, errors.New("failed to clone client metadata")
 	}
 
+	blockRoot, err := blob.SignedBlockHeader.Message.HashTreeRoot()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get block root")
+	}
+
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
@@ -269,7 +274,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 				Slot:            &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.Slot)},
 				Blob:            fmt.Sprintf("0x%s", hex.EncodeToString(blob.Blob[:])),
 				Index:           &wrapperspb.UInt64Value{Value: uint64(blob.Index)},
-				BlockRoot:       blob.SignedBlockHeader.Message.BodyRoot.String(),
+				BlockRoot:       fmt.Sprintf("0x%s", hex.EncodeToString(blockRoot[:])),
 				BlockParentRoot: blob.SignedBlockHeader.Message.ParentRoot.String(),
 				ProposerIndex:   &wrapperspb.UInt64Value{Value: uint64(blob.SignedBlockHeader.Message.ProposerIndex)},
 				KzgCommitment:   blob.KZGCommitment.String(),

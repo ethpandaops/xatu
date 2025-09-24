@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 )
 
@@ -69,7 +70,7 @@ func (tc *TraceConnected) AppendServerMeta(ctx context.Context, meta *xatu.Serve
 	if ipAddress != "" {
 		ip := net.ParseIP(ipAddress)
 		if ip != nil && tc.geoipProvider != nil {
-			geoipLookupResult, err := tc.geoipProvider.LookupIP(ctx, ip)
+			geoipLookupResult, err := tc.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
 				tc.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
 			}

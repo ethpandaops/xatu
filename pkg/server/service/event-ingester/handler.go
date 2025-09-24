@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	eventHandler "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/ethpandaops/xatu/pkg/server/store"
@@ -130,22 +131,32 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		if ip == nil {
 			ipAddress = ""
 		} else if h.geoipProvider != nil {
+			// Determine precision from group
+			precision := lookup.PrecisionFull
+			if group != nil {
+				precision = group.GetGeoPrecision()
+			}
+
 			// get geoip locational data
-			geoipLookupResult, err := h.geoipProvider.LookupIP(ctx, ip)
+			geoipLookupResult, err := h.geoipProvider.LookupIP(ctx, ip, precision)
 			if err != nil {
 				h.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {
 				clientGeo = &xatu.ServerMeta_Geo{
-					Country:                      geoipLookupResult.CountryName,
-					CountryCode:                  geoipLookupResult.CountryCode,
-					City:                         geoipLookupResult.CityName,
-					Latitude:                     geoipLookupResult.Latitude,
-					Longitude:                    geoipLookupResult.Longitude,
-					ContinentCode:                geoipLookupResult.ContinentCode,
-					AutonomousSystemNumber:       geoipLookupResult.AutonomousSystemNumber,
-					AutonomousSystemOrganization: geoipLookupResult.AutonomousSystemOrganization,
+					Country:       geoipLookupResult.CountryName,
+					CountryCode:   geoipLookupResult.CountryCode,
+					City:          geoipLookupResult.CityName,
+					Latitude:      geoipLookupResult.Latitude,
+					Longitude:     geoipLookupResult.Longitude,
+					ContinentCode: geoipLookupResult.ContinentCode,
+				}
+
+				// Only include ASN data if the group allows it
+				if group != nil && group.IncludeASN() {
+					clientGeo.AutonomousSystemNumber = geoipLookupResult.AutonomousSystemNumber
+					clientGeo.AutonomousSystemOrganization = geoipLookupResult.AutonomousSystemOrganization
 				}
 			}
 		}

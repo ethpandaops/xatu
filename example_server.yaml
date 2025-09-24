@@ -34,11 +34,15 @@ store:
 
 geoip:
   enabled: false
+  # Run ./get-geo.sh to download MaxMind and GeoNames data files required for geo lookups
   # type: maxmind
   # config:
   #   database:
   #     city: ./GeoLite2-City.mmdb
   #     asn: ./GeoLite2-ASN.mmdb
+  #   geonames:
+  #     cities: ./cities1000.txt # Optional: GeoNames cities file for city centroids
+  #     countries: ./countries.txt # Optional: GeoNames countries file for country centroids
 
 services:
   coordinator:
@@ -50,6 +54,20 @@ services:
     #   maxExportBatchSize: 512
   eventIngester:
     enabled: true
+    # authorization:
+    #   enabled: true
+    #   groups:
+    #     my-group:
+    #       obscureClientNames: true
+    #       precision: "city" # full, city, country, continent, none - controls geo coordinate precision
+    #       asn: false # Include ASN data (Autonomous System Number) - defaults to true
+    #       users:
+    #         my-user:
+    #           password: "my-password"
+    #           eventFilter:
+    #             eventNames:
+    #             - BEACON_API_ETH_V1_EVENTS_ATTESTATION
+    #             - BEACON_API_ETH_V1_EVENTS_BLOCK
     outputs:
     - name: stdout
       type: stdout

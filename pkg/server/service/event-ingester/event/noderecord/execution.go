@@ -8,6 +8,7 @@ import (
 	coreenr "github.com/ethpandaops/ethcore/pkg/ethereum/node/enr"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -122,7 +123,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 
 	// Perform GeoIP lookup if provider is available.
 	if b.geoipProvider != nil {
-		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip)
+		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 		if err != nil {
 			b.log.WithField("ip", executionData.Ip.GetValue()).WithError(err).Warn("failed to lookup geoip data")
 

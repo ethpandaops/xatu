@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -18,6 +19,8 @@ type GroupConfig struct {
 	EventFilter        *xatu.EventFilterConfig `yaml:"eventFilter"`
 	Redacter           *xatu.RedacterConfig    `yaml:"redacter"`
 	ObscureClientNames bool                    `yaml:"obscureClientNames"`
+	Precision          *lookup.Precision       `yaml:"precision"` // Optional: defaults to full if not specified
+	ASN                *bool                   `yaml:"asn"`       // Optional: defaults to true if not specified
 }
 
 type Groups map[string]*Group
@@ -31,6 +34,8 @@ type Group struct {
 	metrics            *GroupMetrics
 	obscureClientNames bool
 	clientNames        *clientNameCache
+	geoPrecision       lookup.Precision
+	includeASN         bool
 }
 
 func (g *Group) ComputeClientName(user, salt, clientName string) string {
@@ -74,6 +79,7 @@ func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error
 		metrics:            DefaultGroupMetrics,
 		obscureClientNames: c.ObscureClientNames,
 		clientNames:        newClientNameCache(3000),
+		geoPrecision:       lookup.PrecisionFull, // Default to full precision
 	}
 
 	if c.EventFilter != nil {
@@ -101,6 +107,24 @@ func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error
 		}).Info("Created a new redacter")
 
 		g.redacter = redacter
+	}
+
+	// Set geo precision from explicit config or default to full
+	if c.Precision != nil {
+		g.geoPrecision = *c.Precision
+		g.log.WithField("geo_precision", g.geoPrecision.String()).Info("Geo precision set from config")
+	} else {
+		g.geoPrecision = lookup.PrecisionFull
+		g.log.WithField("geo_precision", "full").Info("Geo precision defaulting to full")
+	}
+
+	// Set ASN inclusion from config or default to true
+	if c.ASN != nil {
+		g.includeASN = *c.ASN
+		g.log.WithField("include_asn", g.includeASN).Info("ASN inclusion set from config")
+	} else {
+		g.includeASN = true
+		g.log.WithField("include_asn", true).Info("ASN inclusion defaulting to true")
 	}
 
 	return g, nil
@@ -215,4 +239,13 @@ func (g *Group) ApplyRedacter(ctx context.Context, events []*xatu.DecoratedEvent
 	}
 
 	return events, nil
+}
+
+// GetGeoPrecision returns the geo precision level for this group
+func (g *Group) GetGeoPrecision() lookup.Precision {
+	return g.geoPrecision
+}
+
+func (g *Group) IncludeASN() bool {
+	return g.includeASN
 }

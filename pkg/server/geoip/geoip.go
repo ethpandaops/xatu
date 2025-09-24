@@ -19,5 +19,5 @@ type Provider interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 	Type() string
-	LookupIP(ctx context.Context, ip net.IP) (*lookup.Result, error)
+	LookupIP(ctx context.Context, ip net.IP, precision lookup.Precision) (*lookup.Result, error)
 }

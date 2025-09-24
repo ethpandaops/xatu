@@ -172,6 +172,9 @@ services:
       # GeoIP databases - Docker will create directories if files don't exist, script handles this
       - ./GeoLite2-City.mmdb:/geoip/GeoLite2-City.mmdb:ro
       - ./GeoLite2-ASN.mmdb:/geoip/GeoLite2-ASN.mmdb:ro
+      # GeoNames data - Optional city/country centroid files for geo precision
+      - ./cities1000.txt:/geoip/cities1000.txt:ro
+      - ./countries.txt:/geoip/countries.txt:ro
     networks:
       - xatu-net
 

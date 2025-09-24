@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,7 +59,7 @@ func (b *BeaconP2PAttestation) AppendServerMeta(ctx context.Context, meta *xatu.
 	if ipAddress != "" {
 		ip := net.ParseIP(ipAddress)
 		if ip != nil && b.geoipProvider != nil {
-			geoipLookupResult, err := b.geoipProvider.LookupIP(ctx, ip)
+			geoipLookupResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
 				b.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
 			}

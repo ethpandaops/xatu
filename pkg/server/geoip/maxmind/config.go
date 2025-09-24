@@ -4,10 +4,12 @@ import (
 	"errors"
 
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/database"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/geonames"
 )
 
 type Config struct {
 	Database *database.Config `yaml:"database"`
+	GeoNames *geonames.Config `yaml:"geonames"`
 }
 
 func (c *Config) Validate() error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 )
 
@@ -69,7 +70,7 @@ func (td *TraceDisconnected) AppendServerMeta(ctx context.Context, meta *xatu.Se
 	if ipAddress != "" {
 		ip := net.ParseIP(ipAddress)
 		if ip != nil && td.geoipProvider != nil {
-			geoipLookupResult, err := td.geoipProvider.LookupIP(ctx, ip)
+			geoipLookupResult, err := td.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
 				td.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
 			}

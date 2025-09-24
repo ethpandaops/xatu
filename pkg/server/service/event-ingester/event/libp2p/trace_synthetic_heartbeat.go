@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 )
 
@@ -71,7 +72,7 @@ func (th *TraceSyntheticHeartbeat) AppendServerMeta(ctx context.Context, meta *x
 	if ipAddress != "" {
 		ip := net.ParseIP(ipAddress)
 		if ip != nil && th.geoipProvider != nil {
-			geoipLookupResult, err := th.geoipProvider.LookupIP(ctx, ip)
+			geoipLookupResult, err := th.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
 				th.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
 			}

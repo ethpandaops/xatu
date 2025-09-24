@@ -17,16 +17,19 @@ type City struct {
 
 type LookupCity struct {
 	Country struct {
-		ISOCode string `maxminddb:"iso_code"`
-		Names   struct {
+		ISOCode   string `maxminddb:"iso_code"`
+		GeoNameID uint   `maxminddb:"geoname_id"`
+		Names     struct {
 			EN string `maxminddb:"en"`
 		} `maxminddb:"names"`
 	} `maxminddb:"country"`
 	Continent struct {
-		Code string `maxminddb:"code"`
+		Code      string `maxminddb:"code"`
+		GeoNameID uint   `maxminddb:"geoname_id"`
 	} `maxminddb:"continent"`
 	City struct {
-		Names struct {
+		GeoNameID uint `maxminddb:"geoname_id"`
+		Names     struct {
 			EN string `maxminddb:"en"`
 		} `maxminddb:"names"`
 	} `maxminddb:"city"`

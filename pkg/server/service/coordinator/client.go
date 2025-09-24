@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/cannon"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
@@ -135,7 +136,7 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 			if ipAddress != nil {
 				ip := net.ParseIP(*ipAddress)
 				if ip != nil {
-					geoipLookupResult, err := c.geoipProvider.LookupIP(ctx, ip)
+					geoipLookupResult, err := c.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 					if err != nil {
 						c.log.WithField("ip", *ipAddress).WithError(err).Warn("failed to lookup geoip data")
 					}

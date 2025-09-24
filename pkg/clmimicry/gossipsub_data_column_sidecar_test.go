@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestDataColumnSidecarIntegration(t *testing.T) {
@@ -103,7 +102,7 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 			},
 		}
 
-		err := mimicry.processor.handleGossipDataColumnSidecar(
+		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
 			createTestClientMeta(),
 			event,
@@ -199,14 +198,27 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	t.Run("Empty state and parent roots", func(t *testing.T) {
+	t.Run("Zero-filled state and parent roots", func(t *testing.T) {
+		zeroHash := make([]byte, 32)
+		testHeader := &ethtypes.BeaconBlockHeader{
+			Slot:          primitives.Slot(100),
+			ProposerIndex: primitives.ValidatorIndex(1),
+			StateRoot:     zeroHash,
+			ParentRoot:    zeroHash,
+			BodyRoot:      zeroHash,
+		}
+
+		// Calculate the expected block root hash
+		expectedRoot, err2 := testHeader.HashTreeRoot()
+		require.NoError(t, err2)
+
 		mockSink.EXPECT().
 			HandleNewDecoratedEvent(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(_ context.Context, event *xatu.DecoratedEvent) error {
 				data := event.GetLibp2PTraceGossipsubDataColumnSidecar()
-				assert.Equal(t, wrapperspb.String("").GetValue(), data.StateRoot.GetValue())
-				assert.Equal(t, wrapperspb.String("").GetValue(), data.ParentRoot.GetValue())
-				assert.Equal(t, wrapperspb.String("").GetValue(), data.BlockRoot.GetValue())
+				assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", data.StateRoot.GetValue())
+				assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", data.ParentRoot.GetValue())
+				assert.Equal(t, hex.EncodeToString(expectedRoot[:]), data.BlockRoot.GetValue())
 
 				return nil
 			}).
@@ -221,18 +233,12 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			DataColumnSidecar: &ethtypes.DataColumnSidecar{
 				Index: 0,
 				SignedBlockHeader: &ethtypes.SignedBeaconBlockHeader{
-					Header: &ethtypes.BeaconBlockHeader{
-						Slot:          primitives.Slot(100),
-						ProposerIndex: primitives.ValidatorIndex(1),
-						StateRoot:     []byte{},
-						ParentRoot:    []byte{},
-						BodyRoot:      []byte{},
-					},
+					Header: testHeader,
 				},
 			},
 		}
 
-		err := mimicry.processor.handleGossipDataColumnSidecar(
+		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
 			createTestClientMeta(),
 			&host.TraceEvent{
@@ -282,7 +288,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			},
 		}
 
-		err := mimicry.processor.handleGossipDataColumnSidecar(
+		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
 			createTestClientMeta(),
 			&host.TraceEvent{
@@ -405,6 +411,16 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 			},
 			expectError: false,
 			setupMockCalls: func(mockSink *mock.MockSink) {
+				// Calculate expected block root hash from the header
+				expectedHeader := &ethtypes.BeaconBlockHeader{
+					Slot:          primitives.Slot(100),
+					ProposerIndex: primitives.ValidatorIndex(42),
+					StateRoot:     stateRoot[:],
+					ParentRoot:    parentRoot[:],
+					BodyRoot:      bodyRoot[:],
+				}
+				expectedBlockRoot, _ := expectedHeader.HashTreeRoot()
+
 				expectEventWithValidation(t, mockSink, func(t *testing.T, event *xatu.DecoratedEvent) {
 					t.Helper()
 
@@ -418,7 +434,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, hex.EncodeToString(stateRoot[:]), data.StateRoot.GetValue())
 					assert.Equal(t, hex.EncodeToString(parentRoot[:]), data.ParentRoot.GetValue())
 					assert.Equal(t, uint32(3), data.KzgCommitmentsCount.GetValue())
-					assert.Equal(t, hex.EncodeToString(bodyRoot[:]), data.BlockRoot.GetValue())
+					assert.Equal(t, hex.EncodeToString(expectedBlockRoot[:]), data.BlockRoot.GetValue())
 
 					// Check metadata
 					meta := event.GetMeta().GetClient()
@@ -534,6 +550,16 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 			},
 			expectError: false,
 			setupMockCalls: func(mockSink *mock.MockSink) {
+				// Calculate expected block root hash from the header
+				expectedHeader := &ethtypes.BeaconBlockHeader{
+					Slot:          primitives.Slot(200),
+					ProposerIndex: primitives.ValidatorIndex(1),
+					StateRoot:     stateRoot[:],
+					ParentRoot:    parentRoot[:],
+					BodyRoot:      bodyRoot[:],
+				}
+				expectedBlockRoot, _ := expectedHeader.HashTreeRoot()
+
 				expectEventWithValidation(t, mockSink, func(t *testing.T, event *xatu.DecoratedEvent) {
 					t.Helper()
 
@@ -545,7 +571,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, uint64(200), data.Slot.GetValue())
 					assert.Equal(t, uint64(1), data.ProposerIndex.GetValue())
 					assert.Equal(t, uint32(0), data.KzgCommitmentsCount.GetValue())
-					assert.Equal(t, hex.EncodeToString(bodyRoot[:]), data.BlockRoot.GetValue())
+					assert.Equal(t, hex.EncodeToString(expectedBlockRoot[:]), data.BlockRoot.GetValue())
 				})
 			},
 		},

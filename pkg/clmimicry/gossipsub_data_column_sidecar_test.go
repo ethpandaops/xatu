@@ -96,6 +96,7 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 						ProposerIndex: primitives.ValidatorIndex(42),
 						StateRoot:     stateRoot[:],
 						ParentRoot:    parentRoot[:],
+						BodyRoot:      bodyRoot[:],
 					},
 				},
 			},
@@ -204,6 +205,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 				data := event.GetLibp2PTraceGossipsubDataColumnSidecar()
 				assert.Equal(t, wrapperspb.String("").GetValue(), data.StateRoot.GetValue())
 				assert.Equal(t, wrapperspb.String("").GetValue(), data.ParentRoot.GetValue())
+				assert.Equal(t, wrapperspb.String("").GetValue(), data.BlockRoot.GetValue())
 
 				return nil
 			}).
@@ -223,6 +225,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 						ProposerIndex: primitives.ValidatorIndex(1),
 						StateRoot:     []byte{},
 						ParentRoot:    []byte{},
+						BodyRoot:      []byte{},
 					},
 				},
 			},
@@ -272,6 +275,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 						ProposerIndex: primitives.ValidatorIndex(100),
 						StateRoot:     make([]byte, 32),
 						ParentRoot:    make([]byte, 32),
+						BodyRoot:      make([]byte, 32),
 					},
 				},
 			},
@@ -411,6 +415,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, hex.EncodeToString(stateRoot[:]), data.StateRoot.GetValue())
 					assert.Equal(t, hex.EncodeToString(parentRoot[:]), data.ParentRoot.GetValue())
 					assert.Equal(t, uint32(3), data.KzgCommitmentsCount.GetValue())
+					assert.Equal(t, hex.EncodeToString(bodyRoot[:]), data.BlockRoot.GetValue())
 
 					// Check metadata
 					meta := event.GetMeta().GetClient()
@@ -482,6 +487,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 							ProposerIndex: primitives.ValidatorIndex(42),
 							StateRoot:     stateRoot[:],
 							ParentRoot:    parentRoot[:],
+							BodyRoot:      bodyRoot[:],
 						},
 					},
 				},
@@ -518,6 +524,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 							ProposerIndex: primitives.ValidatorIndex(1),
 							StateRoot:     stateRoot[:],
 							ParentRoot:    parentRoot[:],
+							BodyRoot:      bodyRoot[:],
 						},
 					},
 				},
@@ -535,6 +542,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, uint64(200), data.Slot.GetValue())
 					assert.Equal(t, uint64(1), data.ProposerIndex.GetValue())
 					assert.Equal(t, uint32(0), data.KzgCommitmentsCount.GetValue())
+					assert.Equal(t, hex.EncodeToString(bodyRoot[:]), data.BlockRoot.GetValue())
 				})
 			},
 		},

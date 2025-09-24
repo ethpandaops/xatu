@@ -34,6 +34,7 @@ func (p *Processor) handleGossipDataColumnSidecar(
 		ProposerIndex:       wrapperspb.UInt64(uint64(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetProposerIndex())),
 		StateRoot:           wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetStateRoot())),
 		ParentRoot:          wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetParentRoot())),
+		BlockRoot:           wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetBodyRoot())),
 		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
 	}
 

@@ -34,6 +34,7 @@ func (p *Processor) handleGossipBlobSidecar(
 		ProposerIndex: wrapperspb.UInt64(uint64(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetProposerIndex())),
 		StateRoot:     wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetStateRoot())),
 		ParentRoot:    wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetParentRoot())),
+		BlockRoot:     wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetBodyRoot())),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)

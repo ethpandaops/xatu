@@ -47,6 +47,7 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 
 	stateRoot := [32]byte{10, 20, 30, 40}
 	parentRoot := [32]byte{50, 60, 70, 80}
+	bodyRoot := [32]byte{90, 100, 110, 120}
 
 	// Create multiple data column sidecars with different indices
 	sidecars := []struct {
@@ -349,9 +350,10 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	// Create sample state and parent roots
+	// Create sample state, parent, and body roots
 	stateRoot := [32]byte{1, 2, 3, 4}
 	parentRoot := [32]byte{5, 6, 7, 8}
+	bodyRoot := [32]byte{9, 10, 11, 12}
 
 	tests := []struct {
 		name           string
@@ -396,6 +398,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 							ProposerIndex: primitives.ValidatorIndex(42),
 							StateRoot:     stateRoot[:],
 							ParentRoot:    parentRoot[:],
+							BodyRoot:      bodyRoot[:],
 						},
 					},
 				},

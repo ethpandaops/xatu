@@ -65,7 +65,7 @@ const (
 	Event_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION   Event_Name = 30
 	Event_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL              Event_Name = 31
 	Event_BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR                  Event_Name = 32
-	Event_BLOCKPRINT_BLOCK_CLASSIFICATION                        Event_Name = 33
+	Event_BLOCKPRINT_BLOCK_CLASSIFICATION                        Event_Name = 33 // Deprecated: Blockprint is no longer supported
 	Event_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR                  Event_Name = 34
 	Event_BEACON_P2P_ATTESTATION                                 Event_Name = 35
 	Event_BEACON_API_ETH_V1_PROPOSER_DUTY                        Event_Name = 36
@@ -2080,6 +2080,7 @@ type ClientMeta_EthV1EventsBlobSidecar struct {
 }
 
 type ClientMeta_BlockprintBlockClassification struct {
+	// Deprecated: Blockprint is no longer supported
 	// AdditionalBlockprintBlockClassification contains additional data on
 	// blockprint block classifications.
 	BlockprintBlockClassification *ClientMeta_AdditionalBlockprintBlockClassificationData `protobuf:"bytes,43,opt,name=blockprint_block_classification,json=BLOCKPRINT_BLOCK_CLASSIFICATION,proto3,oneof"`
@@ -3566,6 +3567,7 @@ type DecoratedEvent_EthV1EventsBlobSidecar struct {
 }
 
 type DecoratedEvent_BlockprintBlockClassification struct {
+	// Deprecated: Blockprint is no longer supported
 	BlockprintBlockClassification *blockprint.BlockClassification `protobuf:"bytes,35,opt,name=blockprint_block_classification,json=BLOCKPRINT_BLOCK_CLASSIFICATION,proto3,oneof"`
 }
 
@@ -6617,6 +6619,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) GetBlock() *BlockI
 	return nil
 }
 
+// Deprecated: Blockprint is no longer supported
 type ClientMeta_AdditionalBlockprintBlockClassificationData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

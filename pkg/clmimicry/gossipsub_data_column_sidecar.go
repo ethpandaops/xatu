@@ -28,13 +28,20 @@ func (p *Processor) handleGossipDataColumnSidecar(
 		return fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
 	}
 
+	header := payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader()
+
+	blockRoot, err := header.HashTreeRoot()
+	if err != nil {
+		return fmt.Errorf("failed to calculate block header hash tree root: %w", err)
+	}
+
 	data := &gossipsub.DataColumnSidecar{
 		Index:               wrapperspb.UInt64(payload.DataColumnSidecar.GetIndex()),
-		Slot:                wrapperspb.UInt64(uint64(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetSlot())),
-		ProposerIndex:       wrapperspb.UInt64(uint64(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetProposerIndex())),
-		StateRoot:           wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetStateRoot())),
-		ParentRoot:          wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetParentRoot())),
-		BlockRoot:           wrapperspb.String(hex.EncodeToString(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetBodyRoot())),
+		Slot:                wrapperspb.UInt64(uint64(header.GetSlot())),
+		ProposerIndex:       wrapperspb.UInt64(uint64(header.GetProposerIndex())),
+		StateRoot:           wrapperspb.String(hex.EncodeToString(header.GetStateRoot())),
+		ParentRoot:          wrapperspb.String(hex.EncodeToString(header.GetParentRoot())),
+		BlockRoot:           wrapperspb.String(hex.EncodeToString(blockRoot[:])),
 		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
 	}
 

@@ -28,13 +28,20 @@ func (p *Processor) handleGossipBlobSidecar(
 		return fmt.Errorf("handleGossipBlobSidecar() called with nil blob sidecar")
 	}
 
+	header := payload.BlobSidecar.GetSignedBlockHeader().GetHeader()
+
+	blockRoot, err := header.HashTreeRoot()
+	if err != nil {
+		return fmt.Errorf("failed to calculate block header hash tree root: %w", err)
+	}
+
 	data := &gossipsub.BlobSidecar{
 		Index:         wrapperspb.UInt64(payload.BlobSidecar.GetIndex()),
-		Slot:          wrapperspb.UInt64(uint64(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetSlot())),
-		ProposerIndex: wrapperspb.UInt64(uint64(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetProposerIndex())),
-		StateRoot:     wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetStateRoot())),
-		ParentRoot:    wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetParentRoot())),
-		BlockRoot:     wrapperspb.String(hex.EncodeToString(payload.BlobSidecar.GetSignedBlockHeader().GetHeader().GetBodyRoot())),
+		Slot:          wrapperspb.UInt64(uint64(header.GetSlot())),
+		ProposerIndex: wrapperspb.UInt64(uint64(header.GetProposerIndex())),
+		StateRoot:     wrapperspb.String(hex.EncodeToString(header.GetStateRoot())),
+		ParentRoot:    wrapperspb.String(hex.EncodeToString(header.GetParentRoot())),
+		BlockRoot:     wrapperspb.String(hex.EncodeToString(blockRoot[:])),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)

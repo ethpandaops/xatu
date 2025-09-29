@@ -609,6 +609,10 @@ func TraceEventToHandleMetadata(event *host.TraceEvent) (*HandleMetadata, error)
 		metadata.Error = wrapperspb.String(errorStr)
 	}
 
+	if direction, ok := payload["Direction"].(string); ok {
+		metadata.Direction = wrapperspb.String(direction)
+	}
+
 	return metadata, nil
 }
 

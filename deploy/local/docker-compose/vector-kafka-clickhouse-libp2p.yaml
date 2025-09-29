@@ -1465,6 +1465,7 @@ transforms:
       }
 
       .protocol = .data.protocol_id
+      .direction = .data.direction
 
       .updated_date_time = to_unix_timestamp(now())
 
@@ -1511,6 +1512,7 @@ transforms:
       }
 
       .protocol = .data.protocol_id
+      .direction = .data.direction
       .updated_date_time = to_unix_timestamp(now())
 
       del(.event)

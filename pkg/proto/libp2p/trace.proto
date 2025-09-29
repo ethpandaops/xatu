@@ -146,6 +146,7 @@ message HandleStatus {
   google.protobuf.FloatValue latency = 4;
   xatu.libp2p.Status request = 5;
   xatu.libp2p.Status response = 6;
+  google.protobuf.StringValue direction = 7 [json_name = "direction"];
 }
 
 message HandleMetadata {
@@ -154,6 +155,7 @@ message HandleMetadata {
   google.protobuf.StringValue error = 3;
   google.protobuf.FloatValue latency = 4;
   xatu.libp2p.Metadata metadata = 5;
+  google.protobuf.StringValue direction = 6 [json_name = "direction"];
 }
 
 message SyntheticHeartbeat {

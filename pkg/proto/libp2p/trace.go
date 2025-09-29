@@ -636,6 +636,10 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 		status.Latency = wrapperspb.Float(float32(latencyS))
 	}
 
+	if direction, ok := payload["Direction"].(string); ok {
+		status.Direction = wrapperspb.String(direction)
+	}
+
 	if requestData, ok := payload["Request"].(map[string]any); ok {
 		request, err := parseStatus(requestData)
 		if err != nil {

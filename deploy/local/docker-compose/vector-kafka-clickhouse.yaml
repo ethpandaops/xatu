@@ -595,7 +595,15 @@ transforms:
       }
       .block_root = .data.block_root
       .column_index = .data.index
-      .kzg_commitments = .data.kzg_commitments
+      # Handle backward compatibility: if kzg_commitments is present, calculate count
+      # Otherwise use kzg_commitments_count directly. Abort if neither exists.
+      if exists(.data.kzg_commitments) && .data.kzg_commitments != null {
+        .kzg_commitments_count = length(.data.kzg_commitments)
+      } else if exists(.data.kzg_commitments_count) && .data.kzg_commitments_count != null {
+        .kzg_commitments_count = .data.kzg_commitments_count
+      } else {
+        abort
+      }
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)

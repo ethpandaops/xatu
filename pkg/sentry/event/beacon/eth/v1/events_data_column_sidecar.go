@@ -53,10 +53,11 @@ func (e *EventsDataColumnSidecar) Decorate(ctx context.Context) (*xatu.Decorated
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsDataColumnSidecar{
 			EthV1EventsDataColumnSidecar: &xatuethv1.EventDataColumnSidecar{
-				Slot:           &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
-				Index:          &wrapperspb.UInt64Value{Value: e.event.Index},
-				BlockRoot:      e.event.BlockRoot.String(),
-				KzgCommitments: e.convertKZGCommitments(),
+				Slot:      &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+				Index:     &wrapperspb.UInt64Value{Value: e.event.Index},
+				BlockRoot: e.event.BlockRoot.String(),
+				//nolint:gosec // overflow not a concern for KZG commitment count
+				KzgCommitmentsCount: &wrapperspb.UInt32Value{Value: uint32(len(e.event.KZGCommitments))},
 			},
 		},
 	}
@@ -122,13 +123,4 @@ func (e *EventsDataColumnSidecar) getAdditionalData(_ context.Context) (*xatu.Cl
 	}
 
 	return extra, nil
-}
-
-func (e *EventsDataColumnSidecar) convertKZGCommitments() []string {
-	commitments := make([]string, len(e.event.KZGCommitments))
-	for i, commitment := range e.event.KZGCommitments {
-		commitments[i] = fmt.Sprintf("%#x", commitment)
-	}
-
-	return commitments
 }

@@ -183,10 +183,12 @@ message EventBlockGossip {
 
 message EventDataColumnSidecar {
   google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
-  
+
   google.protobuf.UInt64Value index = 2 [ json_name = "index" ];
-  
+
   string block_root = 3 [ json_name = "block_root" ];
-  
-  repeated string kzg_commitments = 4 [ json_name = "kzg_commitments" ];
+
+  repeated string kzg_commitments = 4 [ json_name = "kzg_commitments", deprecated = true ];
+
+  google.protobuf.UInt32Value kzg_commitments_count = 5 [ json_name = "kzg_commitments_count" ];
 }

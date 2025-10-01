@@ -1448,6 +1448,7 @@ transforms:
         .request_fork_digest = .data.request.fork_digest
         .request_head_root = .data.request.head_root
         .request_head_slot = .data.request.head_slot
+        .request_earliest_available_slot = .data.request.earliest_available_slot
       }
       if .data.response != null {
         .response_finalized_epoch = .data.response.finalized_epoch
@@ -1455,6 +1456,7 @@ transforms:
         .response_fork_digest = .data.response.fork_digest
         .response_head_root = .data.response.head_root
         .response_head_slot = .data.response.head_slot
+        .response_earliest_available_slot = .data.response.earliest_available_slot
       }
 
       .latency_milliseconds, err = .data.latency * 1000
@@ -1503,6 +1505,7 @@ transforms:
       .attnets = .data.metadata.attnets
       .seq_number = .data.metadata.seq_number
       .syncnets = .data.metadata.syncnets
+      .custody_group_count = .data.metadata.custody_group_count
 
       .latency_milliseconds, err = .data.latency * 1000
       if err != null {

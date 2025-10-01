@@ -1,16 +1,22 @@
--- Drop distributed tables
+-- Remove Direction column from distributed tables first
 DROP TABLE IF EXISTS libp2p_handle_status ON CLUSTER '{cluster}' SYNC;
 DROP TABLE IF EXISTS libp2p_handle_metadata ON CLUSTER '{cluster}' SYNC;
 
--- Add Direction column to libp2p_handle_status_local
+-- Remove Direction column from local tables
 ALTER TABLE libp2p_handle_status_local ON CLUSTER '{cluster}'
-ADD COLUMN IF NOT EXISTS direction LowCardinality(Nullable(String)) COMMENT 'Direction of the RPC request (inbound or outbound)' CODEC(ZSTD(1))
-AFTER protocol;
+DROP COLUMN IF EXISTS direction;
 
--- Add Direction column to libp2p_handle_metadata_local
+ALTER TABLE libp2p_handle_status_local ON CLUSTER '{cluster}'
+DROP COLUMN IF EXISTS request_earliest_available_slot;
+
+ALTER TABLE libp2p_handle_status_local ON CLUSTER '{cluster}'
+DROP COLUMN IF EXISTS response_earliest_available_slot;
+
 ALTER TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
-ADD COLUMN IF NOT EXISTS direction LowCardinality(Nullable(String)) COMMENT 'Direction of the RPC request (inbound or outbound)' CODEC(ZSTD(1))
-AFTER protocol;
+DROP COLUMN IF EXISTS direction;
+
+ALTER TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
+DROP COLUMN IF EXISTS custody_group_count;
 
 -- Recreate distributed tables
 CREATE TABLE libp2p_handle_status ON CLUSTER '{cluster}' AS libp2p_handle_status_local

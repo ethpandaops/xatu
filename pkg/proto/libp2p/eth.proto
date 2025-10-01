@@ -12,10 +12,12 @@ message Status {
     google.protobuf.UInt64Value finalized_epoch = 3 [json_name = "finalized_epoch"];
     google.protobuf.StringValue head_root = 4 [json_name = "head_root"];
     google.protobuf.UInt64Value head_slot = 5 [json_name = "head_slot"];
+    google.protobuf.UInt64Value earliest_available_slot = 6 [json_name = "earliest_available_slot"];
 }
 
 message Metadata {
     google.protobuf.UInt64Value seq_number = 1 [json_name = "seq_number"];
     google.protobuf.StringValue attnets = 2;
     google.protobuf.StringValue syncnets = 3;
+    google.protobuf.UInt64Value custody_group_count = 4 [json_name = "custody_group_count"];
 }

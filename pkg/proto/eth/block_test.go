@@ -7,6 +7,7 @@ import (
 	"github.com/attestantio/go-eth2-client/api"
 	apiv1deneb "github.com/attestantio/go-eth2-client/api/v1/deneb"
 	apiv1electra "github.com/attestantio/go-eth2-client/api/v1/electra"
+	apiv1fulu "github.com/attestantio/go-eth2-client/api/v1/fulu"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/altair"
 	"github.com/attestantio/go-eth2-client/spec/bellatrix"
@@ -94,7 +95,7 @@ func TestNewEventBlockV2FromVersionedProposal(t *testing.T) {
 			name: "fulu proposal",
 			proposal: &api.VersionedProposal{
 				Version: spec.DataVersionFulu,
-				Fulu: &apiv1electra.BlockContents{
+				Fulu: &apiv1fulu.BlockContents{
 					Block: mockFuluBlock(),
 				},
 			},

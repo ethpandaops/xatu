@@ -10,7 +10,7 @@ AFTER protocol;
 -- Add Direction column to libp2p_handle_metadata_local
 ALTER TABLE libp2p_handle_metadata_local ON CLUSTER '{cluster}'
 ADD COLUMN IF NOT EXISTS direction LowCardinality(Nullable(String)) COMMENT 'Direction of the RPC request (inbound or outbound)' CODEC(ZSTD(1))
-AFTER protocol;```
+AFTER protocol;
 
 -- Recreate distributed tables
 CREATE TABLE libp2p_handle_status ON CLUSTER '{cluster}' AS libp2p_handle_status_local

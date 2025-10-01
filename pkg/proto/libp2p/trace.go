@@ -613,6 +613,10 @@ func TraceEventToHandleMetadata(event *host.TraceEvent) (*HandleMetadata, error)
 		metadata.Direction = wrapperspb.String(direction)
 	}
 
+	if custodyGroupCount, ok := payload["CustodyGroupCount"].(uint8); ok {
+		metadata.Metadata.CustodyGroupCount = wrapperspb.UInt64(uint64(custodyGroupCount))
+	}
+
 	return metadata, nil
 }
 
@@ -652,6 +656,7 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 			FinalizedEpoch: wrapperspb.UInt64(request.FinalizedEpoch),
 			HeadRoot:       wrapperspb.String(request.HeadRoot),
 			HeadSlot:       wrapperspb.UInt64(request.HeadSlot),
+			EarliestAvailableSlot: wrapperspb.UInt64(request.EarliestAvailableSlot),
 		}
 	}
 
@@ -667,6 +672,7 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 			FinalizedEpoch: wrapperspb.UInt64(response.FinalizedEpoch),
 			HeadRoot:       wrapperspb.String(response.HeadRoot),
 			HeadSlot:       wrapperspb.UInt64(response.HeadSlot),
+			EarliestAvailableSlot: wrapperspb.UInt64(response.EarliestAvailableSlot),
 		}
 	}
 
@@ -683,6 +689,7 @@ type statusFields struct {
 	FinalizedEpoch uint64
 	HeadRoot       string
 	HeadSlot       uint64
+	EarliestAvailableSlot uint64
 }
 
 func parseStatus(data map[string]any) (*statusFields, error) {
@@ -706,6 +713,10 @@ func parseStatus(data map[string]any) (*statusFields, error) {
 
 	if headSlot, ok := data["HeadSlot"].(primitives.Slot); ok {
 		status.HeadSlot = uint64(headSlot)
+	}
+
+	if earliestAvailableSlot, ok := data["EarliestAvailableSlot"].(primitives.Slot); ok {
+		status.EarliestAvailableSlot = uint64(earliestAvailableSlot)
 	}
 
 	return status, nil

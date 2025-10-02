@@ -609,6 +609,14 @@ func TraceEventToHandleMetadata(event *host.TraceEvent) (*HandleMetadata, error)
 		metadata.Error = wrapperspb.String(errorStr)
 	}
 
+	if direction, ok := payload["Direction"].(string); ok {
+		metadata.Direction = wrapperspb.String(direction)
+	}
+
+	if custodyGroupCount, ok := payload["CustodyGroupCount"].(uint64); ok {
+		metadata.Metadata.CustodyGroupCount = wrapperspb.UInt64(custodyGroupCount)
+	}
+
 	return metadata, nil
 }
 
@@ -632,6 +640,10 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 		status.Latency = wrapperspb.Float(float32(latencyS))
 	}
 
+	if direction, ok := payload["Direction"].(string); ok {
+		status.Direction = wrapperspb.String(direction)
+	}
+
 	if requestData, ok := payload["Request"].(map[string]any); ok {
 		request, err := parseStatus(requestData)
 		if err != nil {
@@ -639,11 +651,12 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 		}
 
 		status.Request = &Status{
-			ForkDigest:     wrapperspb.String(request.ForkDigest),
-			FinalizedRoot:  wrapperspb.String(request.FinalizedRoot),
-			FinalizedEpoch: wrapperspb.UInt64(request.FinalizedEpoch),
-			HeadRoot:       wrapperspb.String(request.HeadRoot),
-			HeadSlot:       wrapperspb.UInt64(request.HeadSlot),
+			ForkDigest:            wrapperspb.String(request.ForkDigest),
+			FinalizedRoot:         wrapperspb.String(request.FinalizedRoot),
+			FinalizedEpoch:        wrapperspb.UInt64(request.FinalizedEpoch),
+			HeadRoot:              wrapperspb.String(request.HeadRoot),
+			HeadSlot:              wrapperspb.UInt64(request.HeadSlot),
+			EarliestAvailableSlot: wrapperspb.UInt64(request.EarliestAvailableSlot),
 		}
 	}
 
@@ -654,11 +667,12 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 		}
 
 		status.Response = &Status{
-			ForkDigest:     wrapperspb.String(response.ForkDigest),
-			FinalizedRoot:  wrapperspb.String(response.FinalizedRoot),
-			FinalizedEpoch: wrapperspb.UInt64(response.FinalizedEpoch),
-			HeadRoot:       wrapperspb.String(response.HeadRoot),
-			HeadSlot:       wrapperspb.UInt64(response.HeadSlot),
+			ForkDigest:            wrapperspb.String(response.ForkDigest),
+			FinalizedRoot:         wrapperspb.String(response.FinalizedRoot),
+			FinalizedEpoch:        wrapperspb.UInt64(response.FinalizedEpoch),
+			HeadRoot:              wrapperspb.String(response.HeadRoot),
+			HeadSlot:              wrapperspb.UInt64(response.HeadSlot),
+			EarliestAvailableSlot: wrapperspb.UInt64(response.EarliestAvailableSlot),
 		}
 	}
 
@@ -670,11 +684,12 @@ func TraceEventToHandleStatus(event *host.TraceEvent) (*HandleStatus, error) {
 }
 
 type statusFields struct {
-	ForkDigest     string
-	FinalizedRoot  string
-	FinalizedEpoch uint64
-	HeadRoot       string
-	HeadSlot       uint64
+	ForkDigest            string
+	FinalizedRoot         string
+	FinalizedEpoch        uint64
+	HeadRoot              string
+	HeadSlot              uint64
+	EarliestAvailableSlot uint64
 }
 
 func parseStatus(data map[string]any) (*statusFields, error) {
@@ -698,6 +713,10 @@ func parseStatus(data map[string]any) (*statusFields, error) {
 
 	if headSlot, ok := data["HeadSlot"].(primitives.Slot); ok {
 		status.HeadSlot = uint64(headSlot)
+	}
+
+	if earliestAvailableSlot, ok := data["EarliestAvailableSlot"].(primitives.Slot); ok {
+		status.EarliestAvailableSlot = uint64(earliestAvailableSlot)
 	}
 
 	return status, nil

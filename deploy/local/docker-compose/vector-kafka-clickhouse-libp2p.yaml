@@ -16,6 +16,7 @@ sources:
       codec: json
     topics:
       - "^libp2p-trace.+"
+      - "^libp2p-rpc.+"
     auto_offset_reset: earliest
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
@@ -226,6 +227,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
+      libp2p_rpc_data_column_custody_probe: .event.name == "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE"
       libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
@@ -259,6 +261,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
+      - xatu_server_events_router.libp2p_rpc_data_column_custody_probe
       - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
@@ -1410,6 +1413,97 @@ transforms:
       .topic_fork_digest_value = topicParts[2]
       .topic_name = topicParts[3]
       .topic_encoding = topicParts[4]
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
+  libp2p_rpc_data_column_custody_probe_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_rpc_data_column_custody_probe
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .slot = .data.slot
+      slot_start_date_time, err = parse_timestamp(.data.slot_start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .epoch = .data.epoch
+      .column_index = .data.column_index
+
+      .peer_id = .data.peer_id
+      if .data.peer_user_agent != null {
+        .peer_user_agent = .data.peer_user_agent
+      } else {
+        .peer_user_agent = ""
+      }
+      if .data.peer_protocols != null {
+        .peer_protocols = .data.peer_protocols
+      } else {
+        .peer_protocols = []
+      }
+
+      if .data.expected_custody != null {
+        .expected_custody = if .data.expected_custody { 1 } else { 0 }
+      } else {
+        .expected_custody = 0
+      }
+
+      if .data.custody_group_count != null {
+        .custody_group_count = .data.custody_group_count
+      } else {
+        .custody_group_count = 0
+      }
+
+      if .data.success != null {
+        .success = if .data.success { 1 } else { 0 }
+      } else {
+        .success = 0
+      }
+
+      if .data.response_time_ms != null {
+        .response_time_ms = .data.response_time_ms
+      } else {
+        .response_time_ms = 0
+      }
+
+      if .data.received_data != null {
+        .received_data = if .data.received_data { 1 } else { 0 }
+      } else {
+        .received_data = 0
+      }
+
+      if .data.valid_kzg != null {
+        .valid_kzg = if .data.valid_kzg { 1 } else { 0 }
+      } else {
+        .valid_kzg = 0
+      }
+
+      if .data.error != null {
+        .error = .data.error
+      }
+
+      if .data.error_type != null {
+        .error_type = .data.error_type
+      } else {
+        .error_type = ""
+      }
 
       del(.event)
       del(.meta)
@@ -2795,6 +2889,26 @@ sinks:
       timeout_secs: 1
     buffer:
       max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_rpc_data_column_custody_probe_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_rpc_data_column_custody_probe_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_data_column_custody_probe_local
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 10485760
+      max_events: 10000
+      timeout_secs: 5
+    buffer:
+      max_events: 10000
     healthcheck:
       enabled: true
     skip_unknown_fields: false

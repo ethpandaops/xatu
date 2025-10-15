@@ -31,6 +31,8 @@ import "pkg/proto/libp2p/peer.proto";
 import "pkg/proto/libp2p/trace.proto";
 import "pkg/proto/libp2p/gossipsub/eth.proto";
 
+import "pkg/proto/xatu/custody_probe.proto";
+
 import "pkg/proto/noderecord/consensus.proto";
 import "pkg/proto/noderecord/execution.proto";
 
@@ -1852,6 +1854,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
+    xatu.libp2p.rpc.DataColumnCustodyProbe libp2p_rpc_data_column_custody_probe = 200
+        [ json_name = "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
   };
 }
 

@@ -98,6 +98,7 @@ var (
 	TypeNodeRecordExecution                     Type = Type(noderecord.ExecutionType)
 	TypeNodeRecordConsensus                     Type = Type(noderecord.ConsensusType)
 	TypeLibP2PTraceSyntheticHeartbeat           Type = Type(libp2p.TraceSyntheticHeartbeatType)
+	TypeLibP2PRPCDataColumnCustodyProbe         Type = Type(libp2p.TypeLibp2pRPCDataColumnCustodyProbe)
 )
 
 type Event interface {
@@ -349,6 +350,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsDataColumnSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsDataColumnSidecar(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PRPCDataColumnCustodyProbe, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewDataColumnCustodyProbe(router.log, event), nil
 	})
 
 	return router

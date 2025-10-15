@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package xatu.libp2p.rpc;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/xatu";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// DataColumnCustodyProbe represents a peer custody probe event
+message DataColumnCustodyProbe {
+    // Probe metadata
+    google.protobuf.Timestamp probe_time = 1;
+    string peer_id = 2;
+
+    // Slot and column
+    uint64 slot = 3;
+    uint64 column_index = 4;
+
+    // Custody information
+    bool expected_custody = 5;
+    uint64 custody_group_count = 6;
+
+    // Probe results
+    bool success = 7;
+    int64 response_time_ms = 8;
+    bool received_data = 9;
+    bool valid_kzg = 10;
+    google.protobuf.StringValue error = 11;
+
+    // Peer metadata
+    string peer_user_agent = 12;
+    repeated string peer_protocols = 13;
+}

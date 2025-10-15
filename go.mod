@@ -2,8 +2,19 @@ module github.com/ethpandaops/xatu
 
 go 1.25.1
 
-// release-xatu branch.
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20251001001342-3643aa32bc73
+// Local development - point to sibling directories
+replace github.com/probe-lab/hermes => ../hermes
+
+replace github.com/ethpandaops/hermes => ../hermes
+
+replace github.com/OffchainLabs/prysm/v6 => ../tysm
+
+// Match tysm's go-ethereum version requirement
+// Temporarily removed to allow ethcore to use its required version
+// replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.15.9
+
+// Match tysm's tablewriter version requirement
+replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
 require (
 	github.com/IBM/sarama v1.45.2
@@ -36,7 +47,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pkg/errors v0.9.1
-	github.com/probe-lab/hermes v0.0.0-20250328140724-f552d3382c38
+	github.com/probe-lab/hermes v0.0.4-0.20250825230246-90191d503312
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
 	github.com/redis/go-redis/v9 v9.7.3
@@ -121,7 +132,7 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/emicklei/dot v1.9.0 // indirect
-	github.com/ethereum/c-kzg-4844/v2 v2.1.3 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -157,7 +168,7 @@ require (
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
-	github.com/ipfs/go-log/v2 v2.6.0 // indirect
+	github.com/ipfs/go-log/v2 v2.8.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
@@ -219,7 +230,7 @@ require (
 	github.com/multiformats/go-multistream v0.6.1 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/olekukonko/tablewriter v1.0.9 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect

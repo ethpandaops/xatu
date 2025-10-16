@@ -7,23 +7,26 @@ CREATE TABLE IF NOT EXISTS libp2p_rpc_data_column_custody_probe_local ON CLUSTER
     -- Probe identifiers
     slot UInt32 COMMENT 'Slot number being probed' CODEC(DoubleDelta, ZSTD(1)),
     slot_start_date_time DateTime COMMENT 'The wall clock time when the slot started' CODEC(DoubleDelta, ZSTD(1)),
-    epoch UInt32 COMMENT 'Epoch number derived from slot' CODEC(DoubleDelta, ZSTD(1)),
+    epoch UInt32 COMMENT 'Epoch number of the slot being probed' CODEC(DoubleDelta, ZSTD(1)),
+    epoch_start_date_time DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
+
+    wallclock_request_slot UInt32 COMMENT 'The wallclock slot when the request was sent' CODEC(DoubleDelta, ZSTD(1)),
+    wallclock_request_slot_start_date_time DateTime COMMENT 'The start time for the slot when the request was sent' CODEC(DoubleDelta, ZSTD(1)),
+    wallclock_request_epoch UInt32 COMMENT 'The wallclock epoch when the request was sent' CODEC(DoubleDelta, ZSTD(1)),
+    wallclock_request_epoch_start_date_time DateTime COMMENT 'The start time for the wallclock epoch when the request was sent' CODEC(DoubleDelta, ZSTD(1)),
+
+    -- Column information
     column_index UInt64 COMMENT 'Column index being probed' CODEC(ZSTD(1)),
+    column_rows_count UInt16 COMMENT 'Number of rows in the column' CODEC(ZSTD(1)),
+    beacon_block_root FixedString(66) COMMENT 'Root of the beacon block' CODEC(ZSTD(1)),
 
     -- Peer information
     peer_id_unique_key Int64 COMMENT 'Unique key associated with the identifier of the peer',
 
-    -- Custody metadata
-    expected_custody UInt8 COMMENT 'Whether this column was in peer custody set (1=yes, 0=no)' CODEC(ZSTD(1)),
-    custody_group_count UInt64 COMMENT 'Number of custody groups the peer advertises' CODEC(ZSTD(1)),
-
     -- Probe results
-    success UInt8 COMMENT 'Whether the probe succeeded (1=success, 0=failure)' CODEC(ZSTD(1)),
-    response_time_ms Int64 COMMENT 'Response time in milliseconds' CODEC(ZSTD(1)),
-    received_data UInt8 COMMENT 'Whether peer returned data (1=yes, 0=no)' CODEC(ZSTD(1)),
-    valid_kzg UInt8 COMMENT 'Whether KZG commitments matched (1=yes, 0=no)' CODEC(ZSTD(1)),
+    result LowCardinality(String) COMMENT 'Result of the probe' CODEC(ZSTD(1)),
+    response_time_ms Int32 COMMENT 'Response time in milliseconds' CODEC(ZSTD(1)),
     error Nullable(String) COMMENT 'Error message if probe failed' CODEC(ZSTD(1)),
-    error_type LowCardinality(String) COMMENT 'Type of error (kzg_validation, timeout, rpc_error, etc)' CODEC(ZSTD(1)),
 
     -- Standard metadata fields
     meta_client_name LowCardinality(String) COMMENT 'Name of the client that executed the probe',

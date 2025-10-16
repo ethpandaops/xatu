@@ -27,6 +27,7 @@ type EventConfig struct {
 	DeliverMessageEnabled             bool `yaml:"deliverMessageEnabled" default:"false"`
 	HandleMetadataEnabled             bool `yaml:"handleMetadataEnabled" default:"true"`
 	HandleStatusEnabled               bool `yaml:"handleStatusEnabled" default:"true"`
+	CustodyProbeEnabled               bool `yaml:"custodyProbeEnabled" default:"true"`
 	GossipSubBeaconBlockEnabled       bool `yaml:"gossipSubBeaconBlockEnabled" default:"true"`
 	GossipSubAttestationEnabled       bool `yaml:"gossipSubAttestationEnabled" default:"true"`
 	GossipSubAggregateAndProofEnabled bool `yaml:"gossipSubAggregateAndProofEnabled" default:"true"`

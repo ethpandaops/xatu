@@ -990,7 +990,7 @@ transforms:
           .error_description = "failed to split topic"
       } else {
         if length(topicParts) != 5 {
-            errDebug = {
+            .errDebug = {
                 "topic": .meta.client.additional_data.topic,
             }
             .error_description = "failed to split topic"
@@ -1434,75 +1434,97 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
+      # Extract from .data
       .slot = .data.slot
-      slot_start_date_time, err = parse_timestamp(.data.slot_start_date_time, format: "%+");
-      if err == null {
-        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
-      } else {
-        .error = err
-        .error_description = "failed to parse slot start date time"
-        log(., level: "error", rate_limit_secs: 60)
-      }
-
       .epoch = .data.epoch
-      .column_index = .data.column_index
 
-      .peer_id = .data.peer_id
-      if .data.peer_user_agent != null {
-        .peer_user_agent = .data.peer_user_agent
-      } else {
-        .peer_user_agent = ""
-      }
-      if .data.peer_protocols != null {
-        .peer_protocols = .data.peer_protocols
-      } else {
-        .peer_protocols = []
+      if .data.column_index != null {
+        .column_index = .data.column_index
       }
 
-      if .data.expected_custody != null {
-        .expected_custody = if .data.expected_custody { 1 } else { 0 }
-      } else {
-        .expected_custody = 0
+      if .data.column_rows_count != null {
+        .column_rows_count = .data.column_rows_count
       }
 
-      if .data.custody_group_count != null {
-        .custody_group_count = .data.custody_group_count
-      } else {
-        .custody_group_count = 0
+      if .data.beacon_block_root != null {
+        .beacon_block_root = .data.beacon_block_root
       }
 
-      if .data.success != null {
-        .success = if .data.success { 1 } else { 0 }
-      } else {
-        .success = 0
+      if .data.result != null {
+        .result = .data.result
       }
 
       if .data.response_time_ms != null {
         .response_time_ms = .data.response_time_ms
-      } else {
-        .response_time_ms = 0
-      }
-
-      if .data.received_data != null {
-        .received_data = if .data.received_data { 1 } else { 0 }
-      } else {
-        .received_data = 0
-      }
-
-      if .data.valid_kzg != null {
-        .valid_kzg = if .data.valid_kzg { 1 } else { 0 }
-      } else {
-        .valid_kzg = 0
       }
 
       if .data.error != null {
         .error = .data.error
       }
 
-      if .data.error_type != null {
-        .error_type = .data.error_type
-      } else {
-        .error_type = ""
+      # Extract timestamp fields from metadata
+      if exists(.meta.client.additional_data.slot.start_date_time) {
+        slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+        if err == null {
+          .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse slot start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      if exists(.meta.client.additional_data.epoch.start_date_time) {
+        epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+        if err == null {
+          .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      # Extract wallclock fields from metadata
+      if exists(.meta.client.additional_data.wallclock_slot.number) {
+        .wallclock_request_slot = .meta.client.additional_data.wallclock_slot.number
+      }
+
+      if exists(.meta.client.additional_data.wallclock_slot.start_date_time) {
+        wallclock_request_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+        if err == null {
+          .wallclock_request_slot_start_date_time = to_unix_timestamp(wallclock_request_slot_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse wallclock request slot start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      if exists(.meta.client.additional_data.wallclock_epoch.number) {
+        .wallclock_request_epoch = .meta.client.additional_data.wallclock_epoch.number
+      }
+
+      if exists(.meta.client.additional_data.wallclock_epoch.start_date_time) {
+        wallclock_request_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+        if err == null {
+          .wallclock_request_epoch_start_date_time = to_unix_timestamp(wallclock_request_epoch_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse wallclock request epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      # Use peer_id_unique_key from metadata
+      if exists(.meta.client.additional_data.metadata.peer_id) {
+        peer_id_key, err = to_string(.meta.client.additional_data.metadata.peer_id) + to_string(.meta_network_name)
+        if err != null {
+          .error = err
+          .error_description = "failed to generate peer id unique key"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+        .peer_id_unique_key = seahash(peer_id_key)
       }
 
       del(.event)
@@ -2898,7 +2920,7 @@ sinks:
       - libp2p_rpc_data_column_custody_probe_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: libp2p_rpc_data_column_custody_probe_local
+    table: libp2p_rpc_data_column_custody_probe
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

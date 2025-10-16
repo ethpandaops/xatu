@@ -1,4 +1,4 @@
-logging: "info" # panic,fatal,warn,info,debug,trace
+logging: "trace" # panic,fatal,warn,info,debug,trace
 addr: ":8080"
 metricsAddr: ":9090"
 # pprofAddr: ":6060" # optional. if supplied it enables pprof server
@@ -160,10 +160,13 @@ services:
         type: http
         shippingMethod: async
         filter:
-          modules:
-            - CL_MIMICRY
-            - TYSM
-            - SIDECAR
+          # Temporarily disable module filter for testing
+          # modules:
+          #   - CL_MIMICRY
+          #   - TYSM
+          #   - SIDECAR
+          eventNames:
+            - LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 500000

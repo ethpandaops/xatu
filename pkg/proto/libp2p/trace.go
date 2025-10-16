@@ -749,3 +749,51 @@ func TraceEventToSyntheticHeartbeat(event *host.TraceEvent) (*SyntheticHeartbeat
 		ConnectionAgeNs: wrapperspb.Int64(payload.ConnectionAgeNs),
 	}, nil
 }
+
+// TraceEventToCustodyProbe converts a Hermes TraceEvent to a DataColumnCustodyProbe protobuf message
+func TraceEventToCustodyProbe(event *host.TraceEvent) (*DataColumnCustodyProbe, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for CustodyProbe")
+	}
+
+	probe := &DataColumnCustodyProbe{}
+
+	if peerID, ok := payload["PeerID"].(string); ok {
+		probe.PeerId = wrapperspb.String(peerID)
+	}
+
+	if slot, ok := payload["Slot"].(uint64); ok {
+		probe.Slot = wrapperspb.UInt32(uint32(slot))
+	}
+
+	if epoch, ok := payload["Epoch"].(uint64); ok {
+		probe.Epoch = wrapperspb.UInt32(uint32(epoch))
+	}
+
+	if columnIndex, ok := payload["ColumnIndex"].(uint64); ok {
+		probe.ColumnIndex = wrapperspb.UInt32(uint32(columnIndex))
+	}
+
+	if result, ok := payload["Result"].(string); ok {
+		probe.Result = wrapperspb.String(result)
+	}
+
+	if responseTimeMs, ok := payload["DurationMs"].(int64); ok {
+		probe.ResponseTimeMs = wrapperspb.Int64(responseTimeMs)
+	}
+
+	if errorStr, ok := payload["Error"].(string); ok {
+		probe.Error = wrapperspb.String(errorStr)
+	}
+
+	if beaconBlockRoot, ok := payload["BlockHash"].(string); ok {
+		probe.BeaconBlockRoot = wrapperspb.String(beaconBlockRoot)
+	}
+
+	if columnRowsCount, ok := payload["ColumnSize"].(int); ok {
+		probe.ColumnRowsCount = wrapperspb.UInt32(uint32(columnRowsCount))
+	}
+
+	return probe, nil
+}

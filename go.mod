@@ -29,7 +29,7 @@ require (
 	github.com/ethpandaops/beacon v0.65.0
 	github.com/ethpandaops/ethcore v0.0.0-20251001000135-f392e3493d0d
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ferranbt/fastssz v0.1.4
+	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4
 	github.com/golang/snappy v1.0.0
@@ -329,6 +329,7 @@ require (
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apimachinery v0.33.3 // indirect
 	k8s.io/client-go v0.32.3 // indirect

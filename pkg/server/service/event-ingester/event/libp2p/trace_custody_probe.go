@@ -35,12 +35,8 @@ func (e *DataColumnCustodyProbe) Validate(ctx context.Context) error {
 	data := probe.Libp2PRpcDataColumnCustodyProbe
 
 	// Validate required fields
-	if data.GetPeerId() == "" {
+	if data.GetPeerId().String() == "" {
 		return errors.New("peer_id is required")
-	}
-
-	if data.GetProbeTime() == nil {
-		return errors.New("probe_time is required")
 	}
 
 	return nil

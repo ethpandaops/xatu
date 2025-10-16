@@ -51,6 +51,7 @@ const (
 	EventType_RPC_META_SUBSCRIPTION      EventType = 23
 	EventType_RPC_META_MESSAGE           EventType = 24
 	EventType_SYNTHETIC_HEARTBEAT        EventType = 25
+	EventType_CUSTODY_PROBE              EventType = 26
 )
 
 // Enum value maps for EventType.
@@ -82,6 +83,7 @@ var (
 		23: "RPC_META_SUBSCRIPTION",
 		24: "RPC_META_MESSAGE",
 		25: "SYNTHETIC_HEARTBEAT",
+		26: "CUSTODY_PROBE",
 	}
 	EventType_value = map[string]int32{
 		"UNKNOWN":                    0,
@@ -110,6 +112,7 @@ var (
 		"RPC_META_SUBSCRIPTION":      23,
 		"RPC_META_MESSAGE":           24,
 		"SYNTHETIC_HEARTBEAT":        25,
+		"CUSTODY_PROBE":              26,
 	}
 )
 
@@ -2569,6 +2572,170 @@ func (x *ControlIDontWantMetaItem) GetControlIndex() *wrapperspb.UInt32Value {
 	return nil
 }
 
+// DataColumnCustodyProbe represents a peer custody probe event
+type DataColumnCustodyProbe struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Probe metadata
+	PeerId *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=peer_id,proto3" json:"peer_id,omitempty"`
+	// Slot and column
+	Slot                               *wrapperspb.UInt32Value `protobuf:"bytes,2,opt,name=slot,proto3" json:"slot,omitempty"`
+	SlotStartDateTime                  *wrapperspb.UInt64Value `protobuf:"bytes,3,opt,name=slot_start_date_time,proto3" json:"slot_start_date_time,omitempty"`
+	Epoch                              *wrapperspb.UInt32Value `protobuf:"bytes,4,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	EpochStartDateTime                 *wrapperspb.UInt64Value `protobuf:"bytes,5,opt,name=epoch_start_date_time,proto3" json:"epoch_start_date_time,omitempty"`
+	WallclockRequestSlot               *wrapperspb.UInt32Value `protobuf:"bytes,6,opt,name=wallclock_request_slot,proto3" json:"wallclock_request_slot,omitempty"`
+	WallclockRequestSlotStartDateTime  *wrapperspb.UInt64Value `protobuf:"bytes,7,opt,name=wallclock_request_slot_start_date_time,proto3" json:"wallclock_request_slot_start_date_time,omitempty"`
+	WallclockRequestEpoch              *wrapperspb.UInt32Value `protobuf:"bytes,8,opt,name=wallclock_request_epoch,proto3" json:"wallclock_request_epoch,omitempty"`
+	WallclockRequestEpochStartDateTime *wrapperspb.UInt64Value `protobuf:"bytes,9,opt,name=wallclock_request_epoch_start_date_time,proto3" json:"wallclock_request_epoch_start_date_time,omitempty"`
+	// Column information
+	ColumnIndex     *wrapperspb.UInt32Value `protobuf:"bytes,10,opt,name=column_index,proto3" json:"column_index,omitempty"`
+	ColumnRowsCount *wrapperspb.UInt32Value `protobuf:"bytes,11,opt,name=column_rows_count,proto3" json:"column_rows_count,omitempty"`
+	BeaconBlockRoot *wrapperspb.StringValue `protobuf:"bytes,12,opt,name=beacon_block_root,proto3" json:"beacon_block_root,omitempty"`
+	// Probe results
+	Result         *wrapperspb.StringValue `protobuf:"bytes,13,opt,name=result,proto3" json:"result,omitempty"`
+	ResponseTimeMs *wrapperspb.Int64Value  `protobuf:"bytes,14,opt,name=response_time_ms,proto3" json:"response_time_ms,omitempty"`
+	Error          *wrapperspb.StringValue `protobuf:"bytes,15,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *DataColumnCustodyProbe) Reset() {
+	*x = DataColumnCustodyProbe{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[35]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DataColumnCustodyProbe) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DataColumnCustodyProbe) ProtoMessage() {}
+
+func (x *DataColumnCustodyProbe) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_trace_proto_msgTypes[35]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DataColumnCustodyProbe.ProtoReflect.Descriptor instead.
+func (*DataColumnCustodyProbe) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_trace_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *DataColumnCustodyProbe) GetPeerId() *wrapperspb.StringValue {
+	if x != nil {
+		return x.PeerId
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetSlot() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.Slot
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetSlotStartDateTime() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.SlotStartDateTime
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetEpoch() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.Epoch
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetEpochStartDateTime() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.EpochStartDateTime
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetWallclockRequestSlot() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.WallclockRequestSlot
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetWallclockRequestSlotStartDateTime() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.WallclockRequestSlotStartDateTime
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetWallclockRequestEpoch() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.WallclockRequestEpoch
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetWallclockRequestEpochStartDateTime() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.WallclockRequestEpochStartDateTime
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetColumnIndex() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.ColumnIndex
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetColumnRowsCount() *wrapperspb.UInt32Value {
+	if x != nil {
+		return x.ColumnRowsCount
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetBeaconBlockRoot() *wrapperspb.StringValue {
+	if x != nil {
+		return x.BeaconBlockRoot
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetResult() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetResponseTimeMs() *wrapperspb.Int64Value {
+	if x != nil {
+		return x.ResponseTimeMs
+	}
+	return nil
+}
+
+func (x *DataColumnCustodyProbe) GetError() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 var File_pkg_proto_libp2p_trace_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_libp2p_trace_proto_rawDesc = []byte{
@@ -3085,43 +3252,117 @@ var file_pkg_proto_libp2p_trace_proto_rawDesc = []byte{
 	0x6e, 0x64, 0x65, 0x78, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f,
 	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e,
 	0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f,
-	0x6c, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x2a, 0x84, 0x04, 0x0a, 0x09, 0x45, 0x76, 0x65, 0x6e,
-	0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e,
-	0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10,
-	0x01, 0x12, 0x10, 0x0a, 0x0c, 0x44, 0x49, 0x53, 0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x45,
-	0x44, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x41, 0x44, 0x44, 0x5f, 0x50, 0x45, 0x45, 0x52, 0x10,
-	0x03, 0x12, 0x0f, 0x0a, 0x0b, 0x52, 0x45, 0x4d, 0x4f, 0x56, 0x45, 0x5f, 0x50, 0x45, 0x45, 0x52,
-	0x10, 0x04, 0x12, 0x0c, 0x0a, 0x08, 0x52, 0x45, 0x43, 0x56, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x05,
-	0x12, 0x0c, 0x0a, 0x08, 0x53, 0x45, 0x4e, 0x44, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x06, 0x12, 0x08,
-	0x0a, 0x04, 0x4a, 0x4f, 0x49, 0x4e, 0x10, 0x07, 0x12, 0x11, 0x0a, 0x0d, 0x48, 0x41, 0x4e, 0x44,
-	0x4c, 0x45, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x10, 0x08, 0x12, 0x13, 0x0a, 0x0f, 0x48,
-	0x41, 0x4e, 0x44, 0x4c, 0x45, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x44, 0x41, 0x54, 0x41, 0x10, 0x09,
-	0x12, 0x0c, 0x0a, 0x08, 0x44, 0x52, 0x4f, 0x50, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x0a, 0x12, 0x09,
-	0x0a, 0x05, 0x4c, 0x45, 0x41, 0x56, 0x45, 0x10, 0x0b, 0x12, 0x09, 0x0a, 0x05, 0x47, 0x52, 0x41,
-	0x46, 0x54, 0x10, 0x0c, 0x12, 0x09, 0x0a, 0x05, 0x50, 0x52, 0x55, 0x4e, 0x45, 0x10, 0x0d, 0x12,
-	0x13, 0x0a, 0x0f, 0x50, 0x55, 0x42, 0x4c, 0x49, 0x53, 0x48, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41,
-	0x47, 0x45, 0x10, 0x0e, 0x12, 0x12, 0x0a, 0x0e, 0x52, 0x45, 0x4a, 0x45, 0x43, 0x54, 0x5f, 0x4d,
-	0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x0f, 0x12, 0x15, 0x0a, 0x11, 0x44, 0x55, 0x50, 0x4c,
-	0x49, 0x43, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x10, 0x12,
-	0x13, 0x0a, 0x0f, 0x44, 0x45, 0x4c, 0x49, 0x56, 0x45, 0x52, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41,
-	0x47, 0x45, 0x10, 0x11, 0x12, 0x1a, 0x0a, 0x16, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41,
-	0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x49, 0x48, 0x41, 0x56, 0x45, 0x10, 0x12,
+	0x6c, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x22, 0x85, 0x09, 0x0a, 0x16, 0x44, 0x61, 0x74, 0x61,
+	0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x43, 0x75, 0x73, 0x74, 0x6f, 0x64, 0x79, 0x50, 0x72, 0x6f,
+	0x62, 0x65, 0x12, 0x36, 0x0a, 0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x52, 0x07, 0x70, 0x65, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x12, 0x30, 0x0a, 0x04, 0x73, 0x6c,
+	0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33,
+	0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x50, 0x0a, 0x14,
+	0x73, 0x6c, 0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f,
+	0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e,
+	0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x14, 0x73, 0x6c, 0x6f, 0x74, 0x5f, 0x73,
+	0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x32,
+	0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x12, 0x52, 0x0a, 0x15, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x72,
+	0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52,
+	0x15, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74,
+	0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x54, 0x0a, 0x16, 0x77, 0x61, 0x6c, 0x6c, 0x63, 0x6c,
+	0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x6c, 0x6f, 0x74,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56,
+	0x61, 0x6c, 0x75, 0x65, 0x52, 0x16, 0x77, 0x61, 0x6c, 0x6c, 0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
+	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x74, 0x0a, 0x26,
+	0x77, 0x61, 0x6c, 0x6c, 0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x5f, 0x73, 0x6c, 0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74,
+	0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55,
+	0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x26, 0x77, 0x61, 0x6c, 0x6c,
+	0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x6c,
+	0x6f, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x12, 0x56, 0x0a, 0x17, 0x77, 0x61, 0x6c, 0x6c, 0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
+	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x08, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x52, 0x17, 0x77, 0x61, 0x6c, 0x6c, 0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x5f, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x76, 0x0a, 0x27, 0x77, 0x61,
+	0x6c, 0x6c, 0x63, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f,
+	0x65, 0x70, 0x6f, 0x63, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49,
+	0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x27, 0x77, 0x61, 0x6c, 0x6c, 0x63,
+	0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x12, 0x40, 0x0a, 0x0c, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x5f, 0x69, 0x6e, 0x64,
+	0x65, 0x78, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33,
+	0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0c, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x5f, 0x69,
+	0x6e, 0x64, 0x65, 0x78, 0x12, 0x4a, 0x0a, 0x11, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x5f, 0x72,
+	0x6f, 0x77, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x11, 0x63,
+	0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x5f, 0x72, 0x6f, 0x77, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x12, 0x4a, 0x0a, 0x11, 0x62, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x11, 0x62, 0x65, 0x61, 0x63, 0x6f,
+	0x6e, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x12, 0x34, 0x0a, 0x06,
+	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x12, 0x47, 0x0a, 0x10, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x5f, 0x74,
+	0x69, 0x6d, 0x65, 0x5f, 0x6d, 0x73, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x49,
+	0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x10, 0x72, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x6d, 0x73, 0x12, 0x32, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x2a,
+	0x97, 0x04, 0x0a, 0x09, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a,
+	0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f,
+	0x4e, 0x4e, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x01, 0x12, 0x10, 0x0a, 0x0c, 0x44, 0x49, 0x53,
+	0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x41,
+	0x44, 0x44, 0x5f, 0x50, 0x45, 0x45, 0x52, 0x10, 0x03, 0x12, 0x0f, 0x0a, 0x0b, 0x52, 0x45, 0x4d,
+	0x4f, 0x56, 0x45, 0x5f, 0x50, 0x45, 0x45, 0x52, 0x10, 0x04, 0x12, 0x0c, 0x0a, 0x08, 0x52, 0x45,
+	0x43, 0x56, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x05, 0x12, 0x0c, 0x0a, 0x08, 0x53, 0x45, 0x4e, 0x44,
+	0x5f, 0x52, 0x50, 0x43, 0x10, 0x06, 0x12, 0x08, 0x0a, 0x04, 0x4a, 0x4f, 0x49, 0x4e, 0x10, 0x07,
+	0x12, 0x11, 0x0a, 0x0d, 0x48, 0x41, 0x4e, 0x44, 0x4c, 0x45, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55,
+	0x53, 0x10, 0x08, 0x12, 0x13, 0x0a, 0x0f, 0x48, 0x41, 0x4e, 0x44, 0x4c, 0x45, 0x5f, 0x4d, 0x45,
+	0x54, 0x41, 0x44, 0x41, 0x54, 0x41, 0x10, 0x09, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x52, 0x4f, 0x50,
+	0x5f, 0x52, 0x50, 0x43, 0x10, 0x0a, 0x12, 0x09, 0x0a, 0x05, 0x4c, 0x45, 0x41, 0x56, 0x45, 0x10,
+	0x0b, 0x12, 0x09, 0x0a, 0x05, 0x47, 0x52, 0x41, 0x46, 0x54, 0x10, 0x0c, 0x12, 0x09, 0x0a, 0x05,
+	0x50, 0x52, 0x55, 0x4e, 0x45, 0x10, 0x0d, 0x12, 0x13, 0x0a, 0x0f, 0x50, 0x55, 0x42, 0x4c, 0x49,
+	0x53, 0x48, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x0e, 0x12, 0x12, 0x0a, 0x0e,
+	0x52, 0x45, 0x4a, 0x45, 0x43, 0x54, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x0f,
+	0x12, 0x15, 0x0a, 0x11, 0x44, 0x55, 0x50, 0x4c, 0x49, 0x43, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x45,
+	0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x10, 0x12, 0x13, 0x0a, 0x0f, 0x44, 0x45, 0x4c, 0x49, 0x56,
+	0x45, 0x52, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x11, 0x12, 0x1a, 0x0a, 0x16,
+	0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c,
+	0x5f, 0x49, 0x48, 0x41, 0x56, 0x45, 0x10, 0x12, 0x12, 0x1a, 0x0a, 0x16, 0x52, 0x50, 0x43, 0x5f,
+	0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x49, 0x57, 0x41,
+	0x4e, 0x54, 0x10, 0x13, 0x12, 0x1e, 0x0a, 0x1a, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41,
+	0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x49, 0x44, 0x4f, 0x4e, 0x54, 0x57, 0x41,
+	0x4e, 0x54, 0x10, 0x14, 0x12, 0x1a, 0x0a, 0x16, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41,
+	0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x47, 0x52, 0x41, 0x46, 0x54, 0x10, 0x15,
 	0x12, 0x1a, 0x0a, 0x16, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e,
-	0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x49, 0x57, 0x41, 0x4e, 0x54, 0x10, 0x13, 0x12, 0x1e, 0x0a, 0x1a,
-	0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c,
-	0x5f, 0x49, 0x44, 0x4f, 0x4e, 0x54, 0x57, 0x41, 0x4e, 0x54, 0x10, 0x14, 0x12, 0x1a, 0x0a, 0x16,
-	0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c,
-	0x5f, 0x47, 0x52, 0x41, 0x46, 0x54, 0x10, 0x15, 0x12, 0x1a, 0x0a, 0x16, 0x52, 0x50, 0x43, 0x5f,
-	0x4d, 0x45, 0x54, 0x41, 0x5f, 0x43, 0x4f, 0x4e, 0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x50, 0x52, 0x55,
-	0x4e, 0x45, 0x10, 0x16, 0x12, 0x19, 0x0a, 0x15, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41,
-	0x5f, 0x53, 0x55, 0x42, 0x53, 0x43, 0x52, 0x49, 0x50, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x17, 0x12,
-	0x14, 0x0a, 0x10, 0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x4d, 0x45, 0x53, 0x53,
-	0x41, 0x47, 0x45, 0x10, 0x18, 0x12, 0x17, 0x0a, 0x13, 0x53, 0x59, 0x4e, 0x54, 0x48, 0x45, 0x54,
-	0x49, 0x43, 0x5f, 0x48, 0x45, 0x41, 0x52, 0x54, 0x42, 0x45, 0x41, 0x54, 0x10, 0x19, 0x42, 0x2e,
-	0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68,
-	0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x62, 0x70, 0x32, 0x70, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x54, 0x52, 0x4f, 0x4c, 0x5f, 0x50, 0x52, 0x55, 0x4e, 0x45, 0x10, 0x16, 0x12, 0x19, 0x0a, 0x15,
+	0x52, 0x50, 0x43, 0x5f, 0x4d, 0x45, 0x54, 0x41, 0x5f, 0x53, 0x55, 0x42, 0x53, 0x43, 0x52, 0x49,
+	0x50, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x17, 0x12, 0x14, 0x0a, 0x10, 0x52, 0x50, 0x43, 0x5f, 0x4d,
+	0x45, 0x54, 0x41, 0x5f, 0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x18, 0x12, 0x17, 0x0a,
+	0x13, 0x53, 0x59, 0x4e, 0x54, 0x48, 0x45, 0x54, 0x49, 0x43, 0x5f, 0x48, 0x45, 0x41, 0x52, 0x54,
+	0x42, 0x45, 0x41, 0x54, 0x10, 0x19, 0x12, 0x11, 0x0a, 0x0d, 0x43, 0x55, 0x53, 0x54, 0x4f, 0x44,
+	0x59, 0x5f, 0x50, 0x52, 0x4f, 0x42, 0x45, 0x10, 0x1a, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61,
+	0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x62, 0x70, 0x32, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -3137,7 +3378,7 @@ func file_pkg_proto_libp2p_trace_proto_rawDescGZIP() []byte {
 }
 
 var file_pkg_proto_libp2p_trace_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pkg_proto_libp2p_trace_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_pkg_proto_libp2p_trace_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_pkg_proto_libp2p_trace_proto_goTypes = []any{
 	(EventType)(0),                   // 0: xatu.libp2p.EventType
 	(*AddPeer)(nil),                  // 1: xatu.libp2p.AddPeer
@@ -3175,149 +3416,165 @@ var file_pkg_proto_libp2p_trace_proto_goTypes = []any{
 	(*ControlPruneMetaItem)(nil),     // 33: xatu.libp2p.ControlPruneMetaItem
 	(*ControlIDontWantMeta)(nil),     // 34: xatu.libp2p.ControlIDontWantMeta
 	(*ControlIDontWantMetaItem)(nil), // 35: xatu.libp2p.ControlIDontWantMetaItem
-	(*wrapperspb.StringValue)(nil),   // 36: google.protobuf.StringValue
-	(*wrapperspb.BoolValue)(nil),     // 37: google.protobuf.BoolValue
-	(*wrapperspb.UInt32Value)(nil),   // 38: google.protobuf.UInt32Value
-	(*wrapperspb.UInt64Value)(nil),   // 39: google.protobuf.UInt64Value
-	(*timestamppb.Timestamp)(nil),    // 40: google.protobuf.Timestamp
-	(*wrapperspb.FloatValue)(nil),    // 41: google.protobuf.FloatValue
-	(*Status)(nil),                   // 42: xatu.libp2p.Status
-	(*Metadata)(nil),                 // 43: xatu.libp2p.Metadata
-	(*wrapperspb.Int64Value)(nil),    // 44: google.protobuf.Int64Value
+	(*DataColumnCustodyProbe)(nil),   // 36: xatu.libp2p.DataColumnCustodyProbe
+	(*wrapperspb.StringValue)(nil),   // 37: google.protobuf.StringValue
+	(*wrapperspb.BoolValue)(nil),     // 38: google.protobuf.BoolValue
+	(*wrapperspb.UInt32Value)(nil),   // 39: google.protobuf.UInt32Value
+	(*wrapperspb.UInt64Value)(nil),   // 40: google.protobuf.UInt64Value
+	(*timestamppb.Timestamp)(nil),    // 41: google.protobuf.Timestamp
+	(*wrapperspb.FloatValue)(nil),    // 42: google.protobuf.FloatValue
+	(*Status)(nil),                   // 43: xatu.libp2p.Status
+	(*Metadata)(nil),                 // 44: xatu.libp2p.Metadata
+	(*wrapperspb.Int64Value)(nil),    // 45: google.protobuf.Int64Value
 }
 var file_pkg_proto_libp2p_trace_proto_depIdxs = []int32{
-	36,  // 0: xatu.libp2p.AddPeer.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 1: xatu.libp2p.AddPeer.protocol:type_name -> google.protobuf.StringValue
-	36,  // 2: xatu.libp2p.RemovePeer.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 3: xatu.libp2p.RecvRPC.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 0: xatu.libp2p.AddPeer.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 1: xatu.libp2p.AddPeer.protocol:type_name -> google.protobuf.StringValue
+	37,  // 2: xatu.libp2p.RemovePeer.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 3: xatu.libp2p.RecvRPC.peer_id:type_name -> google.protobuf.StringValue
 	20,  // 4: xatu.libp2p.RecvRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	36,  // 5: xatu.libp2p.SendRPC.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 5: xatu.libp2p.SendRPC.peer_id:type_name -> google.protobuf.StringValue
 	20,  // 6: xatu.libp2p.SendRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	36,  // 7: xatu.libp2p.DropRPC.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 7: xatu.libp2p.DropRPC.peer_id:type_name -> google.protobuf.StringValue
 	20,  // 8: xatu.libp2p.DropRPC.meta:type_name -> xatu.libp2p.RPCMeta
-	36,  // 9: xatu.libp2p.Join.topic:type_name -> google.protobuf.StringValue
-	36,  // 10: xatu.libp2p.Leave.topic:type_name -> google.protobuf.StringValue
-	36,  // 11: xatu.libp2p.Graft.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 12: xatu.libp2p.Graft.topic:type_name -> google.protobuf.StringValue
-	36,  // 13: xatu.libp2p.Prune.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 14: xatu.libp2p.Prune.topic:type_name -> google.protobuf.StringValue
-	36,  // 15: xatu.libp2p.PublishMessage.msg_id:type_name -> google.protobuf.StringValue
-	36,  // 16: xatu.libp2p.PublishMessage.topic:type_name -> google.protobuf.StringValue
-	36,  // 17: xatu.libp2p.RejectMessage.msg_id:type_name -> google.protobuf.StringValue
-	36,  // 18: xatu.libp2p.RejectMessage.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 19: xatu.libp2p.RejectMessage.topic:type_name -> google.protobuf.StringValue
-	36,  // 20: xatu.libp2p.RejectMessage.reason:type_name -> google.protobuf.StringValue
-	37,  // 21: xatu.libp2p.RejectMessage.local:type_name -> google.protobuf.BoolValue
-	38,  // 22: xatu.libp2p.RejectMessage.msg_size:type_name -> google.protobuf.UInt32Value
-	39,  // 23: xatu.libp2p.RejectMessage.seq_number:type_name -> google.protobuf.UInt64Value
-	36,  // 24: xatu.libp2p.DuplicateMessage.msg_id:type_name -> google.protobuf.StringValue
-	36,  // 25: xatu.libp2p.DuplicateMessage.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 26: xatu.libp2p.DuplicateMessage.topic:type_name -> google.protobuf.StringValue
-	37,  // 27: xatu.libp2p.DuplicateMessage.local:type_name -> google.protobuf.BoolValue
-	38,  // 28: xatu.libp2p.DuplicateMessage.msg_size:type_name -> google.protobuf.UInt32Value
-	39,  // 29: xatu.libp2p.DuplicateMessage.seq_number:type_name -> google.protobuf.UInt64Value
-	36,  // 30: xatu.libp2p.DeliverMessage.msg_id:type_name -> google.protobuf.StringValue
-	36,  // 31: xatu.libp2p.DeliverMessage.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 32: xatu.libp2p.DeliverMessage.topic:type_name -> google.protobuf.StringValue
-	37,  // 33: xatu.libp2p.DeliverMessage.local:type_name -> google.protobuf.BoolValue
-	38,  // 34: xatu.libp2p.DeliverMessage.msg_size:type_name -> google.protobuf.UInt32Value
-	39,  // 35: xatu.libp2p.DeliverMessage.seq_number:type_name -> google.protobuf.UInt64Value
-	36,  // 36: xatu.libp2p.TraceEventMetadata.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 37: xatu.libp2p.Connected.remote_peer:type_name -> google.protobuf.StringValue
-	36,  // 38: xatu.libp2p.Connected.remote_maddrs:type_name -> google.protobuf.StringValue
-	36,  // 39: xatu.libp2p.Connected.agent_version:type_name -> google.protobuf.StringValue
-	36,  // 40: xatu.libp2p.Connected.direction:type_name -> google.protobuf.StringValue
-	40,  // 41: xatu.libp2p.Connected.opened:type_name -> google.protobuf.Timestamp
-	37,  // 42: xatu.libp2p.Connected.transient:type_name -> google.protobuf.BoolValue
-	37,  // 43: xatu.libp2p.Connected.limited:type_name -> google.protobuf.BoolValue
-	36,  // 44: xatu.libp2p.Disconnected.remote_peer:type_name -> google.protobuf.StringValue
-	36,  // 45: xatu.libp2p.Disconnected.remote_maddrs:type_name -> google.protobuf.StringValue
-	36,  // 46: xatu.libp2p.Disconnected.agent_version:type_name -> google.protobuf.StringValue
-	36,  // 47: xatu.libp2p.Disconnected.direction:type_name -> google.protobuf.StringValue
-	40,  // 48: xatu.libp2p.Disconnected.opened:type_name -> google.protobuf.Timestamp
-	37,  // 49: xatu.libp2p.Disconnected.transient:type_name -> google.protobuf.BoolValue
-	37,  // 50: xatu.libp2p.Disconnected.limited:type_name -> google.protobuf.BoolValue
-	36,  // 51: xatu.libp2p.HandleStatus.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 52: xatu.libp2p.HandleStatus.protocol_id:type_name -> google.protobuf.StringValue
-	36,  // 53: xatu.libp2p.HandleStatus.error:type_name -> google.protobuf.StringValue
-	41,  // 54: xatu.libp2p.HandleStatus.latency:type_name -> google.protobuf.FloatValue
-	42,  // 55: xatu.libp2p.HandleStatus.request:type_name -> xatu.libp2p.Status
-	42,  // 56: xatu.libp2p.HandleStatus.response:type_name -> xatu.libp2p.Status
-	36,  // 57: xatu.libp2p.HandleStatus.direction:type_name -> google.protobuf.StringValue
-	36,  // 58: xatu.libp2p.HandleMetadata.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 59: xatu.libp2p.HandleMetadata.protocol_id:type_name -> google.protobuf.StringValue
-	36,  // 60: xatu.libp2p.HandleMetadata.error:type_name -> google.protobuf.StringValue
-	41,  // 61: xatu.libp2p.HandleMetadata.latency:type_name -> google.protobuf.FloatValue
-	43,  // 62: xatu.libp2p.HandleMetadata.metadata:type_name -> xatu.libp2p.Metadata
-	36,  // 63: xatu.libp2p.HandleMetadata.direction:type_name -> google.protobuf.StringValue
-	40,  // 64: xatu.libp2p.SyntheticHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
-	36,  // 65: xatu.libp2p.SyntheticHeartbeat.remote_peer:type_name -> google.protobuf.StringValue
-	36,  // 66: xatu.libp2p.SyntheticHeartbeat.remote_maddrs:type_name -> google.protobuf.StringValue
-	44,  // 67: xatu.libp2p.SyntheticHeartbeat.latency_ms:type_name -> google.protobuf.Int64Value
-	36,  // 68: xatu.libp2p.SyntheticHeartbeat.agent_version:type_name -> google.protobuf.StringValue
-	38,  // 69: xatu.libp2p.SyntheticHeartbeat.direction:type_name -> google.protobuf.UInt32Value
-	44,  // 70: xatu.libp2p.SyntheticHeartbeat.connection_age_ns:type_name -> google.protobuf.Int64Value
+	37,  // 9: xatu.libp2p.Join.topic:type_name -> google.protobuf.StringValue
+	37,  // 10: xatu.libp2p.Leave.topic:type_name -> google.protobuf.StringValue
+	37,  // 11: xatu.libp2p.Graft.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 12: xatu.libp2p.Graft.topic:type_name -> google.protobuf.StringValue
+	37,  // 13: xatu.libp2p.Prune.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 14: xatu.libp2p.Prune.topic:type_name -> google.protobuf.StringValue
+	37,  // 15: xatu.libp2p.PublishMessage.msg_id:type_name -> google.protobuf.StringValue
+	37,  // 16: xatu.libp2p.PublishMessage.topic:type_name -> google.protobuf.StringValue
+	37,  // 17: xatu.libp2p.RejectMessage.msg_id:type_name -> google.protobuf.StringValue
+	37,  // 18: xatu.libp2p.RejectMessage.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 19: xatu.libp2p.RejectMessage.topic:type_name -> google.protobuf.StringValue
+	37,  // 20: xatu.libp2p.RejectMessage.reason:type_name -> google.protobuf.StringValue
+	38,  // 21: xatu.libp2p.RejectMessage.local:type_name -> google.protobuf.BoolValue
+	39,  // 22: xatu.libp2p.RejectMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	40,  // 23: xatu.libp2p.RejectMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	37,  // 24: xatu.libp2p.DuplicateMessage.msg_id:type_name -> google.protobuf.StringValue
+	37,  // 25: xatu.libp2p.DuplicateMessage.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 26: xatu.libp2p.DuplicateMessage.topic:type_name -> google.protobuf.StringValue
+	38,  // 27: xatu.libp2p.DuplicateMessage.local:type_name -> google.protobuf.BoolValue
+	39,  // 28: xatu.libp2p.DuplicateMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	40,  // 29: xatu.libp2p.DuplicateMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	37,  // 30: xatu.libp2p.DeliverMessage.msg_id:type_name -> google.protobuf.StringValue
+	37,  // 31: xatu.libp2p.DeliverMessage.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 32: xatu.libp2p.DeliverMessage.topic:type_name -> google.protobuf.StringValue
+	38,  // 33: xatu.libp2p.DeliverMessage.local:type_name -> google.protobuf.BoolValue
+	39,  // 34: xatu.libp2p.DeliverMessage.msg_size:type_name -> google.protobuf.UInt32Value
+	40,  // 35: xatu.libp2p.DeliverMessage.seq_number:type_name -> google.protobuf.UInt64Value
+	37,  // 36: xatu.libp2p.TraceEventMetadata.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 37: xatu.libp2p.Connected.remote_peer:type_name -> google.protobuf.StringValue
+	37,  // 38: xatu.libp2p.Connected.remote_maddrs:type_name -> google.protobuf.StringValue
+	37,  // 39: xatu.libp2p.Connected.agent_version:type_name -> google.protobuf.StringValue
+	37,  // 40: xatu.libp2p.Connected.direction:type_name -> google.protobuf.StringValue
+	41,  // 41: xatu.libp2p.Connected.opened:type_name -> google.protobuf.Timestamp
+	38,  // 42: xatu.libp2p.Connected.transient:type_name -> google.protobuf.BoolValue
+	38,  // 43: xatu.libp2p.Connected.limited:type_name -> google.protobuf.BoolValue
+	37,  // 44: xatu.libp2p.Disconnected.remote_peer:type_name -> google.protobuf.StringValue
+	37,  // 45: xatu.libp2p.Disconnected.remote_maddrs:type_name -> google.protobuf.StringValue
+	37,  // 46: xatu.libp2p.Disconnected.agent_version:type_name -> google.protobuf.StringValue
+	37,  // 47: xatu.libp2p.Disconnected.direction:type_name -> google.protobuf.StringValue
+	41,  // 48: xatu.libp2p.Disconnected.opened:type_name -> google.protobuf.Timestamp
+	38,  // 49: xatu.libp2p.Disconnected.transient:type_name -> google.protobuf.BoolValue
+	38,  // 50: xatu.libp2p.Disconnected.limited:type_name -> google.protobuf.BoolValue
+	37,  // 51: xatu.libp2p.HandleStatus.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 52: xatu.libp2p.HandleStatus.protocol_id:type_name -> google.protobuf.StringValue
+	37,  // 53: xatu.libp2p.HandleStatus.error:type_name -> google.protobuf.StringValue
+	42,  // 54: xatu.libp2p.HandleStatus.latency:type_name -> google.protobuf.FloatValue
+	43,  // 55: xatu.libp2p.HandleStatus.request:type_name -> xatu.libp2p.Status
+	43,  // 56: xatu.libp2p.HandleStatus.response:type_name -> xatu.libp2p.Status
+	37,  // 57: xatu.libp2p.HandleStatus.direction:type_name -> google.protobuf.StringValue
+	37,  // 58: xatu.libp2p.HandleMetadata.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 59: xatu.libp2p.HandleMetadata.protocol_id:type_name -> google.protobuf.StringValue
+	37,  // 60: xatu.libp2p.HandleMetadata.error:type_name -> google.protobuf.StringValue
+	42,  // 61: xatu.libp2p.HandleMetadata.latency:type_name -> google.protobuf.FloatValue
+	44,  // 62: xatu.libp2p.HandleMetadata.metadata:type_name -> xatu.libp2p.Metadata
+	37,  // 63: xatu.libp2p.HandleMetadata.direction:type_name -> google.protobuf.StringValue
+	41,  // 64: xatu.libp2p.SyntheticHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
+	37,  // 65: xatu.libp2p.SyntheticHeartbeat.remote_peer:type_name -> google.protobuf.StringValue
+	37,  // 66: xatu.libp2p.SyntheticHeartbeat.remote_maddrs:type_name -> google.protobuf.StringValue
+	45,  // 67: xatu.libp2p.SyntheticHeartbeat.latency_ms:type_name -> google.protobuf.Int64Value
+	37,  // 68: xatu.libp2p.SyntheticHeartbeat.agent_version:type_name -> google.protobuf.StringValue
+	39,  // 69: xatu.libp2p.SyntheticHeartbeat.direction:type_name -> google.protobuf.UInt32Value
+	45,  // 70: xatu.libp2p.SyntheticHeartbeat.connection_age_ns:type_name -> google.protobuf.Int64Value
 	21,  // 71: xatu.libp2p.RPCMeta.messages:type_name -> xatu.libp2p.MessageMeta
 	23,  // 72: xatu.libp2p.RPCMeta.subscriptions:type_name -> xatu.libp2p.SubMeta
 	25,  // 73: xatu.libp2p.RPCMeta.control:type_name -> xatu.libp2p.ControlMeta
-	36,  // 74: xatu.libp2p.RPCMeta.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 75: xatu.libp2p.MessageMeta.message_id:type_name -> google.protobuf.StringValue
-	36,  // 76: xatu.libp2p.MessageMeta.topic_id:type_name -> google.protobuf.StringValue
-	36,  // 77: xatu.libp2p.MessageMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 78: xatu.libp2p.MessageMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 79: xatu.libp2p.MessageMetaItem.message_id:type_name -> google.protobuf.StringValue
-	36,  // 80: xatu.libp2p.MessageMetaItem.topic_id:type_name -> google.protobuf.StringValue
-	38,  // 81: xatu.libp2p.MessageMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	37,  // 82: xatu.libp2p.SubMeta.subscribe:type_name -> google.protobuf.BoolValue
-	36,  // 83: xatu.libp2p.SubMeta.topic_id:type_name -> google.protobuf.StringValue
-	36,  // 84: xatu.libp2p.SubMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 85: xatu.libp2p.SubMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 86: xatu.libp2p.SubMetaItem.topic_id:type_name -> google.protobuf.StringValue
-	37,  // 87: xatu.libp2p.SubMetaItem.subscribe:type_name -> google.protobuf.BoolValue
-	38,  // 88: xatu.libp2p.SubMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	37,  // 74: xatu.libp2p.RPCMeta.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 75: xatu.libp2p.MessageMeta.message_id:type_name -> google.protobuf.StringValue
+	37,  // 76: xatu.libp2p.MessageMeta.topic_id:type_name -> google.protobuf.StringValue
+	37,  // 77: xatu.libp2p.MessageMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 78: xatu.libp2p.MessageMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 79: xatu.libp2p.MessageMetaItem.message_id:type_name -> google.protobuf.StringValue
+	37,  // 80: xatu.libp2p.MessageMetaItem.topic_id:type_name -> google.protobuf.StringValue
+	39,  // 81: xatu.libp2p.MessageMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	38,  // 82: xatu.libp2p.SubMeta.subscribe:type_name -> google.protobuf.BoolValue
+	37,  // 83: xatu.libp2p.SubMeta.topic_id:type_name -> google.protobuf.StringValue
+	37,  // 84: xatu.libp2p.SubMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 85: xatu.libp2p.SubMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 86: xatu.libp2p.SubMetaItem.topic_id:type_name -> google.protobuf.StringValue
+	38,  // 87: xatu.libp2p.SubMetaItem.subscribe:type_name -> google.protobuf.BoolValue
+	39,  // 88: xatu.libp2p.SubMetaItem.control_index:type_name -> google.protobuf.UInt32Value
 	26,  // 89: xatu.libp2p.ControlMeta.ihave:type_name -> xatu.libp2p.ControlIHaveMeta
 	28,  // 90: xatu.libp2p.ControlMeta.iwant:type_name -> xatu.libp2p.ControlIWantMeta
 	30,  // 91: xatu.libp2p.ControlMeta.graft:type_name -> xatu.libp2p.ControlGraftMeta
 	32,  // 92: xatu.libp2p.ControlMeta.prune:type_name -> xatu.libp2p.ControlPruneMeta
 	34,  // 93: xatu.libp2p.ControlMeta.idontwant:type_name -> xatu.libp2p.ControlIDontWantMeta
-	36,  // 94: xatu.libp2p.ControlIHaveMeta.topic_id:type_name -> google.protobuf.StringValue
-	36,  // 95: xatu.libp2p.ControlIHaveMeta.message_ids:type_name -> google.protobuf.StringValue
-	36,  // 96: xatu.libp2p.ControlIHaveMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 97: xatu.libp2p.ControlIHaveMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 98: xatu.libp2p.ControlIHaveMetaItem.message_id:type_name -> google.protobuf.StringValue
-	36,  // 99: xatu.libp2p.ControlIHaveMetaItem.topic:type_name -> google.protobuf.StringValue
-	38,  // 100: xatu.libp2p.ControlIHaveMetaItem.message_index:type_name -> google.protobuf.UInt32Value
-	38,  // 101: xatu.libp2p.ControlIHaveMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	36,  // 102: xatu.libp2p.ControlIWantMeta.message_ids:type_name -> google.protobuf.StringValue
-	36,  // 103: xatu.libp2p.ControlIWantMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 104: xatu.libp2p.ControlIWantMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 105: xatu.libp2p.ControlIWantMetaItem.message_id:type_name -> google.protobuf.StringValue
-	38,  // 106: xatu.libp2p.ControlIWantMetaItem.message_index:type_name -> google.protobuf.UInt32Value
-	38,  // 107: xatu.libp2p.ControlIWantMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	36,  // 108: xatu.libp2p.ControlGraftMeta.topic_id:type_name -> google.protobuf.StringValue
-	36,  // 109: xatu.libp2p.ControlGraftMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 110: xatu.libp2p.ControlGraftMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 111: xatu.libp2p.ControlGraftMetaItem.topic:type_name -> google.protobuf.StringValue
-	38,  // 112: xatu.libp2p.ControlGraftMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	36,  // 113: xatu.libp2p.ControlPruneMeta.topic_id:type_name -> google.protobuf.StringValue
-	36,  // 114: xatu.libp2p.ControlPruneMeta.peer_ids:type_name -> google.protobuf.StringValue
-	36,  // 115: xatu.libp2p.ControlPruneMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 116: xatu.libp2p.ControlPruneMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 117: xatu.libp2p.ControlPruneMetaItem.graft_peer_id:type_name -> google.protobuf.StringValue
-	36,  // 118: xatu.libp2p.ControlPruneMetaItem.topic:type_name -> google.protobuf.StringValue
-	38,  // 119: xatu.libp2p.ControlPruneMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	38,  // 120: xatu.libp2p.ControlPruneMetaItem.peer_index:type_name -> google.protobuf.UInt32Value
-	36,  // 121: xatu.libp2p.ControlIDontWantMeta.message_ids:type_name -> google.protobuf.StringValue
-	36,  // 122: xatu.libp2p.ControlIDontWantMetaItem.root_event_id:type_name -> google.protobuf.StringValue
-	36,  // 123: xatu.libp2p.ControlIDontWantMetaItem.peer_id:type_name -> google.protobuf.StringValue
-	36,  // 124: xatu.libp2p.ControlIDontWantMetaItem.message_id:type_name -> google.protobuf.StringValue
-	38,  // 125: xatu.libp2p.ControlIDontWantMetaItem.message_index:type_name -> google.protobuf.UInt32Value
-	38,  // 126: xatu.libp2p.ControlIDontWantMetaItem.control_index:type_name -> google.protobuf.UInt32Value
-	127, // [127:127] is the sub-list for method output_type
-	127, // [127:127] is the sub-list for method input_type
-	127, // [127:127] is the sub-list for extension type_name
-	127, // [127:127] is the sub-list for extension extendee
-	0,   // [0:127] is the sub-list for field type_name
+	37,  // 94: xatu.libp2p.ControlIHaveMeta.topic_id:type_name -> google.protobuf.StringValue
+	37,  // 95: xatu.libp2p.ControlIHaveMeta.message_ids:type_name -> google.protobuf.StringValue
+	37,  // 96: xatu.libp2p.ControlIHaveMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 97: xatu.libp2p.ControlIHaveMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 98: xatu.libp2p.ControlIHaveMetaItem.message_id:type_name -> google.protobuf.StringValue
+	37,  // 99: xatu.libp2p.ControlIHaveMetaItem.topic:type_name -> google.protobuf.StringValue
+	39,  // 100: xatu.libp2p.ControlIHaveMetaItem.message_index:type_name -> google.protobuf.UInt32Value
+	39,  // 101: xatu.libp2p.ControlIHaveMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	37,  // 102: xatu.libp2p.ControlIWantMeta.message_ids:type_name -> google.protobuf.StringValue
+	37,  // 103: xatu.libp2p.ControlIWantMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 104: xatu.libp2p.ControlIWantMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 105: xatu.libp2p.ControlIWantMetaItem.message_id:type_name -> google.protobuf.StringValue
+	39,  // 106: xatu.libp2p.ControlIWantMetaItem.message_index:type_name -> google.protobuf.UInt32Value
+	39,  // 107: xatu.libp2p.ControlIWantMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	37,  // 108: xatu.libp2p.ControlGraftMeta.topic_id:type_name -> google.protobuf.StringValue
+	37,  // 109: xatu.libp2p.ControlGraftMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 110: xatu.libp2p.ControlGraftMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 111: xatu.libp2p.ControlGraftMetaItem.topic:type_name -> google.protobuf.StringValue
+	39,  // 112: xatu.libp2p.ControlGraftMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	37,  // 113: xatu.libp2p.ControlPruneMeta.topic_id:type_name -> google.protobuf.StringValue
+	37,  // 114: xatu.libp2p.ControlPruneMeta.peer_ids:type_name -> google.protobuf.StringValue
+	37,  // 115: xatu.libp2p.ControlPruneMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 116: xatu.libp2p.ControlPruneMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 117: xatu.libp2p.ControlPruneMetaItem.graft_peer_id:type_name -> google.protobuf.StringValue
+	37,  // 118: xatu.libp2p.ControlPruneMetaItem.topic:type_name -> google.protobuf.StringValue
+	39,  // 119: xatu.libp2p.ControlPruneMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	39,  // 120: xatu.libp2p.ControlPruneMetaItem.peer_index:type_name -> google.protobuf.UInt32Value
+	37,  // 121: xatu.libp2p.ControlIDontWantMeta.message_ids:type_name -> google.protobuf.StringValue
+	37,  // 122: xatu.libp2p.ControlIDontWantMetaItem.root_event_id:type_name -> google.protobuf.StringValue
+	37,  // 123: xatu.libp2p.ControlIDontWantMetaItem.peer_id:type_name -> google.protobuf.StringValue
+	37,  // 124: xatu.libp2p.ControlIDontWantMetaItem.message_id:type_name -> google.protobuf.StringValue
+	39,  // 125: xatu.libp2p.ControlIDontWantMetaItem.message_index:type_name -> google.protobuf.UInt32Value
+	39,  // 126: xatu.libp2p.ControlIDontWantMetaItem.control_index:type_name -> google.protobuf.UInt32Value
+	37,  // 127: xatu.libp2p.DataColumnCustodyProbe.peer_id:type_name -> google.protobuf.StringValue
+	39,  // 128: xatu.libp2p.DataColumnCustodyProbe.slot:type_name -> google.protobuf.UInt32Value
+	40,  // 129: xatu.libp2p.DataColumnCustodyProbe.slot_start_date_time:type_name -> google.protobuf.UInt64Value
+	39,  // 130: xatu.libp2p.DataColumnCustodyProbe.epoch:type_name -> google.protobuf.UInt32Value
+	40,  // 131: xatu.libp2p.DataColumnCustodyProbe.epoch_start_date_time:type_name -> google.protobuf.UInt64Value
+	39,  // 132: xatu.libp2p.DataColumnCustodyProbe.wallclock_request_slot:type_name -> google.protobuf.UInt32Value
+	40,  // 133: xatu.libp2p.DataColumnCustodyProbe.wallclock_request_slot_start_date_time:type_name -> google.protobuf.UInt64Value
+	39,  // 134: xatu.libp2p.DataColumnCustodyProbe.wallclock_request_epoch:type_name -> google.protobuf.UInt32Value
+	40,  // 135: xatu.libp2p.DataColumnCustodyProbe.wallclock_request_epoch_start_date_time:type_name -> google.protobuf.UInt64Value
+	39,  // 136: xatu.libp2p.DataColumnCustodyProbe.column_index:type_name -> google.protobuf.UInt32Value
+	39,  // 137: xatu.libp2p.DataColumnCustodyProbe.column_rows_count:type_name -> google.protobuf.UInt32Value
+	37,  // 138: xatu.libp2p.DataColumnCustodyProbe.beacon_block_root:type_name -> google.protobuf.StringValue
+	37,  // 139: xatu.libp2p.DataColumnCustodyProbe.result:type_name -> google.protobuf.StringValue
+	45,  // 140: xatu.libp2p.DataColumnCustodyProbe.response_time_ms:type_name -> google.protobuf.Int64Value
+	37,  // 141: xatu.libp2p.DataColumnCustodyProbe.error:type_name -> google.protobuf.StringValue
+	142, // [142:142] is the sub-list for method output_type
+	142, // [142:142] is the sub-list for method input_type
+	142, // [142:142] is the sub-list for extension type_name
+	142, // [142:142] is the sub-list for extension extendee
+	0,   // [0:142] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_libp2p_trace_proto_init() }
@@ -3747,6 +4004,18 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_libp2p_trace_proto_msgTypes[35].Exporter = func(v any, i int) any {
+			switch v := v.(*DataColumnCustodyProbe); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -3754,7 +4023,7 @@ func file_pkg_proto_libp2p_trace_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_libp2p_trace_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   35,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

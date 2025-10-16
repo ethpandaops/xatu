@@ -36,6 +36,7 @@ enum EventType {
   RPC_META_SUBSCRIPTION = 23;
   RPC_META_MESSAGE = 24;
   SYNTHETIC_HEARTBEAT = 25;
+  CUSTODY_PROBE = 26;
 }
 
 message AddPeer {
@@ -303,4 +304,30 @@ message ControlIDontWantMetaItem {
   google.protobuf.StringValue message_id = 3 [json_name = "message_id"];
   google.protobuf.UInt32Value message_index = 4 [json_name = "message_index"];
   google.protobuf.UInt32Value control_index = 5 [json_name = "control_index"];
+}
+
+// DataColumnCustodyProbe represents a peer custody probe event
+message DataColumnCustodyProbe {
+  // Probe metadata
+  google.protobuf.StringValue peer_id = 1 [json_name = "peer_id"];
+
+  // Slot and column
+  google.protobuf.UInt32Value slot = 2 [json_name = "slot"];
+  google.protobuf.UInt64Value slot_start_date_time = 3 [json_name = "slot_start_date_time"];
+  google.protobuf.UInt32Value epoch = 4 [json_name = "epoch"];
+  google.protobuf.UInt64Value epoch_start_date_time = 5 [json_name = "epoch_start_date_time"];
+  google.protobuf.UInt32Value wallclock_request_slot = 6 [json_name = "wallclock_request_slot"];
+  google.protobuf.UInt64Value wallclock_request_slot_start_date_time = 7 [json_name = "wallclock_request_slot_start_date_time"];
+  google.protobuf.UInt32Value wallclock_request_epoch = 8 [json_name = "wallclock_request_epoch"];
+  google.protobuf.UInt64Value wallclock_request_epoch_start_date_time = 9 [json_name = "wallclock_request_epoch_start_date_time"];
+
+  // Column information
+  google.protobuf.UInt32Value column_index = 10 [json_name = "column_index"];
+  google.protobuf.UInt32Value column_rows_count = 11 [json_name = "column_rows_count"];
+  google.protobuf.StringValue beacon_block_root = 12 [json_name = "beacon_block_root"];
+
+  // Probe results
+  google.protobuf.StringValue result = 13 [json_name = "result"];
+  google.protobuf.Int64Value response_time_ms = 14 [json_name = "response_time_ms"];
+  google.protobuf.StringValue error = 15;
 }

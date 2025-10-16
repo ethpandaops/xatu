@@ -325,6 +325,7 @@ services:
           "libp2p-trace-rpc-meta-control-ihave"
           "libp2p-trace-rpc-meta-subscription"
           "libp2p-trace-rpc-meta-message"
+          "libp2p-rpc-data-column-custody-probe"
           "beacon-api-eth-v1-beacon-validators"
           "mev-relay-bid-trace-builder-block-submission"
           "mev-relay-proposer-payload-delivered"

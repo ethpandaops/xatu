@@ -160,13 +160,10 @@ services:
         type: http
         shippingMethod: async
         filter:
-          # Temporarily disable module filter for testing
-          # modules:
-          #   - CL_MIMICRY
-          #   - TYSM
-          #   - SIDECAR
-          eventNames:
-            - LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE
+          modules:
+            - CL_MIMICRY
+            - TYSM
+            - SIDECAR
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 500000

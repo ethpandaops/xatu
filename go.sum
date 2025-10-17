@@ -25,6 +25,8 @@ github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030I
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
+github.com/OffchainLabs/prysm/v6 v6.1.1 h1:OpkmHJFdM9rmEh8jZPOhjSVRexhnGuBPPzjOOf2R/5E=
+github.com/OffchainLabs/prysm/v6 v6.1.1/go.mod h1:g/rVgpjtbxpHDR6CDBmWVxIBZ9aog8ikvpBHLknhEZQ=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/VictoriaMetrics/fastcache v1.12.2 h1:N0y9ASrJ0F6h0QaC3o6uJb3NIZ9VKLjCM7NQbSmF7WI=
@@ -265,6 +267,8 @@ github.com/ethpandaops/ethereum-package-go v0.8.0 h1:h4hyCTBgW+fWNxLLLP29GAhk0BM
 github.com/ethpandaops/ethereum-package-go v0.8.0/go.mod h1:LQThCwlCeeNBTdXOFV+xSwudoced53x+o/Orya3Y+oo=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
 github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
+github.com/ethpandaops/hermes v0.0.4-0.20251015110146-752100614d6c h1:wNKsJ/uLpyhE1WwO+tTlIhlNfMvECMaUi2UKsoH5D4s=
+github.com/ethpandaops/hermes v0.0.4-0.20251015110146-752100614d6c/go.mod h1:hxl2ZUu4ptayciDRlK0Lxjn5+uR+t86yzEobiwMMwOg=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=

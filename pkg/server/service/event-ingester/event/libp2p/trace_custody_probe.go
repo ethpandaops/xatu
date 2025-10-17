@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const TypeLibp2pRPCDataColumnCustodyProbe = "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE"
+const TypeLibp2pRPCDataColumnCustodyProbe = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE"
 
 type DataColumnCustodyProbe struct {
 	log   logrus.FieldLogger
@@ -27,12 +27,12 @@ func (e *DataColumnCustodyProbe) Type() string {
 }
 
 func (e *DataColumnCustodyProbe) Validate(ctx context.Context) error {
-	probe, ok := e.event.GetData().(*xatu.DecoratedEvent_Libp2PRpcDataColumnCustodyProbe)
+	probe, ok := e.event.GetData().(*xatu.DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe)
 	if !ok {
 		return errors.New("failed to cast event data to custody probe")
 	}
 
-	data := probe.Libp2PRpcDataColumnCustodyProbe
+	data := probe.Libp2PTraceRpcDataColumnCustodyProbe
 
 	// Validate required fields
 	if data.GetPeerId().String() == "" {

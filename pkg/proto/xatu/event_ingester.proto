@@ -934,8 +934,8 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
-  // AdditionalLibP2PRpcDataColumnCustodyProbeData: Holds additional data for a custody probe event in LibP2P RPC.
-  message AdditionalLibP2PRpcDataColumnCustodyProbeData {
+  // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData: Holds additional data for a custody probe event in LibP2P Trace RPC.
+  message AdditionalLibP2PTraceRpcDataColumnCustodyProbeData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
 
     // Epoch contains the epoch information for the probe event
@@ -1479,9 +1479,8 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubDataColumnSidecarData libp2p_trace_gossipsub_data_column_sidecar = 86 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     // AdditionalLibP2PTraceSyntheticHeartbeatData contains additional data about the libp2p trace synthetic heartbeat event.
     AdditionalLibP2PTraceSyntheticHeartbeatData libp2p_trace_synthetic_heartbeat = 87 [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
-    // AdditionalLibP2PRpcDataColumnCustodyProbeData contains additional data about the libp2p rpc data column custody probe event.
-    AdditionalLibP2PRpcDataColumnCustodyProbeData libp2p_rpc_data_column_custody_probe = 88 [ json_name = "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
-
+    // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData contains additional data about the libp2p trace rpc data column custody probe event.
+    AdditionalLibP2PTraceRpcDataColumnCustodyProbeData libp2p_trace_rpc_data_column_custody_probe = 88 [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1682,7 +1681,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 75;
     LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR = 76;
     LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
-    LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
+    LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1872,8 +1871,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
-    xatu.libp2p.DataColumnCustodyProbe libp2p_rpc_data_column_custody_probe = 200
-        [ json_name = "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
+    xatu.libp2p.DataColumnCustodyProbe libp2p_trace_rpc_data_column_custody_probe = 200
+        [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
   };
 }
 

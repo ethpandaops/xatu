@@ -227,7 +227,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
-      libp2p_rpc_data_column_custody_probe: .event.name == "LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE"
+      libp2p_trace_rpc_data_column_custody_probe: .event.name == "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE"
       libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
@@ -261,7 +261,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
-      - xatu_server_events_router.libp2p_rpc_data_column_custody_probe
+      - xatu_server_events_router.libp2p_trace_rpc_data_column_custody_probe
       - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
@@ -1419,10 +1419,10 @@ transforms:
       del(.data)
       del(.path)
 
-  libp2p_rpc_data_column_custody_probe_formatted:
+  libp2p_trace_rpc_data_column_custody_probe_formatted:
     type: remap
     inputs:
-      - xatu_server_events_router.libp2p_rpc_data_column_custody_probe
+      - xatu_server_events_router.libp2p_trace_rpc_data_column_custody_probe
     source: |-
       .updated_date_time = to_unix_timestamp(now())
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
@@ -2914,10 +2914,10 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-  libp2p_rpc_data_column_custody_probe_clickhouse:
+  libp2p_trace_rpc_data_column_custody_probe_clickhouse:
     type: clickhouse
     inputs:
-      - libp2p_rpc_data_column_custody_probe_formatted
+      - libp2p_trace_rpc_data_column_custody_probe_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: libp2p_rpc_data_column_custody_probe

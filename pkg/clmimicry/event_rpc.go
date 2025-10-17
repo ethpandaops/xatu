@@ -20,7 +20,7 @@ import (
 var rpcToXatuEventMap = map[string]string{
 	TraceEvent_HANDLE_METADATA: xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
 	TraceEvent_HANDLE_STATUS:   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
-	TraceEvent_CUSTODY_PROBE:   xatu.Event_LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
+	TraceEvent_CUSTODY_PROBE:   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
@@ -72,7 +72,7 @@ func (p *Processor) handleHermesRPCEvent(
 
 		return p.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
 
-	case xatu.Event_LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE.String():
+	case xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String():
 		if !p.events.CustodyProbeEnabled {
 			return nil
 		}
@@ -188,21 +188,21 @@ func (p *Processor) handleCustodyProbeEvent(ctx context.Context,
 		return errors.Wrapf(err, "failed to derive additional data for custody probe event")
 	}
 
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PRpcDataColumnCustodyProbe{
-		Libp2PRpcDataColumnCustodyProbe: extra,
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRpcDataColumnCustodyProbe{
+		Libp2PTraceRpcDataColumnCustodyProbe: extra,
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_RPC_DATA_COLUMN_CUSTODY_PROBE,
+			Name:     xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE,
 			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
 			Client: metadata,
 		},
-		Data: &xatu.DecoratedEvent_Libp2PRpcDataColumnCustodyProbe{
-			Libp2PRpcDataColumnCustodyProbe: data,
+		Data: &xatu.DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe{
+			Libp2PTraceRpcDataColumnCustodyProbe: data,
 		},
 	}
 
@@ -213,8 +213,8 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	event *host.TraceEvent,
 	data *libp2p.DataColumnCustodyProbe,
 	traceMeta *libp2p.TraceEventMetadata,
-) (*xatu.ClientMeta_AdditionalLibP2PRpcDataColumnCustodyProbeData, error) {
-	extra := &xatu.ClientMeta_AdditionalLibP2PRpcDataColumnCustodyProbeData{
+) (*xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData, error) {
+	extra := &xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{
 		Metadata: traceMeta,
 	}
 
@@ -231,8 +231,7 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	}
 
 	// Calculate the wallclock time when the request was sent.
-	// The event time is the time when the probe returned, so we need to subtract the response time, while also adding the clock drift.
-	requestTime := event.Timestamp.Add(-time.Duration(data.GetResponseTimeMs().GetValue()) * time.Millisecond).Add(p.clockDrift)
+	requestTime := data.GetJobStartTimestamp().AsTime().Add(-time.Duration(data.GetResponseTimeMs().GetValue()) * time.Millisecond).Add(p.clockDrift)
 
 	wallclockSlot := p.wallclock.Slots().FromTime(requestTime)
 	extra.WallclockSlot = &xatu.SlotV2{

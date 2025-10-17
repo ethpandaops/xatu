@@ -16,6 +16,7 @@ sources:
       codec: json
     topics:
       - "^libp2p-trace.+"
+      - "^libp2p-rpc.+"
     auto_offset_reset: earliest
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
@@ -226,6 +227,7 @@ transforms:
       libp2p_trace_gossipsub_aggregate_and_proof: .event.name == "LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF"
       libp2p_trace_gossipsub_blob_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR"
       libp2p_trace_gossipsub_data_column_sidecar: .event.name == "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR"
+      libp2p_trace_rpc_data_column_custody_probe: .event.name == "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE"
       libp2p_trace_synthetic_heartbeat: .event.name == "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT"
       libp2p_trace_rpc_meta_control_ihave: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE"
       libp2p_trace_rpc_meta_control_iwant: .event.name == "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
@@ -259,6 +261,7 @@ transforms:
       - xatu_server_events_router.libp2p_trace_gossipsub_aggregate_and_proof
       - xatu_server_events_router.libp2p_trace_gossipsub_blob_sidecar
       - xatu_server_events_router.libp2p_trace_gossipsub_data_column_sidecar
+      - xatu_server_events_router.libp2p_trace_rpc_data_column_custody_probe
       - xatu_server_events_router.libp2p_trace_synthetic_heartbeat
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_ihave
       - xatu_server_events_router.libp2p_trace_rpc_meta_control_iwant
@@ -987,7 +990,7 @@ transforms:
           .error_description = "failed to split topic"
       } else {
         if length(topicParts) != 5 {
-            errDebug = {
+            .errDebug = {
                 "topic": .meta.client.additional_data.topic,
             }
             .error_description = "failed to split topic"
@@ -1410,6 +1413,119 @@ transforms:
       .topic_fork_digest_value = topicParts[2]
       .topic_name = topicParts[3]
       .topic_encoding = topicParts[4]
+
+      del(.event)
+      del(.meta)
+      del(.data)
+      del(.path)
+
+  libp2p_trace_rpc_data_column_custody_probe_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.libp2p_trace_rpc_data_column_custody_probe
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      # Extract from .data
+      .slot = .data.slot
+      .epoch = .data.epoch
+
+      if .data.column_index != null {
+        .column_index = .data.column_index
+      }
+
+      if .data.column_rows_count != null {
+        .column_rows_count = .data.column_rows_count
+      }
+
+      if .data.beacon_block_root != null {
+        .beacon_block_root = .data.beacon_block_root
+      }
+
+      if .data.result != null {
+        .result = .data.result
+      }
+
+      if .data.response_time_ms != null {
+        .response_time_ms = .data.response_time_ms
+      }
+
+      if .data.error != null {
+        .error = .data.error
+      }
+
+      # Extract timestamp fields from metadata
+      if exists(.meta.client.additional_data.slot.start_date_time) {
+        slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
+        if err == null {
+          .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse slot start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      if exists(.meta.client.additional_data.epoch.start_date_time) {
+        epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+        if err == null {
+          .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      # Extract wallclock fields from metadata
+      if exists(.meta.client.additional_data.wallclock_slot.number) {
+        .wallclock_request_slot = .meta.client.additional_data.wallclock_slot.number
+      }
+
+      if exists(.meta.client.additional_data.wallclock_slot.start_date_time) {
+        wallclock_request_slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_slot.start_date_time, format: "%+");
+        if err == null {
+          .wallclock_request_slot_start_date_time = to_unix_timestamp(wallclock_request_slot_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse wallclock request slot start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      if exists(.meta.client.additional_data.wallclock_epoch.number) {
+        .wallclock_request_epoch = .meta.client.additional_data.wallclock_epoch.number
+      }
+
+      if exists(.meta.client.additional_data.wallclock_epoch.start_date_time) {
+        wallclock_request_epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.wallclock_epoch.start_date_time, format: "%+");
+        if err == null {
+          .wallclock_request_epoch_start_date_time = to_unix_timestamp(wallclock_request_epoch_start_date_time)
+        } else {
+          .error = err
+          .error_description = "failed to parse wallclock request epoch start date time"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+      }
+
+      # Use peer_id_unique_key from metadata
+      if exists(.meta.client.additional_data.metadata.peer_id) {
+        peer_id_key, err = to_string(.meta.client.additional_data.metadata.peer_id) + to_string(.meta_network_name)
+        if err != null {
+          .error = err
+          .error_description = "failed to generate peer id unique key"
+          log(., level: "error", rate_limit_secs: 60)
+        }
+        .peer_id_unique_key = seahash(peer_id_key)
+      }
 
       del(.event)
       del(.meta)
@@ -2795,6 +2911,26 @@ sinks:
       timeout_secs: 1
     buffer:
       max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  libp2p_trace_rpc_data_column_custody_probe_clickhouse:
+    type: clickhouse
+    inputs:
+      - libp2p_trace_rpc_data_column_custody_probe_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: libp2p_rpc_data_column_custody_probe
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 10485760
+      max_events: 10000
+      timeout_secs: 5
+    buffer:
+      max_events: 10000
     healthcheck:
       enabled: true
     skip_unknown_fields: false

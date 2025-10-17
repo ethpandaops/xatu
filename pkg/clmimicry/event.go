@@ -18,13 +18,16 @@ const (
 	TraceEvent_HANDLE_MESSAGE = "HANDLE_MESSAGE"
 
 	// libp2p core networking events.
-	TraceEvent_CONNECTED           = "CONNECTED"
-	TraceEvent_DISCONNECTED        = "DISCONNECTED"
-	TraceEvent_SYNTHETIC_HEARTBEAT = "SYNTHETIC_HEARTBEAT"
+	TraceEvent_CONNECTED    = "CONNECTED"
+	TraceEvent_DISCONNECTED = "DISCONNECTED"
 
 	// RPC events.
 	TraceEvent_HANDLE_METADATA = "HANDLE_METADATA"
 	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
+
+	// Events that are not part of a normal Ethereum node.
+	TraceEvent_SYNTHETIC_HEARTBEAT = "SYNTHETIC_HEARTBEAT"
+	TraceEvent_CUSTODY_PROBE       = "CUSTODY_PROBE"
 )
 
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.

@@ -231,7 +231,7 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	}
 
 	// Calculate the wallclock time when the request was sent.
-	requestTime := data.GetJobStartTimestamp().AsTime().Add(-time.Duration(data.GetResponseTimeMs().GetValue()) * time.Millisecond).Add(p.clockDrift)
+	requestTime := event.Timestamp.Add(-time.Duration(data.GetResponseTimeMs().GetValue()) * time.Millisecond).Add(p.clockDrift)
 
 	wallclockSlot := p.wallclock.Slots().FromTime(requestTime)
 	extra.WallclockSlot = &xatu.SlotV2{

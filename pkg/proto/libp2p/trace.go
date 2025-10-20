@@ -759,19 +759,26 @@ func TraceEventToCustodyProbe(event *host.TraceEvent) (*DataColumnCustodyProbe, 
 
 	probe := &DataColumnCustodyProbe{}
 
+	if jobStartTimestamp, ok := payload["JobStartTimestamp"].(time.Time); ok {
+		probe.JobStartTimestamp = timestamppb.New(jobStartTimestamp)
+	}
+
 	if peerID, ok := payload["PeerID"].(string); ok {
 		probe.PeerId = wrapperspb.String(peerID)
 	}
 
 	if slot, ok := payload["Slot"].(uint64); ok {
+		//nolint:gosec // conversion fine.
 		probe.Slot = wrapperspb.UInt32(uint32(slot))
 	}
 
 	if epoch, ok := payload["Epoch"].(uint64); ok {
+		//nolint:gosec // conversion fine.
 		probe.Epoch = wrapperspb.UInt32(uint32(epoch))
 	}
 
 	if columnIndex, ok := payload["ColumnIndex"].(uint64); ok {
+		//nolint:gosec // conversion fine.
 		probe.ColumnIndex = wrapperspb.UInt32(uint32(columnIndex))
 	}
 
@@ -792,6 +799,7 @@ func TraceEventToCustodyProbe(event *host.TraceEvent) (*DataColumnCustodyProbe, 
 	}
 
 	if columnRowsCount, ok := payload["ColumnSize"].(int); ok {
+		//nolint:gosec // conversion fine.
 		probe.ColumnRowsCount = wrapperspb.UInt32(uint32(columnRowsCount))
 	}
 

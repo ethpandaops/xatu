@@ -63,7 +63,7 @@ ORDER BY (
     meta_client_name,
     peer_id_unique_key,
     slot,
-    column_indexm,
+    column_index,
     event_date_time
 )
 COMMENT 'Contains custody probe events for data column availability verification';

@@ -934,6 +934,23 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData: Holds additional data for a custody probe event in LibP2P Trace RPC.
+  message AdditionalLibP2PTraceRpcDataColumnCustodyProbeData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+
+    // Epoch contains the epoch information for the probe event
+    EpochV2 epoch = 2 [ json_name = "epoch" ];
+
+    // Slot contains the slot information for the probe event.
+    SlotV2 slot = 3 [ json_name = "slot" ];
+
+    // WallclockEpoch contains the epoch information for the probe event in the wall clock time when the request was sent.
+    EpochV2 wallclock_epoch = 4 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the slot information for the probe event in the wall clock time when the request was sent.
+    SlotV2 wallclock_slot = 5 [ json_name = "wallclock_slot" ];
+  }
+
   // AdditionalLibP2PTraceRPCMetaSubscriptionData: Holds additional data for a RPC meta subscription event in LibP2P tracing.
   message AdditionalLibP2PTraceRPCMetaSubscriptionData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1401,7 +1418,6 @@ message ClientMeta {
     AdditionalLibP2PTraceDisconnectedData libp2p_trace_disconnected = 54 [ json_name = "LIBP2P_TRACE_DISCCONNECTED" ];
     AdditionalLibP2PTraceHandleMetadataData libp2p_trace_handle_metadata = 55 [ json_name = "LIBP2P_TRACE_HANDLE_METADATA" ];
     AdditionalLibP2PTraceHandleStatusData libp2p_trace_handle_status = 56 [ json_name = "LIBP2P_TRACE_HANDLE_STATUS" ];
-
     // AdditionalLibP2PTraceGossipSubBeaconBlockData contains additional data about the gossip sub beacon block event.
     AdditionalLibP2PTraceGossipSubBeaconBlockData libp2p_trace_gossipsub_beacon_block = 57 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK" ];
     // AdditionalLibP2PTraceGossipSubBeaconAttestationData contains additional data about the gossip sub beacon attestation event.
@@ -1463,6 +1479,8 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubDataColumnSidecarData libp2p_trace_gossipsub_data_column_sidecar = 86 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     // AdditionalLibP2PTraceSyntheticHeartbeatData contains additional data about the libp2p trace synthetic heartbeat event.
     AdditionalLibP2PTraceSyntheticHeartbeatData libp2p_trace_synthetic_heartbeat = 87 [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
+    // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData contains additional data about the libp2p trace rpc data column custody probe event.
+    AdditionalLibP2PTraceRpcDataColumnCustodyProbeData libp2p_trace_rpc_data_column_custody_probe = 88 [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1663,6 +1681,7 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR = 75;
     LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR = 76;
     LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
+    LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1852,6 +1871,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
+    xatu.libp2p.DataColumnCustodyProbe libp2p_trace_rpc_data_column_custody_probe = 200
+        [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
   };
 }
 

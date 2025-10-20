@@ -1,8 +1,14 @@
 FROM golang:1.25 AS builder
 WORKDIR /src
-COPY go.sum go.mod ./
+
+# Copy sibling dependencies that are referenced in go.mod replace directives
+COPY tysm/ /tysm/
+COPY hermes/ /hermes/
+
+# Copy xatu project files
+COPY xatu/go.sum xatu/go.mod ./
 RUN go mod download
-COPY . .
+COPY xatu/ .
 RUN go build -o /bin/app .
 
 FROM ubuntu:latest

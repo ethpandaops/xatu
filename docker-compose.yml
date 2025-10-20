@@ -158,8 +158,8 @@ services:
     container_name: xatu-server
     hostname: xatu-server
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: xatu/Dockerfile
     ports:
       - "${XATU_SERVER_ADDRESS:-0.0.0.0}:${XATU_SERVER_PORT:-8080}:8080"
     # environment:
@@ -325,6 +325,7 @@ services:
           "libp2p-trace-rpc-meta-control-ihave"
           "libp2p-trace-rpc-meta-subscription"
           "libp2p-trace-rpc-meta-message"
+          "libp2p-trace-rpc-data-column-custody-probe"
           "beacon-api-eth-v1-beacon-validators"
           "mev-relay-bid-trace-builder-block-submission"
           "mev-relay-proposer-payload-delivered"
@@ -613,8 +614,8 @@ services:
     container_name: xatu-cannon
     hostname: xatu-cannon
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: xatu/Dockerfile
     environment:
       # Default
       CANNON_XATU_COORDINATOR_AUTHORIZATION: ${CANNON_XATU_COORDINATOR_AUTHORIZATION:-Bearer super_secret}

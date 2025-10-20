@@ -236,13 +236,13 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	wallclockSlot := p.wallclock.Slots().FromTime(requestTime)
 	extra.WallclockSlot = &xatu.SlotV2{
 		Number:        wrapperspb.UInt64(wallclockSlot.Number()),
-		StartDateTime: timestamppb.New(requestTime),
+		StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
 	}
 
 	wallclockEpoch := p.wallclock.Epochs().FromTime(requestTime)
 	extra.WallclockEpoch = &xatu.EpochV2{
 		Number:        wrapperspb.UInt64(wallclockEpoch.Number()),
-		StartDateTime: timestamppb.New(requestTime),
+		StartDateTime: timestamppb.New(wallclockEpoch.TimeWindow().Start()),
 	}
 
 	return extra, nil

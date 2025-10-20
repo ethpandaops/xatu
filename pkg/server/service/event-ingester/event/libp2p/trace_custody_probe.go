@@ -35,7 +35,7 @@ func (e *DataColumnCustodyProbe) Validate(ctx context.Context) error {
 	data := probe.Libp2PTraceRpcDataColumnCustodyProbe
 
 	// Validate required fields
-	if data.GetPeerId().String() == "" {
+	if data.GetPeerId() == nil || data.GetPeerId().GetValue() == "" {
 		return errors.New("peer_id is required")
 	}
 

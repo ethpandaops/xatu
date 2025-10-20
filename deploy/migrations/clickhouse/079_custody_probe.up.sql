@@ -45,11 +45,6 @@ CREATE TABLE IF NOT EXISTS libp2p_rpc_data_column_custody_probe_local ON CLUSTER
     meta_client_geo_autonomous_system_organization Nullable(String) COMMENT 'Autonomous system organization of the client' CODEC(ZSTD(1)),
     meta_network_id Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String) COMMENT 'Ethereum network name',
-    meta_consensus_version LowCardinality(String) COMMENT 'Ethereum consensus client version',
-    meta_consensus_version_major LowCardinality(String) COMMENT 'Ethereum consensus client major version',
-    meta_consensus_version_minor LowCardinality(String) COMMENT 'Ethereum consensus client minor version',
-    meta_consensus_version_patch LowCardinality(String) COMMENT 'Ethereum consensus client patch version',
-    meta_consensus_implementation LowCardinality(String) COMMENT 'Ethereum consensus client implementation',
     meta_labels Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
 ) ENGINE = ReplicatedReplacingMergeTree(
     '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',

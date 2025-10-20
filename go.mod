@@ -3,11 +3,7 @@ module github.com/ethpandaops/xatu
 go 1.25.1
 
 // release-xatu branch.
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20251015110146-752100614d6c
-
-// Match tysm's go-ethereum version requirement
-// Temporarily removed to allow ethcore to use its required version
-// replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.15.9
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20251020020534-bae1d7412c20
 
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5

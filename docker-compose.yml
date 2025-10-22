@@ -158,8 +158,8 @@ services:
     container_name: xatu-server
     hostname: xatu-server
     build:
-      context: ..
-      dockerfile: xatu/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "${XATU_SERVER_ADDRESS:-0.0.0.0}:${XATU_SERVER_PORT:-8080}:8080"
     # environment:
@@ -614,8 +614,8 @@ services:
     container_name: xatu-cannon
     hostname: xatu-cannon
     build:
-      context: ..
-      dockerfile: xatu/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     environment:
       # Default
       CANNON_XATU_COORDINATOR_AUTHORIZATION: ${CANNON_XATU_COORDINATOR_AUTHORIZATION:-Bearer super_secret}

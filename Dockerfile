@@ -1,10 +1,6 @@
 FROM golang:1.25 AS builder
 WORKDIR /src
 
-# Copy sibling dependencies that are referenced in go.mod replace directives
-COPY tysm/ /tysm/
-COPY hermes/ /hermes/
-
 # Copy xatu project files
 COPY xatu/go.sum xatu/go.mod ./
 RUN go mod download

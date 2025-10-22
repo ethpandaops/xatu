@@ -2,9 +2,8 @@ FROM golang:1.25 AS builder
 WORKDIR /src
 
 # Copy xatu project files
-COPY xatu/go.sum xatu/go.mod ./
-RUN go mod download
 COPY . .
+RUN go mod download
 RUN go build -o /bin/app .
 
 FROM ubuntu:latest

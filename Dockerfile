@@ -4,7 +4,7 @@ WORKDIR /src
 # Copy xatu project files
 COPY xatu/go.sum xatu/go.mod ./
 RUN go mod download
-COPY xatu/ .
+COPY . .
 RUN go build -o /bin/app .
 
 FROM ubuntu:latest

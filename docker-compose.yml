@@ -263,7 +263,7 @@ services:
           "beacon-api-eth-v2-beacon-block-execution-transaction"
           "mempool-transaction-v2"
         )
-        
+
         # Regular topics
         regular_topics=(
           "beacon-api-eth-v1-beacon-committee"
@@ -334,13 +334,13 @@ services:
           "node-record-consensus"
           "node-record-execution"
         )
-        
+
         # Create topics with 10MB message size limit
         for topic in "$${large_message_topics[@]}"; do
           echo "Creating topic with 10MB message limit: $$topic";
           kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=delete --config retention.ms=259200000 --config compression.type=snappy --config segment.bytes=536870912 --config max.message.bytes=10485760 --topic "$$topic"
         done
-        
+
         # Create regular topics
         for topic in "$${regular_topics[@]}"; do
           echo "Creating topic: $$topic";
@@ -558,16 +558,13 @@ services:
     networks:
       - xatu-net
   tempo-init:
-    image: &tempoImage grafana/tempo:latest
+    image: busybox:latest
     user: root
-    entrypoint:
-      - "chown"
-      - "10001:10001"
-      - "/var/tempo"
+    command: ["sh", "-c", "chown 10001:10001 /var/tempo"]
     volumes:
       - tempo-data:/var/tempo
   tempo:
-    image: *tempoImage
+    image: grafana/tempo:latest
     container_name: xatu-tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:

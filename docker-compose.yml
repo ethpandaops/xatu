@@ -558,16 +558,13 @@ services:
     networks:
       - xatu-net
   tempo-init:
-    image: &tempoImage grafana/tempo:latest
+    image: busybox:latest
     user: root
-    entrypoint:
-      - "/bin/sh"
-      - "-c"
-      - "chown 10001:10001 /var/tempo"
+    command: chown 10001:10001 /var/tempo
     volumes:
       - tempo-data:/var/tempo
   tempo:
-    image: *tempoImage
+    image: grafana/tempo:latest
     container_name: xatu-tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:

@@ -41,7 +41,7 @@ var (
 	TypeBeaconETHV1EventsContributionAndProofV2 Type = v1.EventsContributionAndProofV2Type
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
-	TypeExecutionStateSize                 Type = execution.ExecutionStateSizeType
+	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
 	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
 	TypeBeaconETHV2BeaconBlockV2                Type = v2.BeaconBlockV2Type
 	TypeDebugForkChoice                         Type = v1.DebugForkChoiceType

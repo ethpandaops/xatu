@@ -20,7 +20,7 @@ type DuplicateCache struct {
 	BeaconEthV1EventsBlobSidecar          *ttlcache.Cache[string, time.Time]
 	BeaconEthV1EventsDataColumnSidecar    *ttlcache.Cache[string, time.Time]
 	MempoolTransaction                    *ttlcache.Cache[string, time.Time]
-	ExecutionStateSize               *ttlcache.Cache[string, time.Time]
+	ExecutionStateSize                    *ttlcache.Cache[string, time.Time]
 }
 
 const (

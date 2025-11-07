@@ -1,10 +1,11 @@
 CREATE TABLE execution_state_size_local ON CLUSTER '{cluster}' (
+  updated_date_time DateTime COMMENT 'Timestamp when the record was last updated' Codec(DoubleDelta, ZSTD(1)),
   event_date_time DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
+  block_number UInt64 Codec(DoubleDelta, ZSTD(1)),
   account_bytes UInt64 Codec(ZSTD(1)),
   account_trienode_bytes UInt64 Codec(ZSTD(1)),
   account_trienodes UInt64 Codec(ZSTD(1)),
   accounts UInt64 Codec(ZSTD(1)),
-  block_number UInt64 Codec(DoubleDelta, ZSTD(1)),
   contract_code_bytes UInt64 Codec(ZSTD(1)),
   contract_codes UInt64 Codec(ZSTD(1)),
   state_root FixedString(66) Codec(ZSTD(1)),
@@ -34,9 +35,20 @@ CREATE TABLE execution_state_size_local ON CLUSTER '{cluster}' (
   meta_execution_version_patch LowCardinality(String),
   meta_execution_implementation LowCardinality(String),
   meta_labels Map(String, String) Codec(ZSTD(1))
-) ENGINE = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
+) ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY intDiv(block_number, 5000000)
-ORDER BY (event_date_time, meta_network_name, meta_client_name, block_number);
+ORDER BY (block_number, meta_network_name, meta_client_name, state_root, event_date_time) COMMENT 'Contains execution state size data.';
 
 CREATE TABLE execution_state_size ON CLUSTER '{cluster}' AS execution_state_size_local
-ENGINE = Distributed('{cluster}', default, execution_state_size_local, rand());
+ENGINE = Distributed(
+  '{cluster}',
+  default,
+  execution_state_size_local,
+  cityHash64(
+    block_number,
+    meta_network_name,
+    meta_client_name,
+    state_root,
+    event_date_time
+  )
+);

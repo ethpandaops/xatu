@@ -1034,6 +1034,7 @@ transforms:
     inputs:
       - xatu_server_events_router.execution_state_size
     source: |-
+      .updated_date_time = to_unix_timestamp(now())
       event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
       if err == null {
         .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
@@ -1042,11 +1043,11 @@ transforms:
         .error_description = "failed to parse event date time"
         log(., level: "error", rate_limit_secs: 60)
       }
+      .block_number = .data.block_number
       .account_bytes = .data.account_bytes
       .account_trienode_bytes = .data.account_trienode_bytes
       .account_trienodes = .data.account_trienodes
       .accounts = .data.accounts
-      .block_number = .data.block_number
       .contract_code_bytes = .data.contract_code_bytes
       .contract_codes = .data.contract_codes
       .state_root = .data.state_root

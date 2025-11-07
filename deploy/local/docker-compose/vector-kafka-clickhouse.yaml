@@ -220,11 +220,21 @@ transforms:
           .meta_execution_fork_id_hash = .meta.client.ethereum.execution.fork_id.hash
           .meta_execution_fork_id_next = .meta.client.ethereum.execution.fork_id.next
         }
-        .meta_execution_implementation = .meta.client.ethereum.execution.implementation
-        .meta_execution_version = .meta.client.ethereum.execution.version
-        .meta_execution_version_major = .meta.client.ethereum.execution.version_major
-        .meta_execution_version_minor = .meta.client.ethereum.execution.version_minor
-        .meta_execution_version_patch = .meta.client.ethereum.execution.version_patch
+        if exists(.meta.client.ethereum.execution.implementation) {
+          .meta_execution_implementation = .meta.client.ethereum.execution.implementation
+        }
+        if exists(.meta.client.ethereum.execution.version) {
+          .meta_execution_version = .meta.client.ethereum.execution.version
+        }
+        if exists(.meta.client.ethereum.execution.version_major) {
+          .meta_execution_version_major = .meta.client.ethereum.execution.version_major
+        }
+        if exists(.meta.client.ethereum.execution.version_minor) {
+          .meta_execution_version_minor = .meta.client.ethereum.execution.version_minor
+        }
+        if exists(.meta.client.ethereum.execution.version_patch) {
+          .meta_execution_version_patch = .meta.client.ethereum.execution.version_patch
+        }
       }
       if exists(.meta.client.labels) {
         .meta_labels = .meta.client.labels

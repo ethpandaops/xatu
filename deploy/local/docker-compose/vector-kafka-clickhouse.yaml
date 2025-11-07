@@ -53,6 +53,16 @@ sources:
       codec: json
     topics:
       - "^mempool-transaction.+"
+  execution_state_size_events_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-execution-state-size-events
+    key_field: "event.id"
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    topics:
+      - "execution-state-size"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -145,6 +155,7 @@ transforms:
       - beacon_api_eth_v1_events_kafka
       - beacon_api_eth_v1_validator_kafka
       - mempool_transaction_events_kafka
+      - execution_state_size_events_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
@@ -209,6 +220,11 @@ transforms:
           .meta_execution_fork_id_hash = .meta.client.ethereum.execution.fork_id.hash
           .meta_execution_fork_id_next = .meta.client.ethereum.execution.fork_id.next
         }
+        .meta_execution_implementation = .meta.client.ethereum.execution.implementation
+        .meta_execution_version = .meta.client.ethereum.execution.version
+        .meta_execution_version_major = .meta.client.ethereum.execution.version_major
+        .meta_execution_version_minor = .meta.client.ethereum.execution.version_minor
+        .meta_execution_version_patch = .meta.client.ethereum.execution.version_patch
       }
       if exists(.meta.client.labels) {
         .meta_labels = .meta.client.labels
@@ -369,6 +385,7 @@ transforms:
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
+      execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
@@ -1009,6 +1026,35 @@ transforms:
       .blob_hashes = .meta.client.additional_data.blob_hashes
       .blob_sidecars_size = .meta.client.additional_data.blob_sidecars_size
       .blob_sidecars_empty_size = .meta.client.additional_data.blob_sidecars_empty_size
+      del(.event)
+      del(.meta)
+      del(.data)
+  execution_state_size_events_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_state_size
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .block_number = .data.block_number
+      .account_bytes = .data.account_bytes
+      .account_trienode_bytes = .data.account_trienode_bytes
+      .account_trienodes = .data.account_trienodes
+      .accounts = .data.accounts
+      .contract_code_bytes = .data.contract_code_bytes
+      .contract_codes = .data.contract_codes
+      .state_root = .data.state_root
+      .storage_bytes = .data.storage_bytes
+      .storage_trienode_bytes = .data.storage_trienode_bytes
+      .storage_trienodes = .data.storage_trienodes
+      .storages = .data.storages
       del(.event)
       del(.meta)
       del(.data)
@@ -2680,6 +2726,26 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: mempool_transaction
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_state_size_events_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_state_size_events_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_state_size
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

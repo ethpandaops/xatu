@@ -162,7 +162,6 @@ CREATE TABLE default.canonical_beacon_validators_withdrawal_credentials_local on
     `version` UInt32 DEFAULT 4294967295 - toUnixTimestamp(epoch_start_date_time) CODEC(DoubleDelta, ZSTD(1)),
     event_date_time DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
     epoch UInt32 CODEC(DoubleDelta, ZSTD(1)),
-    
     epoch_start_date_time DateTime CODEC(DoubleDelta, ZSTD(1)),
     `index` UInt32 CODEC(ZSTD(1)),
     withdrawal_credentials String CODEC(ZSTD(1)),

@@ -524,10 +524,12 @@ func (c *Client) GetClientMetadata() ClientMetadata {
 }
 
 // parseClientVersion parses the web3_clientVersion string.
-// Example inputs:
+// Example inputs from real EL implementations:
 // - "Geth/v1.16.4-stable-41714b49/linux-amd64/go1.24.7"
-// - "Besu/v24.3.0/linux-x86_64/openjdk-java-21"
-// - "Nethermind/v1.25.4+abcdef/linux-x64/dotnet8.0.2"
+// - "erigon/3.0.14/linux-amd64/go1.23.11" (lowercase, no 'v' prefix)
+// - "Nethermind/v1.32.4+1c4c7c0a/linux-x64/dotnet9.0.7" (uses + for commit hash)
+// - "besu/v25.7.0/linux-x86_64/openjdk-java-21" (lowercase)
+// - "reth/v1.8.2-9c30bf7/x86_64-unknown-linux-gnu" (uses - for commit hash)
 // Returns: implementation, version, versionMajor, versionMinor, versionPatch
 func parseClientVersion(clientVersion string) (implementation, version, versionMajor, versionMinor, versionPatch string) {
 	if clientVersion == "" {

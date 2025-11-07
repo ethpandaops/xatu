@@ -1,4 +1,4 @@
-CREATE TABLE execution_debug_state_size_local ON CLUSTER '{cluster}' (
+CREATE TABLE execution_state_size_local ON CLUSTER '{cluster}' (
   event_date_time DateTime64(3) Codec(DoubleDelta, ZSTD(1)),
   account_bytes UInt64 Codec(ZSTD(1)),
   account_trienode_bytes UInt64 Codec(ZSTD(1)),
@@ -35,8 +35,8 @@ CREATE TABLE execution_debug_state_size_local ON CLUSTER '{cluster}' (
   meta_execution_implementation LowCardinality(String),
   meta_labels Map(String, String) Codec(ZSTD(1))
 ) ENGINE = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
-PARTITION BY toStartOfMonth(event_date_time)
+PARTITION BY intDiv(block_number, 5000000)
 ORDER BY (event_date_time, meta_network_name, meta_client_name, block_number);
 
-CREATE TABLE execution_debug_state_size ON CLUSTER '{cluster}' AS execution_debug_state_size_local
-ENGINE = Distributed('{cluster}', default, execution_debug_state_size_local, rand());
+CREATE TABLE execution_state_size ON CLUSTER '{cluster}' AS execution_state_size_local
+ENGINE = Distributed('{cluster}', default, execution_state_size_local, rand());

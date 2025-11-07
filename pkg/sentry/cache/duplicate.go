@@ -20,7 +20,7 @@ type DuplicateCache struct {
 	BeaconEthV1EventsBlobSidecar          *ttlcache.Cache[string, time.Time]
 	BeaconEthV1EventsDataColumnSidecar    *ttlcache.Cache[string, time.Time]
 	MempoolTransaction                    *ttlcache.Cache[string, time.Time]
-	ExecutionDebugStateSize               *ttlcache.Cache[string, time.Time]
+	ExecutionStateSize               *ttlcache.Cache[string, time.Time]
 }
 
 const (
@@ -72,7 +72,7 @@ func NewDuplicateCache() *DuplicateCache {
 		MempoolTransaction: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](EXECUTION_TTL),
 		),
-		ExecutionDebugStateSize: ttlcache.New(
+		ExecutionStateSize: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](EXECUTION_TTL),
 		),
 	}
@@ -92,5 +92,5 @@ func (d *DuplicateCache) Start() {
 	go d.BeaconEthV1EventsBlobSidecar.Start()
 	go d.BeaconEthV1EventsDataColumnSidecar.Start()
 	go d.MempoolTransaction.Start()
-	go d.ExecutionDebugStateSize.Start()
+	go d.ExecutionStateSize.Start()
 }

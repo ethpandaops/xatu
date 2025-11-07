@@ -13,8 +13,8 @@ import (
 // stateSizeWatcher holds the state size watcher instance.
 var stateSizeWatcher *execution.StateSizeWatcher
 
-// startExecutionDebugStateSizeWatcher initializes and starts the execution state size watcher.
-func (s *Sentry) startExecutionDebugStateSizeWatcher(ctx context.Context) error {
+// startExecutionStateSizeWatcher initializes and starts the execution state size watcher.
+func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
 	// Check if execution is enabled and state size monitoring is configured.
 	if s.Config.Execution == nil || !s.Config.Execution.Enabled {
 		s.log.Info("Execution debug state size watcher disabled (execution not enabled)")
@@ -111,11 +111,11 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	}
 
 	// Create the execution debug state size event.
-	event := execEvent.NewExecutionDebugStateSize(
+	event := execEvent.NewExecutionStateSize(
 		s.log,
 		data,
 		now,
-		s.duplicateCache.ExecutionDebugStateSize,
+		s.duplicateCache.ExecutionStateSize,
 		meta,
 	)
 
@@ -149,7 +149,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 		return err
 	}
 
-	s.summary.AddEventStreamEvents("execution_debug_state_size", 1)
+	s.summary.AddEventStreamEvents("execution_state_size", 1)
 
 	s.log.WithFields(logrus.Fields{
 		"state_root":   data.StateRoot,

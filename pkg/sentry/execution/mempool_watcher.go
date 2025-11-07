@@ -149,6 +149,31 @@ func NewMempoolWatcher(
 // Start initializes the watcher's context and launches all background goroutines
 // for transaction discovery and processing.
 func (w *MempoolWatcher) Start(ctx context.Context) error {
+	// Validate configuration values before starting
+	if w.config.ProcessingInterval <= 0 {
+		return fmt.Errorf("processingInterval must be positive, got %d", w.config.ProcessingInterval)
+	}
+
+	if w.config.PruneDuration <= 0 {
+		return fmt.Errorf("pruneDuration must be positive, got %d", w.config.PruneDuration)
+	}
+
+	if w.config.FetchInterval <= 0 {
+		return fmt.Errorf("fetchInterval must be positive, got %d", w.config.FetchInterval)
+	}
+
+	if w.config.ProcessorWorkerCount <= 0 {
+		return fmt.Errorf("processorWorkerCount must be positive, got %d", w.config.ProcessorWorkerCount)
+	}
+
+	if w.config.RpcBatchSize <= 0 {
+		return fmt.Errorf("rpcBatchSize must be positive, got %d", w.config.RpcBatchSize)
+	}
+
+	if w.config.MaxConcurrency <= 0 {
+		return fmt.Errorf("maxConcurrency must be positive, got %d", w.config.MaxConcurrency)
+	}
+
 	// Create a derived context that can be canceled independently of the parent context.
 	w.ctx, w.cancel = context.WithCancel(ctx)
 

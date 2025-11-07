@@ -12,8 +12,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// ExecutionDebugStateSize is an event that represents state size data from the execution layer.
-type ExecutionDebugStateSize struct {
+// ExecutionStateSize is an event that represents state size data from the execution layer.
+type ExecutionStateSize struct {
 	log            logrus.FieldLogger
 	now            time.Time
 	data           *executionClient.DebugStateSizeResponse
@@ -22,16 +22,16 @@ type ExecutionDebugStateSize struct {
 	id             uuid.UUID
 }
 
-// NewExecutionDebugStateSize creates a new ExecutionDebugStateSize event.
-func NewExecutionDebugStateSize(
+// NewExecutionStateSize creates a new ExecutionStateSize event.
+func NewExecutionStateSize(
 	log logrus.FieldLogger,
 	data *executionClient.DebugStateSizeResponse,
 	now time.Time,
 	duplicateCache *ttlcache.Cache[string, time.Time],
 	clientMeta *xatu.ClientMeta,
-) *ExecutionDebugStateSize {
-	return &ExecutionDebugStateSize{
-		log:            log.WithField("event", "EXECUTION_DEBUG_STATE_SIZE"),
+) *ExecutionStateSize {
+	return &ExecutionStateSize{
+		log:            log.WithField("event", "EXECUTION_STATE_SIZE"),
 		now:            now,
 		data:           data,
 		duplicateCache: duplicateCache,
@@ -41,18 +41,18 @@ func NewExecutionDebugStateSize(
 }
 
 // Decorate decorates the event with additional metadata and returns a DecoratedEvent.
-func (e *ExecutionDebugStateSize) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
+func (e *ExecutionStateSize) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     xatu.Event_EXECUTION_DEBUG_STATE_SIZE,
+			Name:     xatu.Event_EXECUTION_STATE_SIZE,
 			DateTime: timestamppb.New(e.now),
 			Id:       e.id.String(),
 		},
 		Meta: &xatu.Meta{
 			Client: e.clientMeta,
 		},
-		Data: &xatu.DecoratedEvent_ExecutionDebugStateSize{
-			ExecutionDebugStateSize: &xatu.ExecutionDebugStateSize{
+		Data: &xatu.DecoratedEvent_ExecutionStateSize{
+			ExecutionStateSize: &xatu.ExecutionStateSize{
 				AccountBytes:         e.data.AccountBytes,
 				AccountTrienodeBytes: e.data.AccountTrienodeBytes,
 				AccountTrienodes:     e.data.AccountTrienodes,
@@ -74,7 +74,7 @@ func (e *ExecutionDebugStateSize) Decorate(ctx context.Context) (*xatu.Decorated
 
 // ShouldIgnore checks if the event should be ignored based on duplicate detection.
 // We use state_root as the cache key since each unique state should only be reported once.
-func (e *ExecutionDebugStateSize) ShouldIgnore(ctx context.Context) (bool, error) {
+func (e *ExecutionStateSize) ShouldIgnore(ctx context.Context) (bool, error) {
 	cacheKey := e.data.StateRoot
 
 	// Check if this state root is already in the cache.

@@ -53,16 +53,16 @@ sources:
       codec: json
     topics:
       - "^mempool-transaction.+"
-  execution_debug_state_size_events_kafka:
+  execution_state_size_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
-    group_id: xatu-vector-kafka-clickhouse-execution-debug-state-size-events
+    group_id: xatu-vector-kafka-clickhouse-execution-state-size-events
     key_field: "event.id"
     auto_offset_reset: earliest
     decoding:
       codec: json
     topics:
-      - "execution-debug-state-size"
+      - "execution-state-size"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -155,7 +155,7 @@ transforms:
       - beacon_api_eth_v1_events_kafka
       - beacon_api_eth_v1_validator_kafka
       - mempool_transaction_events_kafka
-      - execution_debug_state_size_events_kafka
+      - execution_state_size_events_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
@@ -385,7 +385,7 @@ transforms:
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
-      execution_debug_state_size: .event.name == "EXECUTION_DEBUG_STATE_SIZE"
+      execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
@@ -1029,31 +1029,36 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
-  execution_debug_state_size_events_formatted:
+  execution_state_size_events_formatted:
     type: remap
     inputs:
-      - xatu_server_events_router.execution_debug_state_size
+      - xatu_server_events_router.execution_state_size
     source: |-
-      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
-      if err == null {
-        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      if exists(.event.date_time) {
+        event_date_time, err = parse_timestamp(.event.date_time, format: "%+")
+        if err == null {
+          .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+        } else {
+          .error = err
+          .error_description = "failed to parse event date time: " + string!(.event.date_time)
+          log(., level: "error", rate_limit_secs: 60)
+          .event_date_time = to_unix_timestamp(now(), unit: "milliseconds")
+        }
       } else {
-        .error = err
-        .error_description = "failed to parse event date time"
-        log(., level: "error", rate_limit_secs: 60)
+        .event_date_time = to_unix_timestamp(now(), unit: "milliseconds")
       }
-      .account_bytes = to_int!(.data.account_bytes)
-      .account_trienode_bytes = to_int!(.data.account_trienode_bytes)
-      .account_trienodes = to_int!(.data.account_trienodes)
-      .accounts = to_int!(.data.accounts)
-      .block_number = to_int!(.data.block_number)
-      .contract_code_bytes = to_int!(.data.contract_code_bytes)
-      .contract_codes = to_int!(.data.contract_codes)
+      .account_bytes = .data.account_bytes
+      .account_trienode_bytes = .data.account_trienode_bytes
+      .account_trienodes = .data.account_trienodes
+      .accounts = .data.accounts
+      .block_number = .data.block_number
+      .contract_code_bytes = .data.contract_code_bytes
+      .contract_codes = .data.contract_codes
       .state_root = .data.state_root
-      .storage_bytes = to_int!(.data.storage_bytes)
-      .storage_trienode_bytes = to_int!(.data.storage_trienode_bytes)
-      .storage_trienodes = to_int!(.data.storage_trienodes)
-      .storages = to_int!(.data.storages)
+      .storage_bytes = .data.storage_bytes
+      .storage_trienode_bytes = .data.storage_trienode_bytes
+      .storage_trienodes = .data.storage_trienodes
+      .storages = .data.storages
       del(.event)
       del(.meta)
       del(.data)
@@ -2738,13 +2743,13 @@ sinks:
     healthcheck:
       enabled: true
     skip_unknown_fields: false
-  execution_debug_state_size_events_clickhouse:
+  execution_state_size_events_clickhouse:
     type: clickhouse
     inputs:
-      - execution_debug_state_size_events_formatted
+      - execution_state_size_events_formatted
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
-    table: execution_debug_state_size
+    table: execution_state_size
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

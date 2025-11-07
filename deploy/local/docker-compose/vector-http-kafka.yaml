@@ -54,7 +54,7 @@ transforms:
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
-      execution_debug_state_size: .event.name == "EXECUTION_DEBUG_STATE_SIZE"
+      execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
       libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
       libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
       libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
@@ -436,17 +436,17 @@ sinks:
       enabled: true
     encoding:
       codec: json
-  execution_debug_state_size_kafka:
+  execution_state_size_kafka:
     type: kafka
     buffer:
       max_events: 500000
     batch:
       timeout_secs: 0.5
     inputs:
-      - xatu_server_events_router.execution_debug_state_size
+      - xatu_server_events_router.execution_state_size
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
-    topic: execution-debug-state-size
+    topic: execution-state-size
     compression: snappy
     healthcheck:
       enabled: true

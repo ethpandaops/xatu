@@ -84,7 +84,7 @@ type StateSizeConfig struct {
 	// Valid values: "head" (on consensus head events), "block" (on execution block events), "interval" (periodic polling).
 	TriggerMode string `yaml:"triggerMode" default:"head"`
 	// IntervalSeconds is the polling interval in seconds (used when TriggerMode is "interval").
-	IntervalSeconds int `yaml:"intervalSeconds" default:"30"`
+	IntervalSeconds int `yaml:"intervalSeconds" default:"12"`
 }
 
 // DebugStateSizeResponse represents the response from debug_stateSize RPC call.

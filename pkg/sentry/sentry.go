@@ -676,7 +676,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return nil
 		}
 
-		if err := s.startExecutionDebugStateSizeWatcher(ctx); err != nil {
+		if err := s.startExecutionStateSizeWatcher(ctx); err != nil {
 			// If we can't start the state size watcher, log an error and continue.
 			s.log.WithError(err).Error("failed to start execution debug state size watcher")
 

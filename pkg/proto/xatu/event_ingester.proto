@@ -140,7 +140,7 @@ message BlockIdentifier {
   string root = 4 [ json_name = "root" ];
 }
 
-message ExecutionDebugStateSize {
+message ExecutionStateSize {
   // AccountBytes is the total size of all account data in bytes.
   string account_bytes = 1 [ json_name = "account_bytes" ];
   // AccountTrienodeBytes is the total size of account trie nodes in bytes.
@@ -199,11 +199,11 @@ message ClientMeta {
       // Version is the full version string of the execution client.
       string version = 3;
       // VersionMajor is the major version number.
-      string version_major = 4;
+      string version_major = 4 [ json_name = "version_major" ];
       // VersionMinor is the minor version number.
-      string version_minor = 5;
+      string version_minor = 5 [ json_name = "version_minor" ];
       // VersionPatch is the patch version number.
-      string version_patch = 6;
+      string version_patch = 6 [ json_name = "version_patch" ];
     }
     message Consensus {
       // Implementation is the name of the consensus client.
@@ -1719,7 +1719,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR = 76;
     LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
     LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
-    EXECUTION_DEBUG_STATE_SIZE = 79;
+    EXECUTION_STATE_SIZE = 79;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1911,8 +1911,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
     xatu.libp2p.DataColumnCustodyProbe libp2p_trace_rpc_data_column_custody_probe = 200
         [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
-    ExecutionDebugStateSize execution_debug_state_size = 201
-        [ json_name = "EXECUTION_DEBUG_STATE_SIZE" ];
+    ExecutionStateSize execution_state_size = 201
+        [ json_name = "EXECUTION_STATE_SIZE" ];
   };
 }
 

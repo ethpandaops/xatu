@@ -301,6 +301,22 @@ func (c *Client) BatchCallContext(ctx context.Context, method string, params []i
 	return results, nil
 }
 
+// hexToDecimalString converts a hexadecimal string (with or without 0x prefix) to a decimal string.
+// Returns an error if the hex string is invalid.
+func hexToDecimalString(hexStr string) (string, error) {
+	if hexStr == "" {
+		return "0", nil
+	}
+
+	// Parse the hex string as a big integer.
+	value, ok := new(big.Int).SetString(hexStr, 0)
+	if !ok {
+		return "", fmt.Errorf("invalid hex string: %s", hexStr)
+	}
+
+	return value.String(), nil
+}
+
 // DebugStateSize retrieves the state size from the execution client.
 // blockNumber can be "latest", "earliest", "pending", or a specific block number (e.g., "0x1234").
 // If empty, defaults to "latest".
@@ -314,6 +330,62 @@ func (c *Client) DebugStateSize(ctx context.Context, blockNumber string) (*Debug
 	err := c.rpcClient.CallContext(ctx, &result, RPCMethodDebugStateSize, blockNumber)
 	if err != nil {
 		return nil, fmt.Errorf("debug_stateSize call failed: %w", err)
+	}
+
+	// Convert all hex fields to decimal strings.
+	result.AccountBytes, err = hexToDecimalString(result.AccountBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert AccountBytes: %w", err)
+	}
+
+	result.AccountTrienodeBytes, err = hexToDecimalString(result.AccountTrienodeBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert AccountTrienodeBytes: %w", err)
+	}
+
+	result.AccountTrienodes, err = hexToDecimalString(result.AccountTrienodes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert AccountTrienodes: %w", err)
+	}
+
+	result.Accounts, err = hexToDecimalString(result.Accounts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert Accounts: %w", err)
+	}
+
+	result.BlockNumber, err = hexToDecimalString(result.BlockNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert BlockNumber: %w", err)
+	}
+
+	result.ContractCodeBytes, err = hexToDecimalString(result.ContractCodeBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert ContractCodeBytes: %w", err)
+	}
+
+	result.ContractCodes, err = hexToDecimalString(result.ContractCodes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert ContractCodes: %w", err)
+	}
+
+	result.StorageBytes, err = hexToDecimalString(result.StorageBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert StorageBytes: %w", err)
+	}
+
+	result.StorageTrienodeBytes, err = hexToDecimalString(result.StorageTrienodeBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert StorageTrienodeBytes: %w", err)
+	}
+
+	result.StorageTrienodes, err = hexToDecimalString(result.StorageTrienodes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert StorageTrienodes: %w", err)
+	}
+
+	result.Storages, err = hexToDecimalString(result.Storages)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert Storages: %w", err)
 	}
 
 	return &result, nil

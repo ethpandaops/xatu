@@ -140,6 +140,33 @@ message BlockIdentifier {
   string root = 4 [ json_name = "root" ];
 }
 
+message ExecutionDebugStateSize {
+  // AccountBytes is the total size of all account data in bytes.
+  string account_bytes = 1 [ json_name = "account_bytes" ];
+  // AccountTrienodeBytes is the total size of account trie nodes in bytes.
+  string account_trienode_bytes = 2 [ json_name = "account_trienode_bytes" ];
+  // AccountTrienodes is the number of account trie nodes.
+  string account_trienodes = 3 [ json_name = "account_trienodes" ];
+  // Accounts is the total number of accounts.
+  string accounts = 4 [ json_name = "accounts" ];
+  // BlockNumber is the block number at which this state size was measured.
+  string block_number = 5 [ json_name = "block_number" ];
+  // ContractCodeBytes is the total size of contract code in bytes.
+  string contract_code_bytes = 6 [ json_name = "contract_code_bytes" ];
+  // ContractCodes is the number of contract codes.
+  string contract_codes = 7 [ json_name = "contract_codes" ];
+  // StateRoot is the state root hash.
+  string state_root = 8 [ json_name = "state_root" ];
+  // StorageBytes is the total size of storage data in bytes.
+  string storage_bytes = 9 [ json_name = "storage_bytes" ];
+  // StorageTrienodeBytes is the total size of storage trie nodes in bytes.
+  string storage_trienode_bytes = 10 [ json_name = "storage_trienode_bytes" ];
+  // StorageTrienodes is the number of storage trie nodes.
+  string storage_trienodes = 11 [ json_name = "storage_trienodes" ];
+  // Storages is the total number of storage entries.
+  string storages = 12 [ json_name = "storages" ];
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -167,6 +194,16 @@ message ClientMeta {
     message Execution {
       // ForkID is the fork ID of the execution client.
       ForkID fork_id = 1 [ json_name = "fork_id" ];
+      // Implementation is the name of the execution client (e.g., "Geth", "Besu", "Nethermind").
+      string implementation = 2;
+      // Version is the full version string of the execution client.
+      string version = 3;
+      // VersionMajor is the major version number.
+      string version_major = 4;
+      // VersionMinor is the minor version number.
+      string version_minor = 5;
+      // VersionPatch is the patch version number.
+      string version_patch = 6;
     }
     message Consensus {
       // Implementation is the name of the consensus client.
@@ -1682,6 +1719,7 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR = 76;
     LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
     LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
+    EXECUTION_DEBUG_STATE_SIZE = 79;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1873,6 +1911,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
     xatu.libp2p.DataColumnCustodyProbe libp2p_trace_rpc_data_column_custody_probe = 200
         [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
+    ExecutionDebugStateSize execution_debug_state_size = 201
+        [ json_name = "EXECUTION_DEBUG_STATE_SIZE" ];
   };
 }
 

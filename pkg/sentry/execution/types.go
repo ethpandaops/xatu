@@ -18,6 +18,8 @@ const (
 	RPCMethodPendingTransactions = "eth_pendingTransactions"
 	// RPCMethodGetTransactionByHash is the RPC method for getting a transaction by its hash.
 	RPCMethodGetTransactionByHash = "eth_getTransactionByHash"
+	// RPCMethodDebugStateSize is the RPC method for getting the execution layer state size.
+	RPCMethodDebugStateSize = "debug_stateSize"
 )
 
 // Config defines configuration for connecting to an execution client.
@@ -54,6 +56,8 @@ type Config struct {
 	CircuitBreakerFailureThreshold int `yaml:"circuitBreakerFailureThreshold" default:"5"`
 	// CircuitBreakerResetTimeout is the time to wait before transitioning from open to half-open (in seconds).
 	CircuitBreakerResetTimeout int `yaml:"circuitBreakerResetTimeout" default:"30"`
+	// StateSize is the configuration for state size monitoring.
+	StateSize *StateSizeConfig `yaml:"stateSize"`
 }
 
 // PendingTxRecord represents a transaction hash and when it was first seen.
@@ -71,3 +75,30 @@ type EventCallback func(ctx context.Context, event interface{}) error
 
 // TransactionCallback is a callback function for when a transaction is received.
 type TransactionCallback func(ctx context.Context, tx string) error
+
+// StateSizeConfig defines configuration for state size monitoring.
+type StateSizeConfig struct {
+	// Enabled is whether state size monitoring is enabled.
+	Enabled bool `yaml:"enabled" default:"false"`
+	// TriggerMode determines how state size polling is triggered.
+	// Valid values: "head" (on consensus head events), "block" (on execution block events), "interval" (periodic polling).
+	TriggerMode string `yaml:"triggerMode" default:"head"`
+	// IntervalSeconds is the polling interval in seconds (used when TriggerMode is "interval").
+	IntervalSeconds int `yaml:"intervalSeconds" default:"30"`
+}
+
+// DebugStateSizeResponse represents the response from debug_stateSize RPC call.
+type DebugStateSizeResponse struct {
+	AccountBytes         string `json:"accountBytes"`
+	AccountTrienodeBytes string `json:"accountTrienodeBytes"`
+	AccountTrienodes     string `json:"accountTrienodes"`
+	Accounts             string `json:"accounts"`
+	BlockNumber          string `json:"blockNumber"`
+	ContractCodeBytes    string `json:"contractCodeBytes"`
+	ContractCodes        string `json:"contractCodes"`
+	StateRoot            string `json:"stateRoot"`
+	StorageBytes         string `json:"storageBytes"`
+	StorageTrienodeBytes string `json:"storageTrienodeBytes"`
+	StorageTrienodes     string `json:"storageTrienodes"`
+	Storages             string `json:"storages"`
+}

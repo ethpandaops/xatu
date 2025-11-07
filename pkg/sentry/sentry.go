@@ -509,7 +509,16 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+			if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
+				return err
+			}
+
+			// Trigger state size polling if enabled in "head" mode.
+			if err := s.onHeadEventForStateSize(ctx); err != nil {
+				s.log.WithError(err).Debug("Failed to trigger state size polling on head event")
+			}
+
+			return nil
 		})
 
 		s.beacon.Node().OnVoluntaryExit(ctx, func(ctx context.Context, voluntaryExit *phase0.SignedVoluntaryExit) error {
@@ -663,6 +672,13 @@ func (s *Sentry) Start(ctx context.Context) error {
 			// If we can't reach the execution node, we can't start the mempool transaction watcher.
 			// Instead of preventing the sentry from starting, we'll log an error and continue.
 			s.log.WithError(err).Error("failed to start mempool transaction watcher")
+
+			return nil
+		}
+
+		if err := s.startExecutionDebugStateSizeWatcher(ctx); err != nil {
+			// If we can't start the state size watcher, log an error and continue.
+			s.log.WithError(err).Error("failed to start execution debug state size watcher")
 
 			return nil
 		}

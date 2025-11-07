@@ -50,9 +50,15 @@ type Client struct {
 	httpClient *http.Client
 
 	// Shared state.
-	signer        types.Signer
-	clientVersion string
-	vmu           sync.RWMutex
+	signer                    types.Signer
+	clientVersion             string
+	clientImplementation      string
+	clientVersionParsed       string
+	clientVersionMajor        string
+	clientVersionMinor        string
+	clientVersionPatch        string
+	clientMetadataInitialized bool
+	vmu                       sync.RWMutex
 }
 
 // NewClient creates a new unified execution client.
@@ -115,25 +121,23 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 
 // Start starts the execution client.
 func (c *Client) Start(ctx context.Context) error {
-	// Initialize client version.
-	var clientVersion string
-	if err := c.rpcClient.CallContext(ctx, &clientVersion, "web3_clientVersion"); err != nil {
+	// Initialize client version and metadata.
+	if err := c.refreshClientMetadata(ctx); err != nil {
 		return fmt.Errorf("failed to get client version: %w", err)
 	}
-
-	// Cache the client version.
-	c.vmu.Lock()
-	c.clientVersion = clientVersion
-	c.vmu.Unlock()
 
 	// Initialize the signer.
 	c.InitSigner(ctx)
 
 	c.log.WithFields(logrus.Fields{
-		"client_version": clientVersion,
-		"ws_address":     c.config.WSAddress,
-		"rpc_address":    c.config.RPCAddress,
+		"client_version":        c.clientVersion,
+		"client_implementation": c.clientImplementation,
+		"ws_address":            c.config.WSAddress,
+		"rpc_address":           c.config.RPCAddress,
 	}).Info("Connected to execution client")
+
+	// Start periodic refresh of client metadata (every 5 minutes).
+	go c.startPeriodicMetadataRefresh()
 
 	return nil
 }
@@ -297,6 +301,58 @@ func (c *Client) BatchCallContext(ctx context.Context, method string, params []i
 	return results, nil
 }
 
+// DebugStateSize retrieves the state size from the execution client.
+// blockNumber can be "latest", "earliest", "pending", or a specific block number (e.g., "0x1234").
+// If empty, defaults to "latest".
+func (c *Client) DebugStateSize(ctx context.Context, blockNumber string) (*DebugStateSizeResponse, error) {
+	if blockNumber == "" {
+		blockNumber = "latest"
+	}
+
+	var result DebugStateSizeResponse
+
+	err := c.rpcClient.CallContext(ctx, &result, RPCMethodDebugStateSize, blockNumber)
+	if err != nil {
+		return nil, fmt.Errorf("debug_stateSize call failed: %w", err)
+	}
+
+	return &result, nil
+}
+
+// SubscribeToNewHeads subscribes to new block header notifications via WebSocket.
+// Returns a channel for receiving block headers and a channel for errors.
+// Requires WebSocket to be enabled in the client configuration.
+func (c *Client) SubscribeToNewHeads(ctx context.Context) (headerChan <-chan *types.Header, errChan <-chan error, err error) {
+	if c.wsClient == nil {
+		return nil, nil, fmt.Errorf("WebSocket not enabled")
+	}
+
+	hChan := make(chan *types.Header, 100)
+	eChan := make(chan error, 1)
+
+	sub, subErr := c.wsClient.EthSubscribe(ctx, hChan, "newHeads")
+	if subErr != nil {
+		return nil, nil, fmt.Errorf("failed to subscribe to new heads: %w", subErr)
+	}
+
+	// Forward subscription errors to error channel.
+	go func() {
+		defer close(hChan)
+		defer close(eChan)
+
+		select {
+		case subErr := <-sub.Err():
+			if subErr != nil {
+				eChan <- subErr
+			}
+		case <-ctx.Done():
+			sub.Unsubscribe()
+		}
+	}()
+
+	return hChan, eChan, nil
+}
+
 // GetSender retrieves the sender of a transaction.
 func (c *Client) GetSender(tx *types.Transaction) (common.Address, error) {
 	if c.signer == nil {
@@ -324,4 +380,168 @@ func (c *Client) InitSigner(ctx context.Context) {
 
 	chainIDInt := new(big.Int).SetUint64(chainID)
 	c.signer = types.NewCancunSigner(chainIDInt)
+}
+
+// refreshClientMetadata fetches and parses the execution client version information.
+func (c *Client) refreshClientMetadata(ctx context.Context) error {
+	var clientVersion string
+	if err := c.rpcClient.CallContext(ctx, &clientVersion, "web3_clientVersion"); err != nil {
+		return err
+	}
+
+	// Parse the client version string.
+	// Format: "Geth/v1.16.4-stable-41714b49/linux-amd64/go1.24.7"
+	// Or: "Besu/v24.3.0/linux-x86_64/openjdk-java-21"
+	// Or: "Nethermind/v1.25.4+abcdef/linux-x64/dotnet8.0.2"
+	implementation, version, versionMajor, versionMinor, versionPatch := parseClientVersion(clientVersion)
+
+	c.vmu.Lock()
+	c.clientVersion = clientVersion
+	c.clientImplementation = implementation
+	c.clientVersionParsed = version
+	c.clientVersionMajor = versionMajor
+	c.clientVersionMinor = versionMinor
+	c.clientVersionPatch = versionPatch
+	c.clientMetadataInitialized = true
+	c.vmu.Unlock()
+
+	return nil
+}
+
+// startPeriodicMetadataRefresh periodically refreshes the client metadata.
+func (c *Client) startPeriodicMetadataRefresh() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := c.refreshClientMetadata(c.ctx); err != nil {
+				c.log.WithError(err).Warn("Failed to refresh execution client metadata")
+			}
+		}
+	}
+}
+
+// ClientMetadata contains parsed execution client version information.
+type ClientMetadata struct {
+	Implementation string
+	Version        string
+	VersionMajor   string
+	VersionMinor   string
+	VersionPatch   string
+	Initialized    bool
+}
+
+// GetClientMetadata returns the cached execution client metadata.
+// Returns empty strings if metadata hasn't been initialized yet.
+func (c *Client) GetClientMetadata() ClientMetadata {
+	c.vmu.RLock()
+	defer c.vmu.RUnlock()
+
+	return ClientMetadata{
+		Implementation: c.clientImplementation,
+		Version:        c.clientVersionParsed,
+		VersionMajor:   c.clientVersionMajor,
+		VersionMinor:   c.clientVersionMinor,
+		VersionPatch:   c.clientVersionPatch,
+		Initialized:    c.clientMetadataInitialized,
+	}
+}
+
+// parseClientVersion parses the web3_clientVersion string.
+// Example inputs:
+// - "Geth/v1.16.4-stable-41714b49/linux-amd64/go1.24.7"
+// - "Besu/v24.3.0/linux-x86_64/openjdk-java-21"
+// - "Nethermind/v1.25.4+abcdef/linux-x64/dotnet8.0.2"
+// Returns: implementation, version, versionMajor, versionMinor, versionPatch
+func parseClientVersion(clientVersion string) (implementation, version, versionMajor, versionMinor, versionPatch string) {
+	if clientVersion == "" {
+		return "", "", "", "", ""
+	}
+
+	// Split by "/" to get parts
+	parts := make([]string, 0)
+
+	for _, part := range splitString(clientVersion, "/") {
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+
+	if len(parts) == 0 {
+		return clientVersion, "", "", "", ""
+	}
+
+	// First part is the implementation
+	implementation = parts[0]
+
+	// Second part is typically the version
+	if len(parts) < 2 {
+		return implementation, "", "", "", ""
+	}
+
+	versionStr := parts[1]
+
+	// Remove "v" prefix if present
+	if versionStr != "" && versionStr[0] == 'v' {
+		versionStr = versionStr[1:]
+	}
+
+	// Parse semantic version (major.minor.patch)
+	// Version might have suffixes like "-stable-41714b49" or "+abcdef"
+	// Split on "-" or "+" to get the core version
+	coreVersion := versionStr
+
+	for i, c := range versionStr {
+		if c == '-' || c == '+' {
+			coreVersion = versionStr[:i]
+
+			break
+		}
+	}
+
+	// Split by "." to get major.minor.patch
+	versionParts := splitString(coreVersion, ".")
+
+	if len(versionParts) > 0 {
+		versionMajor = versionParts[0]
+	}
+
+	if len(versionParts) > 1 {
+		versionMinor = versionParts[1]
+	}
+
+	if len(versionParts) > 2 {
+		versionPatch = versionParts[2]
+	}
+
+	version = versionStr
+
+	return implementation, version, versionMajor, versionMinor, versionPatch
+}
+
+// splitString is a helper to split strings without importing strings package.
+func splitString(s, sep string) []string {
+	if s == "" {
+		return nil
+	}
+
+	var parts []string
+
+	start := 0
+
+	for i := 0; i <= len(s)-len(sep); i++ {
+		if s[i:i+len(sep)] == sep {
+			parts = append(parts, s[start:i])
+			start = i + len(sep)
+			i += len(sep) - 1
+		}
+	}
+
+	parts = append(parts, s[start:])
+
+	return parts
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,7 +83,7 @@ func (w *StateSizeWatcher) OnHeadEvent(ctx context.Context) error {
 		return nil
 	}
 
-	return w.fetchAndReport(ctx)
+	return w.fetchAndReport(ctx, "latest")
 }
 
 // startPeriodicPoller starts a goroutine that polls debug_stateSize at regular intervals.
@@ -100,7 +101,7 @@ func (w *StateSizeWatcher) startPeriodicPoller() {
 			case <-w.ctx.Done():
 				return
 			case <-ticker.C:
-				if err := w.fetchAndReport(w.ctx); err != nil {
+				if err := w.fetchAndReport(w.ctx, "latest"); err != nil {
 					w.log.WithError(err).Error("Failed to fetch and report state size")
 				}
 			}
@@ -132,9 +133,14 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 				return
 			case header := <-headerChan:
 				if header != nil {
-					w.log.WithField("block_number", header.Number.String()).Debug("Received new block, fetching state size")
+					// Use block hash to query state size for this specific block
+					blockHash := header.Hash().Hex()
+					w.log.WithFields(logrus.Fields{
+						"block_number": hexutil.EncodeBig(header.Number),
+						"block_hash":   blockHash,
+					}).Debug("Received new block, fetching state size")
 
-					if err := w.fetchAndReport(w.ctx); err != nil {
+					if err := w.fetchAndReport(w.ctx, blockHash); err != nil {
 						w.log.WithError(err).Error("Failed to fetch and report state size")
 					}
 				}
@@ -146,8 +152,8 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 }
 
 // fetchAndReport polls the debug_stateSize endpoint and invokes the callback with the result.
-func (w *StateSizeWatcher) fetchAndReport(ctx context.Context) error {
-	result, err := w.client.DebugStateSize(ctx, "latest")
+func (w *StateSizeWatcher) fetchAndReport(ctx context.Context, blockIdentifier string) error {
+	result, err := w.client.DebugStateSize(ctx, blockIdentifier)
 	if err != nil {
 		w.log.WithError(err).Warn("Failed to fetch state size from execution client")
 

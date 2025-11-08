@@ -110,38 +110,93 @@ func (w *StateSizeWatcher) startPeriodicPoller() {
 }
 
 // startBlockSubscription subscribes to new execution layer blocks and polls state size on each new block.
+// Implements automatic reconnection with exponential backoff on WebSocket disconnections.
 func (w *StateSizeWatcher) startBlockSubscription() error {
-	headerChan, errChan, err := w.client.SubscribeToNewHeads(w.ctx)
-	if err != nil {
-		return err
-	}
-
 	w.wg.Add(1)
 
 	go func() {
 		defer w.wg.Done()
 
+		// Reconnection parameters
+		const (
+			initialBackoff = 500 * time.Millisecond
+			maxBackoff     = 15 * time.Second
+			backoffFactor  = 2.0
+		)
+
+		backoff := initialBackoff
+
 		for {
+			// Check if context is cancelled before attempting connection
 			select {
 			case <-w.ctx.Done():
 				return
-			case err := <-errChan:
-				if err != nil {
-					w.log.WithError(err).Error("Error in block subscription")
+			default:
+			}
+
+			w.log.Info("Subscribing to execution layer blocks")
+
+			headerChan, errChan, err := w.client.SubscribeToNewHeads(w.ctx)
+			if err != nil {
+				w.log.WithError(err).WithField("retry_in", backoff).Error("Failed to subscribe to new heads, will retry")
+
+				// Wait before retrying with exponential backoff
+				select {
+				case <-time.After(backoff):
+					backoff = time.Duration(float64(backoff) * backoffFactor)
+					if backoff > maxBackoff {
+						backoff = maxBackoff
+					}
+
+					continue
+				case <-w.ctx.Done():
+					return
 				}
+			}
 
-				return
-			case header := <-headerChan:
-				if header != nil {
-					// Use block hash to query state size for this specific block
-					blockHash := header.Hash().Hex()
-					w.log.WithFields(logrus.Fields{
-						"block_number": hexutil.EncodeBig(header.Number),
-						"block_hash":   blockHash,
-					}).Debug("Received new block, fetching state size")
+			// Successfully subscribed, reset backoff
+			backoff = initialBackoff
 
-					if err := w.fetchAndReport(w.ctx, blockHash); err != nil {
-						w.log.WithError(err).Error("Failed to fetch and report state size")
+			w.log.Info("Successfully subscribed to execution layer blocks")
+
+			// Process blocks until an error occurs or context is cancelled
+			subscriptionClosed := false
+
+			for !subscriptionClosed {
+				select {
+				case <-w.ctx.Done():
+					return
+				case err := <-errChan:
+					if err != nil {
+						w.log.WithError(err).WithField("retry_in", backoff).Warn("Block subscription error, reconnecting")
+					} else {
+						w.log.WithField("retry_in", backoff).Info("Block subscription closed, reconnecting")
+					}
+
+					subscriptionClosed = true
+
+					// Wait before attempting reconnection
+					select {
+					case <-time.After(backoff):
+						backoff = time.Duration(float64(backoff) * backoffFactor)
+						if backoff > maxBackoff {
+							backoff = maxBackoff
+						}
+					case <-w.ctx.Done():
+						return
+					}
+				case header := <-headerChan:
+					if header != nil {
+						// Use block hash to query state size for this specific block
+						blockHash := header.Hash().Hex()
+						w.log.WithFields(logrus.Fields{
+							"block_number": hexutil.EncodeBig(header.Number),
+							"block_hash":   blockHash,
+						}).Debug("Received new block, fetching state size")
+
+						if err := w.fetchAndReport(w.ctx, blockHash); err != nil {
+							w.log.WithError(err).Error("Failed to fetch and report state size")
+						}
 					}
 				}
 			}

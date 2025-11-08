@@ -120,7 +120,7 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 		// Reconnection parameters
 		const (
 			initialBackoff = 1 * time.Second
-			maxBackoff     = 2 * time.Minute
+			maxBackoff     = 15 * time.Second
 			backoffFactor  = 2.0
 		)
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/OffchainLabs/prysm/v6/beacon-chain/p2p"
+	"github.com/OffchainLabs/prysm/v7/beacon-chain/p2p"
 	"github.com/pkg/errors"
 	"github.com/probe-lab/hermes/eth/events"
 	"github.com/probe-lab/hermes/host"

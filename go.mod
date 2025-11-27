@@ -3,14 +3,14 @@ module github.com/ethpandaops/xatu
 go 1.25.1
 
 // release-xatu branch.
-replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20251020020534-bae1d7412c20
+replace github.com/probe-lab/hermes => github.com/ethpandaops/hermes v0.0.4-0.20251127013606-89f11c4baf03
 
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
 require (
 	github.com/IBM/sarama v1.45.2
-	github.com/OffchainLabs/prysm/v6 v6.1.1
+	github.com/OffchainLabs/prysm/v7 v7.0.0
 	github.com/attestantio/go-eth2-client v0.27.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
@@ -69,6 +69,8 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506 // indirect
+	github.com/OffchainLabs/prysm/v6 v6.1.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20250801095011-c009ccb12f2a // indirect
@@ -182,7 +184,7 @@ require (
 	github.com/libp2p/go-libp2p-mplex v0.11.0 // indirect
 	github.com/libp2p/go-mplex v0.7.0 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
-	github.com/libp2p/go-netroute v0.2.2 // indirect
+	github.com/libp2p/go-netroute v0.4.0 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v5 v5.0.1 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
@@ -260,7 +262,7 @@ require (
 	github.com/protolambda/bls12-381-util v0.1.0 // indirect
 	github.com/protolambda/zrnt v0.34.1 // indirect
 	github.com/protolambda/ztyp v0.2.2 // indirect
-	github.com/prysmaticlabs/fastssz v0.0.0-20241008181541-518c4ce73516 // indirect
+	github.com/prysmaticlabs/fastssz v0.0.0-20251103153600-259302269bfc // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect

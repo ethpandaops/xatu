@@ -17,10 +17,15 @@ import (
 
 func (p *Processor) handleGossipAttestation(
 	ctx context.Context,
+	event *AttestationEvent,
 	clientMeta *xatu.ClientMeta,
-	event *TraceEvent,
-	payload *TraceEventAttestation,
+	traceMeta *libp2p.TraceEventMetadata,
 ) error {
+	payload, ok := event.Payload.(*TraceEventAttestation)
+	if !ok {
+		return fmt.Errorf("handleGossipAttestation() called with invalid payload type: %T", event.Payload)
+	}
+
 	if payload.Attestation == nil || payload.Attestation.GetData() == nil {
 		return fmt.Errorf("handleGossipAttestation() called with nil attestation")
 	}
@@ -49,7 +54,7 @@ func (p *Processor) handleGossipAttestation(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := p.createAdditionalGossipSubAttestationData(payload, attestationData, event)
+	additionalData, err := p.createAdditionalGossipSubAttestationData(payload, attestationData, &event.TraceEventBase)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -61,7 +66,7 @@ func (p *Processor) handleGossipAttestation(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			DateTime: timestamppb.New(event.GetTimestamp().Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -79,15 +84,15 @@ func (p *Processor) handleGossipAttestation(
 func (p *Processor) createAdditionalGossipSubAttestationData(
 	payload *TraceEventAttestation,
 	attestationData *ethtypes.AttestationData,
-	event *TraceEvent,
+	event *TraceEventBase,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData, error) {
-	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.GetTimestamp())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
 	// Add Clock Drift
-	timestampAdjusted := event.Timestamp.Add(p.clockDrift)
+	timestampAdjusted := event.GetTimestamp().Add(p.clockDrift)
 
 	attestionSlot := p.wallclock.Slots().FromNumber(uint64(attestationData.GetSlot()))
 	epoch := p.wallclock.Epochs().FromSlot(uint64(attestationData.GetSlot()))

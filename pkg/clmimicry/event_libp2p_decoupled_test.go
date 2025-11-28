@@ -132,11 +132,12 @@ func TestDecoupledSharding(t *testing.T) {
 			peerID, err := peer.Decode(examplePeerID)
 			require.NoError(t, err)
 
-			event := &TraceEvent{
-				Type:      "RecvRPC",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
-				Payload: &RpcMeta{
+			event := &RecvRPCEvent{
+				TraceEventBase: TraceEventBase{
+					Timestamp: time.Now(),
+					PeerID:    peerID,
+				},
+				Meta: &RpcMeta{
 					PeerID: peerID,
 					Control: &RpcMetaControl{
 						IHave: []RpcControlIHave{
@@ -157,14 +158,12 @@ func TestDecoupledSharding(t *testing.T) {
 				PeerId: wrapperspb.String(examplePeerID),
 			}
 
-			// Call the new handleRecvRPCEvent with the additional parameters
+			// Call handleRecvRPCEvent with the typed event
 			err = mimicry.GetProcessor().handleRecvRPCEvent(
 				context.Background(),
+				event,
 				clientMeta,
 				traceMeta,
-				event,
-				xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
-				"1", // network ID
 			)
 
 			// Should not error
@@ -205,11 +204,12 @@ func TestDecoupledShardingSendRPC(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &TraceEvent{
-		Type:      "SendRPC",
-		PeerID:    peerID,
-		Timestamp: time.Now(),
-		Payload: &RpcMeta{
+	event := &SendRPCEvent{
+		TraceEventBase: TraceEventBase{
+			Timestamp: time.Now(),
+			PeerID:    peerID,
+		},
+		Meta: &RpcMeta{
 			PeerID: peerID,
 			Control: &RpcMetaControl{
 				IHave: []RpcControlIHave{
@@ -229,11 +229,9 @@ func TestDecoupledShardingSendRPC(t *testing.T) {
 
 	err = mimicry.GetProcessor().handleSendRPCEvent(
 		context.Background(),
+		event,
 		clientMeta,
 		traceMeta,
-		event,
-		xatu.Event_LIBP2P_TRACE_SEND_RPC.String(),
-		"1",
 	)
 
 	assert.NoError(t, err)
@@ -271,11 +269,12 @@ func TestDecoupledShardingDropRPC(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &TraceEvent{
-		Type:      "DropRPC",
-		PeerID:    peerID,
-		Timestamp: time.Now(),
-		Payload: &RpcMeta{
+	event := &DropRPCEvent{
+		TraceEventBase: TraceEventBase{
+			Timestamp: time.Now(),
+			PeerID:    peerID,
+		},
+		Meta: &RpcMeta{
 			PeerID: peerID,
 			Control: &RpcMetaControl{
 				IHave: []RpcControlIHave{
@@ -295,11 +294,9 @@ func TestDecoupledShardingDropRPC(t *testing.T) {
 
 	err = mimicry.GetProcessor().handleDropRPCEvent(
 		context.Background(),
+		event,
 		clientMeta,
 		traceMeta,
-		event,
-		xatu.Event_LIBP2P_TRACE_DROP_RPC.String(),
-		"1",
 	)
 
 	assert.NoError(t, err)
@@ -369,11 +366,12 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &TraceEvent{
-		Type:      "RecvRPC",
-		PeerID:    peerID,
-		Timestamp: time.Now(),
-		Payload: &RpcMeta{
+	event := &RecvRPCEvent{
+		TraceEventBase: TraceEventBase{
+			Timestamp: time.Now(),
+			PeerID:    peerID,
+		},
+		Meta: &RpcMeta{
 			PeerID: peerID,
 			Control: &RpcMetaControl{
 				IHave: []RpcControlIHave{
@@ -400,6 +398,7 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 				Prune: []RpcControlPrune{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
+						PeerIDs: []peer.ID{peerID},
 					},
 				},
 			},
@@ -413,11 +412,9 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 
 	err = mimicry.GetProcessor().handleRecvRPCEvent(
 		context.Background(),
+		event,
 		clientMeta,
 		traceMeta,
-		event,
-		xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
-		"1",
 	)
 
 	assert.NoError(t, err)

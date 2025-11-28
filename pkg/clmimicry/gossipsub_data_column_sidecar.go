@@ -18,15 +18,15 @@ import (
 
 func (p *Processor) handleGossipDataColumnSidecar(
 	ctx context.Context,
+	event *DataColumnSidecarEvent,
 	clientMeta *xatu.ClientMeta,
-	event *TraceEvent,
-	payload *TraceEventDataColumnSidecar,
+	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	if payload.DataColumnSidecar == nil {
+	if event.DataColumnSidecar == nil || event.DataColumnSidecar.DataColumnSidecar == nil {
 		return fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
 	}
 
-	header := payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader()
+	header := event.DataColumnSidecar.DataColumnSidecar.GetSignedBlockHeader().GetHeader()
 
 	blockRoot, err := header.HashTreeRoot()
 	if err != nil {
@@ -34,13 +34,13 @@ func (p *Processor) handleGossipDataColumnSidecar(
 	}
 
 	data := &gossipsub.DataColumnSidecar{
-		Index:               wrapperspb.UInt64(payload.DataColumnSidecar.GetIndex()),
+		Index:               wrapperspb.UInt64(event.DataColumnSidecar.DataColumnSidecar.GetIndex()),
 		Slot:                wrapperspb.UInt64(uint64(header.GetSlot())),
 		ProposerIndex:       wrapperspb.UInt64(uint64(header.GetProposerIndex())),
 		StateRoot:           wrapperspb.String(hex.EncodeToString(header.GetStateRoot())),
 		ParentRoot:          wrapperspb.String(hex.EncodeToString(header.GetParentRoot())),
 		BlockRoot:           wrapperspb.String(hex.EncodeToString(blockRoot[:])),
-		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
+		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(event.DataColumnSidecar.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -48,7 +48,7 @@ func (p *Processor) handleGossipDataColumnSidecar(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := p.createAdditionalGossipSubDataColumnSidecarData(payload, event.Timestamp)
+	additionalData, err := p.createAdditionalGossipSubDataColumnSidecarData(event.DataColumnSidecar, event.GetTimestamp())
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -60,7 +60,7 @@ func (p *Processor) handleGossipDataColumnSidecar(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			DateTime: timestamppb.New(event.GetTimestamp().Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{

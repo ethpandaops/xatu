@@ -4,24 +4,6 @@
 
 package clmimicry
 
-import (
-	"time"
-
-	"github.com/libp2p/go-libp2p/core/peer"
-)
-
-// TraceEvent represents a trace event from the libp2p network.
-// Extracted from github.com/probe-lab/hermes/host.
-//
-//nolint:tagliatelle // JSON tags match Hermes format for compatibility
-type TraceEvent struct {
-	Type      string
-	Topic     string
-	PeerID    peer.ID
-	Timestamp time.Time
-	Payload   any `json:"Data"` // cannot use field "Data" because of gk.Record method
-}
-
 // TraceEventPayloadMetaData contains metadata for trace event payloads.
 // Extracted from github.com/probe-lab/hermes/host.
 //

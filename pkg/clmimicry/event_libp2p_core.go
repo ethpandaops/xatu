@@ -5,94 +5,32 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// Map of libp2p core event types to Xatu event types
-var libp2pCoreToXatuEventMap = map[string]string{
-	TraceEvent_CONNECTED:           xatu.Event_LIBP2P_TRACE_CONNECTED.String(),
-	TraceEvent_DISCONNECTED:        xatu.Event_LIBP2P_TRACE_DISCONNECTED.String(),
-	TraceEvent_SYNTHETIC_HEARTBEAT: xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String(),
-}
-
-// handleHermesLibp2pCoreEvent handles libp2p core networking events.
-// This includes CONNECTED and DISCONNECTED events from libp2p's network.Notify system.
-func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
-	// Map libp2p core event to Xatu event.
-	xatuEvent, err := mapLibp2pCoreEventToXatuEvent(event.Type)
-	if err != nil {
-		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pCoreEvent event")
-
-		//nolint:nilerr // we don't want to return an error here.
+func (p *Processor) handleConnectedEvent(ctx context.Context,
+	event *ConnectedEvent,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+) error {
+	if !p.events.ConnectedEnabled {
 		return nil
 	}
 
-	switch xatuEvent {
-	case xatu.Event_LIBP2P_TRACE_CONNECTED.String():
-		if !p.events.ConnectedEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleConnectedEvent(ctx, clientMeta, traceMeta, event)
-
-	case xatu.Event_LIBP2P_TRACE_DISCONNECTED.String():
-		if !p.events.DisconnectedEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleDisconnectedEvent(ctx, clientMeta, traceMeta, event)
-
-	case xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String():
-		if !p.events.SyntheticHeartbeatEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleSyntheticHeartbeatEvent(ctx, clientMeta, traceMeta, event)
-	}
-
-	return nil
-}
-
-func (p *Processor) handleConnectedEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
-) error {
-	data, err := TraceEventToConnected(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to connected event")
+	// Build protobuf message directly from typed event
+	data := &libp2p.Connected{
+		RemotePeer:   wrapperspb.String(event.RemotePeer),
+		RemoteMaddrs: wrapperspb.String(event.RemoteMaddrs.String()),
+		AgentVersion: wrapperspb.String(event.AgentVersion),
+		Direction:    wrapperspb.String(event.Direction),
+		Opened:       timestamppb.New(event.Opened),
+		Limited:      wrapperspb.Bool(event.Limited),
+		Transient:    wrapperspb.Bool(event.Limited),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -124,13 +62,23 @@ func (p *Processor) handleConnectedEvent(ctx context.Context,
 }
 
 func (p *Processor) handleDisconnectedEvent(ctx context.Context,
+	event *DisconnectedEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
 ) error {
-	data, err := TraceEventToDisconnected(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to disconnected event")
+	if !p.events.DisconnectedEnabled {
+		return nil
+	}
+
+	// Build protobuf message directly from typed event
+	data := &libp2p.Disconnected{
+		RemotePeer:   wrapperspb.String(event.RemotePeer),
+		RemoteMaddrs: wrapperspb.String(event.RemoteMaddrs.String()),
+		AgentVersion: wrapperspb.String(event.AgentVersion),
+		Direction:    wrapperspb.String(event.Direction),
+		Opened:       timestamppb.New(event.Opened),
+		Limited:      wrapperspb.Bool(event.Limited),
+		Transient:    wrapperspb.Bool(event.Limited),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -162,13 +110,24 @@ func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 }
 
 func (p *Processor) handleSyntheticHeartbeatEvent(ctx context.Context,
+	event *SyntheticHeartbeatEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
 ) error {
-	data, err := TraceEventToSyntheticHeartbeat(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to heartbeat event")
+	if !p.events.SyntheticHeartbeatEnabled {
+		return nil
+	}
+
+	// Build protobuf message directly from typed event
+	data := &libp2p.SyntheticHeartbeat{
+		Timestamp:       timestamppb.New(event.Timestamp),
+		RemotePeer:      wrapperspb.String(event.RemotePeer),
+		RemoteMaddrs:    wrapperspb.String(event.RemoteMaddrs.String()),
+		LatencyMs:       wrapperspb.Int64(event.LatencyMs),
+		AgentVersion:    wrapperspb.String(event.AgentVersion),
+		Direction:       wrapperspb.UInt32(event.Direction),
+		Protocols:       event.Protocols,
+		ConnectionAgeNs: wrapperspb.Int64(event.ConnectionAgeNs),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -197,12 +156,4 @@ func (p *Processor) handleSyntheticHeartbeatEvent(ctx context.Context,
 	}
 
 	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
-}
-
-func mapLibp2pCoreEventToXatuEvent(event string) (string, error) {
-	if xatuEvent, exists := libp2pCoreToXatuEventMap[event]; exists {
-		return xatuEvent, nil
-	}
-
-	return "", fmt.Errorf("unknown libp2p core event: %s", event)
 }

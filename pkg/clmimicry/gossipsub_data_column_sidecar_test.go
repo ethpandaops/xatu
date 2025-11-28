@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/output/mock"
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -19,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestDataColumnSidecarIntegration(t *testing.T) {
@@ -69,11 +71,6 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 
 	// Process each sidecar
 	for _, sidecar := range sidecars {
-		event := &TraceEvent{
-			Type:      "HANDLE_MESSAGE",
-			PeerID:    peerID,
-			Timestamp: time.Now(),
-		}
 
 		payload := &TraceEventDataColumnSidecar{
 			TraceEventPayloadMetaData: TraceEventPayloadMetaData{
@@ -100,11 +97,22 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 			},
 		}
 
+		// Create a DataColumnSidecarEvent with the payload
+		dataColumnEvent := &DataColumnSidecarEvent{
+			TraceEventBase: TraceEventBase{
+				PeerID:    peerID,
+				Timestamp: time.Now(),
+			},
+			Topic:             payload.Topic,
+			MsgID:             payload.MsgID,
+			DataColumnSidecar: payload,
+		}
+
 		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
+			dataColumnEvent,
 			createTestClientMeta(),
-			event,
-			payload,
+			createTestTraceMeta(),
 		)
 		assert.NoError(t, err)
 	}
@@ -236,15 +244,19 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			},
 		}
 
+		traceMeta := &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(peerID.String())}
 		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
-			createTestClientMeta(),
-			&TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
+			&DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic:             "/eth2/test/data_column_sidecar_0/ssz_snappy",
+				DataColumnSidecar: payload,
 			},
-			payload,
+			createTestClientMeta(),
+			traceMeta,
 		)
 		assert.NoError(t, err)
 	})
@@ -286,15 +298,19 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			},
 		}
 
+		traceMeta := &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(peerID.String())}
 		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
-			createTestClientMeta(),
-			&TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
+			&DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic:             "/eth2/test/data_column_sidecar_127/ssz_snappy",
+				DataColumnSidecar: payload,
 			},
-			payload,
+			createTestClientMeta(),
+			traceMeta,
 		)
 		assert.NoError(t, err)
 	})
@@ -337,7 +353,7 @@ func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Si
 		nil,                            // DutiesProvider - not used in these tests
 		&testOutputHandler{sink: sink}, // OutputHandler wrapping the mock sink
 		mimicry.metrics,                // MetricsCollector
-		nil,                            // MetaProvider - not used in these tests
+		&testMetaProvider{},            // MetaProvider for tests
 		mimicry.sharder,                // UnifiedSharder
 		NewEventCategorizer(),          // EventCategorizer
 		wallclock,                      // EthereumBeaconChain
@@ -362,7 +378,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *TraceEvent
+		event          *DataColumnSidecarEvent
 		payload        *TraceEventDataColumnSidecar
 		expectError    bool
 		errorMessage   string
@@ -376,11 +392,12 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
-				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
+			event: &DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic: "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
 			payload: &TraceEventDataColumnSidecar{
 				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
@@ -459,11 +476,12 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
-				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
+			event: &DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic: "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
 			payload: &TraceEventDataColumnSidecar{
 				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
@@ -484,11 +502,12 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: false,
 				},
 			},
-			event: &TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
-				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
+			event: &DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic: "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
 			payload: &TraceEventDataColumnSidecar{
 				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
@@ -519,11 +538,12 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &TraceEvent{
-				Type:      "HANDLE_MESSAGE",
-				PeerID:    peerID,
-				Timestamp: time.Now(),
-				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
+			event: &DataColumnSidecarEvent{
+				TraceEventBase: TraceEventBase{
+					PeerID:    peerID,
+					Timestamp: time.Now(),
+				},
+				Topic: "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
 			payload: &TraceEventDataColumnSidecar{
 				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
@@ -588,20 +608,14 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 				tt.setupMockCalls(mockSink)
 			}
 
-			// Create client metadata
-			clientMeta := createTestClientMeta()
-
-			// Set the payload in the event
-			tt.event.Payload = tt.payload
+			// Embed the payload in the event
+			tt.event.DataColumnSidecar = tt.payload
+			tt.event.Topic = tt.payload.Topic
+			tt.event.MsgID = tt.payload.MsgID
 
 			// Call the gossipsub event handler which routes to the data column sidecar handler
 			// This ensures the event enabled check is properly applied
-			err := mimicry.processor.handleHermesGossipSubEvent(
-				context.Background(),
-				tt.event,
-				clientMeta,
-				createTestTraceMeta(),
-			)
+			err := mimicry.processor.HandleHermesEvent(context.Background(), tt.event)
 
 			// Validate error expectations
 			if tt.expectError {

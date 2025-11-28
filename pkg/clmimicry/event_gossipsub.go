@@ -5,11 +5,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/OffchainLabs/prysm/v7/beacon-chain/p2p"
 	"github.com/pkg/errors"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
+
+// Gossip topic message type constants.
+// These match the values from github.com/OffchainLabs/prysm/v7/beacon-chain/p2p/topics.go
+// but are defined locally to avoid import cycles.
+const (
+	gossipAttestationMessage       = "beacon_attestation"
+	gossipBlockMessage             = "beacon_block"
+	gossipAggregateAndProofMessage = "beacon_aggregate_and_proof"
+	gossipBlobSidecarMessage       = "blob_sidecar"
+	gossipDataColumnSidecarMessage = "data_column_sidecar"
 )
 
 // Define a slice of all gossipsub event types.
@@ -19,11 +29,11 @@ var gossipsubEventTypes = []string{
 
 // Map of gossipsub topic substrings to Xatu event types.
 var gossipsubTopicToXatuEventMap = map[string]string{
-	p2p.GossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
-	p2p.GossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
-	p2p.GossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
-	p2p.GossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
-	p2p.GossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
+	gossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
+	gossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
+	gossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	gossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
+	gossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
 }
 
 // handleHermesGossipSubEvent handles GossipSub protocol events.

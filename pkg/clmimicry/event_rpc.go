@@ -15,90 +15,31 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// Map of RPC event types to Xatu event types.
-var rpcToXatuEventMap = map[string]string{
-	TraceEvent_HANDLE_METADATA: xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
-	TraceEvent_HANDLE_STATUS:   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
-	TraceEvent_CUSTODY_PROBE:   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
-}
-
-// handleHermesRPCEvent handles Request/Response (RPC) protocol events.
-func (p *Processor) handleHermesRPCEvent(
-	ctx context.Context,
-	event *TraceEvent,
+func (p *Processor) handleMetadataEvent(ctx context.Context,
+	event *HandleMetadataEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	// Map libp2p event to Xatu event.
-	xatuEvent, err := mapRPCEventToXatuEvent(event.Type)
-	if err != nil {
-		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesRPCEvent event")
-
-		//nolint:nilerr // we don't want to return an error here.
+	if !p.events.HandleMetadataEnabled {
 		return nil
 	}
 
-	switch xatuEvent {
-	case xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String():
-		if !p.events.HandleMetadataEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleHandleMetadataEvent(ctx, clientMeta, traceMeta, event)
-
-	case xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String():
-		if !p.events.HandleStatusEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
-
-	case xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String():
-		if !p.events.CustodyProbeEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		networkStr := getNetworkID(clientMeta)
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleCustodyProbeEvent(ctx, clientMeta, traceMeta, event)
+	// Build protobuf message directly from typed event
+	data := &libp2p.HandleMetadata{
+		PeerId:     wrapperspb.String(event.PeerID.String()),
+		ProtocolId: wrapperspb.String(string(event.ProtocolID)),
+		Latency:    wrapperspb.Float(float32(event.LatencyS)),
+		Metadata: &libp2p.Metadata{
+			SeqNumber:         wrapperspb.UInt64(event.SeqNumber),
+			Attnets:           wrapperspb.String(event.Attnets),
+			Syncnets:          wrapperspb.String(event.Syncnets),
+			CustodyGroupCount: wrapperspb.UInt64(event.CustodyGroupCount),
+		},
+		Direction: wrapperspb.String(event.Direction),
 	}
 
-	return nil
-}
-
-func (p *Processor) handleHandleMetadataEvent(ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
-) error {
-	data, err := TraceEventToHandleMetadata(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to handle metadata event")
+	if event.Error != "" {
+		data.Error = wrapperspb.String(event.Error)
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -129,14 +70,45 @@ func (p *Processor) handleHandleMetadataEvent(ctx context.Context,
 	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (p *Processor) handleHandleStatusEvent(ctx context.Context,
+func (p *Processor) handleStatusEvent(ctx context.Context,
+	event *HandleStatusEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
 ) error {
-	data, err := TraceEventToHandleStatus(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to handle status event")
+	if !p.events.HandleStatusEnabled {
+		return nil
+	}
+
+	// Build protobuf message directly from typed event
+	data := &libp2p.HandleStatus{
+		PeerId:     wrapperspb.String(event.PeerID.String()),
+		ProtocolId: wrapperspb.String(string(event.ProtocolID)),
+		Latency:    wrapperspb.Float(float32(event.LatencyS)),
+		Direction:  wrapperspb.String(event.Direction),
+	}
+
+	if event.Request != nil {
+		data.Request = &libp2p.Status{
+			ForkDigest:     wrapperspb.String(event.Request.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(event.Request.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(event.Request.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(event.Request.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(event.Request.HeadSlot),
+		}
+	}
+
+	if event.Response != nil {
+		data.Response = &libp2p.Status{
+			ForkDigest:     wrapperspb.String(event.Response.ForkDigest),
+			FinalizedRoot:  wrapperspb.String(event.Response.FinalizedRoot),
+			FinalizedEpoch: wrapperspb.UInt64(event.Response.FinalizedEpoch),
+			HeadRoot:       wrapperspb.String(event.Response.HeadRoot),
+			HeadSlot:       wrapperspb.UInt64(event.Response.HeadSlot),
+		}
+	}
+
+	if event.Error != "" {
+		data.Error = wrapperspb.String(event.Error)
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -168,13 +140,30 @@ func (p *Processor) handleHandleStatusEvent(ctx context.Context,
 }
 
 func (p *Processor) handleCustodyProbeEvent(ctx context.Context,
+	event *CustodyProbeEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
 ) error {
-	data, err := TraceEventToCustodyProbe(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to custody probe event")
+	if !p.events.CustodyProbeEnabled {
+		return nil
+	}
+
+	// Build protobuf message directly from typed event
+	//nolint:gosec // G115: int -> uint32 conversions are safe for slot/epoch/index values
+	data := &libp2p.DataColumnCustodyProbe{
+		JobStartTimestamp: timestamppb.New(event.JobStartTimestamp),
+		PeerId:            wrapperspb.String(event.PeerIDStr),
+		Slot:              wrapperspb.UInt32(uint32(event.Slot)),
+		Epoch:             wrapperspb.UInt32(uint32(event.Epoch)),
+		ColumnIndex:       wrapperspb.UInt32(uint32(event.ColumnIndex)),
+		Result:            wrapperspb.String(event.Result),
+		ResponseTimeMs:    wrapperspb.Int64(event.DurationMs),
+		BeaconBlockRoot:   wrapperspb.String(event.BlockHash),
+		ColumnRowsCount:   wrapperspb.UInt32(uint32(event.ColumnSize)),
+	}
+
+	if event.Error != "" {
+		data.Error = wrapperspb.String(event.Error)
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -209,7 +198,7 @@ func (p *Processor) handleCustodyProbeEvent(ctx context.Context,
 }
 
 func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
-	event *TraceEvent,
+	event *CustodyProbeEvent,
 	data *libp2p.DataColumnCustodyProbe,
 	traceMeta *libp2p.TraceEventMetadata,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData, error) {
@@ -245,12 +234,4 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	}
 
 	return extra, nil
-}
-
-func mapRPCEventToXatuEvent(event string) (string, error) {
-	if xatuEvent, exists := rpcToXatuEventMap[event]; exists {
-		return xatuEvent, nil
-	}
-
-	return "", fmt.Errorf("unknown libp2p rpc event: %s", event)
 }

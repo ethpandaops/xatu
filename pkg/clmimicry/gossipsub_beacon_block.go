@@ -16,9 +16,9 @@ import (
 
 func (p *Processor) handleGossipBeaconBlock(
 	ctx context.Context,
+	event *BeaconBlockEvent,
 	clientMeta *xatu.ClientMeta,
-	event *TraceEvent,
-	payload any,
+	traceMeta *libp2p.TraceEventMetadata,
 ) error {
 	var (
 		err           error
@@ -27,7 +27,7 @@ func (p *Processor) handleGossipBeaconBlock(
 		proposerIndex primitives.ValidatorIndex
 	)
 
-	switch evt := payload.(type) {
+	switch evt := event.Payload.(type) {
 	case *TraceEventPhase0Block:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
@@ -75,7 +75,7 @@ func (p *Processor) handleGossipBeaconBlock(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := p.createAdditionalGossipSubBeaconBlockData(payload, slot, event)
+	additionalData, err := p.createAdditionalGossipSubBeaconBlockData(event.Payload, slot, &event.TraceEventBase)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -87,7 +87,7 @@ func (p *Processor) handleGossipBeaconBlock(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			DateTime: timestamppb.New(event.GetTimestamp().Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{
@@ -105,9 +105,9 @@ func (p *Processor) handleGossipBeaconBlock(
 func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 	payload any,
 	slotNumber primitives.Slot,
-	event *TraceEvent,
+	event *TraceEventBase,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData, error) {
-	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
+	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.GetTimestamp())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
@@ -124,7 +124,7 @@ func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 	}
 
 	// Add Clock Drift
-	timestampAdjusted := event.Timestamp.Add(p.clockDrift)
+	timestampAdjusted := event.GetTimestamp().Add(p.clockDrift)
 
 	slot := p.wallclock.Slots().FromNumber(uint64(slotNumber))
 	epoch := p.wallclock.Epochs().FromSlot(uint64(slotNumber))

@@ -18,15 +18,15 @@ import (
 
 func (p *Processor) handleGossipBlobSidecar(
 	ctx context.Context,
+	event *BlobSidecarEvent,
 	clientMeta *xatu.ClientMeta,
-	event *TraceEvent,
-	payload *TraceEventBlobSidecar,
+	traceMeta *libp2p.TraceEventMetadata,
 ) error {
-	if payload.BlobSidecar == nil {
+	if event.BlobSidecar == nil || event.BlobSidecar.BlobSidecar == nil {
 		return fmt.Errorf("handleGossipBlobSidecar() called with nil blob sidecar")
 	}
 
-	header := payload.BlobSidecar.GetSignedBlockHeader().GetHeader()
+	header := event.BlobSidecar.BlobSidecar.GetSignedBlockHeader().GetHeader()
 
 	blockRoot, err := header.HashTreeRoot()
 	if err != nil {
@@ -34,7 +34,7 @@ func (p *Processor) handleGossipBlobSidecar(
 	}
 
 	data := &gossipsub.BlobSidecar{
-		Index:         wrapperspb.UInt64(payload.BlobSidecar.GetIndex()),
+		Index:         wrapperspb.UInt64(event.BlobSidecar.BlobSidecar.GetIndex()),
 		Slot:          wrapperspb.UInt64(uint64(header.GetSlot())),
 		ProposerIndex: wrapperspb.UInt64(uint64(header.GetProposerIndex())),
 		StateRoot:     wrapperspb.String(hex.EncodeToString(header.GetStateRoot())),
@@ -47,7 +47,7 @@ func (p *Processor) handleGossipBlobSidecar(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := p.createAdditionalGossipSubBlobSidecarData(payload, event.Timestamp)
+	additionalData, err := p.createAdditionalGossipSubBlobSidecarData(event.BlobSidecar, event.GetTimestamp())
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}
@@ -59,7 +59,7 @@ func (p *Processor) handleGossipBlobSidecar(
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			DateTime: timestamppb.New(event.GetTimestamp().Add(p.clockDrift)),
 			Id:       uuid.New().String(),
 		},
 		Meta: &xatu.Meta{

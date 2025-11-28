@@ -9,8 +9,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
@@ -34,13 +32,13 @@ func deriveCommitteeIndexFromBits(committeeBits []byte) uint64 {
 func (p *Processor) handleGossipAggregateAndProof(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	payload any,
 ) error {
 	switch evt := payload.(type) {
-	case *events.TraceEventSignedAggregateAttestationAndProof:
+	case *TraceEventSignedAggregateAttestationAndProof:
 		return p.handleAggregateAndProofFromAttestation(ctx, clientMeta, event, evt)
-	case *events.TraceEventSignedAggregateAttestationAndProofElectra:
+	case *TraceEventSignedAggregateAttestationAndProofElectra:
 		return p.handleAggregateAndProofFromAttestationElectra(ctx, clientMeta, event, evt)
 	default:
 		return fmt.Errorf("unsupported payload type for aggregate and proof: %T", payload)
@@ -50,8 +48,8 @@ func (p *Processor) handleGossipAggregateAndProof(
 func (p *Processor) handleAggregateAndProofFromAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
-	payload *events.TraceEventSignedAggregateAttestationAndProof,
+	event *TraceEvent,
+	payload *TraceEventSignedAggregateAttestationAndProof,
 ) error {
 	if payload.SignedAggregateAttestationAndProof == nil || payload.SignedAggregateAttestationAndProof.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestation() called with nil aggregate attestation and proof")
@@ -125,8 +123,8 @@ func (p *Processor) handleAggregateAndProofFromAttestation(
 func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
-	payload *events.TraceEventSignedAggregateAttestationAndProofElectra,
+	event *TraceEvent,
+	payload *TraceEventSignedAggregateAttestationAndProofElectra,
 ) error {
 	if payload.SignedAggregateAttestationAndProofElectra == nil || payload.SignedAggregateAttestationAndProofElectra.GetMessage() == nil {
 		return fmt.Errorf("handleAggregateAndProofFromAttestationElectra() called with nil aggregate attestation and proof")
@@ -200,7 +198,7 @@ func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 
 func (p *Processor) createAdditionalGossipSubAggregateAndProofData(
 	ctx context.Context,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	aggregateAndProof *v1.SignedAggregateAttestationAndProofV2,
 	slotNumber phase0.Slot,
 	aggregatorIndex uint64,

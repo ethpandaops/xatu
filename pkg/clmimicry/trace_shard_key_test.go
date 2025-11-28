@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -52,7 +51,7 @@ func TestGetMsgID(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				event := &host.TraceEvent{
+				event := &clmimicry.TraceEvent{
 					Payload: tt.payload,
 				}
 				result := clmimicry.GetMsgID(event)
@@ -68,7 +67,7 @@ func TestGetMsgID(t *testing.T) {
 			Topic string
 		}
 
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: &TestPayload{
 				MsgID: "struct-msg-id",
 				Topic: "struct-topic",
@@ -82,7 +81,7 @@ func TestGetMsgID(t *testing.T) {
 	t.Run("edge cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			event    *host.TraceEvent
+			event    *clmimicry.TraceEvent
 			expected string
 		}{
 			{
@@ -92,22 +91,22 @@ func TestGetMsgID(t *testing.T) {
 			},
 			{
 				name:     "nil payload",
-				event:    &host.TraceEvent{Payload: nil},
+				event:    &clmimicry.TraceEvent{Payload: nil},
 				expected: "",
 			},
 			{
 				name:     "non-pointer struct payload",
-				event:    &host.TraceEvent{Payload: struct{ MsgID string }{MsgID: "test"}},
+				event:    &clmimicry.TraceEvent{Payload: struct{ MsgID string }{MsgID: "test"}},
 				expected: "",
 			},
 			{
 				name:     "string payload",
-				event:    &host.TraceEvent{Payload: "not-a-struct"},
+				event:    &clmimicry.TraceEvent{Payload: "not-a-struct"},
 				expected: "",
 			},
 			{
 				name:     "int payload",
-				event:    &host.TraceEvent{Payload: 123},
+				event:    &clmimicry.TraceEvent{Payload: 123},
 				expected: "",
 			},
 		}
@@ -125,28 +124,28 @@ func TestGetGossipTopics(t *testing.T) {
 	t.Run("from RpcMeta payload", func(t *testing.T) {
 		peerID, _ := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
 
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Type:   "LIBP2P_TRACE_RECV_RPC",
 			PeerID: peerID,
-			Payload: &host.RpcMeta{
+			Payload: &clmimicry.RpcMeta{
 				PeerID: peerID,
-				Messages: []host.RpcMetaMsg{
+				Messages: []clmimicry.RpcMetaMsg{
 					{MsgID: "msg1", Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy"},
 					{MsgID: "msg2", Topic: "/eth2/4a26c58b/beacon_attestation_0/ssz_snappy"},
 					{MsgID: "msg3", Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy"}, // duplicate
 				},
-				Subscriptions: []host.RpcMetaSub{
+				Subscriptions: []clmimicry.RpcMetaSub{
 					{TopicID: "/eth2/4a26c58b/voluntary_exit/ssz_snappy", Subscribe: true},
 					{TopicID: "/eth2/4a26c58b/proposer_slashing/ssz_snappy", Subscribe: false},
 				},
-				Control: &host.RpcMetaControl{
-					IHave: []host.RpcControlIHave{
+				Control: &clmimicry.RpcMetaControl{
+					IHave: []clmimicry.RpcControlIHave{
 						{TopicID: "/eth2/4a26c58b/attester_slashing/ssz_snappy", MsgIDs: []string{"msg4", "msg5"}},
 					},
-					Graft: []host.RpcControlGraft{
+					Graft: []clmimicry.RpcControlGraft{
 						{TopicID: "/eth2/4a26c58b/bls_to_execution_change/ssz_snappy"},
 					},
-					Prune: []host.RpcControlPrune{
+					Prune: []clmimicry.RpcControlPrune{
 						{TopicID: "/eth2/4a26c58b/sync_committee_contribution_and_proof/ssz_snappy"},
 					},
 				},
@@ -205,7 +204,7 @@ func TestGetGossipTopics(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				event := &host.TraceEvent{Payload: tt.payload}
+				event := &clmimicry.TraceEvent{Payload: tt.payload}
 				topics := clmimicry.GetGossipTopics(event)
 				assert.Equal(t, tt.expected, topics)
 			})
@@ -219,7 +218,7 @@ func TestGetGossipTopics(t *testing.T) {
 			MsgID string
 		}
 
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: &PayloadWithTopic{
 				Topic: "/eth2/test/topic",
 				MsgID: "msg-123",
@@ -238,7 +237,7 @@ func TestGetGossipTopics(t *testing.T) {
 			MsgID   string
 		}
 
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: &PayloadWithTopicId{
 				TopicId: wrapperspb.String("/eth2/test/topic_id"),
 				MsgID:   "msg-123",
@@ -252,7 +251,7 @@ func TestGetGossipTopics(t *testing.T) {
 	t.Run("edge cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			event    *host.TraceEvent
+			event    *clmimicry.TraceEvent
 			expected []string
 		}{
 			{
@@ -262,17 +261,17 @@ func TestGetGossipTopics(t *testing.T) {
 			},
 			{
 				name:     "nil payload",
-				event:    &host.TraceEvent{Payload: nil},
+				event:    &clmimicry.TraceEvent{Payload: nil},
 				expected: []string{},
 			},
 			{
 				name:     "empty RpcMeta",
-				event:    &host.TraceEvent{Payload: &host.RpcMeta{}},
+				event:    &clmimicry.TraceEvent{Payload: &clmimicry.RpcMeta{}},
 				expected: []string{},
 			},
 			{
 				name: "gossipsub event with topic in event",
-				event: &host.TraceEvent{
+				event: &clmimicry.TraceEvent{
 					Topic:   "/eth2/12345678/beacon_attestation_1/ssz_snappy",
 					Payload: map[string]any{"MsgID": "msg-123"},
 				},
@@ -280,9 +279,9 @@ func TestGetGossipTopics(t *testing.T) {
 			},
 			{
 				name: "RpcMeta with nil control",
-				event: &host.TraceEvent{
-					Payload: &host.RpcMeta{
-						Messages: []host.RpcMetaMsg{
+				event: &clmimicry.TraceEvent{
+					Payload: &clmimicry.RpcMeta{
+						Messages: []clmimicry.RpcMetaMsg{
 							{Topic: "/eth2/test/topic"},
 						},
 						Control: nil,
@@ -292,12 +291,12 @@ func TestGetGossipTopics(t *testing.T) {
 			},
 			{
 				name: "RpcMeta with empty topics",
-				event: &host.TraceEvent{
-					Payload: &host.RpcMeta{
-						Messages: []host.RpcMetaMsg{
+				event: &clmimicry.TraceEvent{
+					Payload: &clmimicry.RpcMeta{
+						Messages: []clmimicry.RpcMetaMsg{
 							{Topic: ""}, // empty topic
 						},
-						Subscriptions: []host.RpcMetaSub{
+						Subscriptions: []clmimicry.RpcMetaSub{
 							{TopicID: ""}, // empty topic
 						},
 					},
@@ -328,7 +327,7 @@ func TestGetGossipTopics(t *testing.T) {
 		}
 
 		topicStr := "/eth2/test/topic"
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: &TestStruct{
 				Topic:      topicStr,
 				TopicPtr:   &topicStr,
@@ -354,7 +353,7 @@ func TestGetGossipTopics(t *testing.T) {
 // Benchmark tests
 func BenchmarkGetMsgID(b *testing.B) {
 	b.Run("map payload", func(b *testing.B) {
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: map[string]any{
 				"MsgID": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 				"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
@@ -373,7 +372,7 @@ func BenchmarkGetMsgID(b *testing.B) {
 			Topic string
 		}
 
-		event := &host.TraceEvent{
+		event := &clmimicry.TraceEvent{
 			Payload: &TestPayload{
 				MsgID: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 				Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
@@ -391,18 +390,18 @@ func BenchmarkGetGossipTopics_Large(b *testing.B) {
 	// Benchmark with a large RpcMeta payload
 	peerID, _ := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
 
-	messages := make([]host.RpcMetaMsg, 100)
+	messages := make([]clmimicry.RpcMetaMsg, 100)
 	for i := range messages {
-		messages[i] = host.RpcMetaMsg{
+		messages[i] = clmimicry.RpcMetaMsg{
 			MsgID: "msg-" + string(rune(i)),
 			Topic: "/eth2/4a26c58b/topic_" + string(rune(i%10)) + "/ssz_snappy",
 		}
 	}
 
-	event := &host.TraceEvent{
+	event := &clmimicry.TraceEvent{
 		Type:   "LIBP2P_TRACE_RECV_RPC",
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &clmimicry.RpcMeta{
 			PeerID:   peerID,
 			Messages: messages,
 		},

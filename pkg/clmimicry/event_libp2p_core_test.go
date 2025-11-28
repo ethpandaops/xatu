@@ -9,7 +9,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
-	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -74,7 +73,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -86,7 +85,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 					ConnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -137,7 +136,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 					ConnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -182,7 +181,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 					ConnectedEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -212,7 +211,7 @@ func Test_handleConnectedEvent(t *testing.T) {
 					ConnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -259,7 +258,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -271,7 +270,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 					DisconnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -322,7 +321,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 					DisconnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -367,7 +366,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 					DisconnectedEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -397,7 +396,7 @@ func Test_handleDisconnectedEvent(t *testing.T) {
 					DisconnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -444,7 +443,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -456,7 +455,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 					ConnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -492,7 +491,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 					DisconnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -529,7 +528,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 					DisconnectedEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "UNKNOWN_CORE_EVENT",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -547,7 +546,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 					ConnectedEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_CONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -577,7 +576,7 @@ func Test_handleHermesLibp2pCoreEvent(t *testing.T) {
 					DisconnectedEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      TraceEvent_DISCONNECTED,
 				PeerID:    peerID,
 				Timestamp: time.Now(),

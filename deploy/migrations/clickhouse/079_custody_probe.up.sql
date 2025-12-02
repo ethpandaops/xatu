@@ -51,15 +51,14 @@ CREATE TABLE IF NOT EXISTS libp2p_rpc_data_column_custody_probe_local ON CLUSTER
     '{replica}',
     updated_date_time
 )
-PARTITION BY toStartOfMonth(slot_start_date_time)
+PARTITION BY toStartOfMonth(event_date_time)
 ORDER BY (
-    slot_start_date_time,
+    event_date_time,
     meta_network_name,
     meta_client_name,
     peer_id_unique_key,
     slot,
-    column_index,
-    event_date_time
+    column_index
 )
 COMMENT 'Contains custody probe events for data column availability verification';
 
@@ -71,12 +70,11 @@ ENGINE = Distributed(
     default,
     libp2p_rpc_data_column_custody_probe_local,
     cityHash64(
-        slot_start_date_time,
+        event_date_time,
         meta_network_name,
         meta_client_name,
         peer_id_unique_key,
         slot,
-        column_index,
-        event_date_time
+        column_index
     )
 );

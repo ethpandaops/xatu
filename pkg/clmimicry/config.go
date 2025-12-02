@@ -32,9 +32,6 @@ type Config struct {
 	// NTP Server to use for clock drift correction
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
 
-	// Node is the configuration for the node
-	Node NodeConfig `yaml:"node"`
-
 	// Events is the configuration for the events
 	Events EventConfig `yaml:"events"`
 

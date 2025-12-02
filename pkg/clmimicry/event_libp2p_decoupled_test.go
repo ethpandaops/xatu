@@ -9,7 +9,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -133,14 +132,14 @@ func TestDecoupledSharding(t *testing.T) {
 			peerID, err := peer.Decode(examplePeerID)
 			require.NoError(t, err)
 
-			event := &host.TraceEvent{
+			event := &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 								MsgIDs: []string{
@@ -206,14 +205,14 @@ func TestDecoupledShardingSendRPC(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &host.TraceEvent{
+	event := &TraceEvent{
 		Type:      "SendRPC",
 		PeerID:    peerID,
 		Timestamp: time.Now(),
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IHave: []host.RpcControlIHave{
+			Control: &RpcMetaControl{
+				IHave: []RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 						MsgIDs:  []string{"test_msg"},
@@ -272,14 +271,14 @@ func TestDecoupledShardingDropRPC(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &host.TraceEvent{
+	event := &TraceEvent{
 		Type:      "DropRPC",
 		PeerID:    peerID,
 		Timestamp: time.Now(),
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IHave: []host.RpcControlIHave{
+			Control: &RpcMetaControl{
+				IHave: []RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 						MsgIDs:  []string{"test_msg"},
@@ -370,35 +369,35 @@ func TestDecoupledShardingComplexScenario(t *testing.T) {
 	peerID, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)
 
-	event := &host.TraceEvent{
+	event := &TraceEvent{
 		Type:      "RecvRPC",
 		PeerID:    peerID,
 		Timestamp: time.Now(),
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IHave: []host.RpcControlIHave{
+			Control: &RpcMetaControl{
+				IHave: []RpcControlIHave{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 						MsgIDs:  []string{"test_msg"},
 					},
 				},
-				IWant: []host.RpcControlIWant{
+				IWant: []RpcControlIWant{
 					{
 						MsgIDs: []string{"test_msg"},
 					},
 				},
-				Idontwant: []host.RpcControlIdontWant{
+				Idontwant: []RpcControlIdontWant{
 					{
 						MsgIDs: []string{"test_msg"},
 					},
 				},
-				Graft: []host.RpcControlGraft{
+				Graft: []RpcControlGraft{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 					},
 				},
-				Prune: []host.RpcControlPrune{
+				Prune: []RpcControlPrune{
 					{
 						TopicID: "/eth2/test/beacon_attestation_0/ssz_snappy",
 					},

@@ -5,13 +5,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/OffchainLabs/prysm/v7/beacon-chain/p2p"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
+
+// Gossip topic message type constants.
+// These match the values from github.com/OffchainLabs/prysm/v7/beacon-chain/p2p/topics.go
+// but are defined locally to avoid import cycles.
+const (
+	gossipAttestationMessage       = "beacon_attestation"
+	gossipBlockMessage             = "beacon_block"
+	gossipAggregateAndProofMessage = "beacon_aggregate_and_proof"
+	gossipBlobSidecarMessage       = "blob_sidecar"
+	gossipDataColumnSidecarMessage = "data_column_sidecar"
 )
 
 // Define a slice of all gossipsub event types.
@@ -21,18 +29,18 @@ var gossipsubEventTypes = []string{
 
 // Map of gossipsub topic substrings to Xatu event types.
 var gossipsubTopicToXatuEventMap = map[string]string{
-	p2p.GossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
-	p2p.GossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
-	p2p.GossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
-	p2p.GossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
-	p2p.GossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
+	gossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
+	gossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
+	gossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	gossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
+	gossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
 }
 
 // handleHermesGossipSubEvent handles GossipSub protocol events.
 // This includes HANDLE_MESSAGE events which are further categorized by topic.
 func (p *Processor) handleHermesGossipSubEvent(
 	ctx context.Context,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
@@ -71,11 +79,11 @@ func (p *Processor) handleHermesGossipSubEvent(
 		}
 
 		switch payload := event.Payload.(type) {
-		case *events.TraceEventAttestation:
+		case *TraceEventAttestation:
 			if err := p.handleGossipAttestation(ctx, clientMeta, event, payload); err != nil {
 				return errors.Wrap(err, "failed to handle gossipsub beacon attestation")
 			}
-		case *events.TraceEventSingleAttestation:
+		case *TraceEventSingleAttestation:
 			if err := p.handleGossipSingleAttestation(ctx, clientMeta, event, payload); err != nil {
 				return errors.Wrap(err, "failed to handle gossipsub single beacon attestation")
 			}
@@ -115,7 +123,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 			return nil
 		}
 
-		payload, ok := event.Payload.(*events.TraceEventBlobSidecar)
+		payload, ok := event.Payload.(*TraceEventBlobSidecar)
 		if !ok {
 			return errors.New("invalid payload type for HandleMessage event")
 		}
@@ -156,7 +164,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 			return nil
 		}
 
-		payload, ok := event.Payload.(*events.TraceEventDataColumnSidecar)
+		payload, ok := event.Payload.(*TraceEventDataColumnSidecar)
 		if !ok {
 			return errors.New("invalid payload type for HandleMessage event")
 		}

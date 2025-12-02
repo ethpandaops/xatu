@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -26,7 +25,7 @@ var rpcToXatuEventMap = map[string]string{
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
 func (p *Processor) handleHermesRPCEvent(
 	ctx context.Context,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
@@ -95,9 +94,9 @@ func (p *Processor) handleHermesRPCEvent(
 func (p *Processor) handleHandleMetadataEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToHandleMetadata(event)
+	data, err := TraceEventToHandleMetadata(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to handle metadata event")
 	}
@@ -133,9 +132,9 @@ func (p *Processor) handleHandleMetadataEvent(ctx context.Context,
 func (p *Processor) handleHandleStatusEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToHandleStatus(event)
+	data, err := TraceEventToHandleStatus(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to handle status event")
 	}
@@ -171,9 +170,9 @@ func (p *Processor) handleHandleStatusEvent(ctx context.Context,
 func (p *Processor) handleCustodyProbeEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToCustodyProbe(event)
+	data, err := TraceEventToCustodyProbe(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to custody probe event")
 	}
@@ -210,7 +209,7 @@ func (p *Processor) handleCustodyProbeEvent(ctx context.Context,
 }
 
 func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.DataColumnCustodyProbe,
 	traceMeta *libp2p.TraceEventMetadata,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData, error) {

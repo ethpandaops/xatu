@@ -9,8 +9,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -19,8 +17,8 @@ import (
 func (p *Processor) handleGossipSingleAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
-	payload *events.TraceEventSingleAttestation,
+	event *TraceEvent,
+	payload *TraceEventSingleAttestation,
 ) error {
 	if payload.SingleAttestation == nil || payload.SingleAttestation.GetData() == nil {
 		return fmt.Errorf("handleGossipSingleAttestation() called with nil attestation")
@@ -78,9 +76,9 @@ func (p *Processor) handleGossipSingleAttestation(
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
 func (p *Processor) createAdditionalGossipSubSingleAttestationData(
-	payload *events.TraceEventSingleAttestation,
+	payload *TraceEventSingleAttestation,
 	attestationData *ethtypes.AttestationData,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData, error) {
 	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
 	if err != nil {

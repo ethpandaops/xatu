@@ -9,8 +9,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -19,7 +17,7 @@ import (
 func (p *Processor) handleGossipBeaconBlock(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	payload any,
 ) error {
 	var (
@@ -30,31 +28,31 @@ func (p *Processor) handleGossipBeaconBlock(
 	)
 
 	switch evt := payload.(type) {
-	case *events.TraceEventPhase0Block:
+	case *TraceEventPhase0Block:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventAltairBlock:
+	case *TraceEventAltairBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventBellatrixBlock:
+	case *TraceEventBellatrixBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventCapellaBlock:
+	case *TraceEventCapellaBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventDenebBlock:
+	case *TraceEventDenebBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventElectraBlock:
+	case *TraceEventElectraBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
-	case *events.TraceEventFuluBlock:
+	case *TraceEventFuluBlock:
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
@@ -107,7 +105,7 @@ func (p *Processor) handleGossipBeaconBlock(
 func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 	payload any,
 	slotNumber primitives.Slot,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData, error) {
 	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(event.Timestamp)
 	if err != nil {
@@ -148,37 +146,37 @@ func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 	}
 
 	switch evt := payload.(type) {
-	case *events.TraceEventPhase0Block:
+	case *TraceEventPhase0Block:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventAltairBlock:
+	case *TraceEventAltairBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventBellatrixBlock:
+	case *TraceEventBellatrixBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventCapellaBlock:
+	case *TraceEventCapellaBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventDenebBlock:
+	case *TraceEventDenebBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventElectraBlock:
+	case *TraceEventElectraBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
-	case *events.TraceEventFuluBlock:
+	case *TraceEventFuluBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)

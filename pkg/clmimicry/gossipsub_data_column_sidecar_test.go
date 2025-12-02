@@ -15,8 +15,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -71,14 +69,14 @@ func TestDataColumnSidecarIntegration(t *testing.T) {
 
 	// Process each sidecar
 	for _, sidecar := range sidecars {
-		event := &host.TraceEvent{
+		event := &TraceEvent{
 			Type:      "HANDLE_MESSAGE",
 			PeerID:    peerID,
 			Timestamp: time.Now(),
 		}
 
-		payload := &events.TraceEventDataColumnSidecar{
-			TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+		payload := &TraceEventDataColumnSidecar{
+			TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 				Topic:   "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 				MsgID:   "msg-" + fmt.Sprintf("%d", sidecar.index),
 				MsgSize: int(1000 + sidecar.index),
@@ -152,8 +150,8 @@ func TestDataColumnSidecarPropagationTiming(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			payload := &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload := &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/test/data_column_sidecar_0/ssz_snappy",
 					MsgID:   "test-msg",
 					MsgSize: 1000,
@@ -224,8 +222,8 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			}).
 			Times(1)
 
-		payload := &events.TraceEventDataColumnSidecar{
-			TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+		payload := &TraceEventDataColumnSidecar{
+			TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 				Topic:  "/eth2/test/data_column_sidecar_0/ssz_snappy",
 				MsgID:  "test",
 				PeerID: peerID.String(),
@@ -241,7 +239,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
 			createTestClientMeta(),
-			&host.TraceEvent{
+			&TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -262,8 +260,8 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			}).
 			Times(1)
 
-		payload := &events.TraceEventDataColumnSidecar{
-			TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+		payload := &TraceEventDataColumnSidecar{
+			TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 				Topic:  "/eth2/test/data_column_sidecar_127/ssz_snappy",
 				MsgID:  "max-index",
 				PeerID: peerID.String(),
@@ -291,7 +289,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 		err = mimicry.processor.handleGossipDataColumnSidecar(
 			context.Background(),
 			createTestClientMeta(),
-			&host.TraceEvent{
+			&TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -303,7 +301,7 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 }
 
 // Helper function to create a test mimicry with a properly initialized wallclock
-func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Sink) *Mimicry {
+func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Sink) *testMimicry {
 	t.Helper()
 
 	// Initialize wallclock with proper genesis time
@@ -326,7 +324,7 @@ func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Si
 		}
 	}
 
-	mimicry := &Mimicry{
+	mimicry := &testMimicry{
 		Config:  config,
 		sinks:   []output.Sink{sink},
 		log:     logrus.NewEntry(logrus.New()),
@@ -336,15 +334,15 @@ func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Si
 	}
 
 	mimicry.processor = NewProcessor(
-		mimicry,               // DutiesProvider
-		mimicry,               // OutputHandler
-		mimicry.metrics,       // MetricsCollector
-		mimicry,               // MetaProvider
-		mimicry.sharder,       // UnifiedSharder
-		NewEventCategorizer(), // EventCategorizer
-		wallclock,             // EthereumBeaconChain
-		time.Duration(0),      // clockDrift
-		config.Events,         // EventConfig
+		nil,                            // DutiesProvider - not used in these tests
+		&testOutputHandler{sink: sink}, // OutputHandler wrapping the mock sink
+		mimicry.metrics,                // MetricsCollector
+		nil,                            // MetaProvider - not used in these tests
+		mimicry.sharder,                // UnifiedSharder
+		NewEventCategorizer(),          // EventCategorizer
+		wallclock,                      // EthereumBeaconChain
+		time.Duration(0),               // clockDrift
+		config.Events,                  // EventConfig
 		mimicry.log.WithField("component", "processor"),
 	)
 
@@ -364,8 +362,8 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
-		payload        *events.TraceEventDataColumnSidecar
+		event          *TraceEvent
+		payload        *TraceEventDataColumnSidecar
 		expectError    bool
 		errorMessage   string
 		setupMockCalls func(*mock.MockSink)
@@ -378,14 +376,14 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
 				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:   "msg123",
 					MsgSize: 1000,
@@ -461,14 +459,14 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
 				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:  "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:  "msg123",
 					PeerID: peerID.String(),
@@ -486,14 +484,14 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
 				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:  "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:  "msg123",
 					PeerID: peerID.String(),
@@ -521,14 +519,14 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					GossipSubDataColumnSidecarEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "HANDLE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
 				Topic:     "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 			},
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:   "msg456",
 					MsgSize: 2000,
@@ -634,15 +632,15 @@ func Test_createAdditionalGossipSubDataColumnSidecarData(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		payload      *events.TraceEventDataColumnSidecar
+		payload      *TraceEventDataColumnSidecar
 		timestamp    time.Time
 		expectError  bool
 		validateData func(t *testing.T, data *xatu.ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData)
 	}{
 		{
 			name: "Valid payload with typical values",
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_5/ssz_snappy",
 					MsgID:   "msg123",
 					MsgSize: 1500,
@@ -679,8 +677,8 @@ func Test_createAdditionalGossipSubDataColumnSidecarData(t *testing.T) {
 		},
 		{
 			name: "Payload with slot 0",
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:   "genesis-msg",
 					MsgSize: 500,
@@ -712,8 +710,8 @@ func Test_createAdditionalGossipSubDataColumnSidecarData(t *testing.T) {
 		},
 		{
 			name: "Payload with large slot number",
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_127/ssz_snappy",
 					MsgID:   "large-msg",
 					MsgSize: 10000,
@@ -744,8 +742,8 @@ func Test_createAdditionalGossipSubDataColumnSidecarData(t *testing.T) {
 		},
 		{
 			name: "Payload with nil signed block header",
-			payload: &events.TraceEventDataColumnSidecar{
-				TraceEventPayloadMetaData: host.TraceEventPayloadMetaData{
+			payload: &TraceEventDataColumnSidecar{
+				TraceEventPayloadMetaData: TraceEventPayloadMetaData{
 					Topic:   "/eth2/fc90fcde/data_column_sidecar_0/ssz_snappy",
 					MsgID:   "nil-header",
 					MsgSize: 100,

@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -39,7 +38,7 @@ var libp2pToXatuEventMap = map[string]string{
 //nolint:gocyclo // This function handles multiple event types and is intentionally complex
 func (p *Processor) handleHermesLibp2pEvent(
 	ctx context.Context,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
 ) error {
@@ -221,9 +220,9 @@ func (p *Processor) handleRemovePeerEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToRemovePeer(event)
+	data, err := TraceEventToRemovePeer(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to remove peer event")
 	}
@@ -260,9 +259,9 @@ func (p *Processor) handleJoinEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToJoin(event)
+	data, err := TraceEventToJoin(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to join event")
 	}
@@ -299,9 +298,9 @@ func (p *Processor) handleLeaveEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToLeave(event)
+	data, err := TraceEventToLeave(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to leave event")
 	}
@@ -338,9 +337,9 @@ func (p *Processor) handleGraftEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToGraft(event)
+	data, err := TraceEventToGraft(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to graft event")
 	}
@@ -377,9 +376,9 @@ func (p *Processor) handlePruneEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToPrune(event)
+	data, err := TraceEventToPrune(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to prune event")
 	}
@@ -416,7 +415,7 @@ func (p *Processor) handleSendRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	xatuEvent string,
 	networkStr string,
 ) error {
@@ -425,7 +424,7 @@ func (p *Processor) handleSendRPCEvent(
 		decoratedEvents []*xatu.DecoratedEvent
 	)
 
-	data, err := libp2p.TraceEventToSendRPC(event)
+	data, err := TraceEventToSendRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
 	}
@@ -503,9 +502,9 @@ func (p *Processor) handleAddPeerEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToAddPeer(event)
+	data, err := TraceEventToAddPeer(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to add_peer event")
 	}
@@ -542,7 +541,7 @@ func (p *Processor) handleRecvRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	xatuEvent string,
 	networkStr string,
 ) error {
@@ -551,7 +550,7 @@ func (p *Processor) handleRecvRPCEvent(
 		decoratedEvents []*xatu.DecoratedEvent
 	)
 
-	data, err := libp2p.TraceEventToRecvRPC(event)
+	data, err := TraceEventToRecvRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
 	}
@@ -629,7 +628,7 @@ func (p *Processor) handleDropRPCEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	xatuEvent string,
 	networkStr string,
 ) error {
@@ -638,7 +637,7 @@ func (p *Processor) handleDropRPCEvent(
 		decoratedEvents []*xatu.DecoratedEvent
 	)
 
-	data, err := libp2p.TraceEventToDropRPC(event)
+	data, err := TraceEventToDropRPC(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
 	}
@@ -716,9 +715,9 @@ func (p *Processor) handlePublishMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToPublishMessage(event)
+	data, err := TraceEventToPublishMessage(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to publish message event")
 	}
@@ -755,9 +754,9 @@ func (p *Processor) handleRejectMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToRejectMessage(event)
+	data, err := TraceEventToRejectMessage(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to reject message event")
 	}
@@ -794,9 +793,9 @@ func (p *Processor) handleDuplicateMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToDuplicateMessage(event)
+	data, err := TraceEventToDuplicateMessage(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to duplicate message event")
 	}
@@ -833,9 +832,9 @@ func (p *Processor) handleDeliverMessageEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToDeliverMessage(event)
+	data, err := TraceEventToDeliverMessage(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to deliver message event")
 	}
@@ -873,7 +872,7 @@ func (p *Processor) parseRPCMeta(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -926,7 +925,7 @@ func (p *Processor) parseRPCMetaControl(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1019,7 +1018,7 @@ func (p *Processor) parseRPCMetaControlIHave(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1094,7 +1093,7 @@ func (p *Processor) parseRPCMetaControlIWant(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1159,7 +1158,7 @@ func (p *Processor) parseRPCMetaControlIDontWant(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1224,7 +1223,7 @@ func (p *Processor) parseRPCMetaControlGraft(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	decoratedEvents := make([]*xatu.DecoratedEvent, 0)
@@ -1292,7 +1291,7 @@ func (p *Processor) parseRPCMetaControlPrune(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1406,7 +1405,7 @@ func (p *Processor) parseRPCMetaSubscriptions(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1440,7 +1439,7 @@ func (p *Processor) parseRPCMetaSubscription(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1509,7 +1508,7 @@ func (p *Processor) parseRPCMetaMessages(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent
@@ -1543,7 +1542,7 @@ func (p *Processor) parseRPCMetaMessage(
 	peerID string,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 	data *libp2p.RPCMeta,
 ) ([]*xatu.DecoratedEvent, error) {
 	var decoratedEvents []*xatu.DecoratedEvent

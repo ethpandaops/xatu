@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/probe-lab/hermes/eth/events"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -21,8 +19,8 @@ import (
 func (p *Processor) handleGossipDataColumnSidecar(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
-	event *host.TraceEvent,
-	payload *events.TraceEventDataColumnSidecar,
+	event *TraceEvent,
+	payload *TraceEventDataColumnSidecar,
 ) error {
 	if payload.DataColumnSidecar == nil {
 		return fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
@@ -78,7 +76,7 @@ func (p *Processor) handleGossipDataColumnSidecar(
 
 //nolint:gosec // int -> uint32 common conversion pattern in xatu.
 func (p *Processor) createAdditionalGossipSubDataColumnSidecarData(
-	payload *events.TraceEventDataColumnSidecar,
+	payload *TraceEventDataColumnSidecar,
 	timestamp time.Time,
 ) (*xatu.ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData, error) {
 	wallclockSlot, wallclockEpoch, err := p.wallclock.FromTime(timestamp)

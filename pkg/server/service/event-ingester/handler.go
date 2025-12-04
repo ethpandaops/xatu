@@ -2,6 +2,8 @@ package eventingester
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -30,12 +32,18 @@ type Handler struct {
 	geoipProvider  geoip.Provider
 	cache          store.Cache
 	clientNameSalt string
+	debugUsers     map[string]struct{}
 	metrics        *Metrics
 
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
+func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string, debugUsers []string) *Handler {
+	debugUsersMap := make(map[string]struct{}, len(debugUsers))
+	for _, u := range debugUsers {
+		debugUsersMap[u] = struct{}{}
+	}
+
 	return &Handler{
 		log:            log,
 		clockDrift:     clockDrift,
@@ -44,6 +52,7 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 		metrics:        NewMetrics("xatu_server_event_ingester"),
 		eventRouter:    eventHandler.NewEventRouter(log, cache, geoipProvider),
 		clientNameSalt: clientNameSalt,
+		debugUsers:     debugUsersMap,
 	}
 }
 
@@ -224,6 +233,21 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			if user != nil {
 				event.Meta.Client.Name = group.ComputeClientName(username, h.clientNameSalt, event.GetMeta().GetClient().GetName())
 			}
+
+			// Debug log for configured debug users
+			if _, isDebugUser := h.debugUsers[username]; isDebugUser {
+				fields := logrus.Fields{
+					"client_id":   event.GetMeta().GetClient().GetId(),
+					"client_name": event.GetMeta().GetClient().GetName(),
+					"group":       group.Name(),
+					"user":        username,
+				}
+				if ipAddress != "" {
+					fields["hashed_ip"] = hashIP(ipAddress, h.clientNameSalt)
+				}
+
+				h.log.WithFields(fields).Debug("Debug user request")
+			}
 		}
 
 		if user != nil {
@@ -251,6 +275,15 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 	}
 
 	return filteredEvents, nil
+}
+
+// hashIP computes a SHA256 hash of the IP address and returns the first 16 hex characters.
+func hashIP(ip, salt string) string {
+	hash := sha256.New()
+	hash.Write([]byte(ip))
+	hash.Write([]byte(salt))
+
+	return hex.EncodeToString(hash.Sum(nil))[:16]
 }
 
 func (h *Handler) filterEvents(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {

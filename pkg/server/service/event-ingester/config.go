@@ -15,6 +15,8 @@ type Config struct {
 	Authorization auth.AuthorizationConfig `yaml:"authorization"`
 	// ClientNameSalt is the salt to use for computing client names
 	ClientNameSalt string `yaml:"clientNameSalt"`
+	// DebugUsers is a list of usernames for which to enable debug logging.
+	DebugUsers []string `yaml:"debugUsers"`
 }
 
 func (c *Config) Validate() error {

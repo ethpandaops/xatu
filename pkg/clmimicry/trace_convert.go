@@ -751,13 +751,56 @@ func TraceEventToSyntheticHeartbeat(event *TraceEvent) (*libp2p.SyntheticHeartbe
 	}, nil
 }
 
-// TraceEventToCustodyProbe converts a Hermes TraceEvent to a DataColumnCustodyProbe protobuf message
+// TraceEventToCustodyProbe converts a Hermes TraceEvent to a DataColumnCustodyProbe protobuf message.
+// Supports both typed *TraceEventCustodyProbe payloads (from direct callers like tysm)
+// and map[string]any payloads (for backwards compatibility with Hermes-style events).
 func TraceEventToCustodyProbe(event *TraceEvent) (*libp2p.DataColumnCustodyProbe, error) {
-	payload, ok := event.Payload.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid payload type for CustodyProbe")
+	// Handle typed payload from direct callers (e.g., tysm using NewCustodyProbePayload)
+	if typed, ok := event.Payload.(*TraceEventCustodyProbe); ok {
+		return traceEventCustodyProbeToProto(typed), nil
 	}
 
+	// Handle map payload (backwards compatibility for Hermes-style events)
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for CustodyProbe: expected *TraceEventCustodyProbe or map[string]any, got %T",
+			event.Payload,
+		)
+	}
+
+	return mapPayloadToCustodyProbe(payload), nil
+}
+
+// traceEventCustodyProbeToProto converts a typed TraceEventCustodyProbe to the protobuf message.
+func traceEventCustodyProbeToProto(typed *TraceEventCustodyProbe) *libp2p.DataColumnCustodyProbe {
+	probe := &libp2p.DataColumnCustodyProbe{}
+
+	if typed.PeerID != nil {
+		probe.PeerId = wrapperspb.String(typed.PeerID.String())
+	}
+
+	//nolint:gosec // conversion fine.
+	probe.Slot = wrapperspb.UInt32(uint32(typed.Slot))
+	//nolint:gosec // conversion fine.
+	probe.Epoch = wrapperspb.UInt32(uint32(typed.Epoch))
+	//nolint:gosec // conversion fine.
+	probe.ColumnIndex = wrapperspb.UInt32(uint32(typed.Column))
+	probe.Result = wrapperspb.String(typed.Result)
+	probe.ResponseTimeMs = wrapperspb.Int64(typed.Duration.Milliseconds())
+	probe.BeaconBlockRoot = wrapperspb.String(typed.BlockHash)
+	//nolint:gosec // conversion fine.
+	probe.ColumnRowsCount = wrapperspb.UInt32(uint32(typed.ColumnSize))
+
+	if typed.Error != "" {
+		probe.Error = wrapperspb.String(typed.Error)
+	}
+
+	return probe
+}
+
+// mapPayloadToCustodyProbe converts a map[string]any payload to the protobuf message.
+func mapPayloadToCustodyProbe(payload map[string]any) *libp2p.DataColumnCustodyProbe {
 	probe := &libp2p.DataColumnCustodyProbe{}
 
 	if jobStartTimestamp, ok := payload["JobStartTimestamp"].(time.Time); ok {
@@ -804,5 +847,5 @@ func TraceEventToCustodyProbe(event *TraceEvent) (*libp2p.DataColumnCustodyProbe
 		probe.ColumnRowsCount = wrapperspb.UInt32(uint32(columnRowsCount))
 	}
 
-	return probe, nil
+	return probe
 }

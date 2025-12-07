@@ -580,3 +580,120 @@ func assertStringValuesEqual(t *testing.T, expected, actual []*wrapperspb.String
 		assert.Equal(t, val.GetValue(), actual[j].GetValue())
 	}
 }
+
+func TestTraceEventToCustodyProbe(t *testing.T) {
+	peerID, err := peer.Decode(peerIDStr)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		input       *TraceEvent
+		expectError bool
+		validate    func(t *testing.T, result *libp2p.DataColumnCustodyProbe)
+	}{
+		{
+			name: "typed TraceEventCustodyProbe payload",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: &TraceEventCustodyProbe{
+					PeerID:     &peerID,
+					Epoch:      100,
+					Slot:       3200,
+					Column:     42,
+					BlockHash:  "0xabcdef1234567890",
+					Result:     "success",
+					Duration:   1500000000, // 1.5 seconds in nanoseconds
+					ColumnSize: 128,
+					Error:      "",
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, uint32(100), result.Epoch.GetValue())
+				assert.Equal(t, uint32(3200), result.Slot.GetValue())
+				assert.Equal(t, uint32(42), result.ColumnIndex.GetValue())
+				assert.Equal(t, "0xabcdef1234567890", result.BeaconBlockRoot.GetValue())
+				assert.Equal(t, "success", result.Result.GetValue())
+				assert.Equal(t, int64(1500), result.ResponseTimeMs.GetValue())
+				assert.Equal(t, uint32(128), result.ColumnRowsCount.GetValue())
+				assert.Nil(t, result.Error)
+			},
+		},
+		{
+			name: "typed TraceEventCustodyProbe payload with error",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: &TraceEventCustodyProbe{
+					PeerID:     &peerID,
+					Epoch:      100,
+					Slot:       3200,
+					Column:     42,
+					BlockHash:  "0xabcdef1234567890",
+					Result:     "failure",
+					Duration:   500000000,
+					ColumnSize: 0,
+					Error:      "timeout",
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, "failure", result.Result.GetValue())
+				assert.Equal(t, "timeout", result.Error.GetValue())
+			},
+		},
+		{
+			name: "map payload (backwards compatibility)",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: map[string]any{
+					"PeerID":      peerIDStr,
+					"Epoch":       uint64(100),
+					"Slot":        uint64(3200),
+					"ColumnIndex": uint64(42),
+					"BlockHash":   "0xabcdef1234567890",
+					"Result":      "success",
+					"DurationMs":  int64(1500),
+					"ColumnSize":  128,
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, uint32(100), result.Epoch.GetValue())
+				assert.Equal(t, uint32(3200), result.Slot.GetValue())
+				assert.Equal(t, uint32(42), result.ColumnIndex.GetValue())
+				assert.Equal(t, "0xabcdef1234567890", result.BeaconBlockRoot.GetValue())
+				assert.Equal(t, "success", result.Result.GetValue())
+				assert.Equal(t, int64(1500), result.ResponseTimeMs.GetValue())
+				assert.Equal(t, uint32(128), result.ColumnRowsCount.GetValue())
+			},
+		},
+		{
+			name: "invalid payload type",
+			input: &TraceEvent{
+				PeerID:  peerID,
+				Payload: "not a valid payload",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := TraceEventToCustodyProbe(tt.input)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid payload type for CustodyProbe")
+
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			if tt.validate != nil {
+				tt.validate(t, result)
+			}
+		})
+	}
+}

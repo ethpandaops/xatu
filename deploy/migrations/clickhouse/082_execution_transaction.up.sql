@@ -3,19 +3,22 @@ CREATE TABLE default.execution_transaction_local ON CLUSTER '{cluster}' (
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `block_hash` FixedString(66) COMMENT 'The block hash' CODEC(ZSTD(1)),
     `parent_hash` FixedString(66) COMMENT 'The parent block hash' CODEC(ZSTD(1)),
-    `transaction_index` UInt64 COMMENT 'The transaction index' CODEC(DoubleDelta, ZSTD(1)),
-    `transaction_hash` FixedString(66) COMMENT 'The transaction hash' CODEC(ZSTD(1)),
-    `nonce` UInt64 COMMENT 'The transaction nonce' CODEC(ZSTD(1)),
-    `from_address` String COMMENT 'The transaction from address' CODEC(ZSTD(1)),
-    `to_address` Nullable(String) COMMENT 'The transaction to address' CODEC(ZSTD(1)),
-    `value` UInt256 COMMENT 'The transaction value in wei' CODEC(ZSTD(1)),
-    `input` Nullable(String) COMMENT 'The transaction input in hex' CODEC(ZSTD(1)),
-    `gas_limit` UInt64 COMMENT 'The transaction gas limit' CODEC(ZSTD(1)),
-    `gas_used` UInt64 COMMENT 'The transaction gas used' CODEC(ZSTD(1)),
-    `gas_price` UInt64 COMMENT 'The transaction gas price' CODEC(ZSTD(1)),
-    `transaction_type` UInt32 COMMENT 'The transaction type' CODEC(ZSTD(1)),
-    `max_priority_fee_per_gas` UInt64 COMMENT 'The transaction max priority fee per gas' CODEC(ZSTD(1)),
-    `max_fee_per_gas` UInt64 COMMENT 'The transaction max fee per gas' CODEC(ZSTD(1)),
+    `position` UInt32 COMMENT 'The position of the transaction in the beacon block' CODEC(DoubleDelta, ZSTD(1)),
+    `hash` FixedString(66) COMMENT 'The hash of the transaction' CODEC(ZSTD(1)),
+    `from` FixedString(42) COMMENT 'The address of the account that sent the transaction' CODEC(ZSTD(1)),
+    `to` Nullable(FixedString(42)) COMMENT 'The address of the account that is the transaction recipient' CODEC(ZSTD(1)),
+    `nonce` UInt64 COMMENT 'The nonce of the sender account at the time of the transaction' CODEC(ZSTD(1)),
+    `gas_price` UInt128 COMMENT 'The gas price of the transaction in wei' CODEC(ZSTD(1)),
+    `gas` UInt64 COMMENT 'The maximum gas provided for the transaction execution' CODEC(ZSTD(1)),
+    `gas_tip_cap` Nullable(UInt128) COMMENT 'The priority fee (tip) the user has set for the transaction' CODEC(ZSTD(1)),
+    `gas_fee_cap` Nullable(UInt128) COMMENT 'The max fee the user has set for the transaction' CODEC(ZSTD(1)),
+    `value` UInt128 COMMENT 'The value transferred with the transaction in wei' CODEC(ZSTD(1)),
+    `type` UInt8 COMMENT 'The type of the transaction' CODEC(ZSTD(1)),
+    `size` UInt32 COMMENT 'The size of the transaction data in bytes' CODEC(ZSTD(1)),
+    `call_data_size` UInt32 COMMENT 'The size of the call data of the transaction in bytes' CODEC(ZSTD(1)),
+    `blob_gas` Nullable(UInt64) COMMENT 'The maximum gas provided for the blob transaction execution' CODEC(ZSTD(1)),
+    `blob_gas_fee_cap` Nullable(UInt128) COMMENT 'The max fee the user has set for the transaction' CODEC(ZSTD(1)),
+    `blob_hashes` Array(String) COMMENT 'The hashes of the blob commitments for blob transactions' CODEC(ZSTD(1)),
     `success` Bool COMMENT 'The transaction success' CODEC(ZSTD(1)),
     `n_input_bytes` UInt32 COMMENT 'The transaction input bytes' CODEC(ZSTD(1)),
     `n_input_zero_bytes` UInt32 COMMENT 'The transaction input zero bytes' CODEC(ZSTD(1)),
@@ -29,10 +32,10 @@ CREATE TABLE default.execution_transaction_local ON CLUSTER '{cluster}' (
 ) PARTITION BY intDiv(block_number, 5000000)
 ORDER BY
     (
-        meta_network_name,
         block_number,
+        meta_network_name,
         block_hash,
-        transaction_index
+        position
     ) COMMENT 'Contains execution transaction data that may not be canonical.';
 
 CREATE TABLE default.execution_transaction ON CLUSTER '{cluster}' AS default.execution_transaction_local ENGINE = Distributed(
@@ -43,6 +46,6 @@ CREATE TABLE default.execution_transaction ON CLUSTER '{cluster}' AS default.exe
         block_number,
         meta_network_name,
         block_hash,
-        transaction_hash
+        position
     )
 );

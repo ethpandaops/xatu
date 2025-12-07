@@ -11,12 +11,9 @@ import (
 func TestShouldTraceMessage(t *testing.T) {
 	// Test the helper functions that are used by ShouldTraceMessage
 	t.Run("GetMsgID extracts message ID correctly", func(t *testing.T) {
-		event := &TraceEvent{
-			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
-			Payload: map[string]any{
-				"MsgID": "test-message-id",
-				"Topic": "/eth2/test/beacon_block/ssz_snappy",
-			},
+		event := &PublishMessageEvent{
+			MsgID: "test-message-id",
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
 		}
 
 		msgID := GetMsgID(event)
@@ -24,11 +21,8 @@ func TestShouldTraceMessage(t *testing.T) {
 	})
 
 	t.Run("GetMsgID returns empty for missing MsgID", func(t *testing.T) {
-		event := &TraceEvent{
-			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
-			Payload: map[string]any{
-				"Topic": "/eth2/test/beacon_block/ssz_snappy",
-			},
+		event := &GraftEvent{
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
 		}
 
 		msgID := GetMsgID(event)
@@ -36,12 +30,9 @@ func TestShouldTraceMessage(t *testing.T) {
 	})
 
 	t.Run("GetGossipTopics extracts topics correctly", func(t *testing.T) {
-		event := &TraceEvent{
-			Type: "LIBP2P_TRACE_PUBLISH_MESSAGE",
-			Payload: map[string]any{
-				"MsgID": "test-message-id",
-				"Topic": "/eth2/test/beacon_block/ssz_snappy",
-			},
+		event := &PublishMessageEvent{
+			MsgID: "test-message-id",
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
 		}
 
 		topics := GetGossipTopics(event)

@@ -38,7 +38,7 @@ func IsShardActive(shard uint64, activeShards []uint64) bool {
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
 // in the sample based on the configured trace settings.
 func (p *Processor) ShouldTraceMessage(
-	event *TraceEvent,
+	event TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 ) bool {
@@ -57,13 +57,12 @@ func (p *Processor) ShouldTraceMessage(
 		// Extract message ID and topics using the existing helper functions.
 		msgID = GetMsgID(event)
 
-		// Get all topics from the event.
-		topics = GetGossipTopics(event)
-		topic  string
+		// Get topic from the event if it implements TopicEvent.
+		topic string
 	)
 
-	if len(topics) > 0 {
-		topic = topics[0] // Use the first topic if available
+	if te, ok := event.(TopicEvent); ok {
+		topic = te.GetTopic()
 	}
 
 	// Use the unified sharder to determine if we should process this event

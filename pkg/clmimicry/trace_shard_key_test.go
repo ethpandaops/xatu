@@ -2,132 +2,106 @@ package clmimicry_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestGetMsgID(t *testing.T) {
-	t.Run("from map payload", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			payload  map[string]any
-			expected string
-		}{
-			{
-				name: "valid MsgID",
-				payload: map[string]any{
-					"MsgID": "msg-123",
-					"Topic": "test-topic",
-				},
-				expected: "msg-123",
-			},
-			{
-				name: "MsgID not string",
-				payload: map[string]any{
-					"MsgID": 123, // not a string
-				},
-				expected: "",
-			},
-			{
-				name:     "no MsgID field",
-				payload:  map[string]any{"Topic": "test-topic"},
-				expected: "",
-			},
-			{
-				name:     "empty map",
-				payload:  map[string]any{},
-				expected: "",
-			},
-			{
-				name:     "nil map",
-				payload:  nil,
-				expected: "",
-			},
-		}
+	peerID, err := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
+	require.NoError(t, err)
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				event := &clmimicry.TraceEvent{
-					Payload: tt.payload,
-				}
-				result := clmimicry.GetMsgID(event)
-				assert.Equal(t, tt.expected, result)
-			})
-		}
-	})
-
-	t.Run("from struct payload via reflection", func(t *testing.T) {
-		// Create a test struct that mimics protobuf structs with MsgID field
-		type TestPayload struct {
-			MsgID string
-			Topic string
-		}
-
-		event := &clmimicry.TraceEvent{
-			Payload: &TestPayload{
-				MsgID: "struct-msg-id",
-				Topic: "struct-topic",
+	t.Run("from PublishMessageEvent", func(t *testing.T) {
+		event := &clmimicry.PublishMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
+			MsgID: "msg-123",
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
 		}
 
 		result := clmimicry.GetMsgID(event)
-		assert.Equal(t, "struct-msg-id", result)
+		assert.Equal(t, "msg-123", result)
 	})
 
-	t.Run("edge cases", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			event    *clmimicry.TraceEvent
-			expected string
-		}{
-			{
-				name:     "nil event",
-				event:    nil,
-				expected: "",
+	t.Run("from DeliverMessageEvent", func(t *testing.T) {
+		event := &clmimicry.DeliverMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
-			{
-				name:     "nil payload",
-				event:    &clmimicry.TraceEvent{Payload: nil},
-				expected: "",
-			},
-			{
-				name:     "non-pointer struct payload",
-				event:    &clmimicry.TraceEvent{Payload: struct{ MsgID string }{MsgID: "test"}},
-				expected: "",
-			},
-			{
-				name:     "string payload",
-				event:    &clmimicry.TraceEvent{Payload: "not-a-struct"},
-				expected: "",
-			},
-			{
-				name:     "int payload",
-				event:    &clmimicry.TraceEvent{Payload: 123},
-				expected: "",
-			},
+			MsgID: "deliver-msg-456",
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
 		}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				result := clmimicry.GetMsgID(tt.event)
-				assert.Equal(t, tt.expected, result)
-			})
+		result := clmimicry.GetMsgID(event)
+		assert.Equal(t, "deliver-msg-456", result)
+	})
+
+	t.Run("from RejectMessageEvent", func(t *testing.T) {
+		event := &clmimicry.RejectMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			MsgID:  "reject-msg-789",
+			Topic:  "/eth2/test/beacon_block/ssz_snappy",
+			Reason: "validation_failed",
 		}
+
+		result := clmimicry.GetMsgID(event)
+		assert.Equal(t, "reject-msg-789", result)
+	})
+
+	t.Run("from DuplicateMessageEvent", func(t *testing.T) {
+		event := &clmimicry.DuplicateMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			MsgID: "dup-msg-000",
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
+		}
+
+		result := clmimicry.GetMsgID(event)
+		assert.Equal(t, "dup-msg-000", result)
+	})
+
+	t.Run("from non-message event (GraftEvent)", func(t *testing.T) {
+		event := &clmimicry.GraftEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			Topic: "/eth2/test/beacon_block/ssz_snappy",
+		}
+
+		// GraftEvent doesn't implement MessageEvent, so should return empty string
+		result := clmimicry.GetMsgID(event)
+		assert.Equal(t, "", result)
+	})
+
+	t.Run("nil event", func(t *testing.T) {
+		result := clmimicry.GetMsgID(nil)
+		assert.Equal(t, "", result)
 	})
 }
 
 func TestGetGossipTopics(t *testing.T) {
-	t.Run("from RpcMeta payload", func(t *testing.T) {
-		peerID, _ := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
+	peerID, err := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
+	require.NoError(t, err)
 
-		event := &clmimicry.TraceEvent{
-			Type:   "LIBP2P_TRACE_RECV_RPC",
-			PeerID: peerID,
-			Payload: &clmimicry.RpcMeta{
+	t.Run("from RPC event with RpcMeta", func(t *testing.T) {
+		event := &clmimicry.RecvRPCEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			Meta: &clmimicry.RpcMeta{
 				PeerID: peerID,
 				Messages: []clmimicry.RpcMetaMsg{
 					{MsgID: "msg1", Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy"},
@@ -171,87 +145,76 @@ func TestGetGossipTopics(t *testing.T) {
 		}
 	})
 
-	t.Run("from map payload", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			payload  map[string]any
-			expected []string
-		}{
-			{
-				name: "single topic",
-				payload: map[string]any{
-					"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
-					"MsgID": "msg-123",
-				},
-				expected: []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"},
+	t.Run("from TopicEvent (JoinEvent)", func(t *testing.T) {
+		event := &clmimicry.JoinEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
-			{
-				name:     "no topic field",
-				payload:  map[string]any{"MsgID": "msg-123"},
-				expected: []string{},
-			},
-			{
-				name:     "empty topic string",
-				payload:  map[string]any{"Topic": ""},
-				expected: []string{},
-			},
-			{
-				name:     "topic not string",
-				payload:  map[string]any{"Topic": 123},
-				expected: []string{},
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				event := &clmimicry.TraceEvent{Payload: tt.payload}
-				topics := clmimicry.GetGossipTopics(event)
-				assert.Equal(t, tt.expected, topics)
-			})
-		}
-	})
-
-	t.Run("from struct with Topic field via reflection", func(t *testing.T) {
-		// Test struct with plain Topic field
-		type PayloadWithTopic struct {
-			Topic string
-			MsgID string
-		}
-
-		event := &clmimicry.TraceEvent{
-			Payload: &PayloadWithTopic{
-				Topic: "/eth2/test/topic",
-				MsgID: "msg-123",
-			},
+			Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
 		}
 
 		topics := clmimicry.GetGossipTopics(event)
-		// The reflection code doesn't extract plain string Topic fields
-		assert.Equal(t, []string{}, topics)
+		assert.Equal(t, []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"}, topics)
 	})
 
-	t.Run("from struct with TopicId field via reflection", func(t *testing.T) {
-		// Test struct with wrapperspb.StringValue TopicId field (like protobuf structs)
-		type PayloadWithTopicId struct {
-			TopicId *wrapperspb.StringValue
-			MsgID   string
-		}
-
-		event := &clmimicry.TraceEvent{
-			Payload: &PayloadWithTopicId{
-				TopicId: wrapperspb.String("/eth2/test/topic_id"),
-				MsgID:   "msg-123",
+	t.Run("from TopicEvent (LeaveEvent)", func(t *testing.T) {
+		event := &clmimicry.LeaveEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
+			Topic: "/eth2/4a26c58b/beacon_attestation_5/ssz_snappy",
 		}
 
 		topics := clmimicry.GetGossipTopics(event)
-		assert.Equal(t, []string{"/eth2/test/topic_id"}, topics)
+		assert.Equal(t, []string{"/eth2/4a26c58b/beacon_attestation_5/ssz_snappy"}, topics)
+	})
+
+	t.Run("from TopicEvent (GraftEvent)", func(t *testing.T) {
+		event := &clmimicry.GraftEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			Topic: "/eth2/4a26c58b/voluntary_exit/ssz_snappy",
+		}
+
+		topics := clmimicry.GetGossipTopics(event)
+		assert.Equal(t, []string{"/eth2/4a26c58b/voluntary_exit/ssz_snappy"}, topics)
+	})
+
+	t.Run("from TopicEvent (PruneEvent)", func(t *testing.T) {
+		event := &clmimicry.PruneEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			Topic: "/eth2/4a26c58b/proposer_slashing/ssz_snappy",
+		}
+
+		topics := clmimicry.GetGossipTopics(event)
+		assert.Equal(t, []string{"/eth2/4a26c58b/proposer_slashing/ssz_snappy"}, topics)
+	})
+
+	t.Run("from TopicEvent (PublishMessageEvent)", func(t *testing.T) {
+		event := &clmimicry.PublishMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
+			},
+			MsgID: "msg-123",
+			Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
+		}
+
+		topics := clmimicry.GetGossipTopics(event)
+		assert.Equal(t, []string{"/eth2/4a26c58b/beacon_block/ssz_snappy"}, topics)
 	})
 
 	t.Run("edge cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			event    *clmimicry.TraceEvent
+			event    clmimicry.TraceEvent
 			expected []string
 		}{
 			{
@@ -260,27 +223,24 @@ func TestGetGossipTopics(t *testing.T) {
 				expected: nil,
 			},
 			{
-				name:     "nil payload",
-				event:    &clmimicry.TraceEvent{Payload: nil},
-				expected: []string{},
-			},
-			{
-				name:     "empty RpcMeta",
-				event:    &clmimicry.TraceEvent{Payload: &clmimicry.RpcMeta{}},
-				expected: []string{},
-			},
-			{
-				name: "gossipsub event with topic in event",
-				event: &clmimicry.TraceEvent{
-					Topic:   "/eth2/12345678/beacon_attestation_1/ssz_snappy",
-					Payload: map[string]any{"MsgID": "msg-123"},
+				name: "empty RpcMeta",
+				event: &clmimicry.RecvRPCEvent{
+					TraceEventBase: clmimicry.TraceEventBase{
+						Timestamp: time.Now(),
+						PeerID:    peerID,
+					},
+					Meta: &clmimicry.RpcMeta{},
 				},
-				expected: []string{"/eth2/12345678/beacon_attestation_1/ssz_snappy"},
+				expected: []string{},
 			},
 			{
 				name: "RpcMeta with nil control",
-				event: &clmimicry.TraceEvent{
-					Payload: &clmimicry.RpcMeta{
+				event: &clmimicry.RecvRPCEvent{
+					TraceEventBase: clmimicry.TraceEventBase{
+						Timestamp: time.Now(),
+						PeerID:    peerID,
+					},
+					Meta: &clmimicry.RpcMeta{
 						Messages: []clmimicry.RpcMetaMsg{
 							{Topic: "/eth2/test/topic"},
 						},
@@ -291,14 +251,28 @@ func TestGetGossipTopics(t *testing.T) {
 			},
 			{
 				name: "RpcMeta with empty topics",
-				event: &clmimicry.TraceEvent{
-					Payload: &clmimicry.RpcMeta{
+				event: &clmimicry.RecvRPCEvent{
+					TraceEventBase: clmimicry.TraceEventBase{
+						Timestamp: time.Now(),
+						PeerID:    peerID,
+					},
+					Meta: &clmimicry.RpcMeta{
 						Messages: []clmimicry.RpcMetaMsg{
 							{Topic: ""}, // empty topic
 						},
 						Subscriptions: []clmimicry.RpcMetaSub{
 							{TopicID: ""}, // empty topic
 						},
+					},
+				},
+				expected: []string{},
+			},
+			{
+				name: "event without Topic (AddPeerEvent)",
+				event: &clmimicry.AddPeerEvent{
+					TraceEventBase: clmimicry.TraceEventBase{
+						Timestamp: time.Now(),
+						PeerID:    peerID,
 					},
 				},
 				expected: []string{},
@@ -312,52 +286,20 @@ func TestGetGossipTopics(t *testing.T) {
 			})
 		}
 	})
-
-	t.Run("reflection safety - no panic on various types", func(t *testing.T) {
-		// Test that reflection code doesn't panic on various field types
-		type TestStruct struct {
-			Topic      string
-			TopicPtr   *string
-			TopicId    *wrapperspb.StringValue
-			TopicSlice []string
-			TopicMap   map[string]string
-			TopicChan  chan string
-			TopicFunc  func() string
-			TopicInt   int
-		}
-
-		topicStr := "/eth2/test/topic"
-		event := &clmimicry.TraceEvent{
-			Payload: &TestStruct{
-				Topic:      topicStr,
-				TopicPtr:   &topicStr,
-				TopicId:    wrapperspb.String("/eth2/test/topic_id"),
-				TopicSlice: []string{topicStr},
-				TopicMap:   map[string]string{"key": topicStr},
-				TopicChan:  nil, // nil channel
-				TopicFunc:  nil, // nil func
-				TopicInt:   123,
-			},
-		}
-
-		// Should not panic
-		require.NotPanics(t, func() {
-			topics := clmimicry.GetGossipTopics(event)
-			// Should extract only the TopicId field (wrapperspb.StringValue)
-			// The plain string Topic field is not extracted by the reflection code
-			assert.Equal(t, []string{"/eth2/test/topic_id"}, topics)
-		})
-	})
 }
 
 // Benchmark tests
 func BenchmarkGetMsgID(b *testing.B) {
-	b.Run("map payload", func(b *testing.B) {
-		event := &clmimicry.TraceEvent{
-			Payload: map[string]any{
-				"MsgID": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-				"Topic": "/eth2/4a26c58b/beacon_block/ssz_snappy",
+	peerID, _ := peer.Decode("16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq")
+
+	b.Run("PublishMessageEvent", func(b *testing.B) {
+		event := &clmimicry.PublishMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
+			MsgID: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
 		}
 
 		b.ResetTimer()
@@ -366,17 +308,14 @@ func BenchmarkGetMsgID(b *testing.B) {
 		}
 	})
 
-	b.Run("struct payload", func(b *testing.B) {
-		type TestPayload struct {
-			MsgID string
-			Topic string
-		}
-
-		event := &clmimicry.TraceEvent{
-			Payload: &TestPayload{
-				MsgID: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-				Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
+	b.Run("DeliverMessageEvent", func(b *testing.B) {
+		event := &clmimicry.DeliverMessageEvent{
+			TraceEventBase: clmimicry.TraceEventBase{
+				Timestamp: time.Now(),
+				PeerID:    peerID,
 			},
+			MsgID: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			Topic: "/eth2/4a26c58b/beacon_block/ssz_snappy",
 		}
 
 		b.ResetTimer()
@@ -398,10 +337,12 @@ func BenchmarkGetGossipTopics_Large(b *testing.B) {
 		}
 	}
 
-	event := &clmimicry.TraceEvent{
-		Type:   "LIBP2P_TRACE_RECV_RPC",
-		PeerID: peerID,
-		Payload: &clmimicry.RpcMeta{
+	event := &clmimicry.RecvRPCEvent{
+		TraceEventBase: clmimicry.TraceEventBase{
+			Timestamp: time.Now(),
+			PeerID:    peerID,
+		},
+		Meta: &clmimicry.RpcMeta{
 			PeerID:   peerID,
 			Messages: messages,
 		},

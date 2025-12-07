@@ -7,7 +7,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -608,6 +608,7 @@ func TestTraceEventToCustodyProbe(t *testing.T) {
 				},
 			},
 			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
 				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
 				assert.Equal(t, uint32(100), result.Epoch.GetValue())
 				assert.Equal(t, uint32(3200), result.Slot.GetValue())
@@ -636,6 +637,7 @@ func TestTraceEventToCustodyProbe(t *testing.T) {
 				},
 			},
 			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
 				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
 				assert.Equal(t, "failure", result.Result.GetValue())
 				assert.Equal(t, "timeout", result.Error.GetValue())
@@ -657,6 +659,7 @@ func TestTraceEventToCustodyProbe(t *testing.T) {
 				},
 			},
 			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
 				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
 				assert.Equal(t, uint32(100), result.Epoch.GetValue())
 				assert.Equal(t, uint32(3200), result.Slot.GetValue())

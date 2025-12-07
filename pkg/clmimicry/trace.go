@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -39,7 +38,7 @@ func IsShardActive(shard uint64, activeShards []uint64) bool {
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
 // in the sample based on the configured trace settings.
 func (p *Processor) ShouldTraceMessage(
-	event *host.TraceEvent,
+	event *TraceEvent,
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
 ) bool {

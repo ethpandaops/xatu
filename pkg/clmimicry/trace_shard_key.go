@@ -3,12 +3,11 @@ package clmimicry
 import (
 	"reflect"
 
-	"github.com/probe-lab/hermes/host"
 )
 
 // GetMsgID extracts the message ID from the event for sharding.
 // We only shard based on message IDs, not peer IDs.
-func GetMsgID(event *host.TraceEvent) string {
+func GetMsgID(event *TraceEvent) string {
 	if event == nil {
 		return ""
 	}
@@ -47,7 +46,7 @@ func GetMsgID(event *host.TraceEvent) string {
 
 // GetGossipTopics extracts all gossip topics from a trace event if available.
 // Returns a slice of unique topics found in the event.
-func GetGossipTopics(event *host.TraceEvent) []string {
+func GetGossipTopics(event *TraceEvent) []string {
 	if event == nil {
 		return nil
 	}
@@ -61,7 +60,7 @@ func GetGossipTopics(event *host.TraceEvent) []string {
 
 	// Handle different payload types
 	switch payload := event.Payload.(type) {
-	case *host.RpcMeta:
+	case *RpcMeta:
 		extractTopicsFromRpcMeta(payload, topicSet)
 	case map[string]any:
 		extractTopicsFromMapPayload(payload, topicSet)
@@ -73,7 +72,7 @@ func GetGossipTopics(event *host.TraceEvent) []string {
 }
 
 // extractTopicsFromRpcMeta extracts topics from RPC meta payload.
-func extractTopicsFromRpcMeta(rpcMeta *host.RpcMeta, topicSet map[string]bool) {
+func extractTopicsFromRpcMeta(rpcMeta *RpcMeta, topicSet map[string]bool) {
 	// Extract topics from messages
 	for _, msg := range rpcMeta.Messages {
 		if msg.Topic != "" {
@@ -95,7 +94,7 @@ func extractTopicsFromRpcMeta(rpcMeta *host.RpcMeta, topicSet map[string]bool) {
 }
 
 // extractTopicsFromControlMessages extracts topics from RPC control messages.
-func extractTopicsFromControlMessages(control *host.RpcMetaControl, topicSet map[string]bool) {
+func extractTopicsFromControlMessages(control *RpcMetaControl, topicSet map[string]bool) {
 	// Extract from IHave messages
 	for _, ihave := range control.IHave {
 		if ihave.TopicID != "" {

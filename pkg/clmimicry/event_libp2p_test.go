@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	"github.com/probe-lab/hermes/host"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +21,35 @@ import (
 )
 
 const examplePeerID = "16Uiu2HAm68jFpjEsRyc1rksPWCorrqwoyR7qdPSvHcinzssnMXJq"
+
+// testMimicry is a test helper struct that holds components needed for testing
+type testMimicry struct {
+	Config    *Config
+	sinks     []output.Sink
+	log       *logrus.Entry
+	id        uuid.UUID
+	metrics   *Metrics
+	sharder   *UnifiedSharder
+	processor *Processor
+}
+
+// GetProcessor returns the processor for testing
+func (m *testMimicry) GetProcessor() *Processor {
+	return m.processor
+}
+
+// testOutputHandler wraps a mock sink to implement OutputHandler interface
+type testOutputHandler struct {
+	sink output.Sink
+}
+
+func (h *testOutputHandler) HandleDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
+	return h.sink.HandleNewDecoratedEvent(ctx, event)
+}
+
+func (h *testOutputHandler) HandleDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	return h.sink.HandleNewDecoratedEvents(ctx, events)
+}
 
 // eventCountAssertion is a helper to validate event counts.
 type eventCountAssertion struct {
@@ -44,7 +72,7 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -57,10 +85,10 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: true,
 				},
 			},
-			event: createRPCEvent(peerID, &host.RpcMeta{
+			event: createRPCEvent(peerID, &RpcMeta{
 				PeerID: peerID,
-				Control: &host.RpcMetaControl{
-					IHave: []host.RpcControlIHave{
+				Control: &RpcMetaControl{
+					IHave: []RpcControlIHave{
 						{
 							TopicID: "/eth2/test-topic",
 							MsgIDs:  []string{"msg1", "msg2", "msg3"},
@@ -83,14 +111,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlIWantEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IWant: []host.RpcControlIWant{
+					Control: &RpcMetaControl{
+						IWant: []RpcControlIWant{
 							{
 								MsgIDs: []string{"msg1", "msg2"},
 							},
@@ -113,14 +141,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlIDontWantEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Idontwant: []host.RpcControlIdontWant{
+					Control: &RpcMetaControl{
+						Idontwant: []RpcControlIdontWant{
 							{
 								MsgIDs: []string{"msg1", "msg2", "msg3", "msg4"},
 							},
@@ -143,14 +171,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlGraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Graft: []host.RpcControlGraft{
+					Control: &RpcMetaControl{
+						Graft: []RpcControlGraft{
 							{
 								TopicID: "/eth2/test-topic-1",
 							},
@@ -176,14 +204,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Prune: []host.RpcControlPrune{
+					Control: &RpcMetaControl{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/test-topic",
 								PeerIDs: []peer.ID{
@@ -210,14 +238,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Prune: []host.RpcControlPrune{
+					Control: &RpcMetaControl{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/test-topic",
 								PeerIDs: []peer.ID{}, // Empty peer IDs
@@ -241,14 +269,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Prune: []host.RpcControlPrune{
+					Control: &RpcMetaControl{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/test-topic-1",
 								PeerIDs: []peer.ID{
@@ -282,26 +310,26 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: createRPCEvent(peerID, &host.RpcMeta{
+			event: createRPCEvent(peerID, &RpcMeta{
 				PeerID: peerID,
-				Control: &host.RpcMetaControl{
-					IHave: []host.RpcControlIHave{
+				Control: &RpcMetaControl{
+					IHave: []RpcControlIHave{
 						{
 							TopicID: "/eth2/test-topic",
 							MsgIDs:  []string{"msg1", "msg2"},
 						},
 					},
-					IWant: []host.RpcControlIWant{
+					IWant: []RpcControlIWant{
 						{
 							MsgIDs: []string{"msg3"},
 						},
 					},
-					Graft: []host.RpcControlGraft{
+					Graft: []RpcControlGraft{
 						{
 							TopicID: "/eth2/test-topic",
 						},
 					},
-					Prune: []host.RpcControlPrune{
+					Prune: []RpcControlPrune{
 						{
 							TopicID: "/eth2/test-topic",
 							PeerIDs: []peer.ID{peer.ID("peer1")},
@@ -332,30 +360,30 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled:     false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1"},
 							},
 						},
-						IWant: []host.RpcControlIWant{
+						IWant: []RpcControlIWant{
 							{
 								MsgIDs: []string{"msg2"},
 							},
 						},
-						Graft: []host.RpcControlGraft{
+						Graft: []RpcControlGraft{
 							{
 								TopicID: "/eth2/test-topic",
 							},
 						},
-						Prune: []host.RpcControlPrune{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/test-topic",
 								PeerIDs: []peer.ID{},
@@ -375,14 +403,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{}, // Empty message IDs
@@ -402,14 +430,14 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/topic-1",
 								MsgIDs:  []string{"msg1", "msg2"},
@@ -452,13 +480,13 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaSubscriptionEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/beacon_block/ssz_snappy",
@@ -506,13 +534,13 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/beacon_block/ssz_snappy",
@@ -562,26 +590,26 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlGraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/test-topic",
 						},
 					},
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
 						},
 					},
-					Control: &host.RpcMetaControl{
-						Graft: []host.RpcControlGraft{
+					Control: &RpcMetaControl{
+						Graft: []RpcControlGraft{
 							{
 								TopicID: "/eth2/test-topic",
 							},
@@ -607,13 +635,13 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaSubscriptionEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID:        peerID,
-					Subscriptions: []host.RpcMetaSub{}, // Empty subscriptions
+					Subscriptions: []RpcMetaSub{}, // Empty subscriptions
 				},
 			},
 			expectError:    false,
@@ -627,13 +655,13 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID:   peerID,
-					Messages: []host.RpcMetaMsg{}, // Empty messages
+					Messages: []RpcMetaMsg{}, // Empty messages
 				},
 			},
 			expectError:    false,
@@ -653,26 +681,26 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled:     false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/test-topic",
 						},
 					},
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
 						},
 					},
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1"},
@@ -692,13 +720,13 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 					RpcMetaSubscriptionEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "RecvRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/beacon_block/ssz_snappy",
@@ -786,7 +814,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -798,7 +826,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -828,7 +856,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -858,7 +886,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -877,7 +905,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -902,7 +930,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -920,7 +948,7 @@ func Test_handleAddPeerEvent(t *testing.T) {
 					AddPeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "ADD_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -969,7 +997,7 @@ func Test_handleRemovePeerEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -981,7 +1009,7 @@ func Test_handleRemovePeerEvent(t *testing.T) {
 					RemovePeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REMOVE_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1009,7 +1037,7 @@ func Test_handleRemovePeerEvent(t *testing.T) {
 					RemovePeerEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REMOVE_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1027,7 +1055,7 @@ func Test_handleRemovePeerEvent(t *testing.T) {
 					RemovePeerEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REMOVE_PEER",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1070,7 +1098,7 @@ func Test_handleJoinEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1082,7 +1110,7 @@ func Test_handleJoinEvent(t *testing.T) {
 					JoinEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "JOIN",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1111,7 +1139,7 @@ func Test_handleJoinEvent(t *testing.T) {
 					JoinEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "JOIN",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1130,7 +1158,7 @@ func Test_handleJoinEvent(t *testing.T) {
 					JoinEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "JOIN",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1173,7 +1201,7 @@ func Test_handleLeaveEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1185,7 +1213,7 @@ func Test_handleLeaveEvent(t *testing.T) {
 					LeaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "LEAVE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1214,7 +1242,7 @@ func Test_handleLeaveEvent(t *testing.T) {
 					LeaveEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "LEAVE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1233,7 +1261,7 @@ func Test_handleLeaveEvent(t *testing.T) {
 					LeaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "LEAVE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1280,7 +1308,7 @@ func Test_handleGraftEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1292,7 +1320,7 @@ func Test_handleGraftEvent(t *testing.T) {
 					GraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "GRAFT",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1322,7 +1350,7 @@ func Test_handleGraftEvent(t *testing.T) {
 					GraftEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "GRAFT",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1341,7 +1369,7 @@ func Test_handleGraftEvent(t *testing.T) {
 					GraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "GRAFT",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1359,7 +1387,7 @@ func Test_handleGraftEvent(t *testing.T) {
 					GraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "GRAFT",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1408,7 +1436,7 @@ func Test_handlePruneEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1420,7 +1448,7 @@ func Test_handlePruneEvent(t *testing.T) {
 					PruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PRUNE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1450,7 +1478,7 @@ func Test_handlePruneEvent(t *testing.T) {
 					PruneEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PRUNE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1469,7 +1497,7 @@ func Test_handlePruneEvent(t *testing.T) {
 					PruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PRUNE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1487,7 +1515,7 @@ func Test_handlePruneEvent(t *testing.T) {
 					PruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PRUNE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1532,7 +1560,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1544,7 +1572,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 					PublishMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PUBLISH_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1574,7 +1602,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 					PublishMessageEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PUBLISH_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1593,7 +1621,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 					PublishMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PUBLISH_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1611,7 +1639,7 @@ func Test_handlePublishMessageEvent(t *testing.T) {
 					PublishMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "PUBLISH_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1660,7 +1688,7 @@ func Test_handleRejectMessageEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1672,7 +1700,7 @@ func Test_handleRejectMessageEvent(t *testing.T) {
 					RejectMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REJECT_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1712,7 +1740,7 @@ func Test_handleRejectMessageEvent(t *testing.T) {
 					RejectMessageEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REJECT_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1736,7 +1764,7 @@ func Test_handleRejectMessageEvent(t *testing.T) {
 					RejectMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "REJECT_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1790,7 +1818,7 @@ func Test_handleDeliverMessageEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1802,7 +1830,7 @@ func Test_handleDeliverMessageEvent(t *testing.T) {
 					DeliverMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DELIVER_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1840,7 +1868,7 @@ func Test_handleDeliverMessageEvent(t *testing.T) {
 					DeliverMessageEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DELIVER_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1863,7 +1891,7 @@ func Test_handleDeliverMessageEvent(t *testing.T) {
 					DeliverMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DELIVER_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1916,7 +1944,7 @@ func Test_handleDuplicateMessageEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -1928,7 +1956,7 @@ func Test_handleDuplicateMessageEvent(t *testing.T) {
 					DuplicateMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DUPLICATE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1966,7 +1994,7 @@ func Test_handleDuplicateMessageEvent(t *testing.T) {
 					DuplicateMessageEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DUPLICATE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -1989,7 +2017,7 @@ func Test_handleDuplicateMessageEvent(t *testing.T) {
 					DuplicateMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DUPLICATE_MESSAGE",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -2038,7 +2066,7 @@ func Test_handleSendRPCEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -2051,14 +2079,14 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1", "msg2"},
@@ -2083,13 +2111,13 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaSubscriptionEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/beacon_block/ssz_snappy",
@@ -2141,13 +2169,13 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/beacon_block/ssz_snappy",
@@ -2174,14 +2202,14 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					SendRPCEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1"},
@@ -2203,26 +2231,26 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/test-topic",
 						},
 					},
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
 						},
 					},
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1"},
@@ -2241,7 +2269,7 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					SendRPCEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -2259,19 +2287,19 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Graft: []host.RpcControlGraft{
+					Control: &RpcMetaControl{
+						Graft: []RpcControlGraft{
 							{
 								TopicID: "/eth2/beacon_block/ssz_snappy",
 							},
 						},
-						Prune: []host.RpcControlPrune{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/beacon_attestation/ssz_snappy",
 								PeerIDs: []peer.ID{peer.ID("peer1")},
@@ -2298,15 +2326,15 @@ func Test_handleSendRPCEvent(t *testing.T) {
 					RpcMetaMessageEnabled:      true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "SendRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID:        peerID,
-					Messages:      []host.RpcMetaMsg{},    // Empty messages
-					Subscriptions: []host.RpcMetaSub{},    // Empty subscriptions
-					Control:       &host.RpcMetaControl{}, // Empty control
+					Messages:      []RpcMetaMsg{},    // Empty messages
+					Subscriptions: []RpcMetaSub{},    // Empty subscriptions
+					Control:       &RpcMetaControl{}, // Empty control
 				},
 			},
 			expectError:    false,
@@ -2345,7 +2373,7 @@ func Test_handleDropRPCEvent(t *testing.T) {
 	tests := []struct {
 		name           string
 		config         *Config
-		event          *host.TraceEvent
+		event          *TraceEvent
 		expectError    bool
 		validateCalls  func(t *testing.T, events []*xatu.DecoratedEvent)
 		setupMockCalls func(*mock.MockSink)
@@ -2358,14 +2386,14 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlIWantEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						IWant: []host.RpcControlIWant{
+					Control: &RpcMetaControl{
+						IWant: []RpcControlIWant{
 							{
 								MsgIDs: []string{"msg1", "msg2", "msg3"},
 							},
@@ -2389,13 +2417,13 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaSubscriptionEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/beacon_block/ssz_snappy",
@@ -2427,13 +2455,13 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaMessageEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/beacon_block/ssz_snappy",
@@ -2456,13 +2484,13 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					DropRPCEnabled: false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
@@ -2487,26 +2515,26 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled:     false,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: true,
 							TopicID:   "/eth2/test-topic",
 						},
 					},
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
 						},
 					},
-					Control: &host.RpcMetaControl{
-						IHave: []host.RpcControlIHave{
+					Control: &RpcMetaControl{
+						IHave: []RpcControlIHave{
 							{
 								TopicID: "/eth2/test-topic",
 								MsgIDs:  []string{"msg1"},
@@ -2525,7 +2553,7 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					DropRPCEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
@@ -2542,14 +2570,14 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlPruneEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Prune: []host.RpcControlPrune{
+					Control: &RpcMetaControl{
+						Prune: []RpcControlPrune{
 							{
 								TopicID: "/eth2/beacon_block/ssz_snappy",
 								PeerIDs: []peer.ID{}, // No peer IDs
@@ -2578,14 +2606,14 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlIDontWantEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Control: &host.RpcMetaControl{
-						Idontwant: []host.RpcControlIdontWant{
+					Control: &RpcMetaControl{
+						Idontwant: []RpcControlIdontWant{
 							{
 								MsgIDs: []string{"msg1", "msg2"},
 							},
@@ -2611,19 +2639,19 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlGraftEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
-					Subscriptions: []host.RpcMetaSub{
+					Subscriptions: []RpcMetaSub{
 						{
 							Subscribe: false,
 							TopicID:   "/eth2/test-topic",
 						},
 					},
-					Messages: []host.RpcMetaMsg{
+					Messages: []RpcMetaMsg{
 						{
 							MsgID: "msg1",
 							Topic: "/eth2/test-topic",
@@ -2633,8 +2661,8 @@ func Test_handleDropRPCEvent(t *testing.T) {
 							Topic: "/eth2/test-topic",
 						},
 					},
-					Control: &host.RpcMetaControl{
-						Graft: []host.RpcControlGraft{
+					Control: &RpcMetaControl{
+						Graft: []RpcControlGraft{
 							{
 								TopicID: "/eth2/test-topic",
 							},
@@ -2660,11 +2688,11 @@ func Test_handleDropRPCEvent(t *testing.T) {
 					RpcMetaControlIHaveEnabled: true,
 				},
 			},
-			event: &host.TraceEvent{
+			event: &TraceEvent{
 				Type:      "DropRPC",
 				PeerID:    peerID,
 				Timestamp: time.Now(),
-				Payload: &host.RpcMeta{
+				Payload: &RpcMeta{
 					PeerID: peerID,
 				},
 			},
@@ -2707,8 +2735,8 @@ func countEventsByType(events []*xatu.DecoratedEvent) map[xatu.Event_Name]int {
 }
 
 // Helper function to create a basic RPC event
-func createRPCEvent(peerID peer.ID, rpcMeta *host.RpcMeta) *host.TraceEvent {
-	return &host.TraceEvent{
+func createRPCEvent(peerID peer.ID, rpcMeta *RpcMeta) *TraceEvent {
+	return &TraceEvent{
 		Type:      "RecvRPC",
 		PeerID:    peerID,
 		Timestamp: time.Now(),
@@ -2748,7 +2776,7 @@ func validateEventCounts(t *testing.T, events []*xatu.DecoratedEvent, assertions
 }
 
 // Helper to create a test mimicry instance
-func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry {
+func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *testMimicry {
 	t.Helper()
 
 	// Create sharder from config if sharding is configured, otherwise disable it
@@ -2769,7 +2797,7 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 		}
 	}
 
-	mimicry := &Mimicry{
+	mimicry := &testMimicry{
 		Config:  config,
 		sinks:   []output.Sink{sink},
 		log:     logrus.NewEntry(logrus.New()),
@@ -2781,15 +2809,15 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *Mimicry 
 	wallclock := &ethwallclock.EthereumBeaconChain{}
 
 	mimicry.processor = NewProcessor(
-		mimicry,               // DutiesProvider
-		mimicry,               // OutputHandler
-		mimicry.metrics,       // MetricsCollector
-		mimicry,               // MetaProvider
-		mimicry.sharder,       // UnifiedSharder
-		NewEventCategorizer(), // EventCategorizer
-		wallclock,             // EthereumBeaconChain
-		time.Duration(0),      // clockDrift
-		config.Events,         // EventConfig
+		nil,                            // DutiesProvider - not used in these tests
+		&testOutputHandler{sink: sink}, // OutputHandler wrapping the mock sink
+		mimicry.metrics,                // MetricsCollector
+		nil,                            // MetaProvider - not used in these tests
+		mimicry.sharder,                // UnifiedSharder
+		NewEventCategorizer(),          // EventCategorizer
+		wallclock,                      // EthereumBeaconChain
+		time.Duration(0),               // clockDrift
+		config.Events,                  // EventConfig
 		mimicry.log.WithField("component", "processor"),
 	)
 

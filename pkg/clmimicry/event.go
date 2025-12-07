@@ -8,12 +8,14 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Define events not supplied by libp2p proto pkgs.
 const (
+	// unknown is used as a fallback value when network ID cannot be determined.
+	unknown = "unknown"
+
 	// libp2p pubsub events.
 	TraceEvent_HANDLE_MESSAGE = "HANDLE_MESSAGE"
 
@@ -55,7 +57,7 @@ const (
 //   - "HANDLE_STATUS": Processing of status requests
 
 // HandleHermesEvent processes a Hermes trace event and routes it to the appropriate handler
-func (p *Processor) HandleHermesEvent(ctx context.Context, event *host.TraceEvent) error {
+func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) error {
 	if event == nil {
 		return errors.New("event is nil")
 	}
@@ -111,27 +113,27 @@ func getNetworkID(clientMeta *xatu.ClientMeta) string {
 }
 
 // isRpcEvent checks if the event is a RPC event.
-func isRpcEvent(event *host.TraceEvent) bool {
+func isRpcEvent(event *TraceEvent) bool {
 	_, exists := rpcToXatuEventMap[event.Type]
 
 	return exists
 }
 
 // isLibp2pCoreEvent checks if the event is a libp2p core event.
-func isLibp2pCoreEvent(event *host.TraceEvent) bool {
+func isLibp2pCoreEvent(event *TraceEvent) bool {
 	_, exists := libp2pCoreToXatuEventMap[event.Type]
 
 	return exists
 }
 
 // isLibp2pEvent checks if the event is a libp2p event.
-func isLibp2pEvent(event *host.TraceEvent) bool {
+func isLibp2pEvent(event *TraceEvent) bool {
 	_, exists := libp2pToXatuEventMap[event.Type]
 
 	return exists
 }
 
 // isGossipSubEvent checks if the event is a gossipsub event.
-func isGossipSubEvent(event *host.TraceEvent) bool {
+func isGossipSubEvent(event *TraceEvent) bool {
 	return slices.Contains(gossipsubEventTypes, event.Type)
 }

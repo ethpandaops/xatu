@@ -16,10 +16,10 @@ networks:
             WHERE epoch = 177 AND
               block_root = '0x3de66e814bb7b124c2464d375fec247c6a5e157ca169d900a67c78433c59ebce' AND
               block_version = 'deneb' AND
-              deposit_data_pubkey = '0x8769e77a1e7db7125004e4bbfc1ba7dbf8fd26420a207644cc75dffe30e75beefc3e35ea2daff1e3ed1e73fba02fecd7' AND
-              deposit_data_withdrawal_credentials = '0x00fb41526eaafc369e15d5e5d1c86817ea36e4e7029487058f08c46f0ed91841' AND
+              deposit_data_pubkey = '0x82586e0c10f84614733e5752428cbbe809e3699d9a3bc5bc604e81169e6a59304352237e39c8e6644acae5f595f1a864' AND
+              deposit_data_withdrawal_credentials = '0x010000000000000000000000382f6ff5b9a29fcf1dd2bf8b86c3234dc7ed2df6' AND
               deposit_data_amount = 32000000000 AND
-              deposit_data_signature = '0x8d68cb1263b0e0b6e94f986e3f1a349f71ff47d53258830ee3b282cca0c5adef5044146277fa4d3ba5100648b45da19304fb0d33739c4b4b821ea77cba5e48d7a807ca8de96a088e0f341464bf1a6f3ee668d0a4ec1e864f0c6250e91df1c2ad';
+              deposit_data_signature = '0x97fa3ccfe4c6cfafa371e9f4884bb4901e4757ff25214e58b4aa7736e75f6d559f345029dff267b019c40fcc5d3530650854c778c3c096926ab9099395ce569b54cb8f180634e7084f918e7a82d378166257d4d1b9cd6455a842392931be4b6f';
           "
           expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE

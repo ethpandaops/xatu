@@ -107,7 +107,7 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://bn-hoodi-lighthouse-erigon-001.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://bn-hoodi-teku-geth-001.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
         coordinator:

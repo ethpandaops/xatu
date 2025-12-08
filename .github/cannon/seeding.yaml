@@ -73,20 +73,21 @@ networks:
           FROM canonical_beacon_block_proposer_slashing FINAL
           WHERE
             epoch = 2065
-            AND block_root = '0x0fc12f0dcf7510957b05f29e39eec0b7de4751b6398e32a15ebe71173062d5c6'
+            AND slot = 66085
+            AND block_root = '0xf460a8197c29b91122cf2801ed81fc2921a5b4617510d3ae45d083a089a288bd'
             AND block_version = 'electra'
-            AND signed_header_1_message_slot = 66081
-            AND signed_header_1_message_proposer_index = 975067
+            AND signed_header_1_message_slot = 66084
+            AND signed_header_1_message_proposer_index = 975061
             AND signed_header_1_message_body_root = '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'
             AND signed_header_1_message_parent_root = '0x1010101010101010101010101010101010101010101010101010101010101010'
             AND signed_header_1_message_state_root = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-            AND signed_header_1_signature = '0xa3b8b389352336ffd258cf80b6d8ba4c5daace83fee249abbe13ff0edb7b175176c313eab87a280b448891b20acf5154139127eb45361411e518a4c66d58a3a7bfefbcb5e48f42f627656e6f6ed49152dfc10fa935d9864cfbf207fe7f26a659'
-            AND signed_header_2_message_slot = 66081
-            AND signed_header_2_message_proposer_index = 975067
+            AND signed_header_1_signature = '0x901ff1a361d4699da28490348dc3a7872ba0f15c6a2b85f843bde8cac131bd08679ce166bfb3d95d8898acca5d74f46b15c3165c1ae808ab3645c0ab82fc26bd9765cb9b24a83168ba3629db63070de2190855ac9df18c0755935ea155df4603'
+            AND signed_header_2_message_slot = 66084
+            AND signed_header_2_message_proposer_index = 975061
             AND signed_header_2_message_body_root = '0xb1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1'
             AND signed_header_2_message_parent_root = '0x1010101010101010101010101010101010101010101010101010101010101010'
             AND signed_header_2_message_state_root = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            AND signed_header_2_signature = '0x98b7caa94cea24a63e804e967f8ca4eb27041aeb441aea995263c98a706cb021a9b9b83740c66a594bb8666d1f107018002b027a2dd50a3ebc8d99254ea76d7e14e6a2c6906d8692336c2b6be78e612313d80f8ff07b2dee6fbb8f2f969f71b1'
+            AND signed_header_2_signature = '0xb29e9fc33ae92c26f96fe18b8b295ab869c54807d004a9b56e16720080123f011fb09d41b66f379fa3b98749d1d5bb90101207415e64343f07e28d601537381c5e8013afb79fb5f904f726cd2d986c503ae40c865b5f6dc217cd46f920d04b9b'
           "
           expected: "1"
       - name: BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT

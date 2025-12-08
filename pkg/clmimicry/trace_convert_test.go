@@ -1,13 +1,13 @@
-package libp2p
+package clmimicry
 
 import (
 	"testing"
 
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/probe-lab/hermes/host"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -20,12 +20,13 @@ func TestTraceEventToRPC(t *testing.T) {
 	peerID, err := peer.Decode(peerIDStr)
 	require.NoError(t, err)
 
-	type traceEventFunc func(*host.TraceEvent) (interface{}, error)
+	type traceEventFunc func(*TraceEvent) (interface{}, error)
+
 	traceEventFuncs := map[string]traceEventFunc{
-		"RecvRPC": func(event *host.TraceEvent) (interface{}, error) {
+		"RecvRPC": func(event *TraceEvent) (interface{}, error) {
 			return TraceEventToRecvRPC(event)
 		},
-		"SendRPC": func(event *host.TraceEvent) (interface{}, error) {
+		"SendRPC": func(event *TraceEvent) (interface{}, error) {
 			return TraceEventToSendRPC(event)
 		},
 	}
@@ -33,7 +34,7 @@ func TestTraceEventToRPC(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		name        string
-		input       *host.TraceEvent
+		input       *TraceEvent
 		expectError bool
 	}{
 		{
@@ -66,7 +67,7 @@ func TestTraceEventToRPC(t *testing.T) {
 		},
 		{
 			name: "invalid payload type",
-			input: &host.TraceEvent{
+			input: &TraceEvent{
 				PeerID:  peerID,
 				Payload: "not an RpcMeta",
 			},
@@ -96,36 +97,36 @@ func TestTraceEventToRPC(t *testing.T) {
 					// Create expected output based on the function type.
 					var expected interface{}
 
-					payload, ok := tt.input.Payload.(*host.RpcMeta)
+					payload, ok := tt.input.Payload.(*RpcMeta)
 					require.True(t, ok)
 
 					meta := createExpectedRPCMeta(peerIDStr, payload)
 
 					if name == "RecvRPC" {
-						expected = &RecvRPC{
+						expected = &libp2p.RecvRPC{
 							PeerId: wrapperspb.String(peerIDStr),
 							Meta:   meta,
 						}
 
-						actual, ok := result.(*RecvRPC)
+						actual, ok := result.(*libp2p.RecvRPC)
 						require.True(t, ok)
 
 						// Safe type assertion since we created expected as *RecvRPC above
-						expectedRecv, ok := expected.(*RecvRPC)
+						expectedRecv, ok := expected.(*libp2p.RecvRPC)
 						require.True(t, ok)
 
 						assertRPCEquals(t, expectedRecv, actual)
 					} else {
-						expected = &SendRPC{
+						expected = &libp2p.SendRPC{
 							PeerId: wrapperspb.String(peerIDStr),
 							Meta:   meta,
 						}
 
-						actual, ok := result.(*SendRPC)
+						actual, ok := result.(*libp2p.SendRPC)
 						require.True(t, ok)
 
 						// Safe type assertion since we created expected as *SendRPC above
-						expectedSend, ok := expected.(*SendRPC)
+						expectedSend, ok := expected.(*libp2p.SendRPC)
 						require.True(t, ok)
 
 						assertRPCEquals(t, expectedSend, actual)
@@ -136,9 +137,9 @@ func TestTraceEventToRPC(t *testing.T) {
 	}
 }
 
-// Helper function to create expected RPCMeta from a host.RpcMeta
-func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
-	meta := &RPCMeta{
+// Helper function to create expected RPCMeta from a RpcMeta
+func createExpectedRPCMeta(peerIDStr string, payload *RpcMeta) *libp2p.RPCMeta {
+	meta := &libp2p.RPCMeta{
 		PeerId: wrapperspb.String(peerIDStr),
 	}
 
@@ -146,7 +147,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 	if len(payload.Messages) > 0 {
 		meta.Messages = createExpectedMessages()
 	} else {
-		meta.Messages = []*MessageMeta{}
+		meta.Messages = []*libp2p.MessageMeta{}
 	}
 
 	// Add subscriptions if any
@@ -156,11 +157,11 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 
 	// Add control if any
 	if payload.Control != nil {
-		meta.Control = &ControlMeta{}
+		meta.Control = &libp2p.ControlMeta{}
 
 		// Add IHave if any
 		if len(payload.Control.IHave) > 0 {
-			meta.Control.Ihave = []*ControlIHaveMeta{
+			meta.Control.Ihave = []*libp2p.ControlIHaveMeta{
 				{
 					TopicId:    wrapperspb.String("topic1"),
 					MessageIds: convertStringValues([]string{"msg1", "msg2"}),
@@ -170,7 +171,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 
 		// Add IWant if any
 		if len(payload.Control.IWant) > 0 {
-			meta.Control.Iwant = []*ControlIWantMeta{
+			meta.Control.Iwant = []*libp2p.ControlIWantMeta{
 				{
 					MessageIds: convertStringValues([]string{"msg1", "msg2"}),
 				},
@@ -180,7 +181,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 			if len(payload.Control.IHave) > 0 &&
 				len(payload.Control.Graft) > 0 &&
 				len(payload.Control.Prune) > 0 {
-				meta.Control.Iwant = []*ControlIWantMeta{
+				meta.Control.Iwant = []*libp2p.ControlIWantMeta{
 					{
 						MessageIds: convertStringValues([]string{"msg3", "msg4"}),
 					},
@@ -190,7 +191,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 
 		// Add IDontWant if any
 		if len(payload.Control.Idontwant) > 0 {
-			meta.Control.Idontwant = []*ControlIDontWantMeta{
+			meta.Control.Idontwant = []*libp2p.ControlIDontWantMeta{
 				{
 					MessageIds: convertStringValues([]string{"msg1", "msg2"}),
 				},
@@ -200,7 +201,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 			if len(payload.Control.IHave) > 0 &&
 				len(payload.Control.IWant) > 0 &&
 				len(payload.Control.Graft) > 0 {
-				meta.Control.Idontwant = []*ControlIDontWantMeta{
+				meta.Control.Idontwant = []*libp2p.ControlIDontWantMeta{
 					{
 						MessageIds: convertStringValues([]string{"msg5", "msg6"}),
 					},
@@ -217,7 +218,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 				topicID = "topic2"
 			}
 
-			meta.Control.Graft = []*ControlGraftMeta{
+			meta.Control.Graft = []*libp2p.ControlGraftMeta{
 				{
 					TopicId: wrapperspb.String(topicID),
 				},
@@ -233,7 +234,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *host.RpcMeta) *RPCMeta {
 				topicID = "topic3"
 			}
 
-			meta.Control.Prune = []*ControlPruneMeta{
+			meta.Control.Prune = []*libp2p.ControlPruneMeta{
 				{
 					TopicId: wrapperspb.String(topicID),
 					PeerIds: convertStringValues([]string{peerIDStr}),
@@ -250,23 +251,24 @@ func assertRPCEquals(t *testing.T, expected, actual interface{}) {
 	t.Helper()
 
 	var expectedPeerID, actualPeerID string
-	var expectedMeta, actualMeta *RPCMeta
+
+	var expectedMeta, actualMeta *libp2p.RPCMeta
 
 	switch e := expected.(type) {
-	case *RecvRPC:
+	case *libp2p.RecvRPC:
 		expectedPeerID = e.PeerId.GetValue()
 		expectedMeta = e.Meta
 
-		a, ok := actual.(*RecvRPC)
+		a, ok := actual.(*libp2p.RecvRPC)
 		require.True(t, ok)
 
 		actualPeerID = a.PeerId.GetValue()
 		actualMeta = a.Meta
-	case *SendRPC:
+	case *libp2p.SendRPC:
 		expectedPeerID = e.PeerId.GetValue()
 		expectedMeta = e.Meta
 
-		a, ok := actual.(*SendRPC)
+		a, ok := actual.(*libp2p.SendRPC)
 		require.True(t, ok)
 
 		actualPeerID = a.PeerId.GetValue()
@@ -280,7 +282,7 @@ func assertRPCEquals(t *testing.T, expected, actual interface{}) {
 }
 
 // Helper function to assert equality between expected and actual RPCMeta objects
-func assertRPCMetaEquals(t *testing.T, expected, actual *RPCMeta) {
+func assertRPCMetaEquals(t *testing.T, expected, actual *libp2p.RPCMeta) {
 	t.Helper()
 
 	if expected.Control != nil {
@@ -311,18 +313,18 @@ func assertRPCMetaEquals(t *testing.T, expected, actual *RPCMeta) {
 	assertSubscriptionsEquals(t, expected.Subscriptions, actual.Subscriptions)
 }
 
-func createTraceEventWithMessages(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithMessages(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Messages: []host.RpcMetaMsg{
+			Messages: []RpcMetaMsg{
 				{
 					MsgID: "msg1",
 					Topic: "topic1",
 				},
 			},
-			Subscriptions: []host.RpcMetaSub{
+			Subscriptions: []RpcMetaSub{
 				{
 					Subscribe: true,
 					TopicID:   "topic1",
@@ -332,13 +334,13 @@ func createTraceEventWithMessages(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithIHave(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithIHave(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IHave: []host.RpcControlIHave{
+			Control: &RpcMetaControl{
+				IHave: []RpcControlIHave{
 					{
 						TopicID: "topic1",
 						MsgIDs:  []string{"msg1", "msg2"},
@@ -349,13 +351,13 @@ func createTraceEventWithIHave(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithIWant(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithIWant(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IWant: []host.RpcControlIWant{
+			Control: &RpcMetaControl{
+				IWant: []RpcControlIWant{
 					{
 						MsgIDs: []string{"msg1", "msg2"},
 					},
@@ -365,13 +367,13 @@ func createTraceEventWithIWant(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithIDontWant(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithIDontWant(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				Idontwant: []host.RpcControlIdontWant{
+			Control: &RpcMetaControl{
+				Idontwant: []RpcControlIdontWant{
 					{
 						MsgIDs: []string{"msg1", "msg2"},
 					},
@@ -381,13 +383,13 @@ func createTraceEventWithIDontWant(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithGraft(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithGraft(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				Graft: []host.RpcControlGraft{
+			Control: &RpcMetaControl{
+				Graft: []RpcControlGraft{
 					{
 						TopicID: "topic1",
 					},
@@ -397,13 +399,13 @@ func createTraceEventWithGraft(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithPrune(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithPrune(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				Prune: []host.RpcControlPrune{
+			Control: &RpcMetaControl{
+				Prune: []RpcControlPrune{
 					{
 						TopicID: "topic1",
 						PeerIDs: []peer.ID{peerID},
@@ -414,34 +416,34 @@ func createTraceEventWithPrune(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithAllControls(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithAllControls(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID: peerID,
-			Control: &host.RpcMetaControl{
-				IHave: []host.RpcControlIHave{
+			Control: &RpcMetaControl{
+				IHave: []RpcControlIHave{
 					{
 						TopicID: "topic1",
 						MsgIDs:  []string{"msg1", "msg2"},
 					},
 				},
-				IWant: []host.RpcControlIWant{
+				IWant: []RpcControlIWant{
 					{
 						MsgIDs: []string{"msg3", "msg4"},
 					},
 				},
-				Idontwant: []host.RpcControlIdontWant{
+				Idontwant: []RpcControlIdontWant{
 					{
 						MsgIDs: []string{"msg5", "msg6"},
 					},
 				},
-				Graft: []host.RpcControlGraft{
+				Graft: []RpcControlGraft{
 					{
 						TopicID: "topic2",
 					},
 				},
-				Prune: []host.RpcControlPrune{
+				Prune: []RpcControlPrune{
 					{
 						TopicID: "topic3",
 						PeerIDs: []peer.ID{peerID},
@@ -452,19 +454,19 @@ func createTraceEventWithAllControls(peerID peer.ID) *host.TraceEvent {
 	}
 }
 
-func createTraceEventWithNilControl(peerID peer.ID) *host.TraceEvent {
-	return &host.TraceEvent{
+func createTraceEventWithNilControl(peerID peer.ID) *TraceEvent {
+	return &TraceEvent{
 		PeerID: peerID,
-		Payload: &host.RpcMeta{
+		Payload: &RpcMeta{
 			PeerID:   peerID,
 			Control:  nil,
-			Messages: []host.RpcMetaMsg{},
+			Messages: []RpcMetaMsg{},
 		},
 	}
 }
 
-func createExpectedMessages() []*MessageMeta {
-	return []*MessageMeta{
+func createExpectedMessages() []*libp2p.MessageMeta {
+	return []*libp2p.MessageMeta{
 		{
 			MessageId: wrapperspb.String("msg1"),
 			TopicId:   wrapperspb.String("topic1"),
@@ -472,8 +474,8 @@ func createExpectedMessages() []*MessageMeta {
 	}
 }
 
-func createExpectedSubscriptions() []*SubMeta {
-	return []*SubMeta{
+func createExpectedSubscriptions() []*libp2p.SubMeta {
+	return []*libp2p.SubMeta{
 		{
 			Subscribe: wrapperspb.Bool(true),
 			TopicId:   wrapperspb.String("topic1"),
@@ -481,7 +483,7 @@ func createExpectedSubscriptions() []*SubMeta {
 	}
 }
 
-func assertControlIHaveEquals(t *testing.T, expected, actual []*ControlIHaveMeta) {
+func assertControlIHaveEquals(t *testing.T, expected, actual []*libp2p.ControlIHaveMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -494,7 +496,7 @@ func assertControlIHaveEquals(t *testing.T, expected, actual []*ControlIHaveMeta
 	}
 }
 
-func assertControlIWantEquals(t *testing.T, expected, actual []*ControlIWantMeta) {
+func assertControlIWantEquals(t *testing.T, expected, actual []*libp2p.ControlIWantMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -506,7 +508,7 @@ func assertControlIWantEquals(t *testing.T, expected, actual []*ControlIWantMeta
 	}
 }
 
-func assertControlIDontWantEquals(t *testing.T, expected, actual []*ControlIDontWantMeta) {
+func assertControlIDontWantEquals(t *testing.T, expected, actual []*libp2p.ControlIDontWantMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -518,7 +520,7 @@ func assertControlIDontWantEquals(t *testing.T, expected, actual []*ControlIDont
 	}
 }
 
-func assertControlGraftEquals(t *testing.T, expected, actual []*ControlGraftMeta) {
+func assertControlGraftEquals(t *testing.T, expected, actual []*libp2p.ControlGraftMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -530,7 +532,7 @@ func assertControlGraftEquals(t *testing.T, expected, actual []*ControlGraftMeta
 	}
 }
 
-func assertControlPruneEquals(t *testing.T, expected, actual []*ControlPruneMeta) {
+func assertControlPruneEquals(t *testing.T, expected, actual []*libp2p.ControlPruneMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -543,7 +545,7 @@ func assertControlPruneEquals(t *testing.T, expected, actual []*ControlPruneMeta
 	}
 }
 
-func assertMessagesEquals(t *testing.T, expected, actual []*MessageMeta) {
+func assertMessagesEquals(t *testing.T, expected, actual []*libp2p.MessageMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -556,7 +558,7 @@ func assertMessagesEquals(t *testing.T, expected, actual []*MessageMeta) {
 	}
 }
 
-func assertSubscriptionsEquals(t *testing.T, expected, actual []*SubMeta) {
+func assertSubscriptionsEquals(t *testing.T, expected, actual []*libp2p.SubMeta) {
 	t.Helper()
 
 	if len(expected) > 0 {
@@ -573,7 +575,128 @@ func assertStringValuesEqual(t *testing.T, expected, actual []*wrapperspb.String
 	t.Helper()
 
 	assert.Equal(t, len(expected), len(actual))
+
 	for j, val := range expected {
 		assert.Equal(t, val.GetValue(), actual[j].GetValue())
+	}
+}
+
+func TestTraceEventToCustodyProbe(t *testing.T) {
+	peerID, err := peer.Decode(peerIDStr)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		input       *TraceEvent
+		expectError bool
+		validate    func(t *testing.T, result *libp2p.DataColumnCustodyProbe)
+	}{
+		{
+			name: "typed TraceEventCustodyProbe payload",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: &TraceEventCustodyProbe{
+					PeerID:     &peerID,
+					Epoch:      100,
+					Slot:       3200,
+					Column:     42,
+					BlockHash:  "0xabcdef1234567890",
+					Result:     "success",
+					Duration:   1500000000, // 1.5 seconds in nanoseconds
+					ColumnSize: 128,
+					Error:      "",
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, uint32(100), result.Epoch.GetValue())
+				assert.Equal(t, uint32(3200), result.Slot.GetValue())
+				assert.Equal(t, uint32(42), result.ColumnIndex.GetValue())
+				assert.Equal(t, "0xabcdef1234567890", result.BeaconBlockRoot.GetValue())
+				assert.Equal(t, "success", result.Result.GetValue())
+				assert.Equal(t, int64(1500), result.ResponseTimeMs.GetValue())
+				assert.Equal(t, uint32(128), result.ColumnRowsCount.GetValue())
+				assert.Nil(t, result.Error)
+			},
+		},
+		{
+			name: "typed TraceEventCustodyProbe payload with error",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: &TraceEventCustodyProbe{
+					PeerID:     &peerID,
+					Epoch:      100,
+					Slot:       3200,
+					Column:     42,
+					BlockHash:  "0xabcdef1234567890",
+					Result:     "failure",
+					Duration:   500000000,
+					ColumnSize: 0,
+					Error:      "timeout",
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, "failure", result.Result.GetValue())
+				assert.Equal(t, "timeout", result.Error.GetValue())
+			},
+		},
+		{
+			name: "map payload (backwards compatibility)",
+			input: &TraceEvent{
+				PeerID: peerID,
+				Payload: map[string]any{
+					"PeerID":      peerIDStr,
+					"Epoch":       uint64(100),
+					"Slot":        uint64(3200),
+					"ColumnIndex": uint64(42),
+					"BlockHash":   "0xabcdef1234567890",
+					"Result":      "success",
+					"DurationMs":  int64(1500),
+					"ColumnSize":  128,
+				},
+			},
+			validate: func(t *testing.T, result *libp2p.DataColumnCustodyProbe) {
+				t.Helper()
+				assert.Equal(t, peerIDStr, result.PeerId.GetValue())
+				assert.Equal(t, uint32(100), result.Epoch.GetValue())
+				assert.Equal(t, uint32(3200), result.Slot.GetValue())
+				assert.Equal(t, uint32(42), result.ColumnIndex.GetValue())
+				assert.Equal(t, "0xabcdef1234567890", result.BeaconBlockRoot.GetValue())
+				assert.Equal(t, "success", result.Result.GetValue())
+				assert.Equal(t, int64(1500), result.ResponseTimeMs.GetValue())
+				assert.Equal(t, uint32(128), result.ColumnRowsCount.GetValue())
+			},
+		},
+		{
+			name: "invalid payload type",
+			input: &TraceEvent{
+				PeerID:  peerID,
+				Payload: "not a valid payload",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := TraceEventToCustodyProbe(tt.input)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid payload type for CustodyProbe")
+
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			if tt.validate != nil {
+				tt.validate(t, result)
+			}
+		})
 	}
 }

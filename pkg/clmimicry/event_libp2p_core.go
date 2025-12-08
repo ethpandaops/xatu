@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/probe-lab/hermes/host"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -23,7 +22,7 @@ var libp2pCoreToXatuEventMap = map[string]string{
 
 // handleHermesLibp2pCoreEvent handles libp2p core networking events.
 // This includes CONNECTED and DISCONNECTED events from libp2p's network.Notify system.
-func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host.TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
+func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *TraceEvent, clientMeta *xatu.ClientMeta, traceMeta *libp2p.TraceEventMetadata) error {
 	// Map libp2p core event to Xatu event.
 	xatuEvent, err := mapLibp2pCoreEventToXatuEvent(event.Type)
 	if err != nil {
@@ -89,9 +88,9 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *host
 func (p *Processor) handleConnectedEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToConnected(event)
+	data, err := TraceEventToConnected(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to connected event")
 	}
@@ -127,9 +126,9 @@ func (p *Processor) handleConnectedEvent(ctx context.Context,
 func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToDisconnected(event)
+	data, err := TraceEventToDisconnected(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to disconnected event")
 	}
@@ -165,9 +164,9 @@ func (p *Processor) handleDisconnectedEvent(ctx context.Context,
 func (p *Processor) handleSyntheticHeartbeatEvent(ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	traceMeta *libp2p.TraceEventMetadata,
-	event *host.TraceEvent,
+	event *TraceEvent,
 ) error {
-	data, err := libp2p.TraceEventToSyntheticHeartbeat(event)
+	data, err := TraceEventToSyntheticHeartbeat(event)
 	if err != nil {
 		return errors.Wrapf(err, "failed to convert event to heartbeat event")
 	}

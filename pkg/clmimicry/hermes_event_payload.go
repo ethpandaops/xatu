@@ -148,3 +148,37 @@ type TraceEventCustodyProbe struct {
 	ColumnSize int           `json:"column_size,omitempty"`
 	Error      string        `json:"error,omitempty"`
 }
+
+// TraceEventConsensusEngineAPINewPayload represents an engine_newPayload API call event.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventConsensusEngineAPINewPayload struct {
+	TraceEventPayloadMetaData
+
+	// Timing
+	RequestedAt time.Time     `json:"requested_at"`
+	Duration    time.Duration `json:"duration"`
+
+	// Beacon context
+	Slot            uint64 `json:"slot"`
+	BlockRoot       string `json:"block_root"`
+	ParentBlockRoot string `json:"parent_block_root"`
+	ProposerIndex   uint64 `json:"proposer_index"`
+
+	// Execution payload
+	BlockNumber uint64 `json:"block_number"`
+	BlockHash   string `json:"block_hash"`
+	ParentHash  string `json:"parent_hash"`
+	GasUsed     uint64 `json:"gas_used"`
+	GasLimit    uint64 `json:"gas_limit"`
+	TxCount     uint32 `json:"tx_count"`
+	BlobCount   uint32 `json:"blob_count"`
+
+	// Response
+	Status          string `json:"status"`
+	LatestValidHash string `json:"latest_valid_hash"`
+	ValidationError string `json:"validation_error"`
+
+	// Meta
+	MethodVersion string `json:"method_version"`
+}

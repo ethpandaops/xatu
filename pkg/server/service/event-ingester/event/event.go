@@ -12,6 +12,7 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
 	v3 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v3"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/consensus"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/execution"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/mempool"
@@ -42,6 +43,7 @@ var (
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
 	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
+	TypeConsensusEngineAPINewPayload            Type = consensus.EngineAPINewPayloadType
 	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
 	TypeBeaconETHV2BeaconBlockV2                Type = v2.BeaconBlockV2Type
 	TypeDebugForkChoice                         Type = v1.DebugForkChoiceType
@@ -190,6 +192,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeExecutionStateSize, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewExecutionStateSize(router.log, event), nil
+	})
+	router.RegisterHandler(TypeConsensusEngineAPINewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return consensus.NewEngineAPINewPayload(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV2BeaconBlock, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlock(router.log, event, router.cache), nil

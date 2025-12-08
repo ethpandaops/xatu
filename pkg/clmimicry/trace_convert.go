@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Helper function to convert a Hermes TraceEvent to a libp2p AddPeer
@@ -848,4 +849,37 @@ func mapPayloadToCustodyProbe(payload map[string]any) *libp2p.DataColumnCustodyP
 	}
 
 	return probe
+}
+
+// TraceEventToConsensusEngineAPINewPayload converts a TraceEvent to a ConsensusEngineAPINewPayload protobuf message.
+// Supports typed *TraceEventConsensusEngineAPINewPayload payloads from direct callers.
+func TraceEventToConsensusEngineAPINewPayload(event *TraceEvent) (*xatu.ConsensusEngineAPINewPayload, error) {
+	typed, ok := event.Payload.(*TraceEventConsensusEngineAPINewPayload)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for ConsensusEngineAPINewPayload: expected *TraceEventConsensusEngineAPINewPayload, got %T",
+			event.Payload,
+		)
+	}
+
+	return &xatu.ConsensusEngineAPINewPayload{
+		RequestedAt: timestamppb.New(typed.RequestedAt),
+		//nolint:gosec // duration is always positive, conversion is safe.
+		DurationMs:      wrapperspb.UInt64(uint64(typed.Duration.Milliseconds())),
+		Slot:            wrapperspb.UInt64(typed.Slot),
+		BlockRoot:       typed.BlockRoot,
+		ParentBlockRoot: typed.ParentBlockRoot,
+		ProposerIndex:   wrapperspb.UInt64(typed.ProposerIndex),
+		BlockNumber:     wrapperspb.UInt64(typed.BlockNumber),
+		BlockHash:       typed.BlockHash,
+		ParentHash:      typed.ParentHash,
+		GasUsed:         wrapperspb.UInt64(typed.GasUsed),
+		GasLimit:        wrapperspb.UInt64(typed.GasLimit),
+		TxCount:         wrapperspb.UInt32(typed.TxCount),
+		BlobCount:       wrapperspb.UInt32(typed.BlobCount),
+		Status:          typed.Status,
+		LatestValidHash: typed.LatestValidHash,
+		ValidationError: typed.ValidationError,
+		MethodVersion:   typed.MethodVersion,
+	}, nil
 }

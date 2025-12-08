@@ -167,6 +167,53 @@ message ExecutionStateSize {
   string storages = 12 [ json_name = "storages" ];
 }
 
+// ConsensusEngineAPINewPayload contains timing and instrumentation data for
+// engine_newPayloadVx calls between the consensus and execution layer.
+message ConsensusEngineAPINewPayload {
+  // RequestedAt is the timestamp when the engine_newPayload call was initiated.
+  google.protobuf.Timestamp requested_at = 1 [ json_name = "requested_at" ];
+  // DurationMs is how long the engine_newPayload call took in milliseconds.
+  google.protobuf.UInt64Value duration_ms = 2 [ json_name = "duration_ms" ];
+
+  // Beacon context (where the payload came from)
+  // Slot is the slot number of the beacon block containing this payload.
+  google.protobuf.UInt64Value slot = 3 [ json_name = "slot" ];
+  // BlockRoot is the root of the beacon block (hex encoded).
+  string block_root = 4 [ json_name = "block_root" ];
+  // ParentBlockRoot is the root of the parent beacon block (hex encoded).
+  string parent_block_root = 5 [ json_name = "parent_block_root" ];
+  // ProposerIndex is the validator index of the block proposer.
+  google.protobuf.UInt64Value proposer_index = 6 [ json_name = "proposer_index" ];
+
+  // Execution payload details (what we're asking EL to validate)
+  // BlockNumber is the execution block number.
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  // BlockHash is the execution block hash (hex encoded).
+  string block_hash = 8 [ json_name = "block_hash" ];
+  // ParentHash is the parent execution block hash (hex encoded).
+  string parent_hash = 9 [ json_name = "parent_hash" ];
+  // GasUsed is the total gas used by all transactions in the block.
+  google.protobuf.UInt64Value gas_used = 10 [ json_name = "gas_used" ];
+  // GasLimit is the gas limit of the block.
+  google.protobuf.UInt64Value gas_limit = 11 [ json_name = "gas_limit" ];
+  // TxCount is the number of transactions in the block.
+  google.protobuf.UInt32Value tx_count = 12 [ json_name = "tx_count" ];
+  // BlobCount is the number of blobs in the block.
+  google.protobuf.UInt32Value blob_count = 13 [ json_name = "blob_count" ];
+
+  // Response from EL
+  // Status is the payload status returned by the EL (VALID, INVALID, SYNCING, ACCEPTED, INVALID_BLOCK_HASH).
+  string status = 14 [ json_name = "status" ];
+  // LatestValidHash is the latest valid hash when status is INVALID (hex encoded).
+  string latest_valid_hash = 15 [ json_name = "latest_valid_hash" ];
+  // ValidationError is the error message when validation fails.
+  string validation_error = 16 [ json_name = "validation_error" ];
+
+  // Meta
+  // MethodVersion is the version of the engine_newPayload method (e.g., "V3", "V4").
+  string method_version = 17 [ json_name = "method_version" ];
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -1278,6 +1325,15 @@ message ClientMeta {
     EpochV2 head_epoch = 4;
   }
 
+  // AdditionalConsensusEngineAPINewPayloadData contains additional metadata about the
+  // engine_newPayload call event.
+  message AdditionalConsensusEngineAPINewPayloadData {
+    // Epoch contains the epoch information for the slot.
+    EpochV2 epoch = 1;
+    // Slot contains the slot information.
+    SlotV2 slot = 2;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1518,6 +1574,8 @@ message ClientMeta {
     AdditionalLibP2PTraceSyntheticHeartbeatData libp2p_trace_synthetic_heartbeat = 87 [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
     // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData contains additional data about the libp2p trace rpc data column custody probe event.
     AdditionalLibP2PTraceRpcDataColumnCustodyProbeData libp2p_trace_rpc_data_column_custody_probe = 88 [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
+    // AdditionalConsensusEngineAPINewPayloadData contains additional data about the consensus engine API new payload event.
+    AdditionalConsensusEngineAPINewPayloadData consensus_engine_api_new_payload = 89 [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1720,6 +1778,7 @@ message Event {
     LIBP2P_TRACE_SYNTHETIC_HEARTBEAT = 77;
     LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
     EXECUTION_STATE_SIZE = 79;
+    CONSENSUS_ENGINE_API_NEW_PAYLOAD = 80;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1913,6 +1972,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
     ExecutionStateSize execution_state_size = 201
         [ json_name = "EXECUTION_STATE_SIZE" ];
+    ConsensusEngineAPINewPayload consensus_engine_api_new_payload = 202
+        [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
   };
 }
 

@@ -2508,12 +2508,12 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
 
-      requested_at, err = parse_timestamp(.data.requested_at, format: "%+");
+      requested_date_time, err = parse_timestamp(.data.requested_at, format: "%+");
       if err == null {
-        .requested_at = to_unix_timestamp(requested_at, unit: "milliseconds")
+        .requested_date_time = to_unix_timestamp(requested_date_time, unit: "milliseconds")
       } else {
         .error = err
-        .error_description = "failed to parse requested_at"
+        .error_description = "failed to parse requested_date_time"
         log(., level: "error", rate_limit_secs: 60)
       }
 

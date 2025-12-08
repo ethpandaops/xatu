@@ -2,7 +2,7 @@ CREATE TABLE consensus_engine_api_new_payload_local ON CLUSTER '{cluster}' (
   -- Timestamps
   updated_date_time DateTime COMMENT 'Timestamp when the record was last updated' Codec(DoubleDelta, ZSTD(1)),
   event_date_time DateTime64(3) COMMENT 'When the sentry received the event' Codec(DoubleDelta, ZSTD(1)),
-  requested_at DateTime64(3) COMMENT 'Timestamp when the engine_newPayload call was initiated' Codec(DoubleDelta, ZSTD(1)),
+  requested_date_time DateTime64(3) COMMENT 'Timestamp when the engine_newPayload call was initiated' Codec(DoubleDelta, ZSTD(1)),
 
   -- Timing
   duration_ms UInt64 COMMENT 'How long the engine_newPayload call took in milliseconds' Codec(ZSTD(1)),
@@ -49,13 +49,7 @@ CREATE TABLE consensus_engine_api_new_payload_local ON CLUSTER '{cluster}' (
   meta_client_geo_autonomous_system_number Nullable(UInt32) COMMENT 'Autonomous system number of the client that generated the event' Codec(ZSTD(1)),
   meta_client_geo_autonomous_system_organization Nullable(String) COMMENT 'Autonomous system organization of the client that generated the event' Codec(ZSTD(1)),
   meta_network_id Int32 COMMENT 'Ethereum network ID' Codec(DoubleDelta, ZSTD(1)),
-  meta_network_name LowCardinality(String) COMMENT 'Ethereum network name',
-  meta_consensus_version LowCardinality(String) COMMENT 'Consensus client version that generated the event',
-  meta_consensus_version_major LowCardinality(String) COMMENT 'Consensus client major version that generated the event',
-  meta_consensus_version_minor LowCardinality(String) COMMENT 'Consensus client minor version that generated the event',
-  meta_consensus_version_patch LowCardinality(String) COMMENT 'Consensus client patch version that generated the event',
-  meta_consensus_implementation LowCardinality(String) COMMENT 'Consensus client implementation that generated the event',
-  meta_labels Map(String, String) COMMENT 'Labels associated with the event' Codec(ZSTD(1))
+  meta_network_name LowCardinality(String) COMMENT 'Ethereum network name'
 ) ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name, block_hash, event_date_time) COMMENT 'Contains timing and instrumentation data for engine_newPayload calls between the consensus and execution layer.';

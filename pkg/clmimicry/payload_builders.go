@@ -149,3 +149,39 @@ func NewCustodyProbePayload(
 		Error:      errorStr,
 	}
 }
+
+// Consensus engine API payload builder
+
+// NewConsensusEngineAPINewPayloadPayload creates a consensus engine API new payload event.
+func NewConsensusEngineAPINewPayloadPayload(
+	requestedAt time.Time,
+	duration time.Duration,
+	slot, proposerIndex uint64,
+	blockRoot, parentBlockRoot string,
+	blockNumber uint64,
+	blockHash, parentHash string,
+	gasUsed, gasLimit uint64,
+	txCount, blobCount uint32,
+	status, latestValidHash, validationError string,
+	methodVersion string,
+) *TraceEventConsensusEngineAPINewPayload {
+	return &TraceEventConsensusEngineAPINewPayload{
+		RequestedAt:     requestedAt,
+		Duration:        duration,
+		Slot:            slot,
+		BlockRoot:       blockRoot,
+		ParentBlockRoot: parentBlockRoot,
+		ProposerIndex:   proposerIndex,
+		BlockNumber:     blockNumber,
+		BlockHash:       blockHash,
+		ParentHash:      parentHash,
+		GasUsed:         gasUsed,
+		GasLimit:        gasLimit,
+		TxCount:         txCount,
+		BlobCount:       blobCount,
+		Status:          status,
+		LatestValidHash: latestValidHash,
+		ValidationError: validationError,
+		MethodVersion:   methodVersion,
+	}
+}

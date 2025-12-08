@@ -28,8 +28,9 @@ const (
 	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
 
 	// Events that are not part of a normal Ethereum node.
-	TraceEvent_SYNTHETIC_HEARTBEAT = "SYNTHETIC_HEARTBEAT"
-	TraceEvent_CUSTODY_PROBE       = "CUSTODY_PROBE"
+	TraceEvent_SYNTHETIC_HEARTBEAT             = "SYNTHETIC_HEARTBEAT"
+	TraceEvent_CUSTODY_PROBE                   = "CUSTODY_PROBE"
+	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD = "CONSENSUS_ENGINE_API_NEWPAYLOAD"
 )
 
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.

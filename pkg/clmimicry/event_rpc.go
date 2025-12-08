@@ -17,9 +17,10 @@ import (
 
 // Map of RPC event types to Xatu event types.
 var rpcToXatuEventMap = map[string]string{
-	TraceEvent_HANDLE_METADATA: xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
-	TraceEvent_HANDLE_STATUS:   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
-	TraceEvent_CUSTODY_PROBE:   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
+	TraceEvent_HANDLE_METADATA:                 xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
+	TraceEvent_HANDLE_STATUS:                   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
+	TraceEvent_CUSTODY_PROBE:                   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
+	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD: xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String(),
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
@@ -86,6 +87,22 @@ func (p *Processor) handleHermesRPCEvent(
 		}
 
 		return p.handleCustodyProbeEvent(ctx, clientMeta, traceMeta, event)
+
+	case xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String():
+		if !p.events.EngineAPINewPayloadEnabled {
+			return nil
+		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleConsensusEngineAPINewPayloadEvent(ctx, clientMeta, event)
 	}
 
 	return nil
@@ -245,6 +262,66 @@ func (p *Processor) deriveAdditionalDataForCustodyProbeEvent(
 	}
 
 	return extra, nil
+}
+
+func (p *Processor) handleConsensusEngineAPINewPayloadEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	event *TraceEvent,
+) error {
+	data, err := TraceEventToConsensusEngineAPINewPayload(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to consensus engine API new payload event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	extra := p.deriveAdditionalDataForConsensusEngineAPINewPayload(data)
+	metadata.AdditionalData = &xatu.ClientMeta_ConsensusEngineApiNewPayload{
+		ConsensusEngineApiNewPayload: extra,
+	}
+
+	now := time.Now().Add(p.clockDrift)
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD,
+			DateTime: timestamppb.New(now),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_ConsensusEngineApiNewPayload{
+			ConsensusEngineApiNewPayload: data,
+		},
+	}
+
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (p *Processor) deriveAdditionalDataForConsensusEngineAPINewPayload(
+	data *xatu.ConsensusEngineAPINewPayload,
+) *xatu.ClientMeta_AdditionalConsensusEngineAPINewPayloadData {
+	extra := &xatu.ClientMeta_AdditionalConsensusEngineAPINewPayloadData{}
+
+	slot := p.wallclock.Slots().FromNumber(data.GetSlot().GetValue())
+	epoch := p.wallclock.Epochs().FromSlot(data.GetSlot().GetValue())
+
+	extra.Slot = &xatu.SlotV2{
+		Number:        wrapperspb.UInt64(slot.Number()),
+		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+	}
+
+	extra.Epoch = &xatu.EpochV2{
+		Number:        wrapperspb.UInt64(epoch.Number()),
+		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	return extra
 }
 
 func mapRPCEventToXatuEvent(event string) (string, error) {

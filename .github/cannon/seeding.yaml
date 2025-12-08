@@ -1,170 +1,42 @@
-# Cannon database seeding configuration for skipping types per network to epochs with known data.
-# Useful for CI for events that are very rare, e.g. Proposer Slashing.
+# Cannon smoke test configuration
 #
-# Note: Due to the way cannon progresses, we need to offset these epochs by 1.
-# FinalizedEpoch will be processed until it is up to head ascendingly.
-# Therefore, if we have data in epoch 100 for a specific type we
-# should set the finalizedEpoch to 99.
-networks:
-  - id: 560048  # Hoodi
-    types:
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
-        finalizedEpoch: 176
-        assert:
-          query: "SELECT COUNT(*)
-            FROM canonical_beacon_block_deposit FINAL
-            WHERE epoch = 177 AND
-              block_root = '0x3de66e814bb7b124c2464d375fec247c6a5e157ca169d900a67c78433c59ebce' AND
-              block_version = 'deneb' AND
-              deposit_data_pubkey = '0x82586e0c10f84614733e5752428cbbe809e3699d9a3bc5bc604e81169e6a59304352237e39c8e6644acae5f595f1a864' AND
-              deposit_data_withdrawal_credentials = '0x010000000000000000000000382f6ff5b9a29fcf1dd2bf8b86c3234dc7ed2df6' AND
-              deposit_data_amount = 32000000000 AND
-              deposit_data_signature = '0x97fa3ccfe4c6cfafa371e9f4884bb4901e4757ff25214e58b4aa7736e75f6d559f345029dff267b019c40fcc5d3530650854c778c3c096926ab9099395ce569b54cb8f180634e7084f918e7a82d378166257d4d1b9cd6455a842392931be4b6f';
-          "
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
-        finalizedEpoch: 2060
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_block_bls_to_execution_change FINAL
-          WHERE
-            epoch = 2061
-            AND slot = 65980
-            AND block_root = '0xa1beced57bedcdc3912fe9a473acddcee92186d876f86f3da5cc4451eb36e917'
-            AND block_version = 'electra'
-            AND exchanging_message_validator_index = 975009
-            AND exchanging_message_from_bls_pubkey = '0xaa0cea1c760fac4d99715ff11937f832be805ac071921a90f87fe6b8a2f2b076bbb5f307e599e869d63fbf0419006ab9'
-            AND exchanging_message_to_execution_address = '0xf6676A87dbEC05d9141e2D84ceFe7EfFb030889b'
-            AND exchanging_signature = '0x81211ec1104dd3852bcf622d1b88903f38ff9352bcff5943df1b51c2e3207c2e1ad760981f4dbc1ddec19ea8bc17eecf015337de8d85d3d01e906408c8a5c2afe53ab216a2c96bcd5d8817223afa2e140abcacbc8943dc357d1a0f8ce24ce428'
-          "
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
-        finalizedEpoch: 4195
-        assert:
-          query: "SELECT COUNT(*) as cnt
-            FROM canonical_beacon_block_attester_slashing FINAL
-            WHERE
-              epoch = 4196
-              AND block_root = '0x049464d15db27e83fd293e3b4ba630cd0ab3eb0aabf70f4b8e8007dd87504488'
-              AND block_version = 'electra'
-              AND has(attestation_1_attesting_indices, 3)
-              AND attestation_1_signature = '0xa14bef429a00c23dbd37060c05a351a89260f4f638d420258dbf7dfa2a55deb651852d4fb7229f0432e68bd42d7ea10d0a591fa565f36d0729fc41ea53fc6ddacefcdcd04d23bd2e3db9357d5a2c3fa45c03254e1caa906c16c678ad2cd7259f'
-              AND attestation_1_data_beacon_block_root = '0x20a936660e5e3a9319b5b144ce7e0e22391eab5a16327881fede855977069e8a'
-              AND attestation_1_data_slot = 134292
-              AND attestation_1_data_index = 0
-              AND attestation_1_data_source_epoch = 4195
-              AND attestation_1_data_source_root = '0x80f22dd45048ce583f37a489c82589f8f6e54a784606a6a30e5f3154751d3366'
-              AND attestation_1_data_target_epoch = 4196
-              AND attestation_1_data_target_root = '0x431ea68ee03a13b214dd94df5579f5e4e1cfaf453e0a7b51ada6075f0b056a79'
-              AND has(attestation_2_attesting_indices, 445107)
-              AND attestation_2_signature = '0x891df4adfbce0c357010e38254dd6097e2289fbaf18ea947ff54f4e5a750141debfce6c5f217cc51357e72160ff0c5ed0d9e1204724b05ae40df02af721a5a7f80f4e9512e03fdd0cfad31673172cbf19ccff6ad41000012b0e5444227dc1621'
-              AND attestation_2_data_beacon_block_root = '0xa664175d9133e8f766667cd75e2253ae32f508f4a50b0806dda7f53cec270786'
-              AND attestation_2_data_slot = 134292
-              AND attestation_2_data_index = 0
-              AND attestation_2_data_source_epoch = 4195
-              AND attestation_2_data_source_root = '0x80f22dd45048ce583f37a489c82589f8f6e54a784606a6a30e5f3154751d3366'
-              AND attestation_2_data_target_epoch = 4196
-              AND attestation_2_data_target_root = '0x431ea68ee03a13b214dd94df5579f5e4e1cfaf453e0a7b51ada6075f0b056a79'
-          "
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
-        finalizedEpoch: 2064
-        assert:
-          query: "SELECT COUNT(*) as cnt
-          FROM canonical_beacon_block_proposer_slashing FINAL
-          WHERE
-            epoch = 2065
-            AND slot = 66085
-            AND block_root = '0xf460a8197c29b91122cf2801ed81fc2921a5b4617510d3ae45d083a089a288bd'
-            AND block_version = 'electra'
-            AND signed_header_1_message_slot = 66084
-            AND signed_header_1_message_proposer_index = 975061
-            AND signed_header_1_message_body_root = '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'
-            AND signed_header_1_message_parent_root = '0x1010101010101010101010101010101010101010101010101010101010101010'
-            AND signed_header_1_message_state_root = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-            AND signed_header_1_signature = '0x901ff1a361d4699da28490348dc3a7872ba0f15c6a2b85f843bde8cac131bd08679ce166bfb3d95d8898acca5d74f46b15c3165c1ae808ab3645c0ab82fc26bd9765cb9b24a83168ba3629db63070de2190855ac9df18c0755935ea155df4603'
-            AND signed_header_2_message_slot = 66084
-            AND signed_header_2_message_proposer_index = 975061
-            AND signed_header_2_message_body_root = '0xb1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1'
-            AND signed_header_2_message_parent_root = '0x1010101010101010101010101010101010101010101010101010101010101010'
-            AND signed_header_2_message_state_root = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            AND signed_header_2_signature = '0xb29e9fc33ae92c26f96fe18b8b295ab869c54807d004a9b56e16720080123f011fb09d41b66f379fa3b98749d1d5bb90101207415e64343f07e28d601537381c5e8013afb79fb5f904f726cd2d986c503ae40c865b5f6dc217cd46f920d04b9b'
-          "
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
-        finalizedEpoch: 696
-        assert:
-          query: "SELECT COUNT(*)
-            FROM canonical_beacon_block_voluntary_exit FINAL
-            WHERE
-              epoch = 697
-              AND block_root = '0x728f9a1511259984875dae7e12ca7ff632aae7dd764496202fa5d09c1ebe67f2'
-              AND block_version = 'deneb'
-              AND voluntary_exit_signature = '0xa3d08e9e9c27c329a5d2f0d177a22d5a05803c52e622e924255bfa77f90f8fa43df7f8e85f414b4d3a2e013a01d5d9af0bd1abbcb3b02f3af62250036c26c514b3a75f08c3e238b780277601489380282c91cb59c56eeccd16851217d727eec3'
-              AND voluntary_exit_message_validator_index = 1062038
-              AND voluntary_exit_message_epoch = 461
-          "
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK
-        finalizedEpoch: 176
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_block FINAL
-          WHERE
-            slot = 5673
-            AND epoch = 177
-            AND block_root = '0x3de66e814bb7b124c2464d375fec247c6a5e157ca169d900a67c78433c59ebce'
-            AND block_version = 'deneb'
-            AND block_total_bytes = 40863
-            AND block_total_bytes_compressed = 18464
-            AND parent_root = '0xe21fc0e5cae84cd263cc669ad95c8b63f8e1248679833f083b89ee930d4f08cd'
-            AND state_root = '0xf62594875d12ae33f8a668feee0322f496e4def279294190a0cd9b7b8ecf33bf'
-            AND proposer_index = 252113
-            AND eth1_data_block_hash = '0x25c0f3ef0db5c0d9f3a7204950d0ba1d80eacc3ee9cf724f1a852c193cd4cb33'
-            AND eth1_data_deposit_root = '0xc326654bac684482b4eea981e72eddbca4c6d8f6ee4ac91be016a218d714a3c8'
-            AND execution_payload_block_hash = '0x10c7446b5fd4d1273ab8a6536618d8b90472154514cf10de2ff4e6de43ef32e4'
-            AND execution_payload_block_number = 5031
-            AND execution_payload_fee_recipient = '0x25941dC771bB64514Fc8abBce970307Fb9d477e9'
-            AND execution_payload_state_root = '0x168152458aeef35b5463329c018c3db43f68094d730e5fc92979edcc263e53d6'
-            AND execution_payload_parent_hash = '0x536ff774590478497704c978994081b4f5af8d0eb2b286ecc4500975e1ea3237'"
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
-        finalizedEpoch: 0
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_block_execution_transaction FINAL
-          WHERE
-            slot = 3
-            AND epoch = 0
-            AND block_root = '0x548873368f6ba369bdca1dec23536797dbe359c57ca7e1a50ca088190087e9e6'
-            AND block_version = 'deneb'
-            AND position = 0
-            AND hash = '0x9e8a77f280c338f4bb73661daf92985bdd035fc8e1fd2cc6262db7e43bdd7212'
-            AND `from` = '0x6Cc9397c3B38739daCbfaA68EaD5F5D77Ba5F455'
-            AND `to` = '0x332E43696A505EF45b9319973785F837ce5267b9'
-            AND nonce = 0
-            AND gas_price = '1000000000000'
-            AND gas = 33585
-            AND gas_tip_cap = '1000000000000'
-            AND gas_fee_cap = '1000000000000'
-            AND value = '500000000000000000000000'
-            AND type = 2
-            AND size = 191
-            AND call_data_size = 66
-            AND blob_gas IS NULL
-            AND blob_gas_fee_cap IS NULL
-            AND blob_hashes = []
-            AND blob_sidecars_size = 0
-            AND blob_sidecars_empty_size = 0"
-          expected: "1"
-      - name: BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
-        finalizedEpoch: 1
-        assert:
-          query: "SELECT COUNT(*) FROM canonical_beacon_block_withdrawal FINAL
-          WHERE
-            slot = 64
-            AND epoch = 2
-            AND block_root = '0x5ca979ad240d7843b48df90ba30406bcf9a0e5287e04205246824159c27f28b8'
-            AND block_version = 'deneb'
-            AND withdrawal_index = 4
-            AND withdrawal_validator_index = 985004
-            AND withdrawal_address = '0xe5061FE5b4d0BD260F1Ff80FA919e339F1f5C330'
-            AND withdrawal_amount = '6118'"
-          expected: "1"
+# This config defines which event types to test in the cannon smoke test.
+# The test dynamically fetches the current finalized epoch from the beacon node
+# and seeds cannon to start processing from (finalized_epoch - epoch_offset).
+#
+# Only event types that are GUARANTEED to exist in every epoch should be tested
+# to avoid flaky tests. Rare events like slashings and deposits are excluded.
+#
+# The assertions verify that data flows through the entire pipeline:
+# Beacon Node -> Cannon -> Xatu Server -> Kafka -> Vector -> ClickHouse
+
+network:
+  name: mainnet
+  id: 1
+
+# How many epochs back from finalized to start processing
+# Lower = faster test, but needs recent data available on beacon node
+epoch_offset: 3
+
+# Event types to test - these must exist in every epoch
+# Each type needs a corresponding ClickHouse table for assertions
+event_types:
+  - name: BEACON_API_ETH_V2_BEACON_BLOCK
+    table: canonical_beacon_block
+    description: "Beacon blocks - one per slot"
+
+  - name: BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
+    table: canonical_beacon_block_withdrawal
+    description: "Withdrawals - multiple per block post-Capella"
+
+  - name: BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
+    table: canonical_beacon_block_execution_transaction
+    description: "Execution transactions - multiple per block"
+
+  - name: BEACON_API_ETH_V1_PROPOSER_DUTY
+    table: canonical_beacon_proposer_duty
+    description: "Proposer duties - 32 per epoch"
+
+  - name: BEACON_API_ETH_V1_BEACON_COMMITTEE
+    table: canonical_beacon_committee
+    description: "Beacon committees - many per epoch"

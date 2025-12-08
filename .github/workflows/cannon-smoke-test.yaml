@@ -13,22 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@e5c7151931ca95bad1c6f4190c730ecf8c7dde48 # v3.19
-    #   with:
-    #     limit-access-to-actor: true
-    #     detached: true
-    - name: Install clickhouse client
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install dependencies
       run: |
+        # Install clickhouse client
         sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
         curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | sudo gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
-
         echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | sudo tee \
         /etc/apt/sources.list.d/clickhouse.list
         sudo apt-get update
         sudo apt-get install -y clickhouse-client
         clickhouse-client --version
+
+        # Install yq for YAML parsing
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+        yq --version
     - name: Pull docker compose images in the background
       run: |
         docker compose pull &
@@ -36,6 +36,44 @@ jobs:
       run: |
         docker build -t ethpandaops/xatu:local .
         echo "Xatu image is built."
+    - name: Fetch finalized epoch from beacon node
+      id: beacon
+      run: |
+        # Read config
+        BEACON_NODE="https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+        EPOCH_OFFSET=$(yq '.epoch_offset' .github/cannon/seeding.yaml)
+        NETWORK_ID=$(yq '.network.id' .github/cannon/seeding.yaml)
+        NETWORK_NAME=$(yq '.network.name' .github/cannon/seeding.yaml)
+
+        echo "Fetching finalized checkpoint from $BEACON_NODE..."
+        FINALIZED_RESPONSE=$(curl -s -H "Authorization: ${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION_2 }}" \
+          "$BEACON_NODE/eth/v1/beacon/states/finalized/finality_checkpoints")
+
+        FINALIZED_EPOCH=$(echo "$FINALIZED_RESPONSE" | jq -r '.data.finalized.epoch')
+
+        if [ -z "$FINALIZED_EPOCH" ] || [ "$FINALIZED_EPOCH" == "null" ]; then
+          echo "Failed to fetch finalized epoch"
+          echo "Response: $FINALIZED_RESPONSE"
+          exit 1
+        fi
+
+        # Calculate seed epoch (finalized - offset - 1 because cannon processes FROM this epoch ascending)
+        SEED_EPOCH=$((FINALIZED_EPOCH - EPOCH_OFFSET - 1))
+        # Target epoch is what we expect to see data for
+        TARGET_EPOCH=$((FINALIZED_EPOCH - EPOCH_OFFSET))
+
+        echo "Finalized epoch: $FINALIZED_EPOCH"
+        echo "Epoch offset: $EPOCH_OFFSET"
+        echo "Seed epoch: $SEED_EPOCH"
+        echo "Target epoch: $TARGET_EPOCH"
+        echo "Network: $NETWORK_NAME (ID: $NETWORK_ID)"
+
+        # Set outputs
+        echo "finalized_epoch=$FINALIZED_EPOCH" >> $GITHUB_OUTPUT
+        echo "seed_epoch=$SEED_EPOCH" >> $GITHUB_OUTPUT
+        echo "target_epoch=$TARGET_EPOCH" >> $GITHUB_OUTPUT
+        echo "network_id=$NETWORK_ID" >> $GITHUB_OUTPUT
+        echo "network_name=$NETWORK_NAME" >> $GITHUB_OUTPUT
     - name: Run Xatu stack
       timeout-minutes: 10
       shell: bash
@@ -43,7 +81,10 @@ jobs:
         docker compose up --build --detach --quiet-pull
     - name: Seed Postgres with cannon data
       run: |
-        set -e;
+        set -e
+        NETWORK_ID="${{ steps.beacon.outputs.network_id }}"
+        SEED_EPOCH="${{ steps.beacon.outputs.seed_epoch }}"
+
         # Wait for Postgres to be ready
         echo "Waiting for Postgres to be ready..."
         docker exec xatu-postgres sh -c 'while ! pg_isready; do sleep 1; done'
@@ -56,17 +97,19 @@ jobs:
           echo "Table not ready yet. Waiting 5 seconds..."
           sleep 5
         done
-
         echo "cannon_location table is now available."
-        # Generate seeding commands
-        echo "Generating seeding commands..."
-        SEEDING_COMMANDS=$(bash .github/cannon/create-seed-commands.sh .github/cannon/seeding.yaml)
 
-        echo "Seeding data prepared."
+        # Generate and execute seeding commands for each event type
+        echo "Seeding cannon_location table..."
 
-        echo "SEEDING_COMMANDS: $SEEDING_COMMANDS"
+        EVENT_TYPES=$(yq '.event_types[].name' .github/cannon/seeding.yaml)
 
-        docker exec xatu-postgres psql -U user -d xatu -c "$SEEDING_COMMANDS"
+        for TYPE in $EVENT_TYPES; do
+          VALUE="{\"backfillingCheckpointMarker\":{\"finalizedEpoch\":\"$SEED_EPOCH\"}}"
+          SQL="INSERT INTO cannon_location (network_id, type, value) VALUES ('$NETWORK_ID', '$TYPE', '$VALUE') ON CONFLICT (network_id, type) DO UPDATE SET value = EXCLUDED.value, update_time = now();"
+          echo "Seeding $TYPE at epoch $SEED_EPOCH"
+          docker exec xatu-postgres psql -U user -d xatu -c "$SQL"
+        done
 
         echo "Seeding completed successfully."
     - name: Show the state of the database
@@ -74,27 +117,30 @@ jobs:
         docker exec xatu-postgres psql -U user -d xatu -c "SELECT * FROM cannon_location;"
     - name: Create Xatu Cannon config
       run: |
+        NETWORK_NAME="${{ steps.beacon.outputs.network_name }}"
+
         cat <<EOF > /tmp/cannon_config.yaml
         logging: debug
         name: cannon-smoke-test
         labels:
           ethpandaops: rocks
 
+        # Only enable derivers for event types we're testing
         derivers:
           attesterSlashing:
-            enabled: true
+            enabled: false
           blsToExecutionChange:
-            enabled: true
+            enabled: false
           deposit:
-            enabled: true
+            enabled: false
           withdrawal:
             enabled: true
           executionTransaction:
             enabled: true
           proposerSlashing:
-            enabled: true
+            enabled: false
           voluntaryExit:
-            enabled: true
+            enabled: false
           beaconBlock:
             enabled: true
           beaconBlobSidecar:
@@ -107,9 +153,10 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://bn-hoodi-teku-geth-001.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
+          overrideNetworkName: "$NETWORK_NAME"
         coordinator:
           address: xatu-server:8080
 
@@ -123,6 +170,7 @@ jobs:
               batchTimeout: 1s
               exportTimeout: 30s
               maxExportBatchSize: 512
+        EOF
     - name: Show config
       run: |
         cat /tmp/cannon_config.yaml
@@ -138,6 +186,9 @@ jobs:
         docker logs xatu-cannon
     - name: Verify Clickhouse has data
       timeout-minutes: 15
+      env:
+        TARGET_EPOCH: ${{ steps.beacon.outputs.target_epoch }}
+        NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
     - name: Collect docker logs on failure

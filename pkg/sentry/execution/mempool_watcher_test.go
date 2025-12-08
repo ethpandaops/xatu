@@ -797,12 +797,13 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 
 		// Create config with minimal settings for testing.
 		config := &Config{
-			QueueSize:          100,
-			PruneDuration:      10,
-			FetchInterval:      1,
-			ProcessingInterval: 100,
-			RpcBatchSize:       10,
-			MaxConcurrency:     1,
+			QueueSize:            100,
+			PruneDuration:        10,
+			FetchInterval:        1,
+			ProcessingInterval:   100,
+			RpcBatchSize:         10,
+			MaxConcurrency:       1,
+			ProcessorWorkerCount: 2,
 		}
 
 		// Create a callback function that records processed transactions.
@@ -825,8 +826,8 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 			json.RawMessage(`{"hash":"` + txHashes[1] + `", "value":"0x456"}`),
 		}
 
-		// Setup expected calls
-		mockClient.EXPECT().GetPendingTransactions(gomock.Any()).Return(pendingTxsResponse, nil)
+		// Setup expected calls - we need 2 calls to GetPendingTransactions
+		mockClient.EXPECT().GetPendingTransactions(gomock.Any()).Return(pendingTxsResponse, nil).Times(2)
 
 		// Empty txpool_content response
 		mockClient.EXPECT().GetTxpoolContent(gomock.Any()).Return(json.RawMessage(`{"pending":{},"queued":{}}`), nil).AnyTimes()
@@ -835,17 +836,20 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(make(chan string), make(chan error), nil).AnyTimes()
 		mockClient.EXPECT().Close().Return(nil).AnyTimes()
 
-		// Create a transaction tracking mechanism
+		// Use a blocking callback that waits until we signal it to continue.
+		// This prevents the workers from deleting transactions from pendingTxs
+		// before we can inspect them.
+		blockCh := make(chan struct{})
 		var processedTxs []string
 		var processingMu sync.Mutex
-		var processingWg sync.WaitGroup
-		processingWg.Add(2) // Expect both transactions
 
 		callback := func(ctx context.Context, record *PendingTxRecord, txData json.RawMessage) error {
+			// Block until test signals to continue
+			<-blockCh
+
 			processingMu.Lock()
 			processedTxs = append(processedTxs, record.Hash)
 			processingMu.Unlock()
-			processingWg.Done()
 
 			return nil
 		}
@@ -863,6 +867,10 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		err = watcher.fetchAndProcessPendingTransactions(ctx)
 		assert.NoError(t, err)
 
+		// Give the workers a moment to pick up the transactions from the queue
+		// (they will block on the callback)
+		time.Sleep(50 * time.Millisecond)
+
 		// Verify pending transactions were added
 		watcher.pendingTxsMutex.RLock()
 		assert.Contains(t, watcher.pendingTxs, txHashes[0])
@@ -875,8 +883,6 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		watcher.pendingTxsMutex.Unlock()
 
 		// Second call with the same transactions - should clear the pruning mark
-		mockClient.EXPECT().GetPendingTransactions(gomock.Any()).Return(pendingTxsResponse, nil)
-
 		err = watcher.fetchAndProcessPendingTransactions(ctx)
 		assert.NoError(t, err)
 
@@ -886,7 +892,8 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 			"MarkedForPruning should be cleared for tx still in mempool")
 		watcher.pendingTxsMutex.RUnlock()
 
-		// Stop the watcher
+		// Unblock all waiting callbacks and stop the watcher
+		close(blockCh)
 		watcher.Stop()
 	})
 
@@ -1033,7 +1040,7 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 	})
 
 	t.Run("FetchAndProcessTxPoolContent", func(t *testing.T) {
-		mockClient, txHashes, config, callback := setupTest()
+		mockClient, txHashes, config, _ := setupTest()
 
 		// Create a complex, nested txpool_content response to exercise
 		// the nested loop/parsing logic in fetchAndProcessTxPool
@@ -1062,6 +1069,16 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(make(chan string), make(chan error), nil).AnyTimes()
 		mockClient.EXPECT().Close().Return(nil).AnyTimes()
 
+		// Use a blocking callback that waits until we signal it to continue.
+		// This prevents the workers from deleting transactions from pendingTxs
+		// before we can inspect them.
+		blockCh := make(chan struct{})
+		callback := func(ctx context.Context, record *PendingTxRecord, txData json.RawMessage) error {
+			<-blockCh
+
+			return nil
+		}
+
 		// Create watcher with the callback
 		watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -1074,6 +1091,10 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		// Call the method we want to test with complex nested response
 		err = watcher.fetchAndProcessTxPool(ctx)
 		assert.NoError(t, err)
+
+		// Give the workers a moment to pick up the transactions from the queue
+		// (they will block on the callback)
+		time.Sleep(50 * time.Millisecond)
 
 		// Verify pending transactions were correctly parsed and added
 		watcher.pendingTxsMutex.RLock()
@@ -1102,12 +1123,13 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		err = watcher.fetchAndProcessTxPool(ctx)
 		assert.NoError(t, err)
 
-		// Stop the watcher
+		// Unblock all waiting callbacks and stop the watcher
+		close(blockCh)
 		watcher.Stop()
 	})
 
 	t.Run("FetchAndProcessTxPoolWithDroppedTxs", func(t *testing.T) {
-		mockClient, txHashes, config, callback := setupTest()
+		mockClient, txHashes, config, _ := setupTest()
 
 		// Create a response with some transactions
 		initialResponse := `{
@@ -1142,6 +1164,16 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(make(chan string), make(chan error), nil).AnyTimes()
 		mockClient.EXPECT().Close().Return(nil).AnyTimes()
 
+		// Use a blocking callback that waits until we signal it to continue.
+		// This prevents the workers from deleting transactions from pendingTxs
+		// before we can inspect them.
+		blockCh := make(chan struct{})
+		callback := func(ctx context.Context, record *PendingTxRecord, txData json.RawMessage) error {
+			<-blockCh
+
+			return nil
+		}
+
 		// Create watcher
 		watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -1154,6 +1186,10 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		// First call to get both transactions
 		err = watcher.fetchAndProcessTxPool(ctx)
 		assert.NoError(t, err)
+
+		// Give the workers a moment to pick up the transactions from the queue
+		// (they will block on the callback)
+		time.Sleep(50 * time.Millisecond)
 
 		// Verify both transactions are in the pending map
 		watcher.pendingTxsMutex.RLock()
@@ -1177,7 +1213,8 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		assert.NotContains(t, watcher.pendingTxs, txHashes[1], "Marked transaction not in mempool should be removed")
 		watcher.pendingTxsMutex.RUnlock()
 
-		// Stop the watcher
+		// Unblock all waiting callbacks and stop the watcher
+		close(blockCh)
 		watcher.Stop()
 	})
 
@@ -1246,12 +1283,13 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 
 		// Create config with minimal settings for testing
 		config := &Config{
-			QueueSize:          100,
-			PruneDuration:      5,
-			FetchInterval:      1,
-			ProcessingInterval: 100,
-			RpcBatchSize:       10,
-			MaxConcurrency:     1,
+			QueueSize:            100,
+			PruneDuration:        5,
+			FetchInterval:        1,
+			ProcessingInterval:   100,
+			RpcBatchSize:         10,
+			MaxConcurrency:       1,
+			ProcessorWorkerCount: 2,
 		}
 
 		// Create metrics
@@ -1433,10 +1471,13 @@ func TestProcessDroppedTransactions(t *testing.T) {
 
 		// Create config with test settings - pruning threshold of 5 seconds.
 		config := &Config{
-			QueueSize:          100,
-			PruneDuration:      5, // 5 second prune interval.
-			FetchInterval:      1,
-			ProcessingInterval: 100,
+			QueueSize:            100,
+			PruneDuration:        5, // 5 second prune interval.
+			FetchInterval:        1,
+			ProcessingInterval:   100,
+			ProcessorWorkerCount: 2,
+			RpcBatchSize:         10,
+			MaxConcurrency:       1,
 		}
 
 		// Create watcher.
@@ -1633,6 +1674,8 @@ func TestFetchersBasedOnConfig(t *testing.T) {
 				TxPoolContentEnabled: tc.txPoolEnabled,
 				EthPendingTxsEnabled: tc.ethPendingEnabled,
 				ProcessorWorkerCount: 2,
+				RpcBatchSize:         10,
+				MaxConcurrency:       1,
 			}
 
 			// Create real watcher.

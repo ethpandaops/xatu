@@ -21,6 +21,7 @@ var rpcToXatuEventMap = map[string]string{
 	TraceEvent_HANDLE_STATUS:                   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
 	TraceEvent_CUSTODY_PROBE:                   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
 	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD: xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String(),
+	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS:   xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String(),
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
@@ -103,6 +104,22 @@ func (p *Processor) handleHermesRPCEvent(
 		}
 
 		return p.handleConsensusEngineAPINewPayloadEvent(ctx, clientMeta, event)
+
+	case xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String():
+		if !p.events.EngineAPIGetBlobsEnabled {
+			return nil
+		}
+
+		// Record that we received this event
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		// Check if we should process this event based on trace/sharding config.
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleConsensusEngineAPIGetBlobsEvent(ctx, clientMeta, event)
 	}
 
 	return nil
@@ -320,6 +337,79 @@ func (p *Processor) deriveAdditionalDataForConsensusEngineAPINewPayload(
 	data *xatu.ConsensusEngineAPINewPayload,
 ) *xatu.ClientMeta_AdditionalConsensusEngineAPINewPayloadData {
 	extra := &xatu.ClientMeta_AdditionalConsensusEngineAPINewPayloadData{}
+
+	slot := p.wallclock.Slots().FromNumber(data.GetSlot().GetValue())
+	epoch := p.wallclock.Epochs().FromSlot(data.GetSlot().GetValue())
+
+	extra.Slot = &xatu.SlotV2{
+		Number:        wrapperspb.UInt64(slot.Number()),
+		StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
+	}
+
+	extra.Epoch = &xatu.EpochV2{
+		Number:        wrapperspb.UInt64(epoch.Number()),
+		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	return extra
+}
+
+func (p *Processor) handleConsensusEngineAPIGetBlobsEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	event *TraceEvent,
+) error {
+	data, err := TraceEventToConsensusEngineAPIGetBlobs(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to consensus engine API get blobs event")
+	}
+
+	// Extract execution client metadata from the event.
+	execMeta, err := ExtractExecutionClientMetadataFromGetBlobs(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to extract execution client metadata")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	// Populate execution client metadata in ClientMeta.Ethereum.Execution.
+	if metadata.Ethereum == nil {
+		metadata.Ethereum = &xatu.ClientMeta_Ethereum{}
+	}
+
+	metadata.Ethereum.Execution = execMeta
+
+	extra := p.deriveAdditionalDataForConsensusEngineAPIGetBlobs(data)
+	metadata.AdditionalData = &xatu.ClientMeta_ConsensusEngineApiGetBlobs{
+		ConsensusEngineApiGetBlobs: extra,
+	}
+
+	now := time.Now().Add(p.clockDrift)
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS,
+			DateTime: timestamppb.New(now),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_ConsensusEngineApiGetBlobs{
+			ConsensusEngineApiGetBlobs: data,
+		},
+	}
+
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (p *Processor) deriveAdditionalDataForConsensusEngineAPIGetBlobs(
+	data *xatu.ConsensusEngineAPIGetBlobs,
+) *xatu.ClientMeta_AdditionalConsensusEngineAPIGetBlobsData {
+	extra := &xatu.ClientMeta_AdditionalConsensusEngineAPIGetBlobsData{}
 
 	slot := p.wallclock.Slots().FromNumber(data.GetSlot().GetValue())
 	epoch := p.wallclock.Epochs().FromSlot(data.GetSlot().GetValue())

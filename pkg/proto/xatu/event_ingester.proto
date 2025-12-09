@@ -214,6 +214,41 @@ message ConsensusEngineAPINewPayload {
   string method_version = 17 [ json_name = "method_version" ];
 }
 
+// ConsensusEngineAPIGetBlobs contains timing and instrumentation data for
+// engine_getBlobsVx calls between the consensus and execution layer.
+message ConsensusEngineAPIGetBlobs {
+  // RequestedAt is the timestamp when the engine_getBlobs call was initiated.
+  google.protobuf.Timestamp requested_at = 1 [ json_name = "requested_at" ];
+  // DurationMs is how long the engine_getBlobs call took in milliseconds.
+  google.protobuf.UInt64Value duration_ms = 2 [ json_name = "duration_ms" ];
+
+  // Beacon context (where the request came from)
+  // Slot is the slot number of the beacon block being reconstructed.
+  google.protobuf.UInt64Value slot = 3 [ json_name = "slot" ];
+  // BlockRoot is the root of the beacon block (hex encoded).
+  string block_root = 4 [ json_name = "block_root" ];
+  // ParentBlockRoot is the root of the parent beacon block (hex encoded).
+  string parent_block_root = 5 [ json_name = "parent_block_root" ];
+
+  // Request details
+  // RequestedCount is the number of versioned hashes requested.
+  google.protobuf.UInt32Value requested_count = 6 [ json_name = "requested_count" ];
+  // VersionedHashes is the list of versioned hashes requested (derived from KZG commitments).
+  repeated string versioned_hashes = 7 [ json_name = "versioned_hashes" ];
+
+  // Response from EL
+  // ReturnedCount is the number of non-null blobs returned.
+  google.protobuf.UInt32Value returned_count = 8 [ json_name = "returned_count" ];
+  // Status is the result status (SUCCESS, PARTIAL, EMPTY, UNSUPPORTED, ERROR).
+  string status = 9 [ json_name = "status" ];
+  // ErrorMessage contains error details if status is ERROR or UNSUPPORTED.
+  string error_message = 10 [ json_name = "error_message" ];
+
+  // Meta
+  // MethodVersion is the version of the engine_getBlobs method (e.g., "V1", "V2").
+  string method_version = 11 [ json_name = "method_version" ];
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -1334,6 +1369,15 @@ message ClientMeta {
     SlotV2 slot = 2;
   }
 
+  // AdditionalConsensusEngineAPIGetBlobsData contains additional metadata about the
+  // engine_getBlobs call event.
+  message AdditionalConsensusEngineAPIGetBlobsData {
+    // Epoch contains the epoch information for the slot.
+    EpochV2 epoch = 1;
+    // Slot contains the slot information.
+    SlotV2 slot = 2;
+  }
+
   // AdditionalData contains additional, computed data as set by the client
   // about the event.
   oneof AdditionalData {
@@ -1576,6 +1620,8 @@ message ClientMeta {
     AdditionalLibP2PTraceRpcDataColumnCustodyProbeData libp2p_trace_rpc_data_column_custody_probe = 88 [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
     // AdditionalConsensusEngineAPINewPayloadData contains additional data about the consensus engine API new payload event.
     AdditionalConsensusEngineAPINewPayloadData consensus_engine_api_new_payload = 89 [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
+    // AdditionalConsensusEngineAPIGetBlobsData contains additional data about the consensus engine API get blobs event.
+    AdditionalConsensusEngineAPIGetBlobsData consensus_engine_api_get_blobs = 90 [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1779,6 +1825,7 @@ message Event {
     LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE = 78;
     EXECUTION_STATE_SIZE = 79;
     CONSENSUS_ENGINE_API_NEW_PAYLOAD = 80;
+    CONSENSUS_ENGINE_API_GET_BLOBS = 81;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1974,6 +2021,8 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_STATE_SIZE" ];
     ConsensusEngineAPINewPayload consensus_engine_api_new_payload = 202
         [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
+    ConsensusEngineAPIGetBlobs consensus_engine_api_get_blobs = 203
+        [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
   };
 }
 

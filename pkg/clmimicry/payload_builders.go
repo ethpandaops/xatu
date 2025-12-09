@@ -189,3 +189,34 @@ func NewConsensusEngineAPINewPayloadPayload(
 		ExecutionClientVersion: executionClientVersion,
 	}
 }
+
+// NewConsensusEngineAPIGetBlobsPayload creates a consensus engine API get blobs event.
+// The executionClientVersion parameter is the raw version string from web3_clientVersion RPC.
+// It will be parsed into components when converting to protobuf.
+func NewConsensusEngineAPIGetBlobsPayload(
+	requestedAt time.Time,
+	duration time.Duration,
+	slot uint64,
+	blockRoot, parentBlockRoot string,
+	requestedCount uint32,
+	versionedHashes []string,
+	returnedCount uint32,
+	status, errorMessage string,
+	methodVersion string,
+	executionClientVersion string,
+) *TraceEventConsensusEngineAPIGetBlobs {
+	return &TraceEventConsensusEngineAPIGetBlobs{
+		RequestedAt:            requestedAt,
+		Duration:               duration,
+		Slot:                   slot,
+		BlockRoot:              blockRoot,
+		ParentBlockRoot:        parentBlockRoot,
+		RequestedCount:         requestedCount,
+		VersionedHashes:        versionedHashes,
+		ReturnedCount:          returnedCount,
+		Status:                 status,
+		ErrorMessage:           errorMessage,
+		MethodVersion:          methodVersion,
+		ExecutionClientVersion: executionClientVersion,
+	}
+}

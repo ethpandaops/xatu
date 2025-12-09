@@ -364,10 +364,23 @@ func (p *Processor) handleConsensusEngineAPIGetBlobsEvent(
 		return errors.Wrapf(err, "failed to convert event to consensus engine API get blobs event")
 	}
 
+	// Extract execution client metadata from the event.
+	execMeta, err := ExtractExecutionClientMetadataFromGetBlobs(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to extract execution client metadata")
+	}
+
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
 	if !ok {
 		return fmt.Errorf("failed to clone client metadata")
 	}
+
+	// Populate execution client metadata in ClientMeta.Ethereum.Execution.
+	if metadata.Ethereum == nil {
+		metadata.Ethereum = &xatu.ClientMeta_Ethereum{}
+	}
+
+	metadata.Ethereum.Execution = execMeta
 
 	extra := p.deriveAdditionalDataForConsensusEngineAPIGetBlobs(data)
 	metadata.AdditionalData = &xatu.ClientMeta_ConsensusEngineApiGetBlobs{

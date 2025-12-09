@@ -935,3 +935,27 @@ func ExtractExecutionClientMetadata(event *TraceEvent) (*xatu.ClientMeta_Ethereu
 		VersionPatch:   vPatch,
 	}, nil
 }
+
+// ExtractExecutionClientMetadataFromGetBlobs extracts and parses execution client metadata from a GetBlobs TraceEvent.
+// The raw ExecutionClientVersion string is parsed into its components.
+// Returns a ClientMeta_Ethereum_Execution proto that can be assigned directly to ClientMeta.Ethereum.Execution.
+func ExtractExecutionClientMetadataFromGetBlobs(event *TraceEvent) (*xatu.ClientMeta_Ethereum_Execution, error) {
+	typed, ok := event.Payload.(*TraceEventConsensusEngineAPIGetBlobs)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type: expected *TraceEventConsensusEngineAPIGetBlobs, got %T",
+			event.Payload,
+		)
+	}
+
+	// Parse the raw execution client version string
+	impl, version, vMajor, vMinor, vPatch := clients.ParseExecutionClientVersion(typed.ExecutionClientVersion)
+
+	return &xatu.ClientMeta_Ethereum_Execution{
+		Implementation: impl,
+		Version:        version,
+		VersionMajor:   vMajor,
+		VersionMinor:   vMinor,
+		VersionPatch:   vPatch,
+	}, nil
+}

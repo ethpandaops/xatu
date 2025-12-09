@@ -182,3 +182,31 @@ type TraceEventConsensusEngineAPINewPayload struct {
 	// Meta
 	MethodVersion string `json:"method_version"`
 }
+
+// TraceEventConsensusEngineAPIGetBlobs represents an engine_getBlobs API call event.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventConsensusEngineAPIGetBlobs struct {
+	TraceEventPayloadMetaData
+
+	// Timing
+	RequestedAt time.Time     `json:"requested_at"`
+	Duration    time.Duration `json:"duration"`
+
+	// Beacon context
+	Slot            uint64 `json:"slot"`
+	BlockRoot       string `json:"block_root"`
+	ParentBlockRoot string `json:"parent_block_root"`
+
+	// Request details
+	RequestedCount  uint32   `json:"requested_count"`
+	VersionedHashes []string `json:"versioned_hashes"`
+
+	// Response
+	ReturnedCount uint32 `json:"returned_count"`
+	Status        string `json:"status"`
+	ErrorMessage  string `json:"error_message"`
+
+	// Meta
+	MethodVersion string `json:"method_version"`
+}

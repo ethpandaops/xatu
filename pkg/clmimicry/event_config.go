@@ -33,7 +33,8 @@ type EventConfig struct {
 	GossipSubAggregateAndProofEnabled bool `yaml:"gossipSubAggregateAndProofEnabled" default:"true"`
 	GossipSubBlobSidecarEnabled       bool `yaml:"gossipSubBlobSidecarEnabled" default:"true"`
 	GossipSubDataColumnSidecarEnabled bool `yaml:"gossipSubDataColumnSidecarEnabled" default:"true"`
-	EngineAPINewPayloadEnabled        bool `yaml:"engineApiNewPayloadEnabled" default:"true"`
+	EngineAPINewPayloadEnabled        bool `yaml:"engineApiNewPayloadEnabled" default:"false"`
+	EngineAPIGetBlobsEnabled          bool `yaml:"engineApiGetBlobsEnabled" default:"false"`
 }
 
 // Validate validates the event config.

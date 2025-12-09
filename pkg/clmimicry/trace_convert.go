@@ -883,3 +883,30 @@ func TraceEventToConsensusEngineAPINewPayload(event *TraceEvent) (*xatu.Consensu
 		MethodVersion:   typed.MethodVersion,
 	}, nil
 }
+
+// TraceEventToConsensusEngineAPIGetBlobs converts a TraceEvent to a ConsensusEngineAPIGetBlobs protobuf message.
+// Supports typed *TraceEventConsensusEngineAPIGetBlobs payloads from direct callers.
+func TraceEventToConsensusEngineAPIGetBlobs(event *TraceEvent) (*xatu.ConsensusEngineAPIGetBlobs, error) {
+	typed, ok := event.Payload.(*TraceEventConsensusEngineAPIGetBlobs)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for ConsensusEngineAPIGetBlobs: expected *TraceEventConsensusEngineAPIGetBlobs, got %T",
+			event.Payload,
+		)
+	}
+
+	return &xatu.ConsensusEngineAPIGetBlobs{
+		RequestedAt: timestamppb.New(typed.RequestedAt),
+		//nolint:gosec // duration is always positive, conversion is safe.
+		DurationMs:      wrapperspb.UInt64(uint64(typed.Duration.Milliseconds())),
+		Slot:            wrapperspb.UInt64(typed.Slot),
+		BlockRoot:       typed.BlockRoot,
+		ParentBlockRoot: typed.ParentBlockRoot,
+		RequestedCount:  wrapperspb.UInt32(typed.RequestedCount),
+		VersionedHashes: typed.VersionedHashes,
+		ReturnedCount:   wrapperspb.UInt32(typed.ReturnedCount),
+		Status:          typed.Status,
+		ErrorMessage:    typed.ErrorMessage,
+		MethodVersion:   typed.MethodVersion,
+	}, nil
+}

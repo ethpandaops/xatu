@@ -333,6 +333,8 @@ services:
           "mev-relay-validator-registration"
           "node-record-consensus"
           "node-record-execution"
+          "consensus-engine-api-new-payload"
+          "consensus-engine-api-get-blobs"
         )
 
         # Create topics with 10MB message size limit

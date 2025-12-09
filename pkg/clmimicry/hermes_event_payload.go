@@ -182,11 +182,7 @@ type TraceEventConsensusEngineAPINewPayload struct {
 	// Meta
 	MethodVersion string `json:"method_version"`
 
-	// Execution client version info (from web3_clientVersion)
-	ExecutionClientVersion        string `json:"execution_client_version"`
-	ExecutionClientImplementation string `json:"execution_client_implementation"`
-	ExecutionClientVersionParsed  string `json:"execution_client_version_parsed"`
-	ExecutionClientVersionMajor   string `json:"execution_client_version_major"`
-	ExecutionClientVersionMinor   string `json:"execution_client_version_minor"`
-	ExecutionClientVersionPatch   string `json:"execution_client_version_patch"`
+	// ExecutionClientVersion is the raw version string from web3_clientVersion RPC.
+	// Parsed into components when converting to protobuf.
+	ExecutionClientVersion string `json:"execution_client_version"`
 }

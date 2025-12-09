@@ -212,22 +212,6 @@ message ConsensusEngineAPINewPayload {
   // Meta
   // MethodVersion is the version of the engine_newPayload method (e.g., "V3", "V4").
   string method_version = 17 [ json_name = "method_version" ];
-  // ExecutionClientVersion is the full version string of the execution client
-  // as returned by web3_clientVersion RPC (e.g., "Geth/v1.14.12-stable/linux-amd64/go1.23.0").
-  // May be empty if the version could not be fetched.
-  string execution_client_version = 18 [ json_name = "execution_client_version" ];
-  // ExecutionClientImplementation is the implementation name extracted from execution_client_version
-  // (e.g., "Geth", "Nethermind", "Besu", "Reth", "Erigon").
-  string execution_client_implementation = 19 [ json_name = "execution_client_implementation" ];
-  // ExecutionClientVersionParsed is the version portion extracted from execution_client_version
-  // (e.g., "1.14.12-stable" from "Geth/v1.14.12-stable/linux-amd64/go1.23.0").
-  string execution_client_version_parsed = 20 [ json_name = "execution_client_version_parsed" ];
-  // ExecutionClientVersionMajor is the major version number (e.g., "1" from "1.14.12").
-  string execution_client_version_major = 21 [ json_name = "execution_client_version_major" ];
-  // ExecutionClientVersionMinor is the minor version number (e.g., "14" from "1.14.12").
-  string execution_client_version_minor = 22 [ json_name = "execution_client_version_minor" ];
-  // ExecutionClientVersionPatch is the patch version number (e.g., "12" from "1.14.12").
-  string execution_client_version_patch = 23 [ json_name = "execution_client_version_patch" ];
 }
 
 message ClientMeta {

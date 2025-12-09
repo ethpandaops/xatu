@@ -2534,12 +2534,14 @@ transforms:
       .validation_error = .data.validation_error
       .method_version = .data.method_version
 
-      # Execution client version fields
-      .execution_client_version = .data.execution_client_version
-      .execution_client_implementation = .data.execution_client_implementation
-      .execution_client_version_major = .data.execution_client_version_major
-      .execution_client_version_minor = .data.execution_client_version_minor
-      .execution_client_version_patch = .data.execution_client_version_patch
+      # Execution client version fields (from ClientMeta.Ethereum.Execution)
+      if exists(.meta.client.ethereum.execution) {
+        .meta_execution_version = .meta.client.ethereum.execution.version
+        .meta_execution_implementation = .meta.client.ethereum.execution.implementation
+        .meta_execution_version_major = .meta.client.ethereum.execution.version_major
+        .meta_execution_version_minor = .meta.client.ethereum.execution.version_minor
+        .meta_execution_version_patch = .meta.client.ethereum.execution.version_patch
+      }
 
       slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.slot.start_date_time, format: "%+");
       if err == null {

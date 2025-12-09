@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
+	"github.com/ethpandaops/ethcore/pkg/ethereum/clients"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
@@ -865,27 +866,45 @@ func TraceEventToConsensusEngineAPINewPayload(event *TraceEvent) (*xatu.Consensu
 	return &xatu.ConsensusEngineAPINewPayload{
 		RequestedAt: timestamppb.New(typed.RequestedAt),
 		//nolint:gosec // duration is always positive, conversion is safe.
-		DurationMs:                    wrapperspb.UInt64(uint64(typed.Duration.Milliseconds())),
-		Slot:                          wrapperspb.UInt64(typed.Slot),
-		BlockRoot:                     typed.BlockRoot,
-		ParentBlockRoot:               typed.ParentBlockRoot,
-		ProposerIndex:                 wrapperspb.UInt64(typed.ProposerIndex),
-		BlockNumber:                   wrapperspb.UInt64(typed.BlockNumber),
-		BlockHash:                     typed.BlockHash,
-		ParentHash:                    typed.ParentHash,
-		GasUsed:                       wrapperspb.UInt64(typed.GasUsed),
-		GasLimit:                      wrapperspb.UInt64(typed.GasLimit),
-		TxCount:                       wrapperspb.UInt32(typed.TxCount),
-		BlobCount:                     wrapperspb.UInt32(typed.BlobCount),
-		Status:                        typed.Status,
-		LatestValidHash:               typed.LatestValidHash,
-		ValidationError:               typed.ValidationError,
-		MethodVersion:                 typed.MethodVersion,
-		ExecutionClientVersion:        typed.ExecutionClientVersion,
-		ExecutionClientImplementation: typed.ExecutionClientImplementation,
-		ExecutionClientVersionParsed:  typed.ExecutionClientVersionParsed,
-		ExecutionClientVersionMajor:   typed.ExecutionClientVersionMajor,
-		ExecutionClientVersionMinor:   typed.ExecutionClientVersionMinor,
-		ExecutionClientVersionPatch:   typed.ExecutionClientVersionPatch,
+		DurationMs:      wrapperspb.UInt64(uint64(typed.Duration.Milliseconds())),
+		Slot:            wrapperspb.UInt64(typed.Slot),
+		BlockRoot:       typed.BlockRoot,
+		ParentBlockRoot: typed.ParentBlockRoot,
+		ProposerIndex:   wrapperspb.UInt64(typed.ProposerIndex),
+		BlockNumber:     wrapperspb.UInt64(typed.BlockNumber),
+		BlockHash:       typed.BlockHash,
+		ParentHash:      typed.ParentHash,
+		GasUsed:         wrapperspb.UInt64(typed.GasUsed),
+		GasLimit:        wrapperspb.UInt64(typed.GasLimit),
+		TxCount:         wrapperspb.UInt32(typed.TxCount),
+		BlobCount:       wrapperspb.UInt32(typed.BlobCount),
+		Status:          typed.Status,
+		LatestValidHash: typed.LatestValidHash,
+		ValidationError: typed.ValidationError,
+		MethodVersion:   typed.MethodVersion,
+	}, nil
+}
+
+// ExtractExecutionClientMetadata extracts and parses execution client metadata from a TraceEvent.
+// The raw ExecutionClientVersion string is parsed into its components.
+// Returns a ClientMeta_Ethereum_Execution proto that can be assigned directly to ClientMeta.Ethereum.Execution.
+func ExtractExecutionClientMetadata(event *TraceEvent) (*xatu.ClientMeta_Ethereum_Execution, error) {
+	typed, ok := event.Payload.(*TraceEventConsensusEngineAPINewPayload)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type: expected *TraceEventConsensusEngineAPINewPayload, got %T",
+			event.Payload,
+		)
+	}
+
+	// Parse the raw execution client version string
+	impl, version, vMajor, vMinor, vPatch := clients.ParseExecutionClientVersion(typed.ExecutionClientVersion)
+
+	return &xatu.ClientMeta_Ethereum_Execution{
+		Implementation: impl,
+		Version:        version,
+		VersionMajor:   vMajor,
+		VersionMinor:   vMinor,
+		VersionPatch:   vPatch,
 	}, nil
 }

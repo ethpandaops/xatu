@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
+	"github.com/ethpandaops/ethcore/pkg/ethereum/clients"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
@@ -881,5 +882,29 @@ func TraceEventToConsensusEngineAPINewPayload(event *TraceEvent) (*xatu.Consensu
 		LatestValidHash: typed.LatestValidHash,
 		ValidationError: typed.ValidationError,
 		MethodVersion:   typed.MethodVersion,
+	}, nil
+}
+
+// ExtractExecutionClientMetadata extracts and parses execution client metadata from a TraceEvent.
+// The raw ExecutionClientVersion string is parsed into its components.
+// Returns a ClientMeta_Ethereum_Execution proto that can be assigned directly to ClientMeta.Ethereum.Execution.
+func ExtractExecutionClientMetadata(event *TraceEvent) (*xatu.ClientMeta_Ethereum_Execution, error) {
+	typed, ok := event.Payload.(*TraceEventConsensusEngineAPINewPayload)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type: expected *TraceEventConsensusEngineAPINewPayload, got %T",
+			event.Payload,
+		)
+	}
+
+	// Parse the raw execution client version string
+	impl, version, vMajor, vMinor, vPatch := clients.ParseExecutionClientVersion(typed.ExecutionClientVersion)
+
+	return &xatu.ClientMeta_Ethereum_Execution{
+		Implementation: impl,
+		Version:        version,
+		VersionMajor:   vMajor,
+		VersionMinor:   vMinor,
+		VersionPatch:   vPatch,
 	}, nil
 }

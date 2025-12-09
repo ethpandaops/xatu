@@ -27,6 +27,13 @@ CREATE TABLE consensus_engine_api_get_blobs_local ON CLUSTER '{cluster}' (
   -- Meta
   method_version LowCardinality(String) COMMENT 'Version of the engine_getBlobs method (e.g., V1, V2)',
 
+  -- Execution client metadata
+  meta_execution_version LowCardinality(String) COMMENT 'Full execution client version string from web3_clientVersion RPC',
+  meta_execution_implementation LowCardinality(String) COMMENT 'Execution client implementation name (e.g., Geth, Nethermind, Besu, Reth, Erigon)',
+  meta_execution_version_major LowCardinality(String) COMMENT 'Execution client major version number',
+  meta_execution_version_minor LowCardinality(String) COMMENT 'Execution client minor version number',
+  meta_execution_version_patch LowCardinality(String) COMMENT 'Execution client patch version number',
+
   -- Standard metadata fields
   meta_client_name LowCardinality(String) COMMENT 'Name of the client that generated the event',
   meta_client_id String COMMENT 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.' Codec(ZSTD(1)),

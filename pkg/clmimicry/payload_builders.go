@@ -153,6 +153,8 @@ func NewCustodyProbePayload(
 // Consensus engine API payload builder
 
 // NewConsensusEngineAPINewPayloadPayload creates a consensus engine API new payload event.
+// The executionClientVersion parameter is the raw version string from web3_clientVersion RPC.
+// It will be parsed into components when converting to protobuf.
 func NewConsensusEngineAPINewPayloadPayload(
 	requestedAt time.Time,
 	duration time.Duration,
@@ -164,24 +166,26 @@ func NewConsensusEngineAPINewPayloadPayload(
 	txCount, blobCount uint32,
 	status, latestValidHash, validationError string,
 	methodVersion string,
+	executionClientVersion string,
 ) *TraceEventConsensusEngineAPINewPayload {
 	return &TraceEventConsensusEngineAPINewPayload{
-		RequestedAt:     requestedAt,
-		Duration:        duration,
-		Slot:            slot,
-		BlockRoot:       blockRoot,
-		ParentBlockRoot: parentBlockRoot,
-		ProposerIndex:   proposerIndex,
-		BlockNumber:     blockNumber,
-		BlockHash:       blockHash,
-		ParentHash:      parentHash,
-		GasUsed:         gasUsed,
-		GasLimit:        gasLimit,
-		TxCount:         txCount,
-		BlobCount:       blobCount,
-		Status:          status,
-		LatestValidHash: latestValidHash,
-		ValidationError: validationError,
-		MethodVersion:   methodVersion,
+		RequestedAt:            requestedAt,
+		Duration:               duration,
+		Slot:                   slot,
+		BlockRoot:              blockRoot,
+		ParentBlockRoot:        parentBlockRoot,
+		ProposerIndex:          proposerIndex,
+		BlockNumber:            blockNumber,
+		BlockHash:              blockHash,
+		ParentHash:             parentHash,
+		GasUsed:                gasUsed,
+		GasLimit:               gasLimit,
+		TxCount:                txCount,
+		BlobCount:              blobCount,
+		Status:                 status,
+		LatestValidHash:        latestValidHash,
+		ValidationError:        validationError,
+		MethodVersion:          methodVersion,
+		ExecutionClientVersion: executionClientVersion,
 	}
 }

@@ -2,6 +2,8 @@ package execution
 
 import (
 	"testing"
+
+	"github.com/ethpandaops/ethcore/pkg/ethereum/clients"
 )
 
 func TestParseClientVersion(t *testing.T) {
@@ -90,7 +92,7 @@ func TestParseClientVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotImpl, gotVersion, gotMajor, gotMinor, gotPatch := parseClientVersion(tt.clientVersion)
+			gotImpl, gotVersion, gotMajor, gotMinor, gotPatch := clients.ParseExecutionClientVersion(tt.clientVersion)
 
 			if gotImpl != tt.wantImpl {
 				t.Errorf("implementation: got %q, want %q", gotImpl, tt.wantImpl)
@@ -110,64 +112,6 @@ func TestParseClientVersion(t *testing.T) {
 
 			if gotPatch != tt.wantVersionPatch {
 				t.Errorf("versionPatch: got %q, want %q", gotPatch, tt.wantVersionPatch)
-			}
-		})
-	}
-}
-
-func TestSplitString(t *testing.T) {
-	tests := []struct {
-		name string
-		s    string
-		sep  string
-		want []string
-	}{
-		{
-			name: "Split by slash",
-			s:    "Geth/v1.2.3/linux",
-			sep:  "/",
-			want: []string{"Geth", "v1.2.3", "linux"},
-		},
-		{
-			name: "Split by dot",
-			s:    "1.2.3",
-			sep:  ".",
-			want: []string{"1", "2", "3"},
-		},
-		{
-			name: "Empty string",
-			s:    "",
-			sep:  "/",
-			want: nil,
-		},
-		{
-			name: "No separator found",
-			s:    "noseparator",
-			sep:  "/",
-			want: []string{"noseparator"},
-		},
-		{
-			name: "Multiple consecutive separators",
-			s:    "a//b//c",
-			sep:  "/",
-			want: []string{"a", "", "b", "", "c"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := splitString(tt.s, tt.sep)
-
-			if len(got) != len(tt.want) {
-				t.Errorf("length mismatch: got %d, want %d", len(got), len(tt.want))
-
-				return
-			}
-
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("element %d: got %q, want %q", i, got[i], tt.want[i])
-				}
 			}
 		})
 	}

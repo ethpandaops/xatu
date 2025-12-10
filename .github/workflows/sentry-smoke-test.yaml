@@ -87,7 +87,6 @@ jobs:
             "beacon_api_eth_v1_events_head"
         )
 
-        # Define a function that prints the last 5 logs from all docker containers that have the argument in the name
         pretty_print() {
             local message=$1
             local color=$2
@@ -95,14 +94,16 @@ jobs:
             local green='\033[0;32m'
             local red='\033[0;31m'
             local bright_red='\033[1;31m'
+            local yellow='\033[0;33m'
 
-            # Choose color based on the type of message
             if [ "$color" == "green" ]; then
                 color=$green
             elif [ "$color" == "red" ]; then
                 color=$red
             elif [ "$color" == "bright_red" ]; then
                 color=$bright_red
+            elif [ "$color" == "yellow" ]; then
+                color=$yellow
             else
                 color=$no_color
             fi
@@ -119,37 +120,98 @@ jobs:
             done
         }
 
-        # Check for any data in the tables before digging in to the individual sentries
-        for table in "${tables[@]}"; do
-            pretty_print "Checking $table table..." "none"
-            data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
-            if [[ $data_count -gt 0 ]]; then
-                pretty_print "$table table has $data_count entries" "green"
-            else
-                pretty_print "$table table has no entries." "bright_red"
+        # Track which sentries have exported at least one event
+        declare -A sentry_has_events
 
-                print_logs xatu-server
-                print_logs vector
-            fi
+        # Wait for each table to have data from at least one sentry
+        for table in "${tables[@]}"; do
+            pretty_print "Waiting for $table to have data..." "none"
+            while true; do
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
+                if [[ $data_count -gt 0 ]]; then
+                    pretty_print "$table has $data_count entries" "green"
+                    break
+                else
+                    pretty_print "$table has no entries yet, waiting..." "yellow"
+                    print_logs xatu-server
+                    print_logs vector
+                    sleep 5
+                fi
+            done
         done
 
-        for table in "${tables[@]}"; do
-            pretty_print "Checking $table table..." "none"
+        # Check each sentry and record which ones have data in any table
+        for sentry in "${all_sentries[@]}"; do
+            pretty_print "Checking sentry $sentry..." "none"
+            for table in "${tables[@]}"; do
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
+                if [[ $data_count -gt 0 ]]; then
+                    pretty_print "$sentry has $data_count entries in $table" "green"
+                    sentry_has_events[$sentry]=1
+                else
+                    pretty_print "$sentry has no entries in $table" "yellow"
+                fi
+            done
+        done
+
+        # Now wait for any sentries that don't have events yet
+        max_retries=60  # 5 minutes max (60 * 5 seconds)
+        retry_count=0
+
+        while true; do
+            all_have_events=true
             for sentry in "${all_sentries[@]}"; do
-                pretty_print "Checking $table table for $sentry..." "none"
-                while true; do
-                    data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
-                    if [[ $data_count -gt 0 ]]; then
-                        pretty_print "$table has $data_count entries from $sentry" "green"
-                        break
-                    else
-                        pretty_print "$table has no entries from $sentry." "bright_red"
+                if [[ -z "${sentry_has_events[$sentry]}" ]]; then
+                    all_have_events=false
+                    # Check all tables for this sentry
+                    for table in "${tables[@]}"; do
+                        data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
+                        if [[ $data_count -gt 0 ]]; then
+                            pretty_print "$sentry now has $data_count entries in $table" "green"
+                            sentry_has_events[$sentry]=1
+                            break
+                        fi
+                    done
 
+                    if [[ -z "${sentry_has_events[$sentry]}" ]]; then
+                        pretty_print "$sentry still has no events in any table" "yellow"
                         print_logs $sentry
+                    fi
+                fi
+            done
 
-                        sleep 5
+            if $all_have_events; then
+                pretty_print "All sentries have exported events!" "green"
+                break
+            fi
+
+            retry_count=$((retry_count + 1))
+            if [[ $retry_count -ge $max_retries ]]; then
+                pretty_print "Timeout waiting for all sentries" "bright_red"
+                echo "Sentries without events:"
+                for sentry in "${all_sentries[@]}"; do
+                    if [[ -z "${sentry_has_events[$sentry]}" ]]; then
+                        echo "  - $sentry"
+                        print_logs $sentry
                     fi
                 done
+                exit 1
+            fi
+
+            sleep 5
+        done
+
+        # Final summary
+        pretty_print "Final Summary" "none"
+        for table in "${tables[@]}"; do
+            echo "=== $table ==="
+            for sentry in "${all_sentries[@]}"; do
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
+                if [[ $data_count -gt 0 ]]; then
+                    echo "  $sentry: $data_count entries"
+                else
+                    echo "  $sentry: no entries (client may not be synced)"
+                fi
             done
         done
 

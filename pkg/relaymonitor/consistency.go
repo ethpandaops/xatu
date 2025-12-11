@@ -13,7 +13,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// startConsistencyProcesses starts the consistency processes (backfill and forward fill) for all relays if configured
+// startConsistencyProcesses starts the consistency processes for all relays if configured.
+// It creates a single coordinator goroutine per relay that handles all consistency work
+// (both backfill and forward fill) in priority order.
 func (r *RelayMonitor) startConsistencyProcesses(ctx context.Context) error {
 	if r.Config.Consistency == nil {
 		r.log.Info("Consistency processes are disabled")
@@ -29,7 +31,6 @@ func (r *RelayMonitor) startConsistencyProcesses(ctx context.Context) error {
 
 	r.log.Info("Starting consistency processes")
 
-	// Create metrics instance
 	metrics := iterator.NewConsistencyMetrics(namespace)
 
 	checkInterval := r.Config.Consistency.CheckEveryDuration.Duration
@@ -37,243 +38,307 @@ func (r *RelayMonitor) startConsistencyProcesses(ctx context.Context) error {
 		return fmt.Errorf("invalid checkEveryDuration: must be positive, got %v", checkInterval)
 	}
 
-	// Create a single shared rate limiter for each relay
-	// Both forward fill and backfill share the same limiter, but forward fill gets priority
-	// This allows backfill to use full capacity when forward fill has no work
-	rateLimiters := make(map[string]*rate.Limiter)
-
+	// Create one coordinator per relay (single goroutine handles all work for that relay)
 	for _, relayClient := range r.relays {
-		limiter := rate.NewLimiter(
-			rate.Limit(r.Config.Consistency.RateLimitPerRelay),
-			1, // No bursting
-		)
-		rateLimiters[relayClient.Name()] = limiter
-	}
-
-	// Create consistency iterators for each relay and event type
-	for _, relayClient := range r.relays {
-		limiter := rateLimiters[relayClient.Name()]
-
-		// Start backfill process if enabled
-		if r.Config.Consistency.Backfill != nil && r.Config.Consistency.Backfill.Enabled {
-			// Backfill for bid traces
-			go r.runBackfillIterator(ctx, relayClient, xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE, metrics, limiter)
-
-			// Backfill for payload delivered if enabled
-			if r.Config.FetchProposerPayloadDelivered {
-				go r.runBackfillIterator(ctx, relayClient, xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED, metrics, limiter)
-			}
-		}
-
-		// Start forward fill process if enabled
-		if r.Config.Consistency.ForwardFill != nil && r.Config.Consistency.ForwardFill.Enabled {
-			// Forward fill for bid traces
-			go r.runForwardFillIterator(ctx, relayClient, xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE, metrics, limiter)
-
-			// Forward fill for payload delivered if enabled
-			if r.Config.FetchProposerPayloadDelivered {
-				go r.runForwardFillIterator(ctx, relayClient, xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED, metrics, limiter)
-			}
-		}
+		limiter := rate.NewLimiter(rate.Limit(r.Config.Consistency.RateLimitPerRelay), 1)
+		go r.runConsistencyCoordinator(ctx, relayClient, limiter, metrics)
 	}
 
 	return nil
 }
 
-// runBackfillIterator runs the backfill iterator for a specific relay and event type
-func (r *RelayMonitor) runBackfillIterator(ctx context.Context, relayClient *relay.Client, eventType xatu.RelayMonitorType, metrics *iterator.ConsistencyMetrics, limiter *rate.Limiter) {
+// runConsistencyCoordinator runs a single coordinator for all consistency work on a relay.
+// It processes work in priority order: forward fill first, then backfill.
+// This eliminates rate limiter contention by having a single consumer per relay.
+func (r *RelayMonitor) runConsistencyCoordinator(
+	ctx context.Context,
+	relayClient *relay.Client,
+	limiter *rate.Limiter,
+	metrics *iterator.ConsistencyMetrics,
+) {
 	log := r.log.WithFields(logrus.Fields{
-		"process":    "backfill",
-		"relay":      relayClient.Name(),
-		"event_type": eventType.String(),
+		"relay":     relayClient.Name(),
+		"component": "consistency_coordinator",
 	})
 
 	checkInterval := r.Config.Consistency.CheckEveryDuration.Duration
+	network := r.Config.Ethereum.Network
 
-	// Create backfill iterator
-	iter := iterator.NewBackfillIterator(
-		log,
-		r.Config.Ethereum.Network,
-		r.Config.Name,
-		eventType,
-		relayClient.Name(),
-		r.coordinatorClient,
-		r.ethereum.Wallclock(),
-		phase0.Slot(r.Config.Consistency.Backfill.ToSlot),
-		checkInterval,
-	)
+	// Create all iterators (owned by this coordinator, not separate goroutines)
+	var forwardFillBidTrace, forwardFillPayload *iterator.ForwardFillIterator
 
-	log.WithField("to_slot", r.Config.Consistency.Backfill.ToSlot).Info("Starting backfill iterator")
+	var backfillBidTrace, backfillPayload *iterator.BackfillIterator
 
-	// Main backfill loop
+	if r.Config.Consistency.ForwardFill != nil && r.Config.Consistency.ForwardFill.Enabled {
+		forwardFillBidTrace = iterator.NewForwardFillIterator(
+			log,
+			network,
+			r.Config.Name,
+			xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE,
+			relayClient.Name(),
+			r.coordinatorClient,
+			r.ethereum.Wallclock(),
+			checkInterval,
+			r.Config.Consistency.ForwardFill.TrailDistance,
+		)
+
+		if r.Config.FetchProposerPayloadDelivered {
+			forwardFillPayload = iterator.NewForwardFillIterator(
+				log,
+				network,
+				r.Config.Name,
+				xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED,
+				relayClient.Name(),
+				r.coordinatorClient,
+				r.ethereum.Wallclock(),
+				checkInterval,
+				r.Config.Consistency.ForwardFill.TrailDistance,
+			)
+		}
+	}
+
+	if r.Config.Consistency.Backfill != nil && r.Config.Consistency.Backfill.Enabled {
+		backfillBidTrace = iterator.NewBackfillIterator(
+			log,
+			network,
+			r.Config.Name,
+			xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE,
+			relayClient.Name(),
+			r.coordinatorClient,
+			r.ethereum.Wallclock(),
+			phase0.Slot(r.Config.Consistency.Backfill.ToSlot),
+			checkInterval,
+		)
+
+		if r.Config.FetchProposerPayloadDelivered {
+			backfillPayload = iterator.NewBackfillIterator(
+				log,
+				network,
+				r.Config.Name,
+				xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED,
+				relayClient.Name(),
+				r.coordinatorClient,
+				r.ethereum.Wallclock(),
+				phase0.Slot(r.Config.Consistency.Backfill.ToSlot),
+				checkInterval,
+			)
+		}
+	}
+
+	log.Info("Starting consistency coordinator")
+
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info("Stopping backfill iterator")
+			log.Info("Stopping consistency coordinator")
 
 			return
 		case <-ticker.C:
-			// Get next slot to process
-			nextSlot, err := iter.Next(ctx)
-			if err != nil {
-				log.WithError(err).Error("Failed to get next backfill slot")
-
-				continue
-			}
-
-			// Check if backfill is complete
-			if nextSlot == nil {
-				log.Debug("Backfill complete or no work available")
-
-				metrics.SetLag("backfill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, 0)
-
-				continue
-			}
-
-			// Update metrics
-			metrics.SetCurrentSlot("backfill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, uint64(*nextSlot))
-			lag := int64(*nextSlot) - int64(r.Config.Consistency.Backfill.ToSlot) //nolint:gosec // slots won't overflow int64
-			metrics.SetLag("backfill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, lag)
-
-			// Process the slot
-			log.WithField("slot", *nextSlot).Debug("Processing backfill slot")
-
-			// Apply rate limiting - backfill uses WaitN with smaller timeout to yield to forward fill
-			// This gives forward fill priority by allowing backfill to be interrupted
-			backfillCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-			err = limiter.Wait(backfillCtx)
-
-			cancel()
-
-			if err != nil {
-				// Context deadline exceeded is expected for backfill - it yields to forward fill
-				// Only log unexpected rate limiter errors
-				if err != context.DeadlineExceeded {
-					log.WithError(err).Error("Rate limiter error")
-				}
-
-				continue
-			}
-
-			// Fetch data for the slot
-			switch eventType {
-			case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
-				err = r.fetchBidTraces(ctx, relayClient, *nextSlot)
-			case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
-				err = r.fetchProposerPayloadDelivered(ctx, relayClient, *nextSlot)
-			}
-
-			if err != nil {
-				log.WithError(err).WithField("slot", *nextSlot).Error("Failed to fetch data")
-
-				continue
-			}
-
-			// Update location
-			if err := iter.UpdateLocation(ctx, *nextSlot); err != nil {
-				log.WithError(err).Error("Failed to update location")
-			}
+			// Process work in priority order
+			r.processConsistencyWork(
+				ctx,
+				log,
+				relayClient,
+				limiter,
+				metrics,
+				forwardFillBidTrace,
+				forwardFillPayload,
+				backfillBidTrace,
+				backfillPayload,
+			)
 		}
 	}
 }
 
-// runForwardFillIterator runs the forward fill iterator for a specific relay and event type
-func (r *RelayMonitor) runForwardFillIterator(ctx context.Context, relayClient *relay.Client, eventType xatu.RelayMonitorType, metrics *iterator.ConsistencyMetrics, limiter *rate.Limiter) {
-	log := r.log.WithFields(logrus.Fields{
-		"process":    "forward_fill",
-		"relay":      relayClient.Name(),
-		"event_type": eventType.String(),
-	})
+// processConsistencyWork checks iterators in priority order and processes one slot.
+// Priority order (payload delivered first as it's "what actually happened"):
+//  1. Forward fill payload delivered
+//  2. Backfill payload delivered
+//  3. Forward fill bid traces
+//  4. Backfill bid traces
+func (r *RelayMonitor) processConsistencyWork(
+	ctx context.Context,
+	log logrus.FieldLogger,
+	relayClient *relay.Client,
+	limiter *rate.Limiter,
+	metrics *iterator.ConsistencyMetrics,
+	forwardFillBidTrace, forwardFillPayload *iterator.ForwardFillIterator,
+	backfillBidTrace, backfillPayload *iterator.BackfillIterator,
+) {
+	network := r.Config.Ethereum.Network
 
-	checkInterval := r.Config.Consistency.CheckEveryDuration.Duration
-
-	// Create forward fill iterator
-	iter := iterator.NewForwardFillIterator(
-		log,
-		r.Config.Ethereum.Network,
-		r.Config.Name,
-		eventType,
-		relayClient.Name(),
-		r.coordinatorClient,
-		r.ethereum.Wallclock(),
-		checkInterval,
-		r.Config.Consistency.ForwardFill.TrailDistance,
-	)
-
-	log.Info("Starting forward fill iterator")
-
-	// Main forward fill loop
-	ticker := time.NewTicker(checkInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Stopping forward fill iterator")
-
+	// Priority 1: Forward fill payload delivered
+	if forwardFillPayload != nil {
+		if r.tryProcessIterator(
+			ctx, log, relayClient, limiter, metrics,
+			forwardFillPayload, xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED, "forward_fill", network,
+		) {
 			return
-		case <-ticker.C:
-			// Get next slot to process
-			nextSlot, err := iter.Next(ctx)
-			if err != nil {
-				log.WithError(err).Error("Failed to get next forward fill slot")
-
-				continue
-			}
-
-			// Check if we're caught up
-			if nextSlot == nil {
-				log.Debug("Forward fill caught up")
-				metrics.SetLag("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, 0)
-
-				continue
-			}
-
-			// Update metrics
-			wallclockSlot := r.ethereum.Wallclock().Slots().Current()
-			metrics.SetCurrentSlot("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, uint64(*nextSlot))
-
-			// Calculate lag considering trail distance
-			maxProcessableSlot := wallclockSlot.Number()
-			if wallclockSlot.Number() > r.Config.Consistency.ForwardFill.TrailDistance {
-				maxProcessableSlot = wallclockSlot.Number() - r.Config.Consistency.ForwardFill.TrailDistance
-			}
-
-			lag := int64(maxProcessableSlot) - int64(*nextSlot) //nolint:gosec // slots won't overflow int64
-			metrics.SetLag("forward_fill", relayClient.Name(), eventType.String(), r.Config.Ethereum.Network, lag)
-
-			// Process the slot
-			log.WithField("slot", *nextSlot).Debug("Processing forward fill slot")
-
-			// Apply rate limiting (forward fill has priority)
-			err = limiter.Wait(ctx)
-			if err != nil {
-				log.WithError(err).Debug("Rate limiter error")
-
-				continue
-			}
-
-			// Fetch data for the slot
-			switch eventType {
-			case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
-				err = r.fetchBidTraces(ctx, relayClient, *nextSlot)
-			case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
-				err = r.fetchProposerPayloadDelivered(ctx, relayClient, *nextSlot)
-			}
-
-			if err != nil {
-				log.WithError(err).WithField("slot", *nextSlot).Error("Failed to fetch data")
-
-				continue
-			}
-
-			// Update location
-			if err := iter.UpdateLocation(ctx, *nextSlot); err != nil {
-				log.WithError(err).Error("Failed to update location")
-			}
 		}
 	}
+
+	// Priority 2: Backfill payload delivered
+	if backfillPayload != nil {
+		if r.tryProcessIterator(
+			ctx, log, relayClient, limiter, metrics,
+			backfillPayload, xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED, "backfill", network,
+		) {
+			return
+		}
+	}
+
+	// Priority 3: Forward fill bid traces
+	if forwardFillBidTrace != nil {
+		if r.tryProcessIterator(
+			ctx, log, relayClient, limiter, metrics,
+			forwardFillBidTrace, xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE, "forward_fill", network,
+		) {
+			return
+		}
+	}
+
+	// Priority 4: Backfill bid traces
+	if backfillBidTrace != nil {
+		if r.tryProcessIterator(
+			ctx, log, relayClient, limiter, metrics,
+			backfillBidTrace, xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE, "backfill", network,
+		) {
+			return
+		}
+	}
+}
+
+// SlotIterator is an interface for iterators that can provide the next slot to process.
+type SlotIterator interface {
+	Next(ctx context.Context) (*phase0.Slot, error)
+	UpdateLocation(ctx context.Context, slot phase0.Slot) error
+}
+
+// tryProcessIterator attempts to get the next slot from an iterator and process it.
+// Returns true if a slot was processed, false if no work was available.
+func (r *RelayMonitor) tryProcessIterator(
+	ctx context.Context,
+	log logrus.FieldLogger,
+	relayClient *relay.Client,
+	limiter *rate.Limiter,
+	metrics *iterator.ConsistencyMetrics,
+	iter SlotIterator,
+	eventType xatu.RelayMonitorType,
+	process string,
+	network string,
+) bool {
+	slot, err := iter.Next(ctx)
+	if err != nil {
+		log.WithError(err).WithFields(logrus.Fields{
+			"event_type": eventType.String(),
+			"process":    process,
+		}).Error("Failed to get next slot")
+
+		return false
+	}
+
+	if slot == nil {
+		// No work available - set lag to 0
+		metrics.SetLag(process, relayClient.Name(), eventType.String(), network, 0)
+
+		return false
+	}
+
+	// Process the slot
+	r.processSlot(ctx, log, relayClient, limiter, metrics, *slot, eventType, process, iter, network)
+
+	return true
+}
+
+// processSlot applies rate limiting, fetches data, and updates location on success.
+func (r *RelayMonitor) processSlot(
+	ctx context.Context,
+	log logrus.FieldLogger,
+	relayClient *relay.Client,
+	limiter *rate.Limiter,
+	metrics *iterator.ConsistencyMetrics,
+	slot phase0.Slot,
+	eventType xatu.RelayMonitorType,
+	process string,
+	iter SlotIterator,
+	network string,
+) {
+	log = log.WithFields(logrus.Fields{
+		"slot":       slot,
+		"event_type": eventType.String(),
+		"process":    process,
+	})
+
+	// Update current slot metric
+	metrics.SetCurrentSlot(process, relayClient.Name(), eventType.String(), network, uint64(slot))
+
+	// Calculate and update lag metric
+	r.updateLagMetric(metrics, process, relayClient.Name(), eventType, network, slot)
+
+	log.Debug("Processing slot")
+
+	// Apply rate limiting (single consumer - no contention)
+	if err := limiter.Wait(ctx); err != nil {
+		log.WithError(err).Debug("Rate limiter cancelled")
+
+		return
+	}
+
+	// Fetch data
+	var err error
+
+	switch eventType {
+	case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
+		err = r.fetchBidTraces(ctx, relayClient, slot)
+	case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
+		err = r.fetchProposerPayloadDelivered(ctx, relayClient, slot)
+	}
+
+	if err != nil {
+		log.WithError(err).Error("Failed to fetch data")
+
+		return // Don't update location - will retry on next tick
+	}
+
+	// Update coordinator location on success
+	if err := iter.UpdateLocation(ctx, slot); err != nil {
+		log.WithError(err).Error("Failed to update location")
+	}
+}
+
+// updateLagMetric calculates and sets the lag metric based on process type.
+func (r *RelayMonitor) updateLagMetric(
+	metrics *iterator.ConsistencyMetrics,
+	process string,
+	relayName string,
+	eventType xatu.RelayMonitorType,
+	network string,
+	slot phase0.Slot,
+) {
+	var lag int64
+
+	switch process {
+	case "forward_fill":
+		// Lag is distance from current slot to max processable slot
+		wallclockSlot := r.ethereum.Wallclock().Slots().Current()
+		maxProcessableSlot := wallclockSlot.Number()
+
+		if r.Config.Consistency.ForwardFill != nil &&
+			wallclockSlot.Number() > r.Config.Consistency.ForwardFill.TrailDistance {
+			maxProcessableSlot = wallclockSlot.Number() - r.Config.Consistency.ForwardFill.TrailDistance
+		}
+
+		lag = int64(maxProcessableSlot) - int64(slot) //nolint:gosec // slots won't overflow int64
+
+	case "backfill":
+		// Lag is distance from current slot to target slot
+		if r.Config.Consistency.Backfill != nil {
+			lag = int64(slot) - int64(r.Config.Consistency.Backfill.ToSlot) //nolint:gosec // slots won't overflow int64
+		}
+	}
+
+	metrics.SetLag(process, relayName, eventType.String(), network, lag)
 }

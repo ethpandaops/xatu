@@ -116,6 +116,34 @@ outputs:
 #   # Configuration for events without sharding keys (Group D events)
 #   noShardingKeyEvents:
 #     enabled: true # Process all events without sharding keys
+#
+# randomSampling:
+#   # Random sampling configuration - provides a "second chance" for events
+#   # that were NOT captured by deterministic sharding.
+#   #
+#   # Pattern Format:
+#   # - For GroupC events (IWANT, IDONTWANT - no topic): Use exact event type
+#   #   e.g., "LIBP2P_TRACE_RPC_META_CONTROL_IWANT"
+#   # - For GroupA/B events (with topic): Use "EVENT_TYPE*:topic_pattern"
+#   #   e.g., "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE*:.*attestation.*"
+#   # - For topic-only patterns: Use regex pattern
+#   #   e.g., ".*beacon_block.*"
+#   #
+#   # Note: Random sampling only applies to events REJECTED by deterministic
+#   # sharding. Events already accepted are NOT sampled again (no duplicates).
+#   patterns:
+#     # 2% random sample of IWANT events
+#     "LIBP2P_TRACE_RPC_META_CONTROL_IWANT":
+#       chance: "2%"
+#
+#     # 2% random sample of IHAVE attestation events
+#     "LIBP2P_TRACE_RPC_META_CONTROL_IHAVE*:.*attestation.*":
+#       chance: "2%"
+#
+#     # 0.5% catch-all for any other rejected events
+#     ".*":
+#       chance: "0.5%"
+#
 # events:
 #   recvRpcEnabled: false
 #   sendRpcEnabled: false

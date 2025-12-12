@@ -37,6 +37,10 @@ type Config struct {
 
 	// Sharding is the configuration for event sharding
 	Sharding ShardingConfig `yaml:"sharding"`
+
+	// RandomSampling is the configuration for random sampling (second chance for events
+	// that were not captured by deterministic sharding)
+	RandomSampling RandomSamplingConfig `yaml:"randomSampling"`
 }
 
 func (c *Config) Validate() error {
@@ -60,6 +64,10 @@ func (c *Config) Validate() error {
 
 	if err := c.validateSharding(); err != nil {
 		return fmt.Errorf("invalid sharding config: %w", err)
+	}
+
+	if err := c.validateRandomSampling(); err != nil {
+		return fmt.Errorf("invalid random sampling config: %w", err)
 	}
 
 	return nil
@@ -111,6 +119,27 @@ func (c *Config) validateSharding() error {
 		c.Sharding.NoShardingKeyEvents = &NoShardingKeyConfig{
 			Enabled: true,
 		}
+	}
+
+	return nil
+}
+
+// validateRandomSampling validates the random sampling configuration
+func (c *Config) validateRandomSampling() error {
+	// If random sampling is not configured, that's fine - it's optional
+	if c.RandomSampling.Patterns == nil {
+		c.RandomSampling.Patterns = make(map[string]*RandomSamplingPatternConfig)
+
+		return nil
+	}
+
+	// Compile and validate patterns
+	if err := c.RandomSampling.compilePatterns(); err != nil {
+		return fmt.Errorf("failed to compile random sampling patterns: %w", err)
+	}
+
+	if err := c.RandomSampling.validate(); err != nil {
+		return err
 	}
 
 	return nil

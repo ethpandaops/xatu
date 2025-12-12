@@ -312,7 +312,8 @@ func createTestMimicryWithWallclock(t *testing.T, config *Config, sink output.Si
 	var sharder *UnifiedSharder
 	if config.Sharding.Topics != nil || config.Sharding.NoShardingKeyEvents != nil {
 		var err error
-		sharder, err = NewUnifiedSharder(&config.Sharding, true)
+
+		sharder, err = NewUnifiedSharder(&config.Sharding, nil, true)
 		if err != nil {
 			t.Fatalf("Failed to create sharder: %v", err)
 		}

@@ -22,6 +22,8 @@ captureDelay: 3m
 
 # ethereum:
 #   overrideNetworkName: devnet
+#   blobTransactionBatchSize: 1  # Number of blob txns to request at a time (default: 1)
+#   transactionBatchSize: 10     # Number of other txns to request at a time (default: 10)
 
 coordinator:
   type: static

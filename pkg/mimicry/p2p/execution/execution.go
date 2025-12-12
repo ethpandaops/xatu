@@ -46,6 +46,10 @@ type Peer struct {
 	signer         types.Signer
 	ethereumConfig *ethereum.Config
 
+	// Transaction batch sizes for GetPooledTransactions
+	blobTransactionBatchSize int
+	transactionBatchSize     int
+
 	name            string
 	protocolVersion uint64
 	implmentation   string
@@ -63,14 +67,30 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 		return nil, err
 	}
 
+	// Set batch sizes from config, with defaults
+	blobBatchSize := 1
+	txBatchSize := 10
+
+	if ethereumConfig != nil {
+		if ethereumConfig.BlobTransactionBatchSize > 0 {
+			blobBatchSize = ethereumConfig.BlobTransactionBatchSize
+		}
+
+		if ethereumConfig.TransactionBatchSize > 0 {
+			txBatchSize = ethereumConfig.TransactionBatchSize
+		}
+	}
+
 	return &Peer{
-		log:            log.WithField("node_record", nodeRecord),
-		nodeRecord:     nodeRecord,
-		handlers:       handlers,
-		captureDelay:   captureDelay,
-		client:         client,
-		sharedCache:    sharedCache,
-		ethereumConfig: ethereumConfig,
+		log:                      log.WithField("node_record", nodeRecord),
+		nodeRecord:               nodeRecord,
+		handlers:                 handlers,
+		captureDelay:             captureDelay,
+		client:                   client,
+		sharedCache:              sharedCache,
+		ethereumConfig:           ethereumConfig,
+		blobTransactionBatchSize: blobBatchSize,
+		transactionBatchSize:     txBatchSize,
 		network: &networks.Network{
 			Name: networks.NetworkNameNone,
 		},
@@ -208,7 +228,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		}
 
 		chainID := new(big.Int).SetUint64(p.network.ID)
-		p.signer = types.NewCancunSigner(chainID)
+		p.signer = types.LatestSignerForChainID(chainID)
 
 		p.log.WithFields(logrus.Fields{
 			"network":      p.network.Name,
@@ -230,8 +250,14 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			now := time.Now()
-			for _, hash := range hashes.Hashes {
-				if errT := p.processTransaction(ctx, now, hash); errT != nil {
+
+			for i, hash := range hashes.Hashes {
+				var txType uint8
+				if hashes.Types != nil && len(hashes.Types) > i {
+					txType = hashes.Types[i]
+				}
+
+				if errT := p.processTransaction(ctx, now, hash, txType); errT != nil {
 					p.log.WithError(errT).Error("failed processing event")
 				}
 			}
@@ -318,13 +344,14 @@ func (p *Peer) shouldGetTransactions() bool {
 	return true
 }
 
-func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash common.Hash) error {
+func (p *Peer) processTransaction(ctx context.Context, now time.Time, hash common.Hash, txType uint8) error {
 	// check if transaction is already in the shared cache, no need to fetch it again
 	exists := p.sharedCache.Transaction.Get(hash.String())
 	if exists == nil {
 		item := TransactionHashItem{
 			Hash: hash,
 			Seen: now,
+			Type: txType,
 		}
 		if err := p.txProc.Write(ctx, []*TransactionHashItem{&item}); err != nil {
 			return err

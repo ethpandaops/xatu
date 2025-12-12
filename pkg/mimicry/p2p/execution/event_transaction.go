@@ -128,6 +128,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 type TransactionHashItem struct {
 	Hash common.Hash
 	Seen time.Time
+	Type uint8
 }
 
 type TransactionExporter struct {
@@ -151,66 +152,106 @@ func (t TransactionExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+type txHashMeta struct {
+	Seen time.Time
+	Type uint8
+}
+
 func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashItem) error {
 	if len(items) == 0 {
 		return nil
 	}
 
-	go func() {
-		var hashes []common.Hash
+	var (
+		blobHashes  []common.Hash
+		otherHashes []common.Hash
+	)
 
-		seenMap := make(map[common.Hash]time.Time, len(items))
+	metaMap := make(map[common.Hash]txHashMeta, len(items))
 
-		for _, item := range items {
-			if item == nil {
-				continue
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+
+		exists := p.sharedCache.Transaction.Get(item.Hash.String())
+		if exists == nil {
+			metaMap[item.Hash] = txHashMeta{Seen: item.Seen, Type: item.Type}
+
+			if item.Type == 3 {
+				blobHashes = append(blobHashes, item.Hash)
+			} else {
+				otherHashes = append(otherHashes, item.Hash)
+			}
+		}
+	}
+
+	if len(blobHashes) == 0 && len(otherHashes) == 0 {
+		return nil
+	}
+
+	// Process blob transactions in configured batch size (default 1, they're ~128KB+ each)
+	for i := 0; i < len(blobHashes); i += p.blobTransactionBatchSize {
+		end := i + p.blobTransactionBatchSize
+		if end > len(blobHashes) {
+			end = len(blobHashes)
+		}
+
+		p.fetchAndProcessTransactions(ctx, blobHashes[i:end], metaMap)
+	}
+
+	// Process other transactions in configured batch size (default 10)
+	for i := 0; i < len(otherHashes); i += p.transactionBatchSize {
+		end := i + p.transactionBatchSize
+		if end > len(otherHashes) {
+			end = len(otherHashes)
+		}
+
+		p.fetchAndProcessTransactions(ctx, otherHashes[i:end], metaMap)
+	}
+
+	return nil
+}
+
+func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.Hash, metaMap map[common.Hash]txHashMeta) {
+	if len(hashes) == 0 {
+		return
+	}
+
+	txs, err := p.client.GetPooledTransactions(ctx, hashes)
+	if err != nil {
+		p.log.WithError(err).Warn("Failed to get pooled transactions")
+
+		return
+	}
+
+	if txs == nil {
+		return
+	}
+
+	for _, tx := range txs.PooledTransactionsResponse {
+		_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
+		// transaction was just set in shared cache, so we need to handle it
+		if !retrieved {
+			meta := metaMap[tx.Hash()]
+			seen := meta.Seen
+
+			if seen.IsZero() {
+				p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")
+
+				seen = time.Now()
 			}
 
-			exists := p.sharedCache.Transaction.Get(item.Hash.String())
-			if exists == nil {
-				hashes = append(hashes, item.Hash)
-				seenMap[item.Hash] = item.Seen
+			event, err := p.handleTransaction(ctx, seen, tx)
+			if err != nil {
+				p.log.WithError(err).Error("Failed to handle transaction")
 			}
-		}
 
-		if len(hashes) == 0 {
-			return
-		}
-
-		txs, err := p.client.GetPooledTransactions(ctx, hashes)
-		if err != nil {
-			p.log.WithError(err).Warn("Failed to get pooled transactions")
-
-			return
-		}
-
-		if txs != nil {
-			for _, tx := range txs.PooledTransactionsResponse {
-				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
-				// transaction was just set in shared cache, so we need to handle it
-				if !retrieved {
-					seen := seenMap[tx.Hash()]
-					if seen.IsZero() {
-						p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")
-
-						seen = time.Now()
-					}
-
-					event, err := p.handleTransaction(ctx, seen, tx)
-
-					if err != nil {
-						p.log.WithError(err).Error("Failed to handle transaction")
-					}
-
-					if event != nil {
-						if err := p.handlers.DecoratedEvent(ctx, event); err != nil {
-							p.log.WithError(err).Error("Failed to handle transaction")
-						}
-					}
+			if event != nil {
+				if err := p.handlers.DecoratedEvent(ctx, event); err != nil {
+					p.log.WithError(err).Error("Failed to handle transaction")
 				}
 			}
 		}
-	}()
-
-	return nil
+	}
 }

@@ -2,7 +2,6 @@ package clmimicry
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -37,9 +36,9 @@ func (p *Processor) handleGossipDataColumnSidecar(
 		Index:               wrapperspb.UInt64(payload.DataColumnSidecar.GetIndex()),
 		Slot:                wrapperspb.UInt64(uint64(header.GetSlot())),
 		ProposerIndex:       wrapperspb.UInt64(uint64(header.GetProposerIndex())),
-		StateRoot:           wrapperspb.String(hex.EncodeToString(header.GetStateRoot())),
-		ParentRoot:          wrapperspb.String(hex.EncodeToString(header.GetParentRoot())),
-		BlockRoot:           wrapperspb.String(hex.EncodeToString(blockRoot[:])),
+		StateRoot:           wrapperspb.String(fmt.Sprintf("0x%x", header.GetStateRoot())),
+		ParentRoot:          wrapperspb.String(fmt.Sprintf("0x%x", header.GetParentRoot())),
+		BlockRoot:           wrapperspb.String(fmt.Sprintf("0x%x", blockRoot)),
 		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
 	}
 

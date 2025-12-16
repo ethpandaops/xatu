@@ -428,6 +428,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 				}
 			}()
 
+			// Trigger n+1 block prefetching if enabled
+			if s.Config.ValidatorBlockPrefetch.Enabled {
+				go s.handleBlockPrefetch(ctx, block.Slot)
+			}
+
 			return nil
 		})
 

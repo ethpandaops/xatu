@@ -3,7 +3,6 @@ package relay
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,10 +19,6 @@ type Config struct {
 	URL  string `yaml:"url"`
 	Name string `yaml:"name"`
 }
-
-var ErrValidatorNotRegistered = errors.New("validator not registered")
-
-var ErrRateLimited = errors.New("rate limited")
 
 // API endpoint constants
 var (
@@ -109,16 +104,15 @@ func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.Bi
 	if resp.StatusCode != http.StatusOK {
 		c.metrics.IncAPIFailures(c.name, GetBidsEndpoint, c.networkName)
 
-		var errorResp struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
+		// Try to read error message from body
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		message := string(bodyBytes)
+
+		if message == "" {
+			message = http.StatusText(resp.StatusCode)
 		}
 
-		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err != nil {
-			return nil, fmt.Errorf("failed to decode error response: %w", err)
-		}
-
-		return nil, fmt.Errorf("API error: %s (code: %d)", errorResp.Message, errorResp.Code)
+		return nil, NewRelayError(resp.StatusCode, message, GetBidsEndpoint)
 	}
 
 	//nolint:tagliatelle // Not our type
@@ -145,18 +139,45 @@ func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.Bi
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	bidTraces := make([]*mevrelay.BidTrace, len(bids))
+	bidTraces := make([]*mevrelay.BidTrace, 0, len(bids))
 
-	for i, bid := range bids {
-		slot, _ := strconv.ParseUint(bid.Slot, 10, 64)
-		blockNumber, _ := strconv.ParseUint(bid.BlockNumber, 10, 64)
-		gasLimit, _ := strconv.ParseUint(bid.GasLimit, 10, 64)
-		gasUsed, _ := strconv.ParseUint(bid.GasUsed, 10, 64)
-		numTx, _ := strconv.ParseUint(bid.NumTx, 10, 64)
-		timestamp, _ := strconv.ParseInt(bid.Timestamp, 10, 64)
-		timestampMs, _ := strconv.ParseInt(bid.TimestampMs, 10, 64)
+	for _, bid := range bids {
+		slot, err := strconv.ParseUint(bid.Slot, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse slot %q: %w", bid.Slot, err)
+		}
 
-		bidTraces[i] = &mevrelay.BidTrace{
+		blockNumber, err := strconv.ParseUint(bid.BlockNumber, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse block_number %q: %w", bid.BlockNumber, err)
+		}
+
+		gasLimit, err := strconv.ParseUint(bid.GasLimit, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse gas_limit %q: %w", bid.GasLimit, err)
+		}
+
+		gasUsed, err := strconv.ParseUint(bid.GasUsed, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse gas_used %q: %w", bid.GasUsed, err)
+		}
+
+		numTx, err := strconv.ParseUint(bid.NumTx, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse num_tx %q: %w", bid.NumTx, err)
+		}
+
+		timestamp, err := strconv.ParseInt(bid.Timestamp, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse timestamp %q: %w", bid.Timestamp, err)
+		}
+
+		timestampMs, err := strconv.ParseInt(bid.TimestampMs, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse timestamp_ms %q: %w", bid.TimestampMs, err)
+		}
+
+		bidTraces = append(bidTraces, &mevrelay.BidTrace{
 			Slot:                 &wrapperspb.UInt64Value{Value: slot},
 			ParentHash:           &wrapperspb.StringValue{Value: bid.ParentHash},
 			BlockHash:            &wrapperspb.StringValue{Value: bid.BlockHash},
@@ -171,7 +192,7 @@ func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.Bi
 			NumTx:                &wrapperspb.UInt64Value{Value: numTx},
 			Timestamp:            &wrapperspb.Int64Value{Value: timestamp},
 			TimestampMs:          &wrapperspb.Int64Value{Value: timestampMs},
-		}
+		})
 	}
 
 	c.metrics.IncBidsReceived(c.name, c.networkName, len(bidTraces))
@@ -210,7 +231,15 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 	if resp.StatusCode != http.StatusOK {
 		c.metrics.IncAPIFailures(c.name, GetProposerPayloadEndpoint, c.networkName)
 
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		// Try to read error message from body
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		message := string(bodyBytes)
+
+		if message == "" {
+			message = http.StatusText(resp.StatusCode)
+		}
+
+		return nil, NewRelayError(resp.StatusCode, message, GetProposerPayloadEndpoint)
 	}
 
 	//nolint:tagliatelle // Not our type
@@ -234,18 +263,37 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	payloads := make([]*mevrelay.ProposerPayloadDelivered, len(rawPayloads))
+	payloads := make([]*mevrelay.ProposerPayloadDelivered, 0, len(rawPayloads))
 
-	for i, rawPayload := range rawPayloads {
+	for _, rawPayload := range rawPayloads {
+		slot, err := strconv.ParseUint(rawPayload.Slot, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse slot %q: %w", rawPayload.Slot, err)
+		}
+
+		gasLimit, err := strconv.ParseUint(rawPayload.GasLimit, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse gas_limit %q: %w", rawPayload.GasLimit, err)
+		}
+
+		gasUsed, err := strconv.ParseUint(rawPayload.GasUsed, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse gas_used %q: %w", rawPayload.GasUsed, err)
+		}
+
+		blockNumber, err := strconv.ParseUint(rawPayload.BlockNumber, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse block_number %q: %w", rawPayload.BlockNumber, err)
+		}
+
+		numTx, err := strconv.ParseUint(rawPayload.NumTx, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse num_tx %q: %w", rawPayload.NumTx, err)
+		}
+
 		c.metrics.IncProposerPayloadDelivered(c.name, c.networkName, 1)
 
-		slot, _ := strconv.ParseUint(rawPayload.Slot, 10, 64)
-		gasLimit, _ := strconv.ParseUint(rawPayload.GasLimit, 10, 64)
-		gasUsed, _ := strconv.ParseUint(rawPayload.GasUsed, 10, 64)
-		blockNumber, _ := strconv.ParseUint(rawPayload.BlockNumber, 10, 64)
-		numTx, _ := strconv.ParseUint(rawPayload.NumTx, 10, 64)
-
-		payloads[i] = &mevrelay.ProposerPayloadDelivered{
+		payloads = append(payloads, &mevrelay.ProposerPayloadDelivered{
 			Slot:                 &wrapperspb.UInt64Value{Value: slot},
 			ParentHash:           &wrapperspb.StringValue{Value: rawPayload.ParentHash},
 			BlockHash:            &wrapperspb.StringValue{Value: rawPayload.BlockHash},
@@ -257,7 +305,7 @@ func (c *Client) GetProposerPayloadDelivered(ctx context.Context, params url.Val
 			Value:                &wrapperspb.StringValue{Value: rawPayload.Value},
 			BlockNumber:          &wrapperspb.UInt64Value{Value: blockNumber},
 			NumTx:                &wrapperspb.UInt64Value{Value: numTx},
-		}
+		})
 	}
 
 	return payloads, nil
@@ -294,21 +342,24 @@ func (c *Client) GetValidatorRegistrations(ctx context.Context, pubkey string) (
 	if resp.StatusCode != http.StatusOK {
 		c.metrics.IncAPIFailures(c.name, GetValidatorRegistrationEndpoint, c.networkName)
 
+		// Try to read error message from body
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		message := string(bodyBytes)
+
+		// Check for specific error conditions
 		if resp.StatusCode == http.StatusTooManyRequests {
 			return nil, ErrRateLimited
 		}
 
-		// Check for "no registration found"
-		bodyBytes, errr := io.ReadAll(resp.Body)
-		if errr != nil {
-			return nil, fmt.Errorf("failed to read response body for non-200 status code: %w", errr)
-		}
-
-		if strings.Contains(string(bodyBytes), "no registration found") {
+		if strings.Contains(message, "no registration found") {
 			return nil, ErrValidatorNotRegistered
 		}
 
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		if message == "" {
+			message = http.StatusText(resp.StatusCode)
+		}
+
+		return nil, NewRelayError(resp.StatusCode, message, GetValidatorRegistrationEndpoint)
 	}
 
 	var rawRegistrations struct {

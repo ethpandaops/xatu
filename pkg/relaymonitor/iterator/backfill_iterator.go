@@ -3,6 +3,7 @@ package iterator
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -23,6 +24,7 @@ type BackfillIterator struct {
 	relayName        string
 	toSlot           phase0.Slot
 	checkInterval    time.Duration
+	batchSize        int
 }
 
 func NewBackfillIterator(
@@ -34,6 +36,7 @@ func NewBackfillIterator(
 	wallclock *ethwallclock.EthereumBeaconChain,
 	toSlot phase0.Slot,
 	checkInterval time.Duration,
+	batchSize int,
 ) *BackfillIterator {
 	// Append ":backfill" suffix to relay name to create unique record
 	relayNameWithSuffix := relayName + ":backfill"
@@ -51,6 +54,7 @@ func NewBackfillIterator(
 		wallclock:        wallclock,
 		toSlot:           toSlot,
 		checkInterval:    checkInterval,
+		batchSize:        batchSize,
 	}
 }
 
@@ -87,6 +91,54 @@ func (b *BackfillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	nextSlot := phase0.Slot(backfillSlot - 1)
 
 	return &nextSlot, nil
+}
+
+// NextBatch returns batch parameters for fetching multiple payloads at once.
+// This is more efficient than fetching slot-by-slot for backfilling.
+// Returns nil if backfill is complete or no work available.
+func (b *BackfillIterator) NextBatch(ctx context.Context) (*BatchRequest, error) {
+	// Get current location from coordinator
+	location, err := b.coordinator.GetRelayMonitorLocation(ctx, b.relayMonitorType, b.networkName, b.clientName, b.relayName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get relay monitor location")
+	}
+
+	var currentSlot uint64
+
+	if location == nil {
+		// Start from current slot if no location exists
+		wallclockSlot := b.wallclock.Slots().Current()
+		currentSlot = wallclockSlot.Number()
+	} else {
+		slot, err := b.getSlot(location)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get slot from location")
+		}
+
+		currentSlot = slot
+	}
+
+	// Check if we've reached the target
+	if currentSlot <= uint64(b.toSlot) {
+		b.log.Debug("Backfill complete")
+
+		return nil, nil //nolint:nilnil // nil indicates backfill complete
+	}
+
+	// Build batch request parameters
+	// Use cursor=currentSlot to fetch payloads from currentSlot going backwards
+	// The relay API returns slots <= cursor in descending order
+	params := url.Values{
+		"cursor": {fmt.Sprintf("%d", currentSlot)},
+		"limit":  {fmt.Sprintf("%d", b.batchSize)},
+	}
+
+	return &BatchRequest{
+		Params:      params,
+		CurrentSlot: currentSlot,
+		TargetSlot:  uint64(b.toSlot),
+		BatchSize:   b.batchSize,
+	}, nil
 }
 
 func (b *BackfillIterator) UpdateLocation(ctx context.Context, slot phase0.Slot) error {

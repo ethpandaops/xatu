@@ -3,6 +3,7 @@ package iterator
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/attestantio/go-eth2-client/spec/phase0"
@@ -12,6 +13,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+// DefaultBatchSize is the default number of payloads to fetch per batch.
+const DefaultBatchSize = 200
+
+// BatchRequest contains parameters for a batch fetch request.
+type BatchRequest struct {
+	// Params are the URL query parameters to pass to the relay API.
+	Params url.Values
+	// CurrentSlot is the current position of the iterator.
+	CurrentSlot uint64
+	// TargetSlot is the slot we're trying to reach.
+	TargetSlot uint64
+	// BatchSize is the number of payloads requested in this batch.
+	BatchSize int
+}
 
 type ForwardFillIterator struct {
 	log              logrus.FieldLogger
@@ -23,6 +39,7 @@ type ForwardFillIterator struct {
 	relayName        string
 	checkInterval    time.Duration
 	trailDistance    uint64
+	batchSize        int
 }
 
 func NewForwardFillIterator(
@@ -34,6 +51,7 @@ func NewForwardFillIterator(
 	wallclock *ethwallclock.EthereumBeaconChain,
 	checkInterval time.Duration,
 	trailDistance uint64,
+	batchSize int,
 ) *ForwardFillIterator {
 	// Append ":forward_fill" suffix to relay name to create unique record
 	relayNameWithSuffix := relayName + ":forward_fill"
@@ -51,6 +69,7 @@ func NewForwardFillIterator(
 		wallclock:        wallclock,
 		checkInterval:    checkInterval,
 		trailDistance:    trailDistance,
+		batchSize:        batchSize,
 	}
 }
 
@@ -101,6 +120,67 @@ func (f *ForwardFillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 	nextSlot := phase0.Slot(currentSlot + 1)
 
 	return &nextSlot, nil
+}
+
+// NextBatch returns batch parameters for fetching multiple payloads at once.
+// This is more efficient than fetching slot-by-slot for catching up.
+// Returns nil if already caught up or no work available.
+func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, error) {
+	wallclockSlot := f.wallclock.Slots().Current()
+
+	// Calculate the maximum slot we should process (head slot - trail distance)
+	var targetSlot uint64
+	if wallclockSlot.Number() > f.trailDistance {
+		targetSlot = wallclockSlot.Number() - f.trailDistance
+	} else {
+		// If wallclock is less than trail distance, we don't process anything
+		return nil, nil //nolint:nilnil // nil indicates no work available
+	}
+
+	// Get current location from coordinator
+	location, err := f.coordinator.GetRelayMonitorLocation(ctx, f.relayMonitorType, f.networkName, f.clientName, f.relayName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get relay monitor location")
+	}
+
+	var currentSlot uint64
+
+	if location == nil {
+		// Start processing from the beginning of the trail window
+		if targetSlot > 0 {
+			currentSlot = targetSlot - 1
+		} else {
+			currentSlot = 0
+		}
+	} else {
+		slot, err := f.getSlot(location)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get slot from location")
+		}
+
+		currentSlot = slot
+	}
+
+	// Check if we're caught up (considering trail distance)
+	if currentSlot >= targetSlot {
+		// We're caught up, nothing to do
+		return nil, nil //nolint:nilnil // nil indicates no work available
+	}
+
+	// Build batch request parameters
+	// Use cursor=targetSlot to fetch payloads from targetSlot going backwards
+	// The relay API returns slots <= cursor in descending order
+	params := url.Values{
+		"cursor": {fmt.Sprintf("%d", targetSlot)},
+		"limit":  {fmt.Sprintf("%d", f.batchSize)},
+	}
+
+	return &BatchRequest{
+		Params:      params,
+		CurrentSlot: currentSlot,
+		TargetSlot:  targetSlot,
+		BatchSize:   f.batchSize,
+	}, nil
 }
 
 func (f *ForwardFillIterator) UpdateLocation(ctx context.Context, slot phase0.Slot) error {

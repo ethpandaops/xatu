@@ -18,6 +18,25 @@ import (
 type Config struct {
 	URL  string `yaml:"url"`
 	Name string `yaml:"name"`
+
+	// Batch configures per-relay batch fetching behavior
+	// If not set, uses global consistency.batchSize
+	Batch *BatchConfig `yaml:"batch"`
+}
+
+// BatchConfig configures per-relay batch fetching capabilities
+type BatchConfig struct {
+	// MaxLimit overrides the global batchSize for this relay
+	// Some relays have lower limits (e.g., BloXroute max is 100)
+	MaxLimit int `yaml:"maxLimit"`
+
+	// DisableBidTraceCursor disables cursor-based pagination for bid traces
+	// Some relays don't support the cursor parameter
+	DisableBidTraceCursor bool `yaml:"disableBidTraceCursor"`
+
+	// DisablePayloadCursor disables cursor-based pagination for payload delivered
+	// Some relays don't support the cursor parameter
+	DisablePayloadCursor bool `yaml:"disablePayloadCursor"`
 }
 
 // API endpoint constants
@@ -43,7 +62,8 @@ type Client struct {
 	name        string
 	httpClient  *http.Client
 	metrics     *Metrics
-	networkName string // Add networkName to the Client struct
+	networkName string
+	batch       *BatchConfig
 }
 
 // NewClient creates a new relay client
@@ -61,6 +81,7 @@ func NewClient(namespace string, config Config, networkName string) (*Client, er
 		},
 		metrics:     GetMetrics(namespace),
 		networkName: networkName,
+		batch:       config.Batch,
 	}, nil
 }
 
@@ -70,6 +91,39 @@ func (c *Client) Name() string {
 
 func (c *Client) URL() string {
 	return c.baseURL
+}
+
+// BatchConfig returns the per-relay batch configuration, or nil if not set.
+func (c *Client) BatchConfig() *BatchConfig {
+	return c.batch
+}
+
+// MaxBatchLimit returns the per-relay max batch limit, or 0 if not configured.
+// Callers should fall back to global batch size when 0 is returned.
+func (c *Client) MaxBatchLimit() int {
+	if c.batch == nil {
+		return 0
+	}
+
+	return c.batch.MaxLimit
+}
+
+// SupportsBidTraceCursor returns whether this relay supports cursor-based pagination for bid traces.
+func (c *Client) SupportsBidTraceCursor() bool {
+	if c.batch == nil {
+		return true // Default to supported
+	}
+
+	return !c.batch.DisableBidTraceCursor
+}
+
+// SupportsPayloadCursor returns whether this relay supports cursor-based pagination for payload delivered.
+func (c *Client) SupportsPayloadCursor() bool {
+	if c.batch == nil {
+		return true // Default to supported
+	}
+
+	return !c.batch.DisablePayloadCursor
 }
 
 func (c *Client) GetBids(ctx context.Context, params url.Values) ([]*mevrelay.BidTrace, error) {

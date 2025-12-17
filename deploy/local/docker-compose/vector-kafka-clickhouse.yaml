@@ -2039,6 +2039,7 @@ transforms:
       .proposer_fee_recipient = .data.proposer_fee_recipient
       .gas_limit = .data.gas_limit
       .gas_used = .data.gas_used
+      .value = .data.value
       .payload = .data.payload
       .block_number = .data.block_number
       .num_tx = .data.num_tx

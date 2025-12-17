@@ -2,7 +2,6 @@ package clmimicry
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -214,9 +213,9 @@ func TestDataColumnSidecarEdgeCases(t *testing.T) {
 			HandleNewDecoratedEvent(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(_ context.Context, event *xatu.DecoratedEvent) error {
 				data := event.GetLibp2PTraceGossipsubDataColumnSidecar()
-				assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", data.StateRoot.GetValue())
-				assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", data.ParentRoot.GetValue())
-				assert.Equal(t, hex.EncodeToString(expectedRoot[:]), data.BlockRoot.GetValue())
+				assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", data.StateRoot.GetValue())
+				assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", data.ParentRoot.GetValue())
+				assert.Equal(t, fmt.Sprintf("0x%x", expectedRoot[:]), data.BlockRoot.GetValue())
 
 				return nil
 			}).
@@ -429,10 +428,10 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, uint64(5), data.Index.GetValue())
 					assert.Equal(t, uint64(100), data.Slot.GetValue())
 					assert.Equal(t, uint64(42), data.ProposerIndex.GetValue())
-					assert.Equal(t, hex.EncodeToString(stateRoot[:]), data.StateRoot.GetValue())
-					assert.Equal(t, hex.EncodeToString(parentRoot[:]), data.ParentRoot.GetValue())
+					assert.Equal(t, fmt.Sprintf("0x%x", stateRoot[:]), data.StateRoot.GetValue())
+					assert.Equal(t, fmt.Sprintf("0x%x", parentRoot[:]), data.ParentRoot.GetValue())
 					assert.Equal(t, uint32(3), data.KzgCommitmentsCount.GetValue())
-					assert.Equal(t, hex.EncodeToString(expectedBlockRoot[:]), data.BlockRoot.GetValue())
+					assert.Equal(t, fmt.Sprintf("0x%x", expectedBlockRoot[:]), data.BlockRoot.GetValue())
 
 					// Check metadata
 					meta := event.GetMeta().GetClient()
@@ -569,7 +568,7 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 					assert.Equal(t, uint64(200), data.Slot.GetValue())
 					assert.Equal(t, uint64(1), data.ProposerIndex.GetValue())
 					assert.Equal(t, uint32(0), data.KzgCommitmentsCount.GetValue())
-					assert.Equal(t, hex.EncodeToString(expectedBlockRoot[:]), data.BlockRoot.GetValue())
+					assert.Equal(t, fmt.Sprintf("0x%x", expectedBlockRoot[:]), data.BlockRoot.GetValue())
 				})
 			},
 		},

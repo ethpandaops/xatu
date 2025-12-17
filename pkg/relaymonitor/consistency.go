@@ -333,9 +333,23 @@ func (r *RelayMonitor) processBatch(
 
 	switch process {
 	case "forward_fill":
-		// For forward fill, we've covered everything up to target slot
-		// (because cursor=target fetches slots <= target)
-		newLocation = batch.TargetSlot
+		// For forward fill, we walk up from currentSlot in batchSize steps
+		// cursor = min(currentSlot + batchSize, targetSlot)
+		// If we got results, use highest slot; otherwise use cursor position
+		// (which is min(currentSlot + batchSize, targetSlot))
+		if count > 0 {
+			newLocation = highestSlot
+		} else {
+			// No results - advance to the cursor position we queried
+			// cursor = min(currentSlot + batchSize, targetSlot)
+			//nolint:gosec // BatchSize is validated to be positive and <= 200
+			cursor := batch.CurrentSlot + uint64(batch.BatchSize)
+			if cursor > batch.TargetSlot {
+				cursor = batch.TargetSlot
+			}
+
+			newLocation = cursor
+		}
 	case "backfill":
 		// For backfill, we've covered down to the lowest slot in batch
 		// If we got fewer than limit results, we've reached the end of available data
@@ -447,6 +461,13 @@ func (r *RelayMonitor) fetchProposerPayloadDeliveredBatch(
 		if payload.Slot.GetValue() < lowestSlot {
 			lowestSlot = payload.Slot.GetValue()
 		}
+
+		// Skip if we've already seen this payload
+		if r.bidCache.Has(client.Name(), slot, payload.BlockHash.GetValue()) {
+			continue
+		}
+
+		r.bidCache.Set(client.Name(), slot, payload.BlockHash.GetValue())
 
 		event, err := r.createNewPayloadDeliveredDecoratedEvent(ctx, client, slot, payload, requestedAt, responseAt)
 		if err != nil {

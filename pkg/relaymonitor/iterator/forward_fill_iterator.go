@@ -167,12 +167,40 @@ func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, err
 		return nil, nil //nolint:nilnil // nil indicates no work available
 	}
 
+	// Calculate gap and dynamic limit
+	gap := targetSlot - currentSlot
+
+	// Use dynamic limit when gap is small to avoid fetching duplicates
+	// Multiply by 3 to account for potential multiple payloads per slot
+	// Minimum of 10 to handle edge cases
+	limit := f.batchSize
+	//nolint:gosec // batchSize is validated to be positive and <= 200
+	if gap < uint64(f.batchSize) {
+		dynamicLimit := int(gap) * 3
+		if dynamicLimit < 10 {
+			dynamicLimit = 10
+		}
+
+		if dynamicLimit < f.batchSize {
+			limit = dynamicLimit
+		}
+	}
+
+	// Calculate cursor: walk up from currentSlot in batchSize steps
+	// This ensures contiguous coverage without skipping slots
+	// cursor = min(currentSlot + batchSize, targetSlot)
+	//nolint:gosec // batchSize is validated to be positive and <= 200
+	cursor := currentSlot + uint64(f.batchSize)
+	if cursor > targetSlot {
+		cursor = targetSlot
+	}
+
 	// Build batch request parameters
-	// Use cursor=targetSlot to fetch payloads from targetSlot going backwards
-	// Explicitly request descending order to ensure we get newest slots first
+	// Request slots <= cursor in descending order
+	// This gives us slots from cursor down toward currentSlot
 	params := url.Values{
-		"cursor": {fmt.Sprintf("%d", targetSlot)},
-		"limit":  {fmt.Sprintf("%d", f.batchSize)},
+		"cursor": {fmt.Sprintf("%d", cursor)},
+		"limit":  {fmt.Sprintf("%d", limit)},
 		"order":  {"desc"},
 	}
 
@@ -180,7 +208,7 @@ func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, err
 		Params:      params,
 		CurrentSlot: currentSlot,
 		TargetSlot:  targetSlot,
-		BatchSize:   f.batchSize,
+		BatchSize:   limit,
 	}, nil
 }
 

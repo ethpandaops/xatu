@@ -13,6 +13,7 @@ import (
 	"github.com/chuckpreslar/emission"
 	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/crawler"
 	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/host"
+	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
@@ -24,6 +25,8 @@ const (
 
 type Status struct {
 	config           *Config
+	executionConfig  *static.ExecutionConfig
+	consensusConfig  *static.ConsensusConfig
 	log              logrus.FieldLogger
 	broker           *emission.Emitter
 	activeExecution  int
@@ -37,11 +40,15 @@ type Status struct {
 }
 
 func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*Status, error) {
+	consensusConfig := config.GetConsensusConfig()
+
 	s := &Status{
-		log:     log.WithField("module", "discovery/p2p"),
-		config:  config,
-		broker:  emission.NewEmitter(),
-		metrics: NewMetrics("xatu_discovery"),
+		log:             log.WithField("module", "discovery/p2p"),
+		config:          config,
+		executionConfig: config.GetExecutionConfig(),
+		consensusConfig: consensusConfig,
+		broker:          emission.NewEmitter(),
+		metrics:         NewMetrics("xatu_discovery"),
 	}
 
 	if config.Ethereum != nil {
@@ -50,12 +57,12 @@ func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*St
 				IPAddr: net.ParseIP("127.0.0.1"),
 			},
 			Beacon:           config.Ethereum,
-			DialConcurrency:  10,
-			DialTimeout:      5 * time.Second,
-			CooloffDuration:  10 * time.Second,
+			DialConcurrency:  consensusConfig.DialConcurrency,
+			DialTimeout:      consensusConfig.DialTimeout,
+			CooloffDuration:  consensusConfig.CooloffDuration,
 			UserAgent:        xatu.Full(),
-			MaxRetryAttempts: 1,
-			RetryBackoff:     2 * time.Second,
+			MaxRetryAttempts: consensusConfig.RetryAttempts,
+			RetryBackoff:     consensusConfig.RetryDelay,
 		}
 
 		c, err := NewConsensusCrawler(ctx, log, cfg)
@@ -172,7 +179,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 					}
 
 					// Use context-aware timeout
-					timer := time.NewTimer(15 * time.Second)
+					timer := time.NewTimer(s.executionConfig.DialTimeout)
 					defer timer.Stop()
 
 					select {
@@ -189,7 +196,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 
 					return response
 				},
-				retry.Attempts(5),
+				retry.Attempts(s.executionConfig.RetryAttempts),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
 					// Check for cancellation during delay
 					select {
@@ -198,7 +205,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 					default:
 						s.log.WithError(err).Debug("peer failed")
 
-						return 5 * time.Second
+						return s.executionConfig.RetryDelay
 					}
 				}),
 				retry.RetryIf(func(err error) bool {
@@ -300,7 +307,7 @@ func (s *Status) AddConsensusNodeRecords(_ context.Context, nodeRecords []string
 			disconnect := peer.Start(s.ctx)
 
 			// Use context-aware timeout
-			timer := time.NewTimer(30 * time.Second)
+			timer := time.NewTimer(s.consensusConfig.ConnectionTimeout)
 			defer timer.Stop()
 
 			select {

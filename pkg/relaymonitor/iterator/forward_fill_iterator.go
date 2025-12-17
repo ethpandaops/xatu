@@ -169,10 +169,11 @@ func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, err
 
 	// Build batch request parameters
 	// Use cursor=targetSlot to fetch payloads from targetSlot going backwards
-	// The relay API returns slots <= cursor in descending order
+	// Explicitly request descending order to ensure we get newest slots first
 	params := url.Values{
 		"cursor": {fmt.Sprintf("%d", targetSlot)},
 		"limit":  {fmt.Sprintf("%d", f.batchSize)},
+		"order":  {"desc"},
 	}
 
 	return &BatchRequest{

@@ -111,6 +111,10 @@ type ConsistencyConfig struct {
 	// Both forward fill and backfill share this limit, with forward fill getting priority
 	RateLimitPerRelay float64 `yaml:"rateLimitPerRelay" default:"0.5"`
 
+	// BatchSize is the number of payloads to fetch per batch request
+	// Maximum is 200 (relay API limit)
+	BatchSize int `yaml:"batchSize" default:"200"`
+
 	// Backfill configuration for historical data
 	Backfill *BackfillConfig `yaml:"backfill"`
 
@@ -126,6 +130,14 @@ func (c *ConsistencyConfig) Validate() error {
 
 	if c.RateLimitPerRelay <= 0 {
 		return errors.New("rateLimitPerRelay must be positive (supports decimals, e.g., 0.5 for 1 req/2s)")
+	}
+
+	if c.BatchSize <= 0 {
+		return errors.New("batchSize must be positive")
+	}
+
+	if c.BatchSize > 200 {
+		return errors.New("batchSize exceeds maximum allowed value of 200 (relay API limit)")
 	}
 
 	// Validate ForwardFill configuration if present
@@ -158,7 +170,7 @@ type ForwardFillConfig struct {
 
 	// TrailDistance is how many slots behind the head slot we will trail
 	// This prevents attempting to fetch data for slots that may not yet be available
-	TrailDistance uint64 `yaml:"trailDistance" default:"32"`
+	TrailDistance uint64 `yaml:"trailDistance" default:"4"`
 }
 
 func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {

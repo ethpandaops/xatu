@@ -48,6 +48,19 @@ p2p:
     discV5: true
     # time between initiating discovery scans, will generate a fresh private key each time
     restart: 2m
+    # execution layer discovery settings (optional, defaults shown)
+    # execution:
+    #   retryAttempts: 5    # max retry attempts for dialing a peer
+    #   retryDelay: 5s      # delay between retry attempts
+    #   dialTimeout: 15s    # timeout for dialing a peer
+    # consensus layer discovery settings (optional, defaults shown)
+    # consensus:
+    #   retryAttempts: 1        # max retry attempts for dialing a peer
+    #   retryDelay: 2s          # backoff delay between retry attempts
+    #   dialTimeout: 5s         # timeout for dialing a peer
+    #   dialConcurrency: 10     # number of concurrent dial attempts
+    #   cooloffDuration: 10s    # duration to wait before retrying a failed peer
+    #   connectionTimeout: 30s  # timeout for establishing a connection
     bootNodes:
       #################################
       # Mainnet
@@ -106,3 +119,14 @@ p2p:
   #   networkIds: [1]
   #   forkIdHashes: [0xf0afd0e3] # execution layer
   #   forkDigests: [0x09fb0a12] # consensus layer
+  #   execution:  # optional
+  #     retryAttempts: 5
+  #     retryDelay: 5s
+  #     dialTimeout: 15s
+  #   consensus:  # optional
+  #     retryAttempts: 1
+  #     retryDelay: 2s
+  #     dialTimeout: 5s
+  #     dialConcurrency: 10
+  #     cooloffDuration: 10s
+  #     connectionTimeout: 30s

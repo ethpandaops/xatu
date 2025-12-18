@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/p2p/enode"
@@ -40,6 +41,134 @@ func (c *Config) GetNetworkIDs() []uint64 {
 		// Static and other types don't have network IDs configured
 		return nil
 	}
+}
+
+// GetExecutionConfig extracts execution layer config from the p2p config.
+// Returns a config with default values if not configured or on error.
+func (c *Config) GetExecutionConfig() *static.ExecutionConfig {
+	defaultConfig := &static.ExecutionConfig{
+		RetryAttempts: 5,
+		RetryDelay:    5 * time.Second,
+		DialTimeout:   15 * time.Second,
+	}
+
+	if c.Config == nil {
+		return defaultConfig
+	}
+
+	switch c.Type {
+	case TypeStatic:
+		conf := &static.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return defaultConfig
+		}
+
+		return c.applyExecutionDefaults(&conf.Execution)
+	case TypeXatu:
+		conf := &xatu.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return defaultConfig
+		}
+
+		// Convert xatu.ExecutionConfig to static.ExecutionConfig
+		return c.applyExecutionDefaults(&static.ExecutionConfig{
+			RetryAttempts: conf.Execution.RetryAttempts,
+			RetryDelay:    conf.Execution.RetryDelay,
+			DialTimeout:   conf.Execution.DialTimeout,
+		})
+	default:
+		return defaultConfig
+	}
+}
+
+// applyExecutionDefaults applies default values for zero-valued fields.
+func (c *Config) applyExecutionDefaults(exec *static.ExecutionConfig) *static.ExecutionConfig {
+	if exec.RetryAttempts == 0 {
+		exec.RetryAttempts = 5
+	}
+
+	if exec.RetryDelay == 0 {
+		exec.RetryDelay = 5 * time.Second
+	}
+
+	if exec.DialTimeout == 0 {
+		exec.DialTimeout = 15 * time.Second
+	}
+
+	return exec
+}
+
+// GetConsensusConfig extracts consensus layer config from the p2p config.
+// Returns a config with default values if not configured or on error.
+func (c *Config) GetConsensusConfig() *static.ConsensusConfig {
+	defaultConfig := &static.ConsensusConfig{
+		RetryAttempts:     1,
+		RetryDelay:        2 * time.Second,
+		DialTimeout:       5 * time.Second,
+		DialConcurrency:   10,
+		CooloffDuration:   10 * time.Second,
+		ConnectionTimeout: 30 * time.Second,
+	}
+
+	if c.Config == nil {
+		return defaultConfig
+	}
+
+	switch c.Type {
+	case TypeStatic:
+		conf := &static.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return defaultConfig
+		}
+
+		return c.applyConsensusDefaults(&conf.Consensus)
+	case TypeXatu:
+		conf := &xatu.Config{}
+		if err := c.Config.Unmarshal(conf); err != nil {
+			return defaultConfig
+		}
+
+		// Convert xatu.ConsensusConfig to static.ConsensusConfig
+		return c.applyConsensusDefaults(&static.ConsensusConfig{
+			RetryAttempts:     conf.Consensus.RetryAttempts,
+			RetryDelay:        conf.Consensus.RetryDelay,
+			DialTimeout:       conf.Consensus.DialTimeout,
+			DialConcurrency:   conf.Consensus.DialConcurrency,
+			CooloffDuration:   conf.Consensus.CooloffDuration,
+			ConnectionTimeout: conf.Consensus.ConnectionTimeout,
+		})
+	default:
+		return defaultConfig
+	}
+}
+
+// applyConsensusDefaults applies default values for zero-valued fields.
+func (c *Config) applyConsensusDefaults(cons *static.ConsensusConfig) *static.ConsensusConfig {
+	if cons.RetryAttempts == 0 {
+		cons.RetryAttempts = 1
+	}
+
+	if cons.RetryDelay == 0 {
+		cons.RetryDelay = 2 * time.Second
+	}
+
+	if cons.DialTimeout == 0 {
+		cons.DialTimeout = 5 * time.Second
+	}
+
+	if cons.DialConcurrency == 0 {
+		cons.DialConcurrency = 10
+	}
+
+	if cons.CooloffDuration == 0 {
+		cons.CooloffDuration = 10 * time.Second
+	}
+
+	if cons.ConnectionTimeout == 0 {
+		cons.ConnectionTimeout = 30 * time.Second
+	}
+
+	return cons
 }
 
 func (c *Config) Validate() error {

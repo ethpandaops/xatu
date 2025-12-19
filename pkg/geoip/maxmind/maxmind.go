@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/database"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/geonames"
+	"github.com/ethpandaops/xatu/pkg/geoip/lookup"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind/database"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind/geonames"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -77,7 +77,7 @@ func New(config *Config, log logrus.FieldLogger) (*Maxmind, error) {
 		geonameCoords:   geonameCoords,
 		countryCoords:   countryCoords,
 		continentCoords: continentCoords,
-		metrics:         NewMetrics("xatu_server_geoip_provider"),
+		metrics:         NewMetrics("xatu_geoip_provider"),
 	}, nil
 }
 

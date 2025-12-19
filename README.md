@@ -21,7 +21,7 @@ Xatu can run in multiple modes. Each mode can be run independently. The followin
       │                          │
 ┌─────▲─────┐              ┌─────▲─────┐       ┌───────────┐
 │ CONSENSUS │              │ ARMIARMA  │       │ EXECUTION │
-│   CLIENT  ◄─────┐        │           │       │P2P NETWORK│
+│   CLIENT  ◄─────┐        │           │       │   CLIENT  │
 └─────▲─────┘     │        └─────▲─────┘       └─────▲─────┘
       │           │              │             ┌─────┘───────┐
       │           │              │             │             │
@@ -33,15 +33,17 @@ Xatu can run in multiple modes. Each mode can be run independently. The followin
       │            │             │             │             │
       │       ┌────▼─────┐       │             │             │
       └───────►          ◄───────┘─────────────┘─────────────┘
-              │   XATU   │
-              │  SERVER  │    ┌─────────────┐
-              │          ◄────► PERSISTENCE │
-              │          │    └─────────────┘
-              └─────┬────┘
-                    │
-                    │
-                    ▼
-              DATA PIPELINE
+              │   XATU   │                           ▲
+              │  SERVER  │    ┌─────────────┐        │
+              │          ◄────► PERSISTENCE │   ┌────┴─────┐
+              │          │    └─────────────┘   │   XATU   │
+              └─────┬────┘                      │ ETHSTATS │
+                    │                           └────▲─────┘
+                    │                                │
+                    ▼                          ┌─────┴─────┐
+              DATA PIPELINE                    │ EXECUTION │
+                                               │P2P NETWORK│
+                                               └───────────┘
 ```
 
 ### Modes
@@ -53,6 +55,7 @@ Follow the links for more information on each mode.
 - [**Discovery**](./docs/discovery.md) - Client that uses the [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discovery nodes on the network. Also attempts to connect to execution layer nodes and collect meta data from them.
 - [**Mimicry**](./docs/mimicry.md) - Client that collects data from the execution layer P2P network.
 - [**Cannon**](./docs/cannon.md) - Client that runs along side a [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects canonical finalized data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). _You must run your own consensus client_ and this projects cannon client will connect to it via the consensus client's http server.
+- [**Ethstats**](./docs/ethstats.md) - Server that receives data from Ethereum execution clients via the ethstats protocol and forwards events to configured output sinks. Supports per-node credential forwarding where clients connect with `nodename:base64(user:pass)@server:port`.
 
 ## Getting Started
 
@@ -61,7 +64,7 @@ Follow the links for more information on each mode.
 Download the latest release from the [Releases page](https://github.com/ethpandaops/xatu/releases). Extract and run with:
 
 ```
-./xatu <server|sentry|discovery|mimicry> --config your-config.yaml
+./xatu <server|sentry|discovery|mimicry|ethstats> --config your-config.yaml
 ```
 
 ### Install via bash script

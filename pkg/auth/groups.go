@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -71,8 +71,8 @@ func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error
 
 	g := &Group{
 		log: log.WithFields(logrus.Fields{
-			"group":         name,
-			"server/module": "event-ingester/auth",
+			"group":  name,
+			"module": "auth",
 		}),
 		users:              &users,
 		name:               name,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind"
+	"github.com/ethpandaops/xatu/pkg/geoip/lookup"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind"
 )
 
 type Type string

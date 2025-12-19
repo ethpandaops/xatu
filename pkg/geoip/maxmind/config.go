@@ -3,8 +3,8 @@ package maxmind
 import (
 	"errors"
 
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/database"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/geonames"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind/database"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind/geonames"
 )
 
 type Config struct {

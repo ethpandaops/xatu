@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net"
 
+	"github.com/ethpandaops/xatu/pkg/geoip"
+	"github.com/ethpandaops/xatu/pkg/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/sirupsen/logrus"
 )
 

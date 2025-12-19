@@ -45,7 +45,7 @@ func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Auth
 	return &Authorization{
 		enabled: config.Enabled,
 		groups:  groups,
-		log:     log.WithField("server/module", "event-ingester/auth"),
+		log:     log.WithField("module", "auth"),
 	}, nil
 }
 

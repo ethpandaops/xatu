@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package xatu.ethstats;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/ethstats";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+// NodeInfo contains metadata about a connected ethstats node.
+message NodeInfo {
+  // Name is the human-readable name of the node.
+  string name = 1;
+  // Node is the enode identifier.
+  string node = 2;
+  // Port is the listening port.
+  google.protobuf.UInt32Value port = 3;
+  // Network is the network name (e.g., "mainnet", "sepolia").
+  string network = 4;
+  // Protocol is the eth protocol version.
+  string protocol = 5;
+  // Api is the API version.
+  string api = 6;
+  // Os is the operating system.
+  string os = 7;
+  // OsVersion is the OS version.
+  string os_version = 8 [ json_name = "os_version" ];
+  // Client is the client implementation (e.g., "geth", "besu").
+  string client = 9;
+  // CanUpdateHistory indicates if the node can update historical data.
+  google.protobuf.BoolValue can_update_history = 10 [ json_name = "can_update_history" ];
+}
+
+// Block contains block information from ethstats.
+message Block {
+  // Number is the block number.
+  google.protobuf.UInt64Value number = 1;
+  // Hash is the block hash.
+  string hash = 2;
+  // ParentHash is the parent block hash.
+  string parent_hash = 3 [ json_name = "parent_hash" ];
+  // Timestamp is the block timestamp.
+  google.protobuf.Timestamp timestamp = 4;
+  // Miner is the miner/proposer address.
+  string miner = 5;
+  // GasUsed is the gas used by the block.
+  google.protobuf.UInt64Value gas_used = 6 [ json_name = "gas_used" ];
+  // GasLimit is the gas limit of the block.
+  google.protobuf.UInt64Value gas_limit = 7 [ json_name = "gas_limit" ];
+  // Difficulty is the block difficulty.
+  string difficulty = 8;
+  // TotalDifficulty is the total chain difficulty.
+  string total_difficulty = 9 [ json_name = "total_difficulty" ];
+  // TransactionCount is the number of transactions in the block.
+  google.protobuf.UInt32Value transaction_count = 10 [ json_name = "transaction_count" ];
+  // TransactionsRoot is the transactions root hash.
+  string transactions_root = 11 [ json_name = "transactions_root" ];
+  // StateRoot is the state root hash.
+  string state_root = 12 [ json_name = "state_root" ];
+  // UncleCount is the number of uncles.
+  google.protobuf.UInt32Value uncle_count = 13 [ json_name = "uncle_count" ];
+}
+
+// NodeStats contains node status information.
+message NodeStats {
+  // Active indicates if the node is active.
+  google.protobuf.BoolValue active = 1;
+  // Syncing indicates if the node is syncing.
+  google.protobuf.BoolValue syncing = 2;
+  // Peers is the number of connected peers.
+  google.protobuf.UInt32Value peers = 3;
+  // GasPrice is the current gas price.
+  google.protobuf.UInt64Value gas_price = 4 [ json_name = "gas_price" ];
+  // Uptime is the node uptime in seconds.
+  google.protobuf.UInt32Value uptime = 5;
+}
+
+// PendingStats contains pending transaction information.
+message PendingStats {
+  // Pending is the number of pending transactions.
+  google.protobuf.UInt32Value pending = 1;
+}
+
+// NewPayload contains engine API new payload timing information.
+message NewPayload {
+  // Number is the block number.
+  google.protobuf.UInt64Value number = 1;
+  // Hash is the block hash.
+  string hash = 2;
+  // ProcessingTimeNs is the processing time in nanoseconds.
+  google.protobuf.UInt64Value processing_time_ns = 3 [ json_name = "processing_time_ns" ];
+}
+
+// Latency contains latency measurement.
+message Latency {
+  // LatencyMs is the latency in milliseconds as a string.
+  string latency_ms = 1 [ json_name = "latency_ms" ];
+}
+
+// Hello is the initial connection event data.
+message Hello {
+  // NodeId is the unique identifier of the ethstats node.
+  string node_id = 1 [ json_name = "node_id" ];
+  // Info contains detailed node metadata.
+  NodeInfo info = 2;
+}
+
+// History contains historical blocks.
+message History {
+  // Blocks is the list of historical blocks.
+  repeated Block blocks = 1;
+}

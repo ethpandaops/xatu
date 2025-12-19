@@ -11,7 +11,6 @@ Ethereum network monitoring with collection clients and a centralized server for
 Xatu can run in multiple modes. Each mode can be run independently. The following diagram shows the different modes and how they interact with each other and other services.
 
 ```
-
              ┌───────────┐
              │ CONSENSUS │
              │P2P NETWORK│
@@ -23,27 +22,25 @@ Xatu can run in multiple modes. Each mode can be run independently. The followin
 │ CONSENSUS │              │ ARMIARMA  │       │ EXECUTION │
 │   CLIENT  ◄─────┐        │           │       │   CLIENT  │
 └─────▲─────┘     │        └─────▲─────┘       └─────▲─────┘
-      │           │              │             ┌─────┘───────┐
-      │           │              │             │             │
-  ┌───▼────┐ ┌────▼─────┐  ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
-  │  XATU  │ │   XATU   │  │   XATU    │ │   XATU    │ │   XATU    │
-  │ SENTRY │ │  CANNON  │  │   SAGE    │ │  MIMICRY  │ │ DISCOVERY │
-  └───┬────┘ └─────┬────┘  └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
-      │            │             │             │             │
-      │            │             │             │             │
-      │       ┌────▼─────┐       │             │             │
-      └───────►          ◄───────┘─────────────┘─────────────┘
-              │   XATU   │                           ▲
-              │  SERVER  │    ┌─────────────┐        │
-              │          ◄────► PERSISTENCE │   ┌────┴─────┐
-              │          │    └─────────────┘   │   XATU   │
-              └─────┬────┘                      │ ETHSTATS │
-                    │                           └────▲─────┘
-                    │                                │
-                    ▼                          ┌─────┴─────┐
-              DATA PIPELINE                    │ EXECUTION │
-                                               │P2P NETWORK│
-                                               └───────────┘
+      │           │              │             ┌─────┘───────┐────────────┐
+      │           │              │             │             │            │
+  ┌───▼────┐ ┌────▼─────┐  ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐┌─────▼────┐
+  │  XATU  │ │   XATU   │  │   XATU    │ │   XATU    │ │   XATU    ││   XATU   │
+  │ SENTRY │ │  CANNON  │  │   SAGE    │ │  MIMICRY  │ │ DISCOVERY ││ ETHSTATS │
+  └───┬────┘ └─────┬────┘  └─────┬─────┘ └─────┬─────┘ └─────┬─────┘└─────┬────┘
+      │            │             │             │             │            │
+      │            │             │             │             │            │
+      │       ┌────▼─────┐       │             │             │            │
+      └───────►          ◄───────┘─────────────┘─────────────┘────────────┘
+              │   XATU   │                   
+              │  SERVER  │    ┌─────────────┐
+              │          ◄────► PERSISTENCE │
+              │          │    └─────────────┘
+              └─────┬────┘                   
+                    │                        
+                    │                        
+                    ▼                        
+              DATA PIPELINE                  
 ```
 
 ### Modes

@@ -96,6 +96,15 @@ validatorBlock:
     slotTimes:
       - 4s
 
+# N+1 block prefetching - triggers v3 Proposal API request for slot N+1
+# when a block event for slot N is received
+validatorBlockPrefetch:
+  enabled: false
+  delay: 0ms
+  # Skip prefetch if block event is more than this many slots behind wallclock
+  # Prevents spamming Proposal API when node is syncing
+  maxLagSlots: 32
+
 outputs:
 - name: http-sink
   type: http

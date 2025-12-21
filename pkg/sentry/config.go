@@ -55,6 +55,9 @@ type Config struct {
 	// ValidatorBlock configuration
 	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{'enabled': false}"`
 
+	// ValidatorBlockPrefetch configuration for n+1 block prefetching
+	ValidatorBlockPrefetch ValidatorBlockPrefetchConfig `yaml:"validatorBlockPrefetch"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -76,6 +79,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Tracing.Validate(); err != nil {
 		return fmt.Errorf("invalid tracing config: %w", err)
+	}
+
+	if err := c.ValidatorBlockPrefetch.Validate(); err != nil {
+		return fmt.Errorf("invalid validatorBlockPrefetch config: %w", err)
 	}
 
 	return nil
@@ -198,6 +205,43 @@ func (f *ValidatorBlockConfig) Validate() error {
 				return errors.New("at.slotTimes must be less than 12s")
 			}
 		}
+	}
+
+	return nil
+}
+
+// ValidatorBlockPrefetchConfig configures the n+1 block prefetching feature.
+// When a block event is received for slot N, this triggers a v3 Proposal API
+// request for slot N+1 after a configurable delay.
+type ValidatorBlockPrefetchConfig struct {
+	// Enabled determines if the n+1 block prefetching feature is active
+	Enabled bool `yaml:"enabled" default:"false"`
+
+	// Delay is the time to wait after receiving a block event before
+	// requesting the n+1 slot's validator block
+	Delay human.Duration `yaml:"delay" default:"0ms"`
+
+	// MaxLagSlots is the maximum number of slots the block event can be behind
+	// the current wallclock slot before the prefetch is skipped.
+	// This prevents spamming the Proposal API when the node is syncing.
+	MaxLagSlots uint64 `yaml:"maxLagSlots" default:"32"`
+}
+
+func (f *ValidatorBlockPrefetchConfig) Validate() error {
+	if !f.Enabled {
+		return nil
+	}
+
+	if f.Delay.Duration < 0 {
+		return errors.New("delay must be non-negative")
+	}
+
+	if f.Delay.Duration > 12*time.Second {
+		return errors.New("delay must be less than 12s")
+	}
+
+	if f.MaxLagSlots == 0 {
+		return errors.New("maxLagSlots must be greater than 0")
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-CREATE TABLE default.canonical_execution_trie_depth_local ON CLUSTER '{cluster}' (
+CREATE TABLE default.execution_mpt_depth_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `state_root` FixedString(66) COMMENT 'State root hash of the execution layer at this block' Codec(ZSTD(1)),
@@ -301,13 +301,17 @@ CREATE TABLE default.canonical_execution_trie_depth_local ON CLUSTER '{cluster}'
 ORDER BY (
         block_number,
         meta_network_name,
-    ) COMMENT 'Contains canonical execution block data.';
-CREATE TABLE default.canonical_execution_trie_depth ON CLUSTER '{cluster}' AS default.canonical_execution_trie_depth_local ENGINE = Distributed(
+        meta_client_name,
+        state_root,
+    ) COMMENT 'Contains execution layer Merkle Patricia Trie depth metrics including nodes written and nodes deleted at specific block heights.';
+CREATE TABLE default.execution_mpt_depth ON CLUSTER '{cluster}' AS default.execution_mpt_depth_local ENGINE = Distributed(
     '{cluster}',
     default,
-    canonical_execution_trie_depth_local,
+    execution_mpt_depth_local,
     cityHash64(
         block_number,
-        meta_network_name
+        meta_network_name,
+        meta_client_name,
+        state_root,
     )
 );

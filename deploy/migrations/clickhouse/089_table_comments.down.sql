@@ -313,12 +313,10 @@ COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
 
 -- libp2p_peer
 ALTER TABLE default.libp2p_peer ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains the original peer id of a seahashed peer_id + meta_network_name, commonly seen in other tables as the field peer_id_unique_key',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains the original peer id of a seahashed peer_id + meta_network_name, commonly seen in other tables as the field peer_id_unique_key';
 
 ALTER TABLE default.libp2p_peer_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains the original peer id of a seahashed peer_id + meta_network_name, commonly seen in other tables as the field peer_id_unique_key',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains the original peer id of a seahashed peer_id + meta_network_name, commonly seen in other tables as the field peer_id_unique_key';
 
 -- libp2p_add_peer
 ALTER TABLE default.libp2p_add_peer ON CLUSTER '{cluster}'
@@ -556,21 +554,17 @@ COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
 
 -- mempool_dumpster_transaction
 ALTER TABLE default.mempool_dumpster_transaction ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions';
 
 ALTER TABLE default.mempool_dumpster_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions';
 
 -- block_native_mempool_transaction
 ALTER TABLE default.block_native_mempool_transaction ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from block native mempool dataset',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains transactions from block native mempool dataset';
 
 ALTER TABLE default.block_native_mempool_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions from block native mempool dataset',
-COMMENT COLUMN meta_client_name 'Name of the client that generated the event';
+MODIFY COMMENT 'Contains transactions from block native mempool dataset';
 
 -- mev_relay_bid_trace
 ALTER TABLE default.mev_relay_bid_trace ON CLUSTER '{cluster}'

@@ -319,12 +319,10 @@ COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The
 
 -- libp2p_peer
 ALTER TABLE default.libp2p_peer ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Lookup table mapping seahashed peer_id + network to original peer ID. Collected from deep instrumentation within forked consensus layer clients. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Lookup table mapping seahashed peer_id + network to original peer ID. Collected from deep instrumentation within forked consensus layer clients. Partition: monthly by `event_date_time`.';
 
 ALTER TABLE default.libp2p_peer_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Lookup table mapping seahashed peer_id + network to original peer ID. Collected from deep instrumentation within forked consensus layer clients. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Lookup table mapping seahashed peer_id + network to original peer ID. Collected from deep instrumentation within forked consensus layer clients. Partition: monthly by `event_date_time`.';
 
 -- libp2p_add_peer
 ALTER TABLE default.libp2p_add_peer ON CLUSTER '{cluster}'
@@ -570,21 +568,17 @@ COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The
 
 -- mempool_dumpster_transaction
 ALTER TABLE default.mempool_dumpster_transaction ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions imported from the external Mempool Dumpster dataset. Historical mempool data following the parquet schema with additions. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Contains transactions imported from the external Mempool Dumpster dataset. Historical mempool data following the parquet schema with additions. Partition: monthly by `event_date_time`.';
 
 ALTER TABLE default.mempool_dumpster_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions imported from the external Mempool Dumpster dataset. Historical mempool data following the parquet schema with additions. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Contains transactions imported from the external Mempool Dumpster dataset. Historical mempool data following the parquet schema with additions. Partition: monthly by `event_date_time`.';
 
 -- block_native_mempool_transaction
 ALTER TABLE default.block_native_mempool_transaction ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions imported from the external Blocknative mempool dataset. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Contains transactions imported from the external Blocknative mempool dataset. Partition: monthly by `event_date_time`.';
 
 ALTER TABLE default.block_native_mempool_transaction_local ON CLUSTER '{cluster}'
-MODIFY COMMENT 'Contains transactions imported from the external Blocknative mempool dataset. Partition: monthly by `event_date_time`.',
-COMMENT COLUMN meta_client_name 'Name of the client that collected the data. The table contains data from multiple clients';
+MODIFY COMMENT 'Contains transactions imported from the external Blocknative mempool dataset. Partition: monthly by `event_date_time`.';
 
 -- mev_relay_bid_trace
 ALTER TABLE default.mev_relay_bid_trace ON CLUSTER '{cluster}'

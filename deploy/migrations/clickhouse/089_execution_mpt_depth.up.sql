@@ -2,6 +2,7 @@ CREATE TABLE default.execution_mpt_depth_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `state_root` FixedString(66) COMMENT 'State root hash of the execution layer at this block' Codec(ZSTD(1)),
+    `parent_state_root` FixedString(66) COMMENT 'State root hash of the execution layer at the parent block' Codec(ZSTD(1)),
     `total_account_written_nodes` UInt64 COMMENT 'The total number of trie nodes written at all depths of account tries' Codec(DoubleDelta, ZSTD(1)),
     `total_account_deleted_nodes` UInt64 COMMENT 'The total number of trie nodes deleted at all depths of account tries' Codec(DoubleDelta, ZSTD(1)),
     `total_storage_written_nodes` UInt64 COMMENT 'The total number of trie nodes written at all depths of storage tries' Codec(DoubleDelta, ZSTD(1)),

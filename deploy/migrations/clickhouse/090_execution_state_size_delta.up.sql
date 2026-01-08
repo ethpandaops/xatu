@@ -2,6 +2,7 @@ CREATE TABLE execution_state_size_delta_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `state_root` FixedString(66) COMMENT 'State root hash of the execution layer at this block' Codec(ZSTD(1)),
+    `parent_state_root` FixedString(66) COMMENT 'State root hash of the execution layer at the parent block' Codec(ZSTD(1)),
     `account_delta` Int64 COMMENT 'The delta in the number of accounts in the state' Codec(DoubleDelta, ZSTD(1)),
     `account_bytes_delta` Int64 COMMENT 'The delta in the number of bytes used by account data' Codec(DoubleDelta, ZSTD(1)),
     `account_trienode_delta` Int64 COMMENT 'The delta in the number of trie nodes in the account trie' Codec(DoubleDelta, ZSTD(1)),

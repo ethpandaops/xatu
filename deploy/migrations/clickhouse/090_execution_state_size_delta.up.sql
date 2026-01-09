@@ -55,6 +55,6 @@ CREATE TABLE execution_state_size_delta ON CLUSTER '{cluster}' AS default.execut
         block_number,
         meta_network_name,
         meta_client_name,
-        state_root,
+        state_root
     )
 );

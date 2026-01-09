@@ -121,6 +121,11 @@ Output configuration to send sentry events to a kafka server.
 | outputs[].config.compression    | string | `none`    | `none` `gzip` `snappy` `lz4` `zstd` | Compression to use.                                                                                                                     |
 | outputs[].config.requiredAcks   | string | `leader`  | `none` `leader` `all`               | Number of ack's required for a succesful batch delivery.                                                                                |
 | outputs[].config.partitioning   | string | `none`    | `none` `random`                     | Paritioning to use for the distribution of messages across the partitions.                                                              |
+| outputs[].config.tls            | bool   | `false`   |                                     | Enable TLS for Kafka connection.                                                                                                        |
+| outputs[].config.sasl.mechanism | string | `PLAIN`   | `PLAIN` `SCRAM-SHA-256` `SCRAM-SHA-512` `OAUTHBEARER` `GSSAPI` | SASL mechanism to use for authentication.                                                                               |
+| outputs[].config.sasl.user      | string |           |                                     | SASL username.                                                                                                                          |
+| outputs[].config.sasl.password  | string |           |                                     | SASL password.                                                                                                                          |
+| outputs[].config.sasl.passwordFile | string |        |                                     | Path to file containing SASL password (alternative to password).                                                                        |
 
 ### Simple example
 
@@ -211,6 +216,27 @@ outputs:
   config:
     brokers: localhost:19092
     topic: events
+```
+
+### kafka server output with SCRAM-SHA-512 authentication example
+
+```yaml
+name: example-instance-005
+
+ethereum:
+  beaconNodeAddress: http://localhost:5052
+
+outputs:
+- name: kafka-sink-scram
+  type: kafka
+  config:
+    brokers: kafka.example.com:9094
+    topic: events
+    tls: true
+    sasl:
+      mechanism: SCRAM-SHA-512
+      user: xatu-client
+      password: "${KAFKA_PASSWORD}"
 ```
 
 ### Complex example with multiple outputs example

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"

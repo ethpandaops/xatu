@@ -7,8 +7,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/ethpandaops/xatu/pkg/geoip"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
 	v3 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v3"

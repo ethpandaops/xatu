@@ -18,6 +18,13 @@ func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {
 		"LIBP2P_TRACE_UNKNOWN":             "unknown event type",
 		"LIBP2P_TRACE_DROP_RPC":            "not implemented yet",
 		"BLOCKPRINT_BLOCK_CLASSIFICATION":  "deprecated: Blockprint support has been removed",
+		"ETHSTATS_HELLO":                   "handled by ethstats service",
+		"ETHSTATS_BLOCK":                   "handled by ethstats service",
+		"ETHSTATS_PENDING":                 "handled by ethstats service",
+		"ETHSTATS_NODE_STATS":              "handled by ethstats service",
+		"ETHSTATS_LATENCY":                 "handled by ethstats service",
+		"ETHSTATS_HISTORY":                 "handled by ethstats service",
+		"ETHSTATS_NEW_PAYLOAD":             "handled by ethstats service",
 	}
 
 	// List of all event types from event_ingester.proto

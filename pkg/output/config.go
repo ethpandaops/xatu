@@ -34,6 +34,13 @@ func (c *Config) Validate() error {
 }
 
 func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (Sink, error) {
+	return NewSinkWithHeaders(name, sinkType, config, log, filterConfig, shippingMethod, nil)
+}
+
+// NewSinkWithHeaders creates a new sink with optional additional headers.
+// For xatu sinks, the headers are merged with any existing headers from config.
+// For other sink types, headers are ignored.
+func NewSinkWithHeaders(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod, headers map[string]string) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}
@@ -78,6 +85,17 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 
 		if err := defaults.Set(conf); err != nil {
 			return nil, err
+		}
+
+		// Merge additional headers if provided
+		if len(headers) > 0 {
+			if conf.Headers == nil {
+				conf.Headers = make(map[string]string, len(headers))
+			}
+
+			for k, v := range headers {
+				conf.Headers[k] = v
+			}
 		}
 
 		return xatu.New(name, conf, log, &filterConfig, shippingMethod)

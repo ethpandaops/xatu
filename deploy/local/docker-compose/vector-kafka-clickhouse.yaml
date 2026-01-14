@@ -83,6 +83,16 @@ sources:
       codec: json
     topics:
       - "consensus-engine-api-get-blobs"
+  execution_block_state_metrics_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-execution-block-state-metrics
+    key_field: "event.id"
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    topics:
+      - "execution-block-state-metrics"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -178,6 +188,7 @@ transforms:
       - execution_state_size_events_kafka
       - consensus_engine_api_new_payload_kafka
       - consensus_engine_api_get_blobs_kafka
+      - execution_block_state_metrics_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
@@ -418,6 +429,7 @@ transforms:
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
       execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
+      execution_block_state_metrics: .event.name == "EXECUTION_BLOCK_STATE_METRICS"
       consensus_engine_api_new_payload: .event.name == "CONSENSUS_ENGINE_API_NEW_PAYLOAD"
       consensus_engine_api_get_blobs: .event.name == "CONSENSUS_ENGINE_API_GET_BLOBS"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
@@ -1091,6 +1103,113 @@ transforms:
       .storage_trienode_bytes = .data.storage_trienode_bytes
       .storage_trienodes = .data.storage_trienodes
       .storages = .data.storages
+      del(.event)
+      del(.meta)
+      del(.data)
+  # Transform for execution_state_size_delta table (state size deltas only)
+  execution_state_size_delta_events_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_block_state_metrics
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      .block_number = to_int(.data.block_number) ?? 0
+      .state_root = .data.state_root
+      .parent_state_root = .data.origin_root
+      .account_delta = to_int(.data.account_delta) ?? 0
+      .account_bytes_delta = to_int(.data.account_bytes_delta) ?? 0
+      .account_trienode_delta = to_int(.data.account_trienode_delta) ?? 0
+      .account_trienode_bytes_delta = to_int(.data.account_trienode_bytes_delta) ?? 0
+      .contract_code_delta = to_int(.data.contract_code_delta) ?? 0
+      .contract_code_bytes_delta = to_int(.data.contract_code_bytes_delta) ?? 0
+      .storage_delta = to_int(.data.storage_delta) ?? 0
+      .storage_bytes_delta = to_int(.data.storage_bytes_delta) ?? 0
+      .storage_trienode_delta = to_int(.data.storage_trienode_delta) ?? 0
+      .storage_trienode_bytes_delta = to_int(.data.storage_trienode_bytes_delta) ?? 0
+      del(.event)
+      del(.meta)
+      del(.data)
+  # Transform for execution_mpt_depth table (trie depth statistics)
+  execution_mpt_depth_events_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_block_state_metrics
+    source: |-
+      .updated_date_time = to_unix_timestamp(now())
+      .block_number = to_int(.data.block_number) ?? 0
+      .state_root = .data.state_root
+      .parent_state_root = .data.origin_root
+
+      # Initialize maps and totals
+      .account_written_nodes = {}
+      .account_written_bytes = {}
+      .total_account_written_nodes = 0
+      .total_account_written_bytes = 0
+      .account_deleted_nodes = {}
+      .account_deleted_bytes = {}
+      .total_account_deleted_nodes = 0
+      .total_account_deleted_bytes = 0
+      .storage_written_nodes = {}
+      .storage_written_bytes = {}
+      .total_storage_written_nodes = 0
+      .total_storage_written_bytes = 0
+      .storage_deleted_nodes = {}
+      .storage_deleted_bytes = {}
+      .total_storage_deleted_nodes = 0
+      .total_storage_deleted_bytes = 0
+
+      # Process account_trie_depth_created
+      if exists(.data.account_trie_depth_created) && is_array(.data.account_trie_depth_created) {
+        for_each(array!(.data.account_trie_depth_created)) -> |_idx, item| {
+          depth_key = to_string(item.depth) ?? "0"
+          count_val = to_int(item.count) ?? 0
+          bytes_val = to_int(item.bytes) ?? 0
+          .account_written_nodes = set!(.account_written_nodes, [depth_key], count_val)
+          .account_written_bytes = set!(.account_written_bytes, [depth_key], bytes_val)
+          .total_account_written_nodes = .total_account_written_nodes + count_val
+          .total_account_written_bytes = .total_account_written_bytes + bytes_val
+        }
+      }
+
+      # Process account_trie_depth_deleted
+      if exists(.data.account_trie_depth_deleted) && is_array(.data.account_trie_depth_deleted) {
+        for_each(array!(.data.account_trie_depth_deleted)) -> |_idx, item| {
+          depth_key = to_string(item.depth) ?? "0"
+          count_val = to_int(item.count) ?? 0
+          bytes_val = to_int(item.bytes) ?? 0
+          .account_deleted_nodes = set!(.account_deleted_nodes, [depth_key], count_val)
+          .account_deleted_bytes = set!(.account_deleted_bytes, [depth_key], bytes_val)
+          .total_account_deleted_nodes = .total_account_deleted_nodes + count_val
+          .total_account_deleted_bytes = .total_account_deleted_bytes + bytes_val
+        }
+      }
+
+      # Process storage_trie_depth_created
+      if exists(.data.storage_trie_depth_created) && is_array(.data.storage_trie_depth_created) {
+        for_each(array!(.data.storage_trie_depth_created)) -> |_idx, item| {
+          depth_key = to_string(item.depth) ?? "0"
+          count_val = to_int(item.count) ?? 0
+          bytes_val = to_int(item.bytes) ?? 0
+          .storage_written_nodes = set!(.storage_written_nodes, [depth_key], count_val)
+          .storage_written_bytes = set!(.storage_written_bytes, [depth_key], bytes_val)
+          .total_storage_written_nodes = .total_storage_written_nodes + count_val
+          .total_storage_written_bytes = .total_storage_written_bytes + bytes_val
+        }
+      }
+
+      # Process storage_trie_depth_deleted
+      if exists(.data.storage_trie_depth_deleted) && is_array(.data.storage_trie_depth_deleted) {
+        for_each(array!(.data.storage_trie_depth_deleted)) -> |_idx, item| {
+          depth_key = to_string(item.depth) ?? "0"
+          count_val = to_int(item.count) ?? 0
+          bytes_val = to_int(item.bytes) ?? 0
+          .storage_deleted_nodes = set!(.storage_deleted_nodes, [depth_key], count_val)
+          .storage_deleted_bytes = set!(.storage_deleted_bytes, [depth_key], bytes_val)
+          .total_storage_deleted_nodes = .total_storage_deleted_nodes + count_val
+          .total_storage_deleted_bytes = .total_storage_deleted_bytes + bytes_val
+        }
+      }
+
       del(.event)
       del(.meta)
       del(.data)
@@ -2919,6 +3038,46 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: execution_state_size
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_state_size_delta_events_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_state_size_delta_events_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_state_size_delta
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_mpt_depth_events_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_mpt_depth_events_formatted
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_mpt_depth
     auth:
       strategy: basic
       user: "${CLICKHOUSE_USER}"

@@ -110,6 +110,7 @@ services:
             - BEACON_API_ETH_V3_VALIDATOR_BLOCK
             - NODE_RECORD_CONSENSUS
             - NODE_RECORD_EXECUTION
+            - EXECUTION_BLOCK_STATE_METRICS
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 302400

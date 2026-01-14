@@ -167,6 +167,79 @@ message ExecutionStateSize {
   string storages = 12 [ json_name = "storages" ];
 }
 
+// DepthStats holds node count and byte size for a single trie depth level.
+// Only depths with non-zero count or bytes are included.
+message DepthStats {
+  // Depth is the trie depth level (0-64).
+  google.protobuf.UInt32Value depth = 1 [ json_name = "depth" ];
+  // Count is the number of nodes at this depth.
+  string count = 2 [ json_name = "count" ];
+  // Bytes is the total size in bytes of nodes at this depth.
+  string bytes = 3 [ json_name = "bytes" ];
+}
+
+// ExecutionBlockStateMetrics contains state size changes and trie depth
+// statistics for a single block. All delta values are signed integers
+// represented as strings.
+message ExecutionBlockStateMetrics {
+  // Block context
+  // BlockNumber is the block number for this state change.
+  string block_number = 1 [ json_name = "block_number" ];
+  // StateRoot is the state root after the block was processed.
+  string state_root = 2 [ json_name = "state_root" ];
+  // OriginRoot is the state root before the block was processed.
+  string origin_root = 3 [ json_name = "origin_root" ];
+
+  // Account changes
+  // AccountDelta is the net change in account count.
+  string account_delta = 4 [ json_name = "account_delta" ];
+  // AccountBytesDelta is the net change in account data bytes.
+  string account_bytes_delta = 5 [ json_name = "account_bytes_delta" ];
+
+  // Account trie node changes
+  // AccountTrienodeDelta is the net change in account trie node count.
+  string account_trienode_delta = 6 [ json_name = "account_trienode_delta" ];
+  // AccountTrienodeBytesDelta is the net change in account trie node bytes.
+  string account_trienode_bytes_delta = 7
+      [ json_name = "account_trienode_bytes_delta" ];
+
+  // Contract code changes
+  // ContractCodeDelta is the net change in contract code count.
+  string contract_code_delta = 8 [ json_name = "contract_code_delta" ];
+  // ContractCodeBytesDelta is the net change in contract code bytes.
+  string contract_code_bytes_delta = 9
+      [ json_name = "contract_code_bytes_delta" ];
+
+  // Storage changes
+  // StorageDelta is the net change in storage entry count.
+  string storage_delta = 10 [ json_name = "storage_delta" ];
+  // StorageBytesDelta is the net change in storage data bytes.
+  string storage_bytes_delta = 11 [ json_name = "storage_bytes_delta" ];
+
+  // Storage trie node changes
+  // StorageTrienodeDelta is the net change in storage trie node count.
+  string storage_trienode_delta = 12 [ json_name = "storage_trienode_delta" ];
+  // StorageTrienodeBytesDelta is the net change in storage trie node bytes.
+  string storage_trienode_bytes_delta = 13
+      [ json_name = "storage_trienode_bytes_delta" ];
+
+  // Depth statistics for created trie nodes (only non-zero depths included)
+  // AccountTrieDepthCreated contains stats for account trie nodes created.
+  repeated DepthStats account_trie_depth_created = 14
+      [ json_name = "account_trie_depth_created" ];
+  // StorageTrieDepthCreated contains stats for storage trie nodes created.
+  repeated DepthStats storage_trie_depth_created = 15
+      [ json_name = "storage_trie_depth_created" ];
+
+  // Depth statistics for deleted trie nodes (only non-zero depths included)
+  // AccountTrieDepthDeleted contains stats for account trie nodes deleted.
+  repeated DepthStats account_trie_depth_deleted = 16
+      [ json_name = "account_trie_depth_deleted" ];
+  // StorageTrieDepthDeleted contains stats for storage trie nodes deleted.
+  repeated DepthStats storage_trie_depth_deleted = 17
+      [ json_name = "storage_trie_depth_deleted" ];
+}
+
 // ConsensusEngineAPINewPayload contains timing and instrumentation data for
 // engine_newPayloadVx calls between the consensus and execution layer.
 message ConsensusEngineAPINewPayload {
@@ -1826,6 +1899,7 @@ message Event {
     EXECUTION_STATE_SIZE = 79;
     CONSENSUS_ENGINE_API_NEW_PAYLOAD = 80;
     CONSENSUS_ENGINE_API_GET_BLOBS = 81;
+    EXECUTION_BLOCK_STATE_METRICS = 82;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2023,6 +2097,8 @@ message DecoratedEvent {
         [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
     ConsensusEngineAPIGetBlobs consensus_engine_api_get_blobs = 203
         [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
+    ExecutionBlockStateMetrics execution_block_state_metrics = 204
+        [ json_name = "EXECUTION_BLOCK_STATE_METRICS" ];
   };
 }
 

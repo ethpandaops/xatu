@@ -55,6 +55,7 @@ transforms:
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
       execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
+      execution_block_state_metrics: .event.name == "EXECUTION_BLOCK_STATE_METRICS"
       consensus_engine_api_new_payload: .event.name == "CONSENSUS_ENGINE_API_NEW_PAYLOAD"
       consensus_engine_api_get_blobs: .event.name == "CONSENSUS_ENGINE_API_GET_BLOBS"
       libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
@@ -449,6 +450,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: execution-state-size
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  execution_block_state_metrics_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.execution_block_state_metrics
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: execution-block-state-metrics
     compression: snappy
     healthcheck:
       enabled: true

@@ -335,6 +335,8 @@ services:
           "node-record-execution"
           "consensus-engine-api-new-payload"
           "consensus-engine-api-get-blobs"
+          "execution-engine-new-payload"
+          "execution-engine-get-blobs"
         )
 
         # Create topics with 10MB message size limit

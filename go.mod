@@ -18,7 +18,7 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/ethpandaops/beacon v0.65.0
-	github.com/ethpandaops/ethcore v0.0.0-20251209022721-8a6a91f46524
+	github.com/ethpandaops/ethcore v0.0.0-20260112064422-e7fe02956738
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6

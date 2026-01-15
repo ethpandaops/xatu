@@ -110,6 +110,8 @@ services:
             - BEACON_API_ETH_V3_VALIDATOR_BLOCK
             - NODE_RECORD_CONSENSUS
             - NODE_RECORD_EXECUTION
+            - EXECUTION_ENGINE_NEW_PAYLOAD
+            - EXECUTION_ENGINE_GET_BLOBS
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 302400
@@ -221,21 +223,3 @@ services:
           compression: gzip
           keepAlive: false
           workers: 400
-      - name: execution-engine
-        type: http
-        shippingMethod: async
-        filter:
-          modules:
-            - EL_MIMICRY
-          eventNames:
-            - EXECUTION_ENGINE_NEW_PAYLOAD
-            - EXECUTION_ENGINE_GET_BLOBS
-        config:
-          address: http://xatu-vector-http-kafka:9005
-          maxQueueSize: 50000
-          batchTimeout: 5s
-          exportTimeout: 30s
-          maxExportBatchSize: 64
-          compression: gzip
-          keepAlive: false
-          workers: 100

@@ -45,7 +45,7 @@ CREATE TABLE execution_engine_new_payload_local ON CLUSTER '{cluster}' (
   meta_network_id Int32 COMMENT 'Ethereum network ID' Codec(DoubleDelta, ZSTD(1)),
   meta_network_name LowCardinality(String) COMMENT 'Ethereum network name'
 ) ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
-PARTITION BY toStartOfMonth(event_date_time)
+PARTITION BY intDiv(block_number, 5000000)
 ORDER BY (block_number, meta_network_name, meta_client_name, block_hash, event_date_time) COMMENT 'Contains timing and instrumentation data for engine_newPayload calls from the execution layer perspective.';
 
 CREATE TABLE execution_engine_new_payload ON CLUSTER '{cluster}' AS execution_engine_new_payload_local

@@ -1,4 +1,10 @@
 ALTER TABLE canonical_execution_transaction_structlog_local ON CLUSTER '{cluster}'
+    ADD COLUMN transaction_gas_used UInt64 DEFAULT 0 COMMENT 'Gas used by the transaction from the receipt' CODEC(ZSTD(1)) AFTER transaction_gas;
+
+ALTER TABLE canonical_execution_transaction_structlog ON CLUSTER '{cluster}'
+    ADD COLUMN transaction_gas_used UInt64 DEFAULT 0 COMMENT 'Gas used by the transaction from the receipt' CODEC(ZSTD(1)) AFTER transaction_gas;
+
+ALTER TABLE canonical_execution_transaction_structlog_local ON CLUSTER '{cluster}'
     ADD COLUMN gas_self UInt64 DEFAULT 0 COMMENT 'Gas consumed by this opcode only, excludes child frame gas for CALL/CREATE opcodes. sum(gas_self) = total execution gas without double counting' CODEC(ZSTD(1)) AFTER gas_used;
 
 ALTER TABLE canonical_execution_transaction_structlog ON CLUSTER '{cluster}'

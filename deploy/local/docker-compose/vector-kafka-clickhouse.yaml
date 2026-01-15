@@ -83,6 +83,26 @@ sources:
       codec: json
     topics:
       - "consensus-engine-api-get-blobs"
+  execution_engine_new_payload_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-execution-engine-new-payload
+    key_field: "event.id"
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    topics:
+      - "execution-engine-new-payload"
+  execution_engine_get_blobs_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-execution-engine-get-blobs
+    key_field: "event.id"
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    topics:
+      - "execution-engine-get-blobs"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -178,6 +198,8 @@ transforms:
       - execution_state_size_events_kafka
       - consensus_engine_api_new_payload_kafka
       - consensus_engine_api_get_blobs_kafka
+      - execution_engine_new_payload_kafka
+      - execution_engine_get_blobs_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
@@ -420,6 +442,8 @@ transforms:
       execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
       consensus_engine_api_new_payload: .event.name == "CONSENSUS_ENGINE_API_NEW_PAYLOAD"
       consensus_engine_api_get_blobs: .event.name == "CONSENSUS_ENGINE_API_GET_BLOBS"
+      execution_engine_new_payload: .event.name == "EXECUTION_ENGINE_NEW_PAYLOAD"
+      execution_engine_get_blobs: .event.name == "EXECUTION_ENGINE_GET_BLOBS"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
@@ -474,6 +498,8 @@ transforms:
       - xatu_server_events_router.node_record_execution
       - xatu_server_events_router.consensus_engine_api_new_payload
       - xatu_server_events_router.consensus_engine_api_get_blobs
+      - xatu_server_events_router.execution_engine_new_payload
+      - xatu_server_events_router.execution_engine_get_blobs
     metrics:
       - type: counter
         field: event.name
@@ -2644,6 +2670,83 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  execution_engine_new_payload_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_engine_new_payload
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      requested_date_time, err = parse_timestamp(.data.requested_at, format: "%+");
+      if err == null {
+        .requested_date_time = to_unix_timestamp(requested_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse requested_date_time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .duration_ms = .data.duration_ms
+      .source = .data.source
+      .block_number = .data.block_number
+      .block_hash = .data.block_hash
+      .parent_hash = .data.parent_hash
+      .gas_used = .data.gas_used
+      .gas_limit = .data.gas_limit
+      .tx_count = .data.tx_count
+      .blob_count = .data.blob_count
+      .status = .data.status
+      .latest_valid_hash = .data.latest_valid_hash
+      .validation_error = .data.validation_error
+      .method_version = .data.method_version
+
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
+  execution_engine_get_blobs_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_engine_get_blobs
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      requested_date_time, err = parse_timestamp(.data.requested_at, format: "%+");
+      if err == null {
+        .requested_date_time = to_unix_timestamp(requested_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse requested_date_time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .duration_ms = .data.duration_ms
+      .source = .data.source
+      .requested_count = .data.requested_count
+      .versioned_hashes = .data.versioned_hashes
+      .returned_count = .data.returned_count
+      .status = .data.status
+      .error_message = .data.error_message
+      .method_version = .data.method_version
+
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -3423,6 +3526,46 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: consensus_engine_api_get_blobs
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_engine_new_payload_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_engine_new_payload_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_engine_new_payload
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_engine_get_blobs_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_engine_get_blobs_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_engine_get_blobs
     batch:
       max_bytes: 52428800
       max_events: 200000

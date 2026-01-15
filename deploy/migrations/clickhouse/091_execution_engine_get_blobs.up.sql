@@ -5,7 +5,7 @@ CREATE TABLE execution_engine_get_blobs_local ON CLUSTER '{cluster}' (
   requested_date_time DateTime64(3) COMMENT 'Timestamp when the engine_getBlobs call was received' Codec(DoubleDelta, ZSTD(1)),
 
   -- Timing
-  duration_ms UInt64 COMMENT 'How long the engine_getBlobs call took in milliseconds' Codec(ZSTD(1)),
+  duration_ms UInt32 COMMENT 'How long the engine_getBlobs call took in milliseconds' Codec(ZSTD(1)),
 
   -- Source
   source LowCardinality(String) COMMENT 'Source of the event (SNOOPER, EXECUTION_CLIENT)',

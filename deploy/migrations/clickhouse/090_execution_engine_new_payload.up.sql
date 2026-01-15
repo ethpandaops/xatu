@@ -5,7 +5,7 @@ CREATE TABLE execution_engine_new_payload_local ON CLUSTER '{cluster}' (
   requested_date_time DateTime64(3) COMMENT 'Timestamp when the engine_newPayload call was received' Codec(DoubleDelta, ZSTD(1)),
 
   -- Timing
-  duration_ms UInt64 COMMENT 'How long the engine_newPayload call took in milliseconds' Codec(ZSTD(1)),
+  duration_ms UInt32 COMMENT 'How long the engine_newPayload call took in milliseconds' Codec(ZSTD(1)),
 
   -- Source
   source LowCardinality(String) COMMENT 'Source of the event (SNOOPER, EXECUTION_CLIENT)',
@@ -46,7 +46,7 @@ CREATE TABLE execution_engine_new_payload_local ON CLUSTER '{cluster}' (
   meta_network_name LowCardinality(String) COMMENT 'Ethereum network name'
 ) ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY toStartOfMonth(event_date_time)
-ORDER BY (event_date_time, meta_network_name, meta_client_name, block_hash) COMMENT 'Contains timing and instrumentation data for engine_newPayload calls from the execution layer perspective.';
+ORDER BY (block_number, meta_network_name, meta_client_name, block_hash, event_date_time) COMMENT 'Contains timing and instrumentation data for engine_newPayload calls from the execution layer perspective.';
 
 CREATE TABLE execution_engine_new_payload ON CLUSTER '{cluster}' AS execution_engine_new_payload_local
 ENGINE = Distributed(
@@ -54,9 +54,10 @@ ENGINE = Distributed(
   default,
   execution_engine_new_payload_local,
   cityHash64(
-    event_date_time,
+    block_number,
     meta_network_name,
     meta_client_name,
-    block_hash
+    block_hash,
+    event_date_time
   )
 );

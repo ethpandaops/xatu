@@ -418,16 +418,24 @@ func (h *Handler) enrichClientMeta(ctx context.Context, node *Node, event *xatu.
 	}
 
 	// Set user, group, and name
+	var username string
+
 	if user := node.User(); user != nil {
-		clientInfo.User = user.Username()
+		username = user.Username()
+		clientInfo.User = username
 	}
 
 	if group := node.Group(); group != nil {
 		clientInfo.Group = group.Name()
 	}
 
-	// Set the node ID as the client name
-	clientInfo.Name = node.ID()
+	// Set the node ID as the client name (potentially obscured)
+	clientName := node.ID()
+	if group := node.Group(); group != nil && group.ShouldObscureClientName() && username != "" {
+		clientName = group.ComputeClientName(username, h.clientNameSalt, clientName)
+	}
+
+	clientInfo.Name = clientName
 
 	event.Meta.Client.Client = clientInfo
 }

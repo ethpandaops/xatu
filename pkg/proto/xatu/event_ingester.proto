@@ -251,6 +251,88 @@ message ConsensusEngineAPIGetBlobs {
   string method_version = 11 [ json_name = "method_version" ];
 }
 
+// EngineSource identifies the source of execution engine API events.
+// This allows the same event type to be produced by different components.
+enum EngineSource {
+  ENGINE_SOURCE_UNSPECIFIED = 0;
+  // ENGINE_SOURCE_SNOOPER indicates events captured by rpc-snooper proxy.
+  ENGINE_SOURCE_SNOOPER = 1;
+  // ENGINE_SOURCE_EXECUTION_CLIENT indicates events instrumented directly by an execution client.
+  ENGINE_SOURCE_EXECUTION_CLIENT = 2;
+}
+
+// ExecutionEngineNewPayload contains timing and instrumentation data for
+// engine_newPayloadVx calls, focused on execution layer perspective.
+// Unlike ConsensusEngineAPINewPayload, this does not include beacon context
+// fields as those may not be available at the execution layer.
+message ExecutionEngineNewPayload {
+  // Source identifies where this event was captured.
+  EngineSource source = 1 [ json_name = "source" ];
+  // RequestedAt is the timestamp when the engine_newPayload call was received.
+  google.protobuf.Timestamp requested_at = 2 [ json_name = "requested_at" ];
+  // DurationMs is how long the engine_newPayload call took in milliseconds.
+  google.protobuf.UInt64Value duration_ms = 3 [ json_name = "duration_ms" ];
+
+  // Execution payload details
+  // BlockNumber is the execution block number.
+  google.protobuf.UInt64Value block_number = 4 [ json_name = "block_number" ];
+  // BlockHash is the execution block hash (hex encoded).
+  string block_hash = 5 [ json_name = "block_hash" ];
+  // ParentHash is the parent execution block hash (hex encoded).
+  string parent_hash = 6 [ json_name = "parent_hash" ];
+  // GasUsed is the total gas used by all transactions in the block.
+  google.protobuf.UInt64Value gas_used = 7 [ json_name = "gas_used" ];
+  // GasLimit is the gas limit of the block.
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  // TxCount is the number of transactions in the block.
+  google.protobuf.UInt32Value tx_count = 9 [ json_name = "tx_count" ];
+  // BlobCount is the number of blobs in the block.
+  google.protobuf.UInt32Value blob_count = 10 [ json_name = "blob_count" ];
+
+  // Response from EL
+  // Status is the payload status returned (VALID, INVALID, SYNCING, ACCEPTED, INVALID_BLOCK_HASH).
+  string status = 11 [ json_name = "status" ];
+  // LatestValidHash is the latest valid hash when status is INVALID (hex encoded).
+  string latest_valid_hash = 12 [ json_name = "latest_valid_hash" ];
+  // ValidationError is the error message when validation fails.
+  string validation_error = 13 [ json_name = "validation_error" ];
+
+  // Meta
+  // MethodVersion is the version of the engine_newPayload method (e.g., "V3", "V4").
+  string method_version = 14 [ json_name = "method_version" ];
+}
+
+// ExecutionEngineGetBlobs contains timing and instrumentation data for
+// engine_getBlobsVx calls, focused on execution layer perspective.
+// Unlike ConsensusEngineAPIGetBlobs, this does not include beacon context
+// fields as those may not be available at the execution layer.
+message ExecutionEngineGetBlobs {
+  // Source identifies where this event was captured.
+  EngineSource source = 1 [ json_name = "source" ];
+  // RequestedAt is the timestamp when the engine_getBlobs call was received.
+  google.protobuf.Timestamp requested_at = 2 [ json_name = "requested_at" ];
+  // DurationMs is how long the engine_getBlobs call took in milliseconds.
+  google.protobuf.UInt64Value duration_ms = 3 [ json_name = "duration_ms" ];
+
+  // Request details
+  // RequestedCount is the number of versioned hashes requested.
+  google.protobuf.UInt32Value requested_count = 4 [ json_name = "requested_count" ];
+  // VersionedHashes is the list of versioned hashes requested (hex encoded).
+  repeated string versioned_hashes = 5 [ json_name = "versioned_hashes" ];
+
+  // Response from EL
+  // ReturnedCount is the number of non-null blobs returned.
+  google.protobuf.UInt32Value returned_count = 6 [ json_name = "returned_count" ];
+  // Status is the result status (SUCCESS, PARTIAL, EMPTY, UNSUPPORTED, ERROR).
+  string status = 7 [ json_name = "status" ];
+  // ErrorMessage contains error details if status is ERROR or UNSUPPORTED.
+  string error_message = 8 [ json_name = "error_message" ];
+
+  // Meta
+  // MethodVersion is the version of the engine_getBlobs method (e.g., "V1", "V2").
+  string method_version = 9 [ json_name = "method_version" ];
+}
+
 message ClientMeta {
   // Name is the name of the client.
   string name = 1;
@@ -1865,14 +1947,16 @@ message Event {
     EXECUTION_STATE_SIZE = 79;
     CONSENSUS_ENGINE_API_NEW_PAYLOAD = 80;
     CONSENSUS_ENGINE_API_GET_BLOBS = 81;
+    EXECUTION_ENGINE_NEW_PAYLOAD = 82;
+    EXECUTION_ENGINE_GET_BLOBS = 83;
     // Ethstats events
-    ETHSTATS_HELLO = 82;
-    ETHSTATS_BLOCK = 83;
-    ETHSTATS_NODE_STATS = 84;
-    ETHSTATS_PENDING = 85;
-    ETHSTATS_LATENCY = 86;
-    ETHSTATS_NEW_PAYLOAD = 87;
-    ETHSTATS_HISTORY = 88;
+    ETHSTATS_HELLO = 84;
+    ETHSTATS_BLOCK = 85;
+    ETHSTATS_NODE_STATS = 86;
+    ETHSTATS_PENDING = 87;
+    ETHSTATS_LATENCY = 88;
+    ETHSTATS_NEW_PAYLOAD = 89;
+    ETHSTATS_HISTORY = 90;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2070,6 +2154,10 @@ message DecoratedEvent {
         [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
     ConsensusEngineAPIGetBlobs consensus_engine_api_get_blobs = 203
         [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
+    ExecutionEngineNewPayload execution_engine_new_payload = 204
+        [ json_name = "EXECUTION_ENGINE_NEW_PAYLOAD" ];
+    ExecutionEngineGetBlobs execution_engine_get_blobs = 205
+        [ json_name = "EXECUTION_ENGINE_GET_BLOBS" ];
     // Ethstats events
     xatu.ethstats.Hello ethstats_hello = 210
         [ json_name = "ETHSTATS_HELLO" ];

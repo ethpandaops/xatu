@@ -16,5 +16,6 @@ enum ModuleName {
   RELAY_MONITOR = 7;
   TYSM = 8;
   SIDECAR = 9;
-  ETHSTATS = 10;
+  RPC_SNOOPER = 10;
+  ETHSTATS = 11;
 }

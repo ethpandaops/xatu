@@ -43,6 +43,8 @@ var (
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
 	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
+	TypeExecutionEngineNewPayload               Type = execution.EngineNewPayloadType
+	TypeExecutionEngineGetBlobs                 Type = execution.EngineGetBlobsType
 	TypeConsensusEngineAPINewPayload            Type = consensus.EngineAPINewPayloadType
 	TypeConsensusEngineAPIGetBlobs              Type = consensus.EngineAPIGetBlobsType
 	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
@@ -193,6 +195,12 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeExecutionStateSize, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewExecutionStateSize(router.log, event), nil
+	})
+	router.RegisterHandler(TypeExecutionEngineNewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewEngineNewPayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeExecutionEngineGetBlobs, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewEngineGetBlobs(router.log, event), nil
 	})
 	router.RegisterHandler(TypeConsensusEngineAPINewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return consensus.NewEngineAPINewPayload(router.log, event), nil

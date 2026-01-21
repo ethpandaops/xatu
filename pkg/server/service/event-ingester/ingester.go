@@ -54,7 +54,7 @@ func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, cloc
 		log:          log,
 		config:       conf,
 		auth:         a,
-		handler:      NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),
+		handler:      NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt, conf.DebugUsers),
 		healthServer: healthServer,
 	}
 

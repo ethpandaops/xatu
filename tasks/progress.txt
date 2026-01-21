@@ -530,3 +530,24 @@ Started: 2026-01-21
   - Position.Epoch calculation assumes 32 slots per epoch (standard beacon chain constant)
 ---
 
+## 2026-01-21 - US-026
+- What was implemented:
+  - Created pkg/horizon/iterator/fill.go with FillIterator struct implementing cldata Iterator interface
+  - FillIterator walks slots from fill_slot position toward HEAD - LAG
+  - FillIteratorConfig with configurable LagSlots (default 32), MaxBoundedSlots (default 7200), RateLimit (default 10.0 slots/sec)
+  - Rate limiting using golang.org/x/time/rate to avoid overwhelming beacon nodes
+  - Bounded range limiting - jumps forward if too far behind HEAD
+  - FillIteratorMetrics with processed_total, skipped_total, position_slot, target_slot, slots_remaining, rate_limit_wait_total, cycles_complete_total
+  - Helper methods setCurrentSlot() and incrementCurrentSlot() for atomic slot updates
+  - UpdateLocation updates fill_slot in coordinator, preserves head_slot
+- Files changed:
+  - pkg/horizon/iterator/fill.go (new - FillIterator implementation with rate limiting and metrics)
+- **Learnings for future iterations:**
+  - Use golang.org/x/time/rate for rate limiting: rate.NewLimiter(rate.Limit(rps), 1) and limiter.Wait(ctx)
+  - Linter rule "no shared variables above expr" requires whitespace before expressions when previous line doesn't share variables
+  - Use helper methods (setCurrentSlot, incrementCurrentSlot) with defer mutex.Unlock() pattern to avoid lint issues with Lock/Unlock blocks
+  - FillIterator uses DirectionBackward since it processes historical data (filling gaps)
+  - getWallclockHeadSlot() uses metadata.Wallclock().Slots().Current().Number() for current slot
+  - When caught up to target (HEAD - LAG), wait roughly one slot duration (12 seconds) before checking again
+---
+

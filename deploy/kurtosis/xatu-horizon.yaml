@@ -1,0 +1,130 @@
+# Horizon configuration for Kurtosis E2E testing
+#
+# This configuration connects Horizon to all consensus clients in the Kurtosis network.
+# Beacon node URLs must be updated based on the Kurtosis enclave inspection output.
+#
+# Usage:
+#   1. Start Kurtosis network: kurtosis run github.com/ethpandaops/ethereum-package --args-file horizon-test.yaml --enclave horizon
+#   2. Get beacon node URLs: kurtosis enclave inspect horizon | grep -E "cl-.+-http"
+#   3. Update beaconNodes section below with actual URLs
+#   4. Run Horizon: xatu horizon --config xatu-horizon.yaml
+#
+# Or use environment variables:
+#   export HORIZON_BEACON_NODES="lighthouse=http://...,prysm=http://...,..."
+#   xatu horizon --config xatu-horizon.yaml
+
+logging: "info" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9098"
+pprofAddr: ":6062"
+
+name: xatu-horizon-e2e
+
+# Labels for E2E test identification
+labels:
+  environment: e2e-test
+  network: kurtosis
+
+# NTP server
+ntpServer: time.google.com
+
+# Coordinator for tracking processing locations
+coordinator:
+  address: xatu-server:8080
+  tls: false
+
+# Multi-beacon node pool - all 6 consensus clients
+# Update these URLs after starting the Kurtosis network
+ethereum:
+  beaconNodes:
+    # Lighthouse
+    - name: lighthouse
+      address: http://cl-lighthouse-geth:4000
+    # Prysm (uses port 3500 by default)
+    - name: prysm
+      address: http://cl-prysm-nethermind:3500
+    # Teku
+    - name: teku
+      address: http://cl-teku-erigon:4000
+    # Lodestar
+    - name: lodestar
+      address: http://cl-lodestar-reth:4000
+    # Nimbus
+    - name: nimbus
+      address: http://cl-nimbus-besu:4000
+    # Grandine
+    - name: grandine
+      address: http://cl-grandine-geth:4000
+
+  # Health check interval
+  healthCheckInterval: 3s
+
+  # Block cache settings
+  blockCacheSize: 1000
+  blockCacheTtl: 1h
+  blockPreloadWorkers: 5
+  blockPreloadQueueSize: 5000
+
+# Deduplication cache - 13 minutes covers ~1 epoch plus delays
+dedupCache:
+  ttl: 13m
+
+# SSE subscription settings
+subscription:
+  bufferSize: 1000
+
+# Reorg handling
+reorg:
+  enabled: true
+  maxDepth: 64
+  bufferSize: 100
+
+# Epoch iterator - trigger at 50% through epoch
+epochIterator:
+  enabled: true
+  triggerPercent: 0.5
+
+# Enable all derivers for comprehensive E2E testing
+derivers:
+  # Block-based derivers
+  beaconBlock:
+    enabled: true
+  attesterSlashing:
+    enabled: true
+  proposerSlashing:
+    enabled: true
+  deposit:
+    enabled: true
+  withdrawal:
+    enabled: true
+  voluntaryExit:
+    enabled: true
+  blsToExecutionChange:
+    enabled: true
+  executionTransaction:
+    enabled: true
+  elaboratedAttestation:
+    enabled: true
+
+  # Epoch-based derivers
+  proposerDuty:
+    enabled: true
+  beaconBlob:
+    enabled: true
+  beaconValidators:
+    enabled: true
+    chunkSize: 100
+  beaconCommittee:
+    enabled: true
+
+# Output to local xatu server
+outputs:
+  - name: xatu
+    type: xatu
+    config:
+      address: xatu-server:8080
+      tls: false
+      maxQueueSize: 51200
+      batchTimeout: 0.5s
+      exportTimeout: 30s
+      maxExportBatchSize: 32
+      workers: 50

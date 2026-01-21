@@ -1,0 +1,75 @@
+# Kurtosis ethereum-package configuration for Horizon E2E testing
+#
+# This configuration creates a local Ethereum testnet with all consensus clients
+# for testing Horizon's multi-beacon node support.
+#
+# Usage:
+#   kurtosis run github.com/ethpandaops/ethereum-package --args-file horizon-test.yaml --enclave horizon
+#
+# After starting, beacon nodes will be available at:
+#   - lighthouse: http://cl-lighthouse-geth:4000
+#   - prysm: http://cl-prysm-nethermind:3500
+#   - teku: http://cl-teku-erigon:4000
+#   - lodestar: http://cl-lodestar-reth:4000
+#   - nimbus: http://cl-nimbus-besu:4000
+#   - grandine: http://cl-grandine-geth:4000
+#
+# Note: Actual hostnames will vary based on Kurtosis enclave. Use:
+#   kurtosis enclave inspect horizon
+# to get the actual service names and ports.
+
+participants:
+  # Lighthouse CL + Geth EL
+  - el_type: geth
+    cl_type: lighthouse
+    count: 1
+
+  # Prysm CL + Nethermind EL
+  - el_type: nethermind
+    cl_type: prysm
+    count: 1
+
+  # Teku CL + Erigon EL
+  - el_type: erigon
+    cl_type: teku
+    count: 1
+
+  # Lodestar CL + Reth EL
+  - el_type: reth
+    cl_type: lodestar
+    count: 1
+
+  # Nimbus CL + Besu EL
+  - el_type: besu
+    cl_type: nimbus
+    count: 1
+    # Nimbus needs subscribe-all-subnets for full attestation coverage
+    cl_extra_params:
+      - --subscribe-all-subnets
+
+  # Grandine CL + Geth EL (different Geth instance)
+  - el_type: geth
+    cl_type: grandine
+    count: 1
+
+# Network configuration for faster testing
+network_params:
+  # Shorter genesis delay for faster startup
+  genesis_delay: 120
+  # Standard slot time
+  seconds_per_slot: 12
+  # Deneb fork for blob testing
+  deneb_fork_epoch: 0
+  # Electra fork for testing Electra attestations
+  electra_fork_epoch: 1
+
+# Disable additional services - we'll run xatu separately
+additional_services: []
+
+# Global settings
+global_log_level: info
+
+# Port publishing disabled - we'll use docker network for connectivity
+port_publisher:
+  nat_exit_ip: KURTOSIS_IP_ADDR_PLACEHOLDER
+  public_port_start: 32000

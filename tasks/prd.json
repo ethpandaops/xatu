@@ -454,8 +454,8 @@
         "Typecheck passes"
       ],
       "priority": 29,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created EpochIterator in pkg/horizon/iterator/epoch.go that triggers at configurable percentage through epoch (default 50%) to fetch NEXT epoch data. Added EpochIteratorConfig with TriggerPercent field. Wired all 4 epoch-based derivers: ProposerDutyDeriver, BeaconBlobDeriver (Deneb+), BeaconValidatorsDeriver (with ChunkSize config), BeaconCommitteeDeriver. Each gets its own EpochIterator instance for independent location tracking. All derivers use Horizon's ContextProvider with ModuleName_HORIZON."
     },
     {
       "id": "US-030",

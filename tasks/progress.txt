@@ -602,3 +602,34 @@ Started: 2026-01-21
   - ContextProviderAdapter creates fresh ClientMeta on each call (not pre-built like Cannon)
 ---
 
+## 2026-01-21 - US-029
+- What was implemented:
+  - Created pkg/horizon/iterator/epoch.go with EpochIterator struct implementing cldata Iterator interface
+  - EpochIterator triggers at configurable percentage through current epoch (TriggerPercent, default 50%)
+  - When triggered, returns the NEXT epoch for processing (pre-fetching pattern)
+  - EpochIteratorConfig struct with Enabled and TriggerPercent fields
+  - Tracks last processed epoch in coordinator using HorizonLocation.HeadSlot field
+  - Added epoch-based deriver configs to pkg/horizon/deriver/config.go:
+    - ProposerDutyConfig, BeaconBlobConfig, BeaconValidatorsConfig (with ChunkSize), BeaconCommitteeConfig
+  - Added EpochIterator config to pkg/horizon/config.go
+  - Added createEpochIterator helper function in horizon.go
+  - Wired all 4 epoch-based derivers in horizon.go onBeaconPoolReady callback:
+    - ProposerDutyDeriver (Phase0+)
+    - BeaconBlobDeriver (Deneb+)
+    - BeaconValidatorsDeriver (Phase0+, with ChunkSize config)
+    - BeaconCommitteeDeriver (Phase0+)
+- Files changed:
+  - pkg/horizon/iterator/epoch.go (new - EpochIterator with midway-fetch timing)
+  - pkg/horizon/deriver/config.go (updated - added epoch-based deriver configs)
+  - pkg/horizon/config.go (updated - added EpochIterator config)
+  - pkg/horizon/horizon.go (updated - wired epoch-based derivers with createEpochIterator helper)
+- **Learnings for future iterations:**
+  - EpochIterator uses wallclock to calculate trigger time based on TriggerPercent
+  - Returns NEXT epoch (current + 1) so derivers can pre-fetch data before epoch starts
+  - Uses HorizonLocation.HeadSlot to store last processed epoch (reuses existing proto message)
+  - EpochIterator.Validate() ensures TriggerPercent is between 0 and 1 (exclusive)
+  - waitForTriggerPoint() calculates exact trigger time and sleeps until then
+  - Each epoch deriver gets its own EpochIterator instance for independent tracking
+  - Use prometheus.Register (not MustRegister) to handle duplicate metric registration gracefully
+---
+

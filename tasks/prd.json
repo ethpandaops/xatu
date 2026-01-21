@@ -241,8 +241,8 @@
         "Typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared BeaconCommitteeDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Uses existing FetchBeaconCommittee method from BeaconClient interface. Uses spec.DataVersionPhase0 as ActivationFork. Updated Cannon to use the shared deriver with adapters. Removed unused v1 import from cannon.go."
     },
     {
       "id": "US-017",
@@ -256,8 +256,8 @@
         "Typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Removed v1/ (4 deriver files) and v2/ (11 deriver files + adapters) directories. Moved adapters.go to pkg/cannon/deriver/adapters.go. Updated event_deriver.go to reference only cldata shared derivers. Simplified config.go with unified DeriverConfig type containing Enabled and Iterator fields. Removed ~4,900 lines of duplicate code."
     },
     {
       "id": "US-018",

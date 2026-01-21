@@ -314,3 +314,47 @@ Started: 2026-01-21
   - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
 ---
 
+## 2026-01-21 - US-016
+- What was implemented:
+  - Created shared BeaconCommitteeDeriver in pkg/cldata/deriver/beacon_committee.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - BeaconCommitteeDeriver uses existing FetchBeaconCommittee method from BeaconClient interface (no interface changes needed)
+  - BeaconCommitteeDeriver uses spec.DataVersionPhase0 as ActivationFork (committees available since genesis)
+  - Updated pkg/cannon/cannon.go to use shared BeaconCommitteeDeriver with adapters
+  - Removed unused v1 import from cannon.go
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared BeaconCommitteeDeriver
+- Files changed:
+  - pkg/cldata/deriver/beacon_committee.go (new - shared BeaconCommitteeDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared BeaconCommitteeDeriver with adapters, removed v1 import)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared BeaconCommitteeDeriver)
+- **Learnings for future iterations:**
+  - BeaconCommitteeDeriver is simpler than BeaconValidatorsDeriver - no chunking needed, creates one event per committee
+  - FetchBeaconCommittee interface method was already added for ElaboratedAttestationDeriver (US-012) so no interface extension needed
+  - Look-ahead is not supported for beacon committees (no pre-loading benefit)
+  - Phase0-activated derivers use spec.DataVersionPhase0 as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+
+## 2026-01-21 - US-017
+- What was implemented:
+  - Removed pkg/cannon/deriver/beacon/eth/v1/ directory (beacon_blob.go, beacon_committee.go, beacon_validators.go, proposer_duty.go)
+  - Removed pkg/cannon/deriver/beacon/eth/v2/ directory (all 11 deriver files + adapters.go)
+  - Moved adapters.go to pkg/cannon/deriver/adapters.go (same content, just relocated)
+  - Updated event_deriver.go to remove v1/v2 imports and interface checks, now references only cldata shared derivers
+  - Simplified config.go with unified DeriverConfig type containing Enabled and Iterator fields
+  - Updated cannon.go to use deriver.NewIteratorAdapter, deriver.NewBeaconClientAdapter, deriver.NewContextProviderAdapter
+  - Removed ~4,900 lines of duplicate code
+- Files changed:
+  - pkg/cannon/deriver/beacon/eth/v1/ (deleted - 4 files + docs)
+  - pkg/cannon/deriver/beacon/eth/v2/ (deleted - 11 files + adapters + docs)
+  - pkg/cannon/deriver/adapters.go (new - relocated from v2/adapters.go with package name change)
+  - pkg/cannon/deriver/config.go (updated - unified DeriverConfig type)
+  - pkg/cannon/deriver/event_deriver.go (updated - removed v1/v2 references)
+  - pkg/cannon/cannon.go (updated - use deriver package directly for adapters)
+- **Learnings for future iterations:**
+  - Adapters (BeaconClientAdapter, IteratorAdapter, ContextProviderAdapter) are Cannon-specific and live in pkg/cannon/deriver/
+  - Deriver config types should include both Enabled field and Iterator config for backfilling
+  - BeaconValidatorsDeriverConfig is special - also has ChunkSize field
+  - After moving shared code to cldata, old directories can be completely removed
+  - The v1/v2 naming convention is no longer needed since all derivers use the same shared interface
+---
+

@@ -574,3 +574,31 @@ Started: 2026-01-21
   - Use separate done channel + ctx.Done() for dual shutdown signal detection
 ---
 
+## 2026-01-21 - US-028
+- What was implemented:
+  - Created pkg/horizon/deriver/adapters.go with BeaconClientAdapter and ContextProviderAdapter
+  - BeaconClientAdapter wraps BeaconNodePool to implement cldata.BeaconClient interface
+  - ContextProviderAdapter wraps Horizon's metadata to implement cldata.ContextProvider with ModuleName_HORIZON
+  - Created pkg/horizon/deriver/config.go with DeriverConfig and per-deriver enable flags
+  - Updated pkg/horizon/config.go with Derivers, DedupCache, Subscription, and Coordinator config fields
+  - Wired all 9 block-based derivers in horizon.go onBeaconPoolReady callback:
+    - BeaconBlockDeriver, AttesterSlashingDeriver, ProposerSlashingDeriver
+    - DepositDeriver, WithdrawalDeriver, VoluntaryExitDeriver
+    - BLSToExecutionChangeDeriver, ExecutionTransactionDeriver, ElaboratedAttestationDeriver
+  - Each deriver gets its own HeadIterator instance for independent location tracking
+  - Added startDeriverWhenReady method for fork-aware deriver activation
+  - Events routed to configured sinks via handleNewDecoratedEvents callback
+- Files changed:
+  - pkg/horizon/deriver/adapters.go (new - BeaconClientAdapter, ContextProviderAdapter)
+  - pkg/horizon/deriver/config.go (new - DeriverConfig, Config with enable flags)
+  - pkg/horizon/config.go (updated - added Derivers, DedupCache, Subscription, Coordinator configs)
+  - pkg/horizon/horizon.go (updated - full deriver wiring with onBeaconPoolReady lifecycle)
+- **Learnings for future iterations:**
+  - Each deriver needs its own HeadIterator instance - don't share iterators between derivers
+  - BlockSubscription.Events() returns <-chan BlockEvent for reading (not the raw channel)
+  - Use h.beaconPool.Metadata().Spec.ForkEpochs.GetByName() directly, not .Spec.Spec()
+  - Go 1.22+ no longer needs loop variable copy (d := d) - gopls modernize linter catches this
+  - createHeadIterator helper function avoids repetitive iterator construction code
+  - ContextProviderAdapter creates fresh ClientMeta on each call (not pre-built like Cannon)
+---
+

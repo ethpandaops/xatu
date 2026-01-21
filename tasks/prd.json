@@ -437,8 +437,8 @@
         "Typecheck passes"
       ],
       "priority": 28,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created pkg/horizon/deriver/adapters.go with BeaconClientAdapter and ContextProviderAdapter to bridge Horizon's BeaconNodePool to shared cldata interfaces. Added deriver config to horizon Config struct with enable flags for all 9 block-based derivers. Wired all derivers in horizon.go onBeaconPoolReady callback: BeaconBlockDeriver, AttesterSlashingDeriver, ProposerSlashingDeriver, DepositDeriver, WithdrawalDeriver, VoluntaryExitDeriver, BLSToExecutionChangeDeriver, ExecutionTransactionDeriver, ElaboratedAttestationDeriver. Each deriver gets its own HeadIterator instance for independent location tracking. ContextProvider sets ModuleName to HORIZON. Events routed to configured sinks via handleNewDecoratedEvents."
     },
     {
       "id": "US-029",

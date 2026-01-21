@@ -312,6 +312,44 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 			beaconClient,
 			ctxProvider,
 		),
+
+		// --- Epoch-based derivers (triggered midway through epoch) ---
+
+		// ProposerDutyDeriver.
+		cldataderiver.NewProposerDutyDeriver(
+			h.log,
+			&cldataderiver.ProposerDutyDeriverConfig{Enabled: h.Config.Derivers.ProposerDutyConfig.Enabled},
+			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_PROPOSER_DUTY, networkID, networkName),
+			beaconClient,
+			ctxProvider,
+		),
+		// BeaconBlobDeriver.
+		cldataderiver.NewBeaconBlobDeriver(
+			h.log,
+			&cldataderiver.BeaconBlobDeriverConfig{Enabled: h.Config.Derivers.BeaconBlobConfig.Enabled},
+			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR, networkID, networkName),
+			beaconClient,
+			ctxProvider,
+		),
+		// BeaconValidatorsDeriver.
+		cldataderiver.NewBeaconValidatorsDeriver(
+			h.log,
+			&cldataderiver.BeaconValidatorsDeriverConfig{
+				Enabled:   h.Config.Derivers.BeaconValidatorsConfig.Enabled,
+				ChunkSize: h.Config.Derivers.BeaconValidatorsConfig.ChunkSize,
+			},
+			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_VALIDATORS, networkID, networkName),
+			beaconClient,
+			ctxProvider,
+		),
+		// BeaconCommitteeDeriver.
+		cldataderiver.NewBeaconCommitteeDeriver(
+			h.log,
+			&cldataderiver.BeaconCommitteeDeriverConfig{Enabled: h.Config.Derivers.BeaconCommitteeConfig.Enabled},
+			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_COMMITTEE, networkID, networkName),
+			beaconClient,
+			ctxProvider,
+		),
 	}
 
 	h.eventDerivers = eventDerivers
@@ -352,6 +390,23 @@ func (h *Horizon) createHeadIterator(
 		networkID,
 		networkName,
 		blockEvents,
+	)
+}
+
+// createEpochIterator creates an Epoch iterator for a specific deriver type.
+func (h *Horizon) createEpochIterator(
+	horizonType xatu.HorizonType,
+	networkID string,
+	networkName string,
+) *iterator.EpochIterator {
+	return iterator.NewEpochIterator(
+		h.log,
+		h.beaconPool,
+		h.coordinatorClient,
+		h.Config.EpochIterator,
+		horizonType,
+		networkID,
+		networkName,
 	)
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/horizon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/horizon/deriver"
 	"github.com/ethpandaops/xatu/pkg/horizon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/horizon/iterator"
 	"github.com/ethpandaops/xatu/pkg/horizon/subscription"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -49,6 +50,9 @@ type Config struct {
 
 	// Subscription configuration for SSE block events
 	Subscription subscription.Config `yaml:"subscription"`
+
+	// EpochIterator configuration for epoch-based derivers
+	EpochIterator iterator.EpochIteratorConfig `yaml:"epochIterator"`
 }
 
 func (c *Config) Validate() error {
@@ -84,6 +88,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Subscription.Validate(); err != nil {
 		return fmt.Errorf("invalid subscription config: %w", err)
+	}
+
+	if err := c.EpochIterator.Validate(); err != nil {
+		return fmt.Errorf("invalid epoch iterator config: %w", err)
 	}
 
 	return nil

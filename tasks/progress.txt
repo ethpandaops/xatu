@@ -766,3 +766,36 @@ Started: 2026-01-21
   - Environment variable naming convention: HORIZON_* for horizon service overrides
 ---
 
+## 2026-01-21 - US-035
+
+- What was implemented:
+  - Created deploy/kurtosis/ directory for E2E testing configuration
+  - Created horizon-test.yaml with ethereum-package config for all 6 consensus clients:
+    - Lighthouse + Geth
+    - Prysm + Nethermind
+    - Teku + Erigon
+    - Lodestar + Reth
+    - Nimbus + Besu
+    - Grandine + Geth
+  - Created xatu-horizon.yaml with Horizon config for connecting to all beacon nodes
+  - Created xatu-server.yaml with server config for E2E test event routing
+  - Created README.md with comprehensive documentation:
+    - Architecture diagram showing Kurtosis network + Xatu stack integration
+    - Step-by-step setup instructions
+    - Network connectivity instructions
+    - Validation queries for ClickHouse
+    - Cleanup commands
+- Files changed:
+  - deploy/kurtosis/horizon-test.yaml (new - ethereum-package config)
+  - deploy/kurtosis/xatu-horizon.yaml (new - Horizon multi-beacon config)
+  - deploy/kurtosis/xatu-server.yaml (new - server E2E config)
+  - deploy/kurtosis/README.md (new - E2E test documentation)
+- **Learnings for future iterations:**
+  - Kurtosis E2E tests follow pattern from sentry smoke test: separate Kurtosis network + docker-compose xatu stack
+  - ClickHouse setup is provided by main docker-compose.yml, not duplicated in Kurtosis config
+  - Beacon node URLs in Kurtosis follow pattern: cl-<client>-<el>:<port> (e.g., cl-lighthouse-geth:4000)
+  - Prysm uses port 3500 by default, other clients use 4000
+  - Network connectivity between Kurtosis and docker-compose requires docker network connect
+  - ethereum-package config format: participants array with el_type, cl_type, count, optional extra_params
+---
+

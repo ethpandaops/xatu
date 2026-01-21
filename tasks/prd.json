@@ -553,8 +553,8 @@
         "Include ClickHouse setup in Kurtosis config"
       ],
       "priority": 35,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created deploy/kurtosis/ directory with 4 files: horizon-test.yaml (ethereum-package config with all 6 CL clients: Lighthouse, Prysm, Teku, Lodestar, Nimbus, Grandine), xatu-horizon.yaml (Horizon config for multi-beacon node connection), xatu-server.yaml (server config for E2E test routing), README.md (comprehensive documentation with architecture diagram, setup steps, and validation queries). ClickHouse setup uses existing docker-compose.yml pattern from sentry smoke test."
     },
     {
       "id": "US-036",

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/horizon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -17,6 +18,9 @@ type Config struct {
 
 	// The name of the horizon instance
 	Name string `yaml:"name"`
+
+	// Ethereum configuration (beacon node pool)
+	Ethereum ethereum.Config `yaml:"ethereum"`
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
@@ -34,6 +38,10 @@ type Config struct {
 func (c *Config) Validate() error {
 	if c.Name == "" {
 		return errors.New("name is required")
+	}
+
+	if err := c.Ethereum.Validate(); err != nil {
+		return fmt.Errorf("invalid ethereum config: %w", err)
 	}
 
 	for _, out := range c.Outputs {
@@ -86,6 +94,20 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 
 		c.MetricsAddr = o.MetricsAddr.Value
 	}
+
+	if o.BeaconNodeURLs.Enabled {
+		log.Info("Overriding beacon node URLs")
+	}
+
+	if o.BeaconNodeHeaders.Enabled {
+		log.Info("Overriding beacon node authorization headers")
+	}
+
+	if o.NetworkName.Enabled {
+		log.WithField("network", o.NetworkName.Value).Info("Overriding network name")
+	}
+
+	o.ApplyBeaconNodeOverrides(&c.Ethereum)
 
 	return nil
 }

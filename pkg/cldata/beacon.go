@@ -48,4 +48,8 @@ type BeaconClient interface {
 		committeeIndex phase0.CommitteeIndex,
 		position uint64,
 	) (phase0.ValidatorIndex, error)
+
+	// FetchProposerDuties retrieves the proposer duties for a given epoch.
+	// Returns a slice of proposer duties, one for each slot in the epoch.
+	FetchProposerDuties(ctx context.Context, epoch phase0.Epoch) ([]*v1.ProposerDuty, error)
 }

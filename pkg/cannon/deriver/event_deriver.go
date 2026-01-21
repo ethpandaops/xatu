@@ -46,3 +46,4 @@ var _ EventDeriver = &cldataderiver.VoluntaryExitDeriver{}
 var _ EventDeriver = &cldataderiver.BLSToExecutionChangeDeriver{}
 var _ EventDeriver = &cldataderiver.ExecutionTransactionDeriver{}
 var _ EventDeriver = &cldataderiver.ElaboratedAttestationDeriver{}
+var _ EventDeriver = &cldataderiver.ProposerDutyDeriver{}

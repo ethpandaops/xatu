@@ -67,6 +67,11 @@ func (a *BeaconClientAdapter) GetValidatorIndex(
 	return a.beacon.Duties().GetValidatorIndex(ctx, epoch, slot, committeeIndex, position)
 }
 
+// FetchProposerDuties retrieves the proposer duties for a given epoch.
+func (a *BeaconClientAdapter) FetchProposerDuties(ctx context.Context, epoch phase0.Epoch) ([]*v1.ProposerDuty, error) {
+	return a.beacon.Node().FetchProposerDuties(ctx, epoch)
+}
+
 // Verify BeaconClientAdapter implements cldata.BeaconClient.
 var _ cldata.BeaconClient = (*BeaconClientAdapter)(nil)
 

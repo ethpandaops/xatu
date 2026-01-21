@@ -7,6 +7,10 @@ Started: 2026-01-21
 - Use `buf generate --path <file>` when symlinks cause issues with full buf generate
 - HorizonType enum values follow pattern HORIZON_TYPE_<API_PATH> (e.g., HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK)
 - HorizonLocation uses simpler slot-based tracking (head_slot, fill_slot) vs Cannon's epoch-based BackfillingCheckpointMarker
+- Persistence layer pattern: create `pkg/server/persistence/<module>/location.go` for struct with Marshal/Unmarshal, then `pkg/server/persistence/<module>_location.go` for client methods
+- PostgreSQL migrations go in `migrations/postgres/` with sequential numbering (e.g., 009_horizon.up.sql)
+- Use `sqlbuilder.Raw("DEFAULT")` for auto-increment ID fields when inserting
+- ON CONFLICT constraint names follow pattern `<table>_unique`
 
 ---
 
@@ -24,5 +28,25 @@ Started: 2026-01-21
   - Symlinks in project root (.cursor, .roo, ai_docs, llms) cause buf generate to fail with "EvalSymlinks: too many links"
   - Use `buf generate --path pkg/proto/xatu/coordinator.proto` to work around this
   - HorizonLocation tracks dual progress (HEAD real-time + FILL catch-up) unlike Cannon's single backfill marker
+---
+
+## 2026-01-21 - US-002
+- What was implemented:
+  - Created PostgreSQL migration for horizon_location table (009_horizon.up.sql, 009_horizon.down.sql)
+  - Created pkg/server/persistence/horizon/location.go with Location struct and Marshal/Unmarshal methods
+  - Created pkg/server/persistence/horizon_location.go with UpsertHorizonLocation and GetHorizonLocationByNetworkIDAndType methods
+  - Implemented GetHorizonLocation RPC handler in coordinator client
+  - Implemented UpsertHorizonLocation RPC handler in coordinator client
+- Files changed:
+  - migrations/postgres/009_horizon.up.sql (new - creates horizon_location table)
+  - migrations/postgres/009_horizon.down.sql (new - drops horizon_location table)
+  - pkg/server/persistence/horizon/location.go (new - Location struct with Marshal/Unmarshal)
+  - pkg/server/persistence/horizon_location.go (new - persistence client methods)
+  - pkg/server/service/coordinator/client.go (added GetHorizonLocation and UpsertHorizonLocation handlers)
+- **Learnings for future iterations:**
+  - HorizonLocation is simpler than CannonLocation - stores head_slot and fill_slot directly without oneof Data pattern
+  - Follow existing patterns: cannon/location.go and relaymonitor/location.go for struct design
+  - Coordinator RPC handlers follow consistent auth check pattern at start of each method
+  - Use ErrHorizonLocationNotFound sentinel error for "not found" cases (don't return nil error with nil result)
 ---
 

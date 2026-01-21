@@ -40,3 +40,4 @@ var _ EventDeriver = &v1.BeaconCommitteeDeriver{}
 var _ EventDeriver = &cldataderiver.BeaconBlockDeriver{}
 var _ EventDeriver = &cldataderiver.AttesterSlashingDeriver{}
 var _ EventDeriver = &cldataderiver.ProposerSlashingDeriver{}
+var _ EventDeriver = &cldataderiver.DepositDeriver{}

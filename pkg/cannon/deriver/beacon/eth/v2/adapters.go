@@ -72,6 +72,21 @@ func (a *BeaconClientAdapter) FetchProposerDuties(ctx context.Context, epoch pha
 	return a.beacon.Node().FetchProposerDuties(ctx, epoch)
 }
 
+// GetValidators retrieves validators for a given state identifier.
+func (a *BeaconClientAdapter) GetValidators(ctx context.Context, identifier string) (map[phase0.ValidatorIndex]*v1.Validator, error) {
+	return a.beacon.GetValidators(ctx, identifier)
+}
+
+// LazyLoadValidators queues validators for background preloading.
+func (a *BeaconClientAdapter) LazyLoadValidators(stateID string) {
+	a.beacon.LazyLoadValidators(stateID)
+}
+
+// DeleteValidatorsFromCache removes validators from the cache.
+func (a *BeaconClientAdapter) DeleteValidatorsFromCache(stateID string) {
+	a.beacon.DeleteValidatorsFromCache(stateID)
+}
+
 // Verify BeaconClientAdapter implements cldata.BeaconClient.
 var _ cldata.BeaconClient = (*BeaconClientAdapter)(nil)
 

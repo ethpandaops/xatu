@@ -48,3 +48,4 @@ var _ EventDeriver = &cldataderiver.ExecutionTransactionDeriver{}
 var _ EventDeriver = &cldataderiver.ElaboratedAttestationDeriver{}
 var _ EventDeriver = &cldataderiver.ProposerDutyDeriver{}
 var _ EventDeriver = &cldataderiver.BeaconBlobDeriver{}
+var _ EventDeriver = &cldataderiver.BeaconValidatorsDeriver{}

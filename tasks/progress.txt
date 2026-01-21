@@ -293,3 +293,24 @@ Started: 2026-01-21
   - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
 ---
 
+## 2026-01-21 - US-015
+- What was implemented:
+  - Created shared BeaconValidatorsDeriver in pkg/cldata/deriver/beacon_validators.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Extended cldata.BeaconClient interface with GetValidators, LazyLoadValidators, and DeleteValidatorsFromCache methods for validator state access
+  - Updated BeaconClientAdapter to implement the new validator-related methods
+  - BeaconValidatorsDeriver uses spec.DataVersionPhase0 as ActivationFork (validators available since genesis)
+  - Updated pkg/cannon/cannon.go to use shared BeaconValidatorsDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared BeaconValidatorsDeriver
+- Files changed:
+  - pkg/cldata/beacon.go (updated - added GetValidators, LazyLoadValidators, DeleteValidatorsFromCache to BeaconClient interface)
+  - pkg/cldata/deriver/beacon_validators.go (new - shared BeaconValidatorsDeriver implementation)
+  - pkg/cannon/deriver/beacon/eth/v2/adapters.go (updated - added GetValidators, LazyLoadValidators, DeleteValidatorsFromCache methods)
+  - pkg/cannon/cannon.go (updated - use shared BeaconValidatorsDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared BeaconValidatorsDeriver)
+- **Learnings for future iterations:**
+  - BeaconValidatorsDeriver chunks validators per configured ChunkSize to avoid large events
+  - Validator cache management is important: LazyLoadValidators for lookahead, DeleteValidatorsFromCache for cleanup after processing
+  - Phase0-activated derivers use spec.DataVersionPhase0 as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+

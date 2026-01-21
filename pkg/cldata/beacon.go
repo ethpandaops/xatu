@@ -52,4 +52,16 @@ type BeaconClient interface {
 	// FetchProposerDuties retrieves the proposer duties for a given epoch.
 	// Returns a slice of proposer duties, one for each slot in the epoch.
 	FetchProposerDuties(ctx context.Context, epoch phase0.Epoch) ([]*v1.ProposerDuty, error)
+
+	// GetValidators retrieves validators for a given state identifier (e.g., slot as string).
+	// Returns a map of validator index to validator information.
+	GetValidators(ctx context.Context, identifier string) (map[phase0.ValidatorIndex]*v1.Validator, error)
+
+	// LazyLoadValidators queues validators for background preloading at the specified state.
+	// This is used for look-ahead optimization.
+	LazyLoadValidators(stateID string)
+
+	// DeleteValidatorsFromCache removes validators from the cache for the specified state.
+	// This is used to clean up memory after processing.
+	DeleteValidatorsFromCache(stateID string)
 }

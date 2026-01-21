@@ -308,7 +308,11 @@ func (h *HeadIterator) checkActivationFork(slot phase0.Slot) error {
 	return nil
 }
 
-// isSlotProcessed checks if a slot has already been processed by this deriver.
+// isSlotProcessed checks if a slot has already been processed by either HEAD or FILL iterator.
+// Both iterators coordinate through the coordinator service:
+// - HEAD updates head_slot after processing real-time blocks
+// - FILL updates fill_slot after processing historical slots
+// A slot is considered processed if slot <= head_slot OR slot <= fill_slot.
 func (h *HeadIterator) isSlotProcessed(ctx context.Context, slot phase0.Slot) (bool, error) {
 	location, err := h.coordinator.GetHorizonLocation(ctx, h.horizonType, h.networkID)
 	if err != nil {
@@ -324,8 +328,18 @@ func (h *HeadIterator) isSlotProcessed(ctx context.Context, slot phase0.Slot) (b
 		return false, nil
 	}
 
-	// Check if this slot is <= the stored head_slot.
-	return uint64(slot) <= location.HeadSlot, nil
+	// Check if this slot was processed by HEAD (slot <= head_slot)
+	// or by FILL (slot <= fill_slot).
+	// Both iterators skip slots processed by the other to avoid duplicates.
+	if uint64(slot) <= location.HeadSlot {
+		return true, nil
+	}
+
+	if uint64(slot) <= location.FillSlot {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // UpdateLocation persists the current position after successful processing.

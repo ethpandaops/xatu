@@ -299,12 +299,12 @@ func (f *FillIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 		}
 
 		// Apply rate limiting
-		if err := f.limiter.Wait(ctx); err != nil {
-			if errors.Is(err, context.Canceled) {
-				return nil, err
+		if rateLimitErr := f.limiter.Wait(ctx); rateLimitErr != nil {
+			if errors.Is(rateLimitErr, context.Canceled) {
+				return nil, rateLimitErr
 			}
 
-			f.log.WithError(err).Warn("Rate limiter wait failed")
+			f.log.WithError(rateLimitErr).Warn("Rate limiter wait failed")
 
 			continue
 		}
@@ -312,7 +312,7 @@ func (f *FillIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 		f.metrics.rateLimitWaitTotal.Inc()
 
 		// Check if slot is before activation fork
-		if err := f.checkActivationFork(currentSlot); err != nil {
+		if forkErr := f.checkActivationFork(currentSlot); forkErr != nil {
 			f.metrics.skippedTotal.WithLabelValues(
 				f.horizonType.String(),
 				f.networkName,
@@ -321,8 +321,32 @@ func (f *FillIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 
 			f.log.WithFields(logrus.Fields{
 				"slot":   currentSlot,
-				"reason": err.Error(),
+				"reason": forkErr.Error(),
 			}).Trace("Skipping slot due to activation fork")
+
+			// Move to next slot
+			f.incrementCurrentSlot()
+
+			continue
+		}
+
+		// Check if slot was already processed by either HEAD or FILL iterator.
+		// Both iterators use the same coordinator to track progress.
+		var alreadyProcessed bool
+
+		alreadyProcessed, err = f.isSlotProcessedByHead(ctx, currentSlot)
+		if err != nil {
+			f.log.WithError(err).Warn("Failed to check if slot was already processed")
+			// Continue anyway, let the deriver handle it.
+		} else if alreadyProcessed {
+			f.metrics.skippedTotal.WithLabelValues(
+				f.horizonType.String(),
+				f.networkName,
+				"already_processed",
+			).Inc()
+
+			f.log.WithField("slot", currentSlot).
+				Trace("Skipping slot already processed by another iterator")
 
 			// Move to next slot
 			f.incrementCurrentSlot()
@@ -448,6 +472,36 @@ func (f *FillIterator) incrementCurrentSlot() {
 	defer f.currentSlotMu.Unlock()
 
 	f.currentSlot++
+}
+
+// isSlotProcessedByHead checks if a slot has already been processed by either iterator.
+// Both iterators coordinate through the coordinator service:
+// - HEAD updates head_slot after processing real-time blocks
+// - FILL updates fill_slot after processing historical slots
+// This check primarily catches slots that HEAD processed (real-time) before FILL reached them.
+func (f *FillIterator) isSlotProcessedByHead(ctx context.Context, slot phase0.Slot) (bool, error) {
+	location, err := f.coordinator.GetHorizonLocation(ctx, f.horizonType, f.networkID)
+	if err != nil {
+		// If location doesn't exist, no slots have been processed.
+		return false, nil //nolint:nilerr // Not found is not an error for this check.
+	}
+
+	if location == nil {
+		return false, nil
+	}
+
+	// Check if slot was already processed by HEAD (real-time processing).
+	if location.HeadSlot > 0 && uint64(slot) <= location.HeadSlot {
+		return true, nil
+	}
+
+	// Also check fill_slot for consistency - FILL shouldn't reprocess its own work
+	// if it restarts from a stale position.
+	if location.FillSlot > 0 && uint64(slot) <= location.FillSlot {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // checkActivationFork checks if the slot is at or after the activation fork.

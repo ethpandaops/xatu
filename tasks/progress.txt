@@ -11,6 +11,12 @@ Started: 2026-01-21
 - PostgreSQL migrations go in `migrations/postgres/` with sequential numbering (e.g., 009_horizon.up.sql)
 - Use `sqlbuilder.Raw("DEFAULT")` for auto-increment ID fields when inserting
 - ON CONFLICT constraint names follow pattern `<table>_unique`
+- Shared interfaces between Cannon/Horizon go in pkg/cldata/ with subdirectories for deriver/ and iterator/
+- EventDeriver interface uses CannonType() method even for shared code (Horizon will map HorizonType to equivalent CannonType)
+- Iterator interface uses Position struct with both Slot and Epoch fields to support both slot-based (Horizon) and epoch-based (Cannon) processing
+- Use adapter pattern to bridge module-specific types to shared interfaces (e.g., IteratorAdapter, BeaconClientAdapter, ContextProviderAdapter in v2/adapters.go)
+- Position.LookAheadEpochs (not LookAheads) for epoch-based preloading to avoid type confusion
+- Shared helper functions like GetBlockIdentifier, ConvertIndexedAttestation go in pkg/cldata/deriver/ and are exported for reuse
 
 ---
 
@@ -48,5 +54,84 @@ Started: 2026-01-21
   - Follow existing patterns: cannon/location.go and relaymonitor/location.go for struct design
   - Coordinator RPC handlers follow consistent auth check pattern at start of each method
   - Use ErrHorizonLocationNotFound sentinel error for "not found" cases (don't return nil error with nil result)
+---
+
+## 2026-01-21 - US-003
+- What was implemented:
+  - Created pkg/cldata/ directory structure with deriver/ and iterator/ subdirectories
+  - Created pkg/cldata/deriver/interface.go with EventDeriver interface (Start, Stop, Name, CannonType, OnEventsDerived, ActivationFork)
+  - Created pkg/cldata/iterator/interface.go with Iterator interface (Start, Next, UpdateLocation) and Position struct
+  - Created pkg/cldata/context.go with ContextProvider interface (CreateClientMeta, NetworkName, NetworkID, Wallclock)
+- Files changed:
+  - pkg/cldata/context.go (new - ContextProvider interface)
+  - pkg/cldata/deriver/interface.go (new - EventDeriver interface)
+  - pkg/cldata/iterator/interface.go (new - Iterator interface, Position struct, Direction type, ErrLocationUpToDate)
+- **Learnings for future iterations:**
+  - Cannon's EventDeriver interface in pkg/cannon/deriver/event_deriver.go served as the template
+  - Cannon's BackfillingCheckpoint iterator returns epoch-based positions; Horizon will use slot-based
+  - Position struct includes both Slot and Epoch to support both processing modes
+  - Direction type uses "forward"/"backward" instead of "head"/"backfill" for clearer semantics
+  - ContextProvider abstracts network metadata needed by derivers (CreateClientMeta is key for event decoration)
+---
+
+## 2026-01-21 - US-004
+- What was implemented:
+  - Created pkg/cldata/beacon.go with BeaconClient interface for block fetching (GetBeaconBlock, LazyLoadBeaconBlock, Synced, Node)
+  - Created shared BeaconBlockDeriver in pkg/cldata/deriver/beacon_block.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Created adapters in pkg/cannon/deriver/beacon/eth/v2/adapters.go:
+    - BeaconClientAdapter wraps *ethereum.BeaconNode to implement cldata.BeaconClient
+    - IteratorAdapter wraps *iterator.BackfillingCheckpoint to implement cldata/iterator.Iterator
+    - ContextProviderAdapter wraps client metadata to implement cldata.ContextProvider
+  - Updated pkg/cannon/cannon.go to use shared BeaconBlockDeriver with adapters
+  - Updated pkg/cldata/iterator/interface.go: renamed LookAheads to LookAheadEpochs for clarity
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared BeaconBlockDeriver
+- Files changed:
+  - pkg/cldata/beacon.go (new - BeaconClient interface)
+  - pkg/cldata/deriver/beacon_block.go (new - shared BeaconBlockDeriver implementation)
+  - pkg/cldata/iterator/interface.go (updated - renamed LookAheads to LookAheadEpochs)
+  - pkg/cannon/deriver/beacon/eth/v2/adapters.go (new - adapter implementations)
+  - pkg/cannon/cannon.go (updated - use shared deriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared deriver)
+- **Learnings for future iterations:**
+  - Adapter pattern is key for bridging module-specific types (BackfillingCheckpoint, BeaconNode) to shared interfaces
+  - Direction enum conversion needed: BackfillingCheckpointDirectionBackfill -> DirectionBackward, DirectionHead -> DirectionForward
+  - Keep Cannon's BeaconBlockDeriverConfig with Iterator field - the shared deriver's config is simpler (just Enabled)
+  - ContextProviderAdapter receives pre-built clientMeta since Cannon creates it once at startup, not per-call
+  - Import shadowing: avoid naming parameters same as imported packages (e.g., `beacon` parameter shadows `beacon` package)
+---
+
+## 2026-01-21 - US-005
+- What was implemented:
+  - Created shared AttesterSlashingDeriver in pkg/cldata/deriver/attester_slashing.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Created shared GetBlockIdentifier helper in pkg/cldata/deriver/block_identifier.go for block metadata extraction
+  - Created shared ConvertIndexedAttestation helper (exported) for converting VersionedIndexedAttestation to proto format
+  - Updated pkg/cannon/cannon.go to use shared AttesterSlashingDeriver with adapters (same pattern as BeaconBlockDeriver)
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared AttesterSlashingDeriver
+- Files changed:
+  - pkg/cldata/deriver/attester_slashing.go (new - shared AttesterSlashingDeriver implementation)
+  - pkg/cldata/deriver/block_identifier.go (new - GetBlockIdentifier helper for block metadata)
+  - pkg/cannon/cannon.go (updated - use shared AttesterSlashingDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared AttesterSlashingDeriver)
+- **Learnings for future iterations:**
+  - GetBlockIdentifier is a reusable utility function that many derivers need - moved to shared package
+  - ConvertIndexedAttestation is exported (capital C) since it may be needed by other slashing-related derivers
+  - Shared derivers use `ctx.CreateClientMeta(ctx)` for per-call metadata vs Cannon's pre-built clientMeta
+  - Use `_ context.Context` for unused context parameters to silence linter warnings
+  - Follow the established adapter wiring pattern: NewIteratorAdapter(iter), NewBeaconClientAdapter(beacon), NewContextProviderAdapter(...)
+---
+
+## 2026-01-21 - US-006
+- What was implemented:
+  - Created shared ProposerSlashingDeriver in pkg/cldata/deriver/proposer_slashing.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Updated pkg/cannon/cannon.go to use shared ProposerSlashingDeriver with adapters (same pattern as AttesterSlashingDeriver)
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared ProposerSlashingDeriver
+- Files changed:
+  - pkg/cldata/deriver/proposer_slashing.go (new - shared ProposerSlashingDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared ProposerSlashingDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared ProposerSlashingDeriver)
+- **Learnings for future iterations:**
+  - ProposerSlashing conversion is simpler than AttesterSlashing - no need for helper functions like ConvertIndexedAttestation
+  - The slashing conversion directly maps phase0.ProposerSlashing fields to xatuethv1.ProposerSlashingV2
+  - Follow same pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter wiring
 ---
 

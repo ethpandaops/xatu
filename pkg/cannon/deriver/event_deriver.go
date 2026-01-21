@@ -39,3 +39,4 @@ var _ EventDeriver = &v1.BeaconCommitteeDeriver{}
 // Shared derivers from cldata package
 var _ EventDeriver = &cldataderiver.BeaconBlockDeriver{}
 var _ EventDeriver = &cldataderiver.AttesterSlashingDeriver{}
+var _ EventDeriver = &cldataderiver.ProposerSlashingDeriver{}

@@ -585,8 +585,8 @@
         "Document expected results in test README"
       ],
       "priority": 37,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created scripts/e2e-horizon-validate.sql with 8 comprehensive validation queries: duplicate blocks check, slot gaps check, module verification, events per deriver (all 13 types), slot coverage summary, block latency analysis, events by node, recent blocks sanity check, and validation summary for automated pass/fail. Updated deploy/kurtosis/README.md with detailed Expected Results section documenting what each query should return."
     }
   ]
 }

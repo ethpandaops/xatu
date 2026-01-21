@@ -831,3 +831,28 @@ Started: 2026-01-21
   - ClickHouse queries need FINAL keyword to see latest data after recent inserts
   - Use trap for cleanup to ensure resources are freed even on script failure
 ---
+
+## 2026-01-21 - US-037
+
+- What was implemented:
+  - Created scripts/e2e-horizon-validate.sql with 8 comprehensive validation queries
+  - Query 1: Duplicate blocks check - detects if deduplication fails (should return empty)
+  - Query 2: Slot gaps check - detects FILL iterator issues (should return empty/minimal)
+  - Query 3: Module verification - confirms meta_client_module = 'HORIZON'
+  - Query 4: Events per deriver - counts all 13 deriver types (block-based + epoch-based)
+  - Query 5: Slot coverage summary - shows min/max/expected/actual slots and coverage %
+  - Query 6: Block latency analysis - avg/min/max processing latency in seconds
+  - Query 7: Events by node - confirms dedup (all events attributed to single Horizon instance)
+  - Query 8: Recent blocks - sanity check showing 10 most recent slots
+  - Query 9: Validation summary - automated pass/fail check for CI (all should return 1)
+  - Updated deploy/kurtosis/README.md with Expected Results section documenting each query
+- Files changed:
+  - scripts/e2e-horizon-validate.sql (new - 200+ lines of validation queries)
+  - deploy/kurtosis/README.md (updated - added Expected Results section with detailed explanations)
+- **Learnings for future iterations:**
+  - Use FINAL keyword in ClickHouse queries to see latest data from ReplacingMergeTree tables
+  - lagInFrame() with OVER (ORDER BY slot) for gap detection in ClickHouse
+  - Validation summary query uses boolean expressions for automated pass/fail
+  - Expected counts help operators understand what "normal" looks like for each deriver
+  - Separate SQL file makes queries reusable and easier to maintain than inline in scripts
+---

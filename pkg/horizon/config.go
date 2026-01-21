@@ -71,6 +71,10 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid coordinator config: %w", err)
 	}
 
+	if len(c.Outputs) == 0 {
+		return errors.New("at least one output sink is required")
+	}
+
 	for _, out := range c.Outputs {
 		if err := out.Validate(); err != nil {
 			return fmt.Errorf("invalid output config %s: %w", out.Name, err)

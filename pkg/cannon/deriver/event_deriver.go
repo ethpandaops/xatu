@@ -6,6 +6,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	cldataderiver "github.com/ethpandaops/xatu/pkg/cldata/deriver"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -34,3 +35,6 @@ var _ EventDeriver = &v1.ProposerDutyDeriver{}
 var _ EventDeriver = &v1.BeaconBlobDeriver{}
 var _ EventDeriver = &v1.BeaconValidatorsDeriver{}
 var _ EventDeriver = &v1.BeaconCommitteeDeriver{}
+
+// Shared derivers from cldata package
+var _ EventDeriver = &cldataderiver.BeaconBlockDeriver{}

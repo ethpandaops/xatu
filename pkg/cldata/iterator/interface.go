@@ -28,12 +28,13 @@ const (
 
 // Position represents a position in the beacon chain that can be processed.
 type Position struct {
-	// Slot is the slot number to process.
+	// Slot is the slot number to process (used by slot-based iterators like Horizon).
 	Slot phase0.Slot
-	// Epoch is the epoch number to process (derived from slot if not set directly).
+	// Epoch is the epoch number to process (used by epoch-based iterators like Cannon).
 	Epoch phase0.Epoch
-	// LookAheads contains upcoming positions for pre-fetching optimization.
-	LookAheads []phase0.Slot
+	// LookAheadEpochs contains upcoming epochs for pre-fetching optimization.
+	// Used to preload blocks for entire epochs ahead of current processing.
+	LookAheadEpochs []phase0.Epoch
 	// Direction indicates whether this is forward or backward processing.
 	Direction Direction
 }

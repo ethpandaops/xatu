@@ -4,7 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/horizon/cache"
+	"github.com/ethpandaops/xatu/pkg/horizon/coordinator"
+	"github.com/ethpandaops/xatu/pkg/horizon/deriver"
 	"github.com/ethpandaops/xatu/pkg/horizon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/horizon/subscription"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -22,6 +26,9 @@ type Config struct {
 	// Ethereum configuration (beacon node pool)
 	Ethereum ethereum.Config `yaml:"ethereum"`
 
+	// Coordinator configuration for tracking processing locations
+	Coordinator coordinator.Config `yaml:"coordinator"`
+
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
 
@@ -33,6 +40,15 @@ type Config struct {
 
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
+
+	// Derivers configuration
+	Derivers deriver.Config `yaml:"derivers"`
+
+	// DedupCache configuration for block event deduplication
+	DedupCache cache.Config `yaml:"dedupCache"`
+
+	// Subscription configuration for SSE block events
+	Subscription subscription.Config `yaml:"subscription"`
 }
 
 func (c *Config) Validate() error {
@@ -44,6 +60,10 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid ethereum config: %w", err)
 	}
 
+	if err := c.Coordinator.Validate(); err != nil {
+		return fmt.Errorf("invalid coordinator config: %w", err)
+	}
+
 	for _, out := range c.Outputs {
 		if err := out.Validate(); err != nil {
 			return fmt.Errorf("invalid output config %s: %w", out.Name, err)
@@ -52,6 +72,18 @@ func (c *Config) Validate() error {
 
 	if err := c.Tracing.Validate(); err != nil {
 		return fmt.Errorf("invalid tracing config: %w", err)
+	}
+
+	if err := c.Derivers.Validate(); err != nil {
+		return fmt.Errorf("invalid derivers config: %w", err)
+	}
+
+	if err := c.DedupCache.Validate(); err != nil {
+		return fmt.Errorf("invalid dedup cache config: %w", err)
+	}
+
+	if err := c.Subscription.Validate(); err != nil {
+		return fmt.Errorf("invalid subscription config: %w", err)
 	}
 
 	return nil

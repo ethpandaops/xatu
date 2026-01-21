@@ -1,0 +1,195 @@
+# Horizon Configuration Example
+#
+# Horizon is a HEAD data collection module with multi-beacon node support,
+# high-availability coordination, and shared derivers. It processes real-time
+# blockchain data from multiple beacon nodes and outputs decorated events.
+#
+# Key features:
+# - Multi-beacon node support with health checking and failover
+# - Real-time HEAD tracking via SSE block events
+# - Local deduplication to prevent duplicate event processing
+# - Chain reorg handling with configurable depth limits
+# - Shared derivers with Cannon module for consistency
+# - Coordinator integration for HA deployments
+
+logging: "info" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9090"
+# pprofAddr: ":6060" # optional. if supplied it enables pprof server
+
+# The name of this Horizon instance (required)
+# Used for identification in logs, metrics, and coordinator
+name: example-horizon-instance
+
+# Labels applied to all events from this instance
+labels:
+  ethpandaops: rocks
+  environment: production
+
+# NTP Server for clock drift correction
+# Better to use a NTP server close to your deployment:
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+# Tracing configuration (optional)
+# tracing:
+#   enabled: false
+#   endpoint: localhost:4317
+#   insecure: true
+
+# Coordinator configuration for tracking processing locations
+# Required for HA deployments to coordinate slot processing across instances
+coordinator:
+  address: localhost:8080
+  tls: false
+  # headers:
+  #   authorization: Someb64Value
+
+# Ethereum configuration - multi-beacon node pool
+# Horizon connects to multiple beacon nodes for redundancy and load distribution
+ethereum:
+  # List of beacon nodes to connect to (at least one required)
+  beaconNodes:
+    - name: lighthouse-1
+      address: http://localhost:5052
+      # headers:
+      #   authorization: Someb64Value
+    - name: prysm-1
+      address: http://localhost:3500
+    - name: teku-1
+      address: http://localhost:5051
+    # Add more nodes for redundancy
+    # - name: lodestar-1
+    #   address: http://localhost:9596
+    # - name: nimbus-1
+    #   address: http://localhost:5052
+    # - name: grandine-1
+    #   address: http://localhost:5052
+
+  # Override network name (optional)
+  # If not set, network name is auto-detected from the first healthy beacon node
+  # overrideNetworkName: mainnet
+
+  # Health check interval for beacon node connections
+  healthCheckInterval: 3s
+
+  # Block cache settings for performance optimization
+  blockCacheSize: 1000
+  blockCacheTtl: 1h
+  blockPreloadWorkers: 5
+  blockPreloadQueueSize: 5000
+
+# Deduplication cache configuration
+# Prevents duplicate processing of block events received from multiple beacon nodes
+dedupCache:
+  # TTL for cached block roots (default: 13m - slightly more than 1 epoch)
+  # After this duration, entries are automatically evicted
+  ttl: 13m
+
+# SSE subscription configuration for real-time block events
+subscription:
+  # Size of the block events channel buffer
+  # Increase if you see "channel full" warnings in logs
+  bufferSize: 1000
+
+# Chain reorg handling configuration
+reorg:
+  # Enable/disable reorg handling
+  enabled: true
+  # Maximum reorg depth to handle (slots)
+  # Reorgs deeper than this are logged and ignored
+  maxDepth: 64
+  # Size of the reorg events channel buffer
+  bufferSize: 100
+
+# Epoch iterator configuration for epoch-based derivers
+# (ProposerDuty, BeaconBlob, BeaconValidators, BeaconCommittee)
+epochIterator:
+  enabled: true
+  # Trigger point within epoch (0.0 to 1.0)
+  # 0.5 = trigger at 50% through epoch (midway)
+  # This allows pre-fetching next epoch data before it's needed
+  triggerPercent: 0.5
+
+# Derivers configuration
+# Enable/disable individual data derivers
+derivers:
+  # Block-based derivers (real-time processing via HEAD iterator)
+  beaconBlock:
+    enabled: true
+  attesterSlashing:
+    enabled: true
+  proposerSlashing:
+    enabled: true
+  deposit:
+    enabled: true
+  withdrawal:
+    enabled: true
+  voluntaryExit:
+    enabled: true
+  blsToExecutionChange:
+    enabled: true
+  executionTransaction:
+    enabled: true
+  elaboratedAttestation:
+    enabled: true
+
+  # Epoch-based derivers (triggered midway through epoch)
+  proposerDuty:
+    enabled: true
+  beaconBlob:
+    enabled: true
+  beaconValidators:
+    enabled: true
+    # Chunk size for validator data (to avoid very large events)
+    chunkSize: 100
+  beaconCommittee:
+    enabled: true
+
+# Output sinks configuration (at least one required)
+# Events are sent to all configured outputs
+outputs:
+  # Xatu server output (recommended for production)
+  - name: xatu-server
+    type: xatu
+    # filter:
+    #   eventNames:
+    #     - BEACON_API_ETH_V2_BEACON_BLOCK
+    #     - BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
+    config:
+      address: localhost:8080
+      tls: false
+      # headers:
+      #   authorization: Someb64Value
+      maxQueueSize: 51200
+      batchTimeout: 5s
+      exportTimeout: 30s
+      maxExportBatchSize: 512
+
+  # HTTP output (alternative sink)
+  # - name: http-sink
+  #   type: http
+  #   config:
+  #     address: http://localhost:8080
+  #     headers:
+  #       authorization: Someb64Value
+  #     maxQueueSize: 51200
+  #     batchTimeout: 5s
+  #     exportTimeout: 30s
+  #     maxExportBatchSize: 512
+
+  # Kafka output (for streaming pipelines)
+  # - name: kafka-sink
+  #   type: kafka
+  #   config:
+  #     brokers: localhost:19092
+  #     topic: xatu-events
+  #     flushFrequency: 1s
+  #     flushMessages: 500
+  #     flushBytes: 1000000
+  #     maxRetries: 6
+  #     compression: snappy
+  #     requiredAcks: leader
+  #     partitioning: random

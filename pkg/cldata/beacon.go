@@ -4,8 +4,10 @@ package cldata
 import (
 	"context"
 
+	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 )
 
@@ -32,4 +34,18 @@ type BeaconClient interface {
 	// Returns empty slice without error if no blobs exist for the slot.
 	// This is used for Deneb+ blocks that contain blob transactions.
 	FetchBeaconBlockBlobs(ctx context.Context, identifier string) ([]*deneb.BlobSidecar, error)
+
+	// FetchBeaconCommittee retrieves the beacon committees for a given epoch.
+	// This is used by derivers that need committee information (e.g., ElaboratedAttestationDeriver).
+	FetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch) ([]*v1.BeaconCommittee, error)
+
+	// GetValidatorIndex looks up a validator index from the committee for a given position.
+	// Returns the validator index at the specified position in the committee.
+	GetValidatorIndex(
+		ctx context.Context,
+		epoch phase0.Epoch,
+		slot phase0.Slot,
+		committeeIndex phase0.CommitteeIndex,
+		position uint64,
+	) (phase0.ValidatorIndex, error)
 }

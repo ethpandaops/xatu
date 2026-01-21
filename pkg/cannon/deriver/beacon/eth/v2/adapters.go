@@ -3,8 +3,10 @@ package v2
 import (
 	"context"
 
+	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
+	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -47,6 +49,22 @@ func (a *BeaconClientAdapter) Node() beacon.Node {
 // FetchBeaconBlockBlobs retrieves blob sidecars for a given block identifier.
 func (a *BeaconClientAdapter) FetchBeaconBlockBlobs(ctx context.Context, identifier string) ([]*deneb.BlobSidecar, error) {
 	return a.beacon.Node().FetchBeaconBlockBlobs(ctx, identifier)
+}
+
+// FetchBeaconCommittee retrieves the beacon committees for a given epoch.
+func (a *BeaconClientAdapter) FetchBeaconCommittee(ctx context.Context, epoch phase0.Epoch) ([]*v1.BeaconCommittee, error) {
+	return a.beacon.Duties().FetchBeaconCommittee(ctx, epoch)
+}
+
+// GetValidatorIndex looks up a validator index from the committee for a given position.
+func (a *BeaconClientAdapter) GetValidatorIndex(
+	ctx context.Context,
+	epoch phase0.Epoch,
+	slot phase0.Slot,
+	committeeIndex phase0.CommitteeIndex,
+	position uint64,
+) (phase0.ValidatorIndex, error) {
+	return a.beacon.Duties().GetValidatorIndex(ctx, epoch, slot, committeeIndex, position)
 }
 
 // Verify BeaconClientAdapter implements cldata.BeaconClient.

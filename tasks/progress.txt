@@ -487,3 +487,23 @@ Started: 2026-01-21
   - Check() combines get and set atomically - if not present, add; return whether was present
 ---
 
+## 2026-01-21 - US-024
+- What was implemented:
+  - Created pkg/horizon/coordinator/ directory with config.go and client.go
+  - Config struct has Address (string), Headers (map[string]string), TLS (bool) fields
+  - Client struct wraps gRPC CoordinatorClient with connection management
+  - New() creates client with TLS or insecure credentials based on config
+  - Start() and Stop() for lifecycle management
+  - GetHorizonLocation(ctx, typ HorizonType, networkID string) returns *HorizonLocation
+  - UpsertHorizonLocation(ctx, location *HorizonLocation) updates or creates location
+  - All methods use gzip compression and support auth headers via metadata
+- Files changed:
+  - pkg/horizon/coordinator/config.go (new - Config struct with Validate)
+  - pkg/horizon/coordinator/client.go (new - Client with GetHorizonLocation, UpsertHorizonLocation)
+- **Learnings for future iterations:**
+  - Horizon coordinator client follows exact same pattern as Cannon's pkg/cannon/coordinator/
+  - Use grpc.NewClient instead of deprecated grpc.Dial for new code
+  - metadata.New(headers) and metadata.NewOutgoingContext for passing auth headers
+  - grpc.UseCompressor(gzip.Name) for compression on all RPC calls
+---
+

@@ -633,3 +633,29 @@ Started: 2026-01-21
   - Use prometheus.Register (not MustRegister) to handle duplicate metric registration gracefully
 ---
 
+## 2026-01-21 - US-030
+- What was implemented:
+  - Created pkg/horizon/subscription/reorg.go with ReorgSubscription struct for chain reorg SSE events
+  - ReorgEvent struct with Slot, Depth, OldHeadBlock, NewHeadBlock, OldHeadState, NewHeadState, Epoch, ReceivedAt, NodeName
+  - ReorgSubscription subscribes to all beacon nodes using node.OnChainReOrg() callback
+  - ReorgConfig with Enabled (default true), MaxDepth (default 64 slots), BufferSize (default 100)
+  - Reorg events exceeding MaxDepth are logged, ignored, and tracked with reorg_ignored_total metric
+  - Added DedupCache.Delete() method to pkg/horizon/cache/dedup.go for clearing block roots
+  - Added reorg config field to pkg/horizon/config.go with validation
+  - Added reorgSubscription field to Horizon struct
+  - Added handleReorgEvents() goroutine that reads from reorg channel and clears old head block from dedup cache
+  - Comprehensive metrics: reorg_events_total, reorg_depth histogram, reorg_ignored_total, last_event_at, last_depth, last_slot
+- Files changed:
+  - pkg/horizon/subscription/reorg.go (new - ReorgSubscription with SSE event handling and metrics)
+  - pkg/horizon/cache/dedup.go (updated - added Delete method)
+  - pkg/horizon/config.go (updated - added Reorg config field and validation)
+  - pkg/horizon/horizon.go (updated - added reorgSubscription, handleReorgEvents, shutdown logic)
+- **Learnings for future iterations:**
+  - The ethpandaops/beacon library provides OnChainReOrg() callback for chain reorg SSE events (capital R in ReOrg)
+  - eth2v1.ChainReorgEvent contains Slot, Depth, OldHeadBlock, NewHeadBlock, OldHeadState, NewHeadState, Epoch
+  - When a reorg occurs, clear the OLD head block root from dedup cache to allow re-processing
+  - The new canonical block will be received via the block subscription SSE and processed normally
+  - ReorgSubscription.Enabled() method allows checking if reorg handling is enabled before starting handler goroutine
+  - Reorg depth limit prevents processing extremely deep reorgs (default 64 slots is ~2 epochs)
+---
+

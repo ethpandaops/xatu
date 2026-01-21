@@ -431,3 +431,20 @@ Started: 2026-01-21
   - For loop uint64 conversion: use `for i := uint64(0); i < config.Workers; i++` not `int(config.Workers)`
 ---
 
+## 2026-01-21 - US-021
+- What was implemented:
+  - Added exponential backoff retry logic for beacon node connections using cenkalti/backoff/v5
+  - Added startNodeWithRetry method that retries failed connections with exponential backoff (1s initial, 30s max interval)
+  - Added PreferNode(nodeAddress) method that prefers a specific node but falls back to any healthy node
+  - Added NodeState enum (Disconnected, Connecting, Connected, Reconnecting) for connection state tracking
+  - Added GetState() and Address() helper methods to BeaconNodeWrapper
+  - Updated Start() to use startNodeWithRetry for all beacon nodes
+- Files changed:
+  - pkg/horizon/ethereum/beacon.go (updated - added retry logic, PreferNode, NodeState enum)
+- **Learnings for future iterations:**
+  - cenkalti/backoff/v5 API: use backoff.Retry(ctx, operation, retryOpts...) with backoff.WithBackOff(bo) and backoff.WithNotify(fn)
+  - backoff v5 does not have MaxElapsedTime field; just set InitialInterval and MaxInterval on ExponentialBackOff
+  - Use backoff.Permanent(err) to stop retrying on fatal errors (context cancellation, shutdown)
+  - The ethpandaops/beacon library handles its own internal reconnection, so we only need retry at the initial Start() level
+---
+

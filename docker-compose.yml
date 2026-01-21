@@ -630,6 +630,28 @@ services:
     networks:
       - xatu-net
 
+  xatu-horizon:
+    profiles:
+      - "horizon"
+    command: horizon --config /etc/horizon/config.yaml
+    container_name: xatu-horizon
+    hostname: xatu-horizon
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Default
+      HORIZON_XATU_COORDINATOR_AUTHORIZATION: ${HORIZON_XATU_COORDINATOR_AUTHORIZATION:-Bearer super_secret}
+      # Default of xatu:example
+      HORIZON_XATU_OUTPUT_AUTHORIZATION: ${HORIZON_XATU_OUTPUT_AUTHORIZATION:-Basic eGF0dTpleGFtcGxl}
+      # Default of http://localhost:5052
+      HORIZON_BEACON_NODE_URL: ${HORIZON_BEACON_NODE_URL:-http://localhost:5052}
+      HORIZON_NETWORK_NAME: ${HORIZON_NETWORK_NAME}
+    volumes:
+      - ./deploy/local/docker-compose/xatu-horizon.yaml:/etc/horizon/config.yaml
+    networks:
+      - xatu-net
+
 networks:
   xatu-net:
     driver: bridge

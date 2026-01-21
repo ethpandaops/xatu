@@ -352,8 +352,8 @@
         "Typecheck passes"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created pkg/horizon/cache/dedup.go with DedupCache struct using jellydator/ttlcache/v3 library. TTL-based cache with configurable TTL (default 13 minutes). Check(blockRoot) returns true if seen (duplicate to drop), false if new (first occurrence to process). Metrics: dedup_hits_total, dedup_misses_total, dedup_cache_size. Config struct with TTL field and Validate method."
     },
     {
       "id": "US-024",

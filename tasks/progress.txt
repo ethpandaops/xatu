@@ -467,3 +467,23 @@ Started: 2026-01-21
   - Sentry module uses similar pattern with beacon.Node().OnBlock() for SSE subscriptions
 ---
 
+## 2026-01-21 - US-023
+- What was implemented:
+  - Created pkg/horizon/cache/dedup.go with DedupCache struct for block event deduplication
+  - Uses jellydator/ttlcache/v3 library (same pattern as sentry, relaymonitor, mimicry caches)
+  - DedupCache has configurable TTL (default 13 minutes to cover ~1 epoch plus delays)
+  - Check(blockRoot) returns true if seen (duplicate), false if new (first occurrence)
+  - On first occurrence, block root is automatically added to cache with TTL
+  - Config struct with TTL field and Validate method (sets default if TTL <= 0)
+  - Metrics struct with dedup_hits_total, dedup_misses_total, dedup_cache_size
+  - Start() and Stop() methods for cache cleanup goroutine lifecycle
+- Files changed:
+  - pkg/horizon/cache/dedup.go (new - DedupCache with TTL-based block root deduplication and metrics)
+- **Learnings for future iterations:**
+  - Use jellydator/ttlcache/v3 for TTL-based caching (consistent with codebase pattern)
+  - Cache.Start() runs cleanup goroutine, call in `go cache.Start()` pattern
+  - TTL of 13 minutes covers slightly more than 1 epoch (6.4 min) to handle delayed events
+  - Metrics pattern: hits_total (duplicates dropped), misses_total (new items processed), cache_size (current entries)
+  - Check() combines get and set atomically - if not present, add; return whether was present
+---
+

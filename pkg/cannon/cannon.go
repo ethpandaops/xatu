@@ -396,24 +396,26 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		finalizedCheckpoint := "finalized"
 
 		eventDerivers := []deriver.EventDeriver{
-			v2.NewAttesterSlashingDeriver(
+			cldataderiver.NewAttesterSlashingDeriver(
 				c.log,
-				&c.Config.Derivers.AttesterSlashingConfig,
-				iterator.NewBackfillingCheckpoint(
-					c.log,
-					networkName,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-					c.coordinatorClient,
-					wallclock,
-					&backfillingCheckpointIteratorMetrics,
-					c.beacon,
-					finalizedCheckpoint,
-					3,
-					&c.Config.Derivers.AttesterSlashingConfig.Iterator,
+				&cldataderiver.AttesterSlashingDeriverConfig{Enabled: c.Config.Derivers.AttesterSlashingConfig.Enabled},
+				v2.NewIteratorAdapter(
+					iterator.NewBackfillingCheckpoint(
+						c.log,
+						networkName,
+						networkID,
+						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
+						c.coordinatorClient,
+						wallclock,
+						&backfillingCheckpointIteratorMetrics,
+						c.beacon,
+						finalizedCheckpoint,
+						3,
+						&c.Config.Derivers.AttesterSlashingConfig.Iterator,
+					),
 				),
-				c.beacon,
-				clientMeta,
+				v2.NewBeaconClientAdapter(c.beacon),
+				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock),
 			),
 			v2.NewProposerSlashingDeriver(
 				c.log,

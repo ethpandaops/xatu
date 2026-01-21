@@ -1,0 +1,7 @@
+# Horizon Progress Log
+
+Branch: ralph/horizon
+Started: 2026-01-21
+
+---
+

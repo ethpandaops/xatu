@@ -39,6 +39,11 @@ service Coordinator {
       returns (GetRelayMonitorLocationResponse) {}
   rpc UpsertRelayMonitorLocation(UpsertRelayMonitorLocationRequest)
       returns (UpsertRelayMonitorLocationResponse) {}
+
+  rpc GetHorizonLocation(GetHorizonLocationRequest)
+      returns (GetHorizonLocationResponse) {}
+  rpc UpsertHorizonLocation(UpsertHorizonLocationRequest)
+      returns (UpsertHorizonLocationResponse) {}
 }
 
 message CreateNodeRecordsRequest { repeated string node_records = 1; }
@@ -368,3 +373,45 @@ message GetRelayMonitorLocationResponse { RelayMonitorLocation location = 1; }
 message UpsertRelayMonitorLocationRequest { RelayMonitorLocation location = 1; }
 
 message UpsertRelayMonitorLocationResponse {}
+
+// Horizon types - for head data collection module
+// Mirrors CannonType for horizon-specific location types
+enum HorizonType {
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT = 0;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING = 1;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT = 2;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING = 3;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE = 4;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 5;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 6;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK = 7;
+  HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 8;
+  HORIZON_TYPE_BEACON_API_ETH_V1_PROPOSER_DUTY = 9;
+  HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION = 10;
+  HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_VALIDATORS = 11;
+  HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_COMMITTEE = 12;
+}
+
+// HorizonLocation stores HEAD and FILL slot positions per deriver
+// Used to track progress of the Horizon head data collection module
+message HorizonLocation {
+  string network_id = 1;                 // Network identifier (e.g., "mainnet", "holesky")
+  HorizonType type = 2;                  // Deriver type being tracked
+  uint64 head_slot = 3;                  // Current head slot position for real-time tracking
+  uint64 fill_slot = 4;                  // Fill slot position for catch-up processing
+}
+
+message GetHorizonLocationRequest {
+  string network_id = 1;
+  HorizonType type = 2;
+}
+
+message GetHorizonLocationResponse {
+  HorizonLocation location = 1;
+}
+
+message UpsertHorizonLocationRequest {
+  HorizonLocation location = 1;
+}
+
+message UpsertHorizonLocationResponse {}

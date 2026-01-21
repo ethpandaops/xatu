@@ -9,6 +9,7 @@ import (
 
 	ehttp "github.com/attestantio/go-eth2-client/http"
 	"github.com/attestantio/go-eth2-client/spec"
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
@@ -20,11 +21,26 @@ import (
 // ErrNoHealthyNodes is returned when no healthy beacon nodes are available.
 var ErrNoHealthyNodes = errors.New("no healthy beacon nodes available")
 
+// NodeState represents the connection state of a beacon node.
+type NodeState int
+
+const (
+	// NodeStateDisconnected indicates the node has not connected yet.
+	NodeStateDisconnected NodeState = iota
+	// NodeStateConnecting indicates the node is attempting to connect.
+	NodeStateConnecting
+	// NodeStateConnected indicates the node is connected but may not be healthy.
+	NodeStateConnected
+	// NodeStateReconnecting indicates the node is reconnecting after a failure.
+	NodeStateReconnecting
+)
+
 // BeaconNodeWrapper wraps a single beacon node with its health status.
 type BeaconNodeWrapper struct {
 	config  BeaconNodeConfig
 	node    beacon.Node
 	healthy bool
+	state   NodeState
 	mu      sync.RWMutex
 	log     logrus.FieldLogger
 }
@@ -181,24 +197,14 @@ func (p *BeaconNodePool) Start(ctx context.Context) error {
 		}()
 	}
 
-	// Start each beacon node
-	errChan := make(chan error, len(p.nodes))
-
+	// Start each beacon node with retry logic
 	for _, wrapper := range p.nodes {
 		p.wg.Add(1)
 
 		go func(w *BeaconNodeWrapper) {
 			defer p.wg.Done()
 
-			if err := w.node.Start(ctx); err != nil {
-				p.log.WithField("node", w.Name()).WithError(err).Error("Failed to start beacon node")
-				w.SetHealthy(false)
-				p.metrics.SetBeaconNodeStatus(w.Name(), BeaconNodeStatusUnhealthy)
-
-				errChan <- fmt.Errorf("failed to start beacon node %s: %w", w.Name(), err)
-
-				return
-			}
+			p.startNodeWithRetry(ctx, w)
 		}(wrapper)
 	}
 
@@ -547,4 +553,110 @@ func (p *BeaconNodePool) HealthyNodeCount() int {
 	}
 
 	return count
+}
+
+// PreferNode returns the specified node if it's healthy, otherwise falls back to any healthy node.
+// The nodeAddress should match the Address field of a configured beacon node.
+func (p *BeaconNodePool) PreferNode(nodeAddress string) (*BeaconNodeWrapper, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	// First, try to find the preferred node
+	for _, wrapper := range p.nodes {
+		if wrapper.config.Address == nodeAddress && wrapper.IsHealthy() {
+			return wrapper, nil
+		}
+	}
+
+	// Preferred node not available, fall back to any healthy node
+	for _, wrapper := range p.nodes {
+		if wrapper.IsHealthy() {
+			p.log.WithFields(logrus.Fields{
+				"preferred": nodeAddress,
+				"fallback":  wrapper.config.Address,
+			}).Debug("Preferred node unavailable, using fallback")
+
+			return wrapper, nil
+		}
+	}
+
+	return nil, ErrNoHealthyNodes
+}
+
+// startNodeWithRetry starts a beacon node with exponential backoff retry.
+func (p *BeaconNodePool) startNodeWithRetry(ctx context.Context, wrapper *BeaconNodeWrapper) {
+	wrapper.mu.Lock()
+	wrapper.state = NodeStateConnecting
+	wrapper.mu.Unlock()
+
+	p.metrics.SetBeaconNodeStatus(wrapper.Name(), BeaconNodeStatusConnecting)
+
+	operation := func() (struct{}, error) {
+		select {
+		case <-ctx.Done():
+			return struct{}{}, backoff.Permanent(ctx.Err())
+		case <-p.shutdownChan:
+			return struct{}{}, backoff.Permanent(errors.New("pool shutting down"))
+		default:
+		}
+
+		if err := wrapper.node.Start(ctx); err != nil {
+			wrapper.log.WithError(err).Warn("Failed to start beacon node, will retry")
+			p.metrics.SetBeaconNodeStatus(wrapper.Name(), BeaconNodeStatusUnhealthy)
+
+			return struct{}{}, err
+		}
+
+		return struct{}{}, nil
+	}
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 1 * time.Second
+	bo.MaxInterval = 30 * time.Second
+
+	retryOpts := []backoff.RetryOption{
+		backoff.WithBackOff(bo),
+		backoff.WithNotify(func(err error, duration time.Duration) {
+			wrapper.log.WithError(err).WithField("next_retry", duration).
+				Warn("Beacon node connection failed, retrying")
+
+			wrapper.mu.Lock()
+			wrapper.state = NodeStateReconnecting
+			wrapper.mu.Unlock()
+		}),
+	}
+	if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
+		// Only log if not a context cancellation or shutdown
+		if !errors.Is(err, context.Canceled) {
+			wrapper.log.WithError(err).Error("Beacon node connection permanently failed")
+		}
+
+		wrapper.mu.Lock()
+		wrapper.state = NodeStateDisconnected
+		wrapper.healthy = false
+		wrapper.mu.Unlock()
+
+		p.metrics.SetBeaconNodeStatus(wrapper.Name(), BeaconNodeStatusUnhealthy)
+
+		return
+	}
+
+	wrapper.mu.Lock()
+	wrapper.state = NodeStateConnected
+	wrapper.mu.Unlock()
+
+	wrapper.log.Info("Beacon node connected successfully")
+}
+
+// GetState returns the current connection state of the beacon node.
+func (w *BeaconNodeWrapper) GetState() NodeState {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	return w.state
+}
+
+// Address returns the address of the beacon node.
+func (w *BeaconNodeWrapper) Address() string {
+	return w.config.Address
 }

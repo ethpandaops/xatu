@@ -701,3 +701,41 @@ Started: 2026-01-21
   - HEAD/FILL iterator configs are per-deriver, not global (each deriver creates its own iterator)
 ---
 
+## 2026-01-21 - US-033
+
+- What was implemented:
+  - Created comprehensive docs/horizon.md documentation (549 lines)
+  - Architecture overview with ASCII art diagram showing module components
+  - Dual-iterator design section with timeline diagram explaining HEAD vs FILL iteration
+  - Multi-beacon node support section explaining pool, failover, health checking
+  - HA deployment guide with multi-instance coordination diagram
+  - Horizon vs Cannon comparison table with use case guidance
+  - Full configuration reference with tables for all options:
+    - General config (logging, metrics, pprof, name, labels, ntp)
+    - Beacon nodes config (array of nodes with name, address, headers)
+    - Coordinator config (address, TLS, headers)
+    - Dedup cache, subscription, reorg configs
+    - Epoch iterator config (triggerPercent)
+    - All 13 derivers (9 block-based + 4 epoch-based)
+    - Output sink reference (linking to cannon.md for details)
+  - Complete metrics reference organized by category:
+    - Core metrics (decorated_event_total, head_slot, fill_slot, etc.)
+    - Beacon node pool metrics (node status, blocks fetched, cache hits/misses)
+    - SSE subscription metrics (events, connection status, delays)
+    - Reorg metrics (events, depth histogram, ignored, last event tracking)
+    - Deduplication cache metrics (hits, misses, size)
+    - Iterator metrics (HEAD, FILL, Epoch) with processed/skipped/position tracking
+  - Usage section with CLI flags and docker/build/dev run commands
+  - Minimal and production configuration examples
+- Files changed:
+  - docs/horizon.md (new - 549 lines)
+- **Learnings for future iterations:**
+  - Follow existing docs pattern: Table of contents, Usage, Requirements, Configuration, Running Locally
+  - Use markdown tables for configuration options (Name, Type, Default, Description columns)
+  - ASCII art diagrams are effective for architecture visualization
+  - Metrics reference should be organized by component/category for easier lookup
+  - Include both minimal and production config examples for different use cases
+  - Cross-reference related docs (e.g., cannon.md for output sink details)
+  - Use comparison tables when contrasting similar modules (when to use which)
+---
+

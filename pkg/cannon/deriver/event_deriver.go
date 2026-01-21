@@ -41,3 +41,4 @@ var _ EventDeriver = &cldataderiver.BeaconBlockDeriver{}
 var _ EventDeriver = &cldataderiver.AttesterSlashingDeriver{}
 var _ EventDeriver = &cldataderiver.ProposerSlashingDeriver{}
 var _ EventDeriver = &cldataderiver.DepositDeriver{}
+var _ EventDeriver = &cldataderiver.WithdrawalDeriver{}

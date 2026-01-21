@@ -130,6 +130,13 @@ func (d *DedupCache) Size() int {
 	return d.cache.Len()
 }
 
+// Delete removes a block root from the cache.
+// This is used when a chain reorg is detected and slots need to be re-processed.
+func (d *DedupCache) Delete(blockRoot string) {
+	d.cache.Delete(blockRoot)
+	d.metrics.cacheSize.Set(float64(d.cache.Len()))
+}
+
 // TTL returns the configured TTL for cache entries.
 func (d *DedupCache) TTL() time.Duration {
 	return d.ttl

@@ -51,6 +51,9 @@ type Config struct {
 	// Subscription configuration for SSE block events
 	Subscription subscription.Config `yaml:"subscription"`
 
+	// Reorg configuration for chain reorg handling
+	Reorg subscription.ReorgConfig `yaml:"reorg"`
+
 	// EpochIterator configuration for epoch-based derivers
 	EpochIterator iterator.EpochIteratorConfig `yaml:"epochIterator"`
 }
@@ -88,6 +91,10 @@ func (c *Config) Validate() error {
 
 	if err := c.Subscription.Validate(); err != nil {
 		return fmt.Errorf("invalid subscription config: %w", err)
+	}
+
+	if err := c.Reorg.Validate(); err != nil {
+		return fmt.Errorf("invalid reorg config: %w", err)
 	}
 
 	if err := c.EpochIterator.Validate(); err != nil {

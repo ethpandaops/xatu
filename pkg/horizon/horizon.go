@@ -56,6 +56,9 @@ type Horizon struct {
 	// Block subscriptions from beacon nodes.
 	blockSubscription *subscription.BlockSubscription
 
+	// Reorg subscription for chain reorg events.
+	reorgSubscription *subscription.ReorgSubscription
+
 	// Event derivers for processing block data.
 	eventDerivers []cldataderiver.EventDeriver
 
@@ -222,6 +225,20 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 
 	// Get the block events channel from the subscription.
 	blockEventsChan := h.blockSubscription.Events()
+
+	// Create and start reorg subscription for chain reorg handling.
+	h.reorgSubscription = subscription.NewReorgSubscription(
+		h.log,
+		h.beaconPool,
+		&h.Config.Reorg,
+	)
+
+	if err := h.reorgSubscription.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start reorg subscription: %w", err)
+	}
+
+	// Start goroutine to handle reorg events.
+	go h.handleReorgEvents(ctx)
 
 	// Create context provider adapter for all derivers.
 	ctxProvider := deriver.NewContextProviderAdapter(
@@ -479,6 +496,53 @@ func (h *Horizon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.D
 	return nil
 }
 
+// handleReorgEvents handles chain reorg events by clearing affected block roots from the dedup cache.
+// This allows the affected slots to be re-processed with the new canonical blocks.
+func (h *Horizon) handleReorgEvents(ctx context.Context) {
+	if h.reorgSubscription == nil || !h.reorgSubscription.Enabled() {
+		return
+	}
+
+	log := h.log.WithField("component", "reorg_handler")
+	log.Info("Starting reorg event handler")
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("Reorg event handler stopped (context cancelled)")
+
+			return
+		case event, ok := <-h.reorgSubscription.Events():
+			if !ok {
+				log.Info("Reorg event handler stopped (channel closed)")
+
+				return
+			}
+
+			log.WithFields(logrus.Fields{
+				"slot":           event.Slot,
+				"depth":          event.Depth,
+				"old_head_block": event.OldHeadBlock.String(),
+				"new_head_block": event.NewHeadBlock.String(),
+				"epoch":          event.Epoch,
+				"node":           event.NodeName,
+			}).Info("Processing chain reorg event")
+
+			// Clear the old head block from dedup cache so the new canonical block can be processed.
+			// The old head block root needs to be removed so that if we receive the new canonical
+			// block for the same slot, it won't be deduplicated.
+			h.dedupCache.Delete(event.OldHeadBlock.String())
+
+			log.WithFields(logrus.Fields{
+				"slot":          event.Slot,
+				"depth":         event.Depth,
+				"cleared_block": event.OldHeadBlock.String(),
+				"new_canonical": event.NewHeadBlock.String(),
+			}).Info("Cleared reorged block from dedup cache - slot can be re-processed")
+		}
+	}
+}
+
 func (h *Horizon) Shutdown(ctx context.Context) error {
 	h.log.Printf("Shutting down")
 
@@ -493,6 +557,13 @@ func (h *Horizon) Shutdown(ctx context.Context) error {
 	if h.blockSubscription != nil {
 		if err := h.blockSubscription.Stop(ctx); err != nil {
 			h.log.WithError(err).Warn("Error stopping block subscription")
+		}
+	}
+
+	// Stop reorg subscription.
+	if h.reorgSubscription != nil {
+		if err := h.reorgSubscription.Stop(ctx); err != nil {
+			h.log.WithError(err).Warn("Error stopping reorg subscription")
 		}
 	}
 

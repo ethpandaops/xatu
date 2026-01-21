@@ -2,6 +2,35 @@
 
 This directory contains configuration files for running E2E tests of the Horizon module using Kurtosis.
 
+## Quick Start (Automated)
+
+The easiest way to run the E2E test is using the automated script:
+
+```bash
+# Full test (~15 minutes, 2 epochs)
+./scripts/e2e-horizon-test.sh
+
+# Quick test (~8 minutes, 1 epoch)
+./scripts/e2e-horizon-test.sh --quick
+
+# Skip image build (use existing image)
+./scripts/e2e-horizon-test.sh --skip-build
+
+# Keep resources for debugging (no cleanup on exit)
+./scripts/e2e-horizon-test.sh --skip-cleanup
+```
+
+The script handles:
+- Building the Xatu Docker image
+- Starting the docker-compose stack (ClickHouse, Kafka, PostgreSQL, xatu-server)
+- Spinning up the Kurtosis Ethereum testnet with all 6 consensus clients
+- Connecting networks between Kurtosis and docker-compose
+- Generating Horizon configuration with actual beacon node URLs
+- Starting Horizon and waiting for data collection
+- Running validation queries against ClickHouse
+- Reporting pass/fail status
+- Cleaning up all resources on exit
+
 ## Architecture
 
 The E2E test uses two separate infrastructure components:
@@ -223,9 +252,127 @@ docker compose down -v
 | Nimbus     | Besu       | 4000            |
 | Grandine   | Geth       | 4000            |
 
+## Manual Test Procedure
+
+For debugging or step-by-step execution, follow this manual procedure:
+
+### Step 1: Build the Xatu Image
+
+```bash
+cd /path/to/xatu
+docker build -t ethpandaops/xatu:local .
+```
+
+### Step 2: Start the Xatu Stack
+
+```bash
+docker compose up --detach
+```
+
+Wait for all services to be healthy:
+```bash
+docker compose ps
+```
+
+### Step 3: Start the Kurtosis Network
+
+```bash
+kurtosis run github.com/ethpandaops/ethereum-package \
+  --args-file deploy/kurtosis/horizon-test.yaml \
+  --enclave horizon-e2e
+```
+
+Wait for the network to start (this may take 2-3 minutes).
+
+### Step 4: Get Beacon Node Containers
+
+```bash
+kurtosis enclave inspect horizon-e2e | grep -E "^cl-" | grep -v validator
+```
+
+### Step 5: Connect Networks
+
+Connect Kurtosis containers to the xatu network:
+
+```bash
+for container in $(kurtosis enclave inspect horizon-e2e | grep -E "^cl-" | grep -v validator | awk '{print $1}'); do
+  docker network connect xatu_xatu-net "$container" 2>/dev/null || true
+  echo "Connected: $container"
+done
+```
+
+### Step 6: Generate Horizon Config
+
+Create a config file with actual beacon node URLs:
+
+```bash
+# Get container names
+LIGHTHOUSE=$(kurtosis enclave inspect horizon-e2e | grep cl-lighthouse | grep -v validator | head -n1 | awk '{print $1}')
+PRYSM=$(kurtosis enclave inspect horizon-e2e | grep cl-prysm | grep -v validator | head -n1 | awk '{print $1}')
+TEKU=$(kurtosis enclave inspect horizon-e2e | grep cl-teku | grep -v validator | head -n1 | awk '{print $1}')
+LODESTAR=$(kurtosis enclave inspect horizon-e2e | grep cl-lodestar | grep -v validator | head -n1 | awk '{print $1}')
+NIMBUS=$(kurtosis enclave inspect horizon-e2e | grep cl-nimbus | grep -v validator | head -n1 | awk '{print $1}')
+GRANDINE=$(kurtosis enclave inspect horizon-e2e | grep cl-grandine | grep -v validator | head -n1 | awk '{print $1}')
+
+echo "Beacon nodes:"
+echo "  Lighthouse: $LIGHTHOUSE"
+echo "  Prysm: $PRYSM"
+echo "  Teku: $TEKU"
+echo "  Lodestar: $LODESTAR"
+echo "  Nimbus: $NIMBUS"
+echo "  Grandine: $GRANDINE"
+```
+
+Update `deploy/kurtosis/xatu-horizon.yaml` with these container names.
+
+### Step 7: Start Horizon
+
+```bash
+docker run -d \
+  --name xatu-horizon \
+  --network xatu_xatu-net \
+  -v $(pwd)/deploy/kurtosis/xatu-horizon.yaml:/etc/xatu/config.yaml:ro \
+  ethpandaops/xatu:local \
+  horizon --config /etc/xatu/config.yaml
+```
+
+### Step 8: Monitor Progress
+
+Check Horizon logs:
+```bash
+docker logs -f xatu-horizon
+```
+
+Check block count in ClickHouse:
+```bash
+docker exec xatu-clickhouse-01 clickhouse-client --query "
+  SELECT COUNT(*) as blocks
+  FROM beacon_api_eth_v2_beacon_block FINAL
+  WHERE meta_client_module = 'HORIZON'
+"
+```
+
+### Step 9: Run Validation Queries
+
+After waiting 2 epochs (~13 minutes), run the validation queries from the "Validation Queries" section above.
+
+### Step 10: Cleanup
+
+```bash
+# Stop Horizon
+docker stop xatu-horizon && docker rm xatu-horizon
+
+# Stop Kurtosis
+kurtosis enclave stop horizon-e2e && kurtosis enclave rm horizon-e2e
+
+# Stop docker-compose
+docker compose down -v
+```
+
 ## Notes
 
 - The E2E test uses the main docker-compose.yml which includes ClickHouse with full schema migrations
 - Horizon connects to all 6 beacon nodes simultaneously, testing the multi-beacon node pool functionality
 - Block deduplication ensures only one event per block root despite receiving from multiple beacon nodes
 - The coordinator tracks progress, allowing Horizon to resume from where it left off
+- The automated script (`scripts/e2e-horizon-test.sh`) is recommended for CI/CD pipelines

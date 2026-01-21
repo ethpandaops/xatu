@@ -3,5 +3,26 @@
 Branch: ralph/horizon
 Started: 2026-01-21
 
+## Codebase Patterns
+- Use `buf generate --path <file>` when symlinks cause issues with full buf generate
+- HorizonType enum values follow pattern HORIZON_TYPE_<API_PATH> (e.g., HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK)
+- HorizonLocation uses simpler slot-based tracking (head_slot, fill_slot) vs Cannon's epoch-based BackfillingCheckpointMarker
+
+---
+
+## 2026-01-21 - US-001
+- What was implemented:
+  - Added HorizonType enum to coordinator.proto mirroring CannonType (13 deriver types)
+  - Added HorizonLocation message with network_id, type, head_slot, fill_slot fields
+  - Added GetHorizonLocation and UpsertHorizonLocation RPC methods to Coordinator service
+  - Generated Go code with buf generate --path
+- Files changed:
+  - pkg/proto/xatu/coordinator.proto (added enum, messages, RPC methods)
+  - pkg/proto/xatu/coordinator.pb.go (regenerated)
+  - pkg/proto/xatu/coordinator_grpc.pb.go (regenerated)
+- **Learnings for future iterations:**
+  - Symlinks in project root (.cursor, .roo, ai_docs, llms) cause buf generate to fail with "EvalSymlinks: too many links"
+  - Use `buf generate --path pkg/proto/xatu/coordinator.proto` to work around this
+  - HorizonLocation tracks dual progress (HEAD real-time + FILL catch-up) unlike Cannon's single backfill marker
 ---
 

@@ -15,8 +15,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Added HorizonType enum (13 deriver types) and HorizonLocation message with network_id, type, head_slot, fill_slot fields. Also added RPC method signatures to service."
     },
     {
       "id": "US-002",

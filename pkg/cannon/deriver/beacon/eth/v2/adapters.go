@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/attestantio/go-eth2-client/spec"
+	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -41,6 +42,11 @@ func (a *BeaconClientAdapter) Synced(ctx context.Context) error {
 // Node returns the underlying beacon node.
 func (a *BeaconClientAdapter) Node() beacon.Node {
 	return a.beacon.Node()
+}
+
+// FetchBeaconBlockBlobs retrieves blob sidecars for a given block identifier.
+func (a *BeaconClientAdapter) FetchBeaconBlockBlobs(ctx context.Context, identifier string) ([]*deneb.BlobSidecar, error) {
+	return a.beacon.Node().FetchBeaconBlockBlobs(ctx, identifier)
 }
 
 // Verify BeaconClientAdapter implements cldata.BeaconClient.
@@ -97,10 +103,11 @@ var _ cldataiterator.Iterator = (*IteratorAdapter)(nil)
 
 // ContextProviderAdapter wraps Cannon's metadata creation to implement cldata.ContextProvider.
 type ContextProviderAdapter struct {
-	clientMeta  *xatu.ClientMeta
-	networkName string
-	networkID   uint64
-	wallclock   *ethwallclock.EthereumBeaconChain
+	clientMeta     *xatu.ClientMeta
+	networkName    string
+	networkID      uint64
+	wallclock      *ethwallclock.EthereumBeaconChain
+	depositChainID uint64
 }
 
 // NewContextProviderAdapter creates a new ContextProviderAdapter.
@@ -109,12 +116,14 @@ func NewContextProviderAdapter(
 	networkName string,
 	networkID uint64,
 	wallclock *ethwallclock.EthereumBeaconChain,
+	depositChainID uint64,
 ) *ContextProviderAdapter {
 	return &ContextProviderAdapter{
-		clientMeta:  clientMeta,
-		networkName: networkName,
-		networkID:   networkID,
-		wallclock:   wallclock,
+		clientMeta:     clientMeta,
+		networkName:    networkName,
+		networkID:      networkID,
+		wallclock:      wallclock,
+		depositChainID: depositChainID,
 	}
 }
 
@@ -136,6 +145,11 @@ func (a *ContextProviderAdapter) NetworkID() uint64 {
 // Wallclock returns the Ethereum wallclock.
 func (a *ContextProviderAdapter) Wallclock() *ethwallclock.EthereumBeaconChain {
 	return a.wallclock
+}
+
+// DepositChainID returns the execution layer chain ID.
+func (a *ContextProviderAdapter) DepositChainID() uint64 {
+	return a.depositChainID
 }
 
 // Verify ContextProviderAdapter implements cldata.ContextProvider.

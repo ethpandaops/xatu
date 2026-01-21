@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/attestantio/go-eth2-client/spec"
+	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 )
 
@@ -26,4 +27,9 @@ type BeaconClient interface {
 	// Node returns the underlying beacon node for spec access.
 	// This is needed for accessing fork epochs and slots per epoch.
 	Node() beacon.Node
+
+	// FetchBeaconBlockBlobs retrieves blob sidecars for a given block identifier.
+	// Returns empty slice without error if no blobs exist for the slot.
+	// This is used for Deneb+ blocks that contain blob transactions.
+	FetchBeaconBlockBlobs(ctx context.Context, identifier string) ([]*deneb.BlobSidecar, error)
 }

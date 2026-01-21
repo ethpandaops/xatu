@@ -27,4 +27,8 @@ type ContextProvider interface {
 	// Wallclock returns the Ethereum beacon chain wallclock for time calculations.
 	// It provides slot and epoch timing information based on genesis time and slot duration.
 	Wallclock() *ethwallclock.EthereumBeaconChain
+
+	// DepositChainID returns the execution layer chain ID.
+	// This is needed for transaction signing and verification.
+	DepositChainID() uint64
 }

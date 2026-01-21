@@ -42,3 +42,4 @@ var _ EventDeriver = &cldataderiver.AttesterSlashingDeriver{}
 var _ EventDeriver = &cldataderiver.ProposerSlashingDeriver{}
 var _ EventDeriver = &cldataderiver.DepositDeriver{}
 var _ EventDeriver = &cldataderiver.WithdrawalDeriver{}
+var _ EventDeriver = &cldataderiver.VoluntaryExitDeriver{}

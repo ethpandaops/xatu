@@ -106,8 +106,8 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared DepositDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-008",
@@ -121,8 +121,8 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared WithdrawalDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-009",
@@ -136,8 +136,8 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared VoluntaryExitDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-010",
@@ -151,8 +151,8 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared BLSToExecutionChangeDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Uses spec.DataVersionCapella as ActivationFork. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-011",

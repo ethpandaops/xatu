@@ -135,3 +135,66 @@ Started: 2026-01-21
   - Follow same pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter wiring
 ---
 
+## 2026-01-21 - US-007
+- What was implemented:
+  - Created shared DepositDeriver in pkg/cldata/deriver/deposit.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Updated pkg/cannon/cannon.go to use shared DepositDeriver with adapters (same pattern as ProposerSlashingDeriver)
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared DepositDeriver
+- Files changed:
+  - pkg/cldata/deriver/deposit.go (new - shared DepositDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared DepositDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared DepositDeriver)
+- **Learnings for future iterations:**
+  - Deposit conversion extracts proof array and deposit data fields (pubkey, withdrawal_credentials, amount, signature)
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+  - All block-based derivers share the same structure: lookAhead, processEpoch, processSlot, getXXX, createEvent
+---
+
+## 2026-01-21 - US-008
+- What was implemented:
+  - Created shared WithdrawalDeriver in pkg/cldata/deriver/withdrawal.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - WithdrawalDeriver uses spec.DataVersionCapella as ActivationFork (withdrawals were introduced in Capella)
+  - Updated pkg/cannon/cannon.go to use shared WithdrawalDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared WithdrawalDeriver
+- Files changed:
+  - pkg/cldata/deriver/withdrawal.go (new - shared WithdrawalDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared WithdrawalDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared WithdrawalDeriver)
+- **Learnings for future iterations:**
+  - Withdrawal conversion is simpler than Deposit - just 4 fields: Index, ValidatorIndex, Address, Amount
+  - Capella-activated derivers use spec.DataVersionCapella as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+
+## 2026-01-21 - US-009
+- What was implemented:
+  - Created shared VoluntaryExitDeriver in pkg/cldata/deriver/voluntary_exit.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - VoluntaryExitDeriver uses spec.DataVersionPhase0 as ActivationFork (voluntary exits available since genesis)
+  - Updated pkg/cannon/cannon.go to use shared VoluntaryExitDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared VoluntaryExitDeriver
+- Files changed:
+  - pkg/cldata/deriver/voluntary_exit.go (new - shared VoluntaryExitDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared VoluntaryExitDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared VoluntaryExitDeriver)
+- **Learnings for future iterations:**
+  - VoluntaryExit conversion uses SignedVoluntaryExitV2 with Message containing Epoch and ValidatorIndex
+  - Phase0-activated derivers use spec.DataVersionPhase0 as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+
+## 2026-01-21 - US-010
+- What was implemented:
+  - Created shared BLSToExecutionChangeDeriver in pkg/cldata/deriver/bls_to_execution_change.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - BLSToExecutionChangeDeriver uses spec.DataVersionCapella as ActivationFork (BLS to execution changes were introduced in Capella)
+  - Updated pkg/cannon/cannon.go to use shared BLSToExecutionChangeDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared BLSToExecutionChangeDeriver
+- Files changed:
+  - pkg/cldata/deriver/bls_to_execution_change.go (new - shared BLSToExecutionChangeDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared BLSToExecutionChangeDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared BLSToExecutionChangeDeriver)
+- **Learnings for future iterations:**
+  - BLSToExecutionChange conversion uses SignedBLSToExecutionChangeV2 with Message containing ValidatorIndex, FromBlsPubkey, ToExecutionAddress
+  - Capella-activated derivers use spec.DataVersionCapella as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+

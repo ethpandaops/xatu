@@ -402,3 +402,32 @@ Started: 2026-01-21
   - Metrics registration uses prometheus.MustRegister() with variadic args for multiple metrics
 ---
 
+## 2026-01-21 - US-020
+- What was implemented:
+  - Created pkg/horizon/ethereum/ directory with three files: beacon.go, config.go, metrics.go
+  - BeaconNodeConfig struct holds name, address, headers for a single beacon node
+  - Config struct holds array of BeaconNodeConfig plus pool-level settings (health check interval, cache settings)
+  - BeaconNodePool manages multiple beacon nodes with health checking and failover
+  - BeaconNodeWrapper wraps individual nodes with health status tracking
+  - Health checks run periodically using sync state from ethpandaops/beacon library
+  - Shared services (MetadataService, DutiesService) initialized from first healthy node
+  - Block cache shared across all nodes with singleflight for deduplication
+  - Metrics: beacon_node_status (gaugevec), blocks_fetched_total, block_cache_hits/misses, block_fetch_errors, health_check_total, health_check_duration
+  - Updated Horizon config.go to include Ethereum configuration
+  - Updated overrides.go with BeaconNodeURLs, BeaconNodeHeaders, NetworkName overrides
+- Files changed:
+  - pkg/horizon/ethereum/beacon.go (new - BeaconNodePool with health checking, block caching)
+  - pkg/horizon/ethereum/config.go (new - BeaconNodeConfig, Config structs)
+  - pkg/horizon/ethereum/metrics.go (new - Metrics struct with beacon node status tracking)
+  - pkg/horizon/config.go (updated - added Ethereum config field, validation)
+  - pkg/horizon/overrides.go (updated - added beacon node override support)
+- **Learnings for future iterations:**
+  - BeaconNodePool reuses cannon/ethereum/services (MetadataService, DutiesService) for consistency
+  - Health checking uses beacon.Node.Status().SyncState().SyncDistance to determine health
+  - Use singleflight.Group to prevent duplicate block fetches across concurrent requests
+  - SetBeaconNodeStatus sets gauge to 1 for active status, 0 for others (multi-status pattern)
+  - services.NewMetadataService returns value, take address for pointer: `metadata := services.NewMetadataService(...); p.metadata = &metadata`
+  - Use goroutine parameter capture pattern: `go func(w *Wrapper) { ... }(wrapper)` for clarity
+  - For loop uint64 conversion: use `for i := uint64(0); i < config.Workers; i++` not `int(config.Workers)`
+---
+

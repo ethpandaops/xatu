@@ -304,8 +304,8 @@
         "Typecheck passes"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created pkg/horizon/ethereum/ with BeaconNodePool managing multiple beacon nodes. Config accepts array of BeaconNodeConfig with name, address, headers. Health checking runs at configurable interval. Metrics: beacon_node_status (gaugevec with healthy/unhealthy/connecting), blocks_fetched_total, block_cache_hits/misses, health_check_total/duration. Shared services (metadata, duties) initialized from first healthy node."
     },
     {
       "id": "US-021",

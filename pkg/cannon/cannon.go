@@ -20,7 +20,6 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
-	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	cldataderiver "github.com/ethpandaops/xatu/pkg/cldata/deriver"
@@ -399,7 +398,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			cldataderiver.NewAttesterSlashingDeriver(
 				c.log,
 				&cldataderiver.AttesterSlashingDeriverConfig{Enabled: c.Config.Derivers.AttesterSlashingConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -414,13 +413,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.AttesterSlashingConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewProposerSlashingDeriver(
 				c.log,
 				&cldataderiver.ProposerSlashingDeriverConfig{Enabled: c.Config.Derivers.ProposerSlashingConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -435,13 +434,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.ProposerSlashingConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewVoluntaryExitDeriver(
 				c.log,
 				&cldataderiver.VoluntaryExitDeriverConfig{Enabled: c.Config.Derivers.VoluntaryExitConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -456,13 +455,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.VoluntaryExitConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewDepositDeriver(
 				c.log,
 				&cldataderiver.DepositDeriverConfig{Enabled: c.Config.Derivers.DepositConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -477,13 +476,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.DepositConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewBLSToExecutionChangeDeriver(
 				c.log,
 				&cldataderiver.BLSToExecutionChangeDeriverConfig{Enabled: c.Config.Derivers.BLSToExecutionConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -498,13 +497,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.BLSToExecutionConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewExecutionTransactionDeriver(
 				c.log,
 				&cldataderiver.ExecutionTransactionDeriverConfig{Enabled: c.Config.Derivers.ExecutionTransactionConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -519,13 +518,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.ExecutionTransactionConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewWithdrawalDeriver(
 				c.log,
 				&cldataderiver.WithdrawalDeriverConfig{Enabled: c.Config.Derivers.WithdrawalConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -540,13 +539,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.WithdrawalConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewBeaconBlockDeriver(
 				c.log,
 				&cldataderiver.BeaconBlockDeriverConfig{Enabled: c.Config.Derivers.BeaconBlockConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -561,13 +560,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.BeaconBlockConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewBeaconBlobDeriver(
 				c.log,
 				&cldataderiver.BeaconBlobDeriverConfig{Enabled: c.Config.Derivers.BeaconBlobSidecarConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -582,13 +581,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.BeaconBlobSidecarConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewProposerDutyDeriver(
 				c.log,
 				&cldataderiver.ProposerDutyDeriverConfig{Enabled: c.Config.Derivers.ProposerDutyConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -603,13 +602,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.ProposerDutyConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewElaboratedAttestationDeriver(
 				c.log,
 				&cldataderiver.ElaboratedAttestationDeriverConfig{Enabled: c.Config.Derivers.ElaboratedAttestationConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -624,8 +623,8 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.ElaboratedAttestationConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewBeaconValidatorsDeriver(
 				c.log,
@@ -633,7 +632,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					Enabled:   c.Config.Derivers.BeaconValidatorsConfig.Enabled,
 					ChunkSize: c.Config.Derivers.BeaconValidatorsConfig.ChunkSize,
 				},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -648,13 +647,13 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.BeaconValidatorsConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 			cldataderiver.NewBeaconCommitteeDeriver(
 				c.log,
 				&cldataderiver.BeaconCommitteeDeriverConfig{Enabled: c.Config.Derivers.BeaconCommitteeConfig.Enabled},
-				v2.NewIteratorAdapter(
+				deriver.NewIteratorAdapter(
 					iterator.NewBackfillingCheckpoint(
 						c.log,
 						networkName,
@@ -669,8 +668,8 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 						&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
 					),
 				),
-				v2.NewBeaconClientAdapter(c.beacon),
-				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
+				deriver.NewBeaconClientAdapter(c.beacon),
+				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 		}
 

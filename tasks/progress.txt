@@ -507,3 +507,26 @@ Started: 2026-01-21
   - grpc.UseCompressor(gzip.Name) for compression on all RPC calls
 ---
 
+## 2026-01-21 - US-025
+- What was implemented:
+  - Created pkg/horizon/iterator/head.go with HeadIterator struct
+  - HeadIterator implements cldata Iterator interface (Start, Next, UpdateLocation)
+  - Receives block events from SSE subscription channel (deduplicated)
+  - Uses DedupCache to check for duplicate block roots
+  - Checks coordinator for already-processed slots before returning position
+  - Creates Position structs with Slot, Epoch, Direction for derivers
+  - UpdateLocation persists head_slot to coordinator, preserves fill_slot
+  - HeadIteratorConfig with Enabled field for configuration
+  - HeadIteratorMetrics with processed_total, skipped_total, position_slot metrics
+  - ErrIteratorClosed and ErrSlotSkipped sentinel errors for control flow
+- Files changed:
+  - pkg/horizon/iterator/head.go (new - HeadIterator implementation with metrics)
+- **Learnings for future iterations:**
+  - Use sentinel errors (ErrSlotSkipped) instead of returning nil error with nil value to satisfy linters
+  - Pass large structs (like BlockEvent, 88 bytes) by pointer to avoid copy overhead
+  - Avoid shadowing imported package names (e.g., don't name a variable `spec` when importing `github.com/attestantio/go-eth2-client/spec`)
+  - HeadIterator receives events from subscription.BlockEvent channel, not directly from SSE
+  - checkActivationFork uses beaconSpec.ForkEpochs.GetByName() to get fork epoch for DataVersion
+  - Position.Epoch calculation assumes 32 slots per epoch (standard beacon chain constant)
+---
+

@@ -156,3 +156,68 @@ func getVersionedProposalData[T any](response *api.Response[T]) (*api.VersionedP
 
 	return data, nil
 }
+
+// handleBlockPrefetch handles the n+1 block prefetching triggered by a block event.
+// When we receive a block for slot N, we request the validator block for slot N+1.
+func (s *Sentry) handleBlockPrefetch(ctx context.Context, currentSlot phase0.Slot) {
+	nextSlot := currentSlot + 1
+
+	logCtx := s.log.
+		WithField("proccer", "block_prefetch").
+		WithField("trigger_slot", uint64(currentSlot)).
+		WithField("target_slot", uint64(nextSlot))
+
+	// Check if we're already past the target slot
+	wallclockSlot, _, err := s.beacon.Metadata().Wallclock().Now()
+	if err != nil {
+		logCtx.WithError(err).Error("Failed to get current wallclock slot")
+
+		return
+	}
+
+	// Check if the block event is too far behind (node might be syncing)
+	maxLag := s.Config.ValidatorBlockPrefetch.MaxLagSlots
+	if wallclockSlot.Number() > uint64(currentSlot)+maxLag {
+		logCtx.WithField("wallclock_slot", wallclockSlot.Number()).
+			WithField("max_lag_slots", maxLag).
+			Debug("Skipping n+1 prefetch: block event too far behind wallclock")
+
+		return
+	}
+
+	if wallclockSlot.Number() > uint64(nextSlot) {
+		logCtx.Debug("Skipping n+1 prefetch: already past target slot")
+
+		return
+	}
+
+	// Apply configured delay
+	delay := s.Config.ValidatorBlockPrefetch.Delay.Duration
+	if delay > 0 {
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	// Re-check after delay
+	wallclockSlot, _, err = s.beacon.Metadata().Wallclock().Now()
+	if err != nil {
+		logCtx.WithError(err).Error("Failed to get wallclock after delay")
+
+		return
+	}
+
+	if wallclockSlot.Number() > uint64(nextSlot) {
+		logCtx.Debug("Skipping n+1 prefetch after delay: past target slot")
+
+		return
+	}
+
+	logCtx.Debug("Fetching n+1 validator block")
+
+	if err := s.fetchDecoratedValidatorBlock(ctx, nextSlot); err != nil {
+		logCtx.WithError(err).Error("Failed to fetch n+1 validator block")
+	}
+}

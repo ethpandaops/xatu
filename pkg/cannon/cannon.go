@@ -20,7 +20,6 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
-	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
@@ -652,24 +651,26 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				v2.NewBeaconClientAdapter(c.beacon),
 				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
-			v1.NewBeaconCommitteeDeriver(
+			cldataderiver.NewBeaconCommitteeDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconCommitteeConfig,
-				iterator.NewBackfillingCheckpoint(
-					c.log,
-					networkName,
-					networkID,
-					xatu.CannonType_BEACON_API_ETH_V1_BEACON_COMMITTEE,
-					c.coordinatorClient,
-					wallclock,
-					&backfillingCheckpointIteratorMetrics,
-					c.beacon,
-					finalizedCheckpoint,
-					2,
-					&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
+				&cldataderiver.BeaconCommitteeDeriverConfig{Enabled: c.Config.Derivers.BeaconCommitteeConfig.Enabled},
+				v2.NewIteratorAdapter(
+					iterator.NewBackfillingCheckpoint(
+						c.log,
+						networkName,
+						networkID,
+						xatu.CannonType_BEACON_API_ETH_V1_BEACON_COMMITTEE,
+						c.coordinatorClient,
+						wallclock,
+						&backfillingCheckpointIteratorMetrics,
+						c.beacon,
+						finalizedCheckpoint,
+						2,
+						&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
+					),
 				),
-				c.beacon,
-				clientMeta,
+				v2.NewBeaconClientAdapter(c.beacon),
+				v2.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
 			),
 		}
 

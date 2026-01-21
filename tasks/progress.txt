@@ -677,3 +677,27 @@ Started: 2026-01-21
   - All validation happens during startup before any goroutines are spawned
 ---
 
+## 2026-01-21 - US-032
+- What was implemented:
+  - Created example_horizon.yaml at repository root with comprehensive documentation
+  - Included multi-beacon node configuration with 3 example nodes (lighthouse, prysm, teku)
+  - Included coordinator config for HA deployments
+  - Included dedupCache config with TTL (default 13m)
+  - Included reorg config with maxDepth (default 64 slots) and bufferSize
+  - Included subscription config with bufferSize for SSE events
+  - Included epochIterator config with triggerPercent (default 0.5)
+  - Included all 13 deriver enable/disable options:
+    - 9 block-based: beaconBlock, attesterSlashing, proposerSlashing, deposit, withdrawal, voluntaryExit, blsToExecutionChange, executionTransaction, elaboratedAttestation
+    - 4 epoch-based: proposerDuty, beaconBlob, beaconValidators (with chunkSize), beaconCommittee
+  - Included output sink examples (xatu, http commented, kafka commented)
+- Files changed:
+  - example_horizon.yaml (new - 195 lines of documented configuration)
+- **Learnings for future iterations:**
+  - Follow existing example config naming convention: example_<module>.yaml at repository root
+  - Include comments explaining what each config section does and when to modify it
+  - Use default values that match code defaults (dedupCache TTL 13m, reorg maxDepth 64, etc.)
+  - Comment out optional sections (pprofAddr, tracing, some outputs) while showing their structure
+  - Multi-beacon node config uses array format with name, address, headers per node
+  - HEAD/FILL iterator configs are per-deriver, not global (each deriver creates its own iterator)
+---
+

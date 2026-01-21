@@ -358,3 +358,30 @@ Started: 2026-01-21
   - The v1/v2 naming convention is no longer needed since all derivers use the same shared interface
 ---
 
+## 2026-01-21 - US-018
+- What was implemented:
+  - Created pkg/horizon/ directory structure mirroring Cannon module
+  - Created pkg/horizon/horizon.go with Horizon struct, New(), Start(), Shutdown() methods
+  - Created pkg/horizon/config.go with Config struct, validation, and sink creation methods
+  - Created pkg/horizon/metrics.go with basic Metrics struct for decorated event counting
+  - Created pkg/horizon/overrides.go with Override struct for CLI flag overrides
+  - Created cmd/horizon.go with 'xatu horizon' CLI subcommand
+  - Added HORIZON = 11 to ModuleName enum in pkg/proto/xatu/module.proto
+  - Module logs startup message with version and instance ID
+  - Implements graceful shutdown on SIGTERM/SIGINT
+- Files changed:
+  - pkg/proto/xatu/module.proto (added HORIZON = 11)
+  - pkg/proto/xatu/module.pb.go (regenerated)
+  - pkg/horizon/horizon.go (new - main module with Start/Stop lifecycle)
+  - pkg/horizon/config.go (new - Config struct with Validate, CreateSinks, ApplyOverrides)
+  - pkg/horizon/metrics.go (new - Metrics struct with AddDecoratedEvent)
+  - pkg/horizon/overrides.go (new - Override struct for CLI overrides)
+  - cmd/horizon.go (new - cobra command for 'xatu horizon' subcommand)
+- **Learnings for future iterations:**
+  - Horizon module follows same structure as Cannon: main.go, config.go, metrics.go, overrides.go
+  - ModuleName enum in module.proto assigns unique IDs to each module (HORIZON = 11)
+  - CLI command pattern uses override structs for environment variable and flag handling
+  - Startup message uses emoji specific to module personality (Cannon uses 💣, Horizon uses 🌅)
+  - Config validation is minimal for skeleton - will be expanded in US-031
+---
+

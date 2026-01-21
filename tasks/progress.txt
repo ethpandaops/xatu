@@ -551,3 +551,26 @@ Started: 2026-01-21
   - When caught up to target (HEAD - LAG), wait roughly one slot duration (12 seconds) before checking again
 ---
 
+## 2026-01-21 - US-027
+- What was implemented:
+  - Created pkg/horizon/iterator/coordinator.go with Coordinator struct managing dual HEAD and FILL iterators
+  - HEAD iterator runs in dedicated goroutine with priority for real-time SSE block events
+  - FILL iterator runs in separate goroutine, never blocks HEAD
+  - Both iterators coordinate through the coordinator service to skip slots processed by the other
+  - Updated HeadIterator.isSlotProcessed to check both head_slot and fill_slot
+  - Updated FillIterator to check both head_slot and fill_slot before processing (isSlotProcessedByHead method)
+  - CoordinatorConfig with Head and Fill sub-configs for enabling/disabling each iterator
+  - CoordinatorMetrics with head_running and fill_running gauges for monitoring
+- Files changed:
+  - pkg/horizon/iterator/coordinator.go (new - Coordinator struct with Start/Stop lifecycle)
+  - pkg/horizon/iterator/head.go (updated - isSlotProcessed now checks both head_slot and fill_slot)
+  - pkg/horizon/iterator/fill.go (updated - added isSlotProcessedByHead method, fixed variable shadowing)
+- **Learnings for future iterations:**
+  - Both iterators must check both slot markers to avoid processing duplicates
+  - HEAD checks slot <= head_slot OR slot <= fill_slot (skips if either processed it)
+  - FILL checks slot <= head_slot OR slot <= fill_slot (skips if either processed it)
+  - Variable shadowing in Go: use distinct names (rateLimitErr, forkErr) instead of reusing `err` in if statements
+  - Coordinator pattern: parent goroutine spawns worker goroutines with WaitGroup for graceful shutdown
+  - Use separate done channel + ctx.Done() for dual shutdown signal detection
+---
+

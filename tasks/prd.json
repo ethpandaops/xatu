@@ -288,8 +288,8 @@
         "Typecheck passes"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Added Horizon-specific metrics: head_slot, fill_slot, lag_slots gauges (labeled by deriver, network) and blocks_derived_total counter (labeled by deriver, network, iterator). Metrics server already started via ServeMetrics() in horizon.go. All metrics use xatu_horizon namespace."
     },
     {
       "id": "US-020",

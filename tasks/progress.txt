@@ -385,3 +385,20 @@ Started: 2026-01-21
   - Config validation is minimal for skeleton - will be expanded in US-031
 ---
 
+## 2026-01-21 - US-019
+- What was implemented:
+  - Added Horizon-specific metrics to pkg/horizon/metrics.go
+  - Added head_slot gauge (tracks current HEAD slot position per deriver/network)
+  - Added fill_slot gauge (tracks current FILL slot position per deriver/network)
+  - Added lag_slots gauge (tracks slots FILL is behind HEAD per deriver/network)
+  - Added blocks_derived_total counter (tracks blocks derived per deriver/network/iterator)
+  - Metrics server was already configured in US-018 via ServeMetrics() on metricsAddr
+- Files changed:
+  - pkg/horizon/metrics.go (updated - added gauges and counter with helper methods)
+- **Learnings for future iterations:**
+  - Prometheus GaugeVec uses Set() for absolute values, CounterVec uses Add() for increments
+  - Use consistent label naming: "deriver", "network", "iterator" for tracking dimensions
+  - All Horizon metrics use "xatu_horizon" namespace prefix
+  - Metrics registration uses prometheus.MustRegister() with variadic args for multiple metrics
+---
+

@@ -569,8 +569,8 @@
         "Document manual test procedure in README"
       ],
       "priority": 36,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created scripts/e2e-horizon-test.sh that orchestrates full E2E test. Script: builds Xatu image, starts docker-compose stack, spins up Kurtosis with all 6 CL clients, connects networks, generates Horizon config dynamically with actual container names, waits for data (~2 epochs), runs 7 validation queries against ClickHouse, reports pass/fail. Options: --quick (1 epoch), --skip-build, --skip-cleanup. Updated deploy/kurtosis/README.md with Quick Start section and detailed Manual Test Procedure."
     },
     {
       "id": "US-037",

@@ -799,3 +799,35 @@ Started: 2026-01-21
   - ethereum-package config format: participants array with el_type, cl_type, count, optional extra_params
 ---
 
+
+## 2026-01-21 - US-036
+
+- What was implemented:
+  - Created scripts/e2e-horizon-test.sh - automated E2E test script for Horizon
+  - Script orchestrates full E2E test lifecycle:
+    - Builds Xatu Docker image (unless --skip-build)
+    - Starts docker-compose stack (ClickHouse, Kafka, PostgreSQL, xatu-server)
+    - Spins up Kurtosis Ethereum testnet with all 6 consensus clients
+    - Waits for genesis (~120 seconds)
+    - Connects Kurtosis beacon node containers to xatu network
+    - Generates Horizon config dynamically with actual container names
+    - Starts Horizon container
+    - Waits for data collection (~2 epochs / ~15 minutes)
+    - Runs 7 validation queries against ClickHouse
+    - Reports pass/fail status with colored output
+    - Cleans up all resources on exit (unless --skip-cleanup)
+  - Script options: --quick (1 epoch), --skip-build, --skip-cleanup
+  - Validation queries check: beacon blocks, deduplication, slot gaps, execution transactions, elaborated attestations, proposer duties, beacon committees
+  - Updated deploy/kurtosis/README.md with Quick Start section and detailed Manual Test Procedure
+- Files changed:
+  - scripts/e2e-horizon-test.sh (new - 400+ lines automated E2E test script)
+  - deploy/kurtosis/README.md (updated - Quick Start section, Manual Test Procedure)
+- **Learnings for future iterations:**
+  - Follow sentry-smoke-test.yaml pattern for network bridging: connect Kurtosis containers to docker-compose network
+  - Kurtosis container names follow pattern: cl-<client>-<el>-<index> (e.g., cl-lighthouse-geth-001)
+  - Use `kurtosis enclave inspect <name>` to discover actual container names
+  - Generate Horizon config dynamically to avoid hardcoding container names
+  - Allow 60s buffer after epoch wait time for event processing through pipeline
+  - ClickHouse queries need FINAL keyword to see latest data after recent inserts
+  - Use trap for cleanup to ensure resources are freed even on script failure
+---

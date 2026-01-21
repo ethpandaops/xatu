@@ -739,3 +739,30 @@ Started: 2026-01-21
   - Use comparison tables when contrasting similar modules (when to use which)
 ---
 
+## 2026-01-21 - US-034
+
+- What was implemented:
+  - Added xatu-horizon service to docker-compose.yml with "horizon" profile
+  - Service follows same pattern as xatu-cannon with environment variables for configuration overrides
+  - Created deploy/local/docker-compose/xatu-horizon.yaml with full Horizon configuration:
+    - Multi-beacon node support (single node placeholder, configurable via HORIZON_BEACON_NODE_URL)
+    - Coordinator config pointing to xatu-server:8080
+    - DedupCache, Subscription, Reorg, EpochIterator configs
+    - All 13 derivers enabled (9 block-based + 4 epoch-based)
+    - Output sink to xatu-server
+  - Added horizon and horizon-vals output handlers to xatu-server.yaml:
+    - Routes HORIZON module events to http://xatu-vector-http-kafka:9005
+    - Same event types as cannon outputs (block-based and epoch-based events)
+    - Separate horizon-vals handler for BEACON_API_ETH_V1_BEACON_VALIDATORS with 400 workers
+- Files changed:
+  - docker-compose.yml (added xatu-horizon service)
+  - deploy/local/docker-compose/xatu-horizon.yaml (new - 113 lines)
+  - deploy/local/docker-compose/xatu-server.yaml (added horizon and horizon-vals outputs)
+- **Learnings for future iterations:**
+  - docker-compose profiles allow optional services: --profile horizon to include xatu-horizon
+  - xatu-server routing uses module filters (HORIZON vs CANNON) to separate traffic
+  - Same event types (BEACON_API_*) can come from different modules, filter by module name
+  - Config file naming convention: xatu-<module>.yaml in deploy/local/docker-compose/
+  - Environment variable naming convention: HORIZON_* for horizon service overrides
+---
+

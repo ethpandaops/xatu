@@ -538,8 +538,8 @@
         "Typecheck passes"
       ],
       "priority": 34,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Added xatu-horizon service to docker-compose.yml with \"horizon\" profile. Created deploy/local/docker-compose/xatu-horizon.yaml config file with full Horizon configuration. Added horizon and horizon-vals output handlers to xatu-server.yaml to route HORIZON module events to ClickHouse via kafka. Run with: docker compose --profile horizon up"
     },
     {
       "id": "US-035",

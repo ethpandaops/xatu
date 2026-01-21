@@ -166,8 +166,8 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared ExecutionTransactionDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Extended BeaconClient with FetchBeaconBlockBlobs method for blob sidecar fetching. Extended ContextProvider with DepositChainID method for chain ID access. Added blob utility functions (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes) to pkg/cldata/blob.go. Uses spec.DataVersionBellatrix as ActivationFork. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-012",
@@ -181,8 +181,8 @@
         "Typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared ElaboratedAttestationDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Extended BeaconClient interface with FetchBeaconCommittee and GetValidatorIndex methods for duties access. Handles both pre-Electra (Phase0-Deneb) and Electra+ attestations. Uses spec.DataVersionPhase0 as ActivationFork. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-013",
@@ -196,8 +196,8 @@
         "Typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared ProposerDutyDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Extended BeaconClient interface with FetchProposerDuties method for epoch-based duty fetching. Uses spec.DataVersionPhase0 as ActivationFork. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-014",
@@ -211,8 +211,8 @@
         "Typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created shared BeaconBlobDeriver using Iterator, BeaconClient, and ContextProvider interfaces. Uses shared blob utility functions (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes) from pkg/cldata/blob.go. Uses spec.DataVersionDeneb as ActivationFork. Updated Cannon to use the shared deriver with adapters."
     },
     {
       "id": "US-015",

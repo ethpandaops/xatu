@@ -17,6 +17,10 @@ Started: 2026-01-21
 - Use adapter pattern to bridge module-specific types to shared interfaces (e.g., IteratorAdapter, BeaconClientAdapter, ContextProviderAdapter in v2/adapters.go)
 - Position.LookAheadEpochs (not LookAheads) for epoch-based preloading to avoid type confusion
 - Shared helper functions like GetBlockIdentifier, ConvertIndexedAttestation go in pkg/cldata/deriver/ and are exported for reuse
+- When extending shared interfaces (BeaconClient, ContextProvider), update ALL adapters that implement them
+- Blob utility functions live in pkg/cldata/blob.go (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes)
+- BeaconClient duties methods: FetchBeaconCommittee(epoch) for committee info, GetValidatorIndex(epoch, slot, committeeIndex, position) for validator lookups
+- Large parameter types (like 96-byte BLSSignature) should be passed by pointer to avoid copy overhead
 
 ---
 
@@ -195,6 +199,97 @@ Started: 2026-01-21
 - **Learnings for future iterations:**
   - BLSToExecutionChange conversion uses SignedBLSToExecutionChangeV2 with Message containing ValidatorIndex, FromBlsPubkey, ToExecutionAddress
   - Capella-activated derivers use spec.DataVersionCapella as activation fork
+  - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
+---
+
+## 2026-01-21 - US-011
+- What was implemented:
+  - Created shared ExecutionTransactionDeriver in pkg/cldata/deriver/execution_transaction.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Extended cldata.BeaconClient interface with FetchBeaconBlockBlobs method for blob sidecar fetching (needed for Deneb+ blocks)
+  - Extended cldata.ContextProvider interface with DepositChainID method for execution layer chain ID access
+  - Created pkg/cldata/blob.go with utility functions: ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes
+  - Updated BeaconClientAdapter to implement FetchBeaconBlockBlobs method
+  - Updated ContextProviderAdapter to accept and provide depositChainID
+  - ExecutionTransactionDeriver uses spec.DataVersionBellatrix as ActivationFork
+  - Updated pkg/cannon/cannon.go to use shared ExecutionTransactionDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared ExecutionTransactionDeriver
+- Files changed:
+  - pkg/cldata/beacon.go (updated - added FetchBeaconBlockBlobs to BeaconClient interface)
+  - pkg/cldata/context.go (updated - added DepositChainID to ContextProvider interface)
+  - pkg/cldata/blob.go (new - blob utility functions)
+  - pkg/cldata/deriver/execution_transaction.go (new - shared ExecutionTransactionDeriver implementation)
+  - pkg/cannon/deriver/beacon/eth/v2/adapters.go (updated - added FetchBeaconBlockBlobs, DepositChainID methods)
+  - pkg/cannon/cannon.go (updated - use shared ExecutionTransactionDeriver with adapters, added depositChainID param)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared ExecutionTransactionDeriver)
+- **Learnings for future iterations:**
+  - ExecutionTransactionDeriver is more complex - requires blob sidecar fetching for type 3 (blob) transactions
+  - Interface extension: adding new methods (FetchBeaconBlockBlobs, DepositChainID) requires updating all adapters
+  - Blob utility functions (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes) moved to shared pkg/cldata/blob.go
+  - Bellatrix-activated derivers use spec.DataVersionBellatrix as activation fork (execution payload introduced)
+  - GetGasPrice helper exported for potential reuse - handles type 0/1/2/3/4 transactions across block versions
+  - ContextProviderAdapter constructor now requires depositChainID parameter (breaking change for existing callers)
+---
+
+## 2026-01-21 - US-012
+- What was implemented:
+  - Created shared ElaboratedAttestationDeriver in pkg/cldata/deriver/elaborated_attestation.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Extended cldata.BeaconClient interface with FetchBeaconCommittee and GetValidatorIndex methods for duties access
+  - Updated BeaconClientAdapter to implement new duties methods (delegating to Cannon's DutiesService)
+  - ElaboratedAttestationDeriver uses spec.DataVersionPhase0 as ActivationFork (attestations available since genesis)
+  - Handles both pre-Electra (Phase0-Deneb) and Electra+ attestations with different processing paths
+  - Updated pkg/cannon/cannon.go to use shared ElaboratedAttestationDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared ElaboratedAttestationDeriver
+- Files changed:
+  - pkg/cldata/beacon.go (updated - added FetchBeaconCommittee and GetValidatorIndex to BeaconClient interface)
+  - pkg/cldata/deriver/elaborated_attestation.go (new - shared ElaboratedAttestationDeriver implementation)
+  - pkg/cannon/deriver/beacon/eth/v2/adapters.go (updated - added FetchBeaconCommittee, GetValidatorIndex methods)
+  - pkg/cannon/cannon.go (updated - use shared ElaboratedAttestationDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared ElaboratedAttestationDeriver)
+- **Learnings for future iterations:**
+  - ElaboratedAttestationDeriver requires duties access (committee info) for validator index lookups
+  - BeaconClient interface extended with FetchBeaconCommittee(epoch) and GetValidatorIndex(epoch, slot, committeeIndex, position)
+  - Electra attestations have committee_bits field requiring per-committee processing; pre-Electra have single committee per attestation
+  - Large parameter types (96-byte BLSSignature) should be passed by pointer to avoid copy overhead
+  - Phase0-activated derivers use spec.DataVersionPhase0 as activation fork
+---
+
+## 2026-01-21 - US-013
+- What was implemented:
+  - Created shared ProposerDutyDeriver in pkg/cldata/deriver/proposer_duty.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - Extended cldata.BeaconClient interface with FetchProposerDuties method for epoch-based duty fetching
+  - Updated BeaconClientAdapter to implement FetchProposerDuties method (delegating to beacon node)
+  - ProposerDutyDeriver uses spec.DataVersionPhase0 as ActivationFork (proposer duties available since genesis)
+  - Updated pkg/cannon/cannon.go to use shared ProposerDutyDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared ProposerDutyDeriver
+- Files changed:
+  - pkg/cldata/beacon.go (updated - added FetchProposerDuties to BeaconClient interface)
+  - pkg/cldata/deriver/proposer_duty.go (new - shared ProposerDutyDeriver implementation)
+  - pkg/cannon/deriver/beacon/eth/v2/adapters.go (updated - added FetchProposerDuties method)
+  - pkg/cannon/cannon.go (updated - use shared ProposerDutyDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared ProposerDutyDeriver)
+- **Learnings for future iterations:**
+  - ProposerDutyDeriver is epoch-based like other v1 derivers - fetches duties for entire epoch via FetchProposerDuties
+  - Unlike block-based derivers, duty derivers don't process slots individually - they get all duties for an epoch at once
+  - FetchProposerDuties returns []*apiv1.ProposerDuty directly from beacon node (via Node().FetchProposerDuties)
+  - Phase0-activated derivers use spec.DataVersionPhase0 as activation fork
+---
+
+## 2026-01-21 - US-014
+- What was implemented:
+  - Created shared BeaconBlobDeriver in pkg/cldata/deriver/beacon_blob.go using Iterator, BeaconClient, and ContextProvider interfaces
+  - BeaconBlobDeriver uses spec.DataVersionDeneb as ActivationFork (blob sidecars were introduced in Deneb)
+  - Uses shared blob utility functions (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes) from pkg/cldata/blob.go
+  - Updated pkg/cannon/cannon.go to use shared BeaconBlobDeriver with adapters
+  - Added interface verification in pkg/cannon/deriver/event_deriver.go for shared BeaconBlobDeriver
+- Files changed:
+  - pkg/cldata/deriver/beacon_blob.go (new - shared BeaconBlobDeriver implementation)
+  - pkg/cannon/cannon.go (updated - use shared BeaconBlobDeriver with adapters)
+  - pkg/cannon/deriver/event_deriver.go (updated - added interface check for shared BeaconBlobDeriver)
+- **Learnings for future iterations:**
+  - BeaconBlobDeriver is epoch-based but processes slots within each epoch to fetch blobs
+  - Uses FetchBeaconBlockBlobs from BeaconClient interface (already added in US-011)
+  - Uses shared blob utilities from pkg/cldata/blob.go (ConvertKzgCommitmentToVersionedHash, CountConsecutiveEmptyBytes)
+  - Deneb-activated derivers use spec.DataVersionDeneb as activation fork
   - Follow same adapter wiring pattern: NewIteratorAdapter, NewBeaconClientAdapter, NewContextProviderAdapter
 ---
 

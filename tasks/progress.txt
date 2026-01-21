@@ -659,3 +659,21 @@ Started: 2026-01-21
   - Reorg depth limit prevents processing extremely deep reorgs (default 64 slots is ~2 epochs)
 ---
 
+## 2026-01-21 - US-031
+- What was implemented:
+  - Added validation to ensure at least one output sink is configured in pkg/horizon/config.go
+  - Verified all other acceptance criteria validations were already in place:
+    - At least one beacon node URL: ethereum/config.go line 55-57
+    - Coordinator address: coordinator/config.go line 18-20
+    - LAG distance positive: iterator/fill.go line 44-48 (sets default to 32 if 0)
+    - TTL positive duration: cache/dedup.go line 33-38 (sets default to 13min if <= 0)
+  - All validation error messages are clear and contextualized with field names
+- Files changed:
+  - pkg/horizon/config.go (updated - added output sink count validation)
+- **Learnings for future iterations:**
+  - The Horizon config validation follows a "fail fast" pattern - returns error on first validation failure
+  - Sub-package configs use "set default if invalid" pattern (LAG, TTL) rather than returning errors for better UX
+  - This is consistent with the Cannon module's approach to configuration validation
+  - All validation happens during startup before any goroutines are spawned
+---
+

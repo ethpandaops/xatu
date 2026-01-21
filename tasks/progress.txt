@@ -448,3 +448,22 @@ Started: 2026-01-21
   - The ethpandaops/beacon library handles its own internal reconnection, so we only need retry at the initial Start() level
 ---
 
+## 2026-01-21 - US-022
+- What was implemented:
+  - Created pkg/horizon/subscription/block.go with BlockSubscription struct
+  - BlockEvent struct contains Slot, BlockRoot, ExecutionOptimistic, ReceivedAt, NodeName fields
+  - Uses ethpandaops/beacon library's OnBlock callback to receive SSE block events
+  - Library handles SSE connection management, reconnection with backoff, and payload parsing
+  - Events emitted to buffered channel (configurable buffer size, default 1000)
+  - Metrics: sse_events_total, sse_connection_status, sse_reconnects_total, sse_last_event_received_at, sse_event_processing_delay_seconds
+  - Config struct with BufferSize field and validation
+- Files changed:
+  - pkg/horizon/subscription/block.go (new - BlockSubscription with SSE event handling and metrics)
+- **Learnings for future iterations:**
+  - The ethpandaops/beacon library provides OnBlock, OnHead, OnAttestation, etc. callbacks for SSE events
+  - SSE connection management (reconnection, backoff) is handled internally by the beacon library
+  - Use non-blocking channel send with default case to avoid blocking on full channels
+  - Track processing delay by comparing receivedAt with slot start time from Wallclock
+  - Sentry module uses similar pattern with beacon.Node().OnBlock() for SSE subscriptions
+---
+

@@ -336,8 +336,8 @@
         "Typecheck passes"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed - Created pkg/horizon/subscription/block.go with BlockSubscription struct. Uses ethpandaops/beacon library's OnBlock callback to receive SSE block events. Library handles SSE connection, reconnection with backoff, and payload parsing. BlockEvent struct contains Slot, BlockRoot, ExecutionOptimistic, ReceivedAt, NodeName. Events emitted to buffered channel. Metrics: sse_events_total, sse_connection_status, sse_reconnects_total, sse_last_event_received_at, sse_event_processing_delay_seconds."
     },
     {
       "id": "US-023",

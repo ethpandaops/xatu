@@ -30,3 +30,5 @@ DROP TABLE IF EXISTS default.canonical_execution_storage_diffs ON CLUSTER '{clus
 DROP TABLE IF EXISTS default.canonical_execution_storage_diffs_local ON CLUSTER '{cluster}' SYNC;
 DROP TABLE IF EXISTS default.canonical_execution_storage_reads ON CLUSTER '{cluster}' SYNC;
 DROP TABLE IF EXISTS default.canonical_execution_storage_reads_local ON CLUSTER '{cluster}' SYNC;
+DROP TABLE IF EXISTS admin.cryo ON CLUSTER '{cluster}' SYNC;
+DROP TABLE IF EXISTS admin.cryo_local ON CLUSTER '{cluster}' SYNC;

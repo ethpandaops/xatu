@@ -2,6 +2,7 @@ package clmimicry
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"regexp"
 	"sort"
 	"strconv"
@@ -18,9 +19,11 @@ const (
 
 // UnifiedSharder provides a single sharding decision point for all events
 type UnifiedSharder struct {
-	config           *ShardingConfig
-	eventCategorizer *EventCategorizer
-	enabled          bool
+	config                *ShardingConfig
+	randomSamplingConfig  *RandomSamplingConfig
+	eventCategorizer      *EventCategorizer
+	enabled               bool
+	randomSamplingEnabled bool
 }
 
 // ShardingConfig represents the sharding configuration
@@ -61,7 +64,11 @@ type CompiledPattern struct {
 }
 
 // NewUnifiedSharder creates a new unified sharder
-func NewUnifiedSharder(config *ShardingConfig, enabled bool) (*UnifiedSharder, error) {
+func NewUnifiedSharder(
+	config *ShardingConfig,
+	randomConfig *RandomSamplingConfig,
+	enabled bool,
+) (*UnifiedSharder, error) {
 	if config == nil {
 		config = &ShardingConfig{
 			Topics: make(map[string]*TopicShardingConfig),
@@ -81,14 +88,21 @@ func NewUnifiedSharder(config *ShardingConfig, enabled bool) (*UnifiedSharder, e
 		return nil, fmt.Errorf("invalid sharding config: %w", err)
 	}
 
+	// Check if random sampling is enabled
+	randomSamplingEnabled := randomConfig != nil && len(randomConfig.Patterns) > 0
+
 	return &UnifiedSharder{
-		config:           config,
-		eventCategorizer: NewEventCategorizer(),
-		enabled:          enabled,
+		config:                config,
+		randomSamplingConfig:  randomConfig,
+		eventCategorizer:      NewEventCategorizer(),
+		enabled:               enabled,
+		randomSamplingEnabled: randomSamplingEnabled,
 	}, nil
 }
 
-// ShouldProcess determines if an event should be processed based on sharding rules
+// ShouldProcess determines if an event should be processed based on sharding rules.
+// It first tries deterministic sharding, and if that rejects the event, it tries
+// random sampling as a "second chance" mechanism.
 //
 //nolint:gocritic // named returns unnecessary.
 func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic string) (bool, string) {
@@ -96,6 +110,33 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 		return true, "sharding_disabled"
 	}
 
+	// Try deterministic sharding first
+	deterministicResult, deterministicReason := s.deterministicProcess(eventType, msgID, topic)
+
+	// If deterministic sharding accepted, return immediately (no duplicates)
+	if deterministicResult {
+		return true, deterministicReason
+	}
+
+	// Try random sampling as "second chance" if deterministic rejected
+	if s.randomSamplingEnabled {
+		randomResult, randomReason := s.randomSamplingProcess(eventType, topic)
+		if randomResult {
+			return true, randomReason
+		}
+	}
+
+	// Neither deterministic nor random sampling accepted
+	return false, deterministicReason
+}
+
+// deterministicProcess contains the deterministic sharding logic based on SipHash.
+//
+//nolint:gocritic // named returns unnecessary.
+func (s *UnifiedSharder) deterministicProcess(
+	eventType xatu.Event_Name,
+	msgID, topic string,
+) (bool, string) {
 	eventInfo, exists := s.eventCategorizer.GetEventInfo(eventType)
 	if !exists {
 		// Unknown event type - default to process
@@ -171,6 +212,33 @@ func (s *UnifiedSharder) ShouldProcess(eventType xatu.Event_Name, msgID, topic s
 	default:
 		return true, "unknown_group"
 	}
+}
+
+// randomSamplingProcess checks if random sampling should accept this event.
+// Returns true if the event should be processed based on random chance.
+//
+//nolint:gocritic // named returns unnecessary.
+func (s *UnifiedSharder) randomSamplingProcess(
+	eventType xatu.Event_Name,
+	topic string,
+) (bool, string) {
+	if s.randomSamplingConfig == nil {
+		return false, "random_sampling_not_configured"
+	}
+
+	// Find matching random sampling pattern
+	config := s.randomSamplingConfig.findMatchingPattern(topic, eventType)
+	if config == nil {
+		return false, "random_no_pattern_match"
+	}
+
+	// Roll the dice - rand.Float64() is thread-safe in math/rand/v2
+	//nolint:gosec // G404: crypto strength not needed for sampling
+	if rand.Float64() < config.parsedChance {
+		return true, fmt.Sprintf("random_sampled_%.2f_pct", config.parsedChance*100)
+	}
+
+	return false, fmt.Sprintf("random_not_sampled_%.2f_pct", config.parsedChance*100)
 }
 
 // ShouldProcessBatch determines which events in a batch should be processed

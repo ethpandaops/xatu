@@ -36,8 +36,10 @@ type FetchedDevnetConfig struct {
 	GenesisValidatorsRoot [32]byte
 	// ForkVersions contains all fork versions from config.yaml
 	ForkVersions []ForkVersionConfig
-	// BootNodes contains ENR strings from bootstrap_nodes.txt
+	// BootNodes contains ENR strings from bootstrap_nodes.txt (consensus layer)
 	BootNodes []string
+	// Enodes contains enode URLs from enodes.txt (execution layer)
+	Enodes []string
 	// ForkIDHash is the computed EIP-2124 fork ID hash (first 4 bytes of CRC32(genesis_hash))
 	ForkIDHash [4]byte
 	// ForkDigests contains computed fork digests for each fork version
@@ -131,28 +133,47 @@ func (c *DevnetConfig) Fetch(ctx context.Context) (*FetchedDevnetConfig, error) 
 		err  error
 	}
 
-	files := []string{
+	// Required files - must exist
+	requiredFiles := []string{
 		"metadata/genesis.json",
 		"metadata/config.yaml",
 		"metadata/genesis_validators_root.txt",
 		"metadata/bootstrap_nodes.txt",
 	}
 
-	results := make(chan fetchResult, len(files))
+	// Optional files - ok if they don't exist
+	optionalFiles := []string{
+		"metadata/enodes.txt",
+	}
 
-	for _, file := range files {
+	allFiles := make([]string, 0, len(requiredFiles)+len(optionalFiles))
+	allFiles = append(allFiles, requiredFiles...)
+	allFiles = append(allFiles, optionalFiles...)
+	results := make(chan fetchResult, len(allFiles))
+
+	for _, file := range allFiles {
 		go func(fileName string) {
 			data, err := c.fetchFile(ctx, fmt.Sprintf("%s/%s", baseURL, fileName))
 			results <- fetchResult{name: fileName, data: data, err: err}
 		}(file)
 	}
 
-	fetched := make(map[string][]byte, len(files))
+	fetched := make(map[string][]byte, len(allFiles))
+	optionalSet := make(map[string]bool, len(optionalFiles))
 
-	for range files {
+	for _, f := range optionalFiles {
+		optionalSet[f] = true
+	}
+
+	for range allFiles {
 		result := <-results
 		if result.err != nil {
-			return nil, fmt.Errorf("failed to fetch %s: %w", result.name, result.err)
+			// Only fail on required files
+			if !optionalSet[result.name] {
+				return nil, fmt.Errorf("failed to fetch %s: %w", result.name, result.err)
+			}
+			// Optional file not found - that's ok
+			continue
 		}
 
 		fetched[result.name] = result.data
@@ -182,8 +203,14 @@ func (c *DevnetConfig) Fetch(ctx context.Context) (*FetchedDevnetConfig, error) 
 		return nil, fmt.Errorf("failed to parse genesis_validators_root.txt: %w", err)
 	}
 
-	// Parse bootstrap nodes
+	// Parse bootstrap nodes (consensus layer ENRs)
 	bootNodes := c.parseBootstrapNodes(fetched["metadata/bootstrap_nodes.txt"])
+
+	// Parse enodes (execution layer) - optional
+	var enodes []string
+	if enodesData, ok := fetched["metadata/enodes.txt"]; ok {
+		enodes = c.parseEnodes(enodesData)
+	}
 
 	// Build fork versions list
 	forkVersions := c.buildForkVersions(cfg)
@@ -200,6 +227,7 @@ func (c *DevnetConfig) Fetch(ctx context.Context) (*FetchedDevnetConfig, error) 
 		GenesisValidatorsRoot: gvr,
 		ForkVersions:          forkVersions,
 		BootNodes:             bootNodes,
+		Enodes:                enodes,
 		ForkIDHash:            forkIDHash,
 		ForkDigests:           forkDigests,
 	}, nil
@@ -290,6 +318,20 @@ func (c *DevnetConfig) parseBootstrapNodes(data []byte) []string {
 	}
 
 	return nodes
+}
+
+func (c *DevnetConfig) parseEnodes(data []byte) []string {
+	lines := strings.Split(string(data), "\n")
+	enodes := make([]string, 0, len(lines))
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && strings.HasPrefix(line, "enode://") {
+			enodes = append(enodes, line)
+		}
+	}
+
+	return enodes
 }
 
 func (c *DevnetConfig) buildForkVersions(cfg *configYAML) []ForkVersionConfig {

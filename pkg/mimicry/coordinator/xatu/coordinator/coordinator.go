@@ -44,11 +44,13 @@ func NewCoordinator(ctx context.Context, name string, config *Config, log logrus
 		// Apply fetched values to config (overrides any manual config)
 		config.NetworkIds = []uint64{fetched.ChainID}
 		config.ForkIDHashes = []string{fetched.ForkIDHashHex()}
+		config.Enodes = fetched.Enodes
 
 		log.WithFields(logrus.Fields{
 			"chain_id":     fetched.ChainID,
 			"fork_id_hash": fetched.ForkIDHashHex(),
 			"boot_nodes":   len(fetched.BootNodes),
+			"enodes":       len(fetched.Enodes),
 		}).Info("Applied network configuration from URL")
 	}
 
@@ -148,4 +150,9 @@ func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, statu
 	// TODO: create and send status event for clickhouse
 
 	return err
+}
+
+// GetEnodes returns the execution layer enodes from the network config.
+func (c *Coordinator) GetEnodes() []string {
+	return c.config.Enodes
 }

@@ -18,6 +18,10 @@ type Config struct {
 	// NetworkConfig allows fetching network configuration from a URL.
 	// When set, NetworkIds and ForkIDHashes will be computed from the fetched devnet configuration.
 	NetworkConfig *networks.DevnetConfig `yaml:"networkConfig"`
+
+	// Enodes contains execution layer enode URLs to use as seed peers.
+	// These are populated from networkConfig if available.
+	Enodes []string `yaml:"-"`
 }
 
 func (c *Config) Validate() error {

@@ -37,13 +37,35 @@ type Coordinator struct {
 	scheduler gocron.Scheduler
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
+func New(ctx context.Context, config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
 
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+
+	// If networkConfig is provided, fetch and apply the devnet configuration
+	if config.NetworkConfig != nil && config.NetworkConfig.URL != "" {
+		log.WithField("url", config.NetworkConfig.URL).Info("Fetching network configuration from URL")
+
+		fetched, err := config.NetworkConfig.Fetch(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch network config: %w", err)
+		}
+
+		// Apply fetched values to config (overrides any manual config)
+		config.NetworkIds = []uint64{fetched.ChainID}
+		config.ForkIDHashes = []string{fetched.ForkIDHashHex()}
+		config.ForkDigests = fetched.ForkDigestHexes()
+
+		log.WithFields(logrus.Fields{
+			"chain_id":     fetched.ChainID,
+			"fork_id_hash": fetched.ForkIDHashHex(),
+			"fork_digests": fetched.ForkDigestHexes(),
+			"boot_nodes":   len(fetched.BootNodes),
+		}).Info("Applied network configuration from URL")
 	}
 
 	var opts []grpc.DialOption

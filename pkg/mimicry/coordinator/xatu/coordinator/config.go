@@ -2,6 +2,8 @@ package coordinator
 
 import (
 	"errors"
+
+	"github.com/ethpandaops/xatu/pkg/networks"
 )
 
 type Config struct {
@@ -12,6 +14,10 @@ type Config struct {
 	ForkIDHashes []string          `yaml:"forkIdHashes"`
 	Capabilities []string          `yaml:"capabilities"`
 	MaxPeers     uint32            `yaml:"maxPeers" default:"100"`
+
+	// NetworkConfig allows fetching network configuration from a URL.
+	// When set, NetworkIds and ForkIDHashes will be computed from the fetched devnet configuration.
+	NetworkConfig *networks.DevnetConfig `yaml:"networkConfig"`
 }
 
 func (c *Config) Validate() error {
@@ -19,8 +25,13 @@ func (c *Config) Validate() error {
 		return errors.New("address is required")
 	}
 
-	if len(c.NetworkIds) == 0 {
-		return errors.New("networkIds is required")
+	// NetworkIds can be empty if NetworkConfig is provided
+	if len(c.NetworkIds) == 0 && c.NetworkConfig == nil {
+		return errors.New("networkIds is required (or provide networkConfig)")
+	}
+
+	if c.NetworkConfig != nil {
+		return c.NetworkConfig.Validate()
 	}
 
 	return nil

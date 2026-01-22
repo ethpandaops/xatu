@@ -1,6 +1,7 @@
 package coordinator
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -28,7 +29,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (Coordinator, error) {
+func NewCoordinator(ctx context.Context, name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (Coordinator, error) {
 	if coordinatorType == TypeUnknown {
 		return nil, errors.New("coordinator type is required")
 	}
@@ -57,7 +58,7 @@ func NewCoordinator(name string, coordinatorType Type, config *RawMessage, handl
 			return nil, err
 		}
 
-		return xatu.New(name, conf, handlers, captureDelay, ethereumConfig, log)
+		return xatu.New(ctx, name, conf, handlers, captureDelay, ethereumConfig, log)
 	default:
 		return nil, fmt.Errorf("coordinator type %s is unknown", coordinatorType)
 	}

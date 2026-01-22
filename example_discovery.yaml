@@ -130,3 +130,7 @@ p2p:
   #     dialConcurrency: 10
   #     cooloffDuration: 10s
   #     connectionTimeout: 30s
+  #   # networkConfig fetches network params from a devnet metadata URL.
+  #   # When set, networkIds/forkIdHashes/forkDigests are auto-computed.
+  #   # networkConfig:
+  #   #   url: https://config.blob-devnet-0.ethpandaops.io

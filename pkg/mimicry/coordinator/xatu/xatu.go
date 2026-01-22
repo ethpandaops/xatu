@@ -33,7 +33,7 @@ type Xatu struct {
 	metrics *Metrics
 }
 
-func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
+func New(ctx context.Context, name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -42,7 +42,7 @@ func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, ca
 		return nil, err
 	}
 
-	coordinator, err := xatuCoordinator.NewCoordinator(name, config, log)
+	coordinator, err := xatuCoordinator.NewCoordinator(ctx, name, config, log)
 	if err != nil {
 		return nil, err
 	}

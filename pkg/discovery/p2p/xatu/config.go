@@ -49,6 +49,14 @@ type Config struct {
 	// When set, NetworkIds, ForkIDHashes, and ForkDigests will be computed
 	// from the fetched devnet configuration.
 	NetworkConfig *networks.DevnetConfig `yaml:"networkConfig"`
+
+	// BootNodes contains ENR strings to use as seed boot nodes for discovery.
+	// These are populated from networkConfig if available.
+	BootNodes []string `yaml:"-"`
+
+	// Enodes contains execution layer enode URLs to use as seed boot nodes.
+	// These are populated from networkConfig if available.
+	Enodes []string `yaml:"-"`
 }
 
 func (c *Config) Validate() error {

@@ -1,3 +1,34 @@
+CREATE DATABASE IF NOT EXISTS `admin` ON CLUSTER '{cluster}';
+
+CREATE TABLE admin.cryo_local ON CLUSTER '{cluster}' (
+    `updated_date_time` DateTime CODEC(DoubleDelta, ZSTD(1)),
+    `dataset` LowCardinality(String),
+    `mode` LowCardinality(String),
+    `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
+    `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name'
+) ENGINE = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',
+    '{replica}',
+    updated_date_time
+)
+ORDER BY
+    (
+        dataset,
+        mode,
+        meta_network_name
+    );
+
+CREATE TABLE admin.cryo ON CLUSTER '{cluster}' AS admin.cryo_local ENGINE = Distributed(
+    '{cluster}',
+    admin,
+    cryo_local,
+    cityHash64(
+        dataset,
+        mode,
+        meta_network_name
+    )
+);
+
 CREATE TABLE default.canonical_execution_block_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_date_time` DateTime64(3) COMMENT 'The block timestamp' CODEC(DoubleDelta, ZSTD(1)),

@@ -13,6 +13,10 @@ type Override struct {
 		Enabled bool
 		Value   string
 	}
+	CoordinatorAuth struct {
+		Enabled bool
+		Value   string
+	}
 	// BeaconNodeURLs allows overriding beacon node URLs via environment variables.
 	// When enabled, it replaces all configured beacon nodes with a single node.
 	BeaconNodeURLs struct {

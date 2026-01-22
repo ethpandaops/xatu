@@ -64,12 +64,39 @@ var HorizonOverrides = []HorizonOverride{
 		},
 	}),
 	createHorizonOverride(HorizonOverrideConfig{
+		FlagName:    "horizon-xatu-coordinator-authorization",
+		EnvName:     "HORIZON_XATU_COORDINATOR_AUTHORIZATION",
+		Description: "sets the authorization secret for coordinator requests",
+		OverrideFunc: func(val string, overrides *horizon.Override) {
+			overrides.CoordinatorAuth.Enabled = true
+			overrides.CoordinatorAuth.Value = val
+		},
+	}),
+	createHorizonOverride(HorizonOverrideConfig{
 		FlagName:    "metrics-addr",
 		EnvName:     "METRICS_ADDR",
 		Description: "sets the metrics address",
 		OverrideFunc: func(val string, overrides *horizon.Override) {
 			overrides.MetricsAddr.Enabled = true
 			overrides.MetricsAddr.Value = val
+		},
+	}),
+	createHorizonOverride(HorizonOverrideConfig{
+		FlagName:    "horizon-beacon-node-url",
+		EnvName:     "HORIZON_BEACON_NODE_URL",
+		Description: "sets a single beacon node URL (overrides configured list)",
+		OverrideFunc: func(val string, overrides *horizon.Override) {
+			overrides.BeaconNodeURLs.Enabled = true
+			overrides.BeaconNodeURLs.Value = val
+		},
+	}),
+	createHorizonOverride(HorizonOverrideConfig{
+		FlagName:    "horizon-network-name",
+		EnvName:     "HORIZON_NETWORK_NAME",
+		Description: "overrides the network name detected from the beacon node",
+		OverrideFunc: func(val string, overrides *horizon.Override) {
+			overrides.NetworkName.Enabled = true
+			overrides.NetworkName.Value = val
 		},
 	}),
 }

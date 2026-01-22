@@ -54,6 +54,9 @@ type Config struct {
 	// Reorg configuration for chain reorg handling
 	Reorg subscription.ReorgConfig `yaml:"reorg"`
 
+	// Iterator configuration for head/fill behavior
+	Iterators iterator.CoordinatorConfig `yaml:"iterators"`
+
 	// EpochIterator configuration for epoch-based derivers
 	EpochIterator iterator.EpochIteratorConfig `yaml:"epochIterator"`
 }
@@ -101,6 +104,10 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid reorg config: %w", err)
 	}
 
+	if err := c.Iterators.Validate(); err != nil {
+		return fmt.Errorf("invalid iterator config: %w", err)
+	}
+
 	if err := c.EpochIterator.Validate(); err != nil {
 		return fmt.Errorf("invalid epoch iterator config: %w", err)
 	}
@@ -144,6 +151,16 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 		log.WithField("address", o.MetricsAddr.Value).Info("Overriding metrics address")
 
 		c.MetricsAddr = o.MetricsAddr.Value
+	}
+
+	if o.CoordinatorAuth.Enabled {
+		log.Info("Overriding coordinator authorization header")
+
+		if c.Coordinator.Headers == nil {
+			c.Coordinator.Headers = make(map[string]string)
+		}
+
+		c.Coordinator.Headers["Authorization"] = o.CoordinatorAuth.Value
 	}
 
 	if o.BeaconNodeURLs.Enabled {

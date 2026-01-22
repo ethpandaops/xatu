@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/horizon/cache"
 	"github.com/ethpandaops/xatu/pkg/horizon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/horizon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/horizon/subscription"
@@ -44,7 +44,6 @@ type HeadIterator struct {
 	log         logrus.FieldLogger
 	pool        *ethereum.BeaconNodePool
 	coordinator *coordinator.Client
-	dedupCache  *cache.DedupCache
 	metrics     *HeadIteratorMetrics
 
 	// horizonType is the type of deriver this iterator is for.
@@ -77,54 +76,61 @@ type HeadIteratorMetrics struct {
 	eventsQueuedSize prometheus.Gauge
 }
 
+var (
+	headIteratorMetrics     *HeadIteratorMetrics
+	headIteratorMetricsOnce sync.Once
+)
+
 // NewHeadIteratorMetrics creates new metrics for the HEAD iterator.
 func NewHeadIteratorMetrics(namespace string) *HeadIteratorMetrics {
-	m := &HeadIteratorMetrics{
-		processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "head_iterator",
-			Name:      "processed_total",
-			Help:      "Total number of slots processed by the HEAD iterator",
-		}, []string{"deriver", "network"}),
+	headIteratorMetricsOnce.Do(func() {
+		headIteratorMetrics = &HeadIteratorMetrics{
+			processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "head_iterator",
+				Name:      "processed_total",
+				Help:      "Total number of slots processed by the HEAD iterator",
+			}, []string{"deriver", "network"}),
 
-		skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "head_iterator",
-			Name:      "skipped_total",
-			Help:      "Total number of slots skipped (already processed)",
-		}, []string{"deriver", "network", "reason"}),
+			skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "head_iterator",
+				Name:      "skipped_total",
+				Help:      "Total number of slots skipped (already processed)",
+			}, []string{"deriver", "network", "reason"}),
 
-		lastProcessedAt: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "head_iterator",
-			Name:      "last_processed_at",
-			Help:      "Unix timestamp of last processed slot",
-		}, []string{"deriver", "network"}),
+			lastProcessedAt: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "head_iterator",
+				Name:      "last_processed_at",
+				Help:      "Unix timestamp of last processed slot",
+			}, []string{"deriver", "network"}),
 
-		positionSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "head_iterator",
-			Name:      "position_slot",
-			Help:      "Current slot position of the HEAD iterator",
-		}, []string{"deriver", "network"}),
+			positionSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "head_iterator",
+				Name:      "position_slot",
+				Help:      "Current slot position of the HEAD iterator",
+			}, []string{"deriver", "network"}),
 
-		eventsQueuedSize: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "head_iterator",
-			Name:      "events_queued",
-			Help:      "Number of block events queued for processing",
-		}),
-	}
+			eventsQueuedSize: prometheus.NewGauge(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "head_iterator",
+				Name:      "events_queued",
+				Help:      "Number of block events queued for processing",
+			}),
+		}
 
-	prometheus.MustRegister(
-		m.processedTotal,
-		m.skippedTotal,
-		m.lastProcessedAt,
-		m.positionSlot,
-		m.eventsQueuedSize,
-	)
+		prometheus.MustRegister(
+			headIteratorMetrics.processedTotal,
+			headIteratorMetrics.skippedTotal,
+			headIteratorMetrics.lastProcessedAt,
+			headIteratorMetrics.positionSlot,
+			headIteratorMetrics.eventsQueuedSize,
+		)
+	})
 
-	return m
+	return headIteratorMetrics
 }
 
 // NewHeadIterator creates a new HEAD iterator.
@@ -132,7 +138,6 @@ func NewHeadIterator(
 	log logrus.FieldLogger,
 	pool *ethereum.BeaconNodePool,
 	coordinatorClient *coordinator.Client,
-	dedupCache *cache.DedupCache,
 	horizonType xatu.HorizonType,
 	networkID string,
 	networkName string,
@@ -145,7 +150,6 @@ func NewHeadIterator(
 		}),
 		pool:        pool,
 		coordinator: coordinatorClient,
-		dedupCache:  dedupCache,
 		horizonType: horizonType,
 		networkID:   networkID,
 		networkName: networkName,
@@ -182,6 +186,8 @@ func (h *HeadIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 				return nil, ErrIteratorClosed
 			}
 
+			h.metrics.eventsQueuedSize.Set(float64(len(h.blockEvents)))
+
 			// Check if we should process this slot.
 			position, err := h.processBlockEvent(ctx, &event)
 			if err != nil {
@@ -204,23 +210,7 @@ func (h *HeadIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 // processBlockEvent processes a block event and returns a position if it should be processed.
 // Returns ErrSlotSkipped if the slot should be skipped (not an error condition).
 func (h *HeadIterator) processBlockEvent(ctx context.Context, event *subscription.BlockEvent) (*cldataIterator.Position, error) {
-	// Check deduplication cache first.
 	blockRootStr := event.BlockRoot.String()
-	if h.dedupCache.Check(blockRootStr) {
-		// This block root was already seen, skip it.
-		h.metrics.skippedTotal.WithLabelValues(
-			h.horizonType.String(),
-			h.networkName,
-			"duplicate",
-		).Inc()
-
-		h.log.WithFields(logrus.Fields{
-			"slot":       event.Slot,
-			"block_root": blockRootStr,
-		}).Trace("Skipping duplicate block event")
-
-		return nil, ErrSlotSkipped
-	}
 
 	// Check if we need to skip based on activation fork.
 	if err := h.checkActivationFork(event.Slot); err != nil {
@@ -261,9 +251,10 @@ func (h *HeadIterator) processBlockEvent(ctx context.Context, event *subscriptio
 	}
 
 	// Create position for the slot.
+	slotsPerEpoch := h.slotsPerEpoch()
 	position := &cldataIterator.Position{
 		Slot:      event.Slot,
-		Epoch:     phase0.Epoch(uint64(event.Slot) / 32), // Assumes 32 slots per epoch.
+		Epoch:     phase0.Epoch(uint64(event.Slot) / slotsPerEpoch),
 		Direction: cldataIterator.DirectionForward,
 	}
 
@@ -392,6 +383,10 @@ func (h *HeadIterator) UpdateLocation(ctx context.Context, position *cldataItera
 		h.horizonType.String(),
 		h.networkName,
 	).Set(float64(position.Slot))
+	h.metrics.lastProcessedAt.WithLabelValues(
+		h.horizonType.String(),
+		h.networkName,
+	).Set(float64(time.Now().Unix()))
 
 	h.log.WithFields(logrus.Fields{
 		"slot":      position.Slot,
@@ -400,6 +395,15 @@ func (h *HeadIterator) UpdateLocation(ctx context.Context, position *cldataItera
 	}).Debug("Updated horizon location")
 
 	return nil
+}
+
+func (h *HeadIterator) slotsPerEpoch() uint64 {
+	metadata := h.pool.Metadata()
+	if metadata != nil && metadata.Spec != nil && metadata.Spec.SlotsPerEpoch > 0 {
+		return uint64(metadata.Spec.SlotsPerEpoch)
+	}
+
+	return 32
 }
 
 // Stop stops the HEAD iterator.

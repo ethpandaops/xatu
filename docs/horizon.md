@@ -116,7 +116,7 @@ Horizon uses a dual-iterator architecture to ensure both real-time data collecti
 - **Priority**: Highest - never blocks, processes events immediately
 - **Location Tracking**: Updates `head_slot` in coordinator after processing each slot
 
-### FILL Iterator (Planned)
+### FILL Iterator
 - **Purpose**: Catches up on any missed slots between restarts
 - **Mechanism**: Walks slots from `fill_slot` toward `HEAD - LAG`
 - **Configuration**:
@@ -301,6 +301,7 @@ Horizon requires a single `yaml` config file. An example file can be found [here
 | ethereum.beaconNodes[].address | string | | **Required.** HTTP endpoint of the beacon node |
 | ethereum.beaconNodes[].headers | object | | Key-value map of headers to append to requests |
 | ethereum.overrideNetworkName | string | | Override auto-detected network name |
+| ethereum.startupTimeout | duration | `60s` | Max time to wait for a healthy beacon node on startup |
 | ethereum.healthCheckInterval | duration | `3s` | Interval between health checks |
 | ethereum.blockCacheSize | int | `1000` | Maximum number of blocks to cache |
 | ethereum.blockCacheTtl | duration | `1h` | TTL for cached blocks |

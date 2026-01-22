@@ -251,7 +251,7 @@ func (p *BeaconNodePool) waitForHealthyNode(ctx context.Context) error {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
-	timeout := time.NewTimer(60 * time.Second)
+	timeout := time.NewTimer(p.config.StartupTimeout.Duration)
 	defer timeout.Stop()
 
 	for {
@@ -353,11 +353,6 @@ func (p *BeaconNodePool) initializeServices(ctx context.Context) error {
 	duties := services.NewDutiesService(p.log, healthyWrapper.node, p.metadata)
 	p.duties = &duties
 
-	// Start metadata service
-	if err := p.metadata.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start metadata service: %w", err)
-	}
-
 	// Wait for metadata service to be ready
 	readyChan := make(chan error, 1)
 
@@ -366,6 +361,11 @@ func (p *BeaconNodePool) initializeServices(ctx context.Context) error {
 
 		return nil
 	})
+
+	// Start metadata service
+	if err := p.metadata.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start metadata service: %w", err)
+	}
 
 	select {
 	case <-ctx.Done():

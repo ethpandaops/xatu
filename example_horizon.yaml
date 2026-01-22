@@ -72,6 +72,10 @@ ethereum:
   # If not set, network name is auto-detected from the first healthy beacon node
   # overrideNetworkName: mainnet
 
+  # Startup timeout while waiting for a healthy beacon node
+  # Increase for slow-starting networks or cold cache scenarios
+  # startupTimeout: 5m
+
   # Health check interval for beacon node connections
   healthCheckInterval: 3s
 

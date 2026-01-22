@@ -35,6 +35,12 @@ coordinator:
 # Multi-beacon node pool - all 6 consensus clients
 # Update these URLs after starting the Kurtosis network
 ethereum:
+  # Override network name for Kurtosis devnet
+  overrideNetworkName: kurtosis
+
+  # Allow extra time for clients to become healthy after genesis
+  startupTimeout: 5m
+
   beaconNodes:
     # Lighthouse
     - name: lighthouse

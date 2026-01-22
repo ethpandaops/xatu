@@ -37,6 +37,10 @@ SKIP_CLEANUP=false
 WAIT_EPOCHS=2
 SECONDS_PER_SLOT=12
 SLOTS_PER_EPOCH=32
+GENESIS_DELAY=120
+FORK_DISABLED_EPOCH=18446744073709551615
+
+KURTOSIS_ARGS_FILE=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -126,6 +130,10 @@ cleanup() {
     log_info "Stopping docker-compose stack..."
     docker compose -f "$REPO_ROOT/docker-compose.yml" down -v 2>/dev/null || true
 
+    if [ -n "$KURTOSIS_ARGS_FILE" ] && [ -f "$KURTOSIS_ARGS_FILE" ]; then
+        rm -f "$KURTOSIS_ARGS_FILE"
+    fi
+
     log_success "Cleanup complete"
 }
 
@@ -191,10 +199,24 @@ wait_for_postgres() {
 
 # Get beacon node container names from Kurtosis
 get_beacon_nodes() {
-    kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | \
-        grep -E "^cl-" | \
-        grep -v validator | \
-        awk '{print $1}' | \
+    local inspect_output
+    if ! inspect_output=$(kurtosis enclave inspect --full-uuids "$ENCLAVE_NAME" 2>/dev/null); then
+        log_error "Failed to inspect Kurtosis enclave: $ENCLAVE_NAME"
+        return 1
+    fi
+
+    echo "$inspect_output" | \
+        awk '{
+            uuid = ""
+            name = ""
+            for (i = 1; i <= NF; i++) {
+                if (length($i) == 32 && $i ~ /^[0-9a-f]+$/) { uuid = $i }
+            }
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /^cl-/ && $i !~ /validator/) { name = $i }
+            }
+            if (uuid != "" && name != "") { print name " " name "--" uuid }
+        }' | \
         head -n 6
 }
 
@@ -204,14 +226,26 @@ connect_networks() {
 
     local beacon_nodes
     beacon_nodes=$(get_beacon_nodes)
+    if [ -z "$beacon_nodes" ]; then
+        log_error "No beacon nodes found in Kurtosis enclave output"
+        return 1
+    fi
 
-    for container in $beacon_nodes; do
-        if docker network connect "$DOCKER_NETWORK" "$container" 2>/dev/null; then
-            log_info "  Connected: $container"
+    local connected=0
+    while read -r name container; do
+        [ -z "$name" ] && continue
+        if docker network connect --alias "$name" "$DOCKER_NETWORK" "$container" 2>/dev/null; then
+            log_info "  Connected: $container (alias: $name)"
+            connected=$((connected + 1))
         else
             log_warn "  Already connected or failed: $container"
         fi
-    done
+    done <<< "$beacon_nodes"
+
+    if [ $connected -eq 0 ]; then
+        log_error "Failed to connect any beacon nodes to $DOCKER_NETWORK"
+        return 1
+    fi
 }
 
 # Generate Horizon config with actual beacon node URLs
@@ -223,12 +257,47 @@ generate_horizon_config() {
     # Get beacon node info from Kurtosis
     local lighthouse_container prysm_container teku_container lodestar_container nimbus_container grandine_container
 
-    lighthouse_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-lighthouse" | grep -v validator | head -n1 | awk '{print $1}')
-    prysm_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-prysm" | grep -v validator | head -n1 | awk '{print $1}')
-    teku_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-teku" | grep -v validator | head -n1 | awk '{print $1}')
-    lodestar_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-lodestar" | grep -v validator | head -n1 | awk '{print $1}')
-    nimbus_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-nimbus" | grep -v validator | head -n1 | awk '{print $1}')
-    grandine_container=$(kurtosis enclave inspect "$ENCLAVE_NAME" 2>/dev/null | grep "cl-grandine" | grep -v validator | head -n1 | awk '{print $1}')
+    local inspect_output
+    if ! inspect_output=$(kurtosis enclave inspect --full-uuids "$ENCLAVE_NAME" 2>/dev/null); then
+        log_error "Failed to inspect Kurtosis enclave: $ENCLAVE_NAME"
+        return 1
+    fi
+
+    lighthouse_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /lighthouse/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+    prysm_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /prysm/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+    teku_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /teku/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+    lodestar_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /lodestar/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+    nimbus_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /nimbus/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+    grandine_container=$(echo "$inspect_output" | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i ~ /^cl-/ && $i ~ /grandine/ && $i !~ /validator/) { print $i; exit }
+        }
+    }')
+
+    if [ -z "${lighthouse_container}${prysm_container}${teku_container}${lodestar_container}${nimbus_container}${grandine_container}" ]; then
+        log_error "No beacon node services found in Kurtosis enclave output"
+        return 1
+    fi
 
     cat > "$config_file" <<EOF
 # Auto-generated Horizon config for E2E test
@@ -248,6 +317,8 @@ coordinator:
   tls: false
 
 ethereum:
+  overrideNetworkName: kurtosis
+  startupTimeout: 5m
   beaconNodes:
 EOF
 
@@ -490,8 +561,24 @@ main() {
 
     # Step 3: Start Kurtosis network
     log_header "Starting Kurtosis Network"
+    local genesis_time
+    genesis_time=$(( $(date +%s) + GENESIS_DELAY ))
+    KURTOSIS_ARGS_FILE="$(mktemp /tmp/horizon-test-XXXXXX)"
+    awk -v genesis_time="$genesis_time" -v fork_disabled_epoch="$FORK_DISABLED_EPOCH" '
+        /genesis_delay:/ {
+            print
+            print "  genesis_time: " genesis_time
+            print "  fulu_fork_epoch: " fork_disabled_epoch
+            next
+        }
+        /deneb_fork_epoch:/ { print "  deneb_fork_epoch: " fork_disabled_epoch; next }
+        /electra_fork_epoch:/ { print "  electra_fork_epoch: " fork_disabled_epoch; next }
+        /fulu_fork_epoch:/ { print "  fulu_fork_epoch: " fork_disabled_epoch; next }
+        { print }
+    ' "$REPO_ROOT/deploy/kurtosis/horizon-test.yaml" > "$KURTOSIS_ARGS_FILE"
+
     kurtosis run github.com/ethpandaops/ethereum-package \
-        --args-file "$REPO_ROOT/deploy/kurtosis/horizon-test.yaml" \
+        --args-file "$KURTOSIS_ARGS_FILE" \
         --enclave "$ENCLAVE_NAME"
     log_success "Kurtosis network started"
 

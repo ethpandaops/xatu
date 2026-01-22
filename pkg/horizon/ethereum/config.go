@@ -38,6 +38,8 @@ type Config struct {
 	// OverrideNetworkName is the name of the network to use.
 	// If not set, the network name will be retrieved from the first healthy beacon node.
 	OverrideNetworkName string `yaml:"overrideNetworkName" default:""`
+	// StartupTimeout is the maximum time to wait for a healthy beacon node on startup.
+	StartupTimeout human.Duration `yaml:"startupTimeout" default:"60s"`
 	// HealthCheckInterval is the interval between health checks.
 	HealthCheckInterval human.Duration `yaml:"healthCheckInterval" default:"3s"`
 	// BlockCacheSize is the number of blocks to cache per beacon node.
@@ -64,6 +66,10 @@ func (c *Config) Validate() error {
 
 	if c.HealthCheckInterval.Duration <= 0 {
 		c.HealthCheckInterval.Duration = 3 * time.Second
+	}
+
+	if c.StartupTimeout.Duration <= 0 {
+		c.StartupTimeout.Duration = 60 * time.Second
 	}
 
 	return nil

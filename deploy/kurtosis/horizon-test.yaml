@@ -72,4 +72,3 @@ global_log_level: info
 # Port publishing disabled - we'll use docker network for connectivity
 port_publisher:
   nat_exit_ip: KURTOSIS_IP_ADDR_PLACEHOLDER
-  public_port_start: 32000

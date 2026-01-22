@@ -53,14 +53,23 @@ type Horizon struct {
 	// Deduplication cache for block events.
 	dedupCache *cache.DedupCache
 
+	// Broadcaster for deduplicated block events.
+	blockBroadcaster *BlockEventBroadcaster
+
 	// Block subscriptions from beacon nodes.
 	blockSubscription *subscription.BlockSubscription
 
 	// Reorg subscription for chain reorg events.
 	reorgSubscription *subscription.ReorgSubscription
 
+	// Reorg tracker for tagging derived events.
+	reorgTracker *ReorgTracker
+
 	// Event derivers for processing block data.
 	eventDerivers []cldataderiver.EventDeriver
+
+	// Dual iterators for coordinated HEAD/FILL processing.
+	dualIterators []*iterator.DualIterator
 
 	shutdownFuncs []func(ctx context.Context) error
 
@@ -72,14 +81,14 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		return nil, errors.New("config is required")
 	}
 
-	if err := config.Validate(); err != nil {
-		return nil, err
-	}
-
 	if overrides != nil {
 		if err := config.ApplyOverrides(overrides, log); err != nil {
 			return nil, fmt.Errorf("failed to apply overrides: %w", err)
 		}
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
 
 	sinks, err := config.CreateSinks(log)
@@ -101,6 +110,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 	// Create deduplication cache.
 	dedupCache := cache.New(&config.DedupCache, "xatu_horizon")
+	reorgTracker := NewReorgTracker(config.DedupCache.TTL)
 
 	return &Horizon{
 		Config:            config,
@@ -111,6 +121,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 		beaconPool:        beaconPool,
 		coordinatorClient: coordinatorClient,
 		dedupCache:        dedupCache,
+		reorgTracker:      reorgTracker,
 		eventDerivers:     nil, // Derivers are created once the beacon pool is ready.
 		shutdownFuncs:     make([]func(ctx context.Context) error, 0),
 		overrides:         overrides,
@@ -223,8 +234,14 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		return fmt.Errorf("failed to start block subscription: %w", err)
 	}
 
-	// Get the block events channel from the subscription.
-	blockEventsChan := h.blockSubscription.Events()
+	// Start block broadcaster to deduplicate and fan-out events.
+	h.blockBroadcaster = NewBlockEventBroadcaster(
+		h.log,
+		h.dedupCache,
+		h.blockSubscription.Events(),
+		h.Config.Subscription.BufferSize,
+	)
+	h.blockBroadcaster.Start(ctx)
 
 	// Create and start reorg subscription for chain reorg handling.
 	h.reorgSubscription = subscription.NewReorgSubscription(
@@ -261,7 +278,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewBeaconBlockDeriver(
 			h.log,
 			&cldataderiver.BeaconBlockDeriverConfig{Enabled: h.Config.Derivers.BeaconBlockConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -269,7 +286,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewAttesterSlashingDeriver(
 			h.log,
 			&cldataderiver.AttesterSlashingDeriverConfig{Enabled: h.Config.Derivers.AttesterSlashingConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -277,7 +294,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewProposerSlashingDeriver(
 			h.log,
 			&cldataderiver.ProposerSlashingDeriverConfig{Enabled: h.Config.Derivers.ProposerSlashingConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -285,7 +302,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewDepositDeriver(
 			h.log,
 			&cldataderiver.DepositDeriverConfig{Enabled: h.Config.Derivers.DepositConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -293,7 +310,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewWithdrawalDeriver(
 			h.log,
 			&cldataderiver.WithdrawalDeriverConfig{Enabled: h.Config.Derivers.WithdrawalConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -301,7 +318,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewVoluntaryExitDeriver(
 			h.log,
 			&cldataderiver.VoluntaryExitDeriverConfig{Enabled: h.Config.Derivers.VoluntaryExitConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -309,7 +326,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewBLSToExecutionChangeDeriver(
 			h.log,
 			&cldataderiver.BLSToExecutionChangeDeriverConfig{Enabled: h.Config.Derivers.BLSToExecutionChangeConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -317,7 +334,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewExecutionTransactionDeriver(
 			h.log,
 			&cldataderiver.ExecutionTransactionDeriverConfig{Enabled: h.Config.Derivers.ExecutionTransactionConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -325,7 +342,7 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 		cldataderiver.NewElaboratedAttestationDeriver(
 			h.log,
 			&cldataderiver.ElaboratedAttestationDeriverConfig{Enabled: h.Config.Derivers.ElaboratedAttestationConfig.Enabled},
-			h.createHeadIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION, networkID, networkName, blockEventsChan),
+			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION, networkID, networkName),
 			beaconClient,
 			ctxProvider,
 		),
@@ -402,12 +419,43 @@ func (h *Horizon) createHeadIterator(
 		h.log,
 		h.beaconPool,
 		h.coordinatorClient,
-		h.dedupCache,
 		horizonType,
 		networkID,
 		networkName,
 		blockEvents,
 	)
+}
+
+// createFillIterator creates a FILL iterator for a specific deriver type.
+func (h *Horizon) createFillIterator(
+	horizonType xatu.HorizonType,
+	networkID string,
+	networkName string,
+) *iterator.FillIterator {
+	return iterator.NewFillIterator(
+		h.log,
+		h.beaconPool,
+		h.coordinatorClient,
+		&h.Config.Iterators.Fill,
+		horizonType,
+		networkID,
+		networkName,
+	)
+}
+
+// createDualIterator creates a dual iterator that multiplexes HEAD and FILL.
+func (h *Horizon) createDualIterator(
+	horizonType xatu.HorizonType,
+	networkID string,
+	networkName string,
+) *iterator.DualIterator {
+	head := h.createHeadIterator(horizonType, networkID, networkName, h.blockBroadcaster.Subscribe())
+	fill := h.createFillIterator(horizonType, networkID, networkName)
+	dual := iterator.NewDualIterator(h.log, &h.Config.Iterators, head, fill)
+
+	h.dualIterators = append(h.dualIterators, dual)
+
+	return dual
 }
 
 // createEpochIterator creates an Epoch iterator for a specific deriver type.
@@ -481,6 +529,8 @@ func (h *Horizon) startDeriverWhenReady(ctx context.Context, d cldataderiver.Eve
 
 // handleNewDecoratedEvents sends derived events to all configured sinks.
 func (h *Horizon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	h.markReorgMetadata(events)
+
 	for _, sink := range h.sinks {
 		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
 			return perrors.Wrapf(err, "failed to handle new decorated events in sink %s", sink.Name())
@@ -528,6 +578,13 @@ func (h *Horizon) handleReorgEvents(ctx context.Context) {
 				"node":           event.NodeName,
 			}).Info("Processing chain reorg event")
 
+			start, end := reorgSlotRange(event)
+			if h.reorgTracker != nil {
+				h.reorgTracker.AddRange(start, end)
+			}
+
+			h.rollbackReorgLocations(ctx, start)
+
 			// Clear the old head block from dedup cache so the new canonical block can be processed.
 			// The old head block root needs to be removed so that if we receive the new canonical
 			// block for the same slot, it won't be deduplicated.
@@ -551,6 +608,18 @@ func (h *Horizon) Shutdown(ctx context.Context) error {
 		if err := d.Stop(ctx); err != nil {
 			h.log.WithError(err).WithField("deriver", d.Name()).Warn("Error stopping deriver")
 		}
+	}
+
+	// Stop dual iterators.
+	for _, dual := range h.dualIterators {
+		if err := dual.Stop(ctx); err != nil {
+			h.log.WithError(err).Warn("Error stopping dual iterator")
+		}
+	}
+
+	// Stop block broadcaster.
+	if h.blockBroadcaster != nil {
+		h.blockBroadcaster.Stop()
 	}
 
 	// Stop block subscription.

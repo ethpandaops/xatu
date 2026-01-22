@@ -101,70 +101,77 @@ type FillIteratorMetrics struct {
 	cyclesCompleteTotal *prometheus.CounterVec
 }
 
+var (
+	fillIteratorMetrics     *FillIteratorMetrics
+	fillIteratorMetricsOnce sync.Once
+)
+
 // NewFillIteratorMetrics creates new metrics for the FILL iterator.
 func NewFillIteratorMetrics(namespace string) *FillIteratorMetrics {
-	m := &FillIteratorMetrics{
-		processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "processed_total",
-			Help:      "Total number of slots processed by the FILL iterator",
-		}, []string{"deriver", "network"}),
+	fillIteratorMetricsOnce.Do(func() {
+		fillIteratorMetrics = &FillIteratorMetrics{
+			processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "processed_total",
+				Help:      "Total number of slots processed by the FILL iterator",
+			}, []string{"deriver", "network"}),
 
-		skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "skipped_total",
-			Help:      "Total number of slots skipped by the FILL iterator",
-		}, []string{"deriver", "network", "reason"}),
+			skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "skipped_total",
+				Help:      "Total number of slots skipped by the FILL iterator",
+			}, []string{"deriver", "network", "reason"}),
 
-		positionSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "position_slot",
-			Help:      "Current slot position of the FILL iterator",
-		}, []string{"deriver", "network"}),
+			positionSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "position_slot",
+				Help:      "Current slot position of the FILL iterator",
+			}, []string{"deriver", "network"}),
 
-		targetSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "target_slot",
-			Help:      "Target slot the FILL iterator is working toward (HEAD - LAG)",
-		}, []string{"deriver", "network"}),
+			targetSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "target_slot",
+				Help:      "Target slot the FILL iterator is working toward (HEAD - LAG)",
+			}, []string{"deriver", "network"}),
 
-		slotsRemaining: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "slots_remaining",
-			Help:      "Number of slots remaining until caught up with target",
-		}, []string{"deriver", "network"}),
+			slotsRemaining: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "slots_remaining",
+				Help:      "Number of slots remaining until caught up with target",
+			}, []string{"deriver", "network"}),
 
-		rateLimitWaitTotal: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "rate_limit_wait_total",
-			Help:      "Total number of times the FILL iterator waited for rate limit",
-		}),
+			rateLimitWaitTotal: prometheus.NewCounter(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "rate_limit_wait_total",
+				Help:      "Total number of times the FILL iterator waited for rate limit",
+			}),
 
-		cyclesCompleteTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "fill_iterator",
-			Name:      "cycles_complete_total",
-			Help:      "Total number of fill cycles completed (caught up to target)",
-		}, []string{"deriver", "network"}),
-	}
+			cyclesCompleteTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "fill_iterator",
+				Name:      "cycles_complete_total",
+				Help:      "Total number of fill cycles completed (caught up to target)",
+			}, []string{"deriver", "network"}),
+		}
 
-	prometheus.MustRegister(
-		m.processedTotal,
-		m.skippedTotal,
-		m.positionSlot,
-		m.targetSlot,
-		m.slotsRemaining,
-		m.rateLimitWaitTotal,
-		m.cyclesCompleteTotal,
-	)
+		prometheus.MustRegister(
+			fillIteratorMetrics.processedTotal,
+			fillIteratorMetrics.skippedTotal,
+			fillIteratorMetrics.positionSlot,
+			fillIteratorMetrics.targetSlot,
+			fillIteratorMetrics.slotsRemaining,
+			fillIteratorMetrics.rateLimitWaitTotal,
+			fillIteratorMetrics.cyclesCompleteTotal,
+		)
+	})
 
-	return m
+	return fillIteratorMetrics
 }
 
 // NewFillIterator creates a new FILL iterator.
@@ -370,10 +377,11 @@ func (f *FillIterator) Next(ctx context.Context) (*cldataIterator.Position, erro
 		}
 
 		// Create position for the slot
+		slotsPerEpoch := f.slotsPerEpoch()
 		position := &cldataIterator.Position{
 			Slot:      currentSlot,
-			Epoch:     phase0.Epoch(uint64(currentSlot) / 32), // Assumes 32 slots per epoch
-			Direction: cldataIterator.DirectionBackward,       // FILL processes historical data
+			Epoch:     phase0.Epoch(uint64(currentSlot) / slotsPerEpoch),
+			Direction: cldataIterator.DirectionBackward, // FILL processes historical data
 		}
 
 		f.log.WithFields(logrus.Fields{
@@ -584,6 +592,15 @@ func (f *FillIterator) Stop(_ context.Context) error {
 	f.log.Info("FILL iterator stopped")
 
 	return nil
+}
+
+func (f *FillIterator) slotsPerEpoch() uint64 {
+	metadata := f.pool.Metadata()
+	if metadata != nil && metadata.Spec != nil && metadata.Spec.SlotsPerEpoch > 0 {
+		return uint64(metadata.Spec.SlotsPerEpoch)
+	}
+
+	return 32
 }
 
 // CurrentSlot returns the current slot position of the iterator.

@@ -90,46 +90,54 @@ type EpochIteratorMetrics struct {
 	triggerWaitTotal *prometheus.CounterVec
 }
 
+var (
+	epochIteratorMetrics     *EpochIteratorMetrics
+	epochIteratorMetricsOnce sync.Once
+)
+
 // newEpochIteratorMetrics creates new metrics for the epoch iterator.
 // Uses registration that doesn't panic on duplicate registration.
 func newEpochIteratorMetrics(namespace string) *EpochIteratorMetrics {
-	m := &EpochIteratorMetrics{
-		processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "epoch_iterator",
-			Name:      "processed_total",
-			Help:      "Total number of epochs processed by the epoch iterator",
-		}, []string{"deriver", "network"}),
+	epochIteratorMetricsOnce.Do(func() {
+		epochIteratorMetrics = &EpochIteratorMetrics{
+			processedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "epoch_iterator",
+				Name:      "processed_total",
+				Help:      "Total number of epochs processed by the epoch iterator",
+			}, []string{"deriver", "network"}),
 
-		skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "epoch_iterator",
-			Name:      "skipped_total",
-			Help:      "Total number of epochs skipped",
-		}, []string{"deriver", "network", "reason"}),
+			skippedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "epoch_iterator",
+				Name:      "skipped_total",
+				Help:      "Total number of epochs skipped",
+			}, []string{"deriver", "network", "reason"}),
 
-		positionEpoch: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "epoch_iterator",
-			Name:      "position_epoch",
-			Help:      "Current epoch position of the epoch iterator",
-		}, []string{"deriver", "network"}),
+			positionEpoch: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Namespace: namespace,
+				Subsystem: "epoch_iterator",
+				Name:      "position_epoch",
+				Help:      "Current epoch position of the epoch iterator",
+			}, []string{"deriver", "network"}),
 
-		triggerWaitTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: "epoch_iterator",
-			Name:      "trigger_wait_total",
-			Help:      "Total number of times the iterator waited for trigger point",
-		}, []string{"deriver", "network"}),
-	}
+			triggerWaitTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: namespace,
+				Subsystem: "epoch_iterator",
+				Name:      "trigger_wait_total",
+				Help:      "Total number of times the iterator waited for trigger point",
+			}, []string{"deriver", "network"}),
+		}
 
-	// Use Register (not MustRegister) to handle duplicate registration gracefully.
-	prometheus.Register(m.processedTotal)   //nolint:errcheck // duplicate registration is ok
-	prometheus.Register(m.skippedTotal)     //nolint:errcheck // duplicate registration is ok
-	prometheus.Register(m.positionEpoch)    //nolint:errcheck // duplicate registration is ok
-	prometheus.Register(m.triggerWaitTotal) //nolint:errcheck // duplicate registration is ok
+		prometheus.MustRegister(
+			epochIteratorMetrics.processedTotal,
+			epochIteratorMetrics.skippedTotal,
+			epochIteratorMetrics.positionEpoch,
+			epochIteratorMetrics.triggerWaitTotal,
+		)
+	})
 
-	return m
+	return epochIteratorMetrics
 }
 
 // NewEpochIterator creates a new epoch iterator.

@@ -129,7 +129,7 @@ func (d *Discovery) Start(ctx context.Context) error {
 		return err
 	}
 
-	p2pDisc, err := p2p.NewP2P(d.Config.P2P.Type, d.Config.P2P.Config, d.handleNewNodeRecord, d.log)
+	p2pDisc, err := p2p.NewP2P(d.ctx, d.Config.P2P.Type, d.Config.P2P.Config, d.handleNewNodeRecord, d.log)
 	if err != nil {
 		return err
 	}

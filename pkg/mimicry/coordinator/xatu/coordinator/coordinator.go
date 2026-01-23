@@ -27,9 +27,31 @@ type Coordinator struct {
 	metrics *Metrics
 }
 
-func NewCoordinator(name string, config *Config, log logrus.FieldLogger) (*Coordinator, error) {
+func NewCoordinator(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
+	}
+
+	// If networkConfig is provided, fetch and apply the devnet configuration
+	if config.NetworkConfig != nil && config.NetworkConfig.URL != "" {
+		log.WithField("url", config.NetworkConfig.URL).Info("Fetching network configuration from URL")
+
+		fetched, err := config.NetworkConfig.Fetch(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch network config: %w", err)
+		}
+
+		// Apply fetched values to config (overrides any manual config)
+		config.NetworkIds = []uint64{fetched.ChainID}
+		config.ForkIDHashes = []string{fetched.ForkIDHashHex()}
+		config.Enodes = fetched.Enodes
+
+		log.WithFields(logrus.Fields{
+			"chain_id":     fetched.ChainID,
+			"fork_id_hash": fetched.ForkIDHashHex(),
+			"boot_nodes":   len(fetched.BootNodes),
+			"enodes":       len(fetched.Enodes),
+		}).Info("Applied network configuration from URL")
 	}
 
 	if err := config.Validate(); err != nil {
@@ -128,4 +150,9 @@ func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, statu
 	// TODO: create and send status event for clickhouse
 
 	return err
+}
+
+// GetEnodes returns the execution layer enodes from the network config.
+func (c *Coordinator) GetEnodes() []string {
+	return c.config.Enodes
 }

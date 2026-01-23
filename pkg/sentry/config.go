@@ -58,6 +58,9 @@ type Config struct {
 	// BlobSidecar configuration
 	BlobSidecar *BlobSidecarConfig `yaml:"blobSidecar" default:"{'enabled': false}"`
 
+	// BeaconBlob configuration
+	BeaconBlob *BeaconBlobConfig `yaml:"beaconBlob" default:"{'enabled': false}"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -218,5 +221,12 @@ type ProposerDutyConfig struct {
 // When enabled, proactively fetches blob sidecars when blocks are received.
 // This ensures blob data is captured even if gossip events are missed.
 type BlobSidecarConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
+}
+
+// BeaconBlobConfig configures beacon blob metadata events derived from block's
+// blob_kzg_commitments. This captures blob metadata with versioned_hash for
+// joining with execution_engine_get_blobs events.
+type BeaconBlobConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 }

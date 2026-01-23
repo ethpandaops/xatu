@@ -662,13 +662,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 			s.log.Info("Blob sidecar fetching enabled")
 
 			s.beacon.Node().OnBlock(ctx, func(ctx context.Context, block *eth2v1.BlockEvent) error {
-				go func() {
-					// Small delay to ensure block is available for blob fetching
-					time.Sleep(1 * time.Second)
+				// Small delay to ensure block is available for blob fetching
+				time.Sleep(1 * time.Second)
 
-					blockRoot := xatuethv1.RootAsString(block.Block)
-					s.fetchAndEmitBlobSidecars(ctx, blockRoot, block.Slot)
-				}()
+				blockRoot := xatuethv1.RootAsString(block.Block)
+				s.fetchAndEmitBlobSidecars(ctx, blockRoot, block.Slot)
 
 				return nil
 			})

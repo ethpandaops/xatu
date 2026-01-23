@@ -272,7 +272,7 @@ services:
         shippingMethod: async
         filter:
           modules:
-            - EL_MIMICRY
+            - RPC_SNOOPER
           eventNames:
             - EXECUTION_ENGINE_NEW_PAYLOAD
             - EXECUTION_ENGINE_GET_BLOBS

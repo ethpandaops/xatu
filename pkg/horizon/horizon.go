@@ -13,9 +13,13 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	// Import extractors package to register all derivers via init().
+	_ "github.com/ethpandaops/xatu/pkg/cldata/deriver/extractors"
+
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	cldataderiver "github.com/ethpandaops/xatu/pkg/cldata/deriver"
+	cldataiterator "github.com/ethpandaops/xatu/pkg/cldata/iterator"
 	"github.com/ethpandaops/xatu/pkg/horizon/cache"
 	"github.com/ethpandaops/xatu/pkg/horizon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/horizon/deriver"
@@ -271,119 +275,42 @@ func (h *Horizon) onBeaconPoolReady(ctx context.Context) error {
 	// Create beacon client adapter.
 	beaconClient := deriver.NewBeaconClientAdapter(h.beaconPool)
 
-	// Create HEAD iterators for each deriver type.
-	// Each deriver gets its own HEAD iterator instance that tracks its progress.
-	eventDerivers := []cldataderiver.EventDeriver{
-		// BeaconBlockDeriver.
-		cldataderiver.NewBeaconBlockDeriver(
-			h.log,
-			&cldataderiver.BeaconBlockDeriverConfig{Enabled: h.Config.Derivers.BeaconBlockConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// AttesterSlashingDeriver.
-		cldataderiver.NewAttesterSlashingDeriver(
-			h.log,
-			&cldataderiver.AttesterSlashingDeriverConfig{Enabled: h.Config.Derivers.AttesterSlashingConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// ProposerSlashingDeriver.
-		cldataderiver.NewProposerSlashingDeriver(
-			h.log,
-			&cldataderiver.ProposerSlashingDeriverConfig{Enabled: h.Config.Derivers.ProposerSlashingConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// DepositDeriver.
-		cldataderiver.NewDepositDeriver(
-			h.log,
-			&cldataderiver.DepositDeriverConfig{Enabled: h.Config.Derivers.DepositConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// WithdrawalDeriver.
-		cldataderiver.NewWithdrawalDeriver(
-			h.log,
-			&cldataderiver.WithdrawalDeriverConfig{Enabled: h.Config.Derivers.WithdrawalConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// VoluntaryExitDeriver.
-		cldataderiver.NewVoluntaryExitDeriver(
-			h.log,
-			&cldataderiver.VoluntaryExitDeriverConfig{Enabled: h.Config.Derivers.VoluntaryExitConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// BLSToExecutionChangeDeriver.
-		cldataderiver.NewBLSToExecutionChangeDeriver(
-			h.log,
-			&cldataderiver.BLSToExecutionChangeDeriverConfig{Enabled: h.Config.Derivers.BLSToExecutionChangeConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// ExecutionTransactionDeriver.
-		cldataderiver.NewExecutionTransactionDeriver(
-			h.log,
-			&cldataderiver.ExecutionTransactionDeriverConfig{Enabled: h.Config.Derivers.ExecutionTransactionConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// ElaboratedAttestationDeriver.
-		cldataderiver.NewElaboratedAttestationDeriver(
-			h.log,
-			&cldataderiver.ElaboratedAttestationDeriverConfig{Enabled: h.Config.Derivers.ElaboratedAttestationConfig.Enabled},
-			h.createDualIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
+	// Create derivers using the factory pattern.
+	// All derivers are registered via init() in the extractors package.
+	factory := cldataderiver.NewDeriverFactory(h.log, beaconClient, ctxProvider)
 
-		// --- Epoch-based derivers (triggered midway through epoch) ---
+	// Create iterator factory that returns appropriate iterator based on deriver mode.
+	iteratorFactory := func(cannonType xatu.CannonType) cldataiterator.Iterator {
+		horizonType, ok := GetHorizonType(cannonType)
+		if !ok {
+			h.log.WithField("cannon_type", cannonType.String()).Warn("Unknown cannon type, skipping")
 
-		// ProposerDutyDeriver.
-		cldataderiver.NewProposerDutyDeriver(
-			h.log,
-			&cldataderiver.ProposerDutyDeriverConfig{Enabled: h.Config.Derivers.ProposerDutyConfig.Enabled},
-			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_PROPOSER_DUTY, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// BeaconBlobDeriver.
-		cldataderiver.NewBeaconBlobDeriver(
-			h.log,
-			&cldataderiver.BeaconBlobDeriverConfig{Enabled: h.Config.Derivers.BeaconBlobConfig.Enabled},
-			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// BeaconValidatorsDeriver.
-		cldataderiver.NewBeaconValidatorsDeriver(
-			h.log,
-			&cldataderiver.BeaconValidatorsDeriverConfig{
-				Enabled:   h.Config.Derivers.BeaconValidatorsConfig.Enabled,
-				ChunkSize: h.Config.Derivers.BeaconValidatorsConfig.ChunkSize,
-			},
-			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_VALIDATORS, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
-		// BeaconCommitteeDeriver.
-		cldataderiver.NewBeaconCommitteeDeriver(
-			h.log,
-			&cldataderiver.BeaconCommitteeDeriverConfig{Enabled: h.Config.Derivers.BeaconCommitteeConfig.Enabled},
-			h.createEpochIterator(xatu.HorizonType_HORIZON_TYPE_BEACON_API_ETH_V1_BEACON_COMMITTEE, networkID, networkName),
-			beaconClient,
-			ctxProvider,
-		),
+			return nil
+		}
+
+		spec, ok := cldataderiver.Get(cannonType)
+		if !ok {
+			return nil
+		}
+
+		if IsEpochBased(spec) {
+			return h.createEpochIterator(horizonType, networkID, networkName)
+		}
+
+		return h.createDualIterator(horizonType, networkID, networkName)
+	}
+
+	// Create enabled function that checks config.
+	enabledFunc := func(cannonType xatu.CannonType) bool {
+		return IsDeriverEnabled(&h.Config.Derivers, cannonType)
+	}
+
+	// Create all derivers using factory.
+	genericDerivers := factory.CreateAll(iteratorFactory, enabledFunc)
+
+	eventDerivers := make([]cldataderiver.EventDeriver, 0, len(genericDerivers))
+	for _, d := range genericDerivers {
+		eventDerivers = append(eventDerivers, d)
 	}
 
 	h.eventDerivers = eventDerivers

@@ -14,6 +14,9 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	// Import extractors package to register all derivers via init().
+	_ "github.com/ethpandaops/xatu/pkg/cldata/deriver/extractors"
+
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
@@ -23,6 +26,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	cldataderiver "github.com/ethpandaops/xatu/pkg/cldata/deriver"
+	cldataiterator "github.com/ethpandaops/xatu/pkg/cldata/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
@@ -391,286 +395,59 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		}
 
 		backfillingCheckpointIteratorMetrics := iterator.NewBackfillingCheckpointMetrics("xatu_cannon")
-
 		finalizedCheckpoint := "finalized"
 
-		eventDerivers := []deriver.EventDeriver{
-			cldataderiver.NewAttesterSlashingDeriver(
-				c.log,
-				&cldataderiver.AttesterSlashingDeriverConfig{Enabled: c.Config.Derivers.AttesterSlashingConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.AttesterSlashingConfig.Iterator,
-					),
+		// Create beacon client and context provider adapters.
+		beaconClient := deriver.NewBeaconClientAdapter(c.beacon)
+		ctxProvider := deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID)
+
+		// Create derivers using the factory pattern.
+		factory := cldataderiver.NewDeriverFactory(c.log, beaconClient, ctxProvider)
+
+		// Create iterator factory that returns appropriate iterator for each cannon type.
+		iteratorFactory := func(cannonType xatu.CannonType) cldataiterator.Iterator {
+			iterConfig := GetIteratorConfig(&c.Config.Derivers, cannonType)
+			if iterConfig == nil {
+				c.log.WithField("cannon_type", cannonType.String()).Warn("Unknown cannon type, skipping")
+
+				return nil
+			}
+
+			// Use lookAhead of 2 for validators/committees, 3 for others.
+			lookAhead := 3
+			if cannonType == xatu.CannonType_BEACON_API_ETH_V1_BEACON_VALIDATORS ||
+				cannonType == xatu.CannonType_BEACON_API_ETH_V1_BEACON_COMMITTEE {
+				lookAhead = 2
+			}
+
+			return deriver.NewIteratorAdapter(
+				iterator.NewBackfillingCheckpoint(
+					c.log,
+					networkName,
+					networkID,
+					cannonType,
+					c.coordinatorClient,
+					wallclock,
+					&backfillingCheckpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
+					lookAhead,
+					iterConfig,
 				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewProposerSlashingDeriver(
-				c.log,
-				&cldataderiver.ProposerSlashingDeriverConfig{Enabled: c.Config.Derivers.ProposerSlashingConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.ProposerSlashingConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewVoluntaryExitDeriver(
-				c.log,
-				&cldataderiver.VoluntaryExitDeriverConfig{Enabled: c.Config.Derivers.VoluntaryExitConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.VoluntaryExitConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewDepositDeriver(
-				c.log,
-				&cldataderiver.DepositDeriverConfig{Enabled: c.Config.Derivers.DepositConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.DepositConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewBLSToExecutionChangeDeriver(
-				c.log,
-				&cldataderiver.BLSToExecutionChangeDeriverConfig{Enabled: c.Config.Derivers.BLSToExecutionConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.BLSToExecutionConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewExecutionTransactionDeriver(
-				c.log,
-				&cldataderiver.ExecutionTransactionDeriverConfig{Enabled: c.Config.Derivers.ExecutionTransactionConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.ExecutionTransactionConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewWithdrawalDeriver(
-				c.log,
-				&cldataderiver.WithdrawalDeriverConfig{Enabled: c.Config.Derivers.WithdrawalConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.WithdrawalConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewBeaconBlockDeriver(
-				c.log,
-				&cldataderiver.BeaconBlockDeriverConfig{Enabled: c.Config.Derivers.BeaconBlockConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.BeaconBlockConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewBeaconBlobDeriver(
-				c.log,
-				&cldataderiver.BeaconBlobDeriverConfig{Enabled: c.Config.Derivers.BeaconBlobSidecarConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.BeaconBlobSidecarConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewProposerDutyDeriver(
-				c.log,
-				&cldataderiver.ProposerDutyDeriverConfig{Enabled: c.Config.Derivers.ProposerDutyConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.ProposerDutyConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewElaboratedAttestationDeriver(
-				c.log,
-				&cldataderiver.ElaboratedAttestationDeriverConfig{Enabled: c.Config.Derivers.ElaboratedAttestationConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						3,
-						&c.Config.Derivers.ElaboratedAttestationConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewBeaconValidatorsDeriver(
-				c.log,
-				&cldataderiver.BeaconValidatorsDeriverConfig{
-					Enabled:   c.Config.Derivers.BeaconValidatorsConfig.Enabled,
-					ChunkSize: c.Config.Derivers.BeaconValidatorsConfig.ChunkSize,
-				},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V1_BEACON_VALIDATORS,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						2,
-						&c.Config.Derivers.BeaconValidatorsConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
-			cldataderiver.NewBeaconCommitteeDeriver(
-				c.log,
-				&cldataderiver.BeaconCommitteeDeriverConfig{Enabled: c.Config.Derivers.BeaconCommitteeConfig.Enabled},
-				deriver.NewIteratorAdapter(
-					iterator.NewBackfillingCheckpoint(
-						c.log,
-						networkName,
-						networkID,
-						xatu.CannonType_BEACON_API_ETH_V1_BEACON_COMMITTEE,
-						c.coordinatorClient,
-						wallclock,
-						&backfillingCheckpointIteratorMetrics,
-						c.beacon,
-						finalizedCheckpoint,
-						2,
-						&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
-					),
-				),
-				deriver.NewBeaconClientAdapter(c.beacon),
-				deriver.NewContextProviderAdapter(clientMeta, networkName, c.beacon.Metadata().Network.ID, wallclock, depositChainID),
-			),
+			)
+		}
+
+		// Create enabled function that checks config.
+		enabledFunc := func(cannonType xatu.CannonType) bool {
+			return IsDeriverEnabled(&c.Config.Derivers, cannonType)
+		}
+
+		// Create all derivers using factory.
+		genericDerivers := factory.CreateAll(iteratorFactory, enabledFunc)
+
+		eventDerivers := make([]deriver.EventDeriver, 0, len(genericDerivers))
+		for _, d := range genericDerivers {
+			eventDerivers = append(eventDerivers, d)
 		}
 
 		c.eventDerivers = eventDerivers

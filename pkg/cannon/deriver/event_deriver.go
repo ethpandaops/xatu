@@ -20,19 +20,5 @@ type EventDeriver interface {
 	ActivationFork() spec.DataVersion
 }
 
-// Ensure that shared derivers from cldata package implement the EventDeriver interface.
-var (
-	_ EventDeriver = (*cldataderiver.BeaconBlockDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.AttesterSlashingDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.ProposerSlashingDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.DepositDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.WithdrawalDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.VoluntaryExitDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.BLSToExecutionChangeDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.ExecutionTransactionDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.ElaboratedAttestationDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.ProposerDutyDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.BeaconBlobDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.BeaconValidatorsDeriver)(nil)
-	_ EventDeriver = (*cldataderiver.BeaconCommitteeDeriver)(nil)
-)
+// Ensure that GenericDeriver from cldata package implements the EventDeriver interface.
+var _ EventDeriver = (*cldataderiver.GenericDeriver)(nil)

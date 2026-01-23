@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/attestantio/go-eth2-client/api"
 	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/altair"
@@ -656,6 +657,23 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		// Blob sidecar fetching on block receipt
+		if s.Config.BlobSidecar != nil && s.Config.BlobSidecar.Enabled {
+			s.log.Info("Blob sidecar fetching enabled")
+
+			s.beacon.Node().OnBlock(ctx, func(ctx context.Context, block *eth2v1.BlockEvent) error {
+				go func() {
+					// Small delay to ensure block is available for blob fetching
+					time.Sleep(1 * time.Second)
+
+					blockRoot := xatuethv1.RootAsString(block.Block)
+					s.fetchAndEmitBlobSidecars(ctx, blockRoot, block.Slot)
+				}()
+
+				return nil
+			})
+		}
+
 		if err := s.startForkChoiceSchedule(ctx); err != nil {
 			return err
 		}
@@ -894,4 +912,122 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	}
 
 	return nil
+}
+
+// fetchAndEmitBlobSidecars fetches blob sidecars for a given block and emits them as events.
+// This ensures blob data is captured even if gossip events are missed.
+func (s *Sentry) fetchAndEmitBlobSidecars(ctx context.Context, blockRoot string, slot phase0.Slot) {
+	blobs, err := s.beacon.Node().FetchBeaconBlockBlobs(ctx, blockRoot)
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case 404:
+				// No blobs for this block - this is normal for blocks without blob transactions
+				s.log.WithFields(logrus.Fields{
+					"block_root": blockRoot,
+					"slot":       slot,
+				}).Debug("No blob sidecars found for block")
+
+				return
+			case 503:
+				s.log.WithFields(logrus.Fields{
+					"block_root": blockRoot,
+					"slot":       slot,
+				}).Warn("Beacon node is syncing, cannot fetch blob sidecars")
+
+				return
+			}
+		}
+
+		s.log.WithError(err).WithFields(logrus.Fields{
+			"block_root": blockRoot,
+			"slot":       slot,
+		}).Error("Failed to fetch blob sidecars")
+
+		return
+	}
+
+	if len(blobs) == 0 {
+		s.log.WithFields(logrus.Fields{
+			"block_root": blockRoot,
+			"slot":       slot,
+		}).Debug("No blob sidecars found for block")
+
+		return
+	}
+
+	now := time.Now().Add(s.clockDrift)
+
+	for _, blob := range blobs {
+		blobEvent, err := ethereum.BlobSidecarToBlobSidecarEvent(blob)
+		if err != nil {
+			s.log.WithError(err).WithFields(logrus.Fields{
+				"block_root": blockRoot,
+				"slot":       slot,
+				"index":      blob.Index,
+			}).Error("Failed to convert blob sidecar to event")
+
+			continue
+		}
+
+		meta, err := s.createNewClientMeta(ctx)
+		if err != nil {
+			s.log.WithError(err).Error("Failed to create client meta for blob sidecar")
+
+			continue
+		}
+
+		event := v1.NewEventsBlobSidecar(
+			s.log,
+			blobEvent,
+			now,
+			s.beacon,
+			s.duplicateCache.BeaconEthV1EventsBlobSidecar,
+			meta,
+		)
+
+		ignore, err := event.ShouldIgnore(ctx)
+		if err != nil {
+			s.log.WithError(err).WithFields(logrus.Fields{
+				"block_root": blockRoot,
+				"slot":       slot,
+				"index":      blob.Index,
+			}).Error("Failed to check if blob sidecar event should be ignored")
+
+			continue
+		}
+
+		if ignore {
+			// Already processed via gossip - duplicate cache prevents re-emission
+			continue
+		}
+
+		decoratedEvent, err := event.Decorate(ctx)
+		if err != nil {
+			s.log.WithError(err).WithFields(logrus.Fields{
+				"block_root": blockRoot,
+				"slot":       slot,
+				"index":      blob.Index,
+			}).Error("Failed to decorate blob sidecar event")
+
+			continue
+		}
+
+		if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
+			s.log.WithError(err).WithFields(logrus.Fields{
+				"block_root": blockRoot,
+				"slot":       slot,
+				"index":      blob.Index,
+			}).Error("Failed to handle blob sidecar event")
+
+			continue
+		}
+	}
+
+	s.log.WithFields(logrus.Fields{
+		"block_root": blockRoot,
+		"slot":       slot,
+		"count":      len(blobs),
+	}).Debug("Fetched and emitted blob sidecars for block")
 }

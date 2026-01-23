@@ -55,6 +55,9 @@ type Config struct {
 	// ValidatorBlock configuration
 	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{'enabled': false}"`
 
+	// BlobSidecar configuration
+	BlobSidecar *BlobSidecarConfig `yaml:"blobSidecar" default:"{'enabled': false}"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -209,4 +212,11 @@ type BeaconCommitteesConfig struct {
 
 type ProposerDutyConfig struct {
 	Enabled bool `yaml:"enabled" default:"true"`
+}
+
+// BlobSidecarConfig configures blob sidecar fetching on block receipt.
+// When enabled, proactively fetches blob sidecars when blocks are received.
+// This ensures blob data is captured even if gossip events are missed.
+type BlobSidecarConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
 }

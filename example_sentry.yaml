@@ -98,8 +98,6 @@ validatorBlock:
 
 # Blob sidecar configuration
 # When enabled, proactively fetches blob sidecars when blocks are received.
-# This ensures blob data is captured even if gossip events are missed.
-# Note: Only applies to Deneb+ blocks.
 blobSidecar:
   enabled: false
 

@@ -15,3 +15,27 @@ ALTER TABLE canonical_execution_transaction_structlog_local ON CLUSTER '{cluster
 
 ALTER TABLE canonical_execution_transaction_structlog ON CLUSTER '{cluster}'
     ADD COLUMN call_frame_path Array(UInt32) DEFAULT [0] COMMENT 'Path of frame IDs from root to current frame' CODEC(ZSTD(1)) AFTER call_frame_id;
+
+ALTER TABLE canonical_execution_transaction_structlog_local ON CLUSTER '{cluster}'
+    DROP COLUMN program_counter;
+
+ALTER TABLE canonical_execution_transaction_structlog ON CLUSTER '{cluster}'
+    DROP COLUMN program_counter;
+
+ALTER TABLE canonical_execution_transaction_structlog_local ON CLUSTER '{cluster}'
+    DROP COLUMN meta_network_id;
+
+ALTER TABLE canonical_execution_transaction_structlog ON CLUSTER '{cluster}'
+    DROP COLUMN meta_network_id;
+
+ALTER TABLE admin.execution_block_local ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS complete UInt8;
+
+ALTER TABLE admin.execution_block ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS complete UInt8;
+
+ALTER TABLE admin.execution_block_local ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS task_count UInt32;
+
+ALTER TABLE admin.execution_block ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS task_count UInt32;

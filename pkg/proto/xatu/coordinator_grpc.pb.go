@@ -34,6 +34,8 @@ const (
 	Coordinator_UpsertCannonLocation_FullMethodName              = "/xatu.Coordinator/UpsertCannonLocation"
 	Coordinator_GetRelayMonitorLocation_FullMethodName           = "/xatu.Coordinator/GetRelayMonitorLocation"
 	Coordinator_UpsertRelayMonitorLocation_FullMethodName        = "/xatu.Coordinator/UpsertRelayMonitorLocation"
+	Coordinator_GetHorizonLocation_FullMethodName                = "/xatu.Coordinator/GetHorizonLocation"
+	Coordinator_UpsertHorizonLocation_FullMethodName             = "/xatu.Coordinator/UpsertHorizonLocation"
 )
 
 // CoordinatorClient is the client API for Coordinator service.
@@ -55,6 +57,8 @@ type CoordinatorClient interface {
 	UpsertCannonLocation(ctx context.Context, in *UpsertCannonLocationRequest, opts ...grpc.CallOption) (*UpsertCannonLocationResponse, error)
 	GetRelayMonitorLocation(ctx context.Context, in *GetRelayMonitorLocationRequest, opts ...grpc.CallOption) (*GetRelayMonitorLocationResponse, error)
 	UpsertRelayMonitorLocation(ctx context.Context, in *UpsertRelayMonitorLocationRequest, opts ...grpc.CallOption) (*UpsertRelayMonitorLocationResponse, error)
+	GetHorizonLocation(ctx context.Context, in *GetHorizonLocationRequest, opts ...grpc.CallOption) (*GetHorizonLocationResponse, error)
+	UpsertHorizonLocation(ctx context.Context, in *UpsertHorizonLocationRequest, opts ...grpc.CallOption) (*UpsertHorizonLocationResponse, error)
 }
 
 type coordinatorClient struct {
@@ -215,6 +219,26 @@ func (c *coordinatorClient) UpsertRelayMonitorLocation(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *coordinatorClient) GetHorizonLocation(ctx context.Context, in *GetHorizonLocationRequest, opts ...grpc.CallOption) (*GetHorizonLocationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetHorizonLocationResponse)
+	err := c.cc.Invoke(ctx, Coordinator_GetHorizonLocation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *coordinatorClient) UpsertHorizonLocation(ctx context.Context, in *UpsertHorizonLocationRequest, opts ...grpc.CallOption) (*UpsertHorizonLocationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertHorizonLocationResponse)
+	err := c.cc.Invoke(ctx, Coordinator_UpsertHorizonLocation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServer is the server API for Coordinator service.
 // All implementations must embed UnimplementedCoordinatorServer
 // for forward compatibility.
@@ -234,6 +258,8 @@ type CoordinatorServer interface {
 	UpsertCannonLocation(context.Context, *UpsertCannonLocationRequest) (*UpsertCannonLocationResponse, error)
 	GetRelayMonitorLocation(context.Context, *GetRelayMonitorLocationRequest) (*GetRelayMonitorLocationResponse, error)
 	UpsertRelayMonitorLocation(context.Context, *UpsertRelayMonitorLocationRequest) (*UpsertRelayMonitorLocationResponse, error)
+	GetHorizonLocation(context.Context, *GetHorizonLocationRequest) (*GetHorizonLocationResponse, error)
+	UpsertHorizonLocation(context.Context, *UpsertHorizonLocationRequest) (*UpsertHorizonLocationResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
 }
 
@@ -288,6 +314,12 @@ func (UnimplementedCoordinatorServer) GetRelayMonitorLocation(context.Context, *
 }
 func (UnimplementedCoordinatorServer) UpsertRelayMonitorLocation(context.Context, *UpsertRelayMonitorLocationRequest) (*UpsertRelayMonitorLocationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertRelayMonitorLocation not implemented")
+}
+func (UnimplementedCoordinatorServer) GetHorizonLocation(context.Context, *GetHorizonLocationRequest) (*GetHorizonLocationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHorizonLocation not implemented")
+}
+func (UnimplementedCoordinatorServer) UpsertHorizonLocation(context.Context, *UpsertHorizonLocationRequest) (*UpsertHorizonLocationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertHorizonLocation not implemented")
 }
 func (UnimplementedCoordinatorServer) mustEmbedUnimplementedCoordinatorServer() {}
 func (UnimplementedCoordinatorServer) testEmbeddedByValue()                     {}
@@ -580,6 +612,42 @@ func _Coordinator_UpsertRelayMonitorLocation_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_GetHorizonLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHorizonLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).GetHorizonLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_GetHorizonLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).GetHorizonLocation(ctx, req.(*GetHorizonLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Coordinator_UpsertHorizonLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertHorizonLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).UpsertHorizonLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_UpsertHorizonLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).UpsertHorizonLocation(ctx, req.(*UpsertHorizonLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Coordinator_ServiceDesc is the grpc.ServiceDesc for Coordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -646,6 +714,14 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertRelayMonitorLocation",
 			Handler:    _Coordinator_UpsertRelayMonitorLocation_Handler,
+		},
+		{
+			MethodName: "GetHorizonLocation",
+			Handler:    _Coordinator_GetHorizonLocation_Handler,
+		},
+		{
+			MethodName: "UpsertHorizonLocation",
+			Handler:    _Coordinator_UpsertHorizonLocation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

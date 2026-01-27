@@ -1,26 +1,41 @@
 package deriver
 
 import (
-	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
-	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 )
 
-type Config struct {
-	AttesterSlashingConfig      v2.AttesterSlashingDeriverConfig      `yaml:"attesterSlashing"`
-	BLSToExecutionConfig        v2.BLSToExecutionChangeDeriverConfig  `yaml:"blsToExecutionChange"`
-	DepositConfig               v2.DepositDeriverConfig               `yaml:"deposit"`
-	ExecutionTransactionConfig  v2.ExecutionTransactionDeriverConfig  `yaml:"executionTransaction"`
-	ProposerSlashingConfig      v2.ProposerSlashingDeriverConfig      `yaml:"proposerSlashing"`
-	VoluntaryExitConfig         v2.VoluntaryExitDeriverConfig         `yaml:"voluntaryExit"`
-	WithdrawalConfig            v2.WithdrawalDeriverConfig            `yaml:"withdrawal"`
-	BeaconBlockConfig           v2.BeaconBlockDeriverConfig           `yaml:"beaconBlock"`
-	BeaconBlobSidecarConfig     v1.BeaconBlobDeriverConfig            `yaml:"beaconBlobSidecar"`
-	ProposerDutyConfig          v1.ProposerDutyDeriverConfig          `yaml:"proposerDuty"`
-	ElaboratedAttestationConfig v2.ElaboratedAttestationDeriverConfig `yaml:"elaboratedAttestation"`
-	BeaconValidatorsConfig      v1.BeaconValidatorsDeriverConfig      `yaml:"beaconValidators"`
-	BeaconCommitteeConfig       v1.BeaconCommitteeDeriverConfig       `yaml:"beaconCommittee"`
+// DeriverConfig is the base configuration for all Cannon derivers.
+// It combines the Enabled flag with iterator-specific configuration.
+type DeriverConfig struct {
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
+// BeaconValidatorsDeriverConfig extends DeriverConfig with validator-specific settings.
+type BeaconValidatorsDeriverConfig struct {
+	Enabled   bool                                 `yaml:"enabled" default:"true"`
+	ChunkSize int                                  `yaml:"chunkSize" default:"100"`
+	Iterator  iterator.BackfillingCheckpointConfig `yaml:"iterator"`
+}
+
+// Config holds configuration for all Cannon derivers.
+type Config struct {
+	AttesterSlashingConfig      DeriverConfig                 `yaml:"attesterSlashing"`
+	BLSToExecutionConfig        DeriverConfig                 `yaml:"blsToExecutionChange"`
+	DepositConfig               DeriverConfig                 `yaml:"deposit"`
+	ExecutionTransactionConfig  DeriverConfig                 `yaml:"executionTransaction"`
+	ProposerSlashingConfig      DeriverConfig                 `yaml:"proposerSlashing"`
+	VoluntaryExitConfig         DeriverConfig                 `yaml:"voluntaryExit"`
+	WithdrawalConfig            DeriverConfig                 `yaml:"withdrawal"`
+	BeaconBlockConfig           DeriverConfig                 `yaml:"beaconBlock"`
+	BeaconBlobSidecarConfig     DeriverConfig                 `yaml:"beaconBlobSidecar"`
+	ProposerDutyConfig          DeriverConfig                 `yaml:"proposerDuty"`
+	ElaboratedAttestationConfig DeriverConfig                 `yaml:"elaboratedAttestation"`
+	BeaconValidatorsConfig      BeaconValidatorsDeriverConfig `yaml:"beaconValidators"`
+	BeaconCommitteeConfig       DeriverConfig                 `yaml:"beaconCommittee"`
+}
+
+// Validate validates the deriver configuration.
 func (c *Config) Validate() error {
 	return nil
 }

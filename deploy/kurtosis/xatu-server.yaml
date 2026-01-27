@@ -1,0 +1,100 @@
+# Xatu Server configuration for Kurtosis E2E testing
+#
+# This configuration runs the xatu-server for receiving events from Horizon
+# and routing them to ClickHouse.
+#
+# Usage:
+#   xatu server --config xatu-server.yaml
+
+logging: "info" # panic,fatal,warn,info,debug,trace
+addr: ":8080"
+metricsAddr: ":9090"
+
+labels:
+  environment: e2e-test
+  network: kurtosis
+
+# NTP server
+ntpServer: time.google.com
+
+# Persistence for coordinator
+persistence:
+  enabled: true
+  driverName: postgres
+  connectionString: postgres://user:password@xatu-postgres:5432/xatu?sslmode=disable
+  maxIdleConns: 2
+  maxOpenConns: 5
+
+# In-memory store (sufficient for E2E testing)
+store:
+  type: memory
+
+# GeoIP disabled for testing
+geoip:
+  enabled: false
+
+# Services configuration
+services:
+  coordinator:
+    enabled: true
+    auth:
+      enabled: false
+    nodeRecord:
+      maxQueueSize: 51200
+      batchTimeout: 5s
+      exportTimeout: 30s
+      maxExportBatchSize: 512
+
+  eventIngester:
+    enabled: true
+    clientNameSalt: "e2e_test_salt"
+    outputs:
+      # Horizon events - block-based derivers
+      - name: horizon
+        type: http
+        shippingMethod: sync
+        filter:
+          modules:
+            - HORIZON
+          eventNames:
+            - BEACON_API_ETH_V1_BEACON_COMMITTEE
+            - BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
+            - BEACON_API_ETH_V1_PROPOSER_DUTY
+            - BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING
+            - BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING
+            - BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE
+            - BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
+            - BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT
+            - BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT
+            - BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
+            - BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION
+            - BEACON_API_ETH_V2_BEACON_BLOCK
+            - BEACON_API_ETH_V2_BEACON_BLOCK_V2
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: 0.5s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 100
+
+      # Horizon validators - separate handler for high-volume events
+      - name: horizon-validators
+        type: http
+        shippingMethod: sync
+        filter:
+          modules:
+            - HORIZON
+          eventNames:
+            - BEACON_API_ETH_V1_BEACON_VALIDATORS
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: 0.5s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 400

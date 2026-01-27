@@ -1,0 +1,114 @@
+logging: "info" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9098"
+pprofAddr: ":6062" # optional. if supplied it enables pprof server
+
+name: xatu-horizon
+
+# Labels applied to all events from this instance
+labels:
+  ethpandaops: rocks
+
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+tracing:
+  enabled: true
+  endpoint: tempo:4318
+  insecure: true
+  sampling:
+    rate: 0.1
+
+# Coordinator configuration for tracking processing locations
+coordinator:
+  address: xatu-server:8080
+  tls: false
+  headers:
+    Authorization: "Bearer SET_ME"
+
+# Ethereum configuration - multi-beacon node pool
+ethereum:
+  # List of beacon nodes to connect to (at least one required)
+  # Set HORIZON_BEACON_NODE_URL environment variable to override
+  beaconNodes:
+    - name: beacon-node-1
+      address: http://SET_ME:5052
+
+  # Health check interval for beacon node connections
+  healthCheckInterval: 3s
+
+  # Block cache settings
+  blockCacheSize: 1000
+  blockCacheTtl: 1h
+  blockPreloadWorkers: 5
+  blockPreloadQueueSize: 5000
+
+# Deduplication cache configuration
+dedupCache:
+  ttl: 13m
+
+# SSE subscription configuration
+subscription:
+  bufferSize: 1000
+
+# Chain reorg handling configuration
+reorg:
+  enabled: true
+  maxDepth: 64
+  bufferSize: 100
+
+# Epoch iterator configuration
+epochIterator:
+  enabled: true
+  triggerPercent: 0.5
+
+# Derivers configuration - enable all derivers for local testing
+derivers:
+  # Block-based derivers
+  beaconBlock:
+    enabled: true
+  attesterSlashing:
+    enabled: true
+  proposerSlashing:
+    enabled: true
+  deposit:
+    enabled: true
+  withdrawal:
+    enabled: true
+  voluntaryExit:
+    enabled: true
+  blsToExecutionChange:
+    enabled: true
+  executionTransaction:
+    enabled: true
+  elaboratedAttestation:
+    enabled: true
+
+  # Epoch-based derivers
+  proposerDuty:
+    enabled: true
+  beaconBlob:
+    enabled: true
+  beaconValidators:
+    enabled: true
+    chunkSize: 100
+  beaconCommittee:
+    enabled: true
+
+# Output to local xatu server
+outputs:
+  - name: xatu
+    type: xatu
+    config:
+      address: xatu-server:8080
+      tls: false
+      maxQueueSize: 51200
+      batchTimeout: 0.5s
+      exportTimeout: 30s
+      maxExportBatchSize: 32
+      workers: 50
+      headers:
+        Authorization: "Bearer SET_ME"

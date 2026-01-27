@@ -17,6 +17,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/cannon"
+	"github.com/ethpandaops/xatu/pkg/server/persistence/horizon"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/relaymonitor"
 	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
@@ -821,6 +822,66 @@ func (c *Client) UpsertRelayMonitorLocation(ctx context.Context, req *xatu.Upser
 	}
 
 	return &xatu.UpsertRelayMonitorLocationResponse{}, nil
+}
+
+func (c *Client) GetHorizonLocation(ctx context.Context, req *xatu.GetHorizonLocationRequest) (*xatu.GetHorizonLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	location, err := c.persistence.GetHorizonLocationByNetworkIDAndType(ctx, req.NetworkId, req.Type.Enum().String())
+	if err != nil && err != persistence.ErrHorizonLocationNotFound {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to get horizon location from db").Error())
+	}
+
+	rsp := &xatu.GetHorizonLocationResponse{}
+
+	if location == nil {
+		return rsp, nil
+	}
+
+	protoLoc, err := location.Unmarshal()
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to unmarshal horizon location").Error())
+	}
+
+	return &xatu.GetHorizonLocationResponse{
+		Location: protoLoc,
+	}, nil
+}
+
+func (c *Client) UpsertHorizonLocation(ctx context.Context, req *xatu.UpsertHorizonLocationRequest) (*xatu.UpsertHorizonLocationResponse, error) {
+	if c.config.Auth.Enabled != nil && *c.config.Auth.Enabled {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+		}
+
+		if err := c.validateAuth(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+
+	newLocation := &horizon.Location{}
+
+	err := newLocation.Marshal(req.Location)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, perrors.Wrap(err, "failed to marshal horizon location").Error())
+	}
+
+	err = c.persistence.UpsertHorizonLocation(ctx, newLocation)
+	if err != nil {
+		return nil, status.Error(codes.Internal, perrors.Wrap(err, "failed to upsert horizon location to db").Error())
+	}
+
+	return &xatu.UpsertHorizonLocationResponse{}, nil
 }
 
 func (c *Client) secureRandomInt(input int) (int, error) {

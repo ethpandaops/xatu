@@ -331,6 +331,11 @@ message ExecutionEngineGetBlobs {
   // Meta
   // MethodVersion is the version of the engine_getBlobs method (e.g., "V1", "V2").
   string method_version = 9 [ json_name = "method_version" ];
+
+  // ReturnedBlobIndexes contains the 0-based indexes of blobs that were
+  // successfully returned (non-null) in the response array.
+  // Always populated: for SUCCESS contains all indexes [0,1,2,...,n-1].
+  repeated google.protobuf.UInt32Value returned_blob_indexes = 10 [ json_name = "returned_blob_indexes" ];
 }
 
 message ClientMeta {

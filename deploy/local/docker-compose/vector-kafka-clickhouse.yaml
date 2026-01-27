@@ -2739,6 +2739,7 @@ transforms:
       .requested_count = .data.requested_count
       .versioned_hashes = .data.versioned_hashes
       .returned_count = .data.returned_count
+      .returned_blob_indexes = .data.returned_blob_indexes
       .status = .data.status
       .error_message = .data.error_message
       .method_version = .data.method_version

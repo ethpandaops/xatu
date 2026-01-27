@@ -187,7 +187,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewP2P(p2pType Type, config *RawMessage, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (P2P, error) {
+func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (P2P, error) {
 	if p2pType == TypeUnknown {
 		return nil, errors.New("p2p type is required")
 	}
@@ -216,7 +216,7 @@ func NewP2P(p2pType Type, config *RawMessage, handler func(ctx context.Context, 
 			return nil, err
 		}
 
-		return xatu.New(conf, handler, log)
+		return xatu.New(ctx, conf, handler, log)
 	default:
 		return nil, fmt.Errorf("p2p type %s is unknown", p2pType)
 	}

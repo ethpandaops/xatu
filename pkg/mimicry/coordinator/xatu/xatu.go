@@ -3,6 +3,7 @@ package xatu
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -33,7 +34,7 @@ type Xatu struct {
 	metrics *Metrics
 }
 
-func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
+func New(ctx context.Context, name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -42,7 +43,7 @@ func New(name string, config *xatuCoordinator.Config, handlers *handler.Peer, ca
 		return nil, err
 	}
 
-	coordinator, err := xatuCoordinator.NewCoordinator(name, config, log)
+	coordinator, err := xatuCoordinator.NewCoordinator(ctx, name, config, log)
 	if err != nil {
 		return nil, err
 	}
@@ -75,9 +76,54 @@ func (x *Xatu) Start(ctx context.Context) error {
 		return err
 	}
 
+	// Add seed peers from network config enodes
+	if err := x.addSeedPeers(ctx); err != nil {
+		return err
+	}
+
 	if err := x.startCrons(ctx); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// addSeedPeers adds the enodes from network config as initial seed peers.
+// Returns an error if enodes are configured but none could be started.
+func (x *Xatu) addSeedPeers(ctx context.Context) error {
+	enodes := x.coordinator.GetEnodes()
+	if len(enodes) == 0 {
+		return nil
+	}
+
+	x.log.WithField("count", len(enodes)).Info("Adding seed peers from network config enodes")
+
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	started := 0
+
+	for _, enode := range enodes {
+		if _, ok := x.peers[enode]; !ok {
+			x.peers[enode] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, enode, 60*time.Second, x.captureDelay, x.ethereumConfig)
+
+			if err := x.peers[enode].Start(ctx); err != nil {
+				x.log.WithError(err).WithField("enode", enode).Error("Failed to start seed peer")
+				delete(x.peers, enode)
+			} else {
+				started++
+			}
+		}
+	}
+
+	if started == 0 {
+		return fmt.Errorf("failed to start any seed peers from %d configured enodes", len(enodes))
+	}
+
+	x.log.WithFields(logrus.Fields{
+		"started": started,
+		"total":   len(enodes),
+	}).Info("Started seed peers from network config")
 
 	return nil
 }

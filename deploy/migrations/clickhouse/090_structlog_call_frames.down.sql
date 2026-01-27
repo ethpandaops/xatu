@@ -1,6 +1,6 @@
--- Drop canonical_execution_transaction_call_frame tables
-DROP TABLE IF EXISTS default.canonical_execution_transaction_call_frame ON CLUSTER '{cluster}';
-DROP TABLE IF EXISTS default.canonical_execution_transaction_call_frame_local ON CLUSTER '{cluster}';
+-- Drop canonical_execution_transaction_structlog_agg tables
+DROP TABLE IF EXISTS default.canonical_execution_transaction_structlog_agg ON CLUSTER '{cluster}';
+DROP TABLE IF EXISTS default.canonical_execution_transaction_structlog_agg_local ON CLUSTER '{cluster}';
 
 ALTER TABLE admin.execution_block_local ON CLUSTER '{cluster}'
     DROP COLUMN IF EXISTS task_count;

@@ -3,8 +3,8 @@ package eventingester
 import (
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/auth"
 	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 )
 
 type Config struct {

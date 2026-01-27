@@ -17,4 +17,5 @@ enum ModuleName {
   TYSM = 8;
   SIDECAR = 9;
   RPC_SNOOPER = 10;
+  ETHSTATS = 11;
 }

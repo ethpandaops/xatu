@@ -2,6 +2,7 @@ package stdout
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -56,9 +57,22 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 }
 
 func (e *ItemExporter) logEvent(event *xatu.DecoratedEvent) error {
-	eventAsJSON, err := protojson.Marshal(event)
+	marshaler := protojson.MarshalOptions{}
+	if e.config.Pretty {
+		marshaler.Multiline = true
+		marshaler.Indent = "  "
+	}
+
+	eventAsJSON, err := marshaler.Marshal(event)
 	if err != nil {
 		return err
+	}
+
+	// If pretty mode, print directly to stdout without logrus wrapper
+	if e.config.Pretty {
+		fmt.Println(string(eventAsJSON))
+
+		return nil
 	}
 
 	entry := e.log.WithField("event", string(eventAsJSON))

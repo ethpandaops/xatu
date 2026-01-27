@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind"
+	"github.com/ethpandaops/xatu/pkg/geoip/maxmind"
 	"github.com/sirupsen/logrus"
 )
 

@@ -3,7 +3,7 @@ package auth
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	DefaultGroupMetrics = NewGroupMetrics("xatu_server_event_ingester")
+	DefaultGroupMetrics = NewGroupMetrics("xatu_auth")
 )
 
 type GroupMetrics struct {

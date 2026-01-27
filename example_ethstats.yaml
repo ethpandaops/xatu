@@ -1,0 +1,96 @@
+logging: "info" # panic,fatal,warn,info,debug,trace
+metricsAddr: ":9090"
+# pprofAddr: ":6060" # optional. if supplied it enables pprof server
+
+# Unique name for this ethstats instance
+name: my-ethstats-server
+
+# Address to listen for WebSocket connections from ethstats clients
+addr: ":3000"
+
+# Optional: Override network name for all events
+# Useful for testnets where the network name should be different from what clients report
+# overrideNetworkName: "my-testnet"
+
+labels:
+  ethpandaops: rocks
+
+# Better to use a NTP server close eg.
+#   time.aws.com - AWS
+#   time.windows.com - Azure
+#   time.google.com - GCP
+#   pool.ntp.org - https://www.pool.ntp.org/zone/@
+ntpServer: time.google.com
+
+# WebSocket server configuration
+websocket:
+  readBufferSize: 1024
+  writeBufferSize: 1024
+  pingInterval: 15s
+  readLimit: 15728640  # 15MB max message size
+  writeWait: 10s
+
+# Optional: Salt for hashing client names (for privacy)
+# clientNameSalt: "my-secret-salt"
+
+# Optional: Authorization configuration (same format as xatu server)
+# authorization:
+#   enabled: true
+#   groups:
+#     my-group:
+#       obscureClientNames: true
+#       precision: "city" # full, city, country, continent, none
+#       asn: false
+#       users:
+#         my-node:
+#           password: "my-secret"
+#           eventFilter:
+#             eventNames:
+#             - ETHSTATS_BLOCK
+#             - ETHSTATS_NODE_STATS
+
+# Optional: GeoIP configuration for enriching events with geographic data
+# geoip:
+#   enabled: false
+#   type: maxmind
+#   config:
+#     database:
+#       city: ./GeoLite2-City.mmdb
+#       asn: ./GeoLite2-ASN.mmdb
+
+# Output sinks for events
+outputs:
+- name: stdout
+  type: stdout
+
+# Example: Forward to xatu server
+# - name: xatu-server
+#   type: xatu
+#   config:
+#     address: localhost:8080
+#     tls: false
+#     headers:
+#       authorization: Someb64Value
+#     maxQueueSize: 51200
+#     batchTimeout: 5s
+#     exportTimeout: 30s
+
+# Example: Forward to Kafka
+# - name: kafka-sink
+#   type: kafka
+#   config:
+#     brokers: localhost:9092
+#     topic: ethstats-events
+#     flushFrequency: 1s
+#     flushMessages: 500
+
+# Example: Forward to HTTP endpoint
+# - name: http-sink
+#   type: http
+#   config:
+#     address: http://localhost:8080
+#     headers:
+#       authorization: Someb64Value
+#     maxQueueSize: 51200
+#     batchTimeout: 5s
+#     exportTimeout: 30s

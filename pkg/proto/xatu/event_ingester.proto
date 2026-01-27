@@ -34,6 +34,8 @@ import "pkg/proto/libp2p/gossipsub/eth.proto";
 import "pkg/proto/noderecord/consensus.proto";
 import "pkg/proto/noderecord/execution.proto";
 
+import "pkg/proto/ethstats/ethstats.proto";
+
 service EventIngester {
   rpc CreateEvents(CreateEventsRequest) returns (CreateEventsResponse) {}
 }
@@ -1465,6 +1467,40 @@ message ClientMeta {
     SlotV2 slot = 2;
   }
 
+// Geo contains geographic information about the client.
+  message Geo {
+    // City is the city of the client.
+    string city = 1 [ json_name = "city" ];
+    // Country is the country of the client.
+    string country = 2 [ json_name = "country" ];
+    // CountryCode is the country code of the client.
+    string country_code = 3 [ json_name = "country_code" ];
+    // ContinentCode is the continent code of the client.
+    string continent_code = 4 [ json_name = "continent_code" ];
+    // Latitude is the latitude of the client.
+    double latitude = 5 [ json_name = "latitude" ];
+    // Longitude is the longitude of the client.
+    double longitude = 6 [ json_name = "longitude" ];
+    // AutonomousSystemNumber is the autonomous system number of the client.
+    uint32 autonomous_system_number = 7 [ json_name = "autonomous_system_number" ];
+    // AutonomousSystemOrganization is the autonomous system organization of the client.
+    string autonomous_system_organization = 8 [ json_name = "autonomous_system_organization" ];
+  }
+
+  // Client contains client-side geo and identity information (set by collector when available).
+  message Client {
+    // IP is the client's IP address.
+    string ip = 1 [ json_name = "ip" ];
+    // Geo contains geographic information about the client.
+    Geo geo = 2;
+    // User is the authenticated user identifier.
+    string user = 3 [ json_name = "user" ];
+    // Group is the authenticated group name.
+    string group = 4 [ json_name = "group" ];
+    // Name is the name of the connected node/client (e.g., ethstats node name).
+    string name = 5 [ json_name = "name" ];
+  }
+
   // AdditionalEthV1BeaconBlobData contains additional metadata about the
   // beacon blob event derived from block's blob_kzg_commitments.
   message AdditionalEthV1BeaconBlobData {
@@ -1727,6 +1763,9 @@ message ClientMeta {
 
   // PresetName contains the name of the preset that sent the event.
   string preset_name = 64 [ json_name = "preset_name" ];
+
+  // Client contains client-side geo and identity information (populated by collectors like ethstats).
+  Client client = 92 [ json_name = "client" ];
 }
 
 message ServerMeta {
@@ -1926,7 +1965,15 @@ message Event {
     CONSENSUS_ENGINE_API_GET_BLOBS = 81;
     EXECUTION_ENGINE_NEW_PAYLOAD = 82;
     EXECUTION_ENGINE_GET_BLOBS = 83;
-    BEACON_API_ETH_V1_BEACON_BLOB = 84;
+BEACON_API_ETH_V1_BEACON_BLOB = 84;
+    // Ethstats events
+    ETHSTATS_HELLO = 85;
+    ETHSTATS_BLOCK = 86;
+    ETHSTATS_NODE_STATS = 87;
+    ETHSTATS_PENDING = 88;
+    ETHSTATS_LATENCY = 89;
+    ETHSTATS_NEW_PAYLOAD = 90;
+    ETHSTATS_HISTORY = 91;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2128,8 +2175,23 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_ENGINE_NEW_PAYLOAD" ];
     ExecutionEngineGetBlobs execution_engine_get_blobs = 205
         [ json_name = "EXECUTION_ENGINE_GET_BLOBS" ];
-    xatu.eth.v1.Blob eth_v1_beacon_blob = 206
+xatu.eth.v1.Blob eth_v1_beacon_blob = 206
         [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
+    // Ethstats events
+    xatu.ethstats.Hello ethstats_hello = 207
+        [ json_name = "ETHSTATS_HELLO" ];
+    xatu.ethstats.Block ethstats_block = 208
+        [ json_name = "ETHSTATS_BLOCK" ];
+    xatu.ethstats.NodeStats ethstats_node_stats = 209
+        [ json_name = "ETHSTATS_NODE_STATS" ];
+    xatu.ethstats.PendingStats ethstats_pending = 210
+        [ json_name = "ETHSTATS_PENDING" ];
+    xatu.ethstats.Latency ethstats_latency = 211
+        [ json_name = "ETHSTATS_LATENCY" ];
+    xatu.ethstats.NewPayload ethstats_new_payload = 212
+        [ json_name = "ETHSTATS_NEW_PAYLOAD" ];
+    xatu.ethstats.History ethstats_history = 213
+        [ json_name = "ETHSTATS_HISTORY" ];
   };
 }
 

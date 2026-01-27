@@ -1467,7 +1467,7 @@ message ClientMeta {
     SlotV2 slot = 2;
   }
 
-  // Geo contains geographic information about the client.
+// Geo contains geographic information about the client.
   message Geo {
     // City is the city of the client.
     string city = 1 [ json_name = "city" ];
@@ -1499,6 +1499,15 @@ message ClientMeta {
     string group = 4 [ json_name = "group" ];
     // Name is the name of the connected node/client (e.g., ethstats node name).
     string name = 5 [ json_name = "name" ];
+  }
+
+  // AdditionalEthV1BeaconBlobData contains additional metadata about the
+  // beacon blob event derived from block's blob_kzg_commitments.
+  message AdditionalEthV1BeaconBlobData {
+    // Epoch contains the epoch information for the blob.
+    EpochV2 epoch = 1;
+    // Slot contains the slot information for the blob.
+    SlotV2 slot = 2;
   }
 
   // AdditionalData contains additional, computed data as set by the client
@@ -1745,6 +1754,8 @@ message ClientMeta {
     AdditionalConsensusEngineAPINewPayloadData consensus_engine_api_new_payload = 89 [ json_name = "CONSENSUS_ENGINE_API_NEW_PAYLOAD" ];
     // AdditionalConsensusEngineAPIGetBlobsData contains additional data about the consensus engine API get blobs event.
     AdditionalConsensusEngineAPIGetBlobsData consensus_engine_api_get_blobs = 90 [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
+    // AdditionalEthV1BeaconBlobData contains additional data about the beacon blob event.
+    AdditionalEthV1BeaconBlobData eth_v1_beacon_blob = 91 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1954,14 +1965,15 @@ message Event {
     CONSENSUS_ENGINE_API_GET_BLOBS = 81;
     EXECUTION_ENGINE_NEW_PAYLOAD = 82;
     EXECUTION_ENGINE_GET_BLOBS = 83;
+BEACON_API_ETH_V1_BEACON_BLOB = 84;
     // Ethstats events
-    ETHSTATS_HELLO = 84;
-    ETHSTATS_BLOCK = 85;
-    ETHSTATS_NODE_STATS = 86;
-    ETHSTATS_PENDING = 87;
-    ETHSTATS_LATENCY = 88;
-    ETHSTATS_NEW_PAYLOAD = 89;
-    ETHSTATS_HISTORY = 90;
+    ETHSTATS_HELLO = 85;
+    ETHSTATS_BLOCK = 86;
+    ETHSTATS_NODE_STATS = 87;
+    ETHSTATS_PENDING = 88;
+    ETHSTATS_LATENCY = 89;
+    ETHSTATS_NEW_PAYLOAD = 90;
+    ETHSTATS_HISTORY = 91;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2163,20 +2175,22 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_ENGINE_NEW_PAYLOAD" ];
     ExecutionEngineGetBlobs execution_engine_get_blobs = 205
         [ json_name = "EXECUTION_ENGINE_GET_BLOBS" ];
+xatu.eth.v1.Blob eth_v1_beacon_blob = 206
+        [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
     // Ethstats events
-    xatu.ethstats.Hello ethstats_hello = 210
+    xatu.ethstats.Hello ethstats_hello = 207
         [ json_name = "ETHSTATS_HELLO" ];
-    xatu.ethstats.Block ethstats_block = 211
+    xatu.ethstats.Block ethstats_block = 208
         [ json_name = "ETHSTATS_BLOCK" ];
-    xatu.ethstats.NodeStats ethstats_node_stats = 212
+    xatu.ethstats.NodeStats ethstats_node_stats = 209
         [ json_name = "ETHSTATS_NODE_STATS" ];
-    xatu.ethstats.PendingStats ethstats_pending = 213
+    xatu.ethstats.PendingStats ethstats_pending = 210
         [ json_name = "ETHSTATS_PENDING" ];
-    xatu.ethstats.Latency ethstats_latency = 214
+    xatu.ethstats.Latency ethstats_latency = 211
         [ json_name = "ETHSTATS_LATENCY" ];
-    xatu.ethstats.NewPayload ethstats_new_payload = 215
+    xatu.ethstats.NewPayload ethstats_new_payload = 212
         [ json_name = "ETHSTATS_NEW_PAYLOAD" ];
-    xatu.ethstats.History ethstats_history = 216
+    xatu.ethstats.History ethstats_history = 213
         [ json_name = "ETHSTATS_HISTORY" ];
   };
 }

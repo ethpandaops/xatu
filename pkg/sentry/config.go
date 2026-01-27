@@ -55,6 +55,9 @@ type Config struct {
 	// ValidatorBlock configuration
 	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{'enabled': false}"`
 
+	// BeaconBlob configuration
+	BeaconBlob *BeaconBlobConfig `yaml:"beaconBlob" default:"{'enabled': false}"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -209,4 +212,11 @@ type BeaconCommitteesConfig struct {
 
 type ProposerDutyConfig struct {
 	Enabled bool `yaml:"enabled" default:"true"`
+}
+
+// BeaconBlobConfig configures beacon blob metadata events derived from block's
+// blob_kzg_commitments. This captures blob metadata with versioned_hash for
+// joining with execution_engine_get_blobs events.
+type BeaconBlobConfig struct {
+	Enabled bool `yaml:"enabled" default:"false"`
 }

@@ -82,6 +82,7 @@ services:
             - DISCOVERY
           eventNames:
             - BEACON_API_ETH_V1_BEACON_COMMITTEE
+            - BEACON_API_ETH_V1_BEACON_BLOB
             - BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR
             - BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR
             - BEACON_API_ETH_V1_EVENTS_BLOCK

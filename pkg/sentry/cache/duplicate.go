@@ -19,6 +19,7 @@ type DuplicateCache struct {
 	BeaconEthV1BeaconCommittee            *ttlcache.Cache[string, time.Time]
 	BeaconEthV1EventsBlobSidecar          *ttlcache.Cache[string, time.Time]
 	BeaconEthV1EventsDataColumnSidecar    *ttlcache.Cache[string, time.Time]
+	BeaconEthV1BeaconBlob                 *ttlcache.Cache[string, time.Time]
 	MempoolTransaction                    *ttlcache.Cache[string, time.Time]
 	ExecutionStateSize                    *ttlcache.Cache[string, time.Time]
 	ConsensusEngineAPINewPayload          *ttlcache.Cache[string, time.Time]
@@ -70,6 +71,9 @@ func NewDuplicateCache() *DuplicateCache {
 		BeaconEthV1EventsDataColumnSidecar: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
 		),
+		BeaconEthV1BeaconBlob: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
 		MempoolTransaction: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](EXECUTION_TTL),
 		),
@@ -95,6 +99,7 @@ func (d *DuplicateCache) Start() {
 	go d.BeaconEthV1BeaconCommittee.Start()
 	go d.BeaconEthV1EventsBlobSidecar.Start()
 	go d.BeaconEthV1EventsDataColumnSidecar.Start()
+	go d.BeaconEthV1BeaconBlob.Start()
 	go d.MempoolTransaction.Start()
 	go d.ExecutionStateSize.Start()
 	go d.ConsensusEngineAPINewPayload.Start()

@@ -96,6 +96,11 @@ validatorBlock:
     slotTimes:
       - 4s
 
+# Blob sidecar configuration
+# When enabled, proactively fetches blob sidecars when blocks are received.
+blobSidecar:
+  enabled: false
+
 outputs:
 - name: http-sink
   type: http

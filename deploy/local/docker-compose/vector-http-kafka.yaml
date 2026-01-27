@@ -18,6 +18,7 @@ transforms:
       - xatu_server_events_http
     route:
       eth_v1_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
+      eth_v1_beacon_blob: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB"
       eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE"
       eth_v1_debug_fork_choice_reorg_v2: .event.name == "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2"
       eth_v1_debug_fork_choice_reorg: .event.name == "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG"
@@ -760,6 +761,22 @@ sinks:
       codec: json
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  beacon_api_eth_v1_beacon_blob_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.eth_v1_beacon_blob
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v1-beacon-blob
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
   beacon_api_eth_v1_proposer_duty_kafka:
     type: kafka
     buffer:

@@ -16,3 +16,17 @@ message BlobSidecar {
   google.protobuf.UInt64Value proposer_index = 7 [ json_name = "proposer_index" ];
   google.protobuf.UInt64Value index = 8;
 }
+
+// Blob contains blob metadata derived from block's blob_kzg_commitments.
+// This is different from BlobSidecar - it stores only metadata + versioned_hash
+// for joining with execution_engine_get_blobs to determine which slot EL was
+// fetching blobs for.
+message Blob {
+  google.protobuf.UInt64Value slot = 1;
+  google.protobuf.UInt64Value index = 2;
+  string block_root = 3 [ json_name = "block_root" ];
+  string block_parent_root = 4 [ json_name = "block_parent_root" ];
+  google.protobuf.UInt64Value proposer_index = 5 [ json_name = "proposer_index" ];
+  string kzg_commitment = 6 [ json_name = "kzg_commitment" ];
+  string versioned_hash = 7 [ json_name = "versioned_hash" ];
+}

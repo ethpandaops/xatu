@@ -43,6 +43,8 @@ var (
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
 	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
+	TypeExecutionEngineNewPayload               Type = execution.EngineNewPayloadType
+	TypeExecutionEngineGetBlobs                 Type = execution.EngineGetBlobsType
 	TypeConsensusEngineAPINewPayload            Type = consensus.EngineAPINewPayloadType
 	TypeConsensusEngineAPIGetBlobs              Type = consensus.EngineAPIGetBlobsType
 	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
@@ -63,6 +65,7 @@ var (
 	TypeBeaconETHV1EventsBlobSidecar            Type = v1.EventsBlobSidecarType
 	TypeBeaconETHV1EventsDataColumnSidecar      Type = v1.EventsDataColumnSidecarType
 	TypeBeaconETHV1BeaconBlobSidecar            Type = v1.BeaconBlobSidecarType
+	TypeBeaconETHV1BeaconBlob                   Type = v1.BeaconBlobType
 	TypeBeaconEthV1ProposerDuty                 Type = v1.BeaconProposerDutyType
 	TypeBeaconP2PAttestation                    Type = v1.BeaconP2PAttestationType
 	TypeBeaconEthV2BeaconElaboratedAttestation  Type = v2.BeaconBlockElaboratedAttestationType
@@ -194,6 +197,12 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	router.RegisterHandler(TypeExecutionStateSize, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewExecutionStateSize(router.log, event), nil
 	})
+	router.RegisterHandler(TypeExecutionEngineNewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewEngineNewPayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeExecutionEngineGetBlobs, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewEngineGetBlobs(router.log, event), nil
+	})
 	router.RegisterHandler(TypeConsensusEngineAPINewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return consensus.NewEngineAPINewPayload(router.log, event), nil
 	})
@@ -253,6 +262,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconETHV1BeaconBlobSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconBlobSidecar(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconBlob, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconBlob(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV1ProposerDuty, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconProposerDuty(router.log, event), nil

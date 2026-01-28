@@ -18,6 +18,7 @@ transforms:
       - xatu_server_events_http
     route:
       eth_v1_beacon_blob_sidecar: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
+      eth_v1_beacon_blob: .event.name == "BEACON_API_ETH_V1_BEACON_BLOB"
       eth_v1_beacon_committee: .event.name == "BEACON_API_ETH_V1_BEACON_COMMITTEE"
       eth_v1_debug_fork_choice_reorg_v2: .event.name == "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2"
       eth_v1_debug_fork_choice_reorg: .event.name == "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG"
@@ -57,6 +58,8 @@ transforms:
       execution_state_size: .event.name == "EXECUTION_STATE_SIZE"
       consensus_engine_api_new_payload: .event.name == "CONSENSUS_ENGINE_API_NEW_PAYLOAD"
       consensus_engine_api_get_blobs: .event.name == "CONSENSUS_ENGINE_API_GET_BLOBS"
+      execution_engine_new_payload: .event.name == "EXECUTION_ENGINE_NEW_PAYLOAD"
+      execution_engine_get_blobs: .event.name == "EXECUTION_ENGINE_GET_BLOBS"
       libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
       libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
       libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
@@ -486,6 +489,38 @@ sinks:
       enabled: true
     encoding:
       codec: json
+  execution_engine_new_payload_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.execution_engine_new_payload
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: execution-engine-new-payload
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  execution_engine_get_blobs_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.execution_engine_get_blobs
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: execution-engine-get-blobs
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
   beacon_api_eth_v2_beacon_block_kafka:
     type: kafka
     buffer:
@@ -726,6 +761,22 @@ sinks:
       codec: json
     librdkafka_options:
       message.max.bytes: "10485760" # 10MB
+  beacon_api_eth_v1_beacon_blob_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.eth_v1_beacon_blob
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v1-beacon-blob
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
   beacon_api_eth_v1_proposer_duty_kafka:
     type: kafka
     buffer:

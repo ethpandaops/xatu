@@ -656,6 +656,21 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		// Beacon blob metadata emission on block receipt
+		if s.Config.BeaconBlob != nil && s.Config.BeaconBlob.Enabled {
+			s.log.Info("Beacon blob metadata emission enabled")
+
+			s.beacon.Node().OnBlock(ctx, func(ctx context.Context, block *eth2v1.BlockEvent) error {
+				// Small delay to ensure block is available for fetching
+				time.Sleep(1 * time.Second)
+
+				blockRoot := xatuethv1.RootAsString(block.Block)
+				s.fetchAndEmitBeaconBlobs(ctx, blockRoot, block.Slot)
+
+				return nil
+			})
+		}
+
 		if err := s.startForkChoiceSchedule(ctx); err != nil {
 			return err
 		}

@@ -43,6 +43,10 @@ coordinator:
   #   forkIdHashes: [0xf0afd0e3]
   #   capabilities: [eth/68]
   #   maxPeers: 100
+  #   # networkConfig fetches network params from a devnet metadata URL.
+  #   # When set, networkIds and forkIdHashes are auto-computed.
+  #   # networkConfig:
+  #   #   url: https://config.blob-devnet-0.ethpandaops.io
 
 outputs:
 - name: http-sink

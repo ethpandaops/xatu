@@ -37,13 +37,38 @@ type Coordinator struct {
 	scheduler gocron.Scheduler
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
+func New(ctx context.Context, config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
 
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+
+	// If networkConfig is provided, fetch and apply the devnet configuration
+	if config.NetworkConfig != nil && config.NetworkConfig.URL != "" {
+		log.WithField("url", config.NetworkConfig.URL).Info("Fetching network configuration from URL")
+
+		fetched, err := config.NetworkConfig.Fetch(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch network config: %w", err)
+		}
+
+		// Apply fetched values to config (overrides any manual config)
+		config.NetworkIds = []uint64{fetched.ChainID}
+		config.ForkIDHashes = []string{fetched.ForkIDHashHex()}
+		config.ForkDigests = fetched.ForkDigestHexes()
+		config.BootNodes = fetched.BootNodes
+		config.Enodes = fetched.Enodes
+
+		log.WithFields(logrus.Fields{
+			"chain_id":     fetched.ChainID,
+			"fork_id_hash": fetched.ForkIDHashHex(),
+			"fork_digests": fetched.ForkDigestHexes(),
+			"boot_nodes":   len(fetched.BootNodes),
+			"enodes":       len(fetched.Enodes),
+		}).Info("Applied network configuration from URL")
 	}
 
 	var opts []grpc.DialOption
@@ -80,10 +105,6 @@ func (c *Coordinator) Type() string {
 }
 
 func (c *Coordinator) Start(ctx context.Context) error {
-	if err := c.startCrons(ctx); err != nil {
-		return err
-	}
-
 	if c.config.DiscV4 {
 		c.discV4 = discovery.NewDiscV4(ctx, c.config.Restart, c.log)
 
@@ -98,6 +119,47 @@ func (c *Coordinator) Start(ctx context.Context) error {
 		c.discV5.OnNodeRecord(ctx, func(ctx context.Context, node *enode.Node) error {
 			return c.handler(ctx, node, "discV5")
 		})
+	}
+
+	// Start seed discovery using boot nodes from network config
+	if err := c.startSeedDiscovery(ctx); err != nil {
+		return err
+	}
+
+	if err := c.startCrons(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// startSeedDiscovery starts discovery using boot nodes from network config as seed nodes.
+// This bootstraps discovery for fresh devnets where xatu server has no records yet.
+func (c *Coordinator) startSeedDiscovery(ctx context.Context) error {
+	// Use consensus boot nodes (ENRs) for discV5
+	if c.config.DiscV5 && len(c.config.BootNodes) > 0 {
+		c.log.WithField("count", len(c.config.BootNodes)).Info("Starting seed discovery with boot nodes from network config")
+
+		if err := c.discV5.UpdateBootNodes(c.config.BootNodes); err != nil {
+			return fmt.Errorf("failed to update discV5 with seed boot nodes: %w", err)
+		}
+
+		if err := c.discV5.Start(ctx); err != nil {
+			return fmt.Errorf("failed to start discV5 with seed boot nodes: %w", err)
+		}
+	}
+
+	// Use execution enodes for discV4
+	if c.config.DiscV4 && len(c.config.Enodes) > 0 {
+		c.log.WithField("count", len(c.config.Enodes)).Info("Starting seed discovery with enodes from network config")
+
+		if err := c.discV4.UpdateBootNodes(c.config.Enodes); err != nil {
+			return fmt.Errorf("failed to update discV4 with seed enodes: %w", err)
+		}
+
+		if err := c.discV4.Start(ctx); err != nil {
+			return fmt.Errorf("failed to start discV4 with seed enodes: %w", err)
+		}
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/IBM/sarama"
+	"github.com/xdg-go/scram"
 )
 
 type CompressionStrategy string
@@ -44,6 +45,30 @@ var (
 	SASLTypeSCRAMSHA512 SASLMechanism = "SCRAM-SHA-512"
 	SASLTypeGSSAPI      SASLMechanism = "GSSAPI"
 )
+
+// scramClient implements sarama.SCRAMClient for SCRAM authentication
+type scramClient struct {
+	*scram.Client
+	*scram.ClientConversation
+	scram.HashGeneratorFcn
+}
+
+func (sc *scramClient) Begin(userName, password, authzID string) (err error) {
+	sc.Client, err = sc.HashGeneratorFcn.NewClient(userName, password, authzID)
+	if err != nil {
+		return err
+	}
+	sc.ClientConversation = sc.Client.NewConversation()
+	return nil
+}
+
+func (sc *scramClient) Step(challenge string) (response string, err error) {
+	return sc.ClientConversation.Step(challenge)
+}
+
+func (sc *scramClient) Done() bool {
+	return sc.ClientConversation.Done()
+}
 
 func NewSyncProducer(config *Config) (sarama.SyncProducer, error) {
 	producerConfig, err := Init(config)
@@ -116,8 +141,14 @@ func Init(config *Config) (*sarama.Config, error) {
 			c.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		case SASLTypeSCRAMSHA256:
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+			c.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &scramClient{HashGeneratorFcn: scram.SHA256}
+			}
 		case SASLTypeSCRAMSHA512:
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+			c.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &scramClient{HashGeneratorFcn: scram.SHA512}
+			}
 		case SASLTypeGSSAPI:
 			c.Net.SASL.Mechanism = sarama.SASLTypeGSSAPI
 		default:

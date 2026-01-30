@@ -183,6 +183,225 @@ func (x *SyncCommitteeContributionV2) GetBeaconBlockRoot() string {
 	return ""
 }
 
+// SyncCommittee represents the sync committee for a given state
+// as returned by the /eth/v1/beacon/states/{state_id}/sync_committees endpoint.
+type SyncCommittee struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// validators contains the validator indices of the sync committee members.
+	Validators []uint64 `protobuf:"varint,1,rep,packed,name=validators,proto3" json:"validators,omitempty"`
+	// validator_aggregates contains the validator indices grouped by their
+	// position in the aggregated public key.
+	ValidatorAggregates []*SyncCommitteeValidatorAggregate `protobuf:"bytes,2,rep,name=validator_aggregates,proto3" json:"validator_aggregates,omitempty"`
+}
+
+func (x *SyncCommittee) Reset() {
+	*x = SyncCommittee{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SyncCommittee) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncCommittee) ProtoMessage() {}
+
+func (x *SyncCommittee) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncCommittee.ProtoReflect.Descriptor instead.
+func (*SyncCommittee) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_sync_committee_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SyncCommittee) GetValidators() []uint64 {
+	if x != nil {
+		return x.Validators
+	}
+	return nil
+}
+
+func (x *SyncCommittee) GetValidatorAggregates() []*SyncCommitteeValidatorAggregate {
+	if x != nil {
+		return x.ValidatorAggregates
+	}
+	return nil
+}
+
+// SyncCommitteeV2 represents the sync committee with wrapped types.
+type SyncCommitteeV2 struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// validators contains the validator indices of the sync committee members.
+	Validators []*wrapperspb.UInt64Value `protobuf:"bytes,1,rep,name=validators,proto3" json:"validators,omitempty"`
+	// validator_aggregates contains the validator indices grouped by their
+	// position in the aggregated public key.
+	ValidatorAggregates []*SyncCommitteeValidatorAggregateV2 `protobuf:"bytes,2,rep,name=validator_aggregates,proto3" json:"validator_aggregates,omitempty"`
+}
+
+func (x *SyncCommitteeV2) Reset() {
+	*x = SyncCommitteeV2{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SyncCommitteeV2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncCommitteeV2) ProtoMessage() {}
+
+func (x *SyncCommitteeV2) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncCommitteeV2.ProtoReflect.Descriptor instead.
+func (*SyncCommitteeV2) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_sync_committee_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SyncCommitteeV2) GetValidators() []*wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Validators
+	}
+	return nil
+}
+
+func (x *SyncCommitteeV2) GetValidatorAggregates() []*SyncCommitteeValidatorAggregateV2 {
+	if x != nil {
+		return x.ValidatorAggregates
+	}
+	return nil
+}
+
+// SyncCommitteeValidatorAggregate represents a group of validators
+// in the sync committee.
+type SyncCommitteeValidatorAggregate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// validators contains the validator indices in this aggregate group.
+	Validators []uint64 `protobuf:"varint,1,rep,packed,name=validators,proto3" json:"validators,omitempty"`
+}
+
+func (x *SyncCommitteeValidatorAggregate) Reset() {
+	*x = SyncCommitteeValidatorAggregate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SyncCommitteeValidatorAggregate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncCommitteeValidatorAggregate) ProtoMessage() {}
+
+func (x *SyncCommitteeValidatorAggregate) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncCommitteeValidatorAggregate.ProtoReflect.Descriptor instead.
+func (*SyncCommitteeValidatorAggregate) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_sync_committee_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SyncCommitteeValidatorAggregate) GetValidators() []uint64 {
+	if x != nil {
+		return x.Validators
+	}
+	return nil
+}
+
+// SyncCommitteeValidatorAggregateV2 represents a group of validators
+// in the sync committee with wrapped types.
+type SyncCommitteeValidatorAggregateV2 struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// validators contains the validator indices in this aggregate group.
+	Validators []*wrapperspb.UInt64Value `protobuf:"bytes,1,rep,name=validators,proto3" json:"validators,omitempty"`
+}
+
+func (x *SyncCommitteeValidatorAggregateV2) Reset() {
+	*x = SyncCommitteeValidatorAggregateV2{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SyncCommitteeValidatorAggregateV2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncCommitteeValidatorAggregateV2) ProtoMessage() {}
+
+func (x *SyncCommitteeValidatorAggregateV2) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncCommitteeValidatorAggregateV2.ProtoReflect.Descriptor instead.
+func (*SyncCommitteeValidatorAggregateV2) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_sync_committee_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SyncCommitteeValidatorAggregateV2) GetValidators() []*wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Validators
+	}
+	return nil
+}
+
 var File_pkg_proto_eth_v1_sync_committee_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_eth_v1_sync_committee_proto_rawDesc = []byte{
@@ -224,7 +443,38 @@ var file_pkg_proto_eth_v1_sync_committee_proto_rawDesc = []byte{
 	0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x2c, 0x0a, 0x11, 0x62, 0x65,
 	0x61, 0x63, 0x6f, 0x6e, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18,
 	0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x11, 0x62, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x5f, 0x62, 0x6c,
-	0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68,
+	0x6f, 0x63, 0x6b, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x22, 0x91, 0x01, 0x0a, 0x0d, 0x53, 0x79, 0x6e,
+	0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x0a,
+	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x60, 0x0a, 0x14, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
+	0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x67, 0x67,
+	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52, 0x14, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x73, 0x22, 0xb3, 0x01, 0x0a,
+	0x0f, 0x53, 0x79, 0x6e, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x56, 0x32,
+	0x12, 0x3c, 0x0a, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c,
+	0x75, 0x65, 0x52, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x62,
+	0x0a, 0x14, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x67, 0x67, 0x72,
+	0x65, 0x67, 0x61, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x43,
+	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x56, 0x32, 0x52, 0x14, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
+	0x65, 0x73, 0x22, 0x41, 0x0a, 0x1f, 0x53, 0x79, 0x6e, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x67, 0x67, 0x72,
+	0x65, 0x67, 0x61, 0x74, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
+	0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x6f, 0x72, 0x73, 0x22, 0x61, 0x0a, 0x21, 0x53, 0x79, 0x6e, 0x63, 0x43, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x41,
+	0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x56, 0x32, 0x12, 0x3c, 0x0a, 0x0a, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0a, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68,
 	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f,
 	0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
@@ -242,20 +492,28 @@ func file_pkg_proto_eth_v1_sync_committee_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v1_sync_committee_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v1_sync_committee_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_pkg_proto_eth_v1_sync_committee_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_pkg_proto_eth_v1_sync_committee_proto_goTypes = []any{
-	(*SyncCommitteeContribution)(nil),   // 0: xatu.eth.v1.SyncCommitteeContribution
-	(*SyncCommitteeContributionV2)(nil), // 1: xatu.eth.v1.SyncCommitteeContributionV2
-	(*wrapperspb.UInt64Value)(nil),      // 2: google.protobuf.UInt64Value
+	(*SyncCommitteeContribution)(nil),         // 0: xatu.eth.v1.SyncCommitteeContribution
+	(*SyncCommitteeContributionV2)(nil),       // 1: xatu.eth.v1.SyncCommitteeContributionV2
+	(*SyncCommittee)(nil),                     // 2: xatu.eth.v1.SyncCommittee
+	(*SyncCommitteeV2)(nil),                   // 3: xatu.eth.v1.SyncCommitteeV2
+	(*SyncCommitteeValidatorAggregate)(nil),   // 4: xatu.eth.v1.SyncCommitteeValidatorAggregate
+	(*SyncCommitteeValidatorAggregateV2)(nil), // 5: xatu.eth.v1.SyncCommitteeValidatorAggregateV2
+	(*wrapperspb.UInt64Value)(nil),            // 6: google.protobuf.UInt64Value
 }
 var file_pkg_proto_eth_v1_sync_committee_proto_depIdxs = []int32{
-	2, // 0: xatu.eth.v1.SyncCommitteeContributionV2.slot:type_name -> google.protobuf.UInt64Value
-	2, // 1: xatu.eth.v1.SyncCommitteeContributionV2.subcommittee_index:type_name -> google.protobuf.UInt64Value
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 0: xatu.eth.v1.SyncCommitteeContributionV2.slot:type_name -> google.protobuf.UInt64Value
+	6, // 1: xatu.eth.v1.SyncCommitteeContributionV2.subcommittee_index:type_name -> google.protobuf.UInt64Value
+	4, // 2: xatu.eth.v1.SyncCommittee.validator_aggregates:type_name -> xatu.eth.v1.SyncCommitteeValidatorAggregate
+	6, // 3: xatu.eth.v1.SyncCommitteeV2.validators:type_name -> google.protobuf.UInt64Value
+	5, // 4: xatu.eth.v1.SyncCommitteeV2.validator_aggregates:type_name -> xatu.eth.v1.SyncCommitteeValidatorAggregateV2
+	6, // 5: xatu.eth.v1.SyncCommitteeValidatorAggregateV2.validators:type_name -> google.protobuf.UInt64Value
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v1_sync_committee_proto_init() }
@@ -288,6 +546,54 @@ func file_pkg_proto_eth_v1_sync_committee_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[2].Exporter = func(v any, i int) any {
+			switch v := v.(*SyncCommittee); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[3].Exporter = func(v any, i int) any {
+			switch v := v.(*SyncCommitteeV2); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*SyncCommitteeValidatorAggregate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v1_sync_committee_proto_msgTypes[5].Exporter = func(v any, i int) any {
+			switch v := v.(*SyncCommitteeValidatorAggregateV2); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -295,7 +601,7 @@ func file_pkg_proto_eth_v1_sync_committee_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v1_sync_committee_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

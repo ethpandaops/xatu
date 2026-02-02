@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
+	httpingester "github.com/ethpandaops/xatu/pkg/server/service/http-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
 )
@@ -47,6 +48,9 @@ type Config struct {
 	// Services is the list of services to run.
 	Services service.Config `yaml:"services"`
 
+	// HTTPIngester is the HTTP ingester configuration.
+	HTTPIngester httpingester.Config `yaml:"httpIngester"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -75,6 +79,10 @@ func (c *Config) Validate() error {
 	}
 
 	if err := c.Tracing.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.HTTPIngester.Validate(); err != nil {
 		return err
 	}
 

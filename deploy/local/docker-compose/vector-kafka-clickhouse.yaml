@@ -103,6 +103,16 @@ sources:
       codec: json
     topics:
       - "execution-engine-get-blobs"
+  execution_block_metrics_kafka:
+    type: kafka
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    group_id: xatu-vector-kafka-clickhouse-execution-block-metrics
+    key_field: "event.id"
+    auto_offset_reset: earliest
+    decoding:
+      codec: json
+    topics:
+      - "execution-block-metrics"
   beacon_api_eth_v2_beacon_block_events_kafka:
     type: kafka
     bootstrap_servers: "${KAFKA_BROKERS}"
@@ -200,6 +210,7 @@ transforms:
       - consensus_engine_api_get_blobs_kafka
       - execution_engine_new_payload_kafka
       - execution_engine_get_blobs_kafka
+      - execution_block_metrics_kafka
       - beacon_api_eth_v2_beacon_block_events_kafka
       - beacon_api_eth_v1_beacon_blob_sidecar_kafka
       - beacon_api_eth_v1_proposer_kafka
@@ -445,6 +456,7 @@ transforms:
       consensus_engine_api_get_blobs: .event.name == "CONSENSUS_ENGINE_API_GET_BLOBS"
       execution_engine_new_payload: .event.name == "EXECUTION_ENGINE_NEW_PAYLOAD"
       execution_engine_get_blobs: .event.name == "EXECUTION_ENGINE_GET_BLOBS"
+      execution_block_metrics: .event.name == "EXECUTION_BLOCK_METRICS"
       mev_relay_bid_trace_builder_block_submission: .event.name == "MEV_RELAY_BID_TRACE_BUILDER_BLOCK_SUBMISSION"
       mev_relay_proposer_payload_delivered: .event.name == "MEV_RELAY_PROPOSER_PAYLOAD_DELIVERED"
       eth_v3_validator_block: .event.name == "BEACON_API_ETH_V3_VALIDATOR_BLOCK"
@@ -506,6 +518,7 @@ transforms:
       - xatu_server_events_router.consensus_engine_api_get_blobs
       - xatu_server_events_router.execution_engine_new_payload
       - xatu_server_events_router.execution_engine_get_blobs
+      - xatu_server_events_router.execution_block_metrics
     metrics:
       - type: counter
         field: event.name
@@ -2906,6 +2919,67 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  execution_block_metrics_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.execution_block_metrics
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+
+      .source = .data.source
+      .block_number = .data.block_number
+      .block_hash = .data.block_hash
+      .gas_used = .data.gas_used
+      .tx_count = .data.tx_count
+
+      # Timing
+      .execution_ms = .data.execution_ms
+      .state_read_ms = .data.state_read_ms
+      .state_hash_ms = .data.state_hash_ms
+      .commit_ms = .data.commit_ms
+      .total_ms = .data.total_ms
+
+      # Throughput
+      .mgas_per_sec = .data.mgas_per_sec
+
+      # State reads
+      .state_reads_accounts = .data.state_reads.accounts
+      .state_reads_storage_slots = .data.state_reads.storage_slots
+      .state_reads_code = .data.state_reads.code
+      .state_reads_code_bytes = .data.state_reads.code_bytes
+
+      # State writes
+      .state_writes_accounts = .data.state_writes.accounts
+      .state_writes_accounts_deleted = .data.state_writes.accounts_deleted
+      .state_writes_storage_slots = .data.state_writes.storage_slots
+      .state_writes_storage_slots_deleted = .data.state_writes.storage_slots_deleted
+      .state_writes_code = .data.state_writes.code
+      .state_writes_code_bytes = .data.state_writes.code_bytes
+
+      # Cache metrics
+      .account_cache_hits = .data.account_cache.hits
+      .account_cache_misses = .data.account_cache.misses
+      .account_cache_hit_rate = .data.account_cache.hit_rate
+      .storage_cache_hits = .data.storage_cache.hits
+      .storage_cache_misses = .data.storage_cache.misses
+      .storage_cache_hit_rate = .data.storage_cache.hit_rate
+      .code_cache_hits = .data.code_cache.hits
+      .code_cache_misses = .data.code_cache.misses
+      .code_cache_hit_rate = .data.code_cache.hit_rate
+      .code_cache_hit_bytes = .data.code_cache.hit_bytes
+      .code_cache_miss_bytes = .data.code_cache.miss_bytes
+
+      .updated_date_time = to_unix_timestamp(now())
+      del(.event)
+      del(.meta)
+      del(.data)
 sinks:
   metrics:
     type: prometheus_exporter
@@ -3785,6 +3859,26 @@ sinks:
     database: default
     endpoint: "${CLICKHOUSE_ENDPOINT}"
     table: execution_engine_get_blobs
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  execution_block_metrics_clickhouse:
+    type: clickhouse
+    inputs:
+      - execution_block_metrics_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: execution_block_metrics
     batch:
       max_bytes: 52428800
       max_events: 200000

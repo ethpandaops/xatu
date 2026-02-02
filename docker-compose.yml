@@ -339,6 +339,7 @@ services:
           "execution-engine-get-blobs"
           "beacon-api-eth-v1-beacon-sync-committee"
           "beacon-api-eth-v2-beacon-block-sync-aggregate"
+          "execution-block-metrics"
         )
 
         # Create topics with 10MB message size limit
@@ -610,6 +611,32 @@ services:
         sed 's/\$$HOSTNAME/'"$$BASE_HOSTNAME"'/g' /tmp/nginx.conf > /etc/nginx/nginx.conf &&
         nginx -g 'daemon off;'
       "
+  xatu-sentry-logs:
+    profiles:
+      - "sentry-logs"
+      - ""
+    container_name: xatu-sentry-logs
+    hostname: xatu-sentry-logs
+    build:
+      context: ./sentry-logs
+      dockerfile: Dockerfile
+    environment:
+      XATU_CLIENT_NAME: ${XATU_SENTRY_LOGS_CLIENT_NAME:-sentry-logs-test}
+      XATU_NETWORK_NAME: ${XATU_SENTRY_LOGS_NETWORK_NAME:-local-testnet}
+      XATU_AUTH: ${XATU_SENTRY_LOGS_AUTH:-}
+      XATU_SERVER_URL: http://xatu-server:8081/v1/events
+      # Batch size of 1 ensures each CreateEventsRequest is sent separately
+      # This avoids issues with protobuf message concatenation
+      XATU_BATCH_MAX_EVENTS: 1
+      XATU_BATCH_TIMEOUT_SECS: 1
+    volumes:
+      - ./deploy/local/docker-compose/sentry-logs/logs:/var/log/geth
+      - ./deploy/local/docker-compose/sentry-logs/sources.d:/etc/xatu/sources.d
+    networks:
+      - xatu-net
+    depends_on:
+      - xatu-server
+
   xatu-cannon:
     profiles:
       - "cannon"

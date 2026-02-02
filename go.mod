@@ -16,6 +16,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
+	github.com/docker/docker v28.2.2+incompatible
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/ethpandaops/beacon v0.65.0
 	github.com/ethpandaops/ethcore v0.0.0-20260112064422-e7fe02956738
@@ -53,6 +54,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0
 	go.opentelemetry.io/otel/trace v1.37.0
 	go.uber.org/mock v0.5.2
+	golang.org/x/crypto v0.41.0
 	golang.org/x/sync v0.16.0
 	golang.org/x/time v0.12.0
 	google.golang.org/grpc v1.74.2
@@ -88,7 +90,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v28.2.2+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
@@ -251,7 +252,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.43.0 // indirect

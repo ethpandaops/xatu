@@ -1,0 +1,13 @@
+# File source for geth JSON logs (local docker-compose)
+sources:
+  ethereum_geth:
+    type: file
+    include:
+      - /var/log/geth/*.log
+    # Read from beginning to catch content added before Vector starts
+    read_from: beginning
+    # Use device_and_inode to avoid "too small to fingerprint" errors
+    fingerprint:
+      strategy: device_and_inode
+    # Ignore checkpoints to always read from beginning on restart
+    ignore_checkpoints: true

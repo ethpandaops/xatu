@@ -53,6 +53,7 @@ Follow the links for more information on each mode.
 - [**Discovery**](./docs/discovery.md) - Client that uses the [Node Discovery Protocol v5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) and [Node Discovery Protocol v4](https://github.com/ethereum/devp2p/blob/master/discv4.md) to discovery nodes on the network. Also attempts to connect to execution layer nodes and collect meta data from them.
 - [**Mimicry**](./docs/mimicry.md) - Client that collects data from the execution layer P2P network.
 - [**Cannon**](./docs/cannon.md) - Client that runs along side a [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) and collects canonical finalized data via the consensus client's [Beacon API](https://ethereum.github.io/beacon-APIs/). _You must run your own consensus client_ and this projects cannon client will connect to it via the consensus client's http server.
+- [**Sentry Logs**](./docs/sentry-logs.md) - Vector-based log collection for Ethereum execution client structured logs. Collects block execution metrics and sends them to Xatu server via HTTP.
 
 ## Getting Started
 

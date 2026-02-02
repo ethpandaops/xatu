@@ -1,0 +1,182 @@
+# Xatu Sentry Logs - Vector Configuration
+# Collects Ethereum client structured logs and sends them to Xatu server.
+
+data_dir: /var/lib/vector
+
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+
+sources:
+  internal_metrics:
+    type: internal_metrics
+
+transforms:
+  # Stage 1: Parse JSON from file source message field
+  # File sources output raw lines in .message, we need to parse the JSON
+  parse_json:
+    type: remap
+    inputs: ["ethereum_*"]
+    drop_on_error: true
+    source: |
+      . = parse_json!(string!(.message))
+
+  # Stage 2: Build client metadata (reusable across event types)
+  # This mirrors the xatu_server_events_meta pattern from deploy/local
+  build_client_meta:
+    type: remap
+    inputs: ["parse_json"]
+    source: |
+      # Preserve original log data
+      .original = .
+
+      # Build client metadata from environment
+      .client_name = get_env_var!("XATU_CLIENT_NAME")
+      .client_version = get_env_var("XATU_VERSION") ?? "dev"
+      .client_implementation = "vector"
+      .network_name = get_env_var!("XATU_NETWORK_NAME")
+      .network_id_str = get_env_var("XATU_NETWORK_ID") ?? "0"
+      .network_id = to_int!(.network_id_str)
+
+  # Stage 3: Route events by log type
+  route_by_log_type:
+    type: route
+    inputs: ["build_client_meta"]
+    route:
+      geth_slow_block: .original.msg == "Slow block"
+      # Future event types can be added here:
+      # geth_other_event: .original.msg == "Other Event"
+      # reth_block_metrics: .original.target == "reth::metrics"
+
+  # Stage 4: Event-specific transforms
+  # Each event type has its own transform to build the event data
+
+  # Geth "Slow block" -> EXECUTION_BLOCK_METRICS
+  geth_block_metrics_event:
+    type: remap
+    inputs: ["route_by_log_type.geth_slow_block"]
+    source: |
+      event_time = format_timestamp!(now(), format: "%Y-%m-%dT%H:%M:%S%.fZ")
+      log = .original
+
+      .event_data = {
+        "source": "client-logs",
+        "block_number": to_string(log.block.number) ?? "",
+        "block_hash": log.block.hash,
+        "gas_used": to_string(log.block.gas_used) ?? "",
+        "tx_count": log.block.tx_count,
+        "execution_ms": log.timing.execution_ms,
+        "state_read_ms": log.timing.state_read_ms,
+        "state_hash_ms": log.timing.state_hash_ms,
+        "commit_ms": log.timing.commit_ms,
+        "total_ms": log.timing.total_ms,
+        "mgas_per_sec": log.throughput.mgas_per_sec,
+        "state_reads": {
+          "accounts": to_string(log.state_reads.accounts) ?? "",
+          "storage_slots": to_string(log.state_reads.storage_slots) ?? "",
+          "code": to_string(log.state_reads.code) ?? "",
+          "code_bytes": to_string(log.state_reads.code_bytes) ?? ""
+        },
+        "state_writes": {
+          "accounts": to_string(log.state_writes.accounts) ?? "",
+          "accounts_deleted": to_string(log.state_writes.accounts_deleted) ?? "",
+          "storage_slots": to_string(log.state_writes.storage_slots) ?? "",
+          "storage_slots_deleted": to_string(log.state_writes.storage_slots_deleted) ?? "",
+          "code": to_string(log.state_writes.code) ?? "",
+          "code_bytes": to_string(log.state_writes.code_bytes) ?? ""
+        },
+        "account_cache": {
+          "hits": to_string(log.cache.account.hits) ?? "",
+          "misses": to_string(log.cache.account.misses) ?? "",
+          "hit_rate": log.cache.account.hit_rate
+        },
+        "storage_cache": {
+          "hits": to_string(log.cache.storage.hits) ?? "",
+          "misses": to_string(log.cache.storage.misses) ?? "",
+          "hit_rate": log.cache.storage.hit_rate
+        },
+        "code_cache": {
+          "hits": to_string(log.cache.code.hits) ?? "",
+          "misses": to_string(log.cache.code.misses) ?? "",
+          "hit_rate": log.cache.code.hit_rate,
+          "hit_bytes": to_string(log.cache.code.hit_bytes) ?? "",
+          "miss_bytes": to_string(log.cache.code.miss_bytes) ?? ""
+        }
+      }
+      .event_name = "EXECUTION_BLOCK_METRICS"
+      .event_time = event_time
+
+  # Stage 5: Assemble final DecoratedEvent (shared across all event types)
+  # Combines client metadata + event-specific data into protojson format
+  build_decorated_event:
+    type: remap
+    inputs:
+      - geth_block_metrics_event
+      # Future event transforms can be added here
+    source: |
+      network_id_str = to_string!(.network_id)
+      event_name = string!(.event_name)
+      event = {
+        "event": {
+          "name": event_name,
+          "date_time": .event_time
+        },
+        "meta": {
+          "client": {
+            "name": .client_name,
+            "version": .client_version,
+            "implementation": .client_implementation,
+            "ethereum": {
+              "network": {
+                "name": .network_name,
+                "id": network_id_str
+              }
+            }
+          }
+        }
+      }
+      # Add event-specific data under dynamic key
+      event = set!(event, [event_name], .event_data)
+      . = { "events": [event] }
+
+sinks:
+  # HTTP sink to xatu-server
+  xatu:
+    type: http
+    inputs: ["build_decorated_event"]
+    uri: "${XATU_SERVER_URL}"
+    method: post
+    encoding:
+      codec: json
+    request:
+      headers:
+        Content-Type: application/json
+        Authorization: "Basic ${XATU_AUTH}"
+    batch:
+      max_events: ${XATU_BATCH_MAX_EVENTS:-5000}
+      timeout_secs: ${XATU_BATCH_TIMEOUT_SECS:-5}
+
+  # Debug sinks - uncomment for troubleshooting
+  # debug_raw:
+  #   type: console
+  #   inputs: ["ethereum_*"]
+  #   encoding:
+  #     codec: json
+  #
+  # debug_after_meta:
+  #   type: console
+  #   inputs: ["build_client_meta"]
+  #   encoding:
+  #     codec: json
+  #
+  # debug_routed:
+  #   type: console
+  #   inputs: ["route_by_log_type.geth_slow_block"]
+  #   encoding:
+  #     codec: json
+  #
+  # debug_final:
+  #   type: console
+  #   inputs: ["build_decorated_event"]
+  #   encoding:
+  #     codec: json

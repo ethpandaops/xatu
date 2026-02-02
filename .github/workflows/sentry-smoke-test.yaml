@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   sentry-smoke-test:
-    timeout-minutes: 20
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -18,6 +18,10 @@ jobs:
       run: |
         docker build -t ethpandaops/xatu:local .
         echo "Xatu image is built."
+    - name: Build sentry-logs image
+      run: |
+        docker build -t ethpandaops/xatu-sentry-logs:local ./sentry-logs
+        echo "Sentry-logs image is built."
     - name: Create Kurtosis config file
       run: |
         cat <<EOF > /tmp/network_params.yaml
@@ -54,11 +58,17 @@ jobs:
             - voluntary_exit
             - contribution_and_proof
         <<EOF
+    - name: Create sentry-logs directory and log file
+      run: |
+        mkdir -p deploy/local/docker-compose/sentry-logs/logs
+        chmod 777 deploy/local/docker-compose/sentry-logs/logs
+        touch deploy/local/docker-compose/sentry-logs/logs/geth.log
+        chmod 666 deploy/local/docker-compose/sentry-logs/logs/geth.log
     - name: Run Xatu stack
       timeout-minutes: 10
-      shell: bash
       run: |
-        docker compose up --detach --quiet-pull &
+        docker compose up --detach --quiet-pull
+        sleep 30
     - name: Setup kurtosis testnet and run assertoor tests
       id: kurtosis-setup
       uses: ethpandaops/kurtosis-assertoor-github-action@5932604b244dbd2ddb811516b516a9094f4d2c2f # v1
@@ -73,9 +83,9 @@ jobs:
         echo $SERVICES
     - name: Add all xatu-sentry containers to the xatu network
       run: |
-        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}"); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done
+        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}" | grep -v xatu-sentry-logs); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done
     - name: Verify Clickhouse has data from all sentries
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
         echo "Checking Clickhouse for data from all sentries"
 
@@ -123,12 +133,22 @@ jobs:
         # Track which sentries have exported at least one event
         declare -A sentry_has_events
 
-        # Wait for each table to have data from at least one sentry
+        # Wait for each table to exist and have data from at least one sentry
         for table in "${tables[@]}"; do
-            pretty_print "Waiting for $table to have data..." "none"
+            pretty_print "Waiting for $table to exist and have data..." "none"
             while true; do
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" || true)
-                if [[ $data_count -gt 0 ]]; then
+                # First check if table exists
+                table_exists=$(docker exec xatu-clickhouse-01 clickhouse-client --query "EXISTS TABLE default.$table" 2>/dev/null || echo "0")
+                if [[ "$table_exists" != "1" ]]; then
+                    pretty_print "$table does not exist yet, waiting..." "yellow"
+                    print_logs xatu-server
+                    print_logs vector
+                    sleep 5
+                    continue
+                fi
+
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" 2>/dev/null || echo "0")
+                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
                     pretty_print "$table has $data_count entries" "green"
                     break
                 else
@@ -144,8 +164,8 @@ jobs:
         for sentry in "${all_sentries[@]}"; do
             pretty_print "Checking sentry $sentry..." "none"
             for table in "${tables[@]}"; do
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
-                if [[ $data_count -gt 0 ]]; then
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
+                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
                     pretty_print "$sentry has $data_count entries in $table" "green"
                     sentry_has_events[$sentry]=1
                 else
@@ -165,8 +185,8 @@ jobs:
                     all_have_events=false
                     # Check all tables for this sentry
                     for table in "${tables[@]}"; do
-                        data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
-                        if [[ $data_count -gt 0 ]]; then
+                        data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
+                        if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
                             pretty_print "$sentry now has $data_count entries in $table" "green"
                             sentry_has_events[$sentry]=1
                             break
@@ -206,14 +226,49 @@ jobs:
         for table in "${tables[@]}"; do
             echo "=== $table ==="
             for sentry in "${all_sentries[@]}"; do
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" || true)
-                if [[ $data_count -gt 0 ]]; then
+                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
+                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
                     echo "  $sentry: $data_count entries"
                 else
                     echo "  $sentry: no entries (client may not be synced)"
                 fi
             done
         done
+
+    - name: Verify sentry-logs (execution_block_metrics) pipeline
+      timeout-minutes: 3
+      run: |
+        echo "Testing sentry-logs execution_block_metrics pipeline"
+
+        # Inject fake "Slow block" log entries (geth format from PR #33655)
+        for i in {1..5}; do
+          echo '{"level":"warn","msg":"Slow block","block":{"number":'${i}',"hash":"0x'$(printf '%064d' ${i})'","gas_used":15000000,"tx_count":150},"timing":{"execution_ms":45.2,"state_read_ms":12.1,"state_hash_ms":8.3,"commit_ms":5.4,"total_ms":71.0},"throughput":{"mgas_per_sec":211.27},"state_reads":{"accounts":1234,"storage_slots":5678,"code":89,"code_bytes":45000},"state_writes":{"accounts":234,"accounts_deleted":5,"storage_slots":890,"storage_slots_deleted":12,"code":3,"code_bytes":15000},"cache":{"account":{"hits":1000,"misses":234,"hit_rate":81.0},"storage":{"hits":5000,"misses":678,"hit_rate":88.0},"code":{"hits":80,"misses":9,"hit_rate":89.9,"hit_bytes":40000,"miss_bytes":5000}}}' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
+        done
+
+        echo "Injected 5 test log entries"
+        sleep 10
+
+        # Wait for data to reach ClickHouse
+        max_retries=30
+        retry_count=0
+        while true; do
+          data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.execution_block_metrics" 2>/dev/null || echo "0")
+          if [[ "$data_count" -ge 5 ]]; then
+            echo "SUCCESS: execution_block_metrics has $data_count entries"
+            break
+          fi
+          echo "Waiting for execution_block_metrics data... (current: $data_count, attempt: $((retry_count + 1))/$max_retries)"
+          retry_count=$((retry_count + 1))
+          if [[ $retry_count -ge $max_retries ]]; then
+            echo "FAILED: Timeout waiting for execution_block_metrics data"
+            exit 1
+          fi
+          sleep 5
+        done
+
+        # Verify data content
+        echo "Sample execution_block_metrics data:"
+        docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT block_number, total_ms, mgas_per_sec, meta_client_name FROM default.execution_block_metrics LIMIT 5"
 
     - name: Collect docker logs on failure
       if: failure()

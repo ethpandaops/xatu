@@ -151,6 +151,42 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Authenticate BEFORE reading body to prevent DDoS via large payload parsing
+	var user *auth.User
+
+	var group *auth.Group
+
+	if i.config.EventIngester.Authorization.Enabled {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			span.SetStatus(ocodes.Error, "no authorization header")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+
+			return
+		}
+
+		username, authErr := i.auth.IsAuthorized(authHeader)
+		if authErr != nil {
+			span.SetStatus(ocodes.Error, authErr.Error())
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+
+			return
+		}
+
+		var userErr error
+
+		user, group, userErr = i.auth.GetUserAndGroup(username)
+		if userErr != nil {
+			span.SetStatus(ocodes.Error, userErr.Error())
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+
+			return
+		}
+
+		span.SetAttributes(attribute.String("user", username))
+		span.SetAttributes(attribute.String("group", group.Name()))
+	}
+
 	// Validate Content-Type (accept both protobuf and JSON)
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/x-protobuf" && contentType != "application/json" {
@@ -249,42 +285,6 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 		}
 
 		i.log.WithField("events_count", len(req.GetEvents())).WithField("event_types", eventTypes).Debug("Received events via HTTP")
-	}
-
-	// Authenticate
-	var user *auth.User
-
-	var group *auth.Group
-
-	if i.config.EventIngester.Authorization.Enabled {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			span.SetStatus(ocodes.Error, "no authorization header")
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-
-			return
-		}
-
-		username, authErr := i.auth.IsAuthorized(authHeader)
-		if authErr != nil {
-			span.SetStatus(ocodes.Error, authErr.Error())
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-
-			return
-		}
-
-		var userErr error
-
-		user, group, userErr = i.auth.GetUserAndGroup(username)
-		if userErr != nil {
-			span.SetStatus(ocodes.Error, userErr.Error())
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-
-			return
-		}
-
-		span.SetAttributes(attribute.String("user", username))
-		span.SetAttributes(attribute.String("group", group.Name()))
 	}
 
 	// Extract client IP

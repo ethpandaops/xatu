@@ -19,6 +19,7 @@ type Config struct {
 	ElaboratedAttestationConfig v2.ElaboratedAttestationDeriverConfig `yaml:"elaboratedAttestation"`
 	BeaconValidatorsConfig      v1.BeaconValidatorsDeriverConfig      `yaml:"beaconValidators"`
 	BeaconCommitteeConfig       v1.BeaconCommitteeDeriverConfig       `yaml:"beaconCommittee"`
+	BeaconSyncCommitteeConfig   v1.BeaconSyncCommitteeDeriverConfig   `yaml:"beaconSyncCommittee"`
 }
 
 func (c *Config) Validate() error {

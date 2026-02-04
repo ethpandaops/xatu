@@ -18,6 +18,7 @@ import "pkg/proto/eth/v1/fork_choice.proto";
 import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
 import "pkg/proto/eth/v1/validator.proto";
+import "pkg/proto/eth/v1/sync_committee.proto";
 
 import "pkg/proto/blockprint/block_classification.proto";
 
@@ -124,6 +125,12 @@ message DebugForkChoiceReorgV2 {
 
 message Validators {
   repeated xatu.eth.v1.Validator validators = 1;
+}
+
+// SyncCommitteeData is a wrapper for sync committee data.
+message SyncCommitteeData {
+  xatu.eth.v1.SyncCommittee sync_committee = 1
+      [ json_name = "sync_committee" ];
 }
 
 message BlockIdentifier {
@@ -672,6 +679,17 @@ message ClientMeta {
     // This can be used to determine if the proposer duty was canonical
     // by checking if the state_id is 'finalized'.
     string state_id = 3 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconSyncCommitteeData contains additional data about the
+  // sync committee.
+  message AdditionalEthV1BeaconSyncCommitteeData {
+    // Epoch contains the epoch information for the sync committee.
+    EpochV2 epoch = 1;
+
+    // SyncCommitteePeriod is the sync committee period number.
+    google.protobuf.UInt64Value sync_committee_period = 2
+        [ json_name = "sync_committee_period" ];
   }
 
   message AdditionalMempoolTransactionData {
@@ -1720,6 +1738,8 @@ message ClientMeta {
     AdditionalConsensusEngineAPIGetBlobsData consensus_engine_api_get_blobs = 90 [ json_name = "CONSENSUS_ENGINE_API_GET_BLOBS" ];
     // AdditionalEthV1BeaconBlobData contains additional data about the beacon blob event.
     AdditionalEthV1BeaconBlobData eth_v1_beacon_blob = 91 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
+    // AdditionalEthV1BeaconSyncCommitteeData contains additional data about the sync committee.
+    AdditionalEthV1BeaconSyncCommitteeData eth_v1_beacon_sync_committee = 92 [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1927,6 +1947,7 @@ message Event {
     EXECUTION_ENGINE_NEW_PAYLOAD = 82;
     EXECUTION_ENGINE_GET_BLOBS = 83;
     BEACON_API_ETH_V1_BEACON_BLOB = 84;
+    BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 85;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2130,6 +2151,8 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_ENGINE_GET_BLOBS" ];
     xatu.eth.v1.Blob eth_v1_beacon_blob = 206
         [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
+    SyncCommitteeData eth_v1_beacon_sync_committee = 207
+        [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
   };
 }
 

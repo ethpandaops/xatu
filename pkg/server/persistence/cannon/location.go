@@ -193,6 +193,17 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE:
+		l.Type = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE"
+
+		data := msg.GetEthV1BeaconSyncCommittee()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -390,6 +401,19 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconCommittee{
 			EthV1BeaconCommittee: data,
+		}
+	case "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE
+
+		data := &xatu.CannonLocationEthV1BeaconSyncCommittee{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconSyncCommittee{
+			EthV1BeaconSyncCommittee: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

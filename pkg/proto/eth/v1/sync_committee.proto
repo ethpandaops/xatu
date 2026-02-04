@@ -34,3 +34,22 @@ message SyncCommitteeContributionV2 {
 
   string beacon_block_root = 5 [ json_name = "beacon_block_root" ];
 }
+
+// SyncCommitteeValidatorAggregate represents a group of validators
+// in the sync committee with wrapped types.
+message SyncCommitteeValidatorAggregate {
+  // validators contains the validator indices in this aggregate group.
+  repeated google.protobuf.UInt64Value validators = 1;
+}
+
+// SyncCommittee represents the sync committee for a given state
+// as returned by the /eth/v1/beacon/states/{state_id}/sync_committees endpoint.
+message SyncCommittee {
+  // validators contains the validator indices of the sync committee members.
+  repeated google.protobuf.UInt64Value validators = 1;
+
+  // validator_aggregates contains the validator indices grouped by their
+  // position in the aggregated public key.
+  repeated SyncCommitteeValidatorAggregate validator_aggregates = 2
+      [ json_name = "validator_aggregates" ];
+}

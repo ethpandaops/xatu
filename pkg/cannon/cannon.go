@@ -642,6 +642,25 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				c.beacon,
 				clientMeta,
 			),
+			v1.NewBeaconSyncCommitteeDeriver(
+				c.log,
+				&c.Config.Derivers.BeaconSyncCommitteeConfig,
+				iterator.NewBackfillingCheckpoint(
+					c.log,
+					networkName,
+					networkID,
+					xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE,
+					c.coordinatorClient,
+					wallclock,
+					&backfillingCheckpointIteratorMetrics,
+					c.beacon,
+					finalizedCheckpoint,
+					3,
+					&c.Config.Derivers.BeaconSyncCommitteeConfig.Iterator,
+				),
+				c.beacon,
+				clientMeta,
+			),
 		}
 
 		c.eventDerivers = eventDerivers

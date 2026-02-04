@@ -154,4 +154,4 @@ make sentry-logs-build
 
 | Event | ID | Description |
 | --- | --- | --- |
-| `EXECUTION_BLOCK_METRICS` | 85 | Block execution performance metrics including timing, state reads/writes, and cache statistics |
+| `EXECUTION_BLOCK_METRICS` | 86 | Block execution performance metrics including timing, state reads/writes, and cache statistics |

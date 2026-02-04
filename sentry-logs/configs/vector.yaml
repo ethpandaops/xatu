@@ -262,6 +262,7 @@ sinks:
     inputs: ["build_decorated_event"]
     uri: "${XATU_SERVER_URL}"
     method: post
+    compression: "${XATU_COMPRESSION:-gzip}"
     encoding:
       codec: json
     request:

@@ -1,5 +1,19 @@
 # Xatu Sentry Logs - Vector Configuration
-# Collects Ethereum client structured logs and sends them to Xatu server.
+# Collects Ethereum execution client structured logs and sends them to Xatu server.
+#
+# Architecture:
+#   1. Sources: File inputs for each client type (ethereum_*)
+#   2. Parse: JSON parsing with nested JSON handling
+#   3. Detect: Identify client type from log format
+#   4. Normalize: Client-specific transforms to common schema
+#   5. Route: Route normalized events by type
+#   6. Build: Construct Xatu DecoratedEvent
+#   7. Sink: Send to xatu-server HTTP ingester
+#
+# Adding a new client:
+#   1. Add detection condition in `detect_client`
+#   2. Add normalizer transform (e.g., `normalize_<client>_block_metrics`)
+#   3. Add normalizer to `route_normalized_events` inputs
 
 data_dir: /var/lib/vector
 
@@ -12,8 +26,11 @@ sources:
     type: internal_metrics
 
 transforms:
-  # Stage 1: Parse JSON from file source message field
-  # File sources output raw lines in .message, we need to parse the JSON
+  # ============================================================================
+  # Stage 1: Parse JSON
+  # ============================================================================
+
+  # Parse raw log lines into JSON objects
   parse_json:
     type: remap
     inputs: ["ethereum_*"]
@@ -21,16 +38,29 @@ transforms:
     source: |
       . = parse_json!(string!(.message))
 
-  # Stage 2: Build client metadata (reusable across event types)
-  # This mirrors the xatu_server_events_meta pattern from deploy/local
-  build_client_meta:
+  # Handle double-encoded JSON (some clients output JSON as string in msg field)
+  parse_nested_json:
     type: remap
     inputs: ["parse_json"]
+    drop_on_error: false
     source: |
-      # Preserve original log data
-      .original = .
+      msg_str = string(.msg) ?? ""
+      if starts_with(msg_str, "{") {
+        parsed = parse_json(msg_str) ?? null
+        if parsed != null {
+          . = parsed
+        }
+      }
 
-      # Build client metadata from environment
+  # ============================================================================
+  # Stage 2: Build Client Metadata
+  # ============================================================================
+
+  build_client_meta:
+    type: remap
+    inputs: ["parse_nested_json"]
+    source: |
+      .original = .
       .client_name = get_env_var!("XATU_CLIENT_NAME")
       .client_version = get_env_var("XATU_VERSION") ?? "dev"
       .client_implementation = "vector"
@@ -38,39 +68,46 @@ transforms:
       .network_id_str = get_env_var("XATU_NETWORK_ID") ?? "0"
       .network_id = to_int!(.network_id_str)
 
-  # Stage 3: Route events by log type
-  route_by_log_type:
+  # ============================================================================
+  # Stage 3: Detect Client Type and Route to Normalizers
+  # ============================================================================
+
+  # Route to client-specific normalizers based on log format
+  detect_client:
     type: route
     inputs: ["build_client_meta"]
     route:
-      geth_slow_block: .original.msg == "Slow block"
-      # Future event types can be added here:
-      # geth_other_event: .original.msg == "Other Event"
-      # reth_block_metrics: .original.target == "reth::metrics"
+      # Geth: "Slow block" message with block/timing/throughput structure
+      geth_block_metrics: .original.msg == "Slow block" && exists(.original.block) && exists(.original.timing)
+      # Reth: Add detection pattern when available
+      # reth_block_metrics: .original.target == "reth::block" && exists(.original.metrics)
+      # Besu: Add detection pattern when available
+      # besu_block_metrics: exists(.original.blockNumber) && exists(.original.executionTime)
 
-  # Stage 4: Event-specific transforms
-  # Each event type has its own transform to build the event data
+  # ============================================================================
+  # Stage 4: Client-Specific Normalizers
+  # Convert client-specific formats to common EXECUTION_BLOCK_METRICS schema
+  # ============================================================================
 
-  # Geth "Slow block" -> EXECUTION_BLOCK_METRICS
-  geth_block_metrics_event:
+  # Geth normalizer: Converts Geth's "Slow block" log to common schema
+  normalize_geth_block_metrics:
     type: remap
-    inputs: ["route_by_log_type.geth_slow_block"]
+    inputs: ["detect_client.geth_block_metrics"]
     source: |
-      event_time = format_timestamp!(now(), format: "%Y-%m-%dT%H:%M:%S%.fZ")
       log = .original
 
-      .event_data = {
-        "source": "client-logs",
+      # Normalize to common schema
+      .normalized = {
         "block_number": to_string(log.block.number) ?? "",
-        "block_hash": log.block.hash,
+        "block_hash": log.block.hash ?? "",
         "gas_used": to_string(log.block.gas_used) ?? "",
-        "tx_count": log.block.tx_count,
-        "execution_ms": log.timing.execution_ms,
-        "state_read_ms": log.timing.state_read_ms,
-        "state_hash_ms": log.timing.state_hash_ms,
-        "commit_ms": log.timing.commit_ms,
-        "total_ms": log.timing.total_ms,
-        "mgas_per_sec": log.throughput.mgas_per_sec,
+        "tx_count": log.block.tx_count ?? 0,
+        "execution_ms": log.timing.execution_ms ?? 0.0,
+        "state_read_ms": log.timing.state_read_ms ?? 0.0,
+        "state_hash_ms": log.timing.state_hash_ms ?? 0.0,
+        "commit_ms": log.timing.commit_ms ?? 0.0,
+        "total_ms": log.timing.total_ms ?? 0.0,
+        "mgas_per_sec": log.throughput.mgas_per_sec ?? 0.0,
         "state_reads": {
           "accounts": to_string(log.state_reads.accounts) ?? "",
           "storage_slots": to_string(log.state_reads.storage_slots) ?? "",
@@ -88,34 +125,66 @@ transforms:
         "account_cache": {
           "hits": to_string(log.cache.account.hits) ?? "",
           "misses": to_string(log.cache.account.misses) ?? "",
-          "hit_rate": log.cache.account.hit_rate
+          "hit_rate": log.cache.account.hit_rate ?? 0.0
         },
         "storage_cache": {
           "hits": to_string(log.cache.storage.hits) ?? "",
           "misses": to_string(log.cache.storage.misses) ?? "",
-          "hit_rate": log.cache.storage.hit_rate
+          "hit_rate": log.cache.storage.hit_rate ?? 0.0
         },
         "code_cache": {
           "hits": to_string(log.cache.code.hits) ?? "",
           "misses": to_string(log.cache.code.misses) ?? "",
-          "hit_rate": log.cache.code.hit_rate,
+          "hit_rate": log.cache.code.hit_rate ?? 0.0,
           "hit_bytes": to_string(log.cache.code.hit_bytes) ?? "",
           "miss_bytes": to_string(log.cache.code.miss_bytes) ?? ""
         }
       }
-      .event_name = "EXECUTION_BLOCK_METRICS"
-      .event_time = event_time
+      .event_type = "EXECUTION_BLOCK_METRICS"
 
-  # Stage 5: Assemble final DecoratedEvent (shared across all event types)
-  # Combines client metadata + event-specific data into protojson format
+  # ============================================================================
+  # Stage 5: Route Normalized Events by Type
+  # ============================================================================
+
+  route_normalized_events:
+    type: route
+    inputs:
+      - normalize_geth_block_metrics
+      # Add other normalizers here as they're implemented:
+      # - normalize_reth_block_metrics
+      # - normalize_besu_block_metrics
+    route:
+      block_metrics: .event_type == "EXECUTION_BLOCK_METRICS"
+      # Add other event types here:
+      # state_metrics: .event_type == "EXECUTION_STATE_METRICS"
+
+  # ============================================================================
+  # Stage 6: Build Xatu Events from Normalized Data
+  # ============================================================================
+
+  build_block_metrics_event:
+    type: remap
+    inputs: ["route_normalized_events.block_metrics"]
+    source: |
+      .event_data = .normalized
+      .event_data.source = "client-logs"
+      .event_name = "EXECUTION_BLOCK_METRICS"
+      .event_time = format_timestamp!(now(), format: "%Y-%m-%dT%H:%M:%S%.fZ")
+
+  # ============================================================================
+  # Stage 7: Assemble Final DecoratedEvent
+  # ============================================================================
+
   build_decorated_event:
     type: remap
     inputs:
-      - geth_block_metrics_event
-      # Future event transforms can be added here
+      - build_block_metrics_event
+      # Add other event builders here:
+      # - build_state_metrics_event
     source: |
       network_id_str = to_string!(.network_id)
       event_name = string!(.event_name)
+
       event = {
         "event": {
           "name": event_name,
@@ -135,7 +204,7 @@ transforms:
           }
         }
       }
-      # Add event-specific data under dynamic key
+
       event = set!(event, [event_name], .event_data)
       . = { "events": [event] }
 
@@ -157,21 +226,15 @@ sinks:
       timeout_secs: ${XATU_BATCH_TIMEOUT_SECS:-5}
 
   # Debug sinks - uncomment for troubleshooting
-  # debug_raw:
+  # debug_parsed:
   #   type: console
-  #   inputs: ["ethereum_*"]
+  #   inputs: ["parse_nested_json"]
   #   encoding:
   #     codec: json
   #
-  # debug_after_meta:
+  # debug_normalized:
   #   type: console
-  #   inputs: ["build_client_meta"]
-  #   encoding:
-  #     codec: json
-  #
-  # debug_routed:
-  #   type: console
-  #   inputs: ["route_by_log_type.geth_slow_block"]
+  #   inputs: ["normalize_geth_block_metrics"]
   #   encoding:
   #     codec: json
   #

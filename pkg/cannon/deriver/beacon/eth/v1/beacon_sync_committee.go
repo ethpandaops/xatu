@@ -301,7 +301,7 @@ func (b *BeaconSyncCommitteeDeriver) processEpoch(
 func (b *BeaconSyncCommitteeDeriver) fetchSyncCommittee(
 	ctx context.Context,
 	slot phase0.Slot,
-) (*xatuethv1.SyncCommitteeV2, error) {
+) (*xatuethv1.SyncCommittee, error) {
 	provider, isProvider := b.beacon.Node().Service().(client.SyncCommitteesProvider)
 	if !isProvider {
 		return nil, errors.New("beacon node does not support sync committees provider")
@@ -325,19 +325,19 @@ func (b *BeaconSyncCommitteeDeriver) fetchSyncCommittee(
 		validators[i] = wrapperspb.UInt64(uint64(v))
 	}
 
-	aggregates := make([]*xatuethv1.SyncCommitteeValidatorAggregateV2, len(resp.Data.ValidatorAggregates))
+	aggregates := make([]*xatuethv1.SyncCommitteeValidatorAggregate, len(resp.Data.ValidatorAggregates))
 	for i, agg := range resp.Data.ValidatorAggregates {
 		aggValidators := make([]*wrapperspb.UInt64Value, len(agg))
 		for j, v := range agg {
 			aggValidators[j] = wrapperspb.UInt64(uint64(v))
 		}
 
-		aggregates[i] = &xatuethv1.SyncCommitteeValidatorAggregateV2{
+		aggregates[i] = &xatuethv1.SyncCommitteeValidatorAggregate{
 			Validators: aggValidators,
 		}
 	}
 
-	return &xatuethv1.SyncCommitteeV2{
+	return &xatuethv1.SyncCommittee{
 		Validators:          validators,
 		ValidatorAggregates: aggregates,
 	}, nil
@@ -345,7 +345,7 @@ func (b *BeaconSyncCommitteeDeriver) fetchSyncCommittee(
 
 func (b *BeaconSyncCommitteeDeriver) createEventFromSyncCommittee(
 	ctx context.Context,
-	syncCommittee *xatuethv1.SyncCommitteeV2,
+	syncCommittee *xatuethv1.SyncCommittee,
 	epoch phase0.Epoch,
 	syncCommitteePeriod uint64,
 ) (*xatu.DecoratedEvent, error) {

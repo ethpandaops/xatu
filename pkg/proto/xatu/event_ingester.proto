@@ -129,7 +129,7 @@ message Validators {
 
 // SyncCommitteeData is a wrapper for sync committee data.
 message SyncCommitteeData {
-  xatu.eth.v1.SyncCommitteeV2 sync_committee = 1
+  xatu.eth.v1.SyncCommittee sync_committee = 1
       [ json_name = "sync_committee" ];
 }
 

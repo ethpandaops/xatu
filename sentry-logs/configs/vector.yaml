@@ -90,54 +90,101 @@ transforms:
   # ============================================================================
 
   # Geth normalizer: Converts Geth's "Slow block" log to common schema
+  # Note: Core fields (block, timing) are guaranteed by routing condition in detect_client
+  # Optional fields (state_reads, state_writes, cache) use get() with defaults
   normalize_geth_block_metrics:
     type: remap
     inputs: ["detect_client.geth_block_metrics"]
     source: |
       log = .original
 
-      # Normalize to common schema
+      # Extract core fields (guaranteed by routing condition)
+      block_number = to_string(log.block.number) ?? ""
+      block_hash = string(log.block.hash) ?? ""
+      gas_used = to_string(log.block.gas_used) ?? ""
+      tx_count = int(log.block.tx_count) ?? 0
+
+      # Timing fields (guaranteed by routing condition)
+      execution_ms = float(log.timing.execution_ms) ?? 0.0
+      state_read_ms = float(log.timing.state_read_ms) ?? 0.0
+      state_hash_ms = float(log.timing.state_hash_ms) ?? 0.0
+      commit_ms = float(log.timing.commit_ms) ?? 0.0
+      total_ms = float(log.timing.total_ms) ?? 0.0
+
+      # Throughput (guaranteed by routing condition check for timing)
+      mgas_per_sec = float(log.throughput.mgas_per_sec) ?? 0.0
+
+      # Optional state_reads fields
+      sr_accounts = to_string(get(log, ["state_reads", "accounts"]) ?? 0) ?? "0"
+      sr_storage = to_string(get(log, ["state_reads", "storage_slots"]) ?? 0) ?? "0"
+      sr_code = to_string(get(log, ["state_reads", "code"]) ?? 0) ?? "0"
+      sr_code_bytes = to_string(get(log, ["state_reads", "code_bytes"]) ?? 0) ?? "0"
+
+      # Optional state_writes fields
+      sw_accounts = to_string(get(log, ["state_writes", "accounts"]) ?? 0) ?? "0"
+      sw_accounts_del = to_string(get(log, ["state_writes", "accounts_deleted"]) ?? 0) ?? "0"
+      sw_storage = to_string(get(log, ["state_writes", "storage_slots"]) ?? 0) ?? "0"
+      sw_storage_del = to_string(get(log, ["state_writes", "storage_slots_deleted"]) ?? 0) ?? "0"
+      sw_code = to_string(get(log, ["state_writes", "code"]) ?? 0) ?? "0"
+      sw_code_bytes = to_string(get(log, ["state_writes", "code_bytes"]) ?? 0) ?? "0"
+
+      # Optional cache fields
+      ac_hits = to_string(get(log, ["cache", "account", "hits"]) ?? 0) ?? "0"
+      ac_misses = to_string(get(log, ["cache", "account", "misses"]) ?? 0) ?? "0"
+      ac_hit_rate = float(get(log, ["cache", "account", "hit_rate"]) ?? 0) ?? 0.0
+
+      stc_hits = to_string(get(log, ["cache", "storage", "hits"]) ?? 0) ?? "0"
+      stc_misses = to_string(get(log, ["cache", "storage", "misses"]) ?? 0) ?? "0"
+      stc_hit_rate = float(get(log, ["cache", "storage", "hit_rate"]) ?? 0) ?? 0.0
+
+      cc_hits = to_string(get(log, ["cache", "code", "hits"]) ?? 0) ?? "0"
+      cc_misses = to_string(get(log, ["cache", "code", "misses"]) ?? 0) ?? "0"
+      cc_hit_rate = float(get(log, ["cache", "code", "hit_rate"]) ?? 0) ?? 0.0
+      cc_hit_bytes = to_string(get(log, ["cache", "code", "hit_bytes"]) ?? 0) ?? "0"
+      cc_miss_bytes = to_string(get(log, ["cache", "code", "miss_bytes"]) ?? 0) ?? "0"
+
+      # Build normalized schema
       .normalized = {
-        "block_number": to_string(log.block.number) ?? "",
-        "block_hash": log.block.hash ?? "",
-        "gas_used": to_string(log.block.gas_used) ?? "",
-        "tx_count": log.block.tx_count ?? 0,
-        "execution_ms": log.timing.execution_ms ?? 0.0,
-        "state_read_ms": log.timing.state_read_ms ?? 0.0,
-        "state_hash_ms": log.timing.state_hash_ms ?? 0.0,
-        "commit_ms": log.timing.commit_ms ?? 0.0,
-        "total_ms": log.timing.total_ms ?? 0.0,
-        "mgas_per_sec": log.throughput.mgas_per_sec ?? 0.0,
+        "block_number": block_number,
+        "block_hash": block_hash,
+        "gas_used": gas_used,
+        "tx_count": tx_count,
+        "execution_ms": execution_ms,
+        "state_read_ms": state_read_ms,
+        "state_hash_ms": state_hash_ms,
+        "commit_ms": commit_ms,
+        "total_ms": total_ms,
+        "mgas_per_sec": mgas_per_sec,
         "state_reads": {
-          "accounts": to_string(log.state_reads.accounts) ?? "",
-          "storage_slots": to_string(log.state_reads.storage_slots) ?? "",
-          "code": to_string(log.state_reads.code) ?? "",
-          "code_bytes": to_string(log.state_reads.code_bytes) ?? ""
+          "accounts": sr_accounts,
+          "storage_slots": sr_storage,
+          "code": sr_code,
+          "code_bytes": sr_code_bytes
         },
         "state_writes": {
-          "accounts": to_string(log.state_writes.accounts) ?? "",
-          "accounts_deleted": to_string(log.state_writes.accounts_deleted) ?? "",
-          "storage_slots": to_string(log.state_writes.storage_slots) ?? "",
-          "storage_slots_deleted": to_string(log.state_writes.storage_slots_deleted) ?? "",
-          "code": to_string(log.state_writes.code) ?? "",
-          "code_bytes": to_string(log.state_writes.code_bytes) ?? ""
+          "accounts": sw_accounts,
+          "accounts_deleted": sw_accounts_del,
+          "storage_slots": sw_storage,
+          "storage_slots_deleted": sw_storage_del,
+          "code": sw_code,
+          "code_bytes": sw_code_bytes
         },
         "account_cache": {
-          "hits": to_string(log.cache.account.hits) ?? "",
-          "misses": to_string(log.cache.account.misses) ?? "",
-          "hit_rate": log.cache.account.hit_rate ?? 0.0
+          "hits": ac_hits,
+          "misses": ac_misses,
+          "hit_rate": ac_hit_rate
         },
         "storage_cache": {
-          "hits": to_string(log.cache.storage.hits) ?? "",
-          "misses": to_string(log.cache.storage.misses) ?? "",
-          "hit_rate": log.cache.storage.hit_rate ?? 0.0
+          "hits": stc_hits,
+          "misses": stc_misses,
+          "hit_rate": stc_hit_rate
         },
         "code_cache": {
-          "hits": to_string(log.cache.code.hits) ?? "",
-          "misses": to_string(log.cache.code.misses) ?? "",
-          "hit_rate": log.cache.code.hit_rate ?? 0.0,
-          "hit_bytes": to_string(log.cache.code.hit_bytes) ?? "",
-          "miss_bytes": to_string(log.cache.code.miss_bytes) ?? ""
+          "hits": cc_hits,
+          "misses": cc_misses,
+          "hit_rate": cc_hit_rate,
+          "hit_bytes": cc_hit_bytes,
+          "miss_bytes": cc_miss_bytes
         }
       }
       .event_type = "EXECUTION_BLOCK_METRICS"

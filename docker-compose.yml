@@ -340,6 +340,7 @@ services:
           "beacon-api-eth-v1-beacon-sync-committee"
           "beacon-api-eth-v2-beacon-block-sync-aggregate"
           "execution-block-metrics"
+          "execution-block-metrics"
         )
 
         # Create topics with 10MB message size limit

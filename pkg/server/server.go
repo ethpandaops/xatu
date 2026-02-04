@@ -59,11 +59,6 @@ type Xatu struct {
 }
 
 func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Override) (*Xatu, error) {
-	// Apply HTTP ingester fallback before validation so the config can reuse gRPC settings.
-	if conf.HTTPIngester.Enabled && conf.HTTPIngester.EventIngester == nil {
-		conf.HTTPIngester.EventIngester = &conf.Services.EventIngester
-	}
-
 	if err := conf.Validate(); err != nil {
 		return nil, err
 	}
@@ -122,9 +117,9 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Overr
 
 	xatuServer.services = services
 
-	// Create HTTP ingester if enabled
+	// Create HTTP ingester if enabled (reuses services.eventIngester config)
 	if conf.HTTPIngester.Enabled {
-		hi, hiErr := httpingester.NewIngester(ctx, log, &conf.HTTPIngester, &clockDrift, g, c)
+		hi, hiErr := httpingester.NewIngester(ctx, log, &conf.HTTPIngester, &conf.Services.EventIngester, &clockDrift, g, c)
 		if hiErr != nil {
 			return nil, fmt.Errorf("failed to create HTTP ingester: %w", hiErr)
 		}

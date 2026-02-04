@@ -36,23 +36,7 @@ tracing:
 httpIngester:
   enabled: true
   addr: ":8081"
-  eventIngester:
-    clientNameSalt: "example_salt"
-    authorization:
-      enabled: false
-    outputs:
-      - name: http-events
-        type: http
-        shippingMethod: async
-        config:
-          address: http://xatu-vector-http-kafka:9005
-          maxQueueSize: 50000
-          batchTimeout: 5s
-          exportTimeout: 30s
-          maxExportBatchSize: 64
-          compression: gzip
-          keepAlive: false
-          workers: 100
+  # Note: HTTP ingester reuses services.eventIngester config for auth, outputs, etc.
 
 services:
   coordinator:

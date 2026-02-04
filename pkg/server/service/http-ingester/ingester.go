@@ -37,41 +37,45 @@ const (
 
 // Ingester handles HTTP event ingestion.
 type Ingester struct {
-	log           logrus.FieldLogger
-	config        *Config
-	auth          *auth.Authorization
-	handler       *eventingester.Handler
-	sinks         []output.Sink
-	geoipProvider geoip.Provider
-	cache         store.Cache
-	clockDrift    *time.Duration
-	server        *http.Server
+	log               logrus.FieldLogger
+	config            *Config
+	eventIngesterConf *eventingester.Config
+	auth              *auth.Authorization
+	handler           *eventingester.Handler
+	sinks             []output.Sink
+	geoipProvider     geoip.Provider
+	cache             store.Cache
+	clockDrift        *time.Duration
+	server            *http.Server
 }
 
 // NewIngester creates a new HTTP event ingester.
+// The eventIngesterConf is the shared event ingester configuration from services.eventIngester.
 func NewIngester(
 	ctx context.Context,
 	log logrus.FieldLogger,
 	conf *Config,
+	eventIngesterConf *eventingester.Config,
 	clockDrift *time.Duration,
 	geoipProvider geoip.Provider,
 	cache store.Cache,
 ) (*Ingester, error) {
 	log = log.WithField("server/module", ServiceType)
 
-	a, err := auth.NewAuthorization(log, conf.EventIngester.Authorization)
+	a, err := auth.NewAuthorization(log, eventIngesterConf.Authorization)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorization: %w", err)
 	}
 
 	i := &Ingester{
-		log:           log,
-		config:        conf,
-		auth:          a,
-		geoipProvider: geoipProvider,
-		cache:         cache,
-		clockDrift:    clockDrift,
-		handler:       eventingester.NewHandler(log, clockDrift, geoipProvider, cache, conf.EventIngester.ClientNameSalt),
+		log:               log,
+		config:            conf,
+		eventIngesterConf: eventIngesterConf,
+		auth:              a,
+		geoipProvider:     geoipProvider,
+		cache:             cache,
+		clockDrift:        clockDrift,
+		handler:           eventingester.NewHandler(log, clockDrift, geoipProvider, cache, eventIngesterConf.ClientNameSalt),
 	}
 
 	sinks, err := i.createSinks()
@@ -156,7 +160,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 
 	var group *auth.Group
 
-	if i.config.EventIngester.Authorization.Enabled {
+	if i.eventIngesterConf.Authorization.Enabled {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			span.SetStatus(ocodes.Error, "no authorization header")
@@ -386,9 +390,9 @@ func (i *Ingester) extractClientIP(r *http.Request) string {
 
 // createSinks creates the output sinks from configuration.
 func (i *Ingester) createSinks() ([]output.Sink, error) {
-	sinks := make([]output.Sink, len(i.config.EventIngester.Outputs))
+	sinks := make([]output.Sink, len(i.eventIngesterConf.Outputs))
 
-	for idx, out := range i.config.EventIngester.Outputs {
+	for idx, out := range i.eventIngesterConf.Outputs {
 		if out.ShippingMethod == nil {
 			shippingMethod := processor.ShippingMethodSync
 			out.ShippingMethod = &shippingMethod

@@ -193,6 +193,8 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	var unmarshalErr error
 
 	if contentType == "application/json" {
+		unmarshalOptions := protojson.UnmarshalOptions{DiscardUnknown: true}
+
 		// Vector batches JSON events as an array: [{"events":[...]}, {"events":[...]}, ...]
 		// Check if the body is a JSON array and handle accordingly
 		trimmedBody := bytes.TrimSpace(body)
@@ -207,7 +209,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 
 				for idx, rawReq := range requests {
 					singleReq := &xatu.CreateEventsRequest{}
-					if protoErr := protojson.Unmarshal(rawReq, singleReq); protoErr != nil {
+					if protoErr := unmarshalOptions.Unmarshal(rawReq, singleReq); protoErr != nil {
 						unmarshalErr = fmt.Errorf("failed to parse request at index %d: %w", idx, protoErr)
 
 						break
@@ -221,7 +223,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			unmarshalErr = protojson.Unmarshal(body, req)
+			unmarshalErr = unmarshalOptions.Unmarshal(body, req)
 		}
 	} else {
 		unmarshalErr = proto.Unmarshal(body, req)

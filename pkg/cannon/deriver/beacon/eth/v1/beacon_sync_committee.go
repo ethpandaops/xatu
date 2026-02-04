@@ -139,29 +139,43 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 					return "", err
 				}
 
-				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				// Calculate the period boundary epoch to process
+				boundaryEpoch, shouldProcess, err := b.calculatePeriodBoundary(ctx, position.Next, position.Direction)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
 				}
 
-				// Look ahead (not supported for sync committee)
-				b.lookAhead(ctx, position.LookAheads)
-
-				// Send the events
-				for _, fn := range b.onEventsCallbacks {
-					if err := fn(ctx, events); err != nil {
+				if shouldProcess {
+					// Process the period boundary epoch
+					events, err := b.processEpoch(ctx, boundaryEpoch)
+					if err != nil {
+						b.log.WithError(err).Error("Failed to process epoch")
 						span.SetStatus(codes.Error, err.Error())
 
-						return "", errors.Wrap(err, "failed to send events")
+						return "", err
+					}
+
+					// Send the events
+					for _, fn := range b.onEventsCallbacks {
+						if err := fn(ctx, events); err != nil {
+							span.SetStatus(codes.Error, err.Error())
+
+							return "", errors.Wrap(err, "failed to send events")
+						}
 					}
 				}
 
-				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				// Update location based on direction:
+				// - For backfill: update to boundary so we skip to previous period
+				// - For head: update to iterator's epoch so it advances normally
+				updateEpoch := boundaryEpoch
+				if position.Direction == iterator.BackfillingCheckpointDirectionHead {
+					updateEpoch = position.Next
+				}
+
+				if err := b.iterator.UpdateLocation(ctx, updateEpoch, position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
@@ -172,16 +186,69 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 				return "", nil
 			}
 
-			if _, err := backoff.Retry(rctx, operation,
+			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
 					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
 				}),
-			); err != nil {
+			}
+			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
 		}
 	}
+}
+
+// calculatePeriodBoundary calculates the appropriate sync committee period boundary epoch
+// based on the current epoch and direction. Returns the boundary epoch, whether it should
+// be processed, and any error.
+//
+// For head direction: only process if we're exactly at a period boundary, otherwise skip.
+// For backfill direction: always process the current period's boundary and jump to it.
+func (b *BeaconSyncCommitteeDeriver) calculatePeriodBoundary(
+	_ context.Context,
+	epoch phase0.Epoch,
+	direction iterator.BackfillingCheckpointDirection,
+) (phase0.Epoch, bool, error) {
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		return 0, false, errors.Wrap(err, "failed to get beacon spec")
+	}
+
+	epochsPerPeriod := uint64(sp.EpochsPerSyncCommitteePeriod)
+
+	// If already at a period boundary, always process it
+	if uint64(epoch)%epochsPerPeriod == 0 {
+		return epoch, true, nil
+	}
+
+	// Calculate the current period's start boundary
+	currentPeriod := uint64(epoch) / epochsPerPeriod
+	boundaryEpoch := phase0.Epoch(currentPeriod * epochsPerPeriod)
+
+	if direction == iterator.BackfillingCheckpointDirectionHead {
+		// For head: we're not at a boundary, so skip processing.
+		// The iterator will advance and eventually hit the next boundary.
+		b.log.WithFields(logrus.Fields{
+			"current_epoch":     epoch,
+			"boundary_epoch":    boundaryEpoch,
+			"direction":         direction,
+			"epochs_per_period": epochsPerPeriod,
+		}).Debug("Skipping non-boundary epoch for head direction")
+
+		return epoch, false, nil
+	}
+
+	// For backfill: jump to the boundary and process it
+	b.log.WithFields(logrus.Fields{
+		"current_epoch":     epoch,
+		"boundary_epoch":    boundaryEpoch,
+		"direction":         direction,
+		"period":            currentPeriod,
+		"epochs_per_period": epochsPerPeriod,
+	}).Debug("Jumping to sync committee period boundary for backfill")
+
+	return boundaryEpoch, true, nil
 }
 
 func (b *BeaconSyncCommitteeDeriver) processEpoch(
@@ -200,18 +267,7 @@ func (b *BeaconSyncCommitteeDeriver) processEpoch(
 		return nil, errors.Wrap(err, "failed to get beacon spec")
 	}
 
-	// Sync committees change every EPOCHS_PER_SYNC_COMMITTEE_PERIOD epochs.
-	// We only need to fetch at period boundaries to avoid redundant API calls.
 	epochsPerPeriod := uint64(sp.EpochsPerSyncCommitteePeriod)
-	if uint64(epoch)%epochsPerPeriod != 0 {
-		b.log.WithFields(logrus.Fields{
-			"epoch":             epoch,
-			"epochs_per_period": epochsPerPeriod,
-		}).Debug("Skipping non-period-boundary epoch for sync committee")
-
-		return []*xatu.DecoratedEvent{}, nil
-	}
-
 	syncCommitteePeriod := uint64(epoch) / epochsPerPeriod
 
 	b.log.WithFields(logrus.Fields{
@@ -285,11 +341,6 @@ func (b *BeaconSyncCommitteeDeriver) fetchSyncCommittee(
 		Validators:          validators,
 		ValidatorAggregates: aggregates,
 	}, nil
-}
-
-func (b *BeaconSyncCommitteeDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	// Sync committee look-ahead is not supported as there's no preload mechanism
-	// and the data changes infrequently (every ~27 hours).
 }
 
 func (b *BeaconSyncCommitteeDeriver) createEventFromSyncCommittee(

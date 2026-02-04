@@ -451,6 +451,7 @@ transforms:
       mev_relay_validator_registration: .event.name == "MEV_RELAY_VALIDATOR_REGISTRATION"
       node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
       node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
+      canonical_beacon_sync_committee: .event.name == "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -498,6 +499,7 @@ transforms:
       - xatu_server_events_router.mev_relay_validator_registration
       - xatu_server_events_router.node_record_consensus
       - xatu_server_events_router.node_record_execution
+      - xatu_server_events_router.canonical_beacon_sync_committee
       - xatu_server_events_router.consensus_engine_api_new_payload
       - xatu_server_events_router.consensus_engine_api_get_blobs
       - xatu_server_events_router.execution_engine_new_payload
@@ -1962,6 +1964,55 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  canonical_beacon_sync_committee_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_sync_committee
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .sync_committee_period = .meta.client.additional_data.sync_committee_period
+      # Convert nested validator aggregates with error handling
+      aggs_arr, err = array(.data.sync_committee.validator_aggregates)
+      if err != null {
+        log("Failed to get validator_aggregates array: " + err, level: "error")
+        abort
+      }
+      .validator_aggregates = map_values(aggs_arr) -> |agg| {
+        inner_arr, err = array(agg.validators)
+        if err != null {
+          log("Failed to get inner validators array: " + err, level: "error")
+          abort
+        }
+        map_values(inner_arr) -> |v| {
+          val, err = to_int(v)
+          if err != null {
+            log("Failed to convert inner validator to int: " + err, level: "error")
+            abort
+          }
+          val
+        }
+      }
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
   mev_relay_bid_trace_builder_block_submission_formatted:
     type: remap
     inputs:
@@ -3096,6 +3147,26 @@ sinks:
       timeout_secs: 1
     buffer:
       max_events: 200000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_sync_committee_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_sync_committee_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_sync_committee
+    batch:
+      max_bytes: 52428800
+      max_events: 1000000
+      timeout_secs: 1
+    buffer:
+      max_events: 1000000
     healthcheck:
       enabled: true
     skip_unknown_fields: false

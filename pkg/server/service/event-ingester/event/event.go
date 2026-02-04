@@ -54,6 +54,7 @@ var (
 	TypeDebugForkChoiceReorg                    Type = v1.DebugForkChoiceReorgType
 	TypeDebugForkChoiceReorgV2                  Type = v1.DebugForkChoiceReorgV2Type
 	TypeBeaconEthV1BeaconCommittee              Type = v1.BeaconCommitteeType
+	TypeBeaconEthV1BeaconSyncCommittee          Type = v1.BeaconSyncCommitteeType
 	TypeBeaconEthV1ValidatorAttestationData     Type = v1.ValidatorAttestationDataType
 	TypeBeaconEthV2BeaconBlockAttesterSlashing  Type = v2.BeaconBlockAttesterSlashingType
 	TypeBeaconEthV2BeaconBlockProposerSlashing  Type = v2.BeaconBlockProposerSlashingType
@@ -229,6 +230,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconEthV1BeaconCommittee, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconCommittee(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconSyncCommittee, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconSyncCommittee(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV1ValidatorAttestationData, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewValidatorAttestationData(router.log, event), nil

@@ -4,7 +4,6 @@ CREATE TABLE default.canonical_beacon_sync_committee_local ON CLUSTER '{cluster}
     `epoch` UInt32 COMMENT 'The epoch number for when the sync committee is active' CODEC(DoubleDelta, ZSTD(1)),
     `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
     `sync_committee_period` UInt64 COMMENT 'The sync committee period number' CODEC(DoubleDelta, ZSTD(1)),
-    `validators` Array(UInt32) COMMENT 'The validator indices of sync committee members (512 validators)' CODEC(ZSTD(1)),
     `validator_aggregates` Array(Array(UInt32)) COMMENT 'The validator indices grouped by subcommittee (64 groups of 8)' CODEC(ZSTD(1)),
     `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
     `meta_client_id` String COMMENT 'Unique Session ID of the client that generated the event. This changes every time the client is restarted.' CODEC(ZSTD(1)),

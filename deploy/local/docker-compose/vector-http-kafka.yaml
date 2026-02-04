@@ -99,6 +99,7 @@ transforms:
       node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
       node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
       eth_v1_beacon_sync_committee: .event.name == "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE"
+      eth_v2_beacon_block_sync_aggregate: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE"
 sinks:
   metrics:
     type: prometheus_exporter
@@ -1433,6 +1434,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v1-beacon-sync-committee
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  beacon_api_eth_v2_beacon_block_sync_aggregate_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.eth_v2_beacon_block_sync_aggregate
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v2-beacon-block-sync-aggregate
     compression: snappy
     healthcheck:
       enabled: true

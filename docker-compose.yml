@@ -338,6 +338,7 @@ services:
           "execution-engine-new-payload"
           "execution-engine-get-blobs"
           "beacon-api-eth-v1-beacon-sync-committee"
+          "beacon-api-eth-v2-beacon-block-sync-aggregate"
         )
 
         # Create topics with 10MB message size limit

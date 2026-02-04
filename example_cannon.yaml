@@ -53,6 +53,12 @@ ethereum:
 #       backfill:
 #         enabled: false
 #         toEpoch: 0
+#   beaconBlockSyncAggregate:
+#     enabled: true
+#     iterator:
+#       backfill:
+#         enabled: false
+#         toEpoch: 0
 
 outputs:
 - name: http-sink

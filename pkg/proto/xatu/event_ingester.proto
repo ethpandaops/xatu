@@ -133,6 +133,24 @@ message SyncCommitteeData {
       [ json_name = "sync_committee" ];
 }
 
+// SyncAggregateData contains sync aggregate data from a beacon block with
+// expanded validator participation information.
+message SyncAggregateData {
+  // SyncCommitteeBits is the raw 512-bit bitvector (hex encoded).
+  string sync_committee_bits = 1 [ json_name = "sync_committee_bits" ];
+  // SyncCommitteeSignature is the aggregated signature.
+  string sync_committee_signature = 2 [ json_name = "sync_committee_signature" ];
+  // ValidatorsParticipated contains the validator indices that participated (voted).
+  repeated google.protobuf.UInt64Value validators_participated = 3
+      [ json_name = "validators_participated" ];
+  // ValidatorsMissed contains the validator indices that missed (did not vote).
+  repeated google.protobuf.UInt64Value validators_missed = 4
+      [ json_name = "validators_missed" ];
+  // ParticipationCount is the number of validators that participated (0-512).
+  google.protobuf.UInt64Value participation_count = 5
+      [ json_name = "participation_count" ];
+}
+
 message BlockIdentifier {
   // Epoch contains the epoch information for the block.
   EpochV2 epoch = 1;
@@ -688,6 +706,17 @@ message ClientMeta {
     EpochV2 epoch = 1;
 
     // SyncCommitteePeriod is the sync committee period number.
+    google.protobuf.UInt64Value sync_committee_period = 2
+        [ json_name = "sync_committee_period" ];
+  }
+
+  // AdditionalEthV2BeaconBlockSyncAggregateData contains additional data about
+  // the sync aggregate from a beacon block.
+  message AdditionalEthV2BeaconBlockSyncAggregateData {
+    // Block contains the block identifier information.
+    BlockIdentifier block = 1;
+
+    // SyncCommitteePeriod is the sync committee period number (epoch / 256).
     google.protobuf.UInt64Value sync_committee_period = 2
         [ json_name = "sync_committee_period" ];
   }
@@ -1740,6 +1769,8 @@ message ClientMeta {
     AdditionalEthV1BeaconBlobData eth_v1_beacon_blob = 91 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
     // AdditionalEthV1BeaconSyncCommitteeData contains additional data about the sync committee.
     AdditionalEthV1BeaconSyncCommitteeData eth_v1_beacon_sync_committee = 92 [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
+    // AdditionalEthV2BeaconBlockSyncAggregateData contains additional data about the sync aggregate.
+    AdditionalEthV2BeaconBlockSyncAggregateData eth_v2_beacon_block_sync_aggregate = 93 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1948,6 +1979,7 @@ message Event {
     EXECUTION_ENGINE_GET_BLOBS = 83;
     BEACON_API_ETH_V1_BEACON_BLOB = 84;
     BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 85;
+    BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2153,6 +2185,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB" ];
     SyncCommitteeData eth_v1_beacon_sync_committee = 207
         [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
+    SyncAggregateData eth_v2_beacon_block_sync_aggregate = 208
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
   };
 }
 

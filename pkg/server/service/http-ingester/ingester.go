@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
@@ -23,7 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	ocodes "go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -37,16 +34,10 @@ const (
 
 // Ingester handles HTTP event ingestion.
 type Ingester struct {
-	log               logrus.FieldLogger
-	config            *Config
-	eventIngesterConf *eventingester.Config
-	auth              *auth.Authorization
-	handler           *eventingester.Handler
-	sinks             []output.Sink
-	geoipProvider     geoip.Provider
-	cache             store.Cache
-	clockDrift        *time.Duration
-	server            *http.Server
+	log      logrus.FieldLogger
+	config   *Config
+	pipeline *eventingester.Pipeline
+	server   *http.Server
 }
 
 // NewIngester creates a new HTTP event ingester.
@@ -62,28 +53,16 @@ func NewIngester(
 ) (*Ingester, error) {
 	log = log.WithField("server/module", ServiceType)
 
-	a, err := auth.NewAuthorization(log, eventIngesterConf.Authorization)
+	pipeline, err := eventingester.NewPipeline(ctx, log, eventIngesterConf, clockDrift, geoipProvider, cache)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorization: %w", err)
+		return nil, fmt.Errorf("failed to create pipeline: %w", err)
 	}
 
 	i := &Ingester{
-		log:               log,
-		config:            conf,
-		eventIngesterConf: eventIngesterConf,
-		auth:              a,
-		geoipProvider:     geoipProvider,
-		cache:             cache,
-		clockDrift:        clockDrift,
-		handler:           eventingester.NewHandler(log, clockDrift, geoipProvider, cache, eventIngesterConf.ClientNameSalt),
+		log:      log,
+		config:   conf,
+		pipeline: pipeline,
 	}
-
-	sinks, err := i.createSinks()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create sinks: %w", err)
-	}
-
-	i.sinks = sinks
 
 	return i, nil
 }
@@ -97,14 +76,8 @@ func (i *Ingester) Name() string {
 func (i *Ingester) Start(ctx context.Context) error {
 	i.log.WithField("addr", i.config.Addr).Info("Starting HTTP ingester")
 
-	if err := i.auth.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start authorization: %w", err)
-	}
-
-	for _, sink := range i.sinks {
-		if err := sink.Start(ctx); err != nil {
-			return fmt.Errorf("failed to start sink %s: %w", sink.Name(), err)
-		}
+	if err := i.pipeline.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start pipeline: %w", err)
 	}
 
 	mux := http.NewServeMux()
@@ -128,10 +101,8 @@ func (i *Ingester) Start(ctx context.Context) error {
 func (i *Ingester) Stop(ctx context.Context) error {
 	i.log.Info("Stopping HTTP ingester")
 
-	for _, sink := range i.sinks {
-		if err := sink.Stop(ctx); err != nil {
-			return fmt.Errorf("failed to stop sink %s: %w", sink.Name(), err)
-		}
+	if err := i.pipeline.Stop(ctx); err != nil {
+		return fmt.Errorf("failed to stop pipeline: %w", err)
 	}
 
 	if i.server != nil {
@@ -156,11 +127,12 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Authenticate BEFORE reading body to prevent DDoS via large payload parsing
-	var user *auth.User
+	var (
+		user  *auth.User
+		group *auth.Group
+	)
 
-	var group *auth.Group
-
-	if i.eventIngesterConf.Authorization.Enabled {
+	if i.pipeline.AuthEnabled() {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			span.SetStatus(ocodes.Error, "no authorization header")
@@ -169,7 +141,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		username, authErr := i.auth.IsAuthorized(authHeader)
+		username, authErr := i.pipeline.Auth().IsAuthorized(authHeader)
 		if authErr != nil {
 			span.SetStatus(ocodes.Error, authErr.Error())
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -179,7 +151,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 
 		var userErr error
 
-		user, group, userErr = i.auth.GetUserAndGroup(username)
+		user, group, userErr = i.pipeline.Auth().GetUserAndGroup(username)
 		if userErr != nil {
 			span.SetStatus(ocodes.Error, userErr.Error())
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -306,44 +278,22 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	peerAddr := &net.TCPAddr{IP: net.ParseIP(clientIP)}
 	ctx = peer.NewContext(ctx, &peer.Peer{Addr: peerAddr})
 
-	// Process events through the handler
-	filteredEvents, handlerErr := i.handler.Events(ctx, req.GetEvents(), user, group)
-	if handlerErr != nil {
-		i.log.WithError(handlerErr).WithField("events_count", len(req.GetEvents())).Error("Failed to process events")
-		span.SetStatus(ocodes.Error, handlerErr.Error())
-		http.Error(w, fmt.Sprintf("failed to process events: %v", handlerErr), http.StatusInternalServerError)
+	// Process events through the pipeline
+	filteredCount, processErr := i.pipeline.ProcessAndSend(ctx, req.GetEvents(), user, group, "HTTPIngester.handleEvents")
+	if processErr != nil {
+		i.log.WithError(processErr).WithField("events_count", len(req.GetEvents())).Error("Failed to process events")
+		span.SetStatus(ocodes.Error, processErr.Error())
+		http.Error(w, fmt.Sprintf("failed to process events: %v", processErr), http.StatusInternalServerError)
 
 		return
 	}
 
-	i.log.WithField("filtered_events_count", len(filteredEvents)).WithField("input_events_count", len(req.GetEvents())).Debug("Events processed by handler")
-
-	// Send to sinks
-	for _, sink := range i.sinks {
-		_, sinkSpan := observability.Tracer().Start(ctx,
-			"HTTPIngester.handleEvents.SendEventsToSink",
-			trace.WithAttributes(
-				attribute.String("sink", sink.Name()),
-				attribute.Int64("events", int64(len(filteredEvents))),
-			),
-		)
-
-		if sinkErr := sink.HandleNewDecoratedEvents(ctx, filteredEvents); sinkErr != nil {
-			i.log.WithError(sinkErr).WithField("sink", sink.Name()).WithField("events_count", len(filteredEvents)).Error("Failed to send events to sink")
-			sinkSpan.SetStatus(ocodes.Error, sinkErr.Error())
-			sinkSpan.End()
-			http.Error(w, fmt.Sprintf("failed to send events to sink: %v", sinkErr), http.StatusInternalServerError)
-
-			return
-		}
-
-		sinkSpan.End()
-	}
+	i.log.WithField("filtered_events_count", filteredCount).WithField("input_events_count", len(req.GetEvents())).Debug("Events processed by handler")
 
 	// Build response
 	response := &xatu.CreateEventsResponse{
 		EventsIngested: &wrapperspb.UInt64Value{
-			Value: uint64(len(filteredEvents)),
+			Value: filteredCount,
 		},
 	}
 
@@ -386,31 +336,4 @@ func (i *Ingester) extractClientIP(r *http.Request) string {
 	}
 
 	return host
-}
-
-// createSinks creates the output sinks from configuration.
-func (i *Ingester) createSinks() ([]output.Sink, error) {
-	sinks := make([]output.Sink, len(i.eventIngesterConf.Outputs))
-
-	for idx, out := range i.eventIngesterConf.Outputs {
-		if out.ShippingMethod == nil {
-			shippingMethod := processor.ShippingMethodSync
-			out.ShippingMethod = &shippingMethod
-		}
-
-		sink, err := output.NewSink(out.Name,
-			out.SinkType,
-			out.Config,
-			i.log,
-			out.FilterConfig,
-			*out.ShippingMethod,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create sink %s: %w", out.Name, err)
-		}
-
-		sinks[idx] = sink
-	}
-
-	return sinks, nil
 }

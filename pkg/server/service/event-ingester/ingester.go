@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
@@ -33,37 +31,35 @@ const (
 type Ingester struct {
 	xatu.UnimplementedEventIngesterServer
 
-	log     logrus.FieldLogger
-	config  *Config
-	handler *Handler
-	auth    *auth.Authorization
-	sinks   []output.Sink
+	log      logrus.FieldLogger
+	config   *Config
+	pipeline *Pipeline
 
 	healthServer *health.Server
 }
 
-func NewIngester(ctx context.Context, log logrus.FieldLogger, conf *Config, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, healthServer *health.Server) (*Ingester, error) {
+func NewIngester(
+	ctx context.Context,
+	log logrus.FieldLogger,
+	conf *Config,
+	clockDrift *time.Duration,
+	geoipProvider geoip.Provider,
+	cache store.Cache,
+	healthServer *health.Server,
+) (*Ingester, error) {
 	log = log.WithField("server/module", ServiceType)
 
-	a, err := auth.NewAuthorization(log, conf.Authorization)
+	pipeline, err := NewPipeline(ctx, log, conf, clockDrift, geoipProvider, cache)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create pipeline: %w", err)
 	}
 
 	e := &Ingester{
 		log:          log,
 		config:       conf,
-		auth:         a,
-		handler:      NewHandler(log, clockDrift, geoipProvider, cache, conf.ClientNameSalt),
+		pipeline:     pipeline,
 		healthServer: healthServer,
 	}
-
-	sinks, err := e.CreateSinks()
-	if err != nil {
-		return e, err
-	}
-
-	e.sinks = sinks
 
 	return e, nil
 }
@@ -76,17 +72,11 @@ func (e *Ingester) Name() string {
 func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 	e.log.Info("Starting module")
 
-	if err := e.auth.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start authorization: %w", err)
+	if err := e.pipeline.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start pipeline: %w", err)
 	}
 
 	xatu.RegisterEventIngesterServer(grpcServer, e)
-
-	for _, sink := range e.sinks {
-		if err := sink.Start(ctx); err != nil {
-			return err
-		}
-	}
 
 	e.healthServer.SetServingStatus(e.Name(), grpc_health_v1.HealthCheckResponse_SERVING)
 
@@ -98,10 +88,8 @@ func (e *Ingester) Stop(ctx context.Context) error {
 
 	e.healthServer.SetServingStatus(e.Name(), grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
-	for _, sink := range e.sinks {
-		if err := sink.Stop(ctx); err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
+	if err := e.pipeline.Stop(ctx); err != nil {
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	return nil
@@ -121,11 +109,12 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		return nil, errors.New("failed to get metadata from context")
 	}
 
-	var user *auth.User
+	var (
+		user  *auth.User
+		group *auth.Group
+	)
 
-	var group *auth.Group
-
-	if e.config.Authorization.Enabled {
+	if e.pipeline.AuthEnabled() {
 		authorization := md.Get("authorization")
 
 		if len(authorization) == 0 {
@@ -136,7 +125,7 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
 
-		username, err := e.auth.IsAuthorized(authorization[0])
+		username, err := e.pipeline.Auth().IsAuthorized(authorization[0])
 		if err != nil {
 			errMsg := fmt.Errorf("failed to authorize user: %w", err)
 
@@ -153,8 +142,8 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 			return nil, status.Error(codes.Unauthenticated, errMsg.Error())
 		}
 
-		user, group, err = e.auth.GetUserAndGroup(username)
-		if err != nil && e.config.Authorization.Enabled {
+		user, group, err = e.pipeline.Auth().GetUserAndGroup(username)
+		if err != nil {
 			errMsg := fmt.Errorf("failed to get user and group: %w", err)
 
 			span.SetStatus(ocodes.Error, errMsg.Error())
@@ -166,66 +155,16 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 		span.SetAttributes(attribute.String("group", group.Name()))
 	}
 
-	filteredEvents, err := e.handler.Events(ctx, req.GetEvents(), user, group)
+	filteredCount, err := e.pipeline.ProcessAndSend(ctx, req.GetEvents(), user, group, "EventIngester.CreateEvents")
 	if err != nil {
-		errMsg := fmt.Errorf("failed to filter events: %w", err)
+		span.SetStatus(ocodes.Error, err.Error())
 
-		span.SetStatus(ocodes.Error, errMsg.Error())
-
-		return nil, status.Error(codes.Internal, errMsg.Error())
-	}
-
-	for _, sink := range e.sinks {
-		_, span := observability.Tracer().Start(ctx,
-			"EventIngester.CreateEvents.SendEventsToSink",
-			trace.WithAttributes(
-				attribute.String("sink", sink.Name()),
-				attribute.Int64("events", int64(len(filteredEvents))),
-			),
-		)
-
-		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
-			errMsg := fmt.Errorf("failed to handle new decorated events: %w", err)
-
-			span.SetStatus(ocodes.Error, errMsg.Error())
-			span.End()
-
-			return nil, status.Error(codes.Internal, errMsg.Error())
-		}
-
-		span.End()
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &xatu.CreateEventsResponse{
 		EventsIngested: &wrapperspb.UInt64Value{
-			Value: uint64(len(filteredEvents)),
+			Value: filteredCount,
 		},
 	}, nil
-}
-
-func (e *Ingester) CreateSinks() ([]output.Sink, error) {
-	sinks := make([]output.Sink, len(e.config.Outputs))
-
-	for i, out := range e.config.Outputs {
-		if out.ShippingMethod == nil {
-			shippingMethod := processor.ShippingMethodSync
-
-			out.ShippingMethod = &shippingMethod
-		}
-
-		sink, err := output.NewSink(out.Name,
-			out.SinkType,
-			out.Config,
-			e.log,
-			out.FilterConfig,
-			*out.ShippingMethod,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		sinks[i] = sink
-	}
-
-	return sinks, nil
 }

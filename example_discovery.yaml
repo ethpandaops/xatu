@@ -18,7 +18,7 @@ outputs:
   - name: clickhouse
     type: xatu
     config:
-      address: http://localhost:8081
+      address: http://localhost:8087
       headers:
         authorization: Someb64Value
   # Example of multiple outputs

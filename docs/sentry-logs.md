@@ -27,7 +27,7 @@ Sentry Logs is distributed as a Docker image.
 docker run -d \
   -e XATU_CLIENT_NAME=my-sentry-logs \
   -e XATU_NETWORK_NAME=mainnet \
-  -e XATU_SERVER_URL=http://your-xatu-server:8081/v1/events \
+  -e XATU_SERVER_URL=http://your-xatu-server:8087/v1/events \
   -e XATU_AUTH=$(echo -n "user:password" | base64) \
   -v /path/to/geth/logs:/var/log/geth:ro \
   -v /path/to/sources.d:/etc/xatu/sources.d:ro \
@@ -43,7 +43,7 @@ services:
     environment:
       XATU_CLIENT_NAME: my-sentry-logs
       XATU_NETWORK_NAME: mainnet
-      XATU_SERVER_URL: http://xatu-server:8081/v1/events
+      XATU_SERVER_URL: http://xatu-server:8087/v1/events
       XATU_AUTH: dXNlcjpwYXNzd29yZA==  # base64(user:password)
     volumes:
       - /var/log/geth:/var/log/geth:ro
@@ -64,7 +64,7 @@ services:
 | --- | --- | --- | --- |
 | XATU_CLIENT_NAME | **Yes** | | Unique name of the sentry-logs instance |
 | XATU_NETWORK_NAME | **Yes** | | Ethereum network name e.g. `mainnet`, `holesky`, `sepolia` |
-| XATU_SERVER_URL | **Yes** | | Xatu server HTTP endpoint (e.g., `http://xatu-server:8081/v1/events`) |
+| XATU_SERVER_URL | **Yes** | | Xatu server HTTP endpoint (e.g., `http://xatu-server:8087/v1/events`) |
 | XATU_AUTH | **Yes** | | Base64-encoded `username:password` for Basic authentication |
 
 The process will crash on startup if required environment variables are not set.
@@ -154,4 +154,4 @@ make sentry-logs-build
 
 | Event | ID | Description |
 | --- | --- | --- |
-| `EXECUTION_BLOCK_METRICS` | 86 | Block execution performance metrics including timing, state reads/writes, and cache statistics |
+| `EXECUTION_BLOCK_METRICS` | 87 | Block execution performance metrics including timing, state reads/writes, and cache statistics |

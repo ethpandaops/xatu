@@ -10,7 +10,7 @@ type Config struct {
 	// Enabled indicates whether the HTTP ingester is enabled.
 	Enabled bool `yaml:"enabled" default:"false"`
 	// Addr is the address to listen on for HTTP requests.
-	Addr string `yaml:"addr" default:":8081"`
+	Addr string `yaml:"addr" default:":8087"`
 }
 
 func (c *Config) Validate() error {

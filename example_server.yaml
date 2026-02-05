@@ -49,7 +49,7 @@ geoip:
 # Reuses services.eventIngester config for auth, outputs, etc.
 httpIngester:
   enabled: false
-  # addr: ":8081"
+  # addr: ":8087"
 
 services:
   coordinator:

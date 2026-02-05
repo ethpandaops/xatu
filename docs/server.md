@@ -66,7 +66,7 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | geoip.config | object |  | GeoIP Provider type configuration [`maxmind`](#geoip-maxmind-configuration) |
 | httpIngester | object |  | [HTTP Ingester](#http-ingester) configuration |
 | httpIngester.enabled | bool | `false` | Enable the HTTP ingester |
-| httpIngester.addr | string | `:8081` | The address to listen on for HTTP requests |
+| httpIngester.addr | string | `:8087` | The address to listen on for HTTP requests |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
@@ -133,7 +133,7 @@ services:
     - name: http-sink
       type: http
       config:
-        address: http://localhost:8081
+        address: http://localhost:8087
         headers:
           authorization: "Basic Someb64Value"
 ```
@@ -187,7 +187,7 @@ services:
     - name: http-sink
       type: http
       config:
-        address: http://localhost:8081
+        address: http://localhost:8087
         headers:
           authorization: "Basic Someb64Value"
     - name: kafka-sink
@@ -221,7 +221,7 @@ The HTTP ingester reuses the `services.eventIngester` configuration for authoriz
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | httpIngester.enabled | bool | `false` | Enable the HTTP ingester |
-| httpIngester.addr | string | `:8081` | The address to listen on for HTTP requests |
+| httpIngester.addr | string | `:8087` | The address to listen on for HTTP requests |
 
 ### HTTP Ingester Example
 
@@ -229,7 +229,7 @@ The HTTP ingester reuses the `services.eventIngester` configuration for authoriz
 # HTTP ingester reuses services.eventIngester config
 httpIngester:
   enabled: true
-  addr: ":8081"
+  addr: ":8087"
 
 services:
   eventIngester:

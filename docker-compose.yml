@@ -625,7 +625,7 @@ services:
       XATU_CLIENT_NAME: ${XATU_SENTRY_LOGS_CLIENT_NAME:-sentry-logs-test}
       XATU_NETWORK_NAME: ${XATU_SENTRY_LOGS_NETWORK_NAME:-local-testnet}
       XATU_AUTH: ${XATU_SENTRY_LOGS_AUTH:-}
-      XATU_SERVER_URL: http://xatu-server:8081/v1/events
+      XATU_SERVER_URL: http://xatu-server:8087/v1/events
       # Batch size of 1 ensures each CreateEventsRequest is sent separately
       # This avoids issues with protobuf message concatenation
       XATU_BATCH_MAX_EVENTS: 1

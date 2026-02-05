@@ -240,13 +240,38 @@ jobs:
       run: |
         echo "Testing sentry-logs execution_block_metrics pipeline"
 
+        # Debug: show running containers
+        echo "=== Running containers ==="
+        docker ps --format "{{.Names}}"
+
+        # Debug: show sentry-logs container logs
+        echo "=== sentry-logs container logs ==="
+        docker logs xatu-sentry-logs 2>&1 | tail -50 || echo "Container not found or no logs"
+
+        # Debug: show xatu-server logs
+        echo "=== xatu-server container logs ==="
+        docker logs xatu-server 2>&1 | tail -30 || echo "Container not found or no logs"
+
         # Inject fake "Slow block" log entries (geth format from PR #33655)
         for i in {1..5}; do
           echo '{"level":"warn","msg":"Slow block","block":{"number":'${i}',"hash":"0x'$(printf '%064d' ${i})'","gas_used":15000000,"tx_count":150},"timing":{"execution_ms":45.2,"state_read_ms":12.1,"state_hash_ms":8.3,"commit_ms":5.4,"total_ms":71.0},"throughput":{"mgas_per_sec":211.27},"state_reads":{"accounts":1234,"storage_slots":5678,"code":89,"code_bytes":45000},"state_writes":{"accounts":234,"accounts_deleted":5,"storage_slots":890,"storage_slots_deleted":12,"code":3,"code_bytes":15000},"cache":{"account":{"hits":1000,"misses":234,"hit_rate":81.0},"storage":{"hits":5000,"misses":678,"hit_rate":88.0},"code":{"hits":80,"misses":9,"hit_rate":89.9,"hit_bytes":40000,"miss_bytes":5000}}}' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
         done
 
         echo "Injected 5 test log entries"
+
+        # Debug: show the log file
+        echo "=== geth.log contents ==="
+        cat deploy/local/docker-compose/sentry-logs/logs/geth.log | head -10
+
         sleep 10
+
+        # Debug: show sentry-logs logs after injection
+        echo "=== sentry-logs logs after injection ==="
+        docker logs xatu-sentry-logs 2>&1 | tail -30 || echo "Container not found"
+
+        # Debug: show xatu-server logs after injection
+        echo "=== xatu-server logs after injection ==="
+        docker logs xatu-server 2>&1 | tail -30 || echo "Container not found"
 
         # Wait for data to reach ClickHouse
         max_retries=30
@@ -261,6 +286,12 @@ jobs:
           retry_count=$((retry_count + 1))
           if [[ $retry_count -ge $max_retries ]]; then
             echo "FAILED: Timeout waiting for execution_block_metrics data"
+            echo "=== Final sentry-logs logs ==="
+            docker logs xatu-sentry-logs 2>&1 | tail -100 || echo "Container not found"
+            echo "=== Final xatu-server logs ==="
+            docker logs xatu-server 2>&1 | tail -50 || echo "Container not found"
+            echo "=== Kafka topics ==="
+            docker exec xatu-kafka kafka-topics --list --bootstrap-server localhost:9092 2>/dev/null | grep execution || echo "No execution topics"
             exit 1
           fi
           sleep 5

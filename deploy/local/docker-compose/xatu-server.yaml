@@ -197,6 +197,7 @@ services:
             - BEACON_API_ETH_V2_BEACON_BLOCK
             - BEACON_API_ETH_V2_BEACON_BLOCK_V2
             - BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE
+            - BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 50000

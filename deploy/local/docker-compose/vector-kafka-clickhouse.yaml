@@ -452,6 +452,7 @@ transforms:
       node_record_consensus: .event.name == "NODE_RECORD_CONSENSUS"
       node_record_execution: .event.name == "NODE_RECORD_EXECUTION"
       canonical_beacon_sync_committee: .event.name == "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE"
+      canonical_beacon_block_sync_aggregate: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE"
   xatu_server_events_router_matched:
     type: log_to_metric
     inputs:
@@ -500,6 +501,7 @@ transforms:
       - xatu_server_events_router.node_record_consensus
       - xatu_server_events_router.node_record_execution
       - xatu_server_events_router.canonical_beacon_sync_committee
+      - xatu_server_events_router.canonical_beacon_block_sync_aggregate
       - xatu_server_events_router.consensus_engine_api_new_payload
       - xatu_server_events_router.consensus_engine_api_get_blobs
       - xatu_server_events_router.execution_engine_new_payload
@@ -2013,6 +2015,68 @@ transforms:
       del(.event)
       del(.meta)
       del(.data)
+  canonical_beacon_block_sync_aggregate_formatted:
+    type: remap
+    inputs:
+      - xatu_server_events_router.canonical_beacon_block_sync_aggregate
+    source: |-
+      event_date_time, err = parse_timestamp(.event.date_time, format: "%+");
+      if err == null {
+        .event_date_time = to_unix_timestamp(event_date_time, unit: "milliseconds")
+      } else {
+        .error = err
+        .error_description = "failed to parse event date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .slot = .meta.client.additional_data.block.slot.number
+      slot_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.slot.start_date_time, format: "%+");
+      if err == null {
+        .slot_start_date_time = to_unix_timestamp(slot_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse slot start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .epoch = .meta.client.additional_data.block.epoch.number
+      epoch_start_date_time, err = parse_timestamp(.meta.client.additional_data.block.epoch.start_date_time, format: "%+");
+      if err == null {
+        .epoch_start_date_time = to_unix_timestamp(epoch_start_date_time)
+      } else {
+        .error = err
+        .error_description = "failed to parse epoch start date time"
+        log(., level: "error", rate_limit_secs: 60)
+      }
+      .block_root = .meta.client.additional_data.block.root
+      .block_version = .meta.client.additional_data.block.version
+      .sync_committee_period = .meta.client.additional_data.sync_committee_period
+      .sync_committee_bits = .data.sync_committee_bits
+      .sync_committee_signature = .data.sync_committee_signature
+      # Convert validators_participated array of wrapped values to array of integers
+      participated_arr, err = array(.data.validators_participated)
+      if err == null {
+        .validators_participated = map_values(participated_arr) -> |v| {
+          int_val, conv_err = to_int(v)
+          if conv_err == null { int_val } else { 0 }
+        }
+      } else {
+        .validators_participated = []
+      }
+      # Convert validators_missed array of wrapped values to array of integers
+      missed_arr, err = array(.data.validators_missed)
+      if err == null {
+        .validators_missed = map_values(missed_arr) -> |v| {
+          int_val, conv_err = to_int(v)
+          if conv_err == null { int_val } else { 0 }
+        }
+      } else {
+        .validators_missed = []
+      }
+      .participation_count = .data.participation_count
+      .updated_date_time = to_unix_timestamp(now())
+
+      del(.event)
+      del(.meta)
+      del(.data)
   mev_relay_bid_trace_builder_block_submission_formatted:
     type: remap
     inputs:
@@ -3167,6 +3231,26 @@ sinks:
       timeout_secs: 1
     buffer:
       max_events: 1000000
+    healthcheck:
+      enabled: true
+    skip_unknown_fields: false
+  canonical_beacon_block_sync_aggregate_clickhouse:
+    type: clickhouse
+    inputs:
+      - canonical_beacon_block_sync_aggregate_formatted
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "${CLICKHOUSE_PASSWORD}"
+    database: default
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    table: canonical_beacon_block_sync_aggregate
+    batch:
+      max_bytes: 52428800
+      max_events: 200000
+      timeout_secs: 1
+    buffer:
+      max_events: 200000
     healthcheck:
       enabled: true
     skip_unknown_fields: false

@@ -194,6 +194,7 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_VALIDATORS = 12;
   BEACON_API_ETH_V1_BEACON_COMMITTEE = 13;
   BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 14;
+  BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 15;
 }
 
 message BackfillingCheckpointMarker {
@@ -272,6 +273,10 @@ message CannonLocationEthV1BeaconSyncCommittee {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationEthV2BeaconBlockSyncAggregate {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -315,6 +320,8 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V1_BEACON_COMMITTEE" ];
     CannonLocationEthV1BeaconSyncCommittee eth_v1_beacon_sync_committee = 17
         [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
+    CannonLocationEthV2BeaconBlockSyncAggregate eth_v2_beacon_block_sync_aggregate = 18
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
   }
 }
 

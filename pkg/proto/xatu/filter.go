@@ -126,12 +126,10 @@ func (f *eventFilter) shouldDropFromModules(event *DecoratedEvent) (bool, error)
 		return false, nil
 	}
 
+	// If the event has no module set and we're filtering by modules,
+	// drop the event (it doesn't match any required module).
 	if event.GetMeta().GetClient().GetModuleName() == 0 {
-		clientName := event.GetMeta().GetClient().GetName()
-
-		clientVersion := event.GetMeta().GetClient().GetVersion()
-
-		return true, fmt.Errorf("event.meta.client.module is empty for client: %s, version: %s", clientName, clientVersion)
+		return true, nil
 	}
 
 	_, ok := f.modules[event.GetMeta().GetClient().GetModuleName().String()]

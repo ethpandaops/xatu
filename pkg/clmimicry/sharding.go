@@ -3,7 +3,7 @@ package clmimicry
 import (
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -451,9 +451,7 @@ func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 	}
 
 	// Sort the result for consistency
-	sort.Slice(result, func(i, j int) bool {
-		return result[i] < result[j]
-	})
+	slices.Sort(result)
 
 	t.ActiveShards = result
 

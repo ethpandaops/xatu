@@ -1980,6 +1980,7 @@ message Event {
     BEACON_API_ETH_V1_BEACON_BLOB = 84;
     BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 85;
     BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
+    EXECUTION_BLOCK_METRICS = 87;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -1987,6 +1988,103 @@ message Event {
   google.protobuf.Timestamp date_time = 2 [ json_name = "date_time" ];
   // ID is the id of the event.
   string id = 3 [ json_name = "id" ];
+}
+
+// ExecutionBlockMetrics contains detailed performance metrics from execution
+// client structured logging output for block execution. Captures timing
+// breakdowns, state read/write counts, and cache hit rates for each block.
+message ExecutionBlockMetrics {
+  // Source identifies where this event was captured (e.g., "client-logs").
+  string source = 1 [ json_name = "source" ];
+
+  // Block info
+  // BlockNumber is the execution block number.
+  google.protobuf.UInt64Value block_number = 2 [ json_name = "block_number" ];
+  // BlockHash is the execution block hash (hex encoded with 0x prefix).
+  string block_hash = 3 [ json_name = "block_hash" ];
+  // GasUsed is the total gas used by all transactions in the block.
+  google.protobuf.UInt64Value gas_used = 4 [ json_name = "gas_used" ];
+  // TxCount is the number of transactions in the block.
+  google.protobuf.UInt32Value tx_count = 5 [ json_name = "tx_count" ];
+
+  // Timing in milliseconds
+  // ExecutionMs is the time spent executing transactions.
+  google.protobuf.DoubleValue execution_ms = 6 [ json_name = "execution_ms" ];
+  // StateReadMs is the time spent reading state.
+  google.protobuf.DoubleValue state_read_ms = 7 [ json_name = "state_read_ms" ];
+  // StateHashMs is the time spent computing state hash.
+  google.protobuf.DoubleValue state_hash_ms = 8 [ json_name = "state_hash_ms" ];
+  // CommitMs is the time spent committing state changes.
+  google.protobuf.DoubleValue commit_ms = 9 [ json_name = "commit_ms" ];
+  // TotalMs is the total time for block processing.
+  google.protobuf.DoubleValue total_ms = 10 [ json_name = "total_ms" ];
+
+  // Throughput
+  // MgasPerSec is the throughput in million gas per second.
+  google.protobuf.DoubleValue mgas_per_sec = 11 [ json_name = "mgas_per_sec" ];
+
+  // StateReads contains state read statistics.
+  message StateReads {
+    // Accounts is the number of account reads.
+    google.protobuf.UInt64Value accounts = 1 [ json_name = "accounts" ];
+    // StorageSlots is the number of storage slot reads.
+    google.protobuf.UInt64Value storage_slots = 2 [ json_name = "storage_slots" ];
+    // Code is the number of code reads.
+    google.protobuf.UInt64Value code = 3 [ json_name = "code" ];
+    // CodeBytes is the total bytes of code read.
+    google.protobuf.UInt64Value code_bytes = 4 [ json_name = "code_bytes" ];
+  }
+  // StateReads contains state read statistics.
+  StateReads state_reads = 12 [ json_name = "state_reads" ];
+
+  // StateWrites contains state write statistics.
+  message StateWrites {
+    // Accounts is the number of account writes.
+    google.protobuf.UInt64Value accounts = 1 [ json_name = "accounts" ];
+    // AccountsDeleted is the number of accounts deleted.
+    google.protobuf.UInt64Value accounts_deleted = 2 [ json_name = "accounts_deleted" ];
+    // StorageSlots is the number of storage slot writes.
+    google.protobuf.UInt64Value storage_slots = 3 [ json_name = "storage_slots" ];
+    // StorageSlotsDeleted is the number of storage slots deleted.
+    google.protobuf.UInt64Value storage_slots_deleted = 4 [ json_name = "storage_slots_deleted" ];
+    // Code is the number of code writes.
+    google.protobuf.UInt64Value code = 5 [ json_name = "code" ];
+    // CodeBytes is the total bytes of code written.
+    google.protobuf.UInt64Value code_bytes = 6 [ json_name = "code_bytes" ];
+  }
+  // StateWrites contains state write statistics.
+  StateWrites state_writes = 13 [ json_name = "state_writes" ];
+
+  // CacheEntry contains cache hit/miss statistics.
+  message CacheEntry {
+    // Hits is the number of cache hits.
+    google.protobuf.Int64Value hits = 1 [ json_name = "hits" ];
+    // Misses is the number of cache misses.
+    google.protobuf.Int64Value misses = 2 [ json_name = "misses" ];
+    // HitRate is the cache hit rate as a percentage.
+    google.protobuf.DoubleValue hit_rate = 3 [ json_name = "hit_rate" ];
+  }
+
+  // CodeCacheEntry extends CacheEntry with byte-level statistics.
+  message CodeCacheEntry {
+    // Hits is the number of cache hits.
+    google.protobuf.Int64Value hits = 1 [ json_name = "hits" ];
+    // Misses is the number of cache misses.
+    google.protobuf.Int64Value misses = 2 [ json_name = "misses" ];
+    // HitRate is the cache hit rate as a percentage.
+    google.protobuf.DoubleValue hit_rate = 3 [ json_name = "hit_rate" ];
+    // HitBytes is the total bytes of cache hits.
+    google.protobuf.Int64Value hit_bytes = 4 [ json_name = "hit_bytes" ];
+    // MissBytes is the total bytes of cache misses.
+    google.protobuf.Int64Value miss_bytes = 5 [ json_name = "miss_bytes" ];
+  }
+
+  // AccountCache contains account cache statistics.
+  CacheEntry account_cache = 14 [ json_name = "account_cache" ];
+  // StorageCache contains storage cache statistics.
+  CacheEntry storage_cache = 15 [ json_name = "storage_cache" ];
+  // CodeCache contains code cache statistics.
+  CodeCacheEntry code_cache = 16 [ json_name = "code_cache" ];
 }
 
 // DecoratedEvent is an event that has been decorated with additional
@@ -2187,6 +2285,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
     SyncAggregateData eth_v2_beacon_block_sync_aggregate = 208
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
+    ExecutionBlockMetrics execution_block_metrics = 209
+        [ json_name = "EXECUTION_BLOCK_METRICS" ];
   };
 }
 

@@ -44,6 +44,13 @@ geoip:
   #     cities: ./cities1000.txt # Optional: GeoNames cities file for city centroids
   #     countries: ./countries.txt # Optional: GeoNames countries file for country centroids
 
+# HTTP ingester provides an HTTP endpoint as an alternative to gRPC.
+# Useful for Vector-based log collectors like sentry-logs.
+# Reuses services.eventIngester config for auth, outputs, etc.
+httpIngester:
+  enabled: false
+  # addr: ":8087"
+
 services:
   coordinator:
     enabled: false # requires persistence to be enabled
@@ -54,6 +61,7 @@ services:
     #   maxExportBatchSize: 512
   eventIngester:
     enabled: true
+    clientNameSalt: "change-me-to-a-random-string"
     # authorization:
     #   enabled: true
     #   groups:

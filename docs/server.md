@@ -16,6 +16,7 @@ A centralized server running configurable services collecting events from client
 - [Services](#services)
   - [Coordinator](#coordinator)
   - [Event Ingester](#event-ingester)
+- [HTTP Ingester](#http-ingester)
 - [Persistence](#persistence)
   - [Migrations](#migrations)
 - [Running locally](#running-locally)
@@ -63,6 +64,9 @@ Server requires a single `yaml` config file. An example file can be found [here]
 | geoip.enabled | bool | `false` | Enable the geoip provider |
 | geoip.type | string | `maxmind` | Type of store (`maxmind`) |
 | geoip.config | object |  | GeoIP Provider type configuration [`maxmind`](#geoip-maxmind-configuration) |
+| httpIngester | object |  | [HTTP Ingester](#http-ingester) configuration |
+| httpIngester.enabled | bool | `false` | Enable the HTTP ingester |
+| httpIngester.addr | string | `:8087` | The address to listen on for HTTP requests |
 | services | object |  | [Services](#services) to run |
 | services.coordinator | object |  | [Coordinator](#coordinator) service |
 | services.coordinator.enabled | bool | `false` | Enable the coordinator service |
@@ -129,7 +133,7 @@ services:
     - name: http-sink
       type: http
       config:
-        address: http://localhost:8081
+        address: http://localhost:8087
         headers:
           authorization: "Basic Someb64Value"
 ```
@@ -183,7 +187,7 @@ services:
     - name: http-sink
       type: http
       config:
-        address: http://localhost:8081
+        address: http://localhost:8087
         headers:
           authorization: "Basic Someb64Value"
     - name: kafka-sink
@@ -206,7 +210,51 @@ The coordinator service is responsible for;
 
 ### Event Ingester
 
-The event ingester service is responsible for receiving events from clients (sentries), validating and then forwarding them to sinks.
+The event ingester service is responsible for receiving events from clients (sentries) via gRPC, validating and then forwarding them to sinks.
+
+## HTTP Ingester
+
+The HTTP ingester provides an HTTP endpoint for receiving events, as an alternative to the gRPC event ingester. This is useful for clients that cannot use gRPC, such as [Vector](https://vector.dev)-based log collectors like [Sentry Logs](./sentry-logs.md).
+
+The HTTP ingester reuses the `services.eventIngester` configuration for authorization, outputs, and other settings.
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| httpIngester.enabled | bool | `false` | Enable the HTTP ingester |
+| httpIngester.addr | string | `:8087` | The address to listen on for HTTP requests |
+
+### HTTP Ingester Example
+
+```yaml
+# HTTP ingester reuses services.eventIngester config
+httpIngester:
+  enabled: true
+  addr: ":8087"
+
+services:
+  eventIngester:
+    enabled: true
+    clientNameSalt: "your-salt-here"
+    authorization:
+      enabled: true
+      groups:
+        default:
+          users:
+            myuser:
+              password: mypassword
+    outputs:
+      - name: http-sink
+        type: http
+        config:
+          address: http://localhost:9005
+```
+
+### HTTP Endpoint
+
+- **POST** `/v1/events` - Submit events
+  - Content-Type: `application/json` or `application/x-protobuf`
+  - Content-Encoding: `gzip` (optional)
+  - Authorization: `Basic <base64(username:password)>`
 
 ## Persistence
 

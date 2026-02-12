@@ -18,6 +18,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service"
+	httpingester "github.com/ethpandaops/xatu/pkg/server/service/http-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/go-co-op/gocron/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -44,6 +45,7 @@ type Xatu struct {
 	metricsServer *http.Server
 	pprofServer   *http.Server
 	healthServer  *health.Server
+	httpIngester  *httpingester.Ingester
 
 	persistence   *persistence.Client
 	cache         store.Cache
@@ -114,6 +116,16 @@ func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Overr
 	}
 
 	xatuServer.services = services
+
+	// Create HTTP ingester if enabled (reuses services.eventIngester config)
+	if conf.HTTPIngester.Enabled {
+		hi, hiErr := httpingester.NewIngester(ctx, log, &conf.HTTPIngester, &conf.Services.EventIngester, &clockDrift, g, c)
+		if hiErr != nil {
+			return nil, fmt.Errorf("failed to create HTTP ingester: %w", hiErr)
+		}
+
+		xatuServer.httpIngester = hi
+	}
 
 	return xatuServer, nil
 }
@@ -196,6 +208,18 @@ func (x *Xatu) Start(ctx context.Context) error {
 		})
 	}
 
+	if x.httpIngester != nil {
+		g.Go(func() error {
+			if err := x.httpIngester.Start(ctx); err != nil {
+				if err != http.ErrServerClosed {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
 	g.Go(func() error {
 		if err := x.startGrpcServer(ctx); err != nil {
 			return err
@@ -238,6 +262,12 @@ func (x *Xatu) stop(ctx context.Context) error {
 
 	for _, s := range x.services {
 		if err := s.Stop(ctx); err != nil {
+			return err
+		}
+	}
+
+	if x.httpIngester != nil {
+		if err := x.httpIngester.Stop(ctx); err != nil {
 			return err
 		}
 	}

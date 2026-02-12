@@ -33,6 +33,11 @@ tracing:
   sampling:
     rate: 0.1
 
+httpIngester:
+  enabled: true
+  addr: ":8087"
+  # Note: HTTP ingester reuses services.eventIngester config for auth, outputs, etc.
+
 services:
   coordinator:
     enabled: true # requires persistence to be enabled
@@ -233,6 +238,21 @@ services:
           eventNames:
             - EXECUTION_ENGINE_NEW_PAYLOAD
             - EXECUTION_ENGINE_GET_BLOBS
+        config:
+          address: http://xatu-vector-http-kafka:9005
+          maxQueueSize: 50000
+          batchTimeout: 5s
+          exportTimeout: 30s
+          maxExportBatchSize: 64
+          compression: gzip
+          keepAlive: false
+          workers: 100
+      - name: sentry-logs
+        type: http
+        shippingMethod: async
+        filter:
+          eventNames:
+            - EXECUTION_BLOCK_METRICS
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 50000

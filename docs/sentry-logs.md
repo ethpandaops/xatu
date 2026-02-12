@@ -11,6 +11,7 @@ Unlike other Xatu components, Sentry Logs runs as a standalone Docker container 
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
   - [Log Sources](#log-sources)
+- [Supported Log Formats](#supported-log-formats)
 - [Execution Client Configuration](#execution-client-configuration)
   - [Geth](#geth)
 - [Development](#development)
@@ -52,7 +53,7 @@ services:
 
 ## Requirements
 
-- Ethereum execution client with JSON structured logging enabled
+- Ethereum execution client with block execution metrics logging enabled
 - [Xatu server](./server.md) with HTTP ingester enabled
 - Docker runtime
 
@@ -111,20 +112,34 @@ sources:
 
 **Important:** Source names must start with `ethereum_` to be processed by the Vector pipeline.
 
+## Supported Log Formats
+
+Sentry Logs automatically detects and parses the following log formats:
+
+| Format | Example |
+| --- | --- |
+| Raw JSON | `{"level":"warn","msg":"Slow block",...}` |
+| slog JSON (`--log.format json`) | `{"t":"...","lvl":"warn","msg":"{\"level\":\"warn\",...}"}` |
+| Terminal (`--log.format terminal`, default) | `WARN [01-28\|12:58:41.123] {"level":"warn","msg":"Slow block",...}` |
+| Logfmt (`--log.format logfmt`) | `t=2026-01-28T... lvl=warn msg="{\"level\":\"warn\",...}"` |
+
+No specific `--log.format` flag is required. All geth log formats are supported.
+
 ## Execution Client Configuration
 
 ### Geth
 
-To enable structured logging in geth with block execution metrics:
+To enable block execution metrics logging in geth:
 
 ```bash
-geth --log.format json --debug.logslowblock 0
+geth --debug.logslowblock 0
 ```
 
 | Flag | Description |
 | --- | --- |
-| `--log.format json` | Enables JSON structured logging |
 | `--debug.logslowblock 0` | Logs metrics for all blocks (threshold of 0ms means every block is logged) |
+
+Any `--log.format` value is supported (json, terminal, logfmt). If omitted, geth defaults to terminal format.
 
 ## Development
 

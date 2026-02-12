@@ -252,12 +252,24 @@ jobs:
         echo "=== xatu-server container logs ==="
         docker logs xatu-server 2>&1 | tail -30 || echo "Container not found or no logs"
 
-        # Inject fake "Slow block" log entries (geth format from PR #33655)
+        # Inject fake "Slow block" log entries in all supported formats
+
+        # Format 1: Raw JSON (geth format from PR #33655)
         for i in {1..5}; do
           echo '{"level":"warn","msg":"Slow block","block":{"number":'${i}',"hash":"0x'$(printf '%064d' ${i})'","gas_used":15000000,"tx_count":150},"timing":{"execution_ms":45.2,"state_read_ms":12.1,"state_hash_ms":8.3,"commit_ms":5.4,"total_ms":71.0},"throughput":{"mgas_per_sec":211.27},"state_reads":{"accounts":1234,"storage_slots":5678,"code":89,"code_bytes":45000},"state_writes":{"accounts":234,"accounts_deleted":5,"storage_slots":890,"storage_slots_deleted":12,"code":3,"code_bytes":15000},"cache":{"account":{"hits":1000,"misses":234,"hit_rate":81.0},"storage":{"hits":5000,"misses":678,"hit_rate":88.0},"code":{"hits":80,"misses":9,"hit_rate":89.9,"hit_bytes":40000,"miss_bytes":5000}}}' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
         done
 
-        echo "Injected 5 test log entries"
+        # Format 2: Terminal format (--log.format terminal, geth default)
+        for i in {6..10}; do
+          echo 'WARN [01-28|12:58:41.123] {"level":"warn","msg":"Slow block","block":{"number":'${i}',"hash":"0x'$(printf '%064d' ${i})'","gas_used":15000000,"tx_count":150},"timing":{"execution_ms":45.2,"state_read_ms":12.1,"state_hash_ms":8.3,"commit_ms":5.4,"total_ms":71.0},"throughput":{"mgas_per_sec":211.27},"state_reads":{"accounts":1234,"storage_slots":5678,"code":89,"code_bytes":45000},"state_writes":{"accounts":234,"accounts_deleted":5,"storage_slots":890,"storage_slots_deleted":12,"code":3,"code_bytes":15000},"cache":{"account":{"hits":1000,"misses":234,"hit_rate":81.0},"storage":{"hits":5000,"misses":678,"hit_rate":88.0},"code":{"hits":80,"misses":9,"hit_rate":89.9,"hit_bytes":40000,"miss_bytes":5000}}}' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
+        done
+
+        # Format 3: Logfmt format (--log.format logfmt)
+        for i in {11..15}; do
+          echo 't=2026-01-28T12:58:41+0000 lvl=warn msg="{\"level\":\"warn\",\"msg\":\"Slow block\",\"block\":{\"number\":'${i}',\"hash\":\"0x'$(printf '%064d' ${i})'\",\"gas_used\":15000000,\"tx_count\":150},\"timing\":{\"execution_ms\":45.2,\"state_read_ms\":12.1,\"state_hash_ms\":8.3,\"commit_ms\":5.4,\"total_ms\":71.0},\"throughput\":{\"mgas_per_sec\":211.27},\"state_reads\":{\"accounts\":1234,\"storage_slots\":5678,\"code\":89,\"code_bytes\":45000},\"state_writes\":{\"accounts\":234,\"accounts_deleted\":5,\"storage_slots\":890,\"storage_slots_deleted\":12,\"code\":3,\"code_bytes\":15000},\"cache\":{\"account\":{\"hits\":1000,\"misses\":234,\"hit_rate\":81.0},\"storage\":{\"hits\":5000,\"misses\":678,\"hit_rate\":88.0},\"code\":{\"hits\":80,\"misses\":9,\"hit_rate\":89.9,\"hit_bytes\":40000,\"miss_bytes\":5000}}}"' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
+        done
+
+        echo "Injected 15 test log entries (5 raw JSON, 5 terminal, 5 logfmt)"
 
         # Debug: show the log file
         echo "=== geth.log contents ==="
@@ -278,7 +290,7 @@ jobs:
         retry_count=0
         while true; do
           data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.execution_block_metrics" 2>/dev/null || echo "0")
-          if [[ "$data_count" -ge 5 ]]; then
+          if [[ "$data_count" -ge 15 ]]; then
             echo "SUCCESS: execution_block_metrics has $data_count entries"
             break
           fi

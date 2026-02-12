@@ -3,12 +3,19 @@
 #
 # Architecture:
 #   1. Sources: File inputs for each client type (ethereum_*)
-#   2. Parse: JSON parsing with nested JSON handling
+#   2. Parse: Multi-format parser (raw JSON, slog JSON, terminal, logfmt)
+#      then nested JSON handling for double-encoded messages
 #   3. Detect: Identify client type from log format
 #   4. Normalize: Client-specific transforms to common schema
 #   5. Route: Route normalized events by type
 #   6. Build: Construct Xatu DecoratedEvent
 #   7. Sink: Send to xatu-server HTTP ingester
+#
+# Supported log formats:
+#   - Raw JSON:  {"level":"warn","msg":"Slow block",...}
+#   - slog JSON: {"t":"...","lvl":"warn","msg":"{\"level\":\"warn\",...}"}
+#   - Terminal:  WARN [01-28|12:58:41.123] {"level":"warn","msg":"Slow block",...}
+#   - Logfmt:    t=2026-01-28T... lvl=warn msg="{\"level\":\"warn\",...}"
 #
 # Adding a new client:
 #   1. Add detection condition in `detect_client`
@@ -27,16 +34,38 @@ sources:
 
 transforms:
   # ============================================================================
-  # Stage 1: Parse JSON
+  # Stage 1: Multi-Format Log Parser
+  # Handles raw JSON, slog JSON, terminal, and logfmt formats.
+  # All formats produce the same JSON object for downstream stages.
   # ============================================================================
 
-  # Parse raw log lines into JSON objects
   parse_json:
     type: remap
     inputs: ["ethereum_*"]
     drop_on_error: true
     source: |
-      . = parse_json!(string!(.message))
+      raw = string!(.message)
+
+      # Strategy 1: Direct JSON parse (raw JSON and --log.format json)
+      parsed, err = parse_json(raw)
+      if err == null {
+        . = parsed
+      } else {
+        # Strategy 2: Terminal format — "LEVEL [timestamp] {json...}"
+        matched, regex_err = parse_regex(raw, r'^[A-Z]+\s+\[[^\]]+\]\s*(?P<json>\{.+\})\s*$')
+        if regex_err == null {
+          . = parse_json!(string!(matched.json))
+        } else {
+          # Strategy 3: Logfmt — extract msg field, parse as JSON
+          logfmt_parsed, logfmt_err = parse_logfmt(raw)
+          if logfmt_err == null {
+            msg_val = string(logfmt_parsed.msg) ?? ""
+            . = parse_json!(msg_val)
+          } else {
+            abort
+          }
+        }
+      }
 
   # Handle double-encoded JSON (some clients output JSON as string in msg field)
   parse_nested_json:

@@ -1,0 +1,44 @@
+logging: "info"
+metricsAddr: ":9090"
+# pprofAddr: ":6060"
+
+kafka:
+  brokers:
+    - localhost:9092
+  topics:
+    - "^general-.+"
+  consumerGroup: xatu-consumoor-general
+  encoding: json  # switch to "protobuf" after Vector removal
+  # offsetDefault: newest
+  # fetchMinBytes: 1
+  # fetchWaitMaxMs: 500
+  # maxPartitionFetchBytes: 10485760
+  # sessionTimeoutMs: 30000
+  # heartbeatIntervalMs: 3000
+  # version: "3.6.0"
+  # tls: false
+  # sasl:
+  #   mechanism: PLAIN
+  #   user: "username"
+  #   password: "password"
+
+clickhouse:
+  dsn: "clickhouse://localhost:9000/default"
+  defaults:
+    batchSize: 200000
+    batchBytes: 52428800     # 50MB
+    flushInterval: 1s
+    bufferSize: 200000
+  tables:
+    beacon_api_eth_v1_beacon_committee:
+      batchSize: 1000000
+      bufferSize: 1000000
+    beacon_api_eth_v1_events_attestation:
+      batchSize: 1000000
+      flushInterval: 5s
+      bufferSize: 1000000
+
+# Optional: disable specific events (replaces Vector blackhole sinks)
+# disabledEvents:
+#   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE
+#   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2

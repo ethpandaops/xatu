@@ -1,0 +1,301 @@
+package consumoor
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/IBM/sarama"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+)
+
+// KafkaConsumer wraps a Sarama consumer group and dispatches decoded
+// DecoratedEvents to a handler function.
+type KafkaConsumer struct {
+	log     logrus.FieldLogger
+	config  *KafkaConfig
+	metrics *Metrics
+
+	group   sarama.ConsumerGroup
+	handler *consumerGroupHandler
+
+	done chan struct{}
+	wg   sync.WaitGroup
+}
+
+// MessageHandler is called for each successfully decoded DecoratedEvent.
+type MessageHandler func(event *xatu.DecoratedEvent)
+
+// NewKafkaConsumer creates a Kafka consumer group. Call Start() to begin
+// consuming messages.
+func NewKafkaConsumer(
+	log logrus.FieldLogger,
+	config *KafkaConfig,
+	metrics *Metrics,
+	handler MessageHandler,
+) (*KafkaConsumer, error) {
+	saramaConfig, err := buildSaramaConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("building sarama config: %w", err)
+	}
+
+	group, err := sarama.NewConsumerGroup(config.Brokers, config.ConsumerGroup, saramaConfig)
+	if err != nil {
+		return nil, fmt.Errorf("creating consumer group: %w", err)
+	}
+
+	return &KafkaConsumer{
+		log:     log.WithField("component", "kafka_consumer"),
+		config:  config,
+		metrics: metrics,
+		group:   group,
+		handler: &consumerGroupHandler{
+			log:      log.WithField("component", "kafka_handler"),
+			encoding: config.Encoding,
+			metrics:  metrics,
+			handler:  handler,
+		},
+		done: make(chan struct{}),
+	}, nil
+}
+
+// Start begins consuming messages in a background goroutine.
+// The consumer will rejoin the group and rebalance automatically.
+func (c *KafkaConsumer) Start(ctx context.Context) error {
+	topics, err := c.resolveTopics()
+	if err != nil {
+		return fmt.Errorf("resolving topics: %w", err)
+	}
+
+	if len(topics) == 0 {
+		return fmt.Errorf("no topics matched patterns %v", c.config.Topics)
+	}
+
+	c.log.WithField("topics", topics).Info("Starting Kafka consumer")
+
+	c.wg.Go(func() {
+		for {
+			select {
+			case <-c.done:
+				return
+			default:
+			}
+
+			if err := c.group.Consume(ctx, topics, c.handler); err != nil {
+				c.log.WithError(err).Error("Consumer group error")
+
+				select {
+				case <-c.done:
+					return
+				case <-time.After(5 * time.Second):
+					// Retry after backoff
+				}
+			}
+		}
+	})
+
+	// Log consumer group errors
+	c.wg.Go(func() {
+		for {
+			select {
+			case <-c.done:
+				return
+			case err, ok := <-c.group.Errors():
+				if !ok {
+					return
+				}
+
+				c.log.WithError(err).Error("Consumer group error")
+			}
+		}
+	})
+
+	return nil
+}
+
+// Stop gracefully shuts down the Kafka consumer.
+func (c *KafkaConsumer) Stop() error {
+	close(c.done)
+
+	if err := c.group.Close(); err != nil {
+		return fmt.Errorf("closing consumer group: %w", err)
+	}
+
+	c.wg.Wait()
+
+	return nil
+}
+
+// resolveTopics expands regex topic patterns against the broker's
+// actual topic list.
+func (c *KafkaConsumer) resolveTopics() ([]string, error) {
+	saramaConfig, err := buildSaramaConfig(c.config)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := sarama.NewClient(c.config.Brokers, saramaConfig)
+	if err != nil {
+		return nil, fmt.Errorf("creating client for topic resolution: %w", err)
+	}
+
+	defer client.Close()
+
+	allTopics, err := client.Topics()
+	if err != nil {
+		return nil, fmt.Errorf("listing topics: %w", err)
+	}
+
+	matched := make(map[string]struct{}, len(allTopics))
+
+	for _, pattern := range c.config.Topics {
+		re, reErr := regexp.Compile(pattern)
+		if reErr != nil {
+			return nil, fmt.Errorf("compiling topic regex %q: %w", pattern, reErr)
+		}
+
+		for _, topic := range allTopics {
+			if re.MatchString(topic) {
+				matched[topic] = struct{}{}
+			}
+		}
+	}
+
+	topics := make([]string, 0, len(matched))
+	for t := range matched {
+		topics = append(topics, t)
+	}
+
+	return topics, nil
+}
+
+// consumerGroupHandler implements sarama.ConsumerGroupHandler.
+type consumerGroupHandler struct {
+	log      logrus.FieldLogger
+	encoding string
+	metrics  *Metrics
+	handler  MessageHandler
+}
+
+func (h *consumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+func (h *consumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+func (h *consumerGroupHandler) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
+	for msg := range claim.Messages() {
+		h.metrics.messagesConsumed.WithLabelValues(msg.Topic).Inc()
+
+		event, err := h.decode(msg.Value)
+		if err != nil {
+			h.log.WithError(err).
+				WithField("topic", msg.Topic).
+				WithField("partition", msg.Partition).
+				WithField("offset", msg.Offset).
+				Warn("Failed to decode message")
+
+			h.metrics.decodeErrors.WithLabelValues(msg.Topic).Inc()
+			session.MarkMessage(msg, "")
+
+			continue
+		}
+
+		h.handler(event)
+		session.MarkMessage(msg, "")
+	}
+
+	return nil
+}
+
+// decode deserializes a Kafka message value into a DecoratedEvent.
+func (h *consumerGroupHandler) decode(data []byte) (*xatu.DecoratedEvent, error) {
+	event := &xatu.DecoratedEvent{}
+
+	switch h.encoding {
+	case "protobuf":
+		if err := proto.Unmarshal(data, event); err != nil {
+			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
+		}
+	default:
+		if err := protojson.Unmarshal(data, event); err != nil {
+			return nil, fmt.Errorf("json unmarshal: %w", err)
+		}
+	}
+
+	return event, nil
+}
+
+// buildSaramaConfig creates a Sarama configuration from our KafkaConfig.
+func buildSaramaConfig(config *KafkaConfig) (*sarama.Config, error) {
+	c := sarama.NewConfig()
+
+	c.Consumer.Fetch.Min = config.FetchMinBytes
+	c.Consumer.MaxWaitTime = time.Duration(config.FetchWaitMaxMs) * time.Millisecond
+	c.Consumer.Fetch.Default = config.MaxPartitionFetchBytes
+	c.Consumer.Group.Session.Timeout = time.Duration(config.SessionTimeoutMs) * time.Millisecond
+	c.Consumer.Group.Heartbeat.Interval = time.Duration(config.HeartbeatIntervalMs) * time.Millisecond
+	c.Consumer.Return.Errors = true
+	c.Net.TLS.Enable = config.TLS
+	c.Metadata.Full = false
+
+	switch config.OffsetDefault {
+	case "oldest":
+		c.Consumer.Offsets.Initial = sarama.OffsetOldest
+	default:
+		c.Consumer.Offsets.Initial = sarama.OffsetNewest
+	}
+
+	if config.Version != "" {
+		version, err := sarama.ParseKafkaVersion(config.Version)
+		if err != nil {
+			return nil, fmt.Errorf("parsing kafka version: %w", err)
+		}
+
+		c.Version = version
+	}
+
+	if config.SASLConfig != nil {
+		var password string
+
+		if config.SASLConfig.Password != "" {
+			password = config.SASLConfig.Password
+		} else if config.SASLConfig.PasswordFile != "" {
+			data, err := os.ReadFile(config.SASLConfig.PasswordFile)
+			if err != nil {
+				return nil, fmt.Errorf("reading SASL password file: %w", err)
+			}
+
+			password = strings.TrimSpace(string(data))
+		}
+
+		c.Net.SASL.Enable = true
+		c.Net.SASL.User = config.SASLConfig.User
+		c.Net.SASL.Password = password
+
+		switch config.SASLConfig.Mechanism {
+		case "SCRAM-SHA-256":
+			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+		case "SCRAM-SHA-512":
+			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+		case "OAUTHBEARER":
+			c.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+		default:
+			c.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+		}
+	}
+
+	return c, nil
+}

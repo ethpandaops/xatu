@@ -199,8 +199,10 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 		gocron.DurationJob(c.config.Restart),
 		gocron.NewTask(
 			func(ctx context.Context) {
-				forkIDHashes := make([][]byte, len(c.config.ForkIDHashes))
+				var bootNodes []string
 
+				// Fetch execution boot node
+				forkIDHashes := make([][]byte, len(c.config.ForkIDHashes))
 				for i, forkIDHash := range c.config.ForkIDHashes {
 					forkIDHashBytes, err := hex.DecodeString(forkIDHash[2:])
 					if err == nil {
@@ -208,7 +210,7 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 					}
 				}
 
-				req := xatu.GetDiscoveryExecutionNodeRecordRequest{
+				execReq := xatu.GetDiscoveryExecutionNodeRecordRequest{
 					NetworkIds:   c.config.NetworkIds,
 					ForkIdHashes: forkIDHashes,
 				}
@@ -216,39 +218,15 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				md := metadata.New(c.config.Headers)
 				ctx = metadata.NewOutgoingContext(ctx, md)
 
-				res, err := c.pb.GetDiscoveryExecutionNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
-
+				execRes, err := c.pb.GetDiscoveryExecutionNodeRecord(ctx, &execReq, grpc.UseCompressor(gzip.Name))
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a execution discovery node record")
-
-					return
+					c.log.WithError(err).Error("Failed to get execution discovery node record")
+				} else {
+					bootNodes = append(bootNodes, execRes.NodeRecord)
 				}
 
-				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
-
-					return
-				}
-
-				if err := c.discV5.Start(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to start discV5")
-
-					return
-				}
-			},
-			ctx,
-		),
-		gocron.WithStartAt(gocron.WithStartImmediately()),
-	); err != nil {
-		return err
-	}
-
-	if _, err := c.scheduler.NewJob(
-		gocron.DurationJob(c.config.Restart),
-		gocron.NewTask(
-			func(ctx context.Context) {
+				// Fetch consensus boot node
 				forkDigests := make([][]byte, len(c.config.ForkDigests))
-
 				for i, forkDigest := range c.config.ForkDigests {
 					forkDigestBytes, err := hex.DecodeString(forkDigest[2:])
 					if err == nil {
@@ -256,32 +234,31 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 					}
 				}
 
-				req := xatu.GetDiscoveryConsensusNodeRecordRequest{
+				consReq := xatu.GetDiscoveryConsensusNodeRecordRequest{
 					NetworkIds:  c.config.NetworkIds,
 					ForkDigests: forkDigests,
 				}
 
-				md := metadata.New(c.config.Headers)
-				ctx = metadata.NewOutgoingContext(ctx, md)
-
-				res, err := c.pb.GetDiscoveryConsensusNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
-
+				consRes, err := c.pb.GetDiscoveryConsensusNodeRecord(ctx, &consReq, grpc.UseCompressor(gzip.Name))
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a consensus discovery node record")
-
-					return
+					c.log.WithError(err).Error("Failed to get consensus discovery node record")
+				} else {
+					bootNodes = append(bootNodes, consRes.NodeRecord)
 				}
 
-				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+				// Update boot nodes if we have any
+				if len(bootNodes) > 0 {
+					if err = c.discV5.UpdateBootNodes(bootNodes); err != nil {
+						c.log.WithError(err).Error("Failed to update discV5 boot nodes")
 
-					return
-				}
+						return
+					}
 
-				if err := c.discV5.Start(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to start discV5")
+					if err := c.discV5.Start(ctx); err != nil {
+						c.log.WithError(err).Error("Failed to start discV5")
 
-					return
+						return
+					}
 				}
 			},
 			ctx,

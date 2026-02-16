@@ -99,7 +99,7 @@ func beaconRoutes() []TableDefinition {
 		GenericTable(
 			TableCanonicalBeaconElaboratedAttestation,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION},
-			WithAliases(map[string]string{"validators": "validator_indexes"}),
+			WithAliases(map[string]string{"validator_indexes": "validators"}),
 		),
 		GenericTable(TableCanonicalBeaconBlockBlsToExecutionChange, []xatu.Event_Name{
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,

@@ -226,6 +226,56 @@ func TestSyncCommitteeMutator(t *testing.T) {
 	assert.Equal(t, []uint64{3}, aggs[1])
 }
 
+func TestFlattenDoesNotEmitLegacyUniqueColumn(t *testing.T) {
+	headRoute := findRouteByTable(t, "beacon_api_eth_v1_events_head")
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2, DateTime: timestamppb.Now(), Id: "head-1"},
+		Meta:  &xatu.Meta{Client: &xatu.ClientMeta{Name: "head-client"}},
+		Data: &xatu.DecoratedEvent_EthV1EventsHead{
+			EthV1EventsHead: &ethv1.EventHead{
+				Slot:  123,
+				Block: "0xabc",
+				State: "0xdef",
+			},
+		},
+	}
+
+	rows, err := headRoute.Flatten(event, metadata.Extract(event))
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+
+	assert.NotContains(t, rows[0], "unique")
+	assert.Contains(t, rows[0], "unique_key")
+}
+
+func TestElaboratedAttestationAliasesValidatorIndexesToValidators(t *testing.T) {
+	elaboratedAttestationRoute := findRouteByTable(t, "canonical_beacon_elaborated_attestation")
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION,
+			DateTime: timestamppb.Now(),
+			Id:       "elaborated-1",
+		},
+		Data: &xatu.DecoratedEvent_EthV2BeaconBlockElaboratedAttestation{
+			EthV2BeaconBlockElaboratedAttestation: &ethv1.ElaboratedAttestation{
+				ValidatorIndexes: []*wrapperspb.UInt64Value{
+					wrapperspb.UInt64(11),
+					wrapperspb.UInt64(22),
+				},
+			},
+		},
+	}
+
+	rows, err := elaboratedAttestationRoute.Flatten(event, metadata.Extract(event))
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+
+	assert.Contains(t, rows[0], "validators")
+	assert.NotContains(t, rows[0], "validator_indexes")
+}
+
 func findRouteByTable(t *testing.T, table string) Route {
 	t.Helper()
 

@@ -70,7 +70,6 @@ func (f *GenericFlattener) Flatten(event *xatu.DecoratedEvent, meta *metadata.Co
 	meta.CopyTo(row)
 
 	row["updated_date_time"] = time.Now().Unix()
-	row["unique"] = event.GetEvent().GetId()
 	row["unique_key"] = hashKey(event.GetEvent().GetId())
 
 	if ts := event.GetEvent().GetDateTime(); ts != nil {
@@ -473,6 +472,10 @@ func asTime(v any) (time.Time, bool) {
 
 func applyAliases(row map[string]any, aliases map[string]string) {
 	for from, to := range aliases {
+		if from == to {
+			continue
+		}
+
 		value, ok := row[from]
 		if !ok {
 			continue
@@ -487,6 +490,8 @@ func applyAliases(row map[string]any, aliases map[string]string) {
 		if _, exists := row[to]; !exists {
 			row[to] = value
 		}
+
+		delete(row, from)
 	}
 }
 

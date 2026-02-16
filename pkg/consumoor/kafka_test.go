@@ -302,3 +302,73 @@ func TestCommitCoordinator_IntervalTriggers(t *testing.T) {
 	assert.GreaterOrEqual(t, writer.flushCount(), 1)
 	assert.GreaterOrEqual(t, session.commitCount(), 1)
 }
+
+func TestBuildSaramaConfig_SCRAMMechanismsSetClientGenerator(t *testing.T) {
+	tests := []struct {
+		name      string
+		mechanism string
+		expected  sarama.SASLMechanism
+	}{
+		{
+			name:      "scram sha256",
+			mechanism: "SCRAM-SHA-256",
+			expected:  sarama.SASLTypeSCRAMSHA256,
+		},
+		{
+			name:      "scram sha512",
+			mechanism: "SCRAM-SHA-512",
+			expected:  sarama.SASLTypeSCRAMSHA512,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := buildSaramaConfig(&KafkaConfig{
+				OffsetDefault:          "oldest",
+				FetchMinBytes:          1,
+				FetchWaitMaxMs:         500,
+				MaxPartitionFetchBytes: 1_048_576,
+				SessionTimeoutMs:       30_000,
+				HeartbeatIntervalMs:    3_000,
+				SASLConfig:             &SASLConfig{Mechanism: tt.mechanism, User: "alice", Password: "secret"},
+				CommitInterval:         5 * time.Second,
+			})
+			require.NoError(t, err)
+
+			assert.True(t, cfg.Net.SASL.Enable)
+			assert.Equal(t, tt.expected, cfg.Net.SASL.Mechanism)
+			assert.NotNil(t, cfg.Net.SASL.SCRAMClientGeneratorFunc)
+			assert.Nil(t, cfg.Net.SASL.TokenProvider)
+			assert.NoError(t, cfg.Validate())
+
+			client := cfg.Net.SASL.SCRAMClientGeneratorFunc()
+			require.NotNil(t, client)
+			assert.NoError(t, client.Begin("alice", "secret", ""))
+		})
+	}
+}
+
+func TestBuildSaramaConfig_OAuthMechanismSetsTokenProvider(t *testing.T) {
+	cfg, err := buildSaramaConfig(&KafkaConfig{
+		OffsetDefault:          "oldest",
+		FetchMinBytes:          1,
+		FetchWaitMaxMs:         500,
+		MaxPartitionFetchBytes: 1_048_576,
+		SessionTimeoutMs:       30_000,
+		HeartbeatIntervalMs:    3_000,
+		SASLConfig:             &SASLConfig{Mechanism: "OAUTHBEARER", User: "alice", Password: "token-value"},
+		CommitInterval:         5 * time.Second,
+	})
+	require.NoError(t, err)
+
+	assert.True(t, cfg.Net.SASL.Enable)
+	assert.Equal(t, string(sarama.SASLTypeOAuth), string(cfg.Net.SASL.Mechanism))
+	assert.NotNil(t, cfg.Net.SASL.TokenProvider)
+	assert.Nil(t, cfg.Net.SASL.SCRAMClientGeneratorFunc)
+	assert.NoError(t, cfg.Validate())
+
+	token, err := cfg.Net.SASL.TokenProvider.Token()
+	require.NoError(t, err)
+	require.NotNil(t, token)
+	assert.Equal(t, "token-value", token.Token)
+}

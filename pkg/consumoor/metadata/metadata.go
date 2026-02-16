@@ -139,7 +139,7 @@ func Extract(event *xatu.DecoratedEvent) *CommonMetadata {
 // ToMap returns the common metadata as a flat map suitable for merging
 // into a ClickHouse row.
 func (m *CommonMetadata) ToMap() map[string]any {
-	row := make(map[string]any, 34)
+	row := make(map[string]any, 32)
 	m.CopyTo(row)
 
 	return row
@@ -152,8 +152,6 @@ func (m *CommonMetadata) CopyTo(dst map[string]any) {
 	dst["meta_client_version"] = m.MetaClientVersion
 	dst["meta_client_implementation"] = m.MetaClientImplementation
 	dst["meta_client_os"] = m.MetaClientOS
-	dst["meta_client_clock_drift"] = m.MetaClientClockDrift
-	dst["meta_client_module_name"] = m.MetaClientModuleName
 	dst["meta_client_ip"] = m.MetaClientIP
 
 	dst["meta_client_geo_city"] = m.MetaClientGeoCity

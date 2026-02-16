@@ -183,9 +183,11 @@ func TestNormalizeIP(t *testing.T) {
 
 func TestCommonMetadataToMap(t *testing.T) {
 	m := &CommonMetadata{
-		MetaClientName:  "test",
-		MetaNetworkName: "mainnet",
-		MetaLabels:      map[string]string{"k": "v"},
+		MetaClientName:       "test",
+		MetaNetworkName:      "mainnet",
+		MetaLabels:           map[string]string{"k": "v"},
+		MetaClientClockDrift: 42,
+		MetaClientModuleName: "module-test",
 	}
 
 	row := m.ToMap()
@@ -193,4 +195,6 @@ func TestCommonMetadataToMap(t *testing.T) {
 	assert.Equal(t, "test", row["meta_client_name"])
 	assert.Equal(t, "mainnet", row["meta_network_name"])
 	assert.Equal(t, map[string]string{"k": "v"}, row["meta_labels"])
+	assert.NotContains(t, row, "meta_client_clock_drift")
+	assert.NotContains(t, row, "meta_client_module_name")
 }

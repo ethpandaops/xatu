@@ -310,7 +310,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 				value = nil
 			}
 
-			cv, err := convertForType(value, tw.appenders[i].arg)
+			cv, err := convertForType(value, tw.appenders[i].arg, tw.appenders[i].name)
 			if err != nil {
 				if firstErr == nil {
 					firstErr = err
@@ -665,7 +665,7 @@ func isTrue(v string) bool {
 	}
 }
 
-func convertForType(value any, target reflect.Type) (reflect.Value, error) {
+func convertForType(value any, target reflect.Type, columnName string) (reflect.Value, error) {
 	if target == nil {
 		return reflect.Value{}, fmt.Errorf("nil target type")
 	}
@@ -683,7 +683,7 @@ func convertForType(value any, target reflect.Type) (reflect.Value, error) {
 	}
 
 	if target == timeType {
-		t, err := toTime(value)
+		t, err := toTime(value, columnName)
 		if err != nil {
 			return reflect.Value{}, err
 		}
@@ -694,7 +694,7 @@ func convertForType(value any, target reflect.Type) (reflect.Value, error) {
 	if target.Kind() == reflect.Struct &&
 		target.PkgPath() == "github.com/ClickHouse/ch-go/proto" &&
 		strings.HasPrefix(target.String(), "proto.Nullable[") {
-		return toNullableValue(value, target)
+		return toNullableValue(value, target, columnName)
 	}
 
 	switch target.Kind() {
@@ -750,15 +750,15 @@ func convertForType(value any, target reflect.Type) (reflect.Value, error) {
 
 		return out, nil
 	case reflect.Slice:
-		return convertSlice(value, target)
+		return convertSlice(value, target, columnName)
 	case reflect.Map:
-		return convertMap(value, target)
+		return convertMap(value, target, columnName)
 	default:
 		return reflect.Value{}, fmt.Errorf("unsupported conversion from %T to %s", value, target)
 	}
 }
 
-func toNullableValue(value any, target reflect.Type) (reflect.Value, error) {
+func toNullableValue(value any, target reflect.Type, columnName string) (reflect.Value, error) {
 	out := reflect.New(target).Elem()
 
 	valueField := out.FieldByName("Value")
@@ -767,7 +767,7 @@ func toNullableValue(value any, target reflect.Type) (reflect.Value, error) {
 		return reflect.Value{}, fmt.Errorf("invalid nullable type %s", target)
 	}
 
-	cv, err := convertForType(value, valueField.Type())
+	cv, err := convertForType(value, valueField.Type(), columnName)
 	if err != nil {
 		return reflect.Value{}, err
 	}
@@ -778,7 +778,7 @@ func toNullableValue(value any, target reflect.Type) (reflect.Value, error) {
 	return out, nil
 }
 
-func convertSlice(value any, target reflect.Type) (reflect.Value, error) {
+func convertSlice(value any, target reflect.Type, columnName string) (reflect.Value, error) {
 	if value == nil {
 		return reflect.Zero(target), nil
 	}
@@ -796,7 +796,7 @@ func convertSlice(value any, target reflect.Type) (reflect.Value, error) {
 
 	out := reflect.MakeSlice(target, rv.Len(), rv.Len())
 	for i := 0; i < rv.Len(); i++ {
-		cv, err := convertForType(rv.Index(i).Interface(), target.Elem())
+		cv, err := convertForType(rv.Index(i).Interface(), target.Elem(), columnName)
 		if err != nil {
 			return reflect.Value{}, fmt.Errorf("slice index %d: %w", i, err)
 		}
@@ -806,7 +806,7 @@ func convertSlice(value any, target reflect.Type) (reflect.Value, error) {
 	return out, nil
 }
 
-func convertMap(value any, target reflect.Type) (reflect.Value, error) {
+func convertMap(value any, target reflect.Type, columnName string) (reflect.Value, error) {
 	if value == nil {
 		return reflect.Zero(target), nil
 	}
@@ -825,11 +825,11 @@ func convertMap(value any, target reflect.Type) (reflect.Value, error) {
 	out := reflect.MakeMapWithSize(target, rv.Len())
 	iter := rv.MapRange()
 	for iter.Next() {
-		kv, err := convertForType(iter.Key().Interface(), target.Key())
+		kv, err := convertForType(iter.Key().Interface(), target.Key(), columnName)
 		if err != nil {
 			return reflect.Value{}, fmt.Errorf("map key: %w", err)
 		}
-		vv, err := convertForType(iter.Value().Interface(), target.Elem())
+		vv, err := convertForType(iter.Value().Interface(), target.Elem(), columnName)
 		if err != nil {
 			return reflect.Value{}, fmt.Errorf("map value: %w", err)
 		}
@@ -1021,24 +1021,24 @@ func toFloat64(value any) (float64, error) {
 	}
 }
 
-func toTime(value any) (time.Time, error) {
+func toTime(value any, columnName string) (time.Time, error) {
 	switch v := value.(type) {
 	case time.Time:
 		return v.UTC(), nil
 	case int64:
-		return time.UnixMilli(v).UTC(), nil
+		return unixNumericTime(v, columnName), nil
 	case int32:
-		return time.UnixMilli(int64(v)).UTC(), nil
+		return unixNumericTime(int64(v), columnName), nil
 	case int:
-		return time.UnixMilli(int64(v)).UTC(), nil
+		return unixNumericTime(int64(v), columnName), nil
 	case uint64:
 		if v > math.MaxInt64 {
 			return time.Time{}, fmt.Errorf("uint64 overflow to int64 for time: %d", v)
 		}
 
-		return time.UnixMilli(int64(v)).UTC(), nil
+		return unixNumericTime(int64(v), columnName), nil
 	case float64:
-		return time.UnixMilli(int64(v)).UTC(), nil
+		return unixNumericTime(int64(v), columnName), nil
 	case string:
 		trimmed := strings.TrimSpace(v)
 		if trimmed == "" {
@@ -1050,11 +1050,21 @@ func toTime(value any) (time.Time, error) {
 		}
 
 		if unixMillis, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
-			return time.UnixMilli(unixMillis).UTC(), nil
+			return unixNumericTime(unixMillis, columnName), nil
 		}
 
 		return time.Time{}, fmt.Errorf("cannot parse time %q", v)
 	default:
 		return time.Time{}, fmt.Errorf("cannot convert %T to time.Time", value)
 	}
+}
+
+func unixNumericTime(value int64, columnName string) time.Time {
+	// event_date_time is emitted as Unix milliseconds; other *_date_time
+	// fields are emitted as Unix seconds.
+	if columnName == "event_date_time" {
+		return time.UnixMilli(value).UTC()
+	}
+
+	return time.Unix(value, 0).UTC()
 }

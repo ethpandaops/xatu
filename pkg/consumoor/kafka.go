@@ -12,6 +12,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	xdgscram "github.com/xdg-go/scram"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -479,14 +480,66 @@ func buildSaramaConfig(config *KafkaConfig) (*sarama.Config, error) {
 		switch config.SASLConfig.Mechanism {
 		case "SCRAM-SHA-256":
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+			c.Net.SASL.SCRAMClientGeneratorFunc = newSCRAMSHA256Client
 		case "SCRAM-SHA-512":
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+			c.Net.SASL.SCRAMClientGeneratorFunc = newSCRAMSHA512Client
 		case "OAUTHBEARER":
 			c.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+			c.Net.SASL.TokenProvider = &staticAccessTokenProvider{token: password}
 		default:
 			c.Net.SASL.Mechanism = sarama.SASLTypePlaintext
 		}
 	}
 
 	return c, nil
+}
+
+type staticAccessTokenProvider struct {
+	token string
+}
+
+func (p *staticAccessTokenProvider) Token() (*sarama.AccessToken, error) {
+	token := strings.TrimSpace(p.token)
+	if token == "" {
+		return nil, fmt.Errorf("empty oauth bearer token")
+	}
+
+	return &sarama.AccessToken{Token: token}, nil
+}
+
+type xdgSCRAMClient struct {
+	generator xdgscram.HashGeneratorFcn
+	convo     *xdgscram.ClientConversation
+}
+
+func (c *xdgSCRAMClient) Begin(userName, password, authzID string) error {
+	client, err := c.generator.NewClient(userName, password, authzID)
+	if err != nil {
+		return err
+	}
+
+	c.convo = client.NewConversation()
+
+	return nil
+}
+
+func (c *xdgSCRAMClient) Step(challenge string) (string, error) {
+	if c.convo == nil {
+		return "", fmt.Errorf("scram conversation not initialized")
+	}
+
+	return c.convo.Step(challenge)
+}
+
+func (c *xdgSCRAMClient) Done() bool {
+	return c.convo != nil && c.convo.Done()
+}
+
+func newSCRAMSHA256Client() sarama.SCRAMClient {
+	return &xdgSCRAMClient{generator: xdgscram.SHA256}
+}
+
+func newSCRAMSHA512Client() sarama.SCRAMClient {
+	return &xdgSCRAMClient{generator: xdgscram.SHA512}
 }

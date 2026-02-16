@@ -28,7 +28,7 @@ type Consumoor struct {
 	metrics  *Metrics
 	router   *Router
 	consumer *KafkaConsumer
-	writer   *ClickHouseWriter
+	writer   Writer
 
 	metricsServer *http.Server
 	pprofServer   *http.Server
@@ -50,7 +50,7 @@ func New(
 	metrics := NewMetrics("xatu")
 
 	// Create the ClickHouse writer
-	writer, err := NewClickHouseWriter(
+	writer, err := NewWriter(
 		log,
 		&config.ClickHouse,
 		metrics,

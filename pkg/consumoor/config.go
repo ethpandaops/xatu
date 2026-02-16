@@ -134,6 +134,10 @@ func (c *SASLConfig) Validate() error {
 
 // ClickHouseConfig configures the ClickHouse writer.
 type ClickHouseConfig struct {
+	// Backend selects the ClickHouse client implementation.
+	// Valid values: "clickhouse-go" or "ch-go".
+	Backend string `yaml:"backend" default:"clickhouse-go"`
+
 	// DSN is the ClickHouse connection string.
 	DSN string `yaml:"dsn"`
 
@@ -158,6 +162,10 @@ type TableConfig struct {
 
 // Validate checks the ClickHouse configuration for errors.
 func (c *ClickHouseConfig) Validate() error {
+	if c.Backend != "clickhouse-go" && c.Backend != "ch-go" {
+		return errors.New("clickhouse: backend must be 'clickhouse-go' or 'ch-go'")
+	}
+
 	if c.DSN == "" {
 		return errors.New("clickhouse: dsn is required")
 	}

@@ -67,10 +67,7 @@ func (f *GenericFlattener) Flatten(event *xatu.DecoratedEvent, meta *metadata.Co
 	}
 
 	row := make(map[string]any, 96)
-
-	for k, v := range meta.ToMap() {
-		row[k] = v
-	}
+	meta.CopyTo(row)
 
 	row["updated_date_time"] = time.Now().Unix()
 	row["unique"] = event.GetEvent().GetId()
@@ -604,6 +601,33 @@ func stringNotFromAdditionalData(disallowed string, path ...string) EventPredica
 }
 
 func additionalDataPath(event *xatu.DecoratedEvent, path ...string) (any, bool) {
+	msg, ok := additionalDataMessage(event)
+	if !ok {
+		return nil, false
+	}
+
+	if value, ok := messagePathValue(msg, path...); ok {
+		return value, true
+	}
+
+	flat := messageToMap(msg)
+
+	flatKey := strings.Join(path, "_")
+	if value, ok := flat[flatKey]; ok {
+		return value, true
+	}
+
+	// fallback for direct fields
+	if len(path) == 1 {
+		if value, ok := flat[path[0]]; ok {
+			return value, true
+		}
+	}
+
+	return nil, false
+}
+
+func additionalDataMessage(event *xatu.DecoratedEvent) (protoreflect.Message, bool) {
 	if event == nil || event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
 		return nil, false
 	}
@@ -620,18 +644,50 @@ func additionalDataPath(event *xatu.DecoratedEvent, path ...string) (any, bool) 
 		return nil, false
 	}
 
-	flat := messageToMap(client.Get(field).Message())
+	return client.Get(field).Message(), true
+}
 
-	flatKey := strings.Join(path, "_")
-	if value, ok := flat[flatKey]; ok {
-		return value, true
-	}
+func messagePathValue(msg protoreflect.Message, path ...string) (any, bool) {
+	current := msg
 
-	// fallback for direct fields
-	if len(path) == 1 {
-		if value, ok := flat[path[0]]; ok {
-			return value, true
+	for i, segment := range path {
+		fd := current.Descriptor().Fields().ByName(protoreflect.Name(segment))
+		if fd == nil {
+			return nil, false
 		}
+
+		if !current.Has(fd) && !fd.IsList() && !fd.IsMap() {
+			return nil, false
+		}
+
+		value := current.Get(fd)
+		last := i == len(path)-1
+
+		if last {
+			switch {
+			case fd.IsMap():
+				return mapFromValue(value.Map(), fd.MapValue()), true
+			case fd.IsList():
+				return listFromValue(value.List(), fd), true
+			case fd.Kind() == protoreflect.MessageKind || fd.Kind() == protoreflect.GroupKind:
+				if unwrapped, ok := unwrapSpecialMessage(fd.Message(), value.Message()); ok {
+					return unwrapped, true
+				}
+
+				out := make(map[string]any, 16)
+				flattenProtoMessage("", value.Message(), out)
+
+				return out, true
+			default:
+				return scalarFromValue(fd, value), true
+			}
+		}
+
+		if fd.Kind() != protoreflect.MessageKind && fd.Kind() != protoreflect.GroupKind {
+			return nil, false
+		}
+
+		current = value.Message()
 	}
 
 	return nil, false
@@ -681,7 +737,8 @@ func (f *ValidatorsFanoutFlattener) Flatten(event *xatu.DecoratedEvent, meta *me
 		epochStart = t.Unix()
 	}
 
-	base := meta.ToMap()
+	base := make(map[string]any, 40)
+	meta.CopyTo(base)
 	base["updated_date_time"] = time.Now().Unix()
 	base["epoch"] = epoch
 	base["epoch_start_date_time"] = epochStart

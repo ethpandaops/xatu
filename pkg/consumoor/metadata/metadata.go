@@ -139,51 +139,55 @@ func Extract(event *xatu.DecoratedEvent) *CommonMetadata {
 // ToMap returns the common metadata as a flat map suitable for merging
 // into a ClickHouse row.
 func (m *CommonMetadata) ToMap() map[string]any {
-	row := map[string]any{
-		"meta_client_name":           m.MetaClientName,
-		"meta_client_id":             m.MetaClientID,
-		"meta_client_version":        m.MetaClientVersion,
-		"meta_client_implementation": m.MetaClientImplementation,
-		"meta_client_os":             m.MetaClientOS,
-		"meta_client_clock_drift":    m.MetaClientClockDrift,
-		"meta_client_module_name":    m.MetaClientModuleName,
-		"meta_client_ip":             m.MetaClientIP,
+	row := make(map[string]any, 34)
+	m.CopyTo(row)
 
-		"meta_client_geo_city":                           m.MetaClientGeoCity,
-		"meta_client_geo_country":                        m.MetaClientGeoCountry,
-		"meta_client_geo_country_code":                   m.MetaClientGeoCountryCode,
-		"meta_client_geo_continent_code":                 m.MetaClientGeoContinentCode,
-		"meta_client_geo_longitude":                      m.MetaClientGeoLongitude,
-		"meta_client_geo_latitude":                       m.MetaClientGeoLatitude,
-		"meta_client_geo_autonomous_system_number":       m.MetaClientGeoAutonomousSystemNumber,
-		"meta_client_geo_autonomous_system_organization": m.MetaClientGeoAutonomousSystemOrganization,
+	return row
+}
 
-		"meta_network_id":   m.MetaNetworkID,
-		"meta_network_name": m.MetaNetworkName,
+// CopyTo copies the metadata fields into dst.
+func (m *CommonMetadata) CopyTo(dst map[string]any) {
+	dst["meta_client_name"] = m.MetaClientName
+	dst["meta_client_id"] = m.MetaClientID
+	dst["meta_client_version"] = m.MetaClientVersion
+	dst["meta_client_implementation"] = m.MetaClientImplementation
+	dst["meta_client_os"] = m.MetaClientOS
+	dst["meta_client_clock_drift"] = m.MetaClientClockDrift
+	dst["meta_client_module_name"] = m.MetaClientModuleName
+	dst["meta_client_ip"] = m.MetaClientIP
 
-		"meta_consensus_implementation": m.MetaConsensusImplementation,
-		"meta_consensus_version":        m.MetaConsensusVersion,
-		"meta_consensus_version_major":  m.MetaConsensusVersionMajor,
-		"meta_consensus_version_minor":  m.MetaConsensusVersionMinor,
-		"meta_consensus_version_patch":  m.MetaConsensusVersionPatch,
+	dst["meta_client_geo_city"] = m.MetaClientGeoCity
+	dst["meta_client_geo_country"] = m.MetaClientGeoCountry
+	dst["meta_client_geo_country_code"] = m.MetaClientGeoCountryCode
+	dst["meta_client_geo_continent_code"] = m.MetaClientGeoContinentCode
+	dst["meta_client_geo_longitude"] = m.MetaClientGeoLongitude
+	dst["meta_client_geo_latitude"] = m.MetaClientGeoLatitude
+	dst["meta_client_geo_autonomous_system_number"] = m.MetaClientGeoAutonomousSystemNumber
+	dst["meta_client_geo_autonomous_system_organization"] = m.MetaClientGeoAutonomousSystemOrganization
 
-		"meta_execution_implementation": m.MetaExecutionImplementation,
-		"meta_execution_version":        m.MetaExecutionVersion,
-		"meta_execution_version_major":  m.MetaExecutionVersionMajor,
-		"meta_execution_version_minor":  m.MetaExecutionVersionMinor,
-		"meta_execution_version_patch":  m.MetaExecutionVersionPatch,
-		"meta_execution_fork_id_hash":   m.MetaExecutionForkIDHash,
-		"meta_execution_fork_id_next":   m.MetaExecutionForkIDNext,
-	}
+	dst["meta_network_id"] = m.MetaNetworkID
+	dst["meta_network_name"] = m.MetaNetworkName
+
+	dst["meta_consensus_implementation"] = m.MetaConsensusImplementation
+	dst["meta_consensus_version"] = m.MetaConsensusVersion
+	dst["meta_consensus_version_major"] = m.MetaConsensusVersionMajor
+	dst["meta_consensus_version_minor"] = m.MetaConsensusVersionMinor
+	dst["meta_consensus_version_patch"] = m.MetaConsensusVersionPatch
+
+	dst["meta_execution_implementation"] = m.MetaExecutionImplementation
+	dst["meta_execution_version"] = m.MetaExecutionVersion
+	dst["meta_execution_version_major"] = m.MetaExecutionVersionMajor
+	dst["meta_execution_version_minor"] = m.MetaExecutionVersionMinor
+	dst["meta_execution_version_patch"] = m.MetaExecutionVersionPatch
+	dst["meta_execution_fork_id_hash"] = m.MetaExecutionForkIDHash
+	dst["meta_execution_fork_id_next"] = m.MetaExecutionForkIDNext
 
 	// Labels as map column
 	if m.MetaLabels != nil {
-		row["meta_labels"] = m.MetaLabels
+		dst["meta_labels"] = m.MetaLabels
 	} else {
-		row["meta_labels"] = map[string]string{}
+		dst["meta_labels"] = map[string]string{}
 	}
-
-	return row
 }
 
 // normalizeIP converts IPv4 addresses to IPv6-mapped form for

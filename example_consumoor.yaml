@@ -23,6 +23,7 @@ kafka:
   #   password: "password"
 
 clickhouse:
+  backend: clickhouse-go  # "clickhouse-go" (http/tcp by DSN) or "ch-go" (native tcp)
   dsn: "clickhouse://localhost:9000/default"
   defaults:
     batchSize: 200000

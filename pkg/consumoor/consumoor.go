@@ -62,7 +62,12 @@ func New(
 	// Create the router with all registered flatteners.
 	registeredFlatteners := buildFlatteners()
 
-	router := NewRouter(log, registeredFlatteners, config.DisabledEvents, metrics)
+	disabledEvents, err := config.DisabledEventEnums()
+	if err != nil {
+		return nil, fmt.Errorf("invalid disabledEvents config: %w", err)
+	}
+
+	router := NewRouter(log, registeredFlatteners, disabledEvents, metrics)
 
 	c := &Consumoor{
 		log:     log.WithField("component", "consumoor"),

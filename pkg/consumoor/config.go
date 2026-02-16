@@ -2,7 +2,12 @@ package consumoor
 
 import (
 	"errors"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Config is the configuration for the consumoor service.
@@ -33,7 +38,37 @@ func (c *Config) Validate() error {
 		return err
 	}
 
+	if _, err := c.DisabledEventEnums(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// DisabledEventEnums parses disabled event names into typed enum values.
+// Unknown names are rejected to fail fast during startup.
+func (c *Config) DisabledEventEnums() ([]xatu.Event_Name, error) {
+	out := make([]xatu.Event_Name, 0, len(c.DisabledEvents))
+	invalid := make([]string, 0)
+
+	for _, name := range c.DisabledEvents {
+		val, ok := xatu.Event_Name_value[name]
+		if !ok {
+			invalid = append(invalid, name)
+
+			continue
+		}
+
+		out = append(out, xatu.Event_Name(val))
+	}
+
+	if len(invalid) > 0 {
+		sort.Strings(invalid)
+
+		return nil, fmt.Errorf("unknown disabledEvents: %s", strings.Join(invalid, ", "))
+	}
+
+	return out, nil
 }
 
 // KafkaConfig configures the Kafka consumer.

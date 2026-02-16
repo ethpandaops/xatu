@@ -28,6 +28,7 @@ type ChGoWriter struct {
 	config   *ClickHouseConfig
 	metrics  *Metrics
 	client   *ch.Client
+	clientMu sync.Mutex
 	database string
 
 	tables map[string]*chTableWriter
@@ -44,6 +45,7 @@ type chTableWriter struct {
 	config   TableConfig
 	metrics  *Metrics
 	client   *ch.Client
+	clientMu *sync.Mutex
 	buffer   chan []map[string]any
 	flushReq chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
@@ -148,6 +150,7 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 		config:   cfg,
 		metrics:  w.metrics,
 		client:   w.client,
+		clientMu: &w.clientMu,
 		buffer:   make(chan []map[string]any, cfg.BufferSize),
 		flushReq: make(chan chan error, 1),
 	}
@@ -172,10 +175,16 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 	batch := make([]map[string]any, 0, tw.config.BatchSize)
 	batchBytes := 0
+	flushBlocked := false
 
 	for {
+		bufferCh := tw.buffer
+		if flushBlocked {
+			bufferCh = nil
+		}
+
 		select {
-		case rows := <-tw.buffer:
+		case rows := <-bufferCh:
 			tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
 
 			for _, row := range rows {
@@ -185,35 +194,48 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
 				if err := tw.flush(context.Background(), batch); err != nil {
-					// Preserve batch for retry on next flush cycle
+					// Preserve batch for retry on next flush cycle. While
+					// pending, stop draining tw.buffer so channel backpressure
+					// remains bounded by BufferSize.
+					flushBlocked = true
+
 					continue
 				}
 
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+				flushBlocked = false
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
 				if err := tw.flush(context.Background(), batch); err != nil {
+					flushBlocked = true
+
 					continue
 				}
 
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+				flushBlocked = false
 			}
 
 		case errCh := <-tw.flushReq:
-			// Drain anything still in the channel into the batch
-		drainReq:
-			for {
-				select {
-				case rows := <-tw.buffer:
-					tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
+			if !flushBlocked {
+				// Drain anything still in the channel into the batch.
+			drainReq:
+				for {
+					select {
+					case rows := <-tw.buffer:
+						tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
 
-					batch = append(batch, rows...)
-				default:
-					break drainReq
+						for _, row := range rows {
+							batch = append(batch, row)
+							batchBytes += len(row) * 100
+						}
+					default:
+						break drainReq
+					}
 				}
 			}
 
@@ -222,6 +244,9 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 				if err == nil {
 					batch = make([]map[string]any, 0, tw.config.BatchSize)
 					batchBytes = 0
+					flushBlocked = false
+				} else {
+					flushBlocked = true
 				}
 				// On error: batch is PRESERVED for retry on next cycle
 				errCh <- err
@@ -234,7 +259,10 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			for {
 				select {
 				case rows := <-tw.buffer:
-					batch = append(batch, rows...)
+					for _, row := range rows {
+						batch = append(batch, row)
+						batchBytes += len(row) * 100
+					}
 				default:
 					break drainLoop
 				}
@@ -255,7 +283,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 	}
 
 	start := time.Now()
-	columns := sortedColumns(rows[0])
+	columns := sortedColumns(rows)
 
 	if err := tw.ensureInput(ctx, columns); err != nil {
 		tw.log.WithError(err).
@@ -319,7 +347,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 		return nil
 	}
 
-	if err := tw.client.Do(ctx, ch.Query{
+	if err := tw.do(ctx, &ch.Query{
 		Body:  tw.input.Into(tw.table),
 		Input: tw.input,
 	}); err != nil {
@@ -464,7 +492,7 @@ func (tw *chTableWriter) loadColumnTypes(ctx context.Context, columns []string) 
 	var names proto.ColStr
 	var types proto.ColStr
 
-	if err := tw.client.Do(ctx, ch.Query{
+	if err := tw.do(ctx, &ch.Query{
 		Body: query,
 		Result: proto.Results{
 			{Name: "name", Data: &names},
@@ -488,6 +516,13 @@ func (tw *chTableWriter) loadColumnTypes(ctx context.Context, columns []string) 
 	}
 
 	return out, nil
+}
+
+func (tw *chTableWriter) do(ctx context.Context, query *ch.Query) error {
+	tw.clientMu.Lock()
+	defer tw.clientMu.Unlock()
+
+	return tw.client.Do(ctx, *query)
 }
 
 func newColumnAppender(name string, data any) (columnAppender, error) {
@@ -589,10 +624,17 @@ func quoteCHString(v string) string {
 	return "'" + strings.ReplaceAll(v, "'", "''") + "'"
 }
 
-func sortedColumns(row map[string]any) []string {
-	cols := make([]string, 0, len(row))
-	for k := range row {
-		cols = append(cols, k)
+func sortedColumns(rows []map[string]any) []string {
+	seen := make(map[string]struct{})
+	for _, row := range rows {
+		for col := range row {
+			seen[col] = struct{}{}
+		}
+	}
+
+	cols := make([]string, 0, len(seen))
+	for col := range seen {
+		cols = append(cols, col)
 	}
 
 	sort.Strings(cols)
@@ -984,19 +1026,19 @@ func toTime(value any) (time.Time, error) {
 	case time.Time:
 		return v.UTC(), nil
 	case int64:
-		return time.Unix(v, 0).UTC(), nil
+		return time.UnixMilli(v).UTC(), nil
 	case int32:
-		return time.Unix(int64(v), 0).UTC(), nil
+		return time.UnixMilli(int64(v)).UTC(), nil
 	case int:
-		return time.Unix(int64(v), 0).UTC(), nil
+		return time.UnixMilli(int64(v)).UTC(), nil
 	case uint64:
 		if v > math.MaxInt64 {
 			return time.Time{}, fmt.Errorf("uint64 overflow to int64 for time: %d", v)
 		}
 
-		return time.Unix(int64(v), 0).UTC(), nil
+		return time.UnixMilli(int64(v)).UTC(), nil
 	case float64:
-		return time.Unix(int64(v), 0).UTC(), nil
+		return time.UnixMilli(int64(v)).UTC(), nil
 	case string:
 		trimmed := strings.TrimSpace(v)
 		if trimmed == "" {
@@ -1007,8 +1049,8 @@ func toTime(value any) (time.Time, error) {
 			return parsed.UTC(), nil
 		}
 
-		if unixSec, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
-			return time.Unix(unixSec, 0).UTC(), nil
+		if unixMillis, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
+			return time.UnixMilli(unixMillis).UTC(), nil
 		}
 
 		return time.Time{}, fmt.Errorf("cannot parse time %q", v)

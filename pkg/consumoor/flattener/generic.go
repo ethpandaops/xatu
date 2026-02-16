@@ -22,7 +22,7 @@ type RowMutator func(event *xatu.DecoratedEvent, meta *metadata.CommonMetadata, 
 // GenericFlattener provides proto-driven flattening for one table/event set.
 type GenericFlattener struct {
 	eventNames   []xatu.Event_Name
-	tableName    string
+	tableName    TableName
 	should       EventPredicate
 	rowMutator   RowMutator
 	extraAliases map[string]string
@@ -30,7 +30,7 @@ type GenericFlattener struct {
 
 // NewGenericFlattener creates a generic proto-driven flattener.
 func NewGenericFlattener(
-	table string,
+	table TableName,
 	events []xatu.Event_Name,
 	predicate EventPredicate,
 	mutator RowMutator,
@@ -50,7 +50,7 @@ func (f *GenericFlattener) EventNames() []xatu.Event_Name {
 }
 
 func (f *GenericFlattener) TableName() string {
-	return f.tableName
+	return string(f.tableName)
 }
 
 func (f *GenericFlattener) ShouldProcess(event *xatu.DecoratedEvent) bool {
@@ -84,7 +84,7 @@ func (f *GenericFlattener) Flatten(event *xatu.DecoratedEvent, meta *metadata.Co
 	flattenClientAdditionalData(event, row)
 	flattenServerAdditionalData(event, row)
 
-	applyTableAliases(f.tableName, row)
+	applyTableAliases(string(f.tableName), row)
 	applyAliases(row, f.extraAliases)
 	normalizeDateTimeColumns(row)
 	enrichCommon(row, event.GetEvent().GetName())
@@ -709,11 +709,19 @@ func messageToMap(msg protoreflect.Message) map[string]any {
 
 // ValidatorsFanoutFlattener fans out canonical validators events to three tables.
 type ValidatorsFanoutFlattener struct {
-	table string
-	kind  string
+	table TableName
+	kind  ValidatorsFanoutKind
 }
 
-func NewValidatorsFanoutFlattener(table, kind string) *ValidatorsFanoutFlattener {
+type ValidatorsFanoutKind string
+
+const (
+	ValidatorsFanoutKindValidators           ValidatorsFanoutKind = "validators"
+	ValidatorsFanoutKindPubkeys              ValidatorsFanoutKind = "pubkeys"
+	ValidatorsFanoutKindWithdrawalCredential ValidatorsFanoutKind = "withdrawal_credentials"
+)
+
+func NewValidatorsFanoutFlattener(table TableName, kind ValidatorsFanoutKind) *ValidatorsFanoutFlattener {
 	return &ValidatorsFanoutFlattener{table: table, kind: kind}
 }
 
@@ -722,7 +730,7 @@ func (f *ValidatorsFanoutFlattener) EventNames() []xatu.Event_Name {
 }
 
 func (f *ValidatorsFanoutFlattener) TableName() string {
-	return f.table
+	return string(f.table)
 }
 
 func (f *ValidatorsFanoutFlattener) ShouldProcess(_ *xatu.DecoratedEvent) bool {
@@ -765,7 +773,7 @@ func (f *ValidatorsFanoutFlattener) Flatten(event *xatu.DecoratedEvent, meta *me
 		}
 
 		switch f.kind {
-		case "validators":
+		case ValidatorsFanoutKindValidators:
 			if validator.GetStatus() != nil {
 				row["status"] = validator.GetStatus().GetValue()
 			}
@@ -788,11 +796,11 @@ func (f *ValidatorsFanoutFlattener) Flatten(event *xatu.DecoratedEvent, meta *me
 			if validator.GetBalance() != nil && validator.GetBalance().GetValue() != 0 {
 				row["balance"] = validator.GetBalance().GetValue()
 			}
-		case "pubkeys":
+		case ValidatorsFanoutKindPubkeys:
 			if data := validator.GetData(); data != nil && data.GetPubkey() != nil {
 				row["pubkey"] = data.GetPubkey().GetValue()
 			}
-		case "withdrawal_credentials":
+		case ValidatorsFanoutKindWithdrawalCredential:
 			if data := validator.GetData(); data != nil && data.GetWithdrawalCredentials() != nil {
 				row["withdrawal_credentials"] = data.GetWithdrawalCredentials().GetValue()
 			}

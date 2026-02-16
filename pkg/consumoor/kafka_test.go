@@ -247,6 +247,22 @@ func TestCommitCoordinator_MultiTopicPartition(t *testing.T) {
 	assert.Equal(t, int64(51), markMap["topicB/0"])  // 50+1
 }
 
+func TestCommitCoordinator_OffsetZeroIsCommitted(t *testing.T) {
+	writer := &mockWriter{}
+	session := &mockSession{}
+	cc := newTestCoordinator(writer, session, time.Hour)
+
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 2, Offset: 0})
+	cc.commit()
+
+	marks := session.getMarks()
+	require.Len(t, marks, 1)
+	assert.Equal(t, "t1", marks[0].topic)
+	assert.Equal(t, int32(2), marks[0].partition)
+	assert.Equal(t, int64(1), marks[0].offset) // 0+1
+	assert.Equal(t, 1, session.commitCount())
+}
+
 func TestCommitCoordinator_StopFinalFlush(t *testing.T) {
 	writer := &mockWriter{}
 	session := &mockSession{}

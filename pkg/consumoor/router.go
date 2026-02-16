@@ -35,7 +35,7 @@ type Router struct {
 func NewRouter(
 	log logrus.FieldLogger,
 	flatteners []flattener.Flattener,
-	disabledEvents []string,
+	disabledEvents []xatu.Event_Name,
 	metrics *Metrics,
 ) *Router {
 	r := &Router{
@@ -54,14 +54,7 @@ func NewRouter(
 
 	// Build disabled events set
 	for _, name := range disabledEvents {
-		val, ok := xatu.Event_Name_value[name]
-		if !ok {
-			log.WithField("event_name", name).Warn("Unknown disabled event name, skipping")
-
-			continue
-		}
-
-		r.disabledEvents[xatu.Event_Name(val)] = struct{}{}
+		r.disabledEvents[name] = struct{}{}
 	}
 
 	// Log registration summary

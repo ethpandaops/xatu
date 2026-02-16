@@ -401,7 +401,8 @@ func (cc *commitCoordinator) commit() {
 			highwater[msg.topic] = parts
 		}
 
-		if msg.offset > parts[msg.partition] {
+		current, ok := parts[msg.partition]
+		if !ok || msg.offset > current {
 			parts[msg.partition] = msg.offset
 		}
 	}

@@ -31,15 +31,13 @@ type ClickHouseWriter struct {
 
 // tableWriter manages buffered rows for a single ClickHouse table.
 type tableWriter struct {
-	log       logrus.FieldLogger
-	table     string
-	config    TableConfig
-	metrics   *Metrics
-	conn      driver.Conn
-	buffer    chan []map[string]any
-	flushReq  chan chan error // coordinator sends a response channel; tableWriter flushes and replies
-	columns   []string
-	columnsMu sync.RWMutex
+	log      logrus.FieldLogger
+	table    string
+	config   TableConfig
+	metrics  *Metrics
+	conn     driver.Conn
+	buffer   chan []map[string]any
+	flushReq chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 }
 
 // NewClickHouseWriter creates a new ClickHouse writer. Call Start() to
@@ -163,10 +161,16 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 
 	batch := make([]map[string]any, 0, tw.config.BatchSize)
 	batchBytes := 0
+	flushBlocked := false
 
 	for {
+		bufferCh := tw.buffer
+		if flushBlocked {
+			bufferCh = nil
+		}
+
 		select {
-		case rows := <-tw.buffer:
+		case rows := <-bufferCh:
 			tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
 
 			for _, row := range rows {
@@ -178,35 +182,48 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 			// Flush if batch size or byte limit reached
 			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
 				if err := tw.flush(context.Background(), batch); err != nil {
-					// Preserve batch for retry on next flush cycle
+					// Preserve batch for retry on next flush cycle. While
+					// pending, stop draining tw.buffer so channel backpressure
+					// remains bounded by BufferSize.
+					flushBlocked = true
+
 					continue
 				}
 
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+				flushBlocked = false
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
 				if err := tw.flush(context.Background(), batch); err != nil {
+					flushBlocked = true
+
 					continue
 				}
 
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+				flushBlocked = false
 			}
 
 		case errCh := <-tw.flushReq:
-			// Drain anything still in the channel into the batch
-		drainReq:
-			for {
-				select {
-				case rows := <-tw.buffer:
-					tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
+			if !flushBlocked {
+				// Drain anything still in the channel into the batch.
+			drainReq:
+				for {
+					select {
+					case rows := <-tw.buffer:
+						tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
 
-					batch = append(batch, rows...)
-				default:
-					break drainReq
+						for _, row := range rows {
+							batch = append(batch, row)
+							batchBytes += len(row) * 100
+						}
+					default:
+						break drainReq
+					}
 				}
 			}
 
@@ -215,6 +232,9 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 				if err == nil {
 					batch = make([]map[string]any, 0, tw.config.BatchSize)
 					batchBytes = 0
+					flushBlocked = false
+				} else {
+					flushBlocked = true
 				}
 				// On error: batch is PRESERVED for retry on next cycle
 				errCh <- err
@@ -228,7 +248,10 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 			for {
 				select {
 				case rows := <-tw.buffer:
-					batch = append(batch, rows...)
+					for _, row := range rows {
+						batch = append(batch, row)
+						batchBytes += len(row) * 100
+					}
 				default:
 					break drainLoop
 				}
@@ -252,8 +275,9 @@ func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) error {
 
 	start := time.Now()
 
-	// Determine column order from the first row (cached after first call)
-	columns := tw.getColumns(rows[0])
+	// Determine column order from the full batch so sparse/optional fields
+	// in later rows are not silently dropped.
+	columns := tw.getColumns(rows)
 
 	// Build INSERT statement
 	query := fmt.Sprintf(
@@ -360,37 +384,23 @@ func (w *ClickHouseWriter) FlushAll(ctx context.Context) error {
 	return firstErr
 }
 
-// getColumns returns a stable, sorted list of column names from a row.
-// The column list is cached after the first call since all rows for a
-// given table should have the same columns.
-func (tw *tableWriter) getColumns(row map[string]any) []string {
-	tw.columnsMu.RLock()
+// getColumns returns a stable, sorted list of column names for this batch.
+// Rows can be sparse, so we must include keys from every row.
+func (tw *tableWriter) getColumns(rows []map[string]any) []string {
+	seen := make(map[string]struct{})
 
-	if tw.columns != nil {
-		cols := tw.columns
-		tw.columnsMu.RUnlock()
-
-		return cols
+	for _, row := range rows {
+		for col := range row {
+			seen[col] = struct{}{}
+		}
 	}
 
-	tw.columnsMu.RUnlock()
-
-	tw.columnsMu.Lock()
-	defer tw.columnsMu.Unlock()
-
-	// Double-check
-	if tw.columns != nil {
-		return tw.columns
-	}
-
-	cols := make([]string, 0, len(row))
-	for k := range row {
-		cols = append(cols, k)
+	cols := make([]string, 0, len(seen))
+	for col := range seen {
+		cols = append(cols, col)
 	}
 
 	sort.Strings(cols)
-
-	tw.columns = cols
 
 	return cols
 }

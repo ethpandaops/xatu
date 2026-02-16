@@ -1,6 +1,8 @@
 package flattener
 
 import (
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +16,73 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+func TestRegistryCoversAllKnownEvents(t *testing.T) {
+	// Explicitly document events consumoor intentionally does not flatten yet.
+	unsupported := map[xatu.Event_Name]string{
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:          "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2:       "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:    "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2: "debug stream not modeled as table output",
+		xatu.Event_BEACON_P2P_ATTESTATION:                       "legacy event path not consumed by consumoor",
+		xatu.Event_BLOCKPRINT_BLOCK_CLASSIFICATION:              "deprecated upstream event",
+	}
+
+	covered := make(map[xatu.Event_Name]struct{}, 128)
+
+	for _, f := range All() {
+		for _, event := range f.EventNames() {
+			covered[event] = struct{}{}
+		}
+	}
+
+	missing := make([]string, 0)
+
+	for number, name := range xatu.Event_Name_name {
+		event := xatu.Event_Name(number)
+
+		// UNKNOWN sentinels should never require a flattener.
+		if strings.HasSuffix(name, "UNKNOWN") {
+			continue
+		}
+
+		_, hasFlattener := covered[event]
+		reason, isUnsupported := unsupported[event]
+
+		if hasFlattener && isUnsupported {
+			t.Fatalf(
+				"event %s is both covered and listed unsupported: %s",
+				event.String(),
+				reason,
+			)
+		}
+
+		if !hasFlattener && !isUnsupported {
+			missing = append(missing, event.String())
+		}
+	}
+
+	sort.Strings(missing)
+	require.Emptyf(
+		t,
+		missing,
+		"new event(s) require routing decision: add flattener or document intentional exclusion: %v",
+		missing,
+	)
+
+	// Keep the unsupported list honest.
+	for event, reason := range unsupported {
+		require.NotEmptyf(t, reason, "unsupported event %s must include reason", event.String())
+
+		if _, ok := xatu.Event_Name_name[int32(event)]; !ok {
+			t.Fatalf("unsupported list contains unknown enum: %d", event)
+		}
+
+		if _, ok := covered[event]; ok {
+			t.Fatalf("unsupported event %s now has a flattener; remove from unsupported list", event.String())
+		}
+	}
+}
 
 func TestConditionalRoutingPredicates(t *testing.T) {
 	canonicalCommittee := findFlattenerByTable(t, "canonical_beacon_committee")

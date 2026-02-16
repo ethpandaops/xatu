@@ -427,18 +427,25 @@ func joinKey(prefix, key string) string {
 
 func normalizeDateTimeColumns(row map[string]any) {
 	for k, v := range row {
+		isEventDateTime := k == "event_date_time"
+		isDateTimeSuffix := strings.HasSuffix(k, "_date_time")
+
+		if !isEventDateTime && !isDateTimeSuffix {
+			continue
+		}
+
 		t, ok := asTime(v)
 		if !ok {
 			continue
 		}
 
-		if k == "event_date_time" {
+		if isEventDateTime {
 			row[k] = t.UnixMilli()
 
 			continue
 		}
 
-		if strings.HasSuffix(k, "_date_time") {
+		if isDateTimeSuffix {
 			row[k] = t.Unix()
 		}
 	}

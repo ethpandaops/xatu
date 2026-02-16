@@ -45,6 +45,7 @@ type chTableWriter struct {
 	metrics  *Metrics
 	client   *ch.Client
 	buffer   chan []map[string]any
+	flushReq chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
 	columnsMu sync.RWMutex
 	columns   []string
@@ -111,17 +112,15 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 }
 
 // Write enqueues rows for table batching.
+// Write blocks if the buffer is full, propagating backpressure to the caller.
 func (w *ChGoWriter) Write(table string, rows []map[string]any) {
 	tw := w.getOrCreateTableWriter(table)
 
 	select {
 	case tw.buffer <- rows:
 		w.metrics.bufferUsage.WithLabelValues(table).Add(float64(len(rows)))
-	default:
-		w.log.WithField("table", table).
-			WithField("rows", len(rows)).
-			Warn("Buffer full, dropping rows")
-		w.metrics.writeErrors.WithLabelValues(table).Add(float64(len(rows)))
+	case <-w.done:
+		// Shutting down, discard.
 	}
 }
 
@@ -150,6 +149,7 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 		metrics:  w.metrics,
 		client:   w.client,
 		buffer:   make(chan []map[string]any, cfg.BufferSize),
+		flushReq: make(chan chan error, 1),
 	}
 
 	w.tables[table] = tw
@@ -184,16 +184,49 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			}
 
 			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
-				tw.flush(context.Background(), batch)
+				if err := tw.flush(context.Background(), batch); err != nil {
+					// Preserve batch for retry on next flush cycle
+					continue
+				}
+
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
-				tw.flush(context.Background(), batch)
+				if err := tw.flush(context.Background(), batch); err != nil {
+					continue
+				}
+
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+			}
+
+		case errCh := <-tw.flushReq:
+			// Drain anything still in the channel into the batch
+		drainReq:
+			for {
+				select {
+				case rows := <-tw.buffer:
+					tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
+
+					batch = append(batch, rows...)
+				default:
+					break drainReq
+				}
+			}
+
+			if len(batch) > 0 {
+				err := tw.flush(context.Background(), batch)
+				if err == nil {
+					batch = make([]map[string]any, 0, tw.config.BatchSize)
+					batchBytes = 0
+				}
+				// On error: batch is PRESERVED for retry on next cycle
+				errCh <- err
+			} else {
+				errCh <- nil
 			}
 
 		case <-done:
@@ -208,7 +241,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			}
 
 			if len(batch) > 0 {
-				tw.flush(context.Background(), batch)
+				_ = tw.flush(context.Background(), batch)
 			}
 
 			return
@@ -216,9 +249,9 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 	}
 }
 
-func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) {
+func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error {
 	if len(rows) == 0 {
-		return
+		return nil
 	}
 
 	start := time.Now()
@@ -230,7 +263,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) {
 			Error("Failed to prepare ch-go input")
 		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(len(rows)))
 
-		return
+		return fmt.Errorf("preparing ch-go input for %s: %w", tw.table, err)
 	}
 
 	tw.input.Reset()
@@ -283,7 +316,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) {
 	}
 
 	if wrote == 0 {
-		return
+		return nil
 	}
 
 	if err := tw.client.Do(ctx, ch.Query{
@@ -295,7 +328,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) {
 			Error("Failed to send ch-go batch")
 		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(wrote))
 
-		return
+		return fmt.Errorf("sending ch-go batch for %s: %w", tw.table, err)
 	}
 
 	duration := time.Since(start)
@@ -307,6 +340,58 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) {
 	tw.log.WithField("rows", wrote).
 		WithField("duration", duration).
 		Debug("Flushed ch-go batch")
+
+	return nil
+}
+
+// FlushAll forces all table writers to drain their buffers and flush
+// to ClickHouse synchronously. Returns the first error encountered;
+// on failure, unflushed rows are preserved in the table writers.
+func (w *ChGoWriter) FlushAll(ctx context.Context) error {
+	w.mu.RLock()
+	writers := make([]*chTableWriter, 0, len(w.tables))
+
+	for _, tw := range w.tables {
+		writers = append(writers, tw)
+	}
+
+	w.mu.RUnlock()
+
+	if len(writers) == 0 {
+		return nil
+	}
+
+	// Send flush requests to all table writers in parallel
+	errChs := make([]chan error, len(writers))
+
+	for i, tw := range writers {
+		errCh := make(chan error, 1)
+		errChs[i] = errCh
+
+		select {
+		case tw.flushReq <- errCh:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	// Collect results — return first error
+	var firstErr error
+
+	for _, errCh := range errChs {
+		select {
+		case err := <-errCh:
+			if err != nil && firstErr == nil {
+				firstErr = err
+			}
+		case <-ctx.Done():
+			if firstErr == nil {
+				firstErr = ctx.Err()
+			}
+		}
+	}
+
+	return firstErr
 }
 
 func (tw *chTableWriter) ensureInput(ctx context.Context, columns []string) error {

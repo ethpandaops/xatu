@@ -37,6 +37,7 @@ type tableWriter struct {
 	metrics   *Metrics
 	conn      driver.Conn
 	buffer    chan []map[string]any
+	flushReq  chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 	columns   []string
 	columnsMu sync.RWMutex
 }
@@ -95,17 +96,15 @@ func (w *ClickHouseWriter) Stop(ctx context.Context) error {
 
 // Write buffers rows for the given table. If no writer exists for this
 // table yet, one is created and its flush goroutine started.
+// Write blocks if the buffer is full, propagating backpressure to the caller.
 func (w *ClickHouseWriter) Write(table string, rows []map[string]any) {
 	tw := w.getOrCreateTableWriter(table)
 
 	select {
 	case tw.buffer <- rows:
 		w.metrics.bufferUsage.WithLabelValues(table).Add(float64(len(rows)))
-	default:
-		w.log.WithField("table", table).
-			WithField("rows", len(rows)).
-			Warn("Buffer full, dropping rows")
-		w.metrics.writeErrors.WithLabelValues(table).Add(float64(len(rows)))
+	case <-w.done:
+		// Shutting down, discard.
 	}
 }
 
@@ -131,12 +130,13 @@ func (w *ClickHouseWriter) getOrCreateTableWriter(table string) *tableWriter {
 	cfg := w.config.TableConfigFor(table)
 
 	tw = &tableWriter{
-		log:     w.log.WithField("table", table),
-		table:   table,
-		config:  cfg,
-		metrics: w.metrics,
-		conn:    w.conn,
-		buffer:  make(chan []map[string]any, cfg.BufferSize),
+		log:      w.log.WithField("table", table),
+		table:    table,
+		config:   cfg,
+		metrics:  w.metrics,
+		conn:     w.conn,
+		buffer:   make(chan []map[string]any, cfg.BufferSize),
+		flushReq: make(chan chan error, 1),
 	}
 
 	w.tables[table] = tw
@@ -155,7 +155,8 @@ func (w *ClickHouseWriter) getOrCreateTableWriter(table string) *tableWriter {
 }
 
 // run is the main flush loop for a table writer. It batches rows and
-// flushes either when the batch is full or the flush interval elapses.
+// flushes either when the batch is full, the flush interval elapses,
+// or a FlushAll request arrives from the commit coordinator.
 func (tw *tableWriter) run(done <-chan struct{}) {
 	ticker := time.NewTicker(tw.config.FlushInterval)
 	defer ticker.Stop()
@@ -176,16 +177,49 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 
 			// Flush if batch size or byte limit reached
 			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
-				tw.flush(context.Background(), batch)
+				if err := tw.flush(context.Background(), batch); err != nil {
+					// Preserve batch for retry on next flush cycle
+					continue
+				}
+
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
-				tw.flush(context.Background(), batch)
+				if err := tw.flush(context.Background(), batch); err != nil {
+					continue
+				}
+
 				batch = make([]map[string]any, 0, tw.config.BatchSize)
 				batchBytes = 0
+			}
+
+		case errCh := <-tw.flushReq:
+			// Drain anything still in the channel into the batch
+		drainReq:
+			for {
+				select {
+				case rows := <-tw.buffer:
+					tw.metrics.bufferUsage.WithLabelValues(tw.table).Sub(float64(len(rows)))
+
+					batch = append(batch, rows...)
+				default:
+					break drainReq
+				}
+			}
+
+			if len(batch) > 0 {
+				err := tw.flush(context.Background(), batch)
+				if err == nil {
+					batch = make([]map[string]any, 0, tw.config.BatchSize)
+					batchBytes = 0
+				}
+				// On error: batch is PRESERVED for retry on next cycle
+				errCh <- err
+			} else {
+				errCh <- nil
 			}
 
 		case <-done:
@@ -201,7 +235,7 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 			}
 
 			if len(batch) > 0 {
-				tw.flush(context.Background(), batch)
+				_ = tw.flush(context.Background(), batch)
 			}
 
 			return
@@ -209,10 +243,11 @@ func (tw *tableWriter) run(done <-chan struct{}) {
 	}
 }
 
-// flush writes a batch of rows to ClickHouse.
-func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) {
+// flush writes a batch of rows to ClickHouse. On error the caller
+// should preserve the batch for retry.
+func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) error {
 	if len(rows) == 0 {
-		return
+		return nil
 	}
 
 	start := time.Now()
@@ -234,7 +269,7 @@ func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) {
 			Error("Failed to prepare batch")
 		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(len(rows)))
 
-		return
+		return fmt.Errorf("preparing batch for %s: %w", tw.table, err)
 	}
 
 	for _, row := range rows {
@@ -259,7 +294,7 @@ func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) {
 			Error("Failed to send batch")
 		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(len(rows)))
 
-		return
+		return fmt.Errorf("sending batch for %s: %w", tw.table, err)
 	}
 
 	duration := time.Since(start)
@@ -271,6 +306,58 @@ func (tw *tableWriter) flush(ctx context.Context, rows []map[string]any) {
 	tw.log.WithField("rows", len(rows)).
 		WithField("duration", duration).
 		Debug("Flushed batch")
+
+	return nil
+}
+
+// FlushAll forces all table writers to drain their buffers and flush
+// to ClickHouse synchronously. Returns the first error encountered;
+// on failure, unflushed rows are preserved in the table writers.
+func (w *ClickHouseWriter) FlushAll(ctx context.Context) error {
+	w.mu.RLock()
+	writers := make([]*tableWriter, 0, len(w.tables))
+
+	for _, tw := range w.tables {
+		writers = append(writers, tw)
+	}
+
+	w.mu.RUnlock()
+
+	if len(writers) == 0 {
+		return nil
+	}
+
+	// Send flush requests to all table writers in parallel
+	errChs := make([]chan error, len(writers))
+
+	for i, tw := range writers {
+		errCh := make(chan error, 1)
+		errChs[i] = errCh
+
+		select {
+		case tw.flushReq <- errCh:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	// Collect results — return first error
+	var firstErr error
+
+	for _, errCh := range errChs {
+		select {
+		case err := <-errCh:
+			if err != nil && firstErr == nil {
+				firstErr = err
+			}
+		case <-ctx.Done():
+			if firstErr == nil {
+				firstErr = ctx.Err()
+			}
+		}
+	}
+
+	return firstErr
 }
 
 // getColumns returns a stable, sorted list of column names from a row.

@@ -70,6 +70,9 @@ type KafkaConfig struct {
 	// OffsetDefault controls where to start consuming when no offset exists.
 	// Valid values: "newest" or "oldest".
 	OffsetDefault string `yaml:"offsetDefault" default:"oldest"`
+
+	// CommitInterval is the maximum time between flush+commit cycles.
+	CommitInterval time.Duration `yaml:"commitInterval" default:"5s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -104,6 +107,10 @@ func (c *KafkaConfig) Validate() error {
 
 	if c.OffsetDefault != "newest" && c.OffsetDefault != "oldest" {
 		return errors.New("kafka: offsetDefault must be 'newest' or 'oldest'")
+	}
+
+	if c.CommitInterval <= 0 {
+		return errors.New("kafka: commitInterval must be positive")
 	}
 
 	if c.SASLConfig != nil {

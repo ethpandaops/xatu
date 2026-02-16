@@ -15,6 +15,8 @@ kafka:
   # maxPartitionFetchBytes: 10485760
   # sessionTimeoutMs: 30000
   # heartbeatIntervalMs: 3000
+  commitBatchSize: 10000  # flush+commit every 10k messages
+  commitInterval: 5s      # or every 5 seconds, whichever comes first
   # version: "3.6.0"
   # tls: false
   # sasl:

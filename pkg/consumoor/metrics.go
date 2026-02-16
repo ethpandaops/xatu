@@ -17,6 +17,11 @@ type Metrics struct {
 	batchSize        *prometheus.HistogramVec
 	bufferUsage      *prometheus.GaugeVec
 	flattenErrors    *prometheus.CounterVec
+
+	// Commit coordinator metrics
+	commitsTotal     prometheus.Counter
+	commitErrors     *prometheus.CounterVec
+	flushAllDuration prometheus.Histogram
 }
 
 // NewMetrics creates and registers all consumoor Prometheus metrics.
@@ -99,5 +104,27 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "flatten_errors_total",
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
+
+		commitsTotal: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "commits_total",
+			Help:      "Total number of successful offset commits.",
+		}),
+
+		commitErrors: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "commit_errors_total",
+			Help:      "Total number of commit cycle failures.",
+		}, []string{"reason"}),
+
+		flushAllDuration: promauto.NewHistogram(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "flush_all_duration_seconds",
+			Help:      "Duration of FlushAll operations during commit cycles.",
+			Buckets:   []float64{0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30},
+		}),
 	}
 }

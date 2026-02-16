@@ -78,6 +78,7 @@ func New(
 		&config.Kafka,
 		metrics,
 		c.handleEvent,
+		writer,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating kafka consumer: %w", err)

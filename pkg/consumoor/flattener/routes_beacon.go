@@ -1,6 +1,10 @@
 package flattener
 
-import "github.com/ethpandaops/xatu/pkg/proto/xatu"
+import (
+	"strings"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
 
 func beaconRoutes() []TableDefinition {
 	return []TableDefinition{
@@ -54,22 +58,22 @@ func beaconRoutes() []TableDefinition {
 		GenericTable(
 			TableBeaconApiEthV1ProposerDuty,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY},
-			WithPredicate(stringFromAdditionalData("head", "state_id")),
+			WithPredicate(isHeadProposerDuty),
 		),
 		GenericTable(
 			TableBeaconApiEthV1BeaconCommittee,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE},
-			WithPredicate(stringNotFromAdditionalData("finalized", "state_id")),
+			WithPredicate(isNonFinalizedBeaconCommittee),
 		),
 		GenericTable(
 			TableCanonicalBeaconCommittee,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE},
-			WithPredicate(stringFromAdditionalData("finalized", "state_id")),
+			WithPredicate(isFinalizedBeaconCommittee),
 		),
 		GenericTable(
 			TableCanonicalBeaconProposerDuty,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY},
-			WithPredicate(stringFromAdditionalData("finalized", "state_id")),
+			WithPredicate(isFinalizedProposerDuty),
 		),
 		GenericTable(TableBeaconApiEthV2BeaconBlock, []xatu.Event_Name{
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK,
@@ -78,7 +82,7 @@ func beaconRoutes() []TableDefinition {
 		GenericTable(
 			TableCanonicalBeaconBlock,
 			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2},
-			WithPredicate(boolFromAdditionalData("finalized_when_requested")),
+			WithPredicate(isFinalizedWhenRequestedBlock),
 		),
 		GenericTable(TableBeaconApiEthV3ValidatorBlock, []xatu.Event_Name{
 			xatu.Event_BEACON_API_ETH_V3_VALIDATOR_BLOCK,
@@ -126,4 +130,32 @@ func beaconRoutes() []TableDefinition {
 			WithMutator(syncAggregateMutator),
 		),
 	}
+}
+
+func isHeadProposerDuty(event *xatu.DecoratedEvent) bool {
+	stateID := event.GetMeta().GetClient().GetEthV1ProposerDuty().GetStateId()
+
+	return strings.EqualFold(stateID, "head")
+}
+
+func isFinalizedProposerDuty(event *xatu.DecoratedEvent) bool {
+	stateID := event.GetMeta().GetClient().GetEthV1ProposerDuty().GetStateId()
+
+	return strings.EqualFold(stateID, "finalized")
+}
+
+func isNonFinalizedBeaconCommittee(event *xatu.DecoratedEvent) bool {
+	stateID := event.GetMeta().GetClient().GetEthV1BeaconCommittee().GetStateId()
+
+	return !strings.EqualFold(stateID, "finalized")
+}
+
+func isFinalizedBeaconCommittee(event *xatu.DecoratedEvent) bool {
+	stateID := event.GetMeta().GetClient().GetEthV1BeaconCommittee().GetStateId()
+
+	return strings.EqualFold(stateID, "finalized")
+}
+
+func isFinalizedWhenRequestedBlock(event *xatu.DecoratedEvent) bool {
+	return event.GetMeta().GetClient().GetEthV2BeaconBlockV2().GetFinalizedWhenRequested()
 }

@@ -572,41 +572,6 @@ func copyRow(row map[string]any) map[string]any {
 	return clone
 }
 
-func boolFromAdditionalData(path ...string) EventPredicate {
-	return func(event *xatu.DecoratedEvent) bool {
-		value, ok := additionalDataPath(event, path...)
-		if !ok {
-			return false
-		}
-
-		b, ok := value.(bool)
-
-		return ok && b
-	}
-}
-
-func stringFromAdditionalData(expected string, path ...string) EventPredicate {
-	return func(event *xatu.DecoratedEvent) bool {
-		value, ok := additionalDataPath(event, path...)
-		if !ok {
-			return false
-		}
-
-		return strings.EqualFold(fmt.Sprint(value), expected)
-	}
-}
-
-func stringNotFromAdditionalData(disallowed string, path ...string) EventPredicate {
-	return func(event *xatu.DecoratedEvent) bool {
-		value, ok := additionalDataPath(event, path...)
-		if !ok {
-			return true
-		}
-
-		return !strings.EqualFold(fmt.Sprint(value), disallowed)
-	}
-}
-
 func additionalDataPath(event *xatu.DecoratedEvent, path ...string) (any, bool) {
 	msg, ok := additionalDataMessage(event)
 	if !ok {

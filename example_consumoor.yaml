@@ -9,7 +9,7 @@ kafka:
     - "^general-.+"
   consumerGroup: xatu-consumoor-general
   encoding: json  # switch to "protobuf" after Vector removal
-  # offsetDefault: newest
+  # offsetDefault: oldest
   # fetchMinBytes: 1
   # fetchWaitMaxMs: 500
   # maxPartitionFetchBytes: 10485760

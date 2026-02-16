@@ -252,10 +252,10 @@ func buildSaramaConfig(config *KafkaConfig) (*sarama.Config, error) {
 	c.Metadata.Full = false
 
 	switch config.OffsetDefault {
-	case "oldest":
-		c.Consumer.Offsets.Initial = sarama.OffsetOldest
-	default:
+	case "newest":
 		c.Consumer.Offsets.Initial = sarama.OffsetNewest
+	default:
+		c.Consumer.Offsets.Initial = sarama.OffsetOldest
 	}
 
 	if config.Version != "" {

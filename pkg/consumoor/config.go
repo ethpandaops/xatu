@@ -69,7 +69,7 @@ type KafkaConfig struct {
 
 	// OffsetDefault controls where to start consuming when no offset exists.
 	// Valid values: "newest" or "oldest".
-	OffsetDefault string `yaml:"offsetDefault" default:"newest"`
+	OffsetDefault string `yaml:"offsetDefault" default:"oldest"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -100,6 +100,10 @@ func (c *KafkaConfig) Validate() error {
 
 	if c.Encoding != "json" && c.Encoding != "protobuf" {
 		return errors.New("kafka: encoding must be 'json' or 'protobuf'")
+	}
+
+	if c.OffsetDefault != "newest" && c.OffsetDefault != "oldest" {
+		return errors.New("kafka: offsetDefault must be 'newest' or 'oldest'")
 	}
 
 	if c.SASLConfig != nil {

@@ -2784,7 +2784,8 @@ func createTestMimicry(t *testing.T, config *Config, sink output.Sink) *testMimi
 	if config.Sharding.Topics != nil || config.Sharding.NoShardingKeyEvents != nil {
 		// Use sharding from config
 		var err error
-		sharder, err = NewUnifiedSharder(&config.Sharding, true)
+
+		sharder, err = NewUnifiedSharder(&config.Sharding, nil, true)
 		if err != nil {
 			t.Fatalf("Failed to create sharder: %v", err)
 		}

@@ -26,6 +26,9 @@ jobs:
       - name: run tests
         run: go test -json ./... | tee test.json
 
+      - name: run consumoor benchmark smoke
+        run: go test -run=^$ -bench=. -benchmem -benchtime=100ms ./pkg/consumoor/...
+
       - name: Annotate tests
         if: always()
         uses: guyarb/golang-test-annotations@2941118d7ef622b1b3771d1ff6eae9e90659eb26 # v0.8.0

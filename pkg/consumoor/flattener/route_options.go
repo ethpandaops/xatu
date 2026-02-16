@@ -28,7 +28,7 @@ func WithAliases(aliases map[string]string) GenericRouteOption {
 	}
 }
 
-func NewGenericRoute(table TableName, events []xatu.Event_Name, opts ...GenericRouteOption) Flattener {
+func NewGenericRoute(table TableName, events []xatu.Event_Name, opts ...GenericRouteOption) Route {
 	cfg := &genericRouteConfig{}
 
 	for _, opt := range opts {

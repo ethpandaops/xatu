@@ -10,15 +10,15 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// All returns all registered flatteners used by consumoor.
-func All() []Flattener {
-	flatteners := make([]Flattener, 0, 96)
-	flatteners = append(flatteners, beaconRoutes()...)
-	flatteners = append(flatteners, executionRoutes()...)
-	flatteners = append(flatteners, mevAndNodeRoutes()...)
-	flatteners = append(flatteners, libp2pRoutes()...)
+// All returns all registered routes used by consumoor.
+func All() []Route {
+	tables := make([]TableDefinition, 0, 96)
+	tables = append(tables, beaconRoutes()...)
+	tables = append(tables, executionRoutes()...)
+	tables = append(tables, mevAndNodeRoutes()...)
+	tables = append(tables, libp2pRoutes()...)
 
-	return flatteners
+	return routesFromTables(tables)
 }
 
 func peerConvergenceMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error) {

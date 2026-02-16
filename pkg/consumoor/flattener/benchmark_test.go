@@ -13,7 +13,7 @@ import (
 )
 
 func BenchmarkFlattenerHead(b *testing.B) {
-	f := benchmarkFindFlattenerByTable(b, "beacon_api_eth_v1_events_head")
+	route := benchmarkFindRouteByTable(b, "beacon_api_eth_v1_events_head")
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2,
@@ -48,14 +48,14 @@ func BenchmarkFlattenerHead(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := f.Flatten(event, meta); err != nil {
+		if _, err := route.Flatten(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
 func BenchmarkFlattenerLibP2PConnected(b *testing.B) {
-	f := benchmarkFindFlattenerByTable(b, "libp2p_connected")
+	route := benchmarkFindRouteByTable(b, "libp2p_connected")
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_CONNECTED,
@@ -86,14 +86,14 @@ func BenchmarkFlattenerLibP2PConnected(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := f.Flatten(event, meta); err != nil {
+		if _, err := route.Flatten(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
 func BenchmarkFlattenerValidatorsFanoutPubkeys(b *testing.B) {
-	f := benchmarkFindFlattenerByTable(b, "canonical_beacon_validators_pubkeys")
+	route := benchmarkFindRouteByTable(b, "canonical_beacon_validators_pubkeys")
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_BEACON_VALIDATORS,
@@ -150,22 +150,22 @@ func BenchmarkFlattenerValidatorsFanoutPubkeys(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := f.Flatten(event, meta); err != nil {
+		if _, err := route.Flatten(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
-func benchmarkFindFlattenerByTable(b *testing.B, table string) Flattener {
+func benchmarkFindRouteByTable(b *testing.B, table string) Route {
 	b.Helper()
 
-	for _, f := range All() {
-		if f.TableName() == table {
-			return f
+	for _, route := range All() {
+		if route.TableName() == table {
+			return route
 		}
 	}
 
-	b.Fatalf("flattener for table %s not found", table)
+	b.Fatalf("route for table %s not found", table)
 
 	return nil
 }

@@ -59,15 +59,15 @@ func New(
 		return nil, fmt.Errorf("creating clickhouse writer: %w", err)
 	}
 
-	// Create the router with all registered flatteners.
-	registeredFlatteners := buildFlatteners()
+	// Create the router with all registered routes.
+	registeredRoutes := buildRoutes()
 
 	disabledEvents, err := config.DisabledEventEnums()
 	if err != nil {
 		return nil, fmt.Errorf("invalid disabledEvents config: %w", err)
 	}
 
-	router := NewRouter(log, registeredFlatteners, disabledEvents, metrics)
+	router := NewRouter(log, registeredRoutes, disabledEvents, metrics)
 
 	c := &Consumoor{
 		log:     log.WithField("component", "consumoor"),
@@ -172,7 +172,7 @@ func (c *Consumoor) stop(ctx context.Context) error {
 }
 
 // handleEvent is the callback invoked for each decoded Kafka message.
-// It routes the event through registered flatteners and writes the
+// It routes the event through registered routes and writes the
 // resulting rows to ClickHouse.
 func (c *Consumoor) handleEvent(event *xatu.DecoratedEvent) {
 	results := c.router.Route(event)
@@ -219,7 +219,7 @@ func (c *Consumoor) startPProf(_ context.Context) error {
 	return nil
 }
 
-// buildFlatteners returns all registered flattener implementations.
-func buildFlatteners() []flattener.Flattener {
+// buildRoutes returns all registered route implementations.
+func buildRoutes() []flattener.Route {
 	return flattener.All()
 }

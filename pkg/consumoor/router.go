@@ -14,15 +14,15 @@ type RouterResult struct {
 	Rows  []map[string]any
 }
 
-// Router maps event names to registered flatteners and dispatches
-// incoming events to the appropriate flatteners.
+// Router maps event names to registered routes and dispatches incoming
+// events to the appropriate route handlers.
 type Router struct {
 	log logrus.FieldLogger
 
-	// flatteners maps event names to the list of flatteners that
-	// handle that event. Most events have one flattener, but
-	// conditional routing produces multiple.
-	flatteners map[xatu.Event_Name][]flattener.Flattener
+	// routesByEvent maps event names to the list of routes that handle
+	// that event. Most events have one route, but conditional routing
+	// produces multiple.
+	routesByEvent map[xatu.Event_Name][]flattener.Route
 
 	// disabledEvents is a set of event names that should be silently
 	// dropped without processing.
@@ -31,24 +31,24 @@ type Router struct {
 	metrics *Metrics
 }
 
-// NewRouter creates a Router with the given flatteners and disabled events.
+// NewRouter creates a Router with the given routes and disabled events.
 func NewRouter(
 	log logrus.FieldLogger,
-	flatteners []flattener.Flattener,
+	routes []flattener.Route,
 	disabledEvents []xatu.Event_Name,
 	metrics *Metrics,
 ) *Router {
 	r := &Router{
 		log:            log.WithField("component", "router"),
-		flatteners:     make(map[xatu.Event_Name][]flattener.Flattener, len(flatteners)),
+		routesByEvent:  make(map[xatu.Event_Name][]flattener.Route, len(routes)),
 		disabledEvents: make(map[xatu.Event_Name]struct{}, len(disabledEvents)),
 		metrics:        metrics,
 	}
 
-	// Register flatteners by event name
-	for _, f := range flatteners {
-		for _, name := range f.EventNames() {
-			r.flatteners[name] = append(r.flatteners[name], f)
+	// Register routes by event name.
+	for _, route := range routes {
+		for _, name := range route.EventNames() {
+			r.routesByEvent[name] = append(r.routesByEvent[name], route)
 		}
 	}
 
@@ -58,7 +58,7 @@ func NewRouter(
 	}
 
 	// Log registration summary
-	log.WithField("registered_events", len(r.flatteners)).
+	log.WithField("registered_events", len(r.routesByEvent)).
 		WithField("disabled_events", len(r.disabledEvents)).
 		Info("Router initialized")
 
@@ -66,7 +66,7 @@ func NewRouter(
 }
 
 // Route processes a single DecoratedEvent through the routing pipeline:
-// extract metadata, find matching flatteners, flatten the event, and
+// extract metadata, find matching routes, flatten the event, and
 // return the results grouped by target table.
 func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 	if event == nil || event.GetEvent() == nil {
@@ -82,8 +82,8 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 		return nil
 	}
 
-	// Look up flatteners for this event
-	flattenersForEvent, ok := r.flatteners[eventName]
+	// Look up routes for this event.
+	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
 		r.metrics.messagesDropped.WithLabelValues(eventName.String(), "no_flattener").Inc()
 
@@ -93,24 +93,24 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 	// Extract shared metadata once
 	meta := metadata.Extract(event)
 
-	results := make([]RouterResult, 0, len(flattenersForEvent))
+	results := make([]RouterResult, 0, len(routesForEvent))
 
-	for _, f := range flattenersForEvent {
+	for _, route := range routesForEvent {
 		// Check conditional routing
-		if !f.ShouldProcess(event) {
+		if !route.ShouldProcess(event) {
 			r.metrics.messagesDropped.WithLabelValues(eventName.String(), "filtered").Inc()
 
 			continue
 		}
 
-		rows, err := f.Flatten(event, meta)
+		rows, err := route.Flatten(event, meta)
 		if err != nil {
 			r.log.WithError(err).
 				WithField("event_name", eventName.String()).
-				WithField("table", f.TableName()).
-				Warn("Flattener error")
+				WithField("table", route.TableName()).
+				Warn("Route error")
 
-			r.metrics.flattenErrors.WithLabelValues(eventName.String(), f.TableName()).Inc()
+			r.metrics.flattenErrors.WithLabelValues(eventName.String(), route.TableName()).Inc()
 
 			continue
 		}
@@ -119,10 +119,10 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 			continue
 		}
 
-		r.metrics.messagesRouted.WithLabelValues(eventName.String(), f.TableName()).Inc()
+		r.metrics.messagesRouted.WithLabelValues(eventName.String(), route.TableName()).Inc()
 
 		results = append(results, RouterResult{
-			Table: f.TableName(),
+			Table: route.TableName(),
 			Rows:  rows,
 		})
 	}

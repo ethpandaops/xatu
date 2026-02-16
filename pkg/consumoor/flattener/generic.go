@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// EventPredicate determines whether a flattener should process a specific event.
+// EventPredicate determines whether a route should process a specific event.
 type EventPredicate func(event *xatu.DecoratedEvent) bool
 
 // RowMutator can amend or fan-out rows after generic flattening.

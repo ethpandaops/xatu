@@ -85,9 +85,9 @@ func TestRegistryCoversAllKnownEvents(t *testing.T) {
 }
 
 func TestConditionalRoutingPredicates(t *testing.T) {
-	canonicalCommittee := findFlattenerByTable(t, "canonical_beacon_committee")
-	headCommittee := findFlattenerByTable(t, "beacon_api_eth_v1_beacon_committee")
-	canonicalBlock := findFlattenerByTable(t, "canonical_beacon_block")
+	canonicalCommittee := findRouteByTable(t, "canonical_beacon_committee")
+	headCommittee := findRouteByTable(t, "beacon_api_eth_v1_beacon_committee")
+	canonicalBlock := findRouteByTable(t, "canonical_beacon_block")
 
 	finalizedCommitteeEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE, DateTime: timestamppb.Now(), Id: "1"},
@@ -121,7 +121,7 @@ func TestConditionalRoutingPredicates(t *testing.T) {
 }
 
 func TestValidatorsFanout(t *testing.T) {
-	pubkeysFlattener := findFlattenerByTable(t, "canonical_beacon_validators_pubkeys")
+	pubkeysFlattener := findRouteByTable(t, "canonical_beacon_validators_pubkeys")
 
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_VALIDATORS, DateTime: timestamppb.Now(), Id: "validators-1"},
@@ -168,7 +168,7 @@ func TestValidatorsFanout(t *testing.T) {
 }
 
 func TestLibP2PEnrichment(t *testing.T) {
-	connectedFlattener := findFlattenerByTable(t, "libp2p_connected")
+	connectedFlattener := findRouteByTable(t, "libp2p_connected")
 
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_LIBP2P_TRACE_CONNECTED, DateTime: timestamppb.Now(), Id: "libp2p-1"},
@@ -198,7 +198,7 @@ func TestLibP2PEnrichment(t *testing.T) {
 }
 
 func TestSyncCommitteeMutator(t *testing.T) {
-	syncCommitteeFlattener := findFlattenerByTable(t, "canonical_beacon_sync_committee")
+	syncCommitteeFlattener := findRouteByTable(t, "canonical_beacon_sync_committee")
 
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE, DateTime: timestamppb.Now(), Id: "sync-1"},
@@ -226,7 +226,7 @@ func TestSyncCommitteeMutator(t *testing.T) {
 	assert.Equal(t, []uint64{3}, aggs[1])
 }
 
-func findFlattenerByTable(t *testing.T, table string) Flattener {
+func findRouteByTable(t *testing.T, table string) Route {
 	t.Helper()
 
 	for _, f := range All() {
@@ -235,7 +235,7 @@ func findFlattenerByTable(t *testing.T, table string) Flattener {
 		}
 	}
 
-	t.Fatalf("flattener for table %s not found", table)
+	t.Fatalf("route for table %s not found", table)
 
 	return nil
 }

@@ -2,9 +2,9 @@ package flattener
 
 import "github.com/ethpandaops/xatu/pkg/proto/xatu"
 
-func libp2pRoutes() []Flattener {
-	return []Flattener{
-		NewGenericRoute(
+func libp2pRoutes() []TableDefinition {
+	return []TableDefinition{
+		GenericTable(
 			TableLibp2pPeer,
 			[]xatu.Event_Name{
 				xatu.Event_LIBP2P_TRACE_CONNECTED,
@@ -19,67 +19,67 @@ func libp2pRoutes() []Flattener {
 			},
 			WithMutator(peerConvergenceMutator),
 		),
-		NewGenericRoute(TableLibp2pConnected, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED}),
-		NewGenericRoute(TableLibp2pDisconnected, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DISCONNECTED}),
-		NewGenericRoute(TableLibp2pAddPeer, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_ADD_PEER}),
-		NewGenericRoute(TableLibp2pRemovePeer, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_REMOVE_PEER}),
-		NewGenericRoute(TableLibp2pRecvRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RECV_RPC}),
-		NewGenericRoute(TableLibp2pSendRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_SEND_RPC}),
-		NewGenericRoute(TableLibp2pDropRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DROP_RPC}),
-		NewGenericRoute(TableLibp2pJoin, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_JOIN}),
-		NewGenericRoute(TableLibp2pLeave, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_LEAVE}),
-		NewGenericRoute(TableLibp2pGraft, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GRAFT}),
-		NewGenericRoute(TableLibp2pPrune, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_PRUNE}),
-		NewGenericRoute(TableLibp2pPublishMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE}),
-		NewGenericRoute(TableLibp2pRejectMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE}),
-		NewGenericRoute(TableLibp2pDuplicateMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE}),
-		NewGenericRoute(TableLibp2pDeliverMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE}),
-		NewGenericRoute(TableLibp2pHandleMetadata, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_HANDLE_METADATA}),
-		NewGenericRoute(TableLibp2pHandleStatus, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_HANDLE_STATUS}),
-		NewGenericRoute(TableLibp2pGossipsubBeaconBlock, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK}),
-		NewGenericRoute(
+		GenericTable(TableLibp2pConnected, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED}),
+		GenericTable(TableLibp2pDisconnected, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DISCONNECTED}),
+		GenericTable(TableLibp2pAddPeer, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_ADD_PEER}),
+		GenericTable(TableLibp2pRemovePeer, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_REMOVE_PEER}),
+		GenericTable(TableLibp2pRecvRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RECV_RPC}),
+		GenericTable(TableLibp2pSendRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_SEND_RPC}),
+		GenericTable(TableLibp2pDropRpc, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DROP_RPC}),
+		GenericTable(TableLibp2pJoin, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_JOIN}),
+		GenericTable(TableLibp2pLeave, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_LEAVE}),
+		GenericTable(TableLibp2pGraft, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GRAFT}),
+		GenericTable(TableLibp2pPrune, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_PRUNE}),
+		GenericTable(TableLibp2pPublishMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE}),
+		GenericTable(TableLibp2pRejectMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE}),
+		GenericTable(TableLibp2pDuplicateMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE}),
+		GenericTable(TableLibp2pDeliverMessage, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE}),
+		GenericTable(TableLibp2pHandleMetadata, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_HANDLE_METADATA}),
+		GenericTable(TableLibp2pHandleStatus, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_HANDLE_STATUS}),
+		GenericTable(TableLibp2pGossipsubBeaconBlock, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK}),
+		GenericTable(
 			TableLibp2pGossipsubBeaconAttestation,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pGossipsubAggregateAndProof,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF},
 		),
-		NewGenericRoute(TableLibp2pGossipsubBlobSidecar, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR}),
-		NewGenericRoute(
+		GenericTable(TableLibp2pGossipsubBlobSidecar, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR}),
+		GenericTable(
 			TableLibp2pGossipsubDataColumnSidecar,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcDataColumnCustodyProbe,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE},
 		),
-		NewGenericRoute(TableLibp2pSyntheticHeartbeat, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT}),
-		NewGenericRoute(
+		GenericTable(TableLibp2pSyntheticHeartbeat, []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT}),
+		GenericTable(
 			TableLibp2pRpcMetaControlIhave,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaControlIwant,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaControlIdontwant,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaControlGraft,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaControlPrune,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaSubscription,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION},
 		),
-		NewGenericRoute(
+		GenericTable(
 			TableLibp2pRpcMetaMessage,
 			[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE},
 		),

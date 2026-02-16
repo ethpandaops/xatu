@@ -330,15 +330,7 @@ func (cc *commitCoordinator) Track(msg *sarama.ConsumerMessage) {
 		partition: msg.Partition,
 		offset:    msg.Offset,
 	})
-	shouldTrigger := cc.batchSize > 0 && len(cc.pending) >= cc.batchSize
 	cc.mu.Unlock()
-
-	if shouldTrigger {
-		select {
-		case cc.trigger <- struct{}{}:
-		default: // already triggered
-		}
-	}
 }
 
 // run is the commit loop. It exits when done is closed.
@@ -356,8 +348,6 @@ func (cc *commitCoordinator) run() {
 
 	for {
 		select {
-		case <-cc.trigger:
-			cc.commit()
 		case <-tickC:
 			cc.commit()
 		case <-cc.done:

@@ -10,18 +10,12 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// All returns all registered routes used by consumoor.
-func All() []Route {
-	routes := make([]Route, 0, 96)
-	routes = append(routes, beaconRoutes()...)
-	routes = append(routes, executionRoutes()...)
-	routes = append(routes, mevAndNodeRoutes()...)
-	routes = append(routes, libp2pRoutes()...)
-
-	return routes
-}
-
-func peerConvergenceMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error) {
+// PeerConvergenceMutator derives peer-level convergence rows used by libp2p peer routing.
+func PeerConvergenceMutator(
+	_ *xatu.DecoratedEvent,
+	_ *metadata.CommonMetadata,
+	row map[string]any,
+) ([]map[string]any, error) {
 	peerID := firstNonEmpty(row, "remote_peer", "peer_id")
 	if peerID == "" {
 		return nil, nil
@@ -34,7 +28,12 @@ func peerConvergenceMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, 
 	return []map[string]any{row}, nil
 }
 
-func syncCommitteeMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error) {
+// SyncCommitteeMutator normalizes sync committee aggregates into validator_aggregates.
+func SyncCommitteeMutator(
+	_ *xatu.DecoratedEvent,
+	_ *metadata.CommonMetadata,
+	row map[string]any,
+) ([]map[string]any, error) {
 	setAlias(row, "epoch", "epoch_number")
 
 	aggsRaw, ok := row["sync_committee_validator_aggregates"]
@@ -64,7 +63,12 @@ func syncCommitteeMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, ro
 	return []map[string]any{row}, nil
 }
 
-func syncAggregateMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error) {
+// SyncAggregateMutator aligns sync aggregate block alias columns and validator arrays.
+func SyncAggregateMutator(
+	_ *xatu.DecoratedEvent,
+	_ *metadata.CommonMetadata,
+	row map[string]any,
+) ([]map[string]any, error) {
 	setAlias(row, "slot", "block_slot_number")
 	setAlias(row, "epoch", "block_epoch_number")
 

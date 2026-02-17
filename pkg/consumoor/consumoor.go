@@ -13,6 +13,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
+	"github.com/ethpandaops/xatu/pkg/consumoor/flattener/table"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -221,5 +222,5 @@ func (c *Consumoor) startPProf(_ context.Context) error {
 
 // buildRoutes returns all registered route implementations.
 func buildRoutes() []flattener.Route {
-	return flattener.All()
+	return table.All()
 }

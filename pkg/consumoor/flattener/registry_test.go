@@ -1,4 +1,4 @@
-package flattener
+package flattener_test
 
 import (
 	"sort"
@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
+	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/flattener/table"
 	"github.com/ethpandaops/xatu/pkg/consumoor/metadata"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	ethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
@@ -30,7 +32,7 @@ func TestRegistryCoversAllKnownEvents(t *testing.T) {
 
 	covered := make(map[xatu.Event_Name]struct{}, 128)
 
-	for _, f := range All() {
+	for _, f := range tabledefs.All() {
 		for _, event := range f.EventNames() {
 			covered[event] = struct{}{}
 		}
@@ -276,10 +278,10 @@ func TestElaboratedAttestationAliasesValidatorIndexesToValidators(t *testing.T) 
 	assert.NotContains(t, rows[0], "validator_indexes")
 }
 
-func findRouteByTable(t *testing.T, table string) Route {
+func findRouteByTable(t *testing.T, table string) flattener.Route {
 	t.Helper()
 
-	for _, f := range All() {
+	for _, f := range tabledefs.All() {
 		if f.TableName() == table {
 			return f
 		}

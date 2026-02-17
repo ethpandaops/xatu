@@ -6,11 +6,73 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+type routeStepSpec struct {
+	name  string
+	build func(rp *RoutePipeline) GenericStep
+}
+
+var (
+	routeStepCommonMetadata = routeStepSpec{
+		name: "common_metadata",
+		build: func(_ *RoutePipeline) GenericStep {
+			return commonMetadataStep()
+		},
+	}
+	routeStepRuntimeColumns = routeStepSpec{
+		name: "runtime_columns",
+		build: func(_ *RoutePipeline) GenericStep {
+			return runtimeColumnsStep()
+		},
+	}
+	routeStepEventData = routeStepSpec{
+		name: "event_data",
+		build: func(_ *RoutePipeline) GenericStep {
+			return eventDataStep()
+		},
+	}
+	routeStepClientAdditionalData = routeStepSpec{
+		name: "client_additional_data",
+		build: func(_ *RoutePipeline) GenericStep {
+			return clientAdditionalDataStep()
+		},
+	}
+	routeStepServerAdditionalData = routeStepSpec{
+		name: "server_additional_data",
+		build: func(_ *RoutePipeline) GenericStep {
+			return serverAdditionalDataStep()
+		},
+	}
+	routeStepTableAliases = routeStepSpec{
+		name: "table_aliases",
+		build: func(rp *RoutePipeline) GenericStep {
+			return tableAliasesStep(rp.table)
+		},
+	}
+	routeStepRouteAliases = routeStepSpec{
+		name: "route_aliases",
+		build: func(rp *RoutePipeline) GenericStep {
+			return routeAliasesStep(rp.aliases)
+		},
+	}
+	routeStepNormalizeDateTimes = routeStepSpec{
+		name: "normalize_date_times",
+		build: func(_ *RoutePipeline) GenericStep {
+			return normalizeDateTimesStep()
+		},
+	}
+	routeStepCommonEnrichment = routeStepSpec{
+		name: "common_enrichment",
+		build: func(_ *RoutePipeline) GenericStep {
+			return commonEnrichmentStep()
+		},
+	}
+)
+
 // RoutePipeline builds an explicit generic route pipeline for one table/event set.
 type RoutePipeline struct {
 	table     TableName
 	events    []xatu.Event_Name
-	stages    []GenericStage
+	steps     []routeStepSpec
 	predicate EventPredicate
 	mutator   RowMutator
 	aliases   map[string]string
@@ -24,57 +86,56 @@ func RouteTo(table TableName, events ...xatu.Event_Name) *RoutePipeline {
 	}
 }
 
-// Then appends explicit flattening stages in execution order.
-func (rp *RoutePipeline) Then(stages ...GenericStage) *RoutePipeline {
-	rp.stages = append(rp.stages, stages...)
+func (rp *RoutePipeline) addStep(step routeStepSpec) *RoutePipeline {
+	rp.steps = append(rp.steps, step)
 
 	return rp
 }
 
 // CommonMetadata copies shared metadata fields onto each row.
 func (rp *RoutePipeline) CommonMetadata() *RoutePipeline {
-	return rp.Then(StageCommonMetadata)
+	return rp.addStep(routeStepCommonMetadata)
 }
 
 // RuntimeColumns appends writer/runtime columns such as updated_date_time,
 // unique_key, and event_date_time.
 func (rp *RoutePipeline) RuntimeColumns() *RoutePipeline {
-	return rp.Then(StageRuntimeColumns)
+	return rp.addStep(routeStepRuntimeColumns)
 }
 
 // EventData flattens the event protobuf payload into row columns.
 func (rp *RoutePipeline) EventData() *RoutePipeline {
-	return rp.Then(StageEventData)
+	return rp.addStep(routeStepEventData)
 }
 
 // ClientAdditionalData flattens client additional_data oneof fields.
 func (rp *RoutePipeline) ClientAdditionalData() *RoutePipeline {
-	return rp.Then(StageClientAdditionalData)
+	return rp.addStep(routeStepClientAdditionalData)
 }
 
 // ServerAdditionalData flattens server additional_data oneof fields.
 func (rp *RoutePipeline) ServerAdditionalData() *RoutePipeline {
-	return rp.Then(StageServerAdditionalData)
+	return rp.addStep(routeStepServerAdditionalData)
 }
 
 // TableAliases applies known destination-table aliases.
 func (rp *RoutePipeline) TableAliases() *RoutePipeline {
-	return rp.Then(StageTableAliases)
+	return rp.addStep(routeStepTableAliases)
 }
 
 // RouteAliases applies route-specific alias remapping set via Aliases().
 func (rp *RoutePipeline) RouteAliases() *RoutePipeline {
-	return rp.Then(StageRouteAliases)
+	return rp.addStep(routeStepRouteAliases)
 }
 
 // NormalizeDateTimes normalizes date/time fields for ClickHouse output.
 func (rp *RoutePipeline) NormalizeDateTimes() *RoutePipeline {
-	return rp.Then(StageNormalizeDateTimes)
+	return rp.addStep(routeStepNormalizeDateTimes)
 }
 
 // CommonEnrichment applies shared enrichment logic by event name.
 func (rp *RoutePipeline) CommonEnrichment() *RoutePipeline {
-	return rp.Then(StageCommonEnrichment)
+	return rp.addStep(routeStepCommonEnrichment)
 }
 
 // Predicate sets conditional routing for this route.
@@ -93,18 +154,7 @@ func (rp *RoutePipeline) Mutator(mutator RowMutator) *RoutePipeline {
 
 // Aliases sets route-specific alias remapping.
 func (rp *RoutePipeline) Aliases(aliases map[string]string) *RoutePipeline {
-	if len(aliases) == 0 {
-		rp.aliases = nil
-
-		return rp
-	}
-
-	cloned := make(map[string]string, len(aliases))
-	for src, dst := range aliases {
-		cloned[src] = dst
-	}
-
-	rp.aliases = cloned
+	rp.aliases = cloneAliases(aliases)
 
 	return rp
 }
@@ -115,13 +165,20 @@ func (rp *RoutePipeline) Build() Route {
 		panic(fmt.Sprintf("invalid route pipeline for table %q: %v", rp.table, err))
 	}
 
-	return NewGenericFlattenerWithStages(
+	steps := make([]compiledGenericStep, 0, len(rp.steps))
+	for _, step := range rp.steps {
+		steps = append(steps, compiledGenericStep{
+			name: step.name,
+			run:  step.build(rp),
+		})
+	}
+
+	return NewGenericFlattenerWithSteps(
 		rp.table,
 		append([]xatu.Event_Name(nil), rp.events...),
-		append([]GenericStage(nil), rp.stages...),
+		steps,
 		rp.predicate,
 		rp.mutator,
-		rp.aliases,
 	)
 }
 
@@ -134,38 +191,35 @@ func (rp *RoutePipeline) validate() error {
 		return fmt.Errorf("at least one event is required")
 	}
 
-	if len(rp.stages) == 0 {
-		return fmt.Errorf("at least one stage is required")
+	if len(rp.steps) == 0 {
+		return fmt.Errorf("at least one step is required")
 	}
 
-	seen := make(map[GenericStage]struct{}, len(rp.stages))
-	hasRouteAliasesStage := false
-	lastOrder := 0
+	seen := make(map[string]struct{}, len(rp.steps))
+	hasRouteAliasesStep := false
 
-	for _, stage := range rp.stages {
-		if !stage.valid() {
-			return fmt.Errorf("unknown stage %s", stage)
+	for _, step := range rp.steps {
+		if step.name == "" {
+			return fmt.Errorf("step name is required")
 		}
 
-		if _, exists := seen[stage]; exists {
-			return fmt.Errorf("duplicate stage %s", stage)
+		if step.build == nil {
+			return fmt.Errorf("step %q has nil builder", step.name)
 		}
 
-		order := stage.order()
-		if order < lastOrder {
-			return fmt.Errorf("stage %s is out of order", stage)
+		if _, exists := seen[step.name]; exists {
+			return fmt.Errorf("duplicate step %q", step.name)
 		}
 
-		if stage == StageRouteAliases {
-			hasRouteAliasesStage = true
+		if step.name == routeStepRouteAliases.name {
+			hasRouteAliasesStep = true
 		}
 
-		lastOrder = order
-		seen[stage] = struct{}{}
+		seen[step.name] = struct{}{}
 	}
 
-	if len(rp.aliases) > 0 && !hasRouteAliasesStage {
-		return fmt.Errorf("aliases configured but StageRouteAliases missing")
+	if len(rp.aliases) > 0 && !hasRouteAliasesStep {
+		return fmt.Errorf("aliases configured but RouteAliases() step missing")
 	}
 
 	return nil

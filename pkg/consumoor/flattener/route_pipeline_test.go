@@ -13,7 +13,7 @@ import (
 )
 
 func TestRoutePipelineBuildValidation(t *testing.T) {
-	t.Run("rejects duplicate stages", func(t *testing.T) {
+	t.Run("rejects duplicate steps", func(t *testing.T) {
 		require.Panics(t, func() {
 			RouteTo(TableLibp2pConnected, xatu.Event_LIBP2P_TRACE_CONNECTED).
 				CommonMetadata().
@@ -22,16 +22,7 @@ func TestRoutePipelineBuildValidation(t *testing.T) {
 		})
 	})
 
-	t.Run("rejects out-of-order stages", func(t *testing.T) {
-		require.Panics(t, func() {
-			RouteTo(TableLibp2pConnected, xatu.Event_LIBP2P_TRACE_CONNECTED).
-				EventData().
-				CommonMetadata().
-				Build()
-		})
-	})
-
-	t.Run("rejects aliases without route alias stage", func(t *testing.T) {
+	t.Run("rejects aliases without RouteAliases step", func(t *testing.T) {
 		require.Panics(t, func() {
 			RouteTo(TableLibp2pConnected, xatu.Event_LIBP2P_TRACE_CONNECTED).
 				EventData().
@@ -41,7 +32,7 @@ func TestRoutePipelineBuildValidation(t *testing.T) {
 	})
 }
 
-func TestRoutePipelineStageSelection(t *testing.T) {
+func TestRoutePipelineStepSelection(t *testing.T) {
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_LIBP2P_TRACE_CONNECTED,
@@ -62,7 +53,7 @@ func TestRoutePipelineStageSelection(t *testing.T) {
 
 	meta := metadata.Extract(event)
 
-	t.Run("metadata stage only", func(t *testing.T) {
+	t.Run("metadata step only", func(t *testing.T) {
 		route := RouteTo(TableLibp2pConnected, xatu.Event_LIBP2P_TRACE_CONNECTED).
 			CommonMetadata().
 			Build()
@@ -74,7 +65,7 @@ func TestRoutePipelineStageSelection(t *testing.T) {
 		assert.NotContains(t, rows[0], "remote_peer")
 	})
 
-	t.Run("event stage only", func(t *testing.T) {
+	t.Run("event step only", func(t *testing.T) {
 		route := RouteTo(TableLibp2pConnected, xatu.Event_LIBP2P_TRACE_CONNECTED).
 			EventData().
 			Build()

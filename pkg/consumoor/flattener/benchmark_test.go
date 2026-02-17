@@ -1,9 +1,11 @@
-package flattener
+package flattener_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
+	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/flattener/table"
 	"github.com/ethpandaops/xatu/pkg/consumoor/metadata"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -156,10 +158,10 @@ func BenchmarkFlattenerValidatorsFanoutPubkeys(b *testing.B) {
 	}
 }
 
-func benchmarkFindRouteByTable(b *testing.B, table string) Route {
+func benchmarkFindRouteByTable(b *testing.B, table string) flattener.Route {
 	b.Helper()
 
-	for _, route := range All() {
+	for _, route := range tabledefs.All() {
 		if route.TableName() == table {
 			return route
 		}

@@ -19,115 +19,38 @@ type EventPredicate func(event *xatu.DecoratedEvent) bool
 // RowMutator can amend or fan-out rows after generic flattening.
 type RowMutator func(event *xatu.DecoratedEvent, meta *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error)
 
-// GenericStage identifies one flattening stage in execution order.
-type GenericStage uint8
+// GenericStep is one composable flattening operation.
+type GenericStep func(event *xatu.DecoratedEvent, meta *metadata.CommonMetadata, row map[string]any) error
 
-const (
-	StageCommonMetadata GenericStage = iota + 1
-	StageRuntimeColumns
-	StageEventData
-	StageClientAdditionalData
-	StageServerAdditionalData
-	StageTableAliases
-	StageRouteAliases
-	StageNormalizeDateTimes
-	StageCommonEnrichment
-)
-
-func (s GenericStage) String() string {
-	switch s {
-	case StageCommonMetadata:
-		return "common_metadata"
-	case StageRuntimeColumns:
-		return "runtime_columns"
-	case StageEventData:
-		return "event_data"
-	case StageClientAdditionalData:
-		return "client_additional_data"
-	case StageServerAdditionalData:
-		return "server_additional_data"
-	case StageTableAliases:
-		return "table_aliases"
-	case StageRouteAliases:
-		return "route_aliases"
-	case StageNormalizeDateTimes:
-		return "normalize_date_times"
-	case StageCommonEnrichment:
-		return "common_enrichment"
-	default:
-		return fmt.Sprintf("stage_%d", s)
-	}
-}
-
-func (s GenericStage) order() int {
-	switch s {
-	case StageCommonMetadata:
-		return 1
-	case StageRuntimeColumns:
-		return 2
-	case StageEventData:
-		return 3
-	case StageClientAdditionalData:
-		return 4
-	case StageServerAdditionalData:
-		return 5
-	case StageTableAliases:
-		return 6
-	case StageRouteAliases:
-		return 7
-	case StageNormalizeDateTimes:
-		return 8
-	case StageCommonEnrichment:
-		return 9
-	default:
-		return 0
-	}
-}
-
-func (s GenericStage) valid() bool {
-	switch s {
-	case StageCommonMetadata,
-		StageRuntimeColumns,
-		StageEventData,
-		StageClientAdditionalData,
-		StageServerAdditionalData,
-		StageTableAliases,
-		StageRouteAliases,
-		StageNormalizeDateTimes,
-		StageCommonEnrichment:
-		return true
-	default:
-		return false
-	}
+type compiledGenericStep struct {
+	name string
+	run  GenericStep
 }
 
 // GenericFlattener provides proto-driven flattening for one table/event set.
 type GenericFlattener struct {
-	eventNames   []xatu.Event_Name
-	tableName    TableName
-	stages       []GenericStage
-	should       EventPredicate
-	rowMutator   RowMutator
-	extraAliases map[string]string
+	eventNames []xatu.Event_Name
+	tableName  TableName
+	steps      []compiledGenericStep
+	should     EventPredicate
+	rowMutator RowMutator
 }
 
-// NewGenericFlattenerWithStages creates a generic proto-driven flattener
+// NewGenericFlattenerWithSteps creates a generic proto-driven flattener
 // with an explicit stage pipeline.
-func NewGenericFlattenerWithStages(
+func NewGenericFlattenerWithSteps(
 	table TableName,
 	events []xatu.Event_Name,
-	stages []GenericStage,
+	steps []compiledGenericStep,
 	predicate EventPredicate,
 	mutator RowMutator,
-	aliases map[string]string,
 ) *GenericFlattener {
 	return &GenericFlattener{
-		eventNames:   events,
-		tableName:    table,
-		stages:       append([]GenericStage(nil), stages...),
-		should:       predicate,
-		rowMutator:   mutator,
-		extraAliases: aliases,
+		eventNames: append([]xatu.Event_Name(nil), events...),
+		tableName:  table,
+		steps:      append([]compiledGenericStep(nil), steps...),
+		should:     predicate,
+		rowMutator: mutator,
 	}
 }
 
@@ -154,37 +77,13 @@ func (f *GenericFlattener) Flatten(event *xatu.DecoratedEvent, meta *metadata.Co
 
 	row := make(map[string]any, 96)
 
-	for _, stage := range f.stages {
-		switch stage {
-		case StageCommonMetadata:
-			if meta != nil {
-				meta.CopyTo(row)
-			}
-		case StageRuntimeColumns:
-			row["updated_date_time"] = time.Now().Unix()
-			row["unique_key"] = hashKey(event.GetEvent().GetId())
+	for _, step := range f.steps {
+		if step.run == nil {
+			continue
+		}
 
-			if ts := event.GetEvent().GetDateTime(); ts != nil {
-				row["event_date_time"] = ts.AsTime().UnixMilli()
-			}
-		case StageEventData:
-			if err := flattenEventData(event, row); err != nil {
-				return nil, err
-			}
-		case StageClientAdditionalData:
-			flattenClientAdditionalData(event, row)
-		case StageServerAdditionalData:
-			flattenServerAdditionalData(event, row)
-		case StageTableAliases:
-			applyTableAliases(string(f.tableName), row)
-		case StageRouteAliases:
-			applyAliases(row, f.extraAliases)
-		case StageNormalizeDateTimes:
-			normalizeDateTimeColumns(row)
-		case StageCommonEnrichment:
-			enrichCommon(row, event.GetEvent().GetName())
-		default:
-			return nil, fmt.Errorf("unsupported generic stage %s", stage)
+		if err := step.run(event, meta, row); err != nil {
+			return nil, fmt.Errorf("flatten step %s: %w", step.name, err)
 		}
 	}
 
@@ -193,6 +92,87 @@ func (f *GenericFlattener) Flatten(event *xatu.DecoratedEvent, meta *metadata.Co
 	}
 
 	return []map[string]any{row}, nil
+}
+
+func commonMetadataStep() GenericStep {
+	return func(_ *xatu.DecoratedEvent, meta *metadata.CommonMetadata, row map[string]any) error {
+		if meta != nil {
+			meta.CopyTo(row)
+		}
+
+		return nil
+	}
+}
+
+func runtimeColumnsStep() GenericStep {
+	return func(event *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		row["updated_date_time"] = time.Now().Unix()
+		row["unique_key"] = hashKey(event.GetEvent().GetId())
+
+		if ts := event.GetEvent().GetDateTime(); ts != nil {
+			row["event_date_time"] = ts.AsTime().UnixMilli()
+		}
+
+		return nil
+	}
+}
+
+func eventDataStep() GenericStep {
+	return func(event *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		return flattenEventData(event, row)
+	}
+}
+
+func clientAdditionalDataStep() GenericStep {
+	return func(event *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		flattenClientAdditionalData(event, row)
+
+		return nil
+	}
+}
+
+func serverAdditionalDataStep() GenericStep {
+	return func(event *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		flattenServerAdditionalData(event, row)
+
+		return nil
+	}
+}
+
+func tableAliasesStep(table TableName) GenericStep {
+	tableName := string(table)
+
+	return func(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		applyTableAliases(tableName, row)
+
+		return nil
+	}
+}
+
+func routeAliasesStep(aliases map[string]string) GenericStep {
+	local := cloneAliases(aliases)
+
+	return func(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		applyAliases(row, local)
+
+		return nil
+	}
+}
+
+func normalizeDateTimesStep() GenericStep {
+	return func(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		normalizeDateTimeColumns(row)
+
+		return nil
+	}
+}
+
+func commonEnrichmentStep() GenericStep {
+	return func(event *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) error {
+		enrichCommon(row, event.GetEvent().GetName())
+
+		return nil
+	}
 }
 
 func flattenEventData(event *xatu.DecoratedEvent, row map[string]any) error {
@@ -593,6 +573,19 @@ func applyAliases(row map[string]any, aliases map[string]string) {
 
 		delete(row, from)
 	}
+}
+
+func cloneAliases(aliases map[string]string) map[string]string {
+	if len(aliases) == 0 {
+		return nil
+	}
+
+	out := make(map[string]string, len(aliases))
+	for from, to := range aliases {
+		out[from] = to
+	}
+
+	return out
 }
 
 func applyTableAliases(table string, row map[string]any) {

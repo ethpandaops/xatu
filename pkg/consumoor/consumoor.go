@@ -2,6 +2,7 @@ package consumoor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,8 +15,8 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
 	"github.com/ethpandaops/xatu/pkg/consumoor/flattener/tables"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -26,10 +27,10 @@ type Consumoor struct {
 	log    logrus.FieldLogger
 	config *Config
 
-	metrics  *Metrics
-	router   *Router
-	consumer *KafkaConsumer
-	writer   Writer
+	metrics *Metrics
+	router  *Router
+	writer  Writer
+	stream  *service.Stream
 
 	metricsServer *http.Server
 	pprofServer   *http.Server
@@ -78,19 +79,18 @@ func New(
 		writer:  writer,
 	}
 
-	// Create the Kafka consumer with handler wired to router + writer
-	consumer, err := NewKafkaConsumer(
+	stream, err := NewBenthosStream(
 		log,
-		&config.Kafka,
+		config,
 		metrics,
-		c.handleEvent,
+		router,
 		writer,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("creating kafka consumer: %w", err)
+		return nil, fmt.Errorf("creating benthos stream: %w", err)
 	}
 
-	c.consumer = consumer
+	c.stream = stream
 
 	return c, nil
 }
@@ -101,17 +101,7 @@ func (c *Consumoor) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Verify ClickHouse connectivity
-	if err := c.writer.Start(ctx); err != nil {
-		return fmt.Errorf("starting clickhouse writer: %w", err)
-	}
-
-	// Start consuming from Kafka
-	if err := c.consumer.Start(nctx); err != nil {
-		return fmt.Errorf("starting kafka consumer: %w", err)
-	}
-
-	c.log.Info("Consumoor started")
+	c.log.Info("Consumoor started (benthos runtime)")
 
 	g, gCtx := errgroup.WithContext(nctx)
 
@@ -124,6 +114,14 @@ func (c *Consumoor) Start(ctx context.Context) error {
 			return c.startPProf(ctx)
 		})
 	}
+
+	g.Go(func() error {
+		if err := c.stream.Run(gCtx); err != nil && !errors.Is(err, context.Canceled) {
+			return fmt.Errorf("running benthos stream: %w", err)
+		}
+
+		return nil
+	})
 
 	g.Go(func() error {
 		<-gCtx.Done()
@@ -144,14 +142,11 @@ func (c *Consumoor) Start(ctx context.Context) error {
 func (c *Consumoor) stop(ctx context.Context) error {
 	c.log.Info("Stopping consumoor")
 
-	// Stop Kafka consumer first (no new messages)
-	if err := c.consumer.Stop(); err != nil {
-		c.log.WithError(err).Error("Error stopping kafka consumer")
-	}
-
-	// Flush remaining ClickHouse buffers
-	if err := c.writer.Stop(ctx); err != nil {
-		c.log.WithError(err).Error("Error stopping clickhouse writer")
+	if c.stream != nil {
+		if err := c.stream.StopWithin(30 * time.Second); err != nil &&
+			err.Error() != "stream has not been run yet" {
+			c.log.WithError(err).Error("Error stopping benthos stream")
+		}
 	}
 
 	// Stop HTTP servers
@@ -170,22 +165,6 @@ func (c *Consumoor) stop(ctx context.Context) error {
 	c.log.Info("Consumoor stopped")
 
 	return nil
-}
-
-// handleEvent is the callback invoked for each decoded Kafka message.
-// It routes the event through registered routes and writes the
-// resulting rows to ClickHouse.
-func (c *Consumoor) handleEvent(event *xatu.DecoratedEvent) DeliveryStatus {
-	outcome := c.router.Route(event)
-	if outcome.Status != DeliveryStatusDelivered {
-		return outcome.Status
-	}
-
-	for _, result := range outcome.Results {
-		c.writer.Write(result.Table, result.Rows)
-	}
-
-	return DeliveryStatusDelivered
 }
 
 func (c *Consumoor) startMetrics(ctx context.Context) error {

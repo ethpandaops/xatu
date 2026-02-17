@@ -301,6 +301,17 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
 				if err := tw.flush(context.Background(), batch); err != nil {
+					if isPermanentRowConversionError(err) {
+						tw.log.WithError(err).
+							WithField("rows", len(batch)).
+							Warn("Dropping permanently invalid batch")
+						batch = make([]map[string]any, 0, tw.config.BatchSize)
+						batchBytes = 0
+						flushBlocked = false
+
+						continue
+					}
+
 					// Preserve batch for retry on next flush cycle. While
 					// pending, stop draining tw.buffer so channel backpressure
 					// remains bounded by BufferSize.
@@ -317,6 +328,17 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 		case <-ticker.C:
 			if len(batch) > 0 {
 				if err := tw.flush(context.Background(), batch); err != nil {
+					if isPermanentRowConversionError(err) {
+						tw.log.WithError(err).
+							WithField("rows", len(batch)).
+							Warn("Dropping permanently invalid batch")
+						batch = make([]map[string]any, 0, tw.config.BatchSize)
+						batchBytes = 0
+						flushBlocked = false
+
+						continue
+					}
+
 					flushBlocked = true
 
 					continue
@@ -348,11 +370,20 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 			if len(batch) > 0 {
 				err := tw.flush(context.Background(), batch)
-				if err == nil {
+				switch {
+				case err == nil:
 					batch = make([]map[string]any, 0, tw.config.BatchSize)
 					batchBytes = 0
 					flushBlocked = false
-				} else {
+				case isPermanentRowConversionError(err):
+					tw.log.WithError(err).
+						WithField("rows", len(batch)).
+						Warn("Dropping permanently invalid batch")
+					batch = make([]map[string]any, 0, tw.config.BatchSize)
+					batchBytes = 0
+					flushBlocked = false
+					err = nil
+				default:
 					flushBlocked = true
 				}
 				// On error: batch is PRESERVED for retry on next cycle

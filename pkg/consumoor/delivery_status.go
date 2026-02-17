@@ -27,13 +27,3 @@ func (s DeliveryStatus) String() string {
 		return "unknown"
 	}
 }
-
-// commitEligible reports whether offsets can advance past this message.
-func (s DeliveryStatus) commitEligible() bool {
-	switch s {
-	case DeliveryStatusDelivered, DeliveryStatusRejected:
-		return true
-	default:
-		return false
-	}
-}

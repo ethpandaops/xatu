@@ -2,6 +2,7 @@ package consumoor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -31,8 +32,9 @@ type KafkaConsumer struct {
 	wg   sync.WaitGroup
 }
 
-// MessageHandler is called for each successfully decoded DecoratedEvent.
-type MessageHandler func(event *xatu.DecoratedEvent)
+// MessageHandler is called for each successfully decoded DecoratedEvent and
+// returns the message delivery status for commit coordination.
+type MessageHandler func(event *xatu.DecoratedEvent) DeliveryStatus
 
 // NewKafkaConsumer creates a Kafka consumer group. Call Start() to begin
 // consuming messages.
@@ -239,14 +241,15 @@ func (h *consumerGroupHandler) ConsumeClaim(
 
 			h.metrics.decodeErrors.WithLabelValues(msg.Topic).Inc()
 
-			// Track even failed decodes so offset advances past them
-			h.coordinator.Track(msg)
+			// Decode failures are terminal for this message, so treat them as
+			// rejected and advance offsets.
+			h.coordinator.Track(msg, DeliveryStatusRejected)
 
 			continue
 		}
 
-		h.handler(event)
-		h.coordinator.Track(msg)
+		status := h.handler(event)
+		h.coordinator.Track(msg, status)
 	}
 
 	return nil
@@ -270,12 +273,13 @@ func (h *consumerGroupHandler) decode(data []byte) (*xatu.DecoratedEvent, error)
 	return event, nil
 }
 
-// trackedMsg holds the Kafka coordinates for a message whose rows have been
-// written to the writer's buffer but not yet flushed to ClickHouse.
+// trackedMsg holds Kafka coordinates plus the current delivery status for a
+// consumed message in this commit cycle.
 type trackedMsg struct {
 	topic     string
 	partition int32
 	offset    int64
+	status    DeliveryStatus
 }
 
 // commitCoordinator manages the flush+commit cycle. A single goroutine
@@ -322,14 +326,15 @@ func (cc *commitCoordinator) Start() {
 	})
 }
 
-// Track records a message whose rows are buffered but not yet flushed.
-// Called by each ConsumeClaim goroutine after Write().
-func (cc *commitCoordinator) Track(msg *sarama.ConsumerMessage) {
+// Track records a message outcome for deferred flush+commit handling.
+// Called by each ConsumeClaim goroutine after decode+handler.
+func (cc *commitCoordinator) Track(msg *sarama.ConsumerMessage, status DeliveryStatus) {
 	cc.mu.Lock()
 	cc.pending = append(cc.pending, trackedMsg{
 		topic:     msg.Topic,
 		partition: msg.Partition,
 		offset:    msg.Offset,
+		status:    status,
 	})
 	cc.mu.Unlock()
 }
@@ -379,6 +384,18 @@ func (cc *commitCoordinator) commit() {
 	start := time.Now()
 
 	if err := cc.writer.FlushAll(context.Background()); err != nil {
+		if isPermanentFlushError(err) {
+			cc.log.WithError(err).
+				WithField("messages", len(snapshot)).
+				Error("FlushAll failed with permanent row conversion error, rejecting snapshot")
+			cc.metrics.commitErrors.WithLabelValues("flush_rejected").Inc()
+
+			snapshot = rejectDelivered(snapshot)
+			cc.applyCommitWindow(snapshot)
+
+			return
+		}
+
 		cc.log.WithError(err).Error("FlushAll failed, not committing offsets")
 		cc.metrics.commitErrors.WithLabelValues("flush_failed").Inc()
 
@@ -392,27 +409,73 @@ func (cc *commitCoordinator) commit() {
 
 	cc.metrics.flushAllDuration.Observe(time.Since(start).Seconds())
 
-	// Mark the highest offset per topic/partition
-	highwater := make(map[string]map[int32]int64, 4)
+	cc.applyCommitWindow(snapshot)
+}
 
-	for _, msg := range snapshot {
-		parts, ok := highwater[msg.topic]
-		if !ok {
-			parts = make(map[int32]int64, 4)
-			highwater[msg.topic] = parts
-		}
+func isPermanentFlushError(err error) bool {
+	var conversionErr *rowConversionError
 
-		current, ok := parts[msg.partition]
-		if !ok || msg.offset > current {
-			parts[msg.partition] = msg.offset
+	return errors.As(err, &conversionErr)
+}
+
+func rejectDelivered(snapshot []trackedMsg) []trackedMsg {
+	out := make([]trackedMsg, len(snapshot))
+	copy(out, snapshot)
+
+	for i := range out {
+		if out[i].status == DeliveryStatusDelivered {
+			out[i].status = DeliveryStatusRejected
 		}
 	}
 
-	for topic, parts := range highwater {
-		for partition, offset := range parts {
-			// MarkOffset expects the NEXT offset to read
-			cc.session.MarkOffset(topic, partition, offset+1, "")
+	return out
+}
+
+func (cc *commitCoordinator) applyCommitWindow(snapshot []trackedMsg) {
+	// Mark highest contiguous commit-eligible offset per topic/partition and
+	// keep non-eligible messages pending (including later offsets in that
+	// partition).
+	type partitionKey struct {
+		topic     string
+		partition int32
+	}
+
+	highwater := make(map[partitionKey]int64, 4)
+	blocked := make(map[partitionKey]struct{}, 4)
+	uncommitted := make([]trackedMsg, 0, len(snapshot))
+
+	for _, msg := range snapshot {
+		key := partitionKey{topic: msg.topic, partition: msg.partition}
+		if _, isBlocked := blocked[key]; isBlocked {
+			uncommitted = append(uncommitted, msg)
+
+			continue
 		}
+
+		if msg.status.commitEligible() {
+			highwater[key] = msg.offset
+
+			continue
+		}
+
+		blocked[key] = struct{}{}
+
+		uncommitted = append(uncommitted, msg)
+	}
+
+	if len(uncommitted) > 0 {
+		cc.mu.Lock()
+		cc.pending = append(uncommitted, cc.pending...)
+		cc.mu.Unlock()
+	}
+
+	if len(highwater) == 0 {
+		return
+	}
+
+	for key, offset := range highwater {
+		// MarkOffset expects the NEXT offset to read
+		cc.session.MarkOffset(key.topic, key.partition, offset+1, "")
 	}
 
 	cc.session.Commit()

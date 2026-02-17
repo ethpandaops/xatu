@@ -112,6 +112,20 @@ type columnAppender struct {
 	arg    reflect.Type
 }
 
+type rowConversionError struct {
+	table   string
+	skipped int
+	cause   error
+}
+
+func (e *rowConversionError) Error() string {
+	return fmt.Sprintf("converting rows for %s: skipped %d row(s): %v", e.table, e.skipped, e.cause)
+}
+
+func (e *rowConversionError) Unwrap() error {
+	return e.cause
+}
+
 // NewChGoWriter creates a new ch-go writer.
 func NewChGoWriter(
 	log logrus.FieldLogger,
@@ -430,10 +444,18 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 	}
 
 	if skipped > 0 {
-		tw.log.WithError(firstErr).
+		err := &rowConversionError{
+			table:   tw.table,
+			skipped: skipped,
+			cause:   firstErr,
+		}
+		tw.log.WithError(err).
+			WithField("rows_total", len(rows)).
 			WithField("rows_skipped", skipped).
-			Warn("Skipping rows that could not be converted for ch-go input")
+			Error("Failed to convert rows for ch-go input")
 		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(skipped))
+
+		return err
 	}
 
 	if wrote == 0 {

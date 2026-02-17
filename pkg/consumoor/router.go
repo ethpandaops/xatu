@@ -14,6 +14,13 @@ type RouterResult struct {
 	Rows  []map[string]any
 }
 
+// RouterOutcome holds routed rows and the overall delivery status for one
+// event. A non-delivered status means rows should not be written.
+type RouterOutcome struct {
+	Results []RouterResult
+	Status  DeliveryStatus
+}
+
 // Router maps event names to registered routes and dispatches incoming
 // events to the appropriate route handlers.
 type Router struct {
@@ -68,9 +75,9 @@ func NewRouter(
 // Route processes a single DecoratedEvent through the routing pipeline:
 // extract metadata, find matching routes, flatten the event, and
 // return the results grouped by target table.
-func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
+func (r *Router) Route(event *xatu.DecoratedEvent) RouterOutcome {
 	if event == nil || event.GetEvent() == nil {
-		return nil
+		return RouterOutcome{Status: DeliveryStatusRejected}
 	}
 
 	eventName := event.GetEvent().GetName()
@@ -79,7 +86,7 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 	if _, disabled := r.disabledEvents[eventName]; disabled {
 		r.metrics.messagesDropped.WithLabelValues(eventName.String(), "disabled").Inc()
 
-		return nil
+		return RouterOutcome{Status: DeliveryStatusDelivered}
 	}
 
 	// Look up routes for this event.
@@ -87,7 +94,7 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 	if !ok {
 		r.metrics.messagesDropped.WithLabelValues(eventName.String(), "no_flattener").Inc()
 
-		return nil
+		return RouterOutcome{Status: DeliveryStatusDelivered}
 	}
 
 	// Extract shared metadata once
@@ -112,14 +119,12 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 
 			r.metrics.flattenErrors.WithLabelValues(eventName.String(), route.TableName()).Inc()
 
-			continue
+			return RouterOutcome{Status: DeliveryStatusRejected}
 		}
 
 		if len(rows) == 0 {
 			continue
 		}
-
-		r.metrics.messagesRouted.WithLabelValues(eventName.String(), route.TableName()).Inc()
 
 		results = append(results, RouterResult{
 			Table: route.TableName(),
@@ -127,5 +132,12 @@ func (r *Router) Route(event *xatu.DecoratedEvent) []RouterResult {
 		})
 	}
 
-	return results
+	for _, result := range results {
+		r.metrics.messagesRouted.WithLabelValues(eventName.String(), result.Table).Inc()
+	}
+
+	return RouterOutcome{
+		Results: results,
+		Status:  DeliveryStatusDelivered,
+	}
 }

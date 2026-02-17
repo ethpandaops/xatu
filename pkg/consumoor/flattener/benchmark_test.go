@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
-	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/flattener/table"
+	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/flattener/tables"
 	"github.com/ethpandaops/xatu/pkg/consumoor/metadata"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"

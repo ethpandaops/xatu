@@ -129,9 +129,9 @@ func TestCommitCoordinator_HappyPath(t *testing.T) {
 	cc := newTestCoordinator(writer, session, time.Hour) // long interval — we trigger manually
 
 	// Track some messages
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10})
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11})
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 1, Offset: 5})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 1, Offset: 5}, DeliveryStatusDelivered)
 
 	// Trigger commit manually
 	cc.commit()
@@ -174,8 +174,8 @@ func TestCommitCoordinator_FlushAllFailure(t *testing.T) {
 	session := &mockSession{}
 	cc := newTestCoordinator(writer, session, time.Hour)
 
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10})
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11}, DeliveryStatusDelivered)
 
 	// First commit fails — messages should be put back
 	cc.commit()
@@ -204,13 +204,13 @@ func TestCommitCoordinator_FlushFailurePreservesOrder(t *testing.T) {
 	cc := newTestCoordinator(writer, session, time.Hour)
 
 	// Track batch 1
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
 
 	// Flush fails — batch 1 goes back to pending
 	cc.commit()
 
 	// Track batch 2 (arrived while batch 1 was being retried)
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 20})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 20}, DeliveryStatusDelivered)
 
 	// Fix writer, commit again — both batches should commit
 	writer.setFlushErr(nil)
@@ -221,15 +221,46 @@ func TestCommitCoordinator_FlushFailurePreservesOrder(t *testing.T) {
 	assert.Equal(t, int64(21), marks[0].offset) // highwater is 20+1
 }
 
+func TestCommitCoordinator_PermanentFlushErrorRejectsDeliveredAndCommits(t *testing.T) {
+	writer := &mockWriter{
+		flushErr: &rowConversionError{
+			table:   "canonical_beacon_block",
+			skipped: 1,
+			cause:   fmt.Errorf("cannot convert column %q", "event_date_time"),
+		},
+	}
+	session := &mockSession{}
+	cc := newTestCoordinator(writer, session, time.Hour)
+
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11}, DeliveryStatusDelivered)
+
+	cc.commit()
+
+	assert.Equal(t, 1, writer.flushCount())
+
+	marks := session.getMarks()
+	require.Len(t, marks, 1)
+	assert.Equal(t, "t1", marks[0].topic)
+	assert.Equal(t, int32(0), marks[0].partition)
+	assert.Equal(t, int64(12), marks[0].offset)
+	assert.Equal(t, 1, session.commitCount())
+
+	cc.mu.Lock()
+	defer cc.mu.Unlock()
+
+	assert.Empty(t, cc.pending)
+}
+
 func TestCommitCoordinator_MultiTopicPartition(t *testing.T) {
 	writer := &mockWriter{}
 	session := &mockSession{}
 	cc := newTestCoordinator(writer, session, time.Hour)
 
-	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 0, Offset: 100})
-	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 1, Offset: 200})
-	cc.Track(&sarama.ConsumerMessage{Topic: "topicB", Partition: 0, Offset: 50})
-	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 0, Offset: 105})
+	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 0, Offset: 100}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 1, Offset: 200}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "topicB", Partition: 0, Offset: 50}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "topicA", Partition: 0, Offset: 105}, DeliveryStatusDelivered)
 
 	cc.commit()
 
@@ -252,7 +283,7 @@ func TestCommitCoordinator_OffsetZeroIsCommitted(t *testing.T) {
 	session := &mockSession{}
 	cc := newTestCoordinator(writer, session, time.Hour)
 
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 2, Offset: 0})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 2, Offset: 0}, DeliveryStatusDelivered)
 	cc.commit()
 
 	marks := session.getMarks()
@@ -263,6 +294,51 @@ func TestCommitCoordinator_OffsetZeroIsCommitted(t *testing.T) {
 	assert.Equal(t, 1, session.commitCount())
 }
 
+func TestCommitCoordinator_RejectedIsCommitEligible(t *testing.T) {
+	writer := &mockWriter{}
+	session := &mockSession{}
+	cc := newTestCoordinator(writer, session, time.Hour)
+
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11}, DeliveryStatusRejected)
+	cc.commit()
+
+	marks := session.getMarks()
+	require.Len(t, marks, 1)
+	assert.Equal(t, int64(12), marks[0].offset)
+	assert.Equal(t, 1, session.commitCount())
+}
+
+func TestCommitCoordinator_ErroredBlocksContiguousCommit(t *testing.T) {
+	writer := &mockWriter{}
+	session := &mockSession{}
+	cc := newTestCoordinator(writer, session, time.Hour)
+
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 10}, DeliveryStatusDelivered)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 11}, DeliveryStatusErrored)
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 12}, DeliveryStatusDelivered)
+
+	cc.commit()
+
+	marks := session.getMarks()
+	require.Len(t, marks, 1)
+	assert.Equal(t, int64(11), marks[0].offset) // committed only through offset 10
+	assert.Equal(t, 1, session.commitCount())
+
+	cc.mu.Lock()
+	pending := append([]trackedMsg(nil), cc.pending...)
+	cc.mu.Unlock()
+
+	require.Len(t, pending, 2)
+	assert.Equal(t, int64(11), pending[0].offset)
+	assert.Equal(t, DeliveryStatusErrored, pending[0].status)
+	assert.Equal(t, int64(12), pending[1].offset)
+
+	cc.commit()
+	assert.Equal(t, 2, writer.flushCount())
+	assert.Equal(t, 1, session.commitCount())
+}
+
 func TestCommitCoordinator_StopFinalFlush(t *testing.T) {
 	writer := &mockWriter{}
 	session := &mockSession{}
@@ -270,7 +346,7 @@ func TestCommitCoordinator_StopFinalFlush(t *testing.T) {
 
 	cc.Start()
 
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 42})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 42}, DeliveryStatusDelivered)
 
 	// Stop should trigger a final flush+commit
 	cc.Stop()
@@ -290,7 +366,7 @@ func TestCommitCoordinator_IntervalTriggers(t *testing.T) {
 
 	cc.Start()
 
-	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 1})
+	cc.Track(&sarama.ConsumerMessage{Topic: "t1", Partition: 0, Offset: 1}, DeliveryStatusDelivered)
 
 	// Wait for at least one interval tick to fire
 	require.Eventually(t, func() bool {

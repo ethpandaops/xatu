@@ -20,8 +20,13 @@ Kafka → KafkaConsumer (decode) → Router (event name → routes) → ClickHou
 
 ### Adding a New Event
 
-1. Add or update a table route in `flattener/table/table_route_*.go` using `flattener.RouteTo(...).<steps>().Build()`
-2. For custom behavior, implement `flattener.Route` directly or use `.Predicate(...)` / `.Mutator(...)` on the route pipeline
+1. Add or update a table route in `flattener/tables/<domain>/*.go` using either `flattener.RouteTo(...).Apply(flattener.<Transform>).Build()` or:
+   `flattener.`
+   `  From(...).`
+   `  To(...).`
+   `  Apply(...).`
+   `  Build()`
+2. For custom behavior, implement `flattener.Route` directly or use `.If(...)` / `.Mutator(...)` on the route pipeline
 3. Write a ClickHouse migration for the target table
 4. Add or update unit tests in `flattener/registry_test.go`
 

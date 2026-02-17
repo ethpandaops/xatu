@@ -13,7 +13,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
-	"github.com/ethpandaops/xatu/pkg/consumoor/flattener/table"
+	"github.com/ethpandaops/xatu/pkg/consumoor/flattener/tables"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -175,12 +175,17 @@ func (c *Consumoor) stop(ctx context.Context) error {
 // handleEvent is the callback invoked for each decoded Kafka message.
 // It routes the event through registered routes and writes the
 // resulting rows to ClickHouse.
-func (c *Consumoor) handleEvent(event *xatu.DecoratedEvent) {
-	results := c.router.Route(event)
+func (c *Consumoor) handleEvent(event *xatu.DecoratedEvent) DeliveryStatus {
+	outcome := c.router.Route(event)
+	if outcome.Status != DeliveryStatusDelivered {
+		return outcome.Status
+	}
 
-	for _, result := range results {
+	for _, result := range outcome.Results {
 		c.writer.Write(result.Table, result.Rows)
 	}
+
+	return DeliveryStatusDelivered
 }
 
 func (c *Consumoor) startMetrics(ctx context.Context) error {
@@ -222,5 +227,5 @@ func (c *Consumoor) startPProf(_ context.Context) error {
 
 // buildRoutes returns all registered route implementations.
 func buildRoutes() []flattener.Route {
-	return table.All()
+	return tables.All()
 }

@@ -13,8 +13,11 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/flattener"
-	"github.com/ethpandaops/xatu/pkg/consumoor/flattener/tables"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse"
+	consrouter "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
+	"github.com/ethpandaops/xatu/pkg/consumoor/source"
+	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/sirupsen/logrus"
@@ -27,9 +30,9 @@ type Consumoor struct {
 	log    logrus.FieldLogger
 	config *Config
 
-	metrics *Metrics
-	router  *Router
-	writer  Writer
+	metrics *telemetry.Metrics
+	router  *consrouter.Engine
+	writer  source.Writer
 	stream  *service.Stream
 
 	metricsServer *http.Server
@@ -49,10 +52,10 @@ func New(
 
 	config.ApplyOverrides(overrides)
 
-	metrics := NewMetrics("xatu")
+	metrics := telemetry.NewMetrics("xatu")
 
-	// Create the ClickHouse writer
-	writer, err := NewWriter(
+	// Create the ClickHouse writer.
+	writer, err := clickhouse.NewChGoWriter(
 		log,
 		&config.ClickHouse,
 		metrics,
@@ -62,14 +65,14 @@ func New(
 	}
 
 	// Create the router with all registered routes.
-	registeredRoutes := buildRoutes()
+	registeredRoutes := tables.All()
 
 	disabledEvents, err := config.DisabledEventEnums()
 	if err != nil {
 		return nil, fmt.Errorf("invalid disabledEvents config: %w", err)
 	}
 
-	router := NewRouter(log, registeredRoutes, disabledEvents, metrics)
+	router := consrouter.New(log, registeredRoutes, disabledEvents, metrics)
 
 	c := &Consumoor{
 		log:     log.WithField("component", "consumoor"),
@@ -79,12 +82,14 @@ func New(
 		writer:  writer,
 	}
 
-	stream, err := NewBenthosStream(
+	stream, err := source.NewBenthosStream(
 		log,
-		config,
+		config.LoggingLevel,
+		&config.Kafka,
 		metrics,
 		router,
 		writer,
+		clickhouse.DefaultErrorClassifier{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating benthos stream: %w", err)
@@ -202,9 +207,4 @@ func (c *Consumoor) startPProf(_ context.Context) error {
 	}
 
 	return nil
-}
-
-// buildRoutes returns all registered route implementations.
-func buildRoutes() []flattener.Route {
-	return tables.All()
 }

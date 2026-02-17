@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/consumoor/source"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,15 +48,15 @@ func TestDisabledEventEnums(t *testing.T) {
 
 func TestClickHouseConfigValidateChGo(t *testing.T) {
 	t.Run("accepts valid ch-go settings", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
+		cfg := &clickhouse.Config{
 			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     1,
 				BatchBytes:    1,
 				FlushInterval: time.Second,
 				BufferSize:    1,
 			},
-			ChGo: ChGoConfig{
+			ChGo: clickhouse.ChGoConfig{
 				QueryTimeout:        30 * time.Second,
 				MaxRetries:          3,
 				RetryBaseDelay:      100 * time.Millisecond,
@@ -72,15 +74,15 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 	})
 
 	t.Run("rejects invalid pool bounds", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
+		cfg := &clickhouse.Config{
 			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     1,
 				BatchBytes:    1,
 				FlushInterval: time.Second,
 				BufferSize:    1,
 			},
-			ChGo: ChGoConfig{
+			ChGo: clickhouse.ChGoConfig{
 				RetryBaseDelay:    100 * time.Millisecond,
 				RetryMaxDelay:     2 * time.Second,
 				MaxConns:          2,
@@ -97,15 +99,15 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 	})
 
 	t.Run("rejects negative retries", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
+		cfg := &clickhouse.Config{
 			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     1,
 				BatchBytes:    1,
 				FlushInterval: time.Second,
 				BufferSize:    1,
 			},
-			ChGo: ChGoConfig{
+			ChGo: clickhouse.ChGoConfig{
 				MaxRetries:        -1,
 				RetryBaseDelay:    100 * time.Millisecond,
 				RetryMaxDelay:     2 * time.Second,
@@ -123,9 +125,9 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 	})
 
 	t.Run("rejects unsupported insertSettings value type", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
+		cfg := &clickhouse.Config{
 			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     1,
 				BatchBytes:    1,
 				FlushInterval: time.Second,
@@ -134,7 +136,7 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 					"bad_setting": []int{1, 2},
 				},
 			},
-			ChGo: ChGoConfig{
+			ChGo: clickhouse.ChGoConfig{
 				RetryBaseDelay:    100 * time.Millisecond,
 				RetryMaxDelay:     2 * time.Second,
 				MaxConns:          8,
@@ -152,8 +154,8 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 }
 
 func TestTableConfigForMergesInsertSettings(t *testing.T) {
-	cfg := &ClickHouseConfig{
-		Defaults: TableConfig{
+	cfg := &clickhouse.Config{
+		Defaults: clickhouse.TableConfig{
 			BatchSize:     100,
 			BatchBytes:    200,
 			FlushInterval: time.Second,
@@ -163,7 +165,7 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 				"insert_quorum_timeout": 30000,
 			},
 		},
-		Tables: map[string]TableConfig{
+		Tables: map[string]clickhouse.TableConfig{
 			"canonical_beacon_block": {
 				BatchSize: 500,
 				InsertSettings: map[string]any{
@@ -190,8 +192,8 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 
 func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	t.Run("adds auto quorum for canonical tables when unset", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
-			Defaults: TableConfig{
+		cfg := &clickhouse.Config{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     100,
 				BatchBytes:    200,
 				FlushInterval: time.Second,
@@ -204,8 +206,8 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	})
 
 	t.Run("does not add quorum for non-canonical tables", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
-			Defaults: TableConfig{
+		cfg := &clickhouse.Config{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     100,
 				BatchBytes:    200,
 				FlushInterval: time.Second,
@@ -218,14 +220,14 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	})
 
 	t.Run("preserves explicit per-table quorum", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
-			Defaults: TableConfig{
+		cfg := &clickhouse.Config{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     100,
 				BatchBytes:    200,
 				FlushInterval: time.Second,
 				BufferSize:    300,
 			},
-			Tables: map[string]TableConfig{
+			Tables: map[string]clickhouse.TableConfig{
 				"canonical_beacon_block": {
 					InsertSettings: map[string]any{
 						"insert_quorum": 3,
@@ -239,8 +241,8 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	})
 
 	t.Run("preserves explicit default quorum", func(t *testing.T) {
-		cfg := &ClickHouseConfig{
-			Defaults: TableConfig{
+		cfg := &clickhouse.Config{
+			Defaults: clickhouse.TableConfig{
 				BatchSize:     100,
 				BatchBytes:    200,
 				FlushInterval: time.Second,
@@ -253,5 +255,40 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
 		assert.Equal(t, map[string]any{"insert_quorum": 2}, got.InsertSettings)
+	})
+}
+
+func TestKafkaConfigValidateDeliveryMode(t *testing.T) {
+	base := source.KafkaConfig{
+		Brokers:        []string{"localhost:9092"},
+		Topics:         []string{"^general-.+"},
+		ConsumerGroup:  "xatu-consumoor",
+		Encoding:       "json",
+		OffsetDefault:  "oldest",
+		CommitInterval: 5 * time.Second,
+	}
+
+	t.Run("defaults empty mode to batch", func(t *testing.T) {
+		cfg := base
+		cfg.DeliveryMode = ""
+
+		require.NoError(t, cfg.Validate())
+		assert.Equal(t, source.DeliveryModeBatch, cfg.DeliveryMode)
+	})
+
+	t.Run("accepts message mode", func(t *testing.T) {
+		cfg := base
+		cfg.DeliveryMode = source.DeliveryModeMessage
+
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("rejects unknown mode", func(t *testing.T) {
+		cfg := base
+		cfg.DeliveryMode = "ultra-fast"
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "deliveryMode")
 	})
 }

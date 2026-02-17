@@ -15,8 +15,9 @@ kafka:
   # maxPartitionFetchBytes: 10485760
   # sessionTimeoutMs: 30000
   # heartbeatIntervalMs: 3000
-  commitInterval: 5s      # flush+commit cycle interval
-  # version: "3.6.0"
+  commitInterval: 5s      # Kafka offset commit interval
+  # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
+  # rejectedTopic: xatu-consumoor-rejected
   # tls: false
   # sasl:
   #   mechanism: PLAIN

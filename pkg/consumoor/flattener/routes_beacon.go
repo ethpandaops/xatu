@@ -6,146 +6,456 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-func beaconRoutes() []TableDefinition {
-	return []TableDefinition{
-		GenericTable(TableBeaconApiEthV1EventsHead, []xatu.Event_Name{
+func beaconRoutes() []Route {
+	return []Route{
+		RouteTo(
+			TableBeaconApiEthV1EventsHead,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsBlock, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsBlock,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsBlockGossip, []xatu.Event_Name{
-			xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsFinalizedCheckpoint, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(TableBeaconApiEthV1EventsBlockGossip, xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_GOSSIP).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsFinalizedCheckpoint,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsChainReorg, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsChainReorg,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1BeaconBlob, []xatu.Event_Name{
-			xatu.Event_BEACON_API_ETH_V1_BEACON_BLOB,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsBlobSidecar, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(TableBeaconApiEthV1BeaconBlob, xatu.Event_BEACON_API_ETH_V1_BEACON_BLOB).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsBlobSidecar,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsDataColumnSidecar, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsDataColumnSidecar,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsVoluntaryExit, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsVoluntaryExit,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsContributionAndProof, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsContributionAndProof,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1EventsAttestation, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1EventsAttestation,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
 			xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2,
-		}),
-		GenericTable(TableBeaconApiEthV1ValidatorAttestationData, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV1ValidatorAttestationData,
 			xatu.Event_BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA,
-		}),
-		GenericTable(TableCanonicalBeaconBlobSidecar, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlobSidecar,
 			xatu.Event_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR,
-		}),
-		GenericTable(
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
 			TableBeaconApiEthV1ProposerDuty,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY},
-			WithPredicate(func(event *xatu.DecoratedEvent) bool {
+			xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Predicate(func(event *xatu.DecoratedEvent) bool {
 				stateID := event.GetMeta().GetClient().GetEthV1ProposerDuty().GetStateId()
 
 				return strings.EqualFold(stateID, "head")
-			}),
-		),
-		GenericTable(
+			}).
+			Build(),
+		RouteTo(
 			TableBeaconApiEthV1BeaconCommittee,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE},
-			WithPredicate(func(event *xatu.DecoratedEvent) bool {
+			xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Predicate(func(event *xatu.DecoratedEvent) bool {
 				stateID := event.GetMeta().GetClient().GetEthV1BeaconCommittee().GetStateId()
 
 				return !strings.EqualFold(stateID, "finalized")
-			}),
-		),
-		GenericTable(
+			}).
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconCommittee,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE},
-			WithPredicate(func(event *xatu.DecoratedEvent) bool {
+			xatu.Event_BEACON_API_ETH_V1_BEACON_COMMITTEE,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Predicate(func(event *xatu.DecoratedEvent) bool {
 				stateID := event.GetMeta().GetClient().GetEthV1BeaconCommittee().GetStateId()
 
 				return strings.EqualFold(stateID, "finalized")
-			}),
-		),
-		GenericTable(
+			}).
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconProposerDuty,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY},
-			WithPredicate(func(event *xatu.DecoratedEvent) bool {
+			xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Predicate(func(event *xatu.DecoratedEvent) bool {
 				stateID := event.GetMeta().GetClient().GetEthV1ProposerDuty().GetStateId()
 
 				return strings.EqualFold(stateID, "finalized")
-			}),
-		),
-		GenericTable(TableBeaconApiEthV2BeaconBlock, []xatu.Event_Name{
+			}).
+			Build(),
+		RouteTo(
+			TableBeaconApiEthV2BeaconBlock,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2,
-		}),
-		GenericTable(
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconBlock,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2},
-			WithPredicate(func(event *xatu.DecoratedEvent) bool {
+			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Predicate(func(event *xatu.DecoratedEvent) bool {
 				return event.GetMeta().GetClient().GetEthV2BeaconBlockV2().GetFinalizedWhenRequested()
-			}),
-		),
-		GenericTable(TableBeaconApiEthV3ValidatorBlock, []xatu.Event_Name{
-			xatu.Event_BEACON_API_ETH_V3_VALIDATOR_BLOCK,
-		}),
-		ValidatorsFanoutTable(TableCanonicalBeaconValidators, ValidatorsFanoutKindValidators),
-		ValidatorsFanoutTable(TableCanonicalBeaconValidatorsPubkeys, ValidatorsFanoutKindPubkeys),
-		ValidatorsFanoutTable(
+			}).
+			Build(),
+		RouteTo(TableBeaconApiEthV3ValidatorBlock, xatu.Event_BEACON_API_ETH_V3_VALIDATOR_BLOCK).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		NewValidatorsFanoutFlattener(TableCanonicalBeaconValidators, ValidatorsFanoutKindValidators),
+		NewValidatorsFanoutFlattener(TableCanonicalBeaconValidatorsPubkeys, ValidatorsFanoutKindPubkeys),
+		NewValidatorsFanoutFlattener(
 			TableCanonicalBeaconValidatorsWithdrawalCredentials,
 			ValidatorsFanoutKindWithdrawalCredential,
 		),
-		GenericTable(TableCanonicalBeaconBlockAttesterSlashing, []xatu.Event_Name{
+		RouteTo(
+			TableCanonicalBeaconBlockAttesterSlashing,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING,
-		}),
-		GenericTable(
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconElaboratedAttestation,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION},
-			WithAliases(map[string]string{"validator_indexes": "validators"}),
-		),
-		GenericTable(TableCanonicalBeaconBlockBlsToExecutionChange, []xatu.Event_Name{
+			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			Aliases(map[string]string{"validator_indexes": "validators"}).
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlockBlsToExecutionChange,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE,
-		}),
-		GenericTable(TableCanonicalBeaconBlockDeposit, []xatu.Event_Name{
-			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
-		}),
-		GenericTable(TableCanonicalBeaconBlockExecutionTransaction, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(TableCanonicalBeaconBlockDeposit, xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlockExecutionTransaction,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
-		}),
-		GenericTable(TableCanonicalBeaconBlockProposerSlashing, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlockProposerSlashing,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING,
-		}),
-		GenericTable(TableCanonicalBeaconBlockVoluntaryExit, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlockVoluntaryExit,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT,
-		}),
-		GenericTable(TableCanonicalBeaconBlockWithdrawal, []xatu.Event_Name{
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
+			TableCanonicalBeaconBlockWithdrawal,
 			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL,
-		}),
-		GenericTable(
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconSyncCommittee,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE},
-			WithMutator(syncCommitteeMutator),
-		),
-		GenericTable(
+			xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Mutator(syncCommitteeMutator).
+			Build(),
+		RouteTo(
 			TableCanonicalBeaconBlockSyncAggregate,
-			[]xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE},
-			WithMutator(syncAggregateMutator),
-		),
+			xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE,
+		).
+			CommonMetadata().
+			RuntimeColumns().
+			EventData().
+			ClientAdditionalData().
+			ServerAdditionalData().
+			TableAliases().
+			RouteAliases().
+			NormalizeDateTimes().
+			CommonEnrichment().
+			Mutator(syncAggregateMutator).
+			Build(),
 	}
 }

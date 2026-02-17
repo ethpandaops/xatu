@@ -12,13 +12,13 @@ import (
 
 // All returns all registered routes used by consumoor.
 func All() []Route {
-	tables := make([]TableDefinition, 0, 96)
-	tables = append(tables, beaconRoutes()...)
-	tables = append(tables, executionRoutes()...)
-	tables = append(tables, mevAndNodeRoutes()...)
-	tables = append(tables, libp2pRoutes()...)
+	routes := make([]Route, 0, 96)
+	routes = append(routes, beaconRoutes()...)
+	routes = append(routes, executionRoutes()...)
+	routes = append(routes, mevAndNodeRoutes()...)
+	routes = append(routes, libp2pRoutes()...)
 
-	return routesFromTables(tables)
+	return routes
 }
 
 func peerConvergenceMutator(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata, row map[string]any) ([]map[string]any, error) {

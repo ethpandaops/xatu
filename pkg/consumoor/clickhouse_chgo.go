@@ -4,7 +4,9 @@ package consumoor
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"net/url"
@@ -13,22 +15,69 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/chpool"
+	"github.com/ClickHouse/ch-go/compress"
 	"github.com/ClickHouse/ch-go/proto"
 	"github.com/sirupsen/logrus"
 )
 
 var timeType = reflect.TypeOf(time.Time{})
 
+const (
+	defaultChGoRetryBaseDelay       = 100 * time.Millisecond
+	defaultChGoRetryMaxDelay        = 2 * time.Second
+	defaultChGoMaxConns       int32 = 8
+	defaultChGoConnMaxLife          = time.Hour
+	defaultChGoConnMaxIdle          = 10 * time.Minute
+	defaultChGoHealthCheck          = 30 * time.Second
+)
+
+func resolvedChGoConfig(cfg ChGoConfig) ChGoConfig {
+	out := cfg
+
+	if out.RetryBaseDelay == 0 {
+		out.RetryBaseDelay = defaultChGoRetryBaseDelay
+	}
+
+	if out.RetryMaxDelay == 0 {
+		out.RetryMaxDelay = defaultChGoRetryMaxDelay
+	}
+
+	if out.MaxConns == 0 {
+		out.MaxConns = defaultChGoMaxConns
+	}
+
+	if out.ConnMaxLifetime == 0 {
+		out.ConnMaxLifetime = defaultChGoConnMaxLife
+	}
+
+	if out.ConnMaxIdleTime == 0 {
+		out.ConnMaxIdleTime = defaultChGoConnMaxIdle
+	}
+
+	if out.HealthCheckPeriod == 0 {
+		out.HealthCheckPeriod = defaultChGoHealthCheck
+	}
+
+	return out
+}
+
 // ChGoWriter manages batched inserts using the ch-go client.
 type ChGoWriter struct {
-	log      logrus.FieldLogger
-	config   *ClickHouseConfig
-	metrics  *Metrics
-	client   *ch.Client
-	clientMu sync.Mutex
+	log     logrus.FieldLogger
+	config  *ClickHouseConfig
+	metrics *Metrics
+
+	options ch.Options
+	chgoCfg ChGoConfig
+
+	poolMu sync.RWMutex
+	pool   *chpool.Pool
+
 	database string
 
 	tables map[string]*chTableWriter
@@ -36,6 +85,9 @@ type ChGoWriter struct {
 
 	done chan struct{}
 	wg   sync.WaitGroup
+
+	poolMetricsDone chan struct{}
+	poolMetricsWG   sync.WaitGroup
 }
 
 type chTableWriter struct {
@@ -44,8 +96,7 @@ type chTableWriter struct {
 	database string
 	config   TableConfig
 	metrics  *Metrics
-	client   *ch.Client
-	clientMu *sync.Mutex
+	writer   *ChGoWriter
 	buffer   chan []map[string]any
 	flushReq chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
@@ -72,42 +123,85 @@ func NewChGoWriter(
 		return nil, fmt.Errorf("parsing clickhouse DSN for ch-go backend: %w", err)
 	}
 
-	client, err := ch.Dial(context.Background(), opts)
-	if err != nil {
-		return nil, fmt.Errorf("opening ch-go connection: %w", err)
+	chgoCfg := resolvedChGoConfig(config.ChGo)
+	if err := chgoCfg.Validate(); err != nil {
+		return nil, fmt.Errorf("validating clickhouse ch-go config: %w", err)
 	}
 
 	return &ChGoWriter{
 		log:      log.WithField("component", "chgo_writer"),
 		config:   config,
 		metrics:  metrics,
-		client:   client,
+		options:  opts,
+		chgoCfg:  chgoCfg,
 		database: opts.Database,
 		tables:   make(map[string]*chTableWriter, 16),
 		done:     make(chan struct{}),
 	}, nil
 }
 
-// Start verifies connectivity.
+// Start dials the pool and verifies connectivity.
 func (w *ChGoWriter) Start(ctx context.Context) error {
-	if err := w.client.Ping(ctx); err != nil {
-		return fmt.Errorf("ch-go ping failed: %w", err)
+	if w.getPool() != nil {
+		return nil
 	}
 
-	w.log.Info("ch-go ClickHouse connection established")
+	var pool *chpool.Pool
+
+	if err := w.doWithRetry(ctx, "dial_pool", func(attemptCtx context.Context) error {
+		p, err := chpool.Dial(attemptCtx, chpool.Options{
+			ClientOptions:     w.options,
+			MaxConns:          w.chgoCfg.MaxConns,
+			MinConns:          w.chgoCfg.MinConns,
+			MaxConnLifetime:   w.chgoCfg.ConnMaxLifetime,
+			MaxConnIdleTime:   w.chgoCfg.ConnMaxIdleTime,
+			HealthCheckPeriod: w.chgoCfg.HealthCheckPeriod,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := p.Ping(attemptCtx); err != nil {
+			p.Close()
+
+			return err
+		}
+
+		pool = p
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("opening ch-go connection pool: %w", err)
+	}
+
+	w.setPool(pool)
+
+	if w.chgoCfg.PoolMetricsInterval > 0 {
+		w.poolMetricsDone = make(chan struct{})
+		w.poolMetricsWG.Go(w.collectPoolMetrics)
+	}
+
+	w.log.WithField("max_conns", w.chgoCfg.MaxConns).
+		WithField("min_conns", w.chgoCfg.MinConns).
+		Info("ch-go ClickHouse connection pool established")
 
 	return nil
 }
 
-// Stop drains buffers and closes connection.
+// Stop drains buffers and closes the connection pool.
 func (w *ChGoWriter) Stop(_ context.Context) error {
 	w.log.Info("Stopping ch-go writer, flushing remaining buffers")
 
 	close(w.done)
 	w.wg.Wait()
 
-	if err := w.client.Close(); err != nil {
-		return fmt.Errorf("closing ch-go connection: %w", err)
+	if w.poolMetricsDone != nil {
+		close(w.poolMetricsDone)
+		w.poolMetricsWG.Wait()
+	}
+
+	if pool := w.getPool(); pool != nil {
+		pool.Close()
 	}
 
 	return nil
@@ -149,8 +243,7 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 		database: w.database,
 		config:   cfg,
 		metrics:  w.metrics,
-		client:   w.client,
-		clientMu: &w.clientMu,
+		writer:   w,
 		buffer:   make(chan []map[string]any, cfg.BufferSize),
 		flushReq: make(chan chan error, 1),
 	}
@@ -347,10 +440,20 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 		return nil
 	}
 
-	if err := tw.do(ctx, &ch.Query{
-		Body:  tw.input.Into(tw.table),
+	insertBody, err := insertQueryWithSettings(tw.input.Into(tw.table), tw.config.InsertSettings)
+	if err != nil {
+		tw.log.WithError(err).
+			WithField("rows", wrote).
+			Error("Invalid insert settings")
+		tw.metrics.writeErrors.WithLabelValues(tw.table).Add(float64(wrote))
+
+		return fmt.Errorf("building insert query for %s: %w", tw.table, err)
+	}
+
+	if err := tw.do(ctx, "insert_"+tw.table, &ch.Query{
+		Body:  insertBody,
 		Input: tw.input,
-	}); err != nil {
+	}, nil); err != nil {
 		tw.log.WithError(err).
 			WithField("rows", wrote).
 			Error("Failed to send ch-go batch")
@@ -420,6 +523,133 @@ func (w *ChGoWriter) FlushAll(ctx context.Context) error {
 	}
 
 	return firstErr
+}
+
+func (w *ChGoWriter) getPool() *chpool.Pool {
+	w.poolMu.RLock()
+	defer w.poolMu.RUnlock()
+
+	return w.pool
+}
+
+func (w *ChGoWriter) setPool(pool *chpool.Pool) {
+	w.poolMu.Lock()
+	defer w.poolMu.Unlock()
+
+	w.pool = pool
+}
+
+func (w *ChGoWriter) withQueryTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if w.chgoCfg.QueryTimeout == 0 {
+		return ctx, func() {}
+	}
+
+	if _, hasDeadline := ctx.Deadline(); hasDeadline {
+		return ctx, func() {}
+	}
+
+	return context.WithTimeout(ctx, w.chgoCfg.QueryTimeout)
+}
+
+func (w *ChGoWriter) doWithRetry(
+	ctx context.Context,
+	operation string,
+	fn func(context.Context) error,
+) error {
+	var lastErr error
+
+	for attempt := 0; attempt <= w.chgoCfg.MaxRetries; attempt++ {
+		if attempt > 0 {
+			delay := w.chgoCfg.RetryBaseDelay * time.Duration(1<<(attempt-1))
+			if delay > w.chgoCfg.RetryMaxDelay {
+				delay = w.chgoCfg.RetryMaxDelay
+			}
+
+			w.log.WithFields(logrus.Fields{
+				"operation": operation,
+				"attempt":   attempt,
+				"max":       w.chgoCfg.MaxRetries,
+				"delay":     delay,
+				"error":     lastErr,
+			}).Debug("Retrying ch-go operation after transient error")
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		attemptCtx, cancel := w.withQueryTimeout(ctx)
+		err := fn(attemptCtx)
+		cancel()
+
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+
+		if !isRetryableError(err) {
+			return err
+		}
+	}
+
+	return fmt.Errorf(
+		"ch-go operation %q exceeded max retries (%d): %w",
+		operation,
+		w.chgoCfg.MaxRetries,
+		lastErr,
+	)
+}
+
+func (w *ChGoWriter) collectPoolMetrics() {
+	ticker := time.NewTicker(w.chgoCfg.PoolMetricsInterval)
+	defer ticker.Stop()
+
+	var prevAcquireCount int64
+	var prevEmptyAcquireCount int64
+	var prevCanceledAcquireCount int64
+
+	for {
+		select {
+		case <-w.poolMetricsDone:
+			return
+		case <-ticker.C:
+			pool := w.getPool()
+			if pool == nil {
+				continue
+			}
+
+			stat := pool.Stat()
+
+			w.metrics.chgoPoolAcquiredResources.Set(float64(stat.AcquiredResources()))
+			w.metrics.chgoPoolIdleResources.Set(float64(stat.IdleResources()))
+			w.metrics.chgoPoolConstructingResources.Set(float64(stat.ConstructingResources()))
+			w.metrics.chgoPoolTotalResources.Set(float64(stat.TotalResources()))
+			w.metrics.chgoPoolMaxResources.Set(float64(stat.MaxResources()))
+			w.metrics.chgoPoolAcquireDuration.Set(stat.AcquireDuration().Seconds())
+			w.metrics.chgoPoolEmptyAcquireWaitTime.Set(stat.EmptyAcquireWaitTime().Seconds())
+
+			acquireCount := stat.AcquireCount()
+			if delta := acquireCount - prevAcquireCount; delta > 0 {
+				w.metrics.chgoPoolAcquireTotal.Add(float64(delta))
+			}
+			prevAcquireCount = acquireCount
+
+			emptyAcquireCount := stat.EmptyAcquireCount()
+			if delta := emptyAcquireCount - prevEmptyAcquireCount; delta > 0 {
+				w.metrics.chgoPoolEmptyAcquireTotal.Add(float64(delta))
+			}
+			prevEmptyAcquireCount = emptyAcquireCount
+
+			canceledAcquireCount := stat.CanceledAcquireCount()
+			if delta := canceledAcquireCount - prevCanceledAcquireCount; delta > 0 {
+				w.metrics.chgoPoolCanceledAcquireTotal.Add(float64(delta))
+			}
+			prevCanceledAcquireCount = canceledAcquireCount
+		}
+	}
 }
 
 func (tw *chTableWriter) ensureInput(ctx context.Context, columns []string) error {
@@ -492,12 +722,15 @@ func (tw *chTableWriter) loadColumnTypes(ctx context.Context, columns []string) 
 	var names proto.ColStr
 	var types proto.ColStr
 
-	if err := tw.do(ctx, &ch.Query{
+	if err := tw.do(ctx, "load_column_types_"+tw.table, &ch.Query{
 		Body: query,
 		Result: proto.Results{
 			{Name: "name", Data: &names},
 			{Name: "type", Data: &types},
 		},
+	}, func() {
+		names.Reset()
+		types.Reset()
 	}); err != nil {
 		return nil, fmt.Errorf("querying system.columns: %w", err)
 	}
@@ -518,11 +751,24 @@ func (tw *chTableWriter) loadColumnTypes(ctx context.Context, columns []string) 
 	return out, nil
 }
 
-func (tw *chTableWriter) do(ctx context.Context, query *ch.Query) error {
-	tw.clientMu.Lock()
-	defer tw.clientMu.Unlock()
+func (tw *chTableWriter) do(
+	ctx context.Context,
+	operation string,
+	query *ch.Query,
+	beforeAttempt func(),
+) error {
+	return tw.writer.doWithRetry(ctx, operation, func(attemptCtx context.Context) error {
+		if beforeAttempt != nil {
+			beforeAttempt()
+		}
 
-	return tw.client.Do(ctx, *query)
+		pool := tw.writer.getPool()
+		if pool == nil {
+			return ch.ErrClosed
+		}
+
+		return pool.Do(attemptCtx, *query)
+	})
 }
 
 func newColumnAppender(name string, data any) (columnAppender, error) {
@@ -618,6 +864,145 @@ func parseChGoOptions(dsn string) (ch.Options, error) {
 		ReadTimeout: 30 * time.Second,
 		TLS:         tlsConfig,
 	}, nil
+}
+
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Context cancellation/deadlines are terminal for this call path.
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+
+	// Closed pool/client is terminal.
+	if errors.Is(err, ch.ErrClosed) {
+		return false
+	}
+
+	// Classify server-side exceptions by ClickHouse code.
+	if exc, ok := ch.AsException(err); ok {
+		return exc.IsCode(
+			proto.ErrTimeoutExceeded,
+			proto.ErrNoFreeConnection,
+			proto.ErrTooManySimultaneousQueries,
+			proto.ErrSocketTimeout,
+			proto.ErrNetworkError,
+		)
+	}
+
+	// Corrupted compression payloads should not be retried.
+	var corruptedErr *compress.CorruptedDataErr
+	if errors.As(err, &corruptedErr) {
+		return false
+	}
+
+	// Common transient transport errors.
+	if errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, syscall.ECONNREFUSED) ||
+		errors.Is(err, syscall.EPIPE) ||
+		errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	errStr := strings.ToLower(err.Error())
+	transientPatterns := []string{
+		"connection reset",
+		"connection refused",
+		"broken pipe",
+		"eof",
+		"timeout",
+		"temporary failure",
+		"server is overloaded",
+		"too many connections",
+	}
+
+	for _, pattern := range transientPatterns {
+		if strings.Contains(errStr, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func insertQueryWithSettings(insertQuery string, settings map[string]any) (string, error) {
+	if len(settings) == 0 {
+		return insertQuery, nil
+	}
+
+	keys := make([]string, 0, len(settings))
+	for k := range settings {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value, err := formatInsertSettingValue(settings[key])
+		if err != nil {
+			return "", fmt.Errorf("setting %q: %w", key, err)
+		}
+
+		parts = append(parts, fmt.Sprintf("%s = %s", key, value))
+	}
+
+	settingsClause := " SETTINGS " + strings.Join(parts, ", ")
+
+	upper := strings.ToUpper(insertQuery)
+	valuesIdx := strings.LastIndex(upper, " VALUES")
+	if valuesIdx >= 0 {
+		return insertQuery[:valuesIdx] + settingsClause + insertQuery[valuesIdx:], nil
+	}
+
+	return insertQuery + settingsClause, nil
+}
+
+func formatInsertSettingValue(value any) (string, error) {
+	switch v := value.(type) {
+	case string:
+		return quoteCHString(v), nil
+	case bool:
+		if v {
+			return "1", nil
+		}
+
+		return "0", nil
+	case int:
+		return strconv.FormatInt(int64(v), 10), nil
+	case int8:
+		return strconv.FormatInt(int64(v), 10), nil
+	case int16:
+		return strconv.FormatInt(int64(v), 10), nil
+	case int32:
+		return strconv.FormatInt(int64(v), 10), nil
+	case int64:
+		return strconv.FormatInt(v, 10), nil
+	case uint:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint8:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint16:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint64:
+		return strconv.FormatUint(v, 10), nil
+	case float32:
+		return strconv.FormatFloat(float64(v), 'f', -1, 32), nil
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64), nil
+	default:
+		return "", fmt.Errorf("unsupported value type %T", value)
+	}
 }
 
 func quoteCHString(v string) string {

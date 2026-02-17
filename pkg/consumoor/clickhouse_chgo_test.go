@@ -1,6 +1,10 @@
 package consumoor
 
 import (
+	"context"
+	"errors"
+	"io"
+	"syscall"
 	"testing"
 	"time"
 
@@ -51,4 +55,61 @@ func TestSortedColumnsUsesAllRows(t *testing.T) {
 	})
 
 	assert.Equal(t, []string{"balance", "validator_id"}, cols)
+}
+
+func TestIsRetryableError(t *testing.T) {
+	assert.False(t, isRetryableError(nil))
+	assert.False(t, isRetryableError(context.Canceled))
+	assert.False(t, isRetryableError(context.DeadlineExceeded))
+	assert.False(t, isRetryableError(errors.New("invalid schema")))
+	assert.True(t, isRetryableError(io.EOF))
+	assert.True(t, isRetryableError(syscall.ECONNRESET))
+	assert.True(t, isRetryableError(errors.New("server is overloaded")))
+}
+
+func TestResolvedChGoConfigAppliesRequiredDefaults(t *testing.T) {
+	cfg := resolvedChGoConfig(ChGoConfig{})
+
+	assert.Equal(t, defaultChGoRetryBaseDelay, cfg.RetryBaseDelay)
+	assert.Equal(t, defaultChGoRetryMaxDelay, cfg.RetryMaxDelay)
+	assert.Equal(t, defaultChGoMaxConns, cfg.MaxConns)
+	assert.Equal(t, int32(0), cfg.MinConns)
+	assert.Equal(t, defaultChGoConnMaxLife, cfg.ConnMaxLifetime)
+	assert.Equal(t, defaultChGoConnMaxIdle, cfg.ConnMaxIdleTime)
+	assert.Equal(t, defaultChGoHealthCheck, cfg.HealthCheckPeriod)
+}
+
+func TestResolvedChGoConfigHonorsExplicitZeroMinConns(t *testing.T) {
+	cfg := resolvedChGoConfig(ChGoConfig{MinConns: 0, MaxConns: 5})
+
+	assert.Equal(t, int32(0), cfg.MinConns)
+	assert.Equal(t, int32(5), cfg.MaxConns)
+}
+
+func TestInsertQueryWithSettings(t *testing.T) {
+	query, err := insertQueryWithSettings(
+		"INSERT INTO canonical_beacon_block (slot, root) VALUES",
+		map[string]any{
+			"insert_quorum":         2,
+			"insert_quorum_timeout": 60000,
+		},
+	)
+	require.NoError(t, err)
+
+	assert.Equal(
+		t,
+		"INSERT INTO canonical_beacon_block (slot, root) SETTINGS insert_quorum = 2, insert_quorum_timeout = 60000 VALUES",
+		query,
+	)
+}
+
+func TestInsertQueryWithSettingsRejectsUnsupportedValue(t *testing.T) {
+	_, err := insertQueryWithSettings(
+		"INSERT INTO canonical_beacon_block (slot, root) VALUES",
+		map[string]any{
+			"bad": map[string]any{"nested": true},
+		},
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported value type")
 }

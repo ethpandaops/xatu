@@ -14,7 +14,7 @@ Kafka → KafkaConsumer (decode) → Router (event name → routes) → ClickHou
 
 - **KafkaConsumer** (`kafka.go`): Sarama consumer group that decodes JSON or protobuf messages into `*xatu.DecoratedEvent`.
 - **Router** (`router.go`): Maps `Event.Name` to registered `Route` implementations. Handles conditional routing (same event → different tables based on additional_data) and fan-out (one event → multiple tables).
-- **ClickHouseWriter** (`clickhouse.go`): Per-table batched inserts with configurable batch sizes, byte limits, and flush intervals.
+- **ChGoWriter** (`clickhouse_chgo.go`): Per-table batched inserts with configurable batch sizes, byte limits, flush intervals, retries, and pool settings.
 - **Route interface** (`flattener/flattener.go`): Each implementation handles one or more event names and produces flat `map[string]any` rows for one ClickHouse table.
 - **CommonMetadata** (`metadata/metadata.go`): Shared metadata extraction from DecoratedEvent proto fields. Replaces the 200-line VRL `xatu_server_events_meta` transform.
 

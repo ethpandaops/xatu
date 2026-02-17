@@ -18,6 +18,18 @@ type Metrics struct {
 	bufferUsage      *prometheus.GaugeVec
 	flattenErrors    *prometheus.CounterVec
 
+	// ch-go pool metrics
+	chgoPoolAcquiredResources     prometheus.Gauge
+	chgoPoolIdleResources         prometheus.Gauge
+	chgoPoolConstructingResources prometheus.Gauge
+	chgoPoolTotalResources        prometheus.Gauge
+	chgoPoolMaxResources          prometheus.Gauge
+	chgoPoolAcquireDuration       prometheus.Gauge
+	chgoPoolEmptyAcquireWaitTime  prometheus.Gauge
+	chgoPoolAcquireTotal          prometheus.Counter
+	chgoPoolEmptyAcquireTotal     prometheus.Counter
+	chgoPoolCanceledAcquireTotal  prometheus.Counter
+
 	// Commit coordinator metrics
 	commitsTotal     prometheus.Counter
 	commitErrors     *prometheus.CounterVec
@@ -104,6 +116,76 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "flatten_errors_total",
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
+
+		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_acquired_resources",
+			Help:      "Number of currently acquired ch-go pool connections.",
+		}),
+
+		chgoPoolIdleResources: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_idle_resources",
+			Help:      "Number of currently idle ch-go pool connections.",
+		}),
+
+		chgoPoolConstructingResources: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_constructing_resources",
+			Help:      "Number of currently constructing ch-go pool connections.",
+		}),
+
+		chgoPoolTotalResources: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_total_resources",
+			Help:      "Total number of ch-go pool connections.",
+		}),
+
+		chgoPoolMaxResources: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_max_resources",
+			Help:      "Configured maximum number of ch-go pool connections.",
+		}),
+
+		chgoPoolAcquireDuration: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_acquire_duration_seconds",
+			Help:      "Cumulative time spent acquiring ch-go pool connections.",
+		}),
+
+		chgoPoolEmptyAcquireWaitTime: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_empty_acquire_wait_time_seconds",
+			Help:      "Cumulative wait time when ch-go pool had no idle connections.",
+		}),
+
+		chgoPoolAcquireTotal: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_acquire_total",
+			Help:      "Total number of successful ch-go pool acquires.",
+		}),
+
+		chgoPoolEmptyAcquireTotal: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_empty_acquire_total",
+			Help:      "Total number of acquires that waited for a ch-go pool connection.",
+		}),
+
+		chgoPoolCanceledAcquireTotal: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "chgo_pool_canceled_acquire_total",
+			Help:      "Total number of canceled ch-go pool acquire attempts.",
+		}),
 
 		commitsTotal: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,

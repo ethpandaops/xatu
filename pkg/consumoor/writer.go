@@ -24,10 +24,5 @@ func NewWriter(
 	config *ClickHouseConfig,
 	metrics *Metrics,
 ) (Writer, error) {
-	switch config.Backend {
-	case "ch-go":
-		return NewChGoWriter(log, config, metrics)
-	default:
-		return NewClickHouseWriter(log, config, metrics)
-	}
+	return NewChGoWriter(log, config, metrics)
 }

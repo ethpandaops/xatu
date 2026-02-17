@@ -24,21 +24,40 @@ kafka:
   #   password: "password"
 
 clickhouse:
-  backend: clickhouse-go  # "clickhouse-go" (http/tcp by DSN) or "ch-go" (native tcp)
   dsn: "clickhouse://localhost:9000/default"
+  # chgo:
+  #   queryTimeout: 30s
+  #   maxRetries: 3
+  #   retryBaseDelay: 100ms
+  #   retryMaxDelay: 2s
+  #   maxConns: 8
+  #   minConns: 1
+  #   connMaxLifetime: 1h
+  #   connMaxIdleTime: 10m
+  #   healthCheckPeriod: 30s
+  #   poolMetricsInterval: 15s
   defaults:
     batchSize: 200000
     batchBytes: 52428800     # 50MB
     flushInterval: 1s
     bufferSize: 200000
   tables:
+    # Canonical tables default to insertSettings.insert_quorum: auto (majority).
+    # Set insertSettings.insert_quorum explicitly to override that behavior.
     beacon_api_eth_v1_beacon_committee:
       batchSize: 1000000
       bufferSize: 1000000
+      # insertSettings:
+      #   insert_quorum: 2
+      #   insert_quorum_timeout: 60000
     beacon_api_eth_v1_events_attestation:
       batchSize: 1000000
       flushInterval: 5s
       bufferSize: 1000000
+    # canonical_beacon_block:
+    #   insertSettings:
+    #     insert_quorum: 3
+    #     insert_quorum_timeout: 60000
 
 # Optional: disable specific events (replaces Vector blackhole sinks)
 # disabledEvents:

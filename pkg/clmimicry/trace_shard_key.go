@@ -2,7 +2,6 @@ package clmimicry
 
 import (
 	"reflect"
-
 )
 
 // GetMsgID extracts the message ID from the event for sharding.
@@ -25,7 +24,7 @@ func GetMsgID(event *TraceEvent) string {
 
 	// Try to access the MsgID field using reflection.
 	v := reflect.ValueOf(event.Payload)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
+	if v.Kind() != reflect.Pointer || v.IsNil() {
 		return ""
 	}
 
@@ -127,13 +126,13 @@ func extractTopicsFromMapPayload(mapPayload map[string]any, topicSet map[string]
 }
 
 // extractTopicsFromReflection uses reflection to extract topics from protobuf structures.
-func extractTopicsFromReflection(payload interface{}, topicSet map[string]bool) {
+func extractTopicsFromReflection(payload any, topicSet map[string]bool) {
 	if payload == nil {
 		return
 	}
 
 	v := reflect.ValueOf(payload)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
+	if v.Kind() != reflect.Pointer || v.IsNil() {
 		return
 	}
 
@@ -157,14 +156,14 @@ func extractTopicFromField(structValue reflect.Value, fieldName string, topicSet
 
 	// Check if the field type supports IsNil() before calling it
 	switch topicField.Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Interface, reflect.Chan, reflect.Func:
+	case reflect.Pointer, reflect.Map, reflect.Slice, reflect.Interface, reflect.Chan, reflect.Func:
 		if topicField.IsNil() {
 			return
 		}
 	}
 
 	// Handle *wrapperspb.StringValue fields
-	if topicField.Kind() == reflect.Ptr && !topicField.IsNil() {
+	if topicField.Kind() == reflect.Pointer && !topicField.IsNil() {
 		// Check if it has a GetValue method (wrapperspb.StringValue)
 		getValue := topicField.MethodByName("GetValue")
 		if getValue.IsValid() {

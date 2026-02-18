@@ -300,7 +300,7 @@ func TestTxQueueOperations(t *testing.T) {
 		queue := newTxQueue(metrics, 5, 1*time.Second)
 
 		// Add more transactions than capacity
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			record := &PendingTxRecord{
 				Hash:      "0x" + string(rune('a'+i)),
 				FirstSeen: time.Now(),
@@ -347,7 +347,7 @@ func TestBatchOperations(t *testing.T) {
 
 	// Setup test transactions
 	pendingTxs := make(map[string]*PendingTxRecord)
-	for i := 0; i < totalTxCount; i++ {
+	for i := range totalTxCount {
 		hash := fmt.Sprintf("0x%064x", i) // Create valid-looking hashes.
 		pendingTxs[hash] = &PendingTxRecord{
 			Hash:      hash,
@@ -441,12 +441,12 @@ func TestTxQueueConcurrency(t *testing.T) {
 
 		// Create concurrent writers
 		t.Run("Writers", func(t *testing.T) {
-			for w := 0; w < workers; w++ {
+			for w := range workers {
 				wg.Add(1)
 				go func(workerID int) {
 					defer wg.Done()
 
-					for i := 0; i < txCount; i++ {
+					for i := range txCount {
 						hash := fmt.Sprintf("0x%d_%d", workerID, i)
 						record := &PendingTxRecord{
 							Hash:      hash,
@@ -471,13 +471,13 @@ func TestTxQueueConcurrency(t *testing.T) {
 
 		// Create concurrent readers
 		t.Run("Readers", func(t *testing.T) {
-			for w := 0; w < workers; w++ {
+			for w := range workers {
 				wg.Add(1)
 				go func(workerID int) {
 					defer wg.Done()
 
-					for i := 0; i < txCount; i++ {
-						for j := 0; j < workers; j++ {
+					for i := range txCount {
+						for j := range workers {
 							hash := fmt.Sprintf("0x%d_%d", j, i)
 							// Just check if processed - should not panic or have race conditions
 							_ = queue.isProcessed(hash)
@@ -494,15 +494,13 @@ func TestTxQueueConcurrency(t *testing.T) {
 
 		// Run a pruner concurrently
 		t.Run("Pruner", func(t *testing.T) {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					time.Sleep(50 * time.Millisecond)
 					queue.prune()
 				}
-			}()
+			})
 		})
 
 		// Wait for all goroutines to finish
@@ -1309,8 +1307,7 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 
 		// Create watcher
 		watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		// Initialize with transactions already in the pending map
 		now := time.Now()
@@ -1442,9 +1439,9 @@ func TestProcessDroppedTransactions(t *testing.T) {
 				}
 
 				// Convert to JSON.
-				responseObj := map[string]interface{}{
+				responseObj := map[string]any{
 					"pending": pendingMap,
-					"queued":  map[string]interface{}{},
+					"queued":  map[string]any{},
 				}
 				responseJSON, _ := json.Marshal(responseObj)
 

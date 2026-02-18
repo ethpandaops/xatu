@@ -93,7 +93,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	txHash := common.HexToHash(record.Hash)
 
 	// First unmarshal into a map to access the hash field and essential metadata.
-	var txMap map[string]interface{}
+	var txMap map[string]any
 	if err := json.Unmarshal(txData, &txMap); err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to unmarshal transaction data")
 
@@ -169,7 +169,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 // parseRawTransactionFromTxPool parses a transaction from txpool_content JSON format
 // and ensures it has the correct hash by creating a special wrapping transaction.
 func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
-	var txMap map[string]interface{}
+	var txMap map[string]any
 	if err := json.Unmarshal(txData, &txMap); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal transaction data: %w", err)
 	}
@@ -196,7 +196,7 @@ func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, 
 }
 
 // createBasicTransaction creates a basic transaction with essential fields.
-func createBasicTransaction(txMap map[string]interface{}, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
+func createBasicTransaction(txMap map[string]any, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
 		gasPrice *big.Int
@@ -269,7 +269,7 @@ func createBasicTransaction(txMap map[string]interface{}, signer types.Signer, e
 }
 
 // parseTypeLegacyTx attempts to parse a legacy transaction (type 0).
-func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
+func parseTypeLegacyTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
 		gasPrice *big.Int
@@ -342,7 +342,7 @@ func parseTypeLegacyTx(txMap map[string]interface{}, expectedHash common.Hash) (
 }
 
 // parseTypeAccessListTx attempts to parse an access list transaction (type 1).
-func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
+func parseTypeAccessListTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce    uint64
 		gasPrice *big.Int
@@ -429,7 +429,7 @@ func parseTypeAccessListTx(txMap map[string]interface{}, expectedHash common.Has
 }
 
 // parseTypeDynamicFeeTx attempts to parse a dynamic fee transaction (type 2, EIP-1559).
-func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
+func parseTypeDynamicFeeTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce          uint64
 		gasLimit       uint64
@@ -540,7 +540,7 @@ func parseTypeDynamicFeeTx(txMap map[string]interface{}, expectedHash common.Has
 }
 
 // parseTypeBlobTx attempts to parse a blob transaction (type 3, EIP-4844).
-func parseTypeBlobTx(txMap map[string]interface{}, expectedHash common.Hash) (*types.Transaction, error) {
+func parseTypeBlobTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
 	var (
 		nonce          uint64
 		gasLimit       uint64

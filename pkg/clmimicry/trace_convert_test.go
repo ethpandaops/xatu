@@ -20,13 +20,13 @@ func TestTraceEventToRPC(t *testing.T) {
 	peerID, err := peer.Decode(peerIDStr)
 	require.NoError(t, err)
 
-	type traceEventFunc func(*TraceEvent) (interface{}, error)
+	type traceEventFunc func(*TraceEvent) (any, error)
 
 	traceEventFuncs := map[string]traceEventFunc{
-		"RecvRPC": func(event *TraceEvent) (interface{}, error) {
+		"RecvRPC": func(event *TraceEvent) (any, error) {
 			return TraceEventToRecvRPC(event)
 		},
-		"SendRPC": func(event *TraceEvent) (interface{}, error) {
+		"SendRPC": func(event *TraceEvent) (any, error) {
 			return TraceEventToSendRPC(event)
 		},
 	}
@@ -95,7 +95,7 @@ func TestTraceEventToRPC(t *testing.T) {
 					require.NoError(t, err)
 
 					// Create expected output based on the function type.
-					var expected interface{}
+					var expected any
 
 					payload, ok := tt.input.Payload.(*RpcMeta)
 					require.True(t, ok)
@@ -247,7 +247,7 @@ func createExpectedRPCMeta(peerIDStr string, payload *RpcMeta) *libp2p.RPCMeta {
 }
 
 // Generic assertion function that works for both RecvRPC and SendRPC
-func assertRPCEquals(t *testing.T, expected, actual interface{}) {
+func assertRPCEquals(t *testing.T, expected, actual any) {
 	t.Helper()
 
 	var expectedPeerID, actualPeerID string

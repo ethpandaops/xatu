@@ -20,7 +20,7 @@ func TestValidatorSetWalker(t *testing.T) {
 		walker := registrations.NewValidatorSetWalker(1, 4) // Shard 1 of 4
 
 		validators := make(map[phase0.ValidatorIndex]*apiv1.Validator)
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			validators[phase0.ValidatorIndex(i)] = &apiv1.Validator{}
 		}
 
@@ -38,7 +38,7 @@ func TestValidatorSetWalker(t *testing.T) {
 
 		// Test walking through validators
 		seen := make(map[phase0.ValidatorIndex]bool)
-		for i := 0; i < 25; i++ {
+		for range 25 {
 			idx, err := walker.Next()
 			if err != nil {
 				t.Errorf("Error getting next validator index: %v", err)
@@ -60,7 +60,7 @@ func TestValidatorSetWalker(t *testing.T) {
 		walker := registrations.NewValidatorSetWalker(0, 3) // First shard of 3
 
 		validators := make(map[phase0.ValidatorIndex]*apiv1.Validator)
-		for i := 0; i < 10; i++ { // 10 validators split into 3 shards
+		for i := range 10 { // 10 validators split into 3 shards
 			validators[phase0.ValidatorIndex(i)] = &apiv1.Validator{}
 		}
 
@@ -99,7 +99,7 @@ func TestValidatorSetWalker(t *testing.T) {
 		walker := registrations.NewValidatorSetWalker(3, 4) // Last shard
 
 		validators := make(map[phase0.ValidatorIndex]*apiv1.Validator)
-		for i := 0; i < 102; i++ { // Not evenly divisible by 4
+		for i := range 102 { // Not evenly divisible by 4
 			validators[phase0.ValidatorIndex(i)] = &apiv1.Validator{}
 		}
 
@@ -119,14 +119,14 @@ func TestValidatorSetWalker(t *testing.T) {
 		walker := registrations.NewValidatorSetWalker(0, 2)
 
 		validators := make(map[phase0.ValidatorIndex]*apiv1.Validator)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			validators[phase0.ValidatorIndex(i)] = &apiv1.Validator{}
 		}
 
 		walker.Update(validators)
 
 		// Walk past halfway point
-		for i := 0; i < 6; i++ {
+		for range 6 {
 			_, err := walker.Next()
 			if err != nil {
 				t.Errorf("Error getting next validator index: %v", err)
@@ -135,7 +135,7 @@ func TestValidatorSetWalker(t *testing.T) {
 
 		// Update with new validator set
 		newValidators := make(map[phase0.ValidatorIndex]*apiv1.Validator)
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			newValidators[phase0.ValidatorIndex(i)] = &apiv1.Validator{}
 		}
 

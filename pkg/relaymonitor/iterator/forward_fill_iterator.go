@@ -176,10 +176,7 @@ func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, err
 	limit := f.batchSize
 	//nolint:gosec // batchSize is validated to be positive and <= 200
 	if gap < uint64(f.batchSize) {
-		dynamicLimit := int(gap) * 3
-		if dynamicLimit < 10 {
-			dynamicLimit = 10
-		}
+		dynamicLimit := max(int(gap)*3, 10)
 
 		if dynamicLimit < f.batchSize {
 			limit = dynamicLimit
@@ -190,10 +187,7 @@ func (f *ForwardFillIterator) NextBatch(ctx context.Context) (*BatchRequest, err
 	// This ensures contiguous coverage without skipping slots
 	// cursor = min(currentSlot + batchSize, targetSlot)
 	//nolint:gosec // batchSize is validated to be positive and <= 200
-	cursor := currentSlot + uint64(f.batchSize)
-	if cursor > targetSlot {
-		cursor = targetSlot
-	}
+	cursor := min(currentSlot+uint64(f.batchSize), targetSlot)
 
 	// Build batch request parameters
 	// Request slots <= cursor in descending order

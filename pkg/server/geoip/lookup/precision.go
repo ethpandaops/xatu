@@ -40,7 +40,7 @@ func (p Precision) String() string {
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler interface for YAML parsing
-func (p *Precision) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (p *Precision) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -65,6 +65,6 @@ func (p *Precision) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // MarshalYAML implements yaml.Marshaler interface for YAML output
-func (p Precision) MarshalYAML() (interface{}, error) {
+func (p Precision) MarshalYAML() (any, error) {
 	return p.String(), nil
 }

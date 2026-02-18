@@ -58,7 +58,7 @@ func SipHash(key [16]byte, data []byte) uint64 {
 	fullBlocks := dataLen / 8
 
 	// Process full blocks.
-	for i := 0; i < fullBlocks; i++ {
+	for i := range fullBlocks {
 		m := binary.LittleEndian.Uint64(data[i*8:])
 		v3 ^= m
 

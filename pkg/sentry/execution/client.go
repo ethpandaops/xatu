@@ -35,7 +35,7 @@ type ClientProvider interface {
 	SubscribeToNewPendingTxs(ctx context.Context) (<-chan string, <-chan error, error)
 
 	// CallContext performs a JSON-RPC call with the given arguments.
-	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+	CallContext(ctx context.Context, result any, method string, args ...any) error
 }
 
 // ExecutionClient represents a unified execution client with both WebSocket and RPC capabilities.
@@ -212,7 +212,7 @@ func (c *Client) GetPendingTransactions(ctx context.Context) ([]json.RawMessage,
 
 // BatchGetTransactionsByHash retrieves transactions by their hashes.
 func (c *Client) BatchGetTransactionsByHash(ctx context.Context, hashes []string) ([]json.RawMessage, error) {
-	params := make([]interface{}, len(hashes))
+	params := make([]any, len(hashes))
 	for i, hash := range hashes {
 		params[i] = hash
 	}
@@ -249,7 +249,7 @@ func (c *Client) GetWebSocketClient() *rpc.Client {
 }
 
 // CallContext calls an RPC method with the given context.
-func (c *Client) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+func (c *Client) CallContext(ctx context.Context, result any, method string, args ...any) error {
 	return c.rpcClient.CallContext(ctx, result, method, args...)
 }
 
@@ -259,13 +259,13 @@ func (c *Client) GetSigner() types.Signer {
 }
 
 // BatchCallContext performs a batch JSON-RPC call for multiple transactions.
-func (c *Client) BatchCallContext(ctx context.Context, method string, params []interface{}) ([]json.RawMessage, error) {
+func (c *Client) BatchCallContext(ctx context.Context, method string, params []any) ([]json.RawMessage, error) {
 	// Prepare batch requests.
 	reqs := make([]rpc.BatchElem, len(params))
 	for i, param := range params {
 		reqs[i] = rpc.BatchElem{
 			Method: method,
-			Args:   []interface{}{param},
+			Args:   []any{param},
 			Result: new(json.RawMessage),
 		}
 	}

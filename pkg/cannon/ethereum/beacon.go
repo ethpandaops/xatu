@@ -289,7 +289,7 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	}
 
 	// Use singleflight to ensure we only make one request for a block at a time.
-	x, err, shared := b.sfGroup.Do(identifier, func() (interface{}, error) {
+	x, err, shared := b.sfGroup.Do(identifier, func() (any, error) {
 		span.AddEvent("Acquiring semaphore...")
 
 		// Acquire a semaphore before proceeding.
@@ -353,7 +353,7 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 	span.SetAttributes(attribute.Bool("cached", false))
 
 	// Use singleflight to ensure we only make one request for validators at a time.
-	x, err, shared := b.validatorsSfGroup.Do(identifier, func() (interface{}, error) {
+	x, err, shared := b.validatorsSfGroup.Do(identifier, func() (any, error) {
 		span.AddEvent("Acquiring semaphore...")
 
 		// Acquire a semaphore before proceeding.

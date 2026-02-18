@@ -61,7 +61,7 @@ type ForkDigest struct {
 
 // configYAML is parsed as a generic map to dynamically extract fork versions.
 // This allows new forks to be supported without code changes.
-type configYAML map[string]interface{}
+type configYAML map[string]any
 
 // getString returns a string value from the config map.
 // For fork versions, YAML parses hex values as integers, so we convert them back.

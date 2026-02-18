@@ -13,7 +13,7 @@ var nodeRecordExecutionStruct = sqlbuilder.NewStruct(new(node.Execution)).For(sq
 func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Execution) error {
 	ib := nodeRecordExecutionStruct.InsertInto("node_record_execution")
 
-	items := []interface{}{
+	items := []any{
 		sqlbuilder.Raw("DEFAULT"),
 		record.Enr,
 		time.Now(),
@@ -44,7 +44,7 @@ func (c *Client) ListNodeRecordExecutions(ctx context.Context, networkIds []uint
 	sb := nodeRecordExecutionStruct.SelectFrom("node_record_execution")
 
 	if len(networkIds) > 0 {
-		nids := make([]interface{}, 0, len(networkIds))
+		nids := make([]any, 0, len(networkIds))
 		for _, nid := range networkIds {
 			nids = append(nids, nid)
 		}
@@ -53,7 +53,7 @@ func (c *Client) ListNodeRecordExecutions(ctx context.Context, networkIds []uint
 	}
 
 	if len(forkIDHashes) > 0 {
-		fidhs := make([]interface{}, 0, len(forkIDHashes))
+		fidhs := make([]any, 0, len(forkIDHashes))
 		for _, fidh := range forkIDHashes {
 			fidhs = append(fidhs, fidh)
 		}

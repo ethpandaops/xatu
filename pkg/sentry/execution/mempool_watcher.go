@@ -226,10 +226,8 @@ func (w *MempoolWatcher) Stop() {
 // reconnection using exponential backoff. This ensures we receive real-time notifications
 // of new transactions as they enter the mempool.
 func (w *MempoolWatcher) startNewPendingTxSubscription() error {
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		ctx, cancel := context.WithCancel(w.ctx)
 		defer cancel() // This hits when the goroutine exits.
@@ -285,7 +283,7 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 		if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
 			w.log.WithError(err).Error("websocket subscription permanently failed")
 		}
-	}()
+	})
 
 	return nil
 }
@@ -345,10 +343,8 @@ func (w *MempoolWatcher) subscribeToNewPendingTransactions() error {
 // startPeriodicFetcher launches a goroutine that periodically fetches the full
 // txpool content to get comprehensive transaction details.
 func (w *MempoolWatcher) startPeriodicFetcher() {
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		ticker := time.NewTicker(time.Duration(w.config.FetchInterval) * time.Second)
 		defer ticker.Stop()
@@ -363,7 +359,7 @@ func (w *MempoolWatcher) startPeriodicFetcher() {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // fetchAndProcessTxPool retrieves and processes all transactions in the node's txpool.
@@ -386,7 +382,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 	}
 
 	// Parse the raw response into the structured map.
-	var response map[string]interface{}
+	var response map[string]any
 	if err := json.Unmarshal(rawResponse, &response); err != nil {
 		return fmt.Errorf("failed to unmarshal txpool_content response: %w", err)
 	}
@@ -409,13 +405,13 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 
 	// Process pending and queued transactions.
 	for _, section := range []string{"pending", "queued"} {
-		sectionData, ok := response[section].(map[string]interface{})
+		sectionData, ok := response[section].(map[string]any)
 		if !ok {
 			continue
 		}
 
 		for _, accountData := range sectionData {
-			accountTxs, ok := accountData.(map[string]interface{})
+			accountTxs, ok := accountData.(map[string]any)
 			if !ok {
 				continue
 			}
@@ -425,7 +421,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 				totalTxCount++
 
 				// Extract transaction hash from the data.
-				txDataMap, ok := txData.(map[string]interface{})
+				txDataMap, ok := txData.(map[string]any)
 				if !ok {
 					continue
 				}
@@ -532,10 +528,8 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 // This method runs more frequently than txpool_content and has jitter added to
 // avoid creating predictable load patterns on the node.
 func (w *MempoolWatcher) startPendingTransactionsFetcher() {
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		// Stagger this slightly offset from txpool_content fetch to avoid overwhelming the EL.
 		// Use 1/3 of the fetchInterval to have this run 3x as frequently as txpool_content
@@ -559,7 +553,7 @@ func (w *MempoolWatcher) startPendingTransactionsFetcher() {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // fetchAndProcessPendingTransactions fetches eth_pendingTransactions to discover new transactions.
@@ -726,10 +720,8 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 	}
 
 	// Start a separate goroutine for batch processing of transactions without data.
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		ticker := time.NewTicker(time.Duration(w.config.ProcessingInterval) * time.Millisecond)
 		defer ticker.Stop()
@@ -751,13 +743,11 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 				}
 			}
 		}
-	}()
+	})
 
 	// Start a goroutine to periodically prune the processed transactions map.
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		ticker := time.NewTicker(time.Duration(w.config.PruneDuration) * time.Second)
 		defer ticker.Stop()
@@ -773,7 +763,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // processPendingTransactionsBatch collects transactions without full data and
@@ -1039,10 +1029,8 @@ func (w *MempoolWatcher) addPendingTransaction(txHash string, txData json.RawMes
 // based on age. This is a fallback cleanup mechanism for transactions that weren't
 // explicitly confirmed or dropped.
 func (w *MempoolWatcher) startPruner() {
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		//  // Run pruner at half the prune duration.
 		ticker := time.NewTicker(time.Duration(w.config.PruneDuration) * time.Second / 2)
@@ -1056,7 +1044,7 @@ func (w *MempoolWatcher) startPruner() {
 				w.prunePendingTxs()
 			}
 		}
-	}()
+	})
 }
 
 // prunePendingTxs removes transactions that have been in the pending map longer than
@@ -1097,10 +1085,8 @@ func (w *MempoolWatcher) prunePendingTxs() {
 // startSummaryLogger launches a goroutine that periodically logs operational metrics
 // about the mempool watcher state for monitoring purposes.
 func (w *MempoolWatcher) startSummaryLogger() {
-	w.wg.Add(1)
 
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 
 		ticker := time.NewTicker(1 * time.Minute)
 		defer ticker.Stop()
@@ -1113,7 +1099,7 @@ func (w *MempoolWatcher) startSummaryLogger() {
 				w.logMetrics()
 			}
 		}
-	}()
+	})
 }
 
 // logMetrics records and logs key operational metrics about the mempool watcher state.

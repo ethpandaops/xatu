@@ -1,7 +1,7 @@
 package registrations
 
 import (
-	"sort"
+	"slices"
 	"sync"
 
 	"math/rand/v2"
@@ -102,9 +102,7 @@ func (v *ValidatorSetWalker) Update(validators map[phase0.ValidatorIndex]*apiv1.
 		v.validators = append(v.validators, validatorIndex)
 	}
 
-	sort.Slice(v.validators, func(i, j int) bool {
-		return v.validators[i] < v.validators[j]
-	})
+	slices.Sort(v.validators)
 
 	v.updateMin()
 	v.updateMax()

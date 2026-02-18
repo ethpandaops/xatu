@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
@@ -139,21 +140,13 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	attestationTopic := "attestation"
 
 	if config.Ethereum.BeaconSubscriptions != nil {
-		for _, topic := range *config.Ethereum.BeaconSubscriptions {
-			if topic == attestationTopic {
-				hasAttestationSubscription = true
-
-				break
-			}
+		if slices.Contains(*config.Ethereum.BeaconSubscriptions, attestationTopic) {
+			hasAttestationSubscription = true
 		}
 	} else if beacon.DefaultEnabledBeaconSubscriptionOptions().Enabled {
 		// If no subscriptions have been provided in config, we need to check if the default options have it enabled
-		for _, topic := range beacon.DefaultEnabledBeaconSubscriptionOptions().Topics {
-			if topic == attestationTopic {
-				hasAttestationSubscription = true
-
-				break
-			}
+		if slices.Contains(beacon.DefaultEnabledBeaconSubscriptionOptions().Topics, attestationTopic) {
+			hasAttestationSubscription = true
 		}
 	}
 

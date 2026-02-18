@@ -4,7 +4,7 @@ import "time"
 
 type Activity struct {
 	// ActivityID is the activity id.
-	ActivityID interface{} `json:"activityId" db:"activity_id"`
+	ActivityID any `json:"activityId" db:"activity_id"`
 	// Enr is the enr of the node record.
 	Enr string `json:"enr" db:"enr" fieldopt:"omitempty"`
 	// Client is the name of the coordinated client.

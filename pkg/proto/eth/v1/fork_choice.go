@@ -97,7 +97,7 @@ func (f *ForkChoiceNode) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceNod
 		return nil, errors.Wrap(err, "failed to convert execution_block_hash")
 	}
 
-	extraData := make(map[string]interface{})
+	extraData := make(map[string]any)
 
 	err = json.Unmarshal([]byte(f.ExtraData), &extraData)
 	if err != nil {
@@ -138,7 +138,7 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		return nil, errors.Wrap(err, "failed to convert execution_block_hash")
 	}
 
-	extraData := make(map[string]interface{})
+	extraData := make(map[string]any)
 
 	err = json.Unmarshal([]byte(f.ExtraData), &extraData)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -75,7 +76,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 
 	var rsp *http.Response
 
-	body := ""
+	var body strings.Builder
 
 	for _, event := range items {
 		eventAsJSON, err := protojson.Marshal(event)
@@ -83,10 +84,10 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 			return err
 		}
 
-		body += string(eventAsJSON) + "\n"
+		body.WriteString(string(eventAsJSON) + "\n")
 	}
 
-	buf := bytes.NewBufferString(body)
+	buf := bytes.NewBufferString(body.String())
 
 	compressed, err := e.compressor.Compress(buf)
 	if err != nil {

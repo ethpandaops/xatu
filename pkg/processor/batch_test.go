@@ -323,7 +323,7 @@ func TestBatchItemProcessorDrainQueue(t *testing.T) {
 
 	itemsToExport := 5000
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		if err := bsp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
 		}}); err != nil {
@@ -343,7 +343,7 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 
 	bsp.Start(context.Background())
 
-	for i := 0; i < 60; i++ {
+	for i := range 60 {
 		if err := bsp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
 		}}); err != nil {
@@ -355,7 +355,7 @@ func TestBatchItemProcessorPostShutdown(t *testing.T) {
 
 	lenJustAfterShutdown := be.len()
 
-	for i := 0; i < 60; i++ {
+	for i := range 60 {
 		err := bsp.Write(context.Background(), []*TestItem{{
 			name: strconv.Itoa(i),
 		}})
@@ -403,7 +403,7 @@ func TestMultipleWorkersConsumeConcurrently(t *testing.T) {
 
 	itemsToExport := 100
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
 			t.Errorf("Error writing to BatchItemProcessor\n")
 		}
@@ -425,7 +425,7 @@ func TestWorkersProcessBatches(t *testing.T) {
 
 	itemsToExport := 50
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
 			t.Errorf("Error writing to BatchItemProcessor\n")
 		}
@@ -451,7 +451,7 @@ func TestDrainQueueWithMultipleWorkers(t *testing.T) {
 
 	itemsToExport := 100
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
 			t.Errorf("Error writing to BatchItemProcessor\n")
 		}
@@ -477,7 +477,7 @@ func TestBatchItemProcessorTimerFunctionality(t *testing.T) {
 	// Add items less than the max batch size
 	itemsToExport := 25
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		if err := bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}); err != nil {
 			t.Errorf("Error writing to BatchItemProcessor\n")
 		}
@@ -601,7 +601,7 @@ func TestBatchItemProcessorSyncShipping(t *testing.T) {
 					bsp.Start(context.Background())
 
 					items := make([]*TestItem, itemsToExport)
-					for i := 0; i < itemsToExport; i++ {
+					for i := range itemsToExport {
 						items[i] = &TestItem{name: strconv.Itoa(i)}
 					}
 
@@ -641,7 +641,7 @@ func TestBatchItemProcessorExportCancellationOnFailure(t *testing.T) {
 		bsp.Start(context.Background())
 
 		items := make([]*TestItem, itemsToExport)
-		for i := 0; i < itemsToExport; i++ {
+		for i := range itemsToExport {
 			items[i] = &TestItem{name: strconv.Itoa(i)}
 		}
 
@@ -706,7 +706,7 @@ func TestBatchItemProcessorExportWithTimeout(t *testing.T) {
 	itemsToExport := 10
 	items := make([]*TestItem, itemsToExport)
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		items[i] = &TestItem{name: strconv.Itoa(i)}
 	}
 
@@ -725,7 +725,7 @@ func TestBatchItemProcessorWithBatchTimeout(t *testing.T) {
 	itemsToExport := 5
 	items := make([]*TestItem, itemsToExport)
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		items[i] = &TestItem{name: strconv.Itoa(i)}
 	}
 
@@ -750,7 +750,7 @@ func TestBatchItemProcessorDrainOnShutdownAfterContextCancellation(t *testing.T)
 	itemsToExport := 50
 	items := make([]*TestItem, itemsToExport)
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		items[i] = &TestItem{name: strconv.Itoa(i)}
 	}
 
@@ -817,7 +817,7 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	for i := 0; i < itemsToExport; i++ {
+	for i := range itemsToExport {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()

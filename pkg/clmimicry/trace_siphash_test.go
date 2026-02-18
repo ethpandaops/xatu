@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry"
@@ -63,7 +64,7 @@ func TestGetShard(t *testing.T) {
 
 		// Generate 6400 different message IDs (100 per shard).
 		// For each one, check which shard it's assigned to and count them.
-		for i := 0; i < 6400; i++ {
+		for i := range 6400 {
 			// Create a unique hash-like ID for each test case.
 			msgID := generateHashMsgID("test-distribution", i)
 			shard := clmimicry.GetShard(msgID, totalShards)
@@ -142,12 +143,13 @@ func TestGetShard(t *testing.T) {
 		assert.Less(t, emptyShard, totalShards, "Empty message should map to a valid shard")
 
 		// Very long message ID edge case (simulates a huge transaction ID or similar).
-		longMsg := "0x"
-		for i := 0; i < 1000; i++ {
-			longMsg += "1234567890abcdef"
+		var longMsg strings.Builder
+		longMsg.WriteString("0x")
+		for range 1000 {
+			longMsg.WriteString("1234567890abcdef")
 		}
 
-		longShard := clmimicry.GetShard(longMsg, totalShards)
+		longShard := clmimicry.GetShard(longMsg.String(), totalShards)
 
 		assert.Less(t, longShard, totalShards, "Long message should map to a valid shard")
 	})
@@ -155,7 +157,7 @@ func TestGetShard(t *testing.T) {
 	// Test specifically with 64 buckets to validate our production scenario.
 	t.Run("64BucketsSpecific", func(t *testing.T) {
 		// Create a test message for each possible shard.
-		for i := 0; i < 64; i++ {
+		for i := range 64 {
 			// Generate a unique message ID for each test.
 			msgID := generateHashMsgID("bucket-test", i)
 			shard := clmimicry.GetShard(msgID, 64)
@@ -191,7 +193,7 @@ func TestGetShard(t *testing.T) {
 		// Now generate a large number of eth-style hashes and check
 		// their distribution across shards.
 		shardDistribution := make(map[uint64]int)
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			shard := clmimicry.GetShard(fmt.Sprintf("0x%064x", i), totalShards)
 			shardDistribution[shard]++
 		}

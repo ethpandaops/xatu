@@ -808,15 +808,16 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 	bsp.Start(context.Background())
 
 	// Try to write many more items than the queue can hold
-	itemsToExport := 20
-	successfulWrites := 0
-	failedWrites := 0
+	var (
+		itemsToExport    = 20
+		successfulWrites int
+		failedWrites     int
+		wg               sync.WaitGroup
+		mu               sync.Mutex
+	)
 
 	// Write items to the processor rapidly to fill the queue
 	// Use a goroutine to write all items concurrently
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
 	for i := range itemsToExport {
 		wg.Add(1)
 		go func(idx int) {

@@ -95,7 +95,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 		hashes := event.BlobHashes()
 		blobHashes := make([]string, len(hashes))
 
-		for i := 0; i < len(hashes); i++ {
+		for i := range hashes {
 			hash := hashes[i]
 			blobHashes[i] = hash.String()
 		}
@@ -192,20 +192,14 @@ func (p *Peer) ExportTransactions(ctx context.Context, items []*TransactionHashI
 
 	// Process blob transactions in configured batch size (default 1, they're ~128KB+ each)
 	for i := 0; i < len(blobHashes); i += p.blobTransactionBatchSize {
-		end := i + p.blobTransactionBatchSize
-		if end > len(blobHashes) {
-			end = len(blobHashes)
-		}
+		end := min(i+p.blobTransactionBatchSize, len(blobHashes))
 
 		p.fetchAndProcessTransactions(ctx, blobHashes[i:end], metaMap)
 	}
 
 	// Process other transactions in configured batch size (default 10)
 	for i := 0; i < len(otherHashes); i += p.transactionBatchSize {
-		end := i + p.transactionBatchSize
-		if end > len(otherHashes) {
-			end = len(otherHashes)
-		}
+		end := min(i+p.transactionBatchSize, len(otherHashes))
 
 		p.fetchAndProcessTransactions(ctx, otherHashes[i:end], metaMap)
 	}

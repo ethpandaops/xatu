@@ -10,7 +10,7 @@ import (
 var nodeRecordStruct = sqlbuilder.NewStruct(new(node.Record)).For(sqlbuilder.PostgreSQL)
 
 func (c *Client) InsertNodeRecords(ctx context.Context, records []*node.Record) error {
-	values := make([]interface{}, len(records))
+	values := make([]any, len(records))
 	for i, record := range records {
 		values[i] = record
 	}
@@ -56,7 +56,7 @@ func (c *Client) CheckoutStalledExecutionNodeRecords(ctx context.Context, limit 
 
 	var records []*node.Record
 
-	var enrs []interface{}
+	var enrs []any
 
 	for rows.Next() {
 		var record node.Record
@@ -111,7 +111,7 @@ func (c *Client) CheckoutStalledConsensusNodeRecords(ctx context.Context, limit 
 
 	var records []*node.Record
 
-	var enrs []interface{}
+	var enrs []any
 
 	for rows.Next() {
 		var record node.Record

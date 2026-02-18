@@ -3,7 +3,7 @@ package clmimicry
 import (
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -233,8 +233,8 @@ func (s *UnifiedSharder) findTopicConfig(topic string, eventType xatu.Event_Name
 			eventTypeName := eventType.String()
 
 			// Check for wildcard match (e.g., "LIBP2P_TRACE_RPC_META_*")
-			if strings.HasSuffix(compiled.EventTypeConstraint, "*") {
-				prefix := strings.TrimSuffix(compiled.EventTypeConstraint, "*")
+			if before, ok := strings.CutSuffix(compiled.EventTypeConstraint, "*"); ok {
+				prefix := before
 				if !strings.HasPrefix(eventTypeName, prefix) {
 					continue
 				}
@@ -264,13 +264,7 @@ func (s *UnifiedSharder) calculateShard(key string, totalShards uint64) uint64 {
 
 // isShardActive checks if a shard is in the active shards list
 func (s *UnifiedSharder) isShardActive(shard uint64, activeShards []uint64) bool {
-	for _, activeShard := range activeShards {
-		if shard == activeShard {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(activeShards, shard)
 }
 
 // GetShardForKey returns the shard number for a given key (for testing/debugging)
@@ -290,15 +284,15 @@ func (c *ShardingConfig) compilePatterns() error {
 
 		// Check if pattern contains event type prefix
 		// Event types always start with uppercase letters and contain underscores
-		if colonIdx := strings.Index(pattern, ":"); colonIdx != -1 {
-			potentialEventType := pattern[:colonIdx]
+		if before, after, ok := strings.Cut(pattern, ":"); ok {
+			potentialEventType := before
 			// Check if it looks like an event type (starts with uppercase letter and contains underscore)
 			if potentialEventType != "" &&
 				potentialEventType[0] >= 'A' && potentialEventType[0] <= 'Z' &&
 				strings.Contains(potentialEventType, "_") {
 				// Extract event type constraint and topic pattern
 				eventTypeConstraint = potentialEventType
-				topicPattern = pattern[colonIdx+1:]
+				topicPattern = after
 			} else {
 				// Colon is part of the regex pattern, not an event type separator
 				eventTypeConstraint = ""
@@ -373,8 +367,8 @@ func (t *TopicShardingConfig) IsFirehose() bool {
 func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 	// Define a temporary struct to unmarshal the raw values
 	type rawConfig struct {
-		TotalShards  uint64        `yaml:"totalShards"`
-		ActiveShards []interface{} `yaml:"activeShards"`
+		TotalShards  uint64 `yaml:"totalShards"`
+		ActiveShards []any  `yaml:"activeShards"`
 	}
 
 	var raw rawConfig
@@ -451,9 +445,7 @@ func (t *TopicShardingConfig) UnmarshalYAML(node *yaml.Node) error {
 	}
 
 	// Sort the result for consistency
-	sort.Slice(result, func(i, j int) bool {
-		return result[i] < result[j]
-	})
+	slices.Sort(result)
 
 	t.ActiveShards = result
 
@@ -466,23 +458,24 @@ func (c *ShardingConfig) LogSummary() string {
 		return "Sharding disabled (no topic configurations)"
 	}
 
-	summary := fmt.Sprintf("Sharding enabled with %d topic patterns:", len(c.Topics))
+	var summary strings.Builder
+	summary.WriteString(fmt.Sprintf("Sharding enabled with %d topic patterns:", len(c.Topics)))
 
 	for pattern, config := range c.Topics {
 		if config.IsFirehose() {
-			summary += fmt.Sprintf("\n  - Pattern '%s': FIREHOSE (all %d shards active)", pattern, config.TotalShards)
+			summary.WriteString(fmt.Sprintf("\n  - Pattern '%s': FIREHOSE (all %d shards active)", pattern, config.TotalShards))
 		} else {
 			samplingRate := config.GetSamplingRate() * 100.0
-			summary += fmt.Sprintf("\n  - Pattern '%s': %d/%d shards active (%.1f%%)",
-				pattern, len(config.ActiveShards), config.TotalShards, samplingRate)
+			summary.WriteString(fmt.Sprintf("\n  - Pattern '%s': %d/%d shards active (%.1f%%)",
+				pattern, len(config.ActiveShards), config.TotalShards, samplingRate))
 		}
 	}
 
 	if c.NoShardingKeyEvents != nil && c.NoShardingKeyEvents.Enabled {
-		summary += "\n  - Events without sharding keys: ENABLED"
+		summary.WriteString("\n  - Events without sharding keys: ENABLED")
 	} else {
-		summary += "\n  - Events without sharding keys: DISABLED"
+		summary.WriteString("\n  - Events without sharding keys: DISABLED")
 	}
 
-	return summary
+	return summary.String()
 }

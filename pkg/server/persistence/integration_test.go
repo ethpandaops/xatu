@@ -288,7 +288,7 @@ func TestPersistenceIntegration(t *testing.T) {
 			t.Run("LargeBatch", func(t *testing.T) {
 				// Create 600 records to test batching
 				largeENRs := make([]string, 600)
-				for i := 0; i < 600; i++ {
+				for i := range 600 {
 					largeENRs[i] = fmt.Sprintf("enr:-IS4QLarge%04d-consensus-record-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abc", i)
 				}
 
@@ -301,10 +301,7 @@ func TestPersistenceIntegration(t *testing.T) {
 				// Insert node records in batches to avoid overwhelming the test
 				batchSize := 100
 				for i := 0; i < len(largeNodeRecords); i += batchSize {
-					end := i + batchSize
-					if end > len(largeNodeRecords) {
-						end = len(largeNodeRecords)
-					}
+					end := min(i+batchSize, len(largeNodeRecords))
 					err := tc.Client.InsertNodeRecords(ctx, largeNodeRecords[i:end])
 					require.NoError(t, err)
 				}
@@ -686,7 +683,7 @@ func TestPersistenceIntegration(t *testing.T) {
 
 			// Add activities from 3 different clients (making it unavailable)
 			activities := make([]*node.Activity, 3)
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				activities[i] = &node.Activity{
 					Enr:       enr,
 					ClientID:  string(rune('a' + i)),

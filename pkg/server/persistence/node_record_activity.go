@@ -33,7 +33,7 @@ func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 		return nil
 	}
 
-	values := make([]interface{}, len(activities))
+	values := make([]any, len(activities))
 
 	for i, activity := range activities {
 		values[i] = &node.Activity{
@@ -57,22 +57,22 @@ func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 }
 
 func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkIDHashes [][]byte, capabilities []string, limit int) ([]*string, error) {
-	inr := make([]interface{}, 0, len(ignoredNodeRecords))
+	inr := make([]any, 0, len(ignoredNodeRecords))
 	for _, enr := range ignoredNodeRecords {
 		inr = append(inr, enr)
 	}
 
-	nids := make([]interface{}, 0, len(networkIds))
+	nids := make([]any, 0, len(networkIds))
 	for _, nid := range networkIds {
 		nids = append(nids, nid)
 	}
 
-	fidhs := make([]interface{}, 0, len(forkIDHashes))
+	fidhs := make([]any, 0, len(forkIDHashes))
 	for _, fidh := range forkIDHashes {
 		fidhs = append(fidhs, fidh)
 	}
 
-	caps := make([]interface{}, 0, len(capabilities))
+	caps := make([]any, 0, len(capabilities))
 	for _, cap := range capabilities {
 		caps = append(caps, cap)
 	}
@@ -158,17 +158,17 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 }
 
 func (c *Client) ListAvailableConsensusNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkDigests [][]byte, limit int) ([]*string, error) {
-	inr := make([]interface{}, 0, len(ignoredNodeRecords))
+	inr := make([]any, 0, len(ignoredNodeRecords))
 	for _, nr := range ignoredNodeRecords {
 		inr = append(inr, nr)
 	}
 
-	nids := make([]interface{}, 0, len(networkIds))
+	nids := make([]any, 0, len(networkIds))
 	for _, nid := range networkIds {
 		nids = append(nids, nid)
 	}
 
-	fds := make([]interface{}, 0, len(forkDigests))
+	fds := make([]any, 0, len(forkDigests))
 	for _, fd := range forkDigests {
 		fds = append(fds, fd)
 	}

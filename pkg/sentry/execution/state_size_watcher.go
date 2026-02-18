@@ -88,11 +88,7 @@ func (w *StateSizeWatcher) OnHeadEvent(ctx context.Context) error {
 
 // startPeriodicPoller starts a goroutine that polls debug_stateSize at regular intervals.
 func (w *StateSizeWatcher) startPeriodicPoller() {
-	w.wg.Add(1)
-
-	go func() {
-		defer w.wg.Done()
-
+	w.wg.Go(func() {
 		ticker := time.NewTicker(time.Duration(w.config.IntervalSeconds) * time.Second)
 		defer ticker.Stop()
 
@@ -106,17 +102,13 @@ func (w *StateSizeWatcher) startPeriodicPoller() {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // startBlockSubscription subscribes to new execution layer blocks and polls state size on each new block.
 // Implements automatic reconnection with exponential backoff on WebSocket disconnections.
 func (w *StateSizeWatcher) startBlockSubscription() error {
-	w.wg.Add(1)
-
-	go func() {
-		defer w.wg.Done()
-
+	w.wg.Go(func() {
 		// Reconnection parameters
 		const (
 			initialBackoff = 500 * time.Millisecond
@@ -143,10 +135,7 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 				// Wait before retrying with exponential backoff
 				select {
 				case <-time.After(backoff):
-					backoff = time.Duration(float64(backoff) * backoffFactor)
-					if backoff > maxBackoff {
-						backoff = maxBackoff
-					}
+					backoff = min(time.Duration(float64(backoff)*backoffFactor), maxBackoff)
 
 					continue
 				case <-w.ctx.Done():
@@ -178,10 +167,7 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 					// Wait before attempting reconnection
 					select {
 					case <-time.After(backoff):
-						backoff = time.Duration(float64(backoff) * backoffFactor)
-						if backoff > maxBackoff {
-							backoff = maxBackoff
-						}
+						backoff = min(time.Duration(float64(backoff)*backoffFactor), maxBackoff)
 					case <-w.ctx.Done():
 						return
 					}
@@ -201,7 +187,7 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 				}
 			}
 		}
-	}()
+	})
 
 	return nil
 }

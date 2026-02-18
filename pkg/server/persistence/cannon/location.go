@@ -11,7 +11,7 @@ import (
 
 type Location struct {
 	// LocationID is the location id.
-	LocationID interface{} `json:"locationId" db:"location_id"`
+	LocationID any `json:"locationId" db:"location_id"`
 	// CreateTime is the timestamp of when the execution record was created.
 	CreateTime time.Time `json:"createTime" db:"create_time" fieldopt:"omitempty"`
 	// UpdateTime is the timestamp of when the activity record was updated.

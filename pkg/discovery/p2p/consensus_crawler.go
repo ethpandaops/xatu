@@ -170,7 +170,7 @@ func (c *ConsensusCrawler) createNodeStatus(crawl *crawler.SuccessfulCrawl) (*xa
 
 func encodeUint64ToBytes(value uint64) []byte {
 	bytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		bytes[i] = byte(value >> (8 * (7 - i)))
 	}
 

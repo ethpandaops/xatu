@@ -71,7 +71,7 @@ type PendingTxRecord struct {
 }
 
 // EventCallback is a generic callback function for subscription events.
-type EventCallback func(ctx context.Context, event interface{}) error
+type EventCallback func(ctx context.Context, event any) error
 
 // TransactionCallback is a callback function for when a transaction is received.
 type TransactionCallback func(ctx context.Context, tx string) error

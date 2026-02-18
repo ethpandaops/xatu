@@ -292,7 +292,7 @@ func TestShardDistribution(t *testing.T) {
 	numTests := 100000 // Large sample size for statistical significance
 	shardCounts := make([]int, totalShards)
 
-	for i := 0; i < numTests; i++ {
+	for i := range numTests {
 		msgID := fmt.Sprintf("test-message-%d", i)
 		shard := sharder.GetShardForKey(msgID, totalShards)
 		shardCounts[shard]++
@@ -851,7 +851,7 @@ func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
 		processedCount := 0
 		totalCount := 1000
 
-		for i := 0; i < totalCount; i++ {
+		for i := range totalCount {
 			msgID := fmt.Sprintf("msgid-%d", i)
 			shouldProcess, reason := sharder.ShouldProcess(
 				xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT,
@@ -890,7 +890,8 @@ func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
 		require.NoError(t, err)
 
 		iwantProcessed := 0
-		for i := 0; i < 100; i++ {
+
+		for i := range 100 {
 			msgID := fmt.Sprintf("iwant-msg-%d", i)
 			shouldProcess, _ := iwantSharder.ShouldProcess(
 				xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,

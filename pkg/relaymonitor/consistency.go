@@ -493,10 +493,7 @@ func (r *RelayMonitor) processBatch(
 			// No results - advance to the cursor position we queried
 			// cursor = min(currentSlot + batchSize, targetSlot)
 			//nolint:gosec // BatchSize is validated to be positive and <= 200
-			cursor := batch.CurrentSlot + uint64(batch.BatchSize)
-			if cursor > batch.TargetSlot {
-				cursor = batch.TargetSlot
-			}
+			cursor := min(batch.CurrentSlot+uint64(batch.BatchSize), batch.TargetSlot)
 
 			newLocation = cursor
 		}

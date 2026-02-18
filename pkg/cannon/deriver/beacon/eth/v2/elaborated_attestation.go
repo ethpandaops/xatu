@@ -365,7 +365,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 				committeeValidatorIndexes := []*wrapperspb.UInt64Value{}
 
 				// For each validator position in this committee
-				for i := 0; i < committeeSize; i++ {
+				for i := range committeeSize {
 					// Calculate the bit position in the aggregation_bits
 					aggregationBitPosition := committeeOffset + i
 

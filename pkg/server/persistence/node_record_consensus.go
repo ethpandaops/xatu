@@ -12,7 +12,7 @@ var nodeRecordConsensusStruct = sqlbuilder.NewStruct(new(node.Consensus)).For(sq
 func (c *Client) InsertNodeRecordConsensus(ctx context.Context, record *node.Consensus) error {
 	ib := nodeRecordConsensusStruct.InsertInto("node_record_consensus")
 
-	items := []interface{}{
+	items := []any{
 		sqlbuilder.Raw("DEFAULT"),
 		record.Enr,
 		record.NodeID,
@@ -46,7 +46,7 @@ func (c *Client) ListNodeRecordConsensus(ctx context.Context, networkIds []uint6
 	sb := nodeRecordConsensusStruct.SelectFrom("node_record_consensus")
 
 	if len(networkIds) > 0 {
-		nids := make([]interface{}, 0, len(networkIds))
+		nids := make([]any, 0, len(networkIds))
 		for _, nid := range networkIds {
 			nids = append(nids, nid)
 		}
@@ -55,7 +55,7 @@ func (c *Client) ListNodeRecordConsensus(ctx context.Context, networkIds []uint6
 	}
 
 	if len(forkDigests) > 0 {
-		fds := make([]interface{}, 0, len(forkDigests))
+		fds := make([]any, 0, len(forkDigests))
 		for _, fd := range forkDigests {
 			fds = append(fds, fd)
 		}
@@ -100,10 +100,7 @@ func (c *Client) BulkInsertNodeRecordConsensus(ctx context.Context, records []*n
 
 	// Process in batches if necessary.
 	for i := 0; i < len(records); i += maxBatchSize {
-		end := i + maxBatchSize
-		if end > len(records) {
-			end = len(records)
-		}
+		end := min(i+maxBatchSize, len(records))
 
 		var (
 			batch = records[i:end]
@@ -113,7 +110,7 @@ func (c *Client) BulkInsertNodeRecordConsensus(ctx context.Context, records []*n
 		ib.Cols(nodeRecordConsensusStruct.Columns()...)
 
 		for _, record := range batch {
-			values := []interface{}{
+			values := []any{
 				sqlbuilder.Raw("DEFAULT"),
 				record.Enr,
 				record.NodeID,

@@ -2,6 +2,7 @@ package clmimicry
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -26,13 +27,7 @@ type RPCMetaTopicInfo struct {
 
 // IsShardActive checks if a shard is in the active shards list.
 func IsShardActive(shard uint64, activeShards []uint64) bool {
-	for _, activeShard := range activeShards {
-		if shard == activeShard {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(activeShards, shard)
 }
 
 // ShouldTraceMessage determines whether a message with the given MsgID should be included
@@ -86,7 +81,7 @@ func (p *Processor) ShouldTraceMessage(
 func (p *Processor) ShouldTraceRPCMetaMessages(
 	clientMeta *xatu.ClientMeta,
 	xatuEventType string,
-	messages interface{}, // []RPCMetaMessageInfo, []RPCMetaTopicInfo, or []*wrapperspb.StringValue
+	messages any, // []RPCMetaMessageInfo, []RPCMetaTopicInfo, or []*wrapperspb.StringValue
 ) ([]FilteredMessageWithIndex, error) {
 	if p.unifiedSharder == nil || !p.unifiedSharder.enabled {
 		// If sharding is disabled, include all messages
@@ -180,7 +175,7 @@ func (p *Processor) ShouldTraceRPCMetaMessages(
 }
 
 // buildAllMessagesFromInterface builds a result with all messages when sharding is disabled
-func (p *Processor) buildAllMessagesFromInterface(messages interface{}, xatuEventType, networkStr string) []FilteredMessageWithIndex {
+func (p *Processor) buildAllMessagesFromInterface(messages any, xatuEventType, networkStr string) []FilteredMessageWithIndex {
 	var result []FilteredMessageWithIndex
 
 	switch msgs := messages.(type) {

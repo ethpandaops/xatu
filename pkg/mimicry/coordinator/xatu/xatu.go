@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -193,13 +194,9 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 
 				for i, peer := range x.peers {
 					found := false
-					for _, record := range res.NodeRecords {
-						if record == i {
-							found = true
-							peer.RetryDelay(retryDelay)
-
-							break
-						}
+					if slices.Contains(res.NodeRecords, i) {
+						found = true
+						peer.RetryDelay(retryDelay)
 					}
 
 					// remove peer

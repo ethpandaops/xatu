@@ -145,6 +145,7 @@ func TestGetShard(t *testing.T) {
 		// Very long message ID edge case (simulates a huge transaction ID or similar).
 		var longMsg strings.Builder
 		longMsg.WriteString("0x")
+
 		for range 1000 {
 			longMsg.WriteString("1234567890abcdef")
 		}
@@ -193,6 +194,7 @@ func TestGetShard(t *testing.T) {
 		// Now generate a large number of eth-style hashes and check
 		// their distribution across shards.
 		shardDistribution := make(map[uint64]int)
+
 		for i := range 1000 {
 			shard := clmimicry.GetShard(fmt.Sprintf("0x%064x", i), totalShards)
 			shardDistribution[shard]++

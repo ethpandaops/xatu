@@ -226,9 +226,7 @@ func (w *MempoolWatcher) Stop() {
 // reconnection using exponential backoff. This ensures we receive real-time notifications
 // of new transactions as they enter the mempool.
 func (w *MempoolWatcher) startNewPendingTxSubscription() error {
-
 	w.wg.Go(func() {
-
 		ctx, cancel := context.WithCancel(w.ctx)
 		defer cancel() // This hits when the goroutine exits.
 
@@ -257,6 +255,7 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 				// The subscription will end when w.subscriptionCancel is called
 				// or when the parent context is canceled.
 				<-ctx.Done()
+
 				done <- fmt.Errorf("context canceled")
 			}()
 
@@ -343,9 +342,7 @@ func (w *MempoolWatcher) subscribeToNewPendingTransactions() error {
 // startPeriodicFetcher launches a goroutine that periodically fetches the full
 // txpool content to get comprehensive transaction details.
 func (w *MempoolWatcher) startPeriodicFetcher() {
-
 	w.wg.Go(func() {
-
 		ticker := time.NewTicker(time.Duration(w.config.FetchInterval) * time.Second)
 		defer ticker.Stop()
 
@@ -488,9 +485,11 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 
 		// Then remove from pending map.
 		w.pendingTxsMutex.Lock()
+
 		for _, hash := range txsToRemove {
 			delete(w.pendingTxs, hash)
 		}
+
 		w.pendingTxsMutex.Unlock()
 
 		w.txQueue.recordProcessingOutcome("pruned", removedCount)
@@ -528,9 +527,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 // This method runs more frequently than txpool_content and has jitter added to
 // avoid creating predictable load patterns on the node.
 func (w *MempoolWatcher) startPendingTransactionsFetcher() {
-
 	w.wg.Go(func() {
-
 		// Stagger this slightly offset from txpool_content fetch to avoid overwhelming the EL.
 		// Use 1/3 of the fetchInterval to have this run 3x as frequently as txpool_content
 		fetchInterval := time.Duration(w.config.FetchInterval) * time.Second / 3
@@ -564,7 +561,6 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 	transactions, err := w.pendingTxsBreaker.Execute(func() ([]json.RawMessage, error) {
 		return w.client.GetPendingTransactions(ctx)
 	})
-
 	if err != nil {
 		return err
 	}
@@ -637,11 +633,13 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		}
 
 		w.pendingTxsMutex.Lock()
+
 		for _, hash := range txsToClear {
 			if record, exists := w.pendingTxs[hash]; exists && record.MarkedForPruning {
 				record.MarkedForPruning = false
 			}
 		}
+
 		w.pendingTxsMutex.Unlock()
 	}
 
@@ -709,9 +707,11 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 						// If it doesn't have any data yet, put it back in the pending map to be picked
 						// up by the batch processor which will fetch the data for it.
 						w.pendingTxsMutex.Lock()
+
 						if _, exists := w.pendingTxs[item.record.Hash]; !exists {
 							w.pendingTxs[item.record.Hash] = item.record
 						}
+
 						w.pendingTxsMutex.Unlock()
 					}
 				}
@@ -720,9 +720,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 	}
 
 	// Start a separate goroutine for batch processing of transactions without data.
-
 	w.wg.Go(func() {
-
 		ticker := time.NewTicker(time.Duration(w.config.ProcessingInterval) * time.Millisecond)
 		defer ticker.Stop()
 
@@ -738,6 +736,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 				if batchMutex.TryLock() {
 					go func() {
 						defer batchMutex.Unlock()
+
 						w.processPendingTransactionsBatch()
 					}()
 				}
@@ -746,9 +745,7 @@ func (w *MempoolWatcher) startTransactionProcessor() {
 	})
 
 	// Start a goroutine to periodically prune the processed transactions map.
-
 	w.wg.Go(func() {
-
 		ticker := time.NewTicker(time.Duration(w.config.PruneDuration) * time.Second)
 		defer ticker.Stop()
 
@@ -893,9 +890,11 @@ func (w *MempoolWatcher) processPendingTransactionsBatch() {
 					w.txQueue.recordProcessingOutcome("null", 1)
 
 					w.pendingTxsMutex.Lock()
+
 					if record, exists := w.pendingTxs[hash]; exists && !record.MarkedForPruning {
 						record.MarkedForPruning = true
 					}
+
 					w.pendingTxsMutex.Unlock()
 
 					w.txQueue.markProcessed(hash)
@@ -1029,9 +1028,7 @@ func (w *MempoolWatcher) addPendingTransaction(txHash string, txData json.RawMes
 // based on age. This is a fallback cleanup mechanism for transactions that weren't
 // explicitly confirmed or dropped.
 func (w *MempoolWatcher) startPruner() {
-
 	w.wg.Go(func() {
-
 		//  // Run pruner at half the prune duration.
 		ticker := time.NewTicker(time.Duration(w.config.PruneDuration) * time.Second / 2)
 		defer ticker.Stop()
@@ -1085,9 +1082,7 @@ func (w *MempoolWatcher) prunePendingTxs() {
 // startSummaryLogger launches a goroutine that periodically logs operational metrics
 // about the mempool watcher state for monitoring purposes.
 func (w *MempoolWatcher) startSummaryLogger() {
-
 	w.wg.Go(func() {
-
 		ticker := time.NewTicker(1 * time.Minute)
 		defer ticker.Stop()
 

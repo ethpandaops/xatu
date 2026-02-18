@@ -169,6 +169,7 @@ func TestPrunePendingTxsLogic(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	watcher.ctx = ctx
 	watcher.cancel = cancel
 
@@ -220,6 +221,7 @@ func TestPrunePendingTxsLogic(t *testing.T) {
 
 	// Verify total count
 	expectedCount := 0
+
 	for _, tc := range testCases {
 		if !tc.shouldBeRemoved {
 			expectedCount++
@@ -347,6 +349,7 @@ func TestBatchOperations(t *testing.T) {
 
 	// Setup test transactions
 	pendingTxs := make(map[string]*PendingTxRecord)
+
 	for i := range totalTxCount {
 		hash := fmt.Sprintf("0x%064x", i) // Create valid-looking hashes.
 		pendingTxs[hash] = &PendingTxRecord{
@@ -417,6 +420,7 @@ func TestBatchOperations(t *testing.T) {
 	t.Run("NoDuplicates", func(t *testing.T) {
 		// Check for duplicates
 		seen := make(map[string]bool)
+
 		for _, batch := range txBatches {
 			for _, hash := range batch {
 				assert.False(t, seen[hash], "Transaction %s should not be duplicated across batches", hash)
@@ -433,6 +437,7 @@ func TestTxQueueConcurrency(t *testing.T) {
 	queue := newTxQueue(metrics, 1000, 5*time.Second)
 
 	const txCount = 100
+
 	const workers = 10
 
 	// Test concurrency with writes, reads, and pruning operations all happening simultaneously
@@ -443,6 +448,7 @@ func TestTxQueueConcurrency(t *testing.T) {
 		t.Run("Writers", func(t *testing.T) {
 			for w := range workers {
 				wg.Add(1)
+
 				go func(workerID int) {
 					defer wg.Done()
 
@@ -473,6 +479,7 @@ func TestTxQueueConcurrency(t *testing.T) {
 		t.Run("Readers", func(t *testing.T) {
 			for w := range workers {
 				wg.Add(1)
+
 				go func(workerID int) {
 					defer wg.Done()
 
@@ -495,7 +502,6 @@ func TestTxQueueConcurrency(t *testing.T) {
 		// Run a pruner concurrently
 		t.Run("Pruner", func(t *testing.T) {
 			wg.Go(func() {
-
 				for range 10 {
 					time.Sleep(50 * time.Millisecond)
 					queue.prune()

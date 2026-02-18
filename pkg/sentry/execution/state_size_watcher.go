@@ -88,9 +88,7 @@ func (w *StateSizeWatcher) OnHeadEvent(ctx context.Context) error {
 
 // startPeriodicPoller starts a goroutine that polls debug_stateSize at regular intervals.
 func (w *StateSizeWatcher) startPeriodicPoller() {
-
 	w.wg.Go(func() {
-
 		ticker := time.NewTicker(time.Duration(w.config.IntervalSeconds) * time.Second)
 		defer ticker.Stop()
 
@@ -110,9 +108,7 @@ func (w *StateSizeWatcher) startPeriodicPoller() {
 // startBlockSubscription subscribes to new execution layer blocks and polls state size on each new block.
 // Implements automatic reconnection with exponential backoff on WebSocket disconnections.
 func (w *StateSizeWatcher) startBlockSubscription() error {
-
 	w.wg.Go(func() {
-
 		// Reconnection parameters
 		const (
 			initialBackoff = 500 * time.Millisecond

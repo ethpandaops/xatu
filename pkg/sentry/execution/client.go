@@ -189,6 +189,7 @@ func (c *Client) GetClientInfo(ctx context.Context, version *string) error {
 // GetTxpoolContent retrieves the full transaction pool content.
 func (c *Client) GetTxpoolContent(ctx context.Context) (json.RawMessage, error) {
 	var result json.RawMessage
+
 	err := c.CallContext(ctx, &result, RPCMethodTxpoolContent)
 
 	return result, err
@@ -212,12 +213,12 @@ func (c *Client) GetPendingTransactions(ctx context.Context) ([]json.RawMessage,
 
 // BatchGetTransactionsByHash retrieves transactions by their hashes.
 func (c *Client) BatchGetTransactionsByHash(ctx context.Context, hashes []string) ([]json.RawMessage, error) {
-	params := make([]any, len(hashes))
+	args := make([]any, len(hashes))
 	for i, hash := range hashes {
-		params[i] = hash
+		args[i] = hash
 	}
 
-	return c.BatchCallContext(ctx, RPCMethodGetTransactionByHash, params)
+	return c.BatchCallContext(ctx, RPCMethodGetTransactionByHash, args)
 }
 
 // SubscribeToNewPendingTxs subscribes to new pending transaction notifications
@@ -259,10 +260,10 @@ func (c *Client) GetSigner() types.Signer {
 }
 
 // BatchCallContext performs a batch JSON-RPC call for multiple transactions.
-func (c *Client) BatchCallContext(ctx context.Context, method string, params []any) ([]json.RawMessage, error) {
+func (c *Client) BatchCallContext(ctx context.Context, method string, args []any) ([]json.RawMessage, error) {
 	// Prepare batch requests.
-	reqs := make([]rpc.BatchElem, len(params))
-	for i, param := range params {
+	reqs := make([]rpc.BatchElem, len(args))
+	for i, param := range args {
 		reqs[i] = rpc.BatchElem{
 			Method: method,
 			Args:   []any{param},

@@ -890,6 +890,7 @@ func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
 		require.NoError(t, err)
 
 		iwantProcessed := 0
+
 		for i := range 100 {
 			msgID := fmt.Sprintf("iwant-msg-%d", i)
 			shouldProcess, _ := iwantSharder.ShouldProcess(

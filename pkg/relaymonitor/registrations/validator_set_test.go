@@ -38,6 +38,7 @@ func TestValidatorSetWalker(t *testing.T) {
 
 		// Test walking through validators
 		seen := make(map[phase0.ValidatorIndex]bool)
+
 		for range 25 {
 			idx, err := walker.Next()
 			if err != nil {

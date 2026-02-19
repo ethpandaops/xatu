@@ -253,6 +253,8 @@ services:
         filter:
           eventNames:
             - EXECUTION_BLOCK_METRICS
+            - EXECUTION_STATE_SIZE_DELTA
+            - EXECUTION_MPT_DEPTH
         config:
           address: http://xatu-vector-http-kafka:9005
           maxQueueSize: 50000

@@ -1981,6 +1981,8 @@ message Event {
     BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 85;
     BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
     EXECUTION_BLOCK_METRICS = 87;
+    EXECUTION_STATE_SIZE_DELTA = 88;
+    EXECUTION_MPT_DEPTH = 89;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2085,6 +2087,87 @@ message ExecutionBlockMetrics {
   CacheEntry storage_cache = 15 [ json_name = "storage_cache" ];
   // CodeCache contains code cache statistics.
   CodeCacheEntry code_cache = 16 [ json_name = "code_cache" ];
+}
+
+// ExecutionStateSizeDelta contains state size delta metrics captured from
+// execution client structured logging output via the sentry-logs pipeline.
+// Maps to the execution_state_size_delta ClickHouse table.
+message ExecutionStateSizeDelta {
+  // Source identifies where this event was captured (e.g., "client-logs").
+  string source = 1 [ json_name = "source" ];
+  // BlockNumber is the execution block number.
+  google.protobuf.UInt64Value block_number = 2 [ json_name = "block_number" ];
+  // StateRoot is the state root hash at this block.
+  string state_root = 3 [ json_name = "state_root" ];
+  // ParentStateRoot is the state root hash at the parent block.
+  string parent_state_root = 4 [ json_name = "parent_state_root" ];
+  // AccountDelta is the change in number of accounts.
+  google.protobuf.Int64Value account_delta = 5 [ json_name = "account_delta" ];
+  // AccountBytesDelta is the change in bytes used by account data.
+  google.protobuf.Int64Value account_bytes_delta = 6 [ json_name = "account_bytes_delta" ];
+  // AccountTrienodeDelta is the change in account trie node count.
+  google.protobuf.Int64Value account_trienode_delta = 7 [ json_name = "account_trienode_delta" ];
+  // AccountTrienodeBytesDelta is the change in bytes used by account trie nodes.
+  google.protobuf.Int64Value account_trienode_bytes_delta = 8 [ json_name = "account_trienode_bytes_delta" ];
+  // ContractCodeDelta is the change in number of contract codes.
+  google.protobuf.Int64Value contract_code_delta = 9 [ json_name = "contract_code_delta" ];
+  // ContractCodeBytesDelta is the change in bytes used by contract code.
+  google.protobuf.Int64Value contract_code_bytes_delta = 10 [ json_name = "contract_code_bytes_delta" ];
+  // StorageDelta is the change in number of storage slots.
+  google.protobuf.Int64Value storage_delta = 11 [ json_name = "storage_delta" ];
+  // StorageBytesDelta is the change in bytes used by storage data.
+  google.protobuf.Int64Value storage_bytes_delta = 12 [ json_name = "storage_bytes_delta" ];
+  // StorageTrienodeDelta is the change in storage trie node count.
+  google.protobuf.Int64Value storage_trienode_delta = 13 [ json_name = "storage_trienode_delta" ];
+  // StorageTrienodeBytesDelta is the change in bytes used by storage trie nodes.
+  google.protobuf.Int64Value storage_trienode_bytes_delta = 14 [ json_name = "storage_trienode_bytes_delta" ];
+}
+
+// ExecutionMPTDepth contains Merkle Patricia Trie depth metrics captured from
+// execution client structured logging output via the sentry-logs pipeline.
+// Maps to the execution_mpt_depth ClickHouse table. Per-depth map data flows
+// through Vector as plain JSON and is not represented in this proto message.
+message ExecutionMPTDepth {
+  // Source identifies where this event was captured (e.g., "client-logs").
+  string source = 1 [ json_name = "source" ];
+  // BlockNumber is the execution block number.
+  google.protobuf.UInt64Value block_number = 2 [ json_name = "block_number" ];
+  // StateRoot is the state root hash at this block.
+  string state_root = 3 [ json_name = "state_root" ];
+  // ParentStateRoot is the state root hash at the parent block.
+  string parent_state_root = 4 [ json_name = "parent_state_root" ];
+  // TotalAccountWrittenNodes is the total trie nodes written in account tries.
+  google.protobuf.UInt64Value total_account_written_nodes = 5 [ json_name = "total_account_written_nodes" ];
+  // TotalAccountWrittenBytes is the total bytes written in account tries.
+  google.protobuf.UInt64Value total_account_written_bytes = 6 [ json_name = "total_account_written_bytes" ];
+  // TotalAccountDeletedNodes is the total trie nodes deleted in account tries.
+  google.protobuf.UInt64Value total_account_deleted_nodes = 7 [ json_name = "total_account_deleted_nodes" ];
+  // TotalAccountDeletedBytes is the total bytes deleted in account tries.
+  google.protobuf.UInt64Value total_account_deleted_bytes = 8 [ json_name = "total_account_deleted_bytes" ];
+  // TotalStorageWrittenNodes is the total trie nodes written in storage tries.
+  google.protobuf.UInt64Value total_storage_written_nodes = 9 [ json_name = "total_storage_written_nodes" ];
+  // TotalStorageWrittenBytes is the total bytes written in storage tries.
+  google.protobuf.UInt64Value total_storage_written_bytes = 10 [ json_name = "total_storage_written_bytes" ];
+  // TotalStorageDeletedNodes is the total trie nodes deleted in storage tries.
+  google.protobuf.UInt64Value total_storage_deleted_nodes = 11 [ json_name = "total_storage_deleted_nodes" ];
+  // TotalStorageDeletedBytes is the total bytes deleted in storage tries.
+  google.protobuf.UInt64Value total_storage_deleted_bytes = 12 [ json_name = "total_storage_deleted_bytes" ];
+  // AccountWrittenNodes is a map of trie depth to number of nodes written at that depth in account tries.
+  map<uint32, uint64> account_written_nodes = 13 [ json_name = "account_written_nodes" ];
+  // AccountWrittenBytes is a map of trie depth to bytes written at that depth in account tries.
+  map<uint32, uint64> account_written_bytes = 14 [ json_name = "account_written_bytes" ];
+  // AccountDeletedNodes is a map of trie depth to number of nodes deleted at that depth in account tries.
+  map<uint32, uint64> account_deleted_nodes = 15 [ json_name = "account_deleted_nodes" ];
+  // AccountDeletedBytes is a map of trie depth to bytes deleted at that depth in account tries.
+  map<uint32, uint64> account_deleted_bytes = 16 [ json_name = "account_deleted_bytes" ];
+  // StorageWrittenNodes is a map of trie depth to number of nodes written at that depth in storage tries.
+  map<uint32, uint64> storage_written_nodes = 17 [ json_name = "storage_written_nodes" ];
+  // StorageWrittenBytes is a map of trie depth to bytes written at that depth in storage tries.
+  map<uint32, uint64> storage_written_bytes = 18 [ json_name = "storage_written_bytes" ];
+  // StorageDeletedNodes is a map of trie depth to number of nodes deleted at that depth in storage tries.
+  map<uint32, uint64> storage_deleted_nodes = 19 [ json_name = "storage_deleted_nodes" ];
+  // StorageDeletedBytes is a map of trie depth to bytes deleted at that depth in storage tries.
+  map<uint32, uint64> storage_deleted_bytes = 20 [ json_name = "storage_deleted_bytes" ];
 }
 
 // DecoratedEvent is an event that has been decorated with additional
@@ -2287,6 +2370,10 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     ExecutionBlockMetrics execution_block_metrics = 209
         [ json_name = "EXECUTION_BLOCK_METRICS" ];
+    ExecutionStateSizeDelta execution_state_size_delta = 210
+        [ json_name = "EXECUTION_STATE_SIZE_DELTA" ];
+    ExecutionMPTDepth execution_mpt_depth = 211
+        [ json_name = "EXECUTION_MPT_DEPTH" ];
   };
 }
 

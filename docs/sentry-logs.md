@@ -139,6 +139,16 @@ geth --debug.logslowblock 0
 | --- | --- |
 | `--debug.logslowblock 0` | Logs metrics for all blocks (threshold of 0ms means every block is logged) |
 
+To enable state size delta and MPT depth metrics, add the `--vmtrace` flag:
+
+```bash
+geth --debug.logslowblock 0 --vmtrace statesize
+```
+
+| Flag | Description |
+| --- | --- |
+| `--vmtrace statesize` | Enables the statesize tracer which logs state size deltas and trie depth stats per block |
+
 Any `--log.format` value is supported (json, terminal, logfmt). If omitted, geth defaults to terminal format.
 
 ## Development
@@ -170,3 +180,5 @@ make sentry-logs-build
 | Event | ID | Description |
 | --- | --- | --- |
 | `EXECUTION_BLOCK_METRICS` | 87 | Block execution performance metrics including timing, state reads/writes, and cache statistics |
+| `EXECUTION_STATE_SIZE_DELTA` | 88 | State size delta per block: account, storage, trienode, and contract code count/byte changes |
+| `EXECUTION_MPT_DEPTH` | 89 | Merkle Patricia Trie depth metrics: per-depth node counts and byte sizes for written/deleted trie nodes |

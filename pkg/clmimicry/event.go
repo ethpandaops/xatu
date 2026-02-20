@@ -32,6 +32,7 @@ const (
 	TraceEvent_CUSTODY_PROBE                   = "CUSTODY_PROBE"
 	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD = "CONSENSUS_ENGINE_API_NEWPAYLOAD"
 	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS   = "CONSENSUS_ENGINE_API_GETBLOBS"
+	TraceEvent_IDENTIFY                        = "IDENTIFY"
 )
 
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.

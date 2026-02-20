@@ -27,7 +27,11 @@ geoip:
   enabled: false
 
 tracing:
-  enabled: false
+  enabled: true
+  endpoint: tempo:4318
+  insecure: true
+  sampling:
+    rate: 0.1
 
 httpIngester:
   enabled: true
@@ -258,16 +262,3 @@ services:
           compression: gzip
           keepAlive: false
           workers: 100
-      - name: consumoor-proto
-        type: kafka
-        shippingMethod: async
-        config:
-          brokers: "xatu-kafka:29092"
-          topicPattern: "proto-${event-name}"
-          encoding: protobuf
-          compression: snappy
-          flushBytes: 10485760
-          maxQueueSize: 302400
-          batchTimeout: 5s
-          maxExportBatchSize: 64
-          workers: 500

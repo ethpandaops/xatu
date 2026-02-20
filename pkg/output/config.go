@@ -81,7 +81,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 		}
 
 		return xatu.New(name, conf, log, &filterConfig, shippingMethod)
-	case SinkTypeKafka, "kafkaTopicRouter":
+	case SinkTypeKafka:
 		conf := &kafka.Config{}
 
 		if config != nil {

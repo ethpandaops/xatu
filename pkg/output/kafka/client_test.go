@@ -367,21 +367,41 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "brokers is required",
 		},
 		{
-			name: "missing topic",
+			name: "neither topic nor pattern",
 			config: Config{
 				ProducerConfig: ProducerConfig{
 					Brokers: "localhost:9092",
 				},
 			},
-			wantErr: "topic is required",
+			wantErr: "exactly one of topic or topicPattern is required",
 		},
 		{
-			name: "valid config",
+			name: "both topic and pattern",
+			config: Config{
+				ProducerConfig: ProducerConfig{
+					Brokers: "localhost:9092",
+				},
+				Topic:        "test-topic",
+				TopicPattern: "xatu-${event-name}",
+			},
+			wantErr: "topic and topicPattern are mutually exclusive",
+		},
+		{
+			name: "valid config with static topic",
 			config: Config{
 				ProducerConfig: ProducerConfig{
 					Brokers: "localhost:9092",
 				},
 				Topic: "test-topic",
+			},
+		},
+		{
+			name: "valid config with topic pattern",
+			config: Config{
+				ProducerConfig: ProducerConfig{
+					Brokers: "localhost:9092",
+				},
+				TopicPattern: "xatu-${event-name}",
 			},
 		},
 	}

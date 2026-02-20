@@ -88,7 +88,8 @@ Output configuration to send sentry events to a kafka server.
 | Name                            | Type   | Default   | Allowed Values                      | Description                                                                                                                             |
 | ------------------------------- | ------ |-----------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | outputs[].config.brokers        | string |           |                                     | Comma delimited list of brokers. Eg: `localhost:19091,localhost:19092`                                                                  |
-| outputs[].config.topic          | string |           |                                     | Name of the topic.                                                                                                                      |
+| outputs[].config.topic          | string |           |                                     | Name of the topic. Mutually exclusive with `topicPattern`.                                                                              |
+| outputs[].config.topicPattern   | string |           |                                     | Topic template with variables `${EVENT_NAME}` or `${event-name}`. Mutually exclusive with `topic`.                                      |
 | outputs[].config.flushFrequency | string | `3s`      |                                     | The maximum time a single batch can wait before a flush. Producer flushes the batch when the limit is reached.                          |
 | outputs[].config.flushMessages  | int    | `500`     |                                     | The maximum number of events in a single batch before a flush. Producer flushes the batch when the limit is reached.                    |
 | outputs[].config.flushBytes     | int    | `1000000` |                                     | The maximum size (in bytes) of a single batch before a flush. Producer flushes the batch when the limit is reached.                     |
@@ -96,6 +97,7 @@ Output configuration to send sentry events to a kafka server.
 | outputs[].config.compression    | string | `none`    | `none` `gzip` `snappy` `lz4` `zstd` | Compression to use.                                                                                                                     |
 | outputs[].config.requiredAcks   | string | `leader`  | `none` `leader` `all`               | Number of ack's required for a succesful batch delivery.                                                                                |
 | outputs[].config.partitioning   | string | `none`    | `none` `random`                     | Paritioning to use for the distribution of messages across the partitions.                                                              |
+| outputs[].config.encoding       | string | `json`    | `json` `protobuf`                   | Serialization format for message values.                                                                                                |
 
 ### Simple example
 

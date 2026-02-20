@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/kafka"
-	"github.com/ethpandaops/xatu/pkg/output/kafkatopicrouter"
 	"github.com/ethpandaops/xatu/pkg/output/stdout"
 	xatuSink "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -16,12 +15,11 @@ import (
 type SinkType string
 
 const (
-	SinkTypeUnknown          SinkType = "unknown"
-	SinkTypeHTTP             SinkType = http.SinkType
-	SinkTypeStdOut           SinkType = stdout.SinkType
-	SinkTypeXatu             SinkType = xatuSink.SinkType
-	SinkTypeKafka            SinkType = kafka.SinkType
-	SinkTypeKafkaTopicRouter SinkType = kafkatopicrouter.SinkType
+	SinkTypeUnknown SinkType = "unknown"
+	SinkTypeHTTP    SinkType = http.SinkType
+	SinkTypeStdOut  SinkType = stdout.SinkType
+	SinkTypeXatu    SinkType = xatuSink.SinkType
+	SinkTypeKafka   SinkType = kafka.SinkType
 )
 
 type Sink interface {

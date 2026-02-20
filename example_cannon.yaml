@@ -94,7 +94,6 @@ outputs:
     brokers: localhost:19092
     topic: events
     flushFrequency: 1s
-    flushMessages: 500
     flushBytes: 1000000
     maxRetries: 6
     compression: snappy

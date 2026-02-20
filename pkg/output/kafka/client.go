@@ -69,7 +69,6 @@ type ProducerConfig struct {
 	TLSClientConfig *TLSClientConfig    `yaml:"tlsClientConfig"`
 	SASLConfig      *SASLConfig         `yaml:"sasl"`
 	FlushFrequency  time.Duration       `yaml:"flushFrequency" default:"10s"`
-	FlushMessages   int                 `yaml:"flushMessages" default:"500"`
 	FlushBytes      int                 `yaml:"flushBytes" default:"1000000"`
 	MaxRetries      int                 `yaml:"maxRetries" default:"3"`
 	Compression     CompressionStrategy `yaml:"compression" default:"none"`
@@ -165,8 +164,10 @@ func (c *SASLConfig) Validate() error {
 }
 
 // NewSyncProducer creates a new Sarama SyncProducer from ProducerConfig.
-func NewSyncProducer(config *ProducerConfig) (sarama.SyncProducer, error) {
-	saramaConfig, err := InitSaramaConfig(config)
+// maxExportBatchSize is used to set the Sarama flush message threshold so
+// that both layers flush at the same boundary.
+func NewSyncProducer(config *ProducerConfig, maxExportBatchSize int) (sarama.SyncProducer, error) {
+	saramaConfig, err := InitSaramaConfig(config, maxExportBatchSize)
 	if err != nil {
 		return nil, err
 	}
@@ -177,10 +178,12 @@ func NewSyncProducer(config *ProducerConfig) (sarama.SyncProducer, error) {
 }
 
 // InitSaramaConfig builds a *sarama.Config from ProducerConfig.
-func InitSaramaConfig(config *ProducerConfig) (*sarama.Config, error) {
+// maxExportBatchSize sets Producer.Flush.Messages so that Sarama's internal
+// flush threshold stays aligned with the BatchItemProcessor batch size.
+func InitSaramaConfig(config *ProducerConfig, maxExportBatchSize int) (*sarama.Config, error) {
 	c := sarama.NewConfig()
 	c.Producer.Flush.Bytes = config.FlushBytes
-	c.Producer.Flush.Messages = config.FlushMessages
+	c.Producer.Flush.Messages = maxExportBatchSize
 	c.Producer.Flush.Frequency = config.FlushFrequency
 	c.Producer.Retry.Max = config.MaxRetries
 	c.Producer.Return.Successes = true

@@ -18,4 +18,4 @@ Type-safe routing system that dispatches incoming Ethereum network events to ver
 ## Important Constraints
 - **Handler Registration Required**: Every supported event type must have a registered handler or routing will fail
 - **Type Safety**: Event routing is strictly typed using const Type definitions to prevent runtime errors
-- **Domain Segregation**: Events are organized by domain (beacon, libp2p, mempool, mevrelay, blockprint) with separate handler packages
+- **Domain Segregation**: Events are organized by domain (beacon, libp2p, mempool, mevrelay) with separate handler packages

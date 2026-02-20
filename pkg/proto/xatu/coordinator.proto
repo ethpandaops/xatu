@@ -187,7 +187,9 @@ enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION = 5;
   BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL = 6;
   BEACON_API_ETH_V2_BEACON_BLOCK = 7;
-  BLOCKPRINT_BLOCK_CLASSIFICATION = 8; // Deprecated: Blockprint is no longer supported
+  // Enum value 8 was BLOCKPRINT_BLOCK_CLASSIFICATION — blockprint is deprecated.
+  reserved 8;
+  reserved "BLOCKPRINT_BLOCK_CLASSIFICATION";
   BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR = 9;
   BEACON_API_ETH_V1_PROPOSER_DUTY = 10;
   BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION = 11;
@@ -242,11 +244,7 @@ message CannonLocationEthV2BeaconBlock {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 2;
 }
 
-// Deprecated: Blockprint is no longer supported
-message CannonLocationBlockprintBlockClassification {
-  uint64 slot = 1;
-  uint64 target_end_slot = 2;
-}
+// CannonLocationBlockprintBlockClassification was removed — blockprint is deprecated.
 
 message CannonLocationEthV1BeaconBlobSidecar {
   reserved 1;
@@ -303,10 +301,8 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL" ];
     CannonLocationEthV2BeaconBlock eth_v2_beacon_block = 10
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK" ];
-    // Deprecated: Blockprint is no longer supported
-    CannonLocationBlockprintBlockClassification
-        blockprint_block_classification = 11
-        [ json_name = "BLOCKPRINT_BLOCK_CLASSIFICATION" ];
+    // Field 11 was blockprint_block_classification — blockprint is deprecated.
+    // Do not reuse field number 11.
     CannonLocationEthV1BeaconBlobSidecar eth_v1_beacon_blob_sidecar = 12
         [ json_name = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR" ];
     CannonLocationEthV1BeaconProposerDuty eth_v1_beacon_proposer_duty = 13

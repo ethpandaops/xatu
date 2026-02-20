@@ -187,7 +187,6 @@ services:
           modules:
             - CANNON
           eventNames:
-            - BLOCKPRINT_BLOCK_CLASSIFICATION
             - BEACON_API_ETH_V1_BEACON_COMMITTEE
             - BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
             - BEACON_API_ETH_V1_PROPOSER_DUTY

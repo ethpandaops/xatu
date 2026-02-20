@@ -1,0 +1,1199 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"crypto/tls"
+	"flag"
+	"fmt"
+	"go/format"
+	"net"
+	"net/url"
+	"os"
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	ch "github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/chpool"
+	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
+)
+
+type column struct {
+	Name     string
+	Field    string
+	Type     string
+	Position uint64
+}
+
+type options struct {
+	DSN         string
+	Database    string
+	Table       string
+	TableName   string
+	TypeName    string
+	PackageName string
+	Out         string
+
+	WithMetadata bool
+}
+
+// Go type name constants used in code generation.
+const (
+	goTypeString  = "string"
+	goTypeBool    = "bool"
+	goTypeInt8    = "int8"
+	goTypeInt16   = "int16"
+	goTypeInt32   = "int32"
+	goTypeInt64   = "int64"
+	goTypeUint8   = "uint8"
+	goTypeUint16  = "uint16"
+	goTypeUint32  = "uint32"
+	goTypeUint64  = "uint64"
+	goTypeFloat32 = "float32"
+	goTypeFloat64 = "float64"
+
+	chTypeUInt8          = "UInt8"
+	chTypeUInt32         = "UInt32"
+	chTypeEnum8          = "Enum8"
+	chTypeEnum16         = "Enum16"
+	chTypeFixedString    = "FixedString"
+	chTypeIPv4           = "IPv4"
+	chTypeIPv6           = "IPv6"
+	chTypeString         = "String"
+	chTypeUUID           = "UUID"
+	chTypeLowCardinality = "LowCardinality"
+	chTypeNullable       = "Nullable"
+	chTypeArray          = "Array"
+	chTypeDateTime64     = "DateTime64"
+
+	protoIPv4 = "proto.IPv4"
+	protoIPv6 = "proto.IPv6"
+)
+
+func main() {
+	if err := run(); err != nil {
+		failf("%v", err)
+	}
+}
+
+func run() error {
+	var (
+		opts           options
+		pointerColumns string
+	)
+
+	flag.StringVar(&opts.DSN, "dsn", "", "ClickHouse DSN")
+	flag.StringVar(&opts.Database, "database", "default", "ClickHouse database")
+	flag.StringVar(&opts.Table, "table", "", "ClickHouse table name")
+	flag.StringVar(&opts.TableName, "table-name", "", "logical destination table name in generated constant (defaults to -table without _local suffix)")
+	flag.StringVar(&opts.TypeName, "type", "", "generated Go struct type name")
+	flag.StringVar(&opts.PackageName, "package", "", "generated Go package name")
+	flag.StringVar(&opts.Out, "out", "", "output file path")
+	flag.StringVar(&pointerColumns, "pointer-columns", "", "deprecated: ignored")
+	flag.BoolVar(&opts.WithMetadata, "with-metadata", true, "generate appendMetadata(*metadata.CommonMetadata)")
+	flag.Parse()
+
+	if opts.DSN == "" {
+		return fmt.Errorf("missing -dsn")
+	}
+
+	if opts.Table == "" {
+		return fmt.Errorf("missing -table")
+	}
+
+	if opts.TypeName == "" {
+		return fmt.Errorf("missing -type")
+	}
+
+	if opts.PackageName == "" {
+		return fmt.Errorf("missing -package")
+	}
+
+	if opts.Out == "" {
+		return fmt.Errorf("missing -out")
+	}
+
+	if opts.TableName == "" {
+		opts.TableName = strings.TrimSuffix(opts.Table, "_local")
+		if opts.TableName == "" {
+			opts.TableName = opts.Table
+		}
+	}
+
+	cols, err := fetchColumns(context.Background(), &opts)
+	if err != nil {
+		return err
+	}
+
+	if len(cols) == 0 {
+		return fmt.Errorf("no columns found for %s.%s", opts.Database, opts.Table)
+	}
+
+	src, err := generateSource(&opts, cols)
+	if err != nil {
+		return err
+	}
+
+	formatted, err := format.Source(src)
+	if err != nil {
+		return fmt.Errorf("format source: %w", err)
+	}
+
+	if err := os.WriteFile(opts.Out, formatted, 0o600); err != nil {
+		return fmt.Errorf("write %s: %w", opts.Out, err)
+	}
+
+	return nil
+}
+
+func fetchColumns(ctx context.Context, opts *options) ([]column, error) {
+	chOpts, err := parseChOptions(opts.DSN)
+	if err != nil {
+		return nil, fmt.Errorf("parse DSN: %w", err)
+	}
+
+	pool, err := chpool.Dial(ctx, chpool.Options{
+		ClientOptions: chOpts,
+		MaxConns:      1,
+		MinConns:      1,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("dial clickhouse: %w", err)
+	}
+	defer pool.Close()
+
+	var (
+		names     proto.ColStr
+		types     proto.ColStr
+		positions proto.ColUInt64
+	)
+
+	query := fmt.Sprintf(
+		"SELECT name, type, position FROM system.columns WHERE database = %s AND table = %s ORDER BY position",
+		quoteCHString(opts.Database),
+		quoteCHString(opts.Table),
+	)
+
+	if err := pool.Do(ctx, ch.Query{
+		Body: query,
+		Result: proto.Results{
+			{Name: "name", Data: &names},
+			{Name: "type", Data: &types},
+			{Name: "position", Data: &positions},
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("query system.columns: %w", err)
+	}
+
+	if names.Rows() != types.Rows() || names.Rows() != positions.Rows() {
+		return nil, fmt.Errorf("invalid system.columns result sizes")
+	}
+
+	cols := make([]column, 0, names.Rows())
+
+	for i := 0; i < names.Rows(); i++ {
+		cols = append(cols, column{
+			Name:     names.Row(i),
+			Field:    toPascal(names.Row(i)),
+			Type:     types.Row(i),
+			Position: positions.Row(i),
+		})
+	}
+
+	return cols, nil
+}
+
+func generateSource(opts *options, cols []column) ([]byte, error) {
+	sort.Slice(cols, func(i, j int) bool {
+		return cols[i].Position < cols[j].Position
+	})
+
+	var b bytes.Buffer
+
+	b.WriteString("// Code generated by chgo-rowgen; DO NOT EDIT.\n\n")
+	b.WriteString("package " + opts.PackageName + "\n\n")
+
+	// Collect imports needed by the columnar batch code.
+	stdImports, extImports := columnarBatchImports(cols)
+
+	extImports = append(extImports,
+		"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener",
+	)
+
+	if opts.WithMetadata {
+		extImports = append(extImports, "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata")
+	}
+
+	sort.Strings(stdImports)
+	sort.Strings(extImports)
+
+	b.WriteString("import (\n")
+
+	for _, path := range stdImports {
+		b.WriteString("\t\"" + path + "\"\n")
+	}
+
+	if len(stdImports) > 0 && len(extImports) > 0 {
+		b.WriteString("\n")
+	}
+
+	for _, path := range extImports {
+		b.WriteString("\t\"" + path + "\"\n")
+	}
+
+	b.WriteString(")\n\n")
+
+	b.WriteString("const " + tableConstName(opts.TypeName) + " flattener.TableName = " + quoteGoString(opts.TableName) + "\n\n")
+
+	writeColumnarBatch(&b, opts.TypeName, cols, opts.WithMetadata)
+
+	return b.Bytes(), nil
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+func isNumericKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	case reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
+}
+
+func isNumericGoType(t string) bool {
+	switch t {
+	case "int", goTypeInt8, goTypeInt16, goTypeInt32, goTypeInt64,
+		"uint", goTypeUint8, goTypeUint16, goTypeUint32, goTypeUint64,
+		goTypeFloat32, goTypeFloat64:
+		return true
+	default:
+		return false
+	}
+}
+
+func baseTypeName(typ string) string {
+	typ = strings.TrimSpace(typ)
+	if idx := strings.IndexByte(typ, '('); idx >= 0 {
+		return typ[:idx]
+	}
+
+	return typ
+}
+
+func unwrapType(typ, wrapper string) string {
+	out, ok := unwrapTypeOK(typ, wrapper)
+	if !ok {
+		return typ
+	}
+
+	return out
+}
+
+func unwrapTypeOK(typ, wrapper string) (string, bool) {
+	typ = strings.TrimSpace(typ)
+	prefix := wrapper + "("
+
+	if !strings.HasPrefix(typ, prefix) || !strings.HasSuffix(typ, ")") {
+		return "", false
+	}
+
+	inner := strings.TrimSuffix(strings.TrimPrefix(typ, prefix), ")")
+
+	return strings.TrimSpace(inner), true
+}
+
+func splitTopLevel(s string, sep rune) []string {
+	out := make([]string, 0, 4)
+	start := 0
+	depth := 0
+
+	for i, r := range s {
+		switch r {
+		case '(':
+			depth++
+		case ')':
+			if depth > 0 {
+				depth--
+			}
+		default:
+			if r == sep && depth == 0 {
+				part := strings.TrimSpace(s[start:i])
+				if part != "" {
+					out = append(out, part)
+				}
+
+				start = i + 1
+			}
+		}
+	}
+
+	if start < len(s) {
+		part := strings.TrimSpace(s[start:])
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+
+	return out
+}
+
+func toPascal(s string) string {
+	parts := strings.Split(s, "_")
+	for i := range parts {
+		parts[i] = strings.ToLower(parts[i])
+		if v, ok := initialisms[parts[i]]; ok {
+			parts[i] = v
+
+			continue
+		}
+
+		parts[i] = strings.Title(parts[i]) //nolint:staticcheck // acceptable for codegen
+	}
+
+	return strings.Join(parts, "")
+}
+
+var initialisms = map[string]string{
+	"id":  "ID",
+	"ip":  "IP",
+	"os":  "OS",
+	"rpc": "RPC",
+	"api": "API",
+	"cpu": "CPU",
+	"asn": "ASN",
+}
+
+func tableConstName(typeName string) string {
+	base := strings.TrimSuffix(typeName, "Row")
+
+	return base + "TableName"
+}
+
+func quoteGoString(s string) string {
+	return strconv.Quote(s)
+}
+
+func parseChOptions(dsn string) (ch.Options, error) {
+	if !strings.Contains(dsn, "://") {
+		dsn = "clickhouse://" + dsn
+	}
+
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return ch.Options{}, err
+	}
+
+	switch u.Scheme {
+	case "http", "https":
+		return ch.Options{}, fmt.Errorf("ch-go supports native tcp only, got DSN scheme %q", u.Scheme)
+	case "clickhouse", "tcp", "clickhouses":
+	default:
+		return ch.Options{}, fmt.Errorf("unsupported DSN scheme %q", u.Scheme)
+	}
+
+	hostPort := u.Host
+	if hostPort == "" {
+		return ch.Options{}, fmt.Errorf("missing host in DSN")
+	}
+
+	if strings.Contains(hostPort, ",") {
+		return ch.Options{}, fmt.Errorf("multiple hosts are not supported")
+	}
+
+	if _, _, splitErr := net.SplitHostPort(hostPort); splitErr != nil {
+		hostPort = net.JoinHostPort(hostPort, "9000")
+	}
+
+	database := strings.TrimPrefix(u.Path, "/")
+	if database == "" {
+		database = "default"
+	}
+
+	username := "default"
+	password := ""
+
+	if u.User != nil {
+		if user := u.User.Username(); user != "" {
+			username = user
+		}
+
+		if pass, ok := u.User.Password(); ok {
+			password = pass
+		}
+	}
+
+	q := u.Query()
+
+	if user := q.Get("username"); user != "" {
+		username = user
+	}
+
+	if pass := q.Get("password"); pass != "" {
+		password = pass
+	}
+
+	if db := q.Get("database"); db != "" {
+		database = db
+	}
+
+	var tlsConfig *tls.Config
+	if isTrue(q.Get("secure")) || isTrue(q.Get("tls")) || u.Scheme == "clickhouses" {
+		tlsConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+
+	return ch.Options{
+		Address:     hostPort,
+		Database:    database,
+		User:        username,
+		Password:    password,
+		DialTimeout: 5 * time.Second,
+		ReadTimeout: 30 * time.Second,
+		TLS:         tlsConfig,
+	}, nil
+}
+
+func quoteCHString(v string) string {
+	return "'" + strings.ReplaceAll(v, "'", "''") + "'"
+}
+
+func isTrue(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
+
+func failf(msg string, args ...any) {
+	_, _ = fmt.Fprintf(os.Stderr, "chgo-rowgen: "+msg+"\n", args...)
+	os.Exit(1)
+}
+
+// ---------------------------------------------------------------------------
+// Columnar batch code generation
+// ---------------------------------------------------------------------------
+
+// protoGen describes how to generate proto column code for a single column.
+type protoGen struct {
+	fieldType string // Go type for batch struct field
+	isPtr     bool   // needs pointer init in constructor
+	initExpr  string // constructor expression
+
+	// zeroVal: zero value expression for nil/missing columns.
+	zeroVal string
+
+	// inputRef: "ptr" to use b.Field, "ref" to use &b.Field in Input.
+	inputRef string
+
+	// decimalWrap: if non-empty, wrap Input Data in TypedColInput.
+	decimalWrap string
+
+	// snapshotFmt: format string for Snapshot Row(i) reading.
+	// %s is replaced with "b.Field.Row(i)". Empty means use as-is.
+	snapshotFmt string
+
+	needsTime bool
+	needsUUID bool
+}
+
+// resolveProtoGen maps a ClickHouse column type to proto column generation info.
+func resolveProtoGen(chType string) protoGen {
+	original := chType
+
+	// Strip LowCardinality wrapper.
+	chType = unwrapType(chType, chTypeLowCardinality)
+
+	// Handle Nullable: strip and use ColNullable.
+	// ch-go bug: LowCardinality(Nullable(T)) → just use Nullable(T).
+	if inner, ok := unwrapTypeOK(chType, chTypeNullable); ok {
+		return resolveNullableProtoGen(inner)
+	}
+
+	// Handle Array.
+	if inner, ok := unwrapTypeOK(chType, chTypeArray); ok {
+		return resolveArrayProtoGen(inner)
+	}
+
+	// Handle Map.
+	if inner, ok := unwrapTypeOK(chType, "Map"); ok {
+		parts := splitTopLevel(inner, ',')
+		if len(parts) == 2 {
+			keyGen := resolveProtoGen(parts[0])
+			valGen := resolveProtoGen(parts[1])
+			keyGoType := keyGen.protoGoType()
+			valGoType := valGen.protoGoType()
+
+			return protoGen{
+				fieldType: "*proto.ColMap[" + keyGoType + ", " + valGoType + "]",
+				isPtr:     true,
+				initExpr:  "proto.NewMap[" + keyGoType + ", " + valGoType + "](new(" + keyGen.fieldType + "), new(" + valGen.fieldType + "))",
+				zeroVal:   "nil",
+				inputRef:  "ptr",
+			}
+		}
+	}
+
+	base := baseTypeName(chType)
+
+	switch base {
+	case "Bool":
+		return protoGen{fieldType: "proto.ColBool", zeroVal: "false", inputRef: "ref"}
+	case chTypeUInt8:
+		return protoGen{fieldType: "proto.ColUInt8", zeroVal: "0", inputRef: "ref"}
+	case "UInt16":
+		return protoGen{fieldType: "proto.ColUInt16", zeroVal: "0", inputRef: "ref"}
+	case chTypeUInt32:
+		return protoGen{fieldType: "proto.ColUInt32", zeroVal: "0", inputRef: "ref"}
+	case "UInt64":
+		return protoGen{fieldType: "proto.ColUInt64", zeroVal: "0", inputRef: "ref"}
+	case "Int8":
+		return protoGen{fieldType: "proto.ColInt8", zeroVal: "0", inputRef: "ref"}
+	case "Int16":
+		return protoGen{fieldType: "proto.ColInt16", zeroVal: "0", inputRef: "ref"}
+	case "Int32":
+		return protoGen{fieldType: "proto.ColInt32", zeroVal: "0", inputRef: "ref"}
+	case "Int64":
+		return protoGen{fieldType: "proto.ColInt64", zeroVal: "0", inputRef: "ref"}
+	case "Float32":
+		return protoGen{fieldType: "proto.ColFloat32", zeroVal: "0", inputRef: "ref"}
+	case "Float64":
+		return protoGen{fieldType: "proto.ColFloat64", zeroVal: "0", inputRef: "ref"}
+	case chTypeString:
+		return protoGen{fieldType: "proto.ColStr", zeroVal: `""`, inputRef: "ref"}
+
+	case "DateTime":
+		return protoGen{
+			fieldType:   "proto.ColDateTime",
+			zeroVal:     "time.Time{}",
+			inputRef:    "ref",
+			snapshotFmt: "%s.Unix()",
+		}
+	case chTypeDateTime64:
+		precision := parseDateTime64Precision(chType)
+		initExpr := fmt.Sprintf("func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(%d)); return c }()", precision)
+
+		switch precision {
+		case 6:
+			return protoGen{
+				fieldType:   "proto.ColDateTime64",
+				zeroVal:     "time.Time{}",
+				inputRef:    "ref",
+				snapshotFmt: "%s.UnixMicro()",
+				initExpr:    initExpr,
+			}
+		default: // 3 is the most common
+			return protoGen{
+				fieldType:   "proto.ColDateTime64",
+				zeroVal:     "time.Time{}",
+				inputRef:    "ref",
+				snapshotFmt: "%s.UnixMilli()",
+				initExpr:    initExpr,
+			}
+		}
+
+	case chTypeUUID:
+		return protoGen{
+			fieldType:   "proto.ColUUID",
+			zeroVal:     "uuid.UUID{}",
+			inputRef:    "ref",
+			needsUUID:   true,
+			snapshotFmt: "%s.String()",
+		}
+	case chTypeIPv4:
+		return protoGen{
+			fieldType: "proto.ColIPv4",
+			zeroVal:   "proto.IPv4(0)",
+			inputRef:  "ref",
+		}
+	case chTypeIPv6:
+		return protoGen{
+			fieldType: "proto.ColIPv6",
+			zeroVal:   "proto.IPv6{}",
+			inputRef:  "ref",
+		}
+	case "UInt128":
+		return protoGen{
+			fieldType:   "proto.ColUInt128",
+			zeroVal:     "proto.UInt128{}",
+			inputRef:    "ref",
+			snapshotFmt: "flattener.UInt128ToString(%s)",
+		}
+	case "UInt256":
+		return protoGen{
+			fieldType:   "proto.ColUInt256",
+			zeroVal:     "proto.UInt256{}",
+			inputRef:    "ref",
+			snapshotFmt: "flattener.UInt256ToString(%s)",
+		}
+	case chTypeFixedString:
+		size := parseFixedStrSize(chType)
+
+		return protoGen{
+			fieldType:   "flattener.SafeColFixedStr",
+			zeroVal:     "nil",
+			inputRef:    "ref",
+			initExpr:    fmt.Sprintf("func() flattener.SafeColFixedStr { var c flattener.SafeColFixedStr; c.SetSize(%d); return c }()", size),
+			snapshotFmt: "string(%s)",
+		}
+
+	case "Decimal", "Decimal32", "Decimal64", "Decimal128", "Decimal256":
+		scale := parseDecScale(chType)
+
+		return protoGen{
+			fieldType:   "proto.ColDecimal64",
+			zeroVal:     "0",
+			inputRef:    "ref",
+			decimalWrap: original,
+			snapshotFmt: fmt.Sprintf("flattener.FormatDecimal(int64(%%s), %d)", scale),
+		}
+
+	case chTypeEnum8, chTypeEnum16, "Date", "Date32":
+		return protoGen{fieldType: "proto.ColStr", zeroVal: `""`, inputRef: "ref"}
+
+	default:
+		// Fallback: treat as string.
+		return protoGen{fieldType: "proto.ColStr", zeroVal: `""`, inputRef: "ref"}
+	}
+}
+
+// resolveNullableProtoGen handles Nullable(T) column types.
+func resolveNullableProtoGen(inner string) protoGen {
+	// Special case: Nullable(FixedString(N)) — SafeColFixedStr
+	// doesn't have .Nullable(), use helper constructor.
+	if strings.HasPrefix(inner, chTypeFixedString+"(") {
+		size := parseFixedStrSize(inner)
+
+		return protoGen{
+			fieldType: "*proto.ColNullable[[]byte]",
+			isPtr:     true,
+			initExpr:  fmt.Sprintf("flattener.NewNullableFixedStr(%d)", size),
+			zeroVal:   "proto.Nullable[[]byte]{}",
+			inputRef:  "ptr",
+		}
+	}
+
+	base := resolveProtoGen(inner)
+	nullableGoType := base.protoGoType()
+
+	// Nullable struct field references the Go type directly (e.g. *proto.ColNullable[time.Time]),
+	// so we need the time import when the inner type resolves to time.Time.
+	needsTime := base.needsTime || nullableGoType == "time.Time"
+
+	return protoGen{
+		fieldType: "*proto.ColNullable[" + nullableGoType + "]",
+		isPtr:     true,
+		initExpr:  "new(" + base.fieldType + ").Nullable()",
+		zeroVal:   "proto.Nullable[" + nullableGoType + "]{}",
+		inputRef:  "ptr",
+		needsTime: needsTime,
+		needsUUID: base.needsUUID,
+		// No snapshotFmt — nullable Row(i) returns proto.Nullable[T] directly.
+	}
+}
+
+// resolveArrayProtoGen handles Array(T) column types.
+func resolveArrayProtoGen(inner string) protoGen {
+	// Nested array: Array(Array(UInt32))
+	if _, ok2 := unwrapTypeOK(inner, chTypeArray); ok2 {
+		return protoGen{
+			fieldType: "*proto.ColArr[[]uint32]",
+			isPtr:     true,
+			initExpr:  "proto.NewArray[[]uint32](&proto.ColArr[uint32]{Data: new(proto.ColUInt32)})",
+			zeroVal:   "nil",
+			inputRef:  "ptr",
+		}
+	}
+
+	// Special case: Array(FixedString(N)) — needs SetSize and
+	// string→[]byte conversion.
+	if strings.HasPrefix(inner, chTypeFixedString+"(") {
+		size := parseFixedStrSize(inner)
+
+		return protoGen{
+			fieldType:   "*proto.ColArr[[]byte]",
+			isPtr:       true,
+			initExpr:    fmt.Sprintf("func() *proto.ColArr[[]byte] { var fs flattener.SafeColFixedStr; fs.SetSize(%d); return proto.NewArray[[]byte](&fs) }()", size),
+			zeroVal:     "nil",
+			inputRef:    "ptr",
+			snapshotFmt: "flattener.ByteSlicesToStrings(%s)",
+		}
+	}
+
+	innerGen := resolveProtoGen(inner)
+	goElemType := innerGen.protoGoType()
+
+	gen := protoGen{
+		fieldType: "*proto.ColArr[" + goElemType + "]",
+		isPtr:     true,
+		initExpr:  "proto.NewArray[" + goElemType + "](new(" + innerGen.fieldType + "))",
+		zeroVal:   "nil",
+		inputRef:  "ptr",
+	}
+
+	// []uint8 (= []byte) JSON-marshals as base64; convert to []int for JSON arrays.
+	if goElemType == goTypeUint8 {
+		gen.snapshotFmt = "flattener.Uint8SliceToIntSlice(%s)"
+	}
+
+	return gen
+}
+
+// protoGoType returns the Go type that this proto column accepts in Append.
+func (p *protoGen) protoGoType() string {
+	switch p.fieldType {
+	case "proto.ColBool":
+		return "bool"
+	case "proto.ColUInt8":
+		return "uint8"
+	case "proto.ColUInt16":
+		return "uint16"
+	case "proto.ColUInt32":
+		return "uint32"
+	case "proto.ColUInt64":
+		return "uint64"
+	case "proto.ColInt8":
+		return goTypeInt8
+	case "proto.ColInt16":
+		return goTypeInt16
+	case "proto.ColInt32":
+		return "int32"
+	case "proto.ColInt64":
+		return "int64"
+	case "proto.ColFloat32":
+		return "float32"
+	case "proto.ColFloat64":
+		return "float64"
+	case "proto.ColStr":
+		return goTypeString
+	case "proto.ColDateTime", "proto.ColDateTime64":
+		return "time.Time"
+	case "proto.ColIPv4":
+		return protoIPv4
+	case "proto.ColIPv6":
+		return protoIPv6
+	case "proto.ColUUID":
+		return "uuid.UUID"
+	case "proto.ColUInt128":
+		return "proto.UInt128"
+	case "proto.ColUInt256":
+		return "proto.UInt256"
+	case "proto.ColDecimal64":
+		return "int64"
+	case "flattener.SafeColFixedStr":
+		return "[]byte"
+	default:
+		return goTypeString
+	}
+}
+
+func parseDateTime64Precision(chType string) int {
+	inner, ok := unwrapTypeOK(chType, chTypeDateTime64)
+	if !ok {
+		return 3
+	}
+
+	parts := splitTopLevel(inner, ',')
+	if len(parts) == 0 {
+		return 3
+	}
+
+	n, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	if err != nil {
+		return 3
+	}
+
+	return n
+}
+
+func parseFixedStrSize(chType string) int {
+	inner, ok := unwrapTypeOK(chType, chTypeFixedString)
+	if !ok {
+		return 1
+	}
+
+	n, err := strconv.Atoi(strings.TrimSpace(inner))
+	if err != nil || n <= 0 {
+		return 1
+	}
+
+	return n
+}
+
+func parseDecScale(chType string) int {
+	base := baseTypeName(chType)
+
+	inner, ok := unwrapTypeOK(chType, base)
+	if !ok {
+		return 0
+	}
+
+	parts := splitTopLevel(inner, ',')
+
+	switch len(parts) {
+	case 1:
+		// Decimal64(S)
+		s, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil {
+			return 0
+		}
+
+		return s
+	case 2:
+		// Decimal(P, S)
+		s, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil {
+			return 0
+		}
+
+		return s
+	default:
+		return 0
+	}
+}
+
+// batchTypeName returns the Batch struct name from the row type name.
+func batchTypeName(rowTypeName string) string {
+	return strings.TrimSuffix(rowTypeName, "Row") + "Batch"
+}
+
+// columnarBatchImports returns the standard-library and external imports
+// needed by the generated columnar batch code for the given columns.
+func columnarBatchImports(cols []column) (stdImports, extImports []string) {
+	needsTime := false
+	needsUUID := false
+	needsNet := false
+
+	for _, col := range cols {
+		gen := resolveProtoGen(col.Type)
+
+		if gen.needsTime {
+			needsTime = true
+		}
+
+		if gen.needsUUID {
+			needsUUID = true
+		}
+
+		// Nullable IP columns need "net" for Snapshot IP-to-string conversion.
+		if gen.isPtr && strings.HasPrefix(gen.fieldType, "*proto.ColNullable") {
+			innerGoType := nullableInnerGoType(gen.fieldType)
+			if innerGoType == protoIPv4 || innerGoType == protoIPv6 {
+				needsNet = true
+			}
+		}
+	}
+
+	extImports = []string{
+		"github.com/ClickHouse/ch-go/proto",
+	}
+
+	if needsTime {
+		stdImports = append(stdImports, "time")
+	}
+
+	if needsNet {
+		stdImports = append(stdImports, "net")
+	}
+
+	if needsUUID {
+		extImports = append(extImports, "github.com/google/uuid")
+	}
+
+	return stdImports, extImports
+}
+
+// writeColumnarBatch generates the full columnar batch struct and methods.
+func writeColumnarBatch(b *bytes.Buffer, rowTypeName string, cols []column, withMetadata bool) {
+	batchName := batchTypeName(rowTypeName)
+
+	// Resolve proto info for each column.
+	gens := make([]protoGen, len(cols))
+
+	for i, col := range cols {
+		gens[i] = resolveProtoGen(col.Type)
+	}
+
+	// Batch struct with rows counter.
+	b.WriteString("type " + batchName + " struct {\n")
+
+	for i, col := range cols {
+		fmt.Fprintf(b, "\t%s %s\n", col.Field, gens[i].fieldType)
+	}
+
+	b.WriteString("\trows int\n")
+	b.WriteString("}\n\n")
+
+	// Constructor.
+	writeNewBatch(b, batchName, cols, gens)
+
+	// Rows() int.
+	writeRowsMethod(b, batchName)
+
+	// appendMetadata(meta *metadata.CommonMetadata).
+	if withMetadata {
+		writeAppendMetadata(b, batchName, cols, gens)
+	}
+
+	// Input() proto.Input.
+	writeInputMethod(b, batchName, cols, gens)
+
+	// Reset().
+	writeResetMethod(b, batchName, cols)
+
+	// Snapshot() []map[string]any.
+	writeSnapshot(b, batchName, cols, gens)
+}
+
+func writeNewBatch(b *bytes.Buffer, batchName string, cols []column, gens []protoGen) {
+	b.WriteString("func new" + batchName + "() *" + batchName + " {\n")
+
+	// Check if any columns need initialization.
+	hasInit := false
+
+	for i := range gens {
+		if gens[i].isPtr || gens[i].initExpr != "" {
+			hasInit = true
+
+			break
+		}
+	}
+
+	if !hasInit {
+		b.WriteString("\treturn &" + batchName + "{}\n")
+		b.WriteString("}\n\n")
+
+		return
+	}
+
+	b.WriteString("\treturn &" + batchName + "{\n")
+
+	for i, col := range cols {
+		if gens[i].initExpr != "" {
+			fmt.Fprintf(b, "\t\t%s: %s,\n", col.Field, gens[i].initExpr)
+		}
+	}
+
+	b.WriteString("\t}\n")
+	b.WriteString("}\n\n")
+}
+
+func writeRowsMethod(b *bytes.Buffer, batchName string) {
+	b.WriteString("func (b *" + batchName + ") Rows() int {\n")
+	b.WriteString("\treturn b.rows\n")
+	b.WriteString("}\n\n")
+}
+
+func writeAppendMetadata(b *bytes.Buffer, batchName string, cols []column, gens []protoGen) {
+	commonMetaType := reflect.TypeOf(metadata.CommonMetadata{})
+
+	b.WriteString("func (b *" + batchName + ") appendMetadata(meta *metadata.CommonMetadata) {\n")
+	b.WriteString("\tif meta == nil {\n")
+
+	// Nil case: append zero values for all meta columns.
+	for i, col := range cols {
+		if !strings.HasPrefix(col.Name, "meta_") {
+			continue
+		}
+
+		fmt.Fprintf(b, "\t\tb.%s.Append(%s)\n", col.Field, gens[i].zeroVal)
+	}
+
+	b.WriteString("\t\treturn\n")
+	b.WriteString("\t}\n\n")
+
+	// Non-nil case: append from metadata fields.
+	for i, col := range cols {
+		if !strings.HasPrefix(col.Name, "meta_") {
+			continue
+		}
+
+		gen := gens[i]
+		metaFieldName := toPascal(col.Name)
+
+		srcField, ok := commonMetaType.FieldByName(metaFieldName)
+		if !ok {
+			// Field not found in CommonMetadata, append zero.
+			fmt.Fprintf(b, "\tb.%s.Append(%s)\n", col.Field, gen.zeroVal)
+
+			continue
+		}
+
+		// Special handling for labels (map type).
+		if col.Name == "meta_labels" {
+			b.WriteString("\tif meta.MetaLabels != nil {\n")
+			b.WriteString("\t\tb.MetaLabels.Append(meta.MetaLabels)\n")
+			b.WriteString("\t} else {\n")
+			b.WriteString("\t\tb.MetaLabels.Append(map[string]string{})\n")
+			b.WriteString("\t}\n")
+
+			continue
+		}
+
+		expr := metaAppendExpr(&gen, "meta."+metaFieldName, srcField.Type)
+		fmt.Fprintf(b, "\tb.%s.Append(%s)\n", col.Field, expr)
+	}
+
+	b.WriteString("}\n\n")
+}
+
+// metaAppendExpr builds the append expression for a metadata field.
+func metaAppendExpr(gen *protoGen, srcExpr string, srcType reflect.Type) string {
+	// Handle nullable: wrap inner conversion in Nullable constructor.
+	if gen.isPtr && strings.HasPrefix(gen.fieldType, "*proto.ColNullable") {
+		goType := nullableInnerGoType(gen.fieldType)
+		innerExpr := innerMetaConvert(goType, srcExpr, srcType)
+
+		return "proto.NewNullable[" + goType + "](" + innerExpr + ")"
+	}
+
+	// Non-nullable: direct conversion.
+	goType := gen.protoGoType()
+
+	return innerMetaConvert(goType, srcExpr, srcType)
+}
+
+// nullableInnerGoType extracts T from "*proto.ColNullable[T]".
+func nullableInnerGoType(fieldType string) string {
+	const (
+		prefix = "*proto.ColNullable["
+		suffix = "]"
+	)
+
+	if strings.HasPrefix(fieldType, prefix) && strings.HasSuffix(fieldType, suffix) {
+		return fieldType[len(prefix) : len(fieldType)-len(suffix)]
+	}
+
+	return goTypeString
+}
+
+// innerMetaConvert builds the conversion expression from a CommonMetadata
+// field to the proto column's Go type.
+func innerMetaConvert(targetGoType, srcExpr string, srcType reflect.Type) string {
+	// Special proto types that need parse helpers.
+	switch targetGoType {
+	case protoIPv6:
+		return "flattener.ParseIPv6(" + srcExpr + ")"
+	case protoIPv4:
+		return "flattener.ParseIPv4(" + srcExpr + ")"
+	case "uuid.UUID":
+		return "flattener.ParseUUID(" + srcExpr + ")"
+	}
+
+	// Same type: no conversion needed.
+	srcGoType := srcType.String()
+	if srcGoType == targetGoType {
+		return srcExpr
+	}
+
+	// Numeric → numeric: explicit cast.
+	if isNumericKind(srcType.Kind()) && isNumericGoType(targetGoType) {
+		return targetGoType + "(" + srcExpr + ")"
+	}
+
+	return srcExpr
+}
+
+func writeInputMethod(b *bytes.Buffer, batchName string, cols []column, gens []protoGen) {
+	b.WriteString("func (b *" + batchName + ") Input() proto.Input {\n")
+	fmt.Fprintf(b, "\treturn proto.Input{\n")
+
+	for i, col := range cols {
+		gen := gens[i]
+
+		var dataExpr string
+
+		switch {
+		case gen.decimalWrap != "":
+			dataExpr = fmt.Sprintf(
+				"&flattener.TypedColInput{ColInput: &b.%s, CHType: %s}",
+				col.Field,
+				quoteGoString(gen.decimalWrap),
+			)
+		case gen.inputRef == "ptr":
+			dataExpr = "b." + col.Field
+		default:
+			dataExpr = "&b." + col.Field
+		}
+
+		fmt.Fprintf(b, "\t\t{Name: %q, Data: %s},\n", col.Name, dataExpr)
+	}
+
+	b.WriteString("\t}\n")
+	b.WriteString("}\n\n")
+}
+
+func writeResetMethod(b *bytes.Buffer, batchName string, cols []column) {
+	b.WriteString("func (b *" + batchName + ") Reset() {\n")
+
+	for _, col := range cols {
+		fmt.Fprintf(b, "\tb.%s.Reset()\n", col.Field)
+	}
+
+	b.WriteString("\tb.rows = 0\n")
+	b.WriteString("}\n\n")
+}
+
+func writeSnapshot(b *bytes.Buffer, batchName string, cols []column, gens []protoGen) {
+	b.WriteString("func (b *" + batchName + ") Snapshot() []map[string]any {\n")
+	b.WriteString("\tn := b.rows\n")
+	b.WriteString("\tout := make([]map[string]any, n)\n\n")
+	b.WriteString("\tfor i := 0; i < n; i++ {\n")
+	fmt.Fprintf(b, "\t\trow := make(map[string]any, %d)\n", len(cols))
+
+	for i, col := range cols {
+		gen := gens[i]
+
+		if gen.isPtr && strings.HasPrefix(gen.fieldType, "*proto.ColNullable") {
+			// Unwrap Nullable: return inner value if Set, nil otherwise.
+			innerGoType := nullableInnerGoType(gen.fieldType)
+
+			fmt.Fprintf(b, "\t\tif v := b.%s.Row(i); v.Set {\n", col.Field)
+
+			// Apply snapshot formatting to the inner value if needed.
+			innerExpr := "v.Value"
+
+			innerGen := resolveProtoGen(unwrapType(unwrapType(col.Type, chTypeLowCardinality), chTypeNullable))
+			if innerGen.snapshotFmt != "" {
+				innerExpr = fmt.Sprintf(innerGen.snapshotFmt, innerExpr)
+			}
+
+			// For IP types, convert to string for JSON compatibility.
+			switch innerGoType {
+			case protoIPv6:
+				innerExpr = "net.IP(v.Value[:]).String()"
+			case protoIPv4:
+				innerExpr = "net.IP(v.Value.To4()).String()"
+			}
+
+			fmt.Fprintf(b, "\t\t\trow[%q] = %s\n", col.Name, innerExpr)
+			b.WriteString("\t\t} else {\n")
+			fmt.Fprintf(b, "\t\t\trow[%q] = nil\n", col.Name)
+			b.WriteString("\t\t}\n")
+		} else {
+			rowExpr := "b." + col.Field + ".Row(i)"
+
+			if gen.snapshotFmt != "" {
+				rowExpr = fmt.Sprintf(gen.snapshotFmt, rowExpr)
+			}
+
+			fmt.Fprintf(b, "\t\trow[%q] = %s\n", col.Name, rowExpr)
+		}
+	}
+
+	b.WriteString("\t\tout[i] = row\n")
+	b.WriteString("\t}\n\n")
+	b.WriteString("\treturn out\n")
+	b.WriteString("}\n")
+}

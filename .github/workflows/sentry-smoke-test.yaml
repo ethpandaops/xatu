@@ -115,7 +115,6 @@ jobs:
           - head
           - block
           - attestation
-          - blob_sidecar
           - contribution_and_proof
           - finalized_checkpoint
 

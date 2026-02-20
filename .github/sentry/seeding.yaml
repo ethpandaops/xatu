@@ -26,10 +26,6 @@ event_types:
     table: beacon_api_eth_v1_events_attestation
     description: "Attestation events - many per slot"
 
-  - name: BEACON_API_ETH_V1_EVENTS_BLOB_SIDECAR
-    table: beacon_api_eth_v1_events_blob_sidecar
-    description: "Blob sidecar events - every block post-Deneb"
-
   - name: BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF
     table: beacon_api_eth_v1_events_contribution_and_proof
     description: "Sync committee contributions - multiple per slot"

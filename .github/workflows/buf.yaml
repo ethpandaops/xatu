@@ -1,0 +1,35 @@
+name: Protobuf
+
+on:
+  pull_request:
+    paths:
+      - '**/*.proto'
+      - 'buf.yaml'
+      - 'buf.gen.yaml'
+      - 'buf.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  buf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up buf
+        uses: bufbuild/buf-setup-action@a47c93e0b1648769eb9a2e1f98e7b4e3e13089f0 # v1.50.0
+
+      - name: Lint protos
+        run: buf lint
+
+      - name: Check for breaking changes
+        uses: bufbuild/buf-breaking-action@c57b3d842a5c3f3b454756ef65305a50a587c5ba # v1.1.4
+        with:
+          against: 'https://github.com/ethpandaops/xatu.git#branch=master'

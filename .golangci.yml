@@ -36,6 +36,9 @@ linters:
     - tagliatelle
     - thelper
     - tparallel
+    - exhaustive
+    - protogetter
+    - sloglint
     - unconvert
     - unused
     - whitespace
@@ -56,6 +59,8 @@ linters:
     govet:
       enable:
         - shadow
+    exhaustive:
+      default-signifies-exhaustive: true
     nolintlint:
       require-explanation: true
       require-specific: true

@@ -8,17 +8,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Result holds the output of routing a single event: the target
-// table name and the flat rows to insert.
+// Result holds the routing decision for a single event: the target
+// table name and the route that will handle flattening.
 type Result struct {
 	Table string
-	Rows  []map[string]any
+	Route flattener.Route
 }
 
-// Outcome holds routed rows and the overall delivery status for one
-// event. A non-delivered status means rows should not be written.
+// Outcome holds routing decisions and the overall delivery status for
+// one event. A non-delivered status means the event should not be written.
 type Outcome struct {
 	Results []Result
+	Meta    *metadata.CommonMetadata
 	Status  Status
 }
 
@@ -73,8 +74,7 @@ func New(
 }
 
 // Route processes a single DecoratedEvent through the routing pipeline:
-// extract metadata, find matching routes, flatten the event, and
-// return the results grouped by target table.
+// extract metadata, find matching routes, and return routing decisions.
 func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	if event == nil || event.GetEvent() == nil {
 		return Outcome{Status: StatusRejected}
@@ -90,7 +90,7 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 		return Outcome{Status: StatusDelivered}
 	}
 
-	// Extract shared metadata once
+	// Extract shared metadata once for all routes.
 	meta := metadata.Extract(event)
 
 	results := make([]Result, 0, len(routesForEvent))
@@ -103,25 +103,9 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 			continue
 		}
 
-		rows, err := route.Flatten(event, meta)
-		if err != nil {
-			r.log.WithError(err).
-				WithField("event_name", eventName.String()).
-				WithField("table", route.TableName()).
-				Warn("Route error")
-
-			r.metrics.FlattenErrors().WithLabelValues(eventName.String(), route.TableName()).Inc()
-
-			return Outcome{Status: StatusRejected}
-		}
-
-		if len(rows) == 0 {
-			continue
-		}
-
 		results = append(results, Result{
 			Table: route.TableName(),
-			Rows:  rows,
+			Route: route,
 		})
 	}
 
@@ -131,6 +115,7 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 
 	return Outcome{
 		Results: results,
+		Meta:    meta,
 		Status:  StatusDelivered,
 	}
 }

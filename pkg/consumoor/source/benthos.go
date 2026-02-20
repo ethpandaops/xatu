@@ -252,20 +252,8 @@ func (o *xatuClickHouseOutput) writeMessageMode(ctx context.Context, msgs servic
 			continue
 		}
 
-		hasRows := false
-
 		for _, result := range outcome.Results {
-			if len(result.Rows) == 0 {
-				continue
-			}
-
-			hasRows = true
-
-			o.writer.Write(result.Table, result.Rows)
-		}
-
-		if !hasRows {
-			continue
+			o.writer.Write(result.Table, event, outcome.Meta)
 		}
 
 		if err := o.writer.FlushAll(ctx); err != nil {
@@ -303,8 +291,8 @@ func (o *xatuClickHouseOutput) writeMessageMode(ctx context.Context, msgs servic
 
 func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.MessageBatch) error {
 	msgContexts := make([]messageContext, len(msgs))
-	rowsByTable := make(map[string][]map[string]any, 32)
 	tableToMessageIndexes := make(map[string]map[int]struct{}, 32)
+	hasResults := false
 
 	var batchErr *service.BatchError
 
@@ -372,25 +360,19 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 		}
 
 		for _, result := range outcome.Results {
-			if len(result.Rows) == 0 {
-				continue
-			}
+			hasResults = true
 
-			rowsByTable[result.Table] = append(rowsByTable[result.Table], result.Rows...)
+			o.writer.Write(result.Table, event, outcome.Meta)
 			addTableMessageIndex(tableToMessageIndexes, result.Table, i)
 		}
 	}
 
-	if len(rowsByTable) == 0 {
+	if !hasResults {
 		if batchErr != nil {
 			return batchErr
 		}
 
 		return nil
-	}
-
-	for table, rows := range rowsByTable {
-		o.writer.Write(table, rows)
 	}
 
 	if err := o.writer.FlushAll(ctx); err != nil {

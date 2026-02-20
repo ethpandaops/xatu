@@ -3,7 +3,6 @@ package metadata
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -92,11 +91,10 @@ func Extract(event *xatu.DecoratedEvent) *CommonMetadata {
 			if consensus := eth.GetConsensus(); consensus != nil {
 				m.MetaConsensusImplementation = consensus.GetImplementation()
 
-				rawVersion := consensus.GetVersion()
-				m.MetaConsensusVersion = rawVersion
+				m.MetaConsensusVersion = normalizeConsensusVersion(consensus.GetVersion())
 				m.MetaConsensusVersionMajor,
 					m.MetaConsensusVersionMinor,
-					m.MetaConsensusVersionPatch = parseVersion(rawVersion)
+					m.MetaConsensusVersionPatch = parseVersion(m.MetaConsensusVersion)
 			}
 
 			// Execution client metadata
@@ -158,6 +156,7 @@ func (m *CommonMetadata) CopyTo(dst map[string]any) {
 	dst["meta_client_geo_country"] = m.MetaClientGeoCountry
 	dst["meta_client_geo_country_code"] = m.MetaClientGeoCountryCode
 	dst["meta_client_geo_continent_code"] = m.MetaClientGeoContinentCode
+
 	dst["meta_client_geo_longitude"] = m.MetaClientGeoLongitude
 	dst["meta_client_geo_latitude"] = m.MetaClientGeoLatitude
 	dst["meta_client_geo_autonomous_system_number"] = m.MetaClientGeoAutonomousSystemNumber
@@ -208,63 +207,44 @@ func normalizeIP(ip string) string {
 	return parsed.String()
 }
 
+func normalizeConsensusVersion(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	parts := strings.SplitN(raw, "/", 3)
+	if len(parts) > 1 {
+		return parts[1]
+	}
+
+	return raw
+}
+
 // parseVersion extracts major, minor, patch from a version string.
-// Handles formats like "v1.2.3", "Lighthouse/v4.5.6-abcdef/x86_64-linux",
-// "teku/teku/v1.2.3".
+// It mirrors the VRL logic used by the Vector metadata transform.
 func parseVersion(raw string) (major, minor, patch string) {
 	if raw == "" {
 		return "", "", ""
 	}
 
-	// Find the segment containing a version (starts with "v" or "V")
-	// by splitting on "/" and finding the first segment with a "v" prefix.
 	version := raw
-
-	if strings.Contains(version, "/") {
-		parts := strings.Split(version, "/")
-
-		found := false
-
-		for _, p := range parts {
-			if strings.HasPrefix(p, "v") || strings.HasPrefix(p, "V") {
-				version = p
-				found = true
-
-				break
-			}
-		}
-
-		if !found {
-			// Fall back to last segment
-			version = parts[len(parts)-1]
-		}
-	}
-
 	version = strings.TrimPrefix(version, "v")
 	version = strings.TrimPrefix(version, "V")
-
-	// Handle suffixes like "4.5.6-abcdef" by stripping after "-" or "+"
-	if idx := strings.IndexAny(version, "-+"); idx != -1 {
-		version = version[:idx]
-	}
 
 	parts := strings.SplitN(version, ".", 3)
 
 	if len(parts) >= 1 {
-		if _, err := strconv.Atoi(parts[0]); err == nil {
-			major = parts[0]
-		}
+		major = parts[0]
 	}
 
 	if len(parts) >= 2 {
-		if _, err := strconv.Atoi(parts[1]); err == nil {
-			minor = parts[1]
-		}
+		minor = parts[1]
 	}
 
 	if len(parts) >= 3 {
-		if _, err := strconv.Atoi(parts[2]); err == nil {
-			patch = parts[2]
+		patch = parts[2]
+		if idx := strings.IndexAny(patch, "-+ "); idx != -1 {
+			patch = patch[:idx]
 		}
 	}
 

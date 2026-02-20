@@ -1,34 +1,97 @@
 package canonical
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
 	catalog "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables/catalog"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-type CanonicalBeaconBlockDepositRoute struct{}
-
-func (CanonicalBeaconBlockDepositRoute) Table() flattener.TableName {
-	return flattener.TableName("canonical_beacon_block_deposit")
-}
-
-func (r CanonicalBeaconBlockDepositRoute) Build() flattener.Route {
-	return flattener.
-		From(xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT).
-		To(r.Table()).
-		Apply(flattener.AddCommonMetadataFields).
-		Apply(flattener.AddRuntimeColumns).
-		Apply(flattener.FlattenEventDataFields).
-		Apply(flattener.FlattenClientAdditionalDataFields).
-		Apply(flattener.FlattenServerAdditionalDataFields).
-		Apply(flattener.CopyFieldIfMissing("slot", "block_slot_number")).
-		Apply(flattener.CopyFieldIfMissing("epoch", "block_epoch_number")).
-		Apply(flattener.CopyFieldIfMissing("slot_start_date_time", "block_slot_start_date_time")).
-		Apply(flattener.CopyFieldIfMissing("epoch_start_date_time", "block_epoch_start_date_time")).
-		Apply(flattener.NormalizeDateTimeValues).
-		Build()
+var canonicalBeaconBlockDepositEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT,
 }
 
 func init() {
-	catalog.MustRegister(CanonicalBeaconBlockDepositRoute{})
+	catalog.MustRegister(flattener.NewStaticRoute(
+		canonicalBeaconBlockDepositTableName,
+		canonicalBeaconBlockDepositEventNames,
+		func() flattener.ColumnarBatch { return newcanonicalBeaconBlockDepositBatch() },
+	))
+}
+
+func (b *canonicalBeaconBlockDepositBatch) FlattenTo(
+	event *xatu.DecoratedEvent,
+	meta *metadata.CommonMetadata,
+) error {
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if meta == nil {
+		meta = metadata.Extract(event)
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(meta)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockDepositBatch) appendRuntime(_ *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEvent) {
+	deposit := event.GetEthV2BeaconBlockDeposit()
+	if deposit == nil {
+		b.DepositProof.Append([]string{})
+		b.DepositDataPubkey.Append("")
+		b.DepositDataWithdrawalCredentials.Append(nil)
+		b.DepositDataSignature.Append("")
+		b.DepositDataAmount.Append(flattener.ParseUInt128("0"))
+
+		return
+	}
+
+	b.DepositProof.Append(deposit.GetProof())
+
+	if data := deposit.GetData(); data != nil {
+		b.DepositDataPubkey.Append(data.GetPubkey())
+		b.DepositDataWithdrawalCredentials.Append([]byte(data.GetWithdrawalCredentials()))
+		b.DepositDataSignature.Append(data.GetSignature())
+
+		if amount := data.GetAmount(); amount != nil {
+			b.DepositDataAmount.Append(flattener.ParseUInt128(fmt.Sprintf("%d", amount.GetValue())))
+		} else {
+			b.DepositDataAmount.Append(flattener.ParseUInt128("0"))
+		}
+	} else {
+		b.DepositDataPubkey.Append("")
+		b.DepositDataWithdrawalCredentials.Append(nil)
+		b.DepositDataSignature.Append("")
+		b.DepositDataAmount.Append(flattener.ParseUInt128("0"))
+	}
+}
+
+func (b *canonicalBeaconBlockDepositBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockDeposit()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+		b.BlockVersion.Append("")
+		b.BlockRoot.Append(nil)
+
+		return
+	}
+
+	appendBlockIdentifier(additional.GetBlock(),
+		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 }

@@ -12,6 +12,11 @@ type Config struct {
 	// DSN is the ClickHouse connection string.
 	DSN string `yaml:"dsn"`
 
+	// TableSuffix is appended to every table name before writing.
+	// For example, set to "_local" to bypass Distributed tables and write
+	// directly to ReplicatedMergeTree tables in a clustered setup.
+	TableSuffix string `yaml:"tableSuffix"`
+
 	// Defaults are the default batch settings for all tables.
 	Defaults TableConfig `yaml:"defaults"`
 

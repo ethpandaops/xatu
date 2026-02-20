@@ -50,7 +50,8 @@ func BenchmarkFlattenerHead(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := route.Flatten(event, meta); err != nil {
+		batch := route.NewBatch()
+		if err := batch.FlattenTo(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -88,7 +89,8 @@ func BenchmarkFlattenerLibP2PConnected(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := route.Flatten(event, meta); err != nil {
+		batch := route.NewBatch()
+		if err := batch.FlattenTo(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -152,7 +154,8 @@ func BenchmarkFlattenerValidatorsFanoutPubkeys(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := route.Flatten(event, meta); err != nil {
+		batch := route.NewBatch()
+		if err := batch.FlattenTo(event, meta); err != nil {
 			b.Fatal(err)
 		}
 	}

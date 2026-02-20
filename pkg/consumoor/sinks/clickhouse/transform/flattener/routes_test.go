@@ -1,6 +1,7 @@
 package flattener_test
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -10,7 +11,6 @@ import (
 	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	ethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
@@ -22,12 +22,20 @@ import (
 func TestRegistryCoversAllKnownEvents(t *testing.T) {
 	// Explicitly document events consumoor intentionally does not flatten yet.
 	unsupported := map[xatu.Event_Name]string{
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:          "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2:       "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:    "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2: "debug stream not modeled as table output",
-		xatu.Event_BEACON_P2P_ATTESTATION:                       "legacy event path not consumed by consumoor",
-		xatu.Event_BLOCKPRINT_BLOCK_CLASSIFICATION:              "deprecated upstream event",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:             "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2:          "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:       "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2:    "debug stream not modeled as table output",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION:            "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK:                  "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG:            "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF: "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT:   "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD:                   "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:         "deprecated in favor of V2 event",
+		xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK:                  "deprecated in favor of V2 event",
+		xatu.Event_BEACON_P2P_ATTESTATION:                          "legacy event path not consumed by consumoor",
+		xatu.Event_BLOCKPRINT_BLOCK_CLASSIFICATION:                 "deprecated upstream event",
 	}
 
 	covered := make(map[xatu.Event_Name]struct{}, 128)
@@ -110,12 +118,10 @@ func TestConditionalRoutingPredicates(t *testing.T) {
 	finalizedBlockEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2, DateTime: timestamppb.Now(), Id: "3"},
 		Meta:  &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockV2{EthV2BeaconBlockV2: &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{FinalizedWhenRequested: true}}}},
-		Data:  &xatu.DecoratedEvent_EthV2BeaconBlockV2{EthV2BeaconBlockV2: &ethv2.EventBlockV2{}},
 	}
 	nonFinalizedBlockEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2, DateTime: timestamppb.Now(), Id: "4"},
 		Meta:  &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockV2{EthV2BeaconBlockV2: &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{FinalizedWhenRequested: false}}}},
-		Data:  &xatu.DecoratedEvent_EthV2BeaconBlockV2{EthV2BeaconBlockV2: &ethv2.EventBlockV2{}},
 	}
 
 	assert.True(t, canonicalBlock.ShouldProcess(finalizedBlockEvent))
@@ -123,7 +129,7 @@ func TestConditionalRoutingPredicates(t *testing.T) {
 }
 
 func TestValidatorsFanout(t *testing.T) {
-	pubkeysFlattener := findRouteByTable(t, "canonical_beacon_validators_pubkeys")
+	pubkeysRoute := findRouteByTable(t, "canonical_beacon_validators_pubkeys")
 
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_VALIDATORS, DateTime: timestamppb.Now(), Id: "validators-1"},
@@ -159,18 +165,20 @@ func TestValidatorsFanout(t *testing.T) {
 		}}},
 	}
 
-	rows, err := pubkeysFlattener.Flatten(event, metadata.Extract(event))
+	batch := pubkeysRoute.NewBatch()
+	err := batch.FlattenTo(event, metadata.Extract(event))
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
+	require.Equal(t, 1, batch.Rows())
 
-	assert.Equal(t, uint64(42), rows[0]["index"])
-	assert.Equal(t, "0xabc", rows[0]["pubkey"])
-	assert.Equal(t, uint64(123), rows[0]["epoch"])
-	assert.Equal(t, int64(1_700_000_000), rows[0]["epoch_start_date_time"])
+	snap := batch.Snapshot()
+	require.Len(t, snap, 1)
+
+	assert.Equal(t, uint32(42), snap[0]["index"])
+	assert.Equal(t, uint32(123), snap[0]["epoch"])
 }
 
 func TestLibP2PEnrichment(t *testing.T) {
-	connectedFlattener := findRouteByTable(t, "libp2p_connected")
+	connectedRoute := findRouteByTable(t, "libp2p_connected")
 
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_LIBP2P_TRACE_CONNECTED, DateTime: timestamppb.Now(), Id: "libp2p-1"},
@@ -188,44 +196,18 @@ func TestLibP2PEnrichment(t *testing.T) {
 		}},
 	}
 
-	rows, err := connectedFlattener.Flatten(event, metadata.Extract(event))
+	batch := connectedRoute.NewBatch()
+	err := batch.FlattenTo(event, metadata.Extract(event))
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
+	require.Equal(t, 1, batch.Rows())
 
-	assert.Equal(t, "ip4", rows[0]["remote_protocol"])
-	assert.Equal(t, "1.2.3.4", rows[0]["remote_ip"])
-	assert.Equal(t, "tcp", rows[0]["remote_transport_protocol"])
-	assert.Equal(t, uint64(9000), rows[0]["remote_port"])
-	assert.NotZero(t, rows[0]["remote_peer_id_unique_key"])
-}
+	snap := batch.Snapshot()
+	require.Len(t, snap, 1)
 
-func TestSyncCommitteeMutator(t *testing.T) {
-	syncCommitteeFlattener := findRouteByTable(t, "canonical_beacon_sync_committee")
-
-	event := &xatu.DecoratedEvent{
-		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE, DateTime: timestamppb.Now(), Id: "sync-1"},
-		Meta: &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV1BeaconSyncCommittee{
-			EthV1BeaconSyncCommittee: &xatu.ClientMeta_AdditionalEthV1BeaconSyncCommitteeData{
-				Epoch: &xatu.EpochV2{Number: wrapperspb.UInt64(321)},
-			},
-		}}},
-		Data: &xatu.DecoratedEvent_EthV1BeaconSyncCommittee{EthV1BeaconSyncCommittee: &xatu.SyncCommitteeData{SyncCommittee: &ethv1.SyncCommittee{
-			ValidatorAggregates: []*ethv1.SyncCommitteeValidatorAggregate{
-				{Validators: []*wrapperspb.UInt64Value{wrapperspb.UInt64(1), wrapperspb.UInt64(2)}},
-				{Validators: []*wrapperspb.UInt64Value{wrapperspb.UInt64(3)}},
-			},
-		}}},
-	}
-
-	rows, err := syncCommitteeFlattener.Flatten(event, metadata.Extract(event))
-	require.NoError(t, err)
-	require.Len(t, rows, 1)
-
-	aggs, ok := rows[0]["validator_aggregates"].([][]uint64)
-	require.True(t, ok)
-	require.Len(t, aggs, 2)
-	assert.Equal(t, []uint64{1, 2}, aggs[0])
-	assert.Equal(t, []uint64{3}, aggs[1])
+	assert.Equal(t, "ip4", snap[0]["remote_protocol"])
+	assert.Equal(t, "1.2.3.4", snap[0]["remote_ip"])
+	assert.Equal(t, "tcp", snap[0]["remote_transport_protocol"])
+	assert.NotZero(t, snap[0]["remote_peer_id_unique_key"])
 }
 
 func TestFlattenDoesNotEmitLegacyUniqueColumn(t *testing.T) {
@@ -243,12 +225,19 @@ func TestFlattenDoesNotEmitLegacyUniqueColumn(t *testing.T) {
 		},
 	}
 
-	rows, err := headRoute.Flatten(event, metadata.Extract(event))
+	batch := headRoute.NewBatch()
+	err := batch.FlattenTo(event, metadata.Extract(event))
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
+	require.Equal(t, 1, batch.Rows())
 
-	assert.NotContains(t, rows[0], "unique")
-	assert.Contains(t, rows[0], "unique_key")
+	snap := batch.Snapshot()
+	require.Len(t, snap, 1)
+
+	_, hasUnique := snap[0]["unique"]
+	assert.False(t, hasUnique)
+
+	_, hasUniqueKey := snap[0]["unique_key"]
+	assert.False(t, hasUniqueKey)
 }
 
 func TestElaboratedAttestationAliasesValidatorIndexesToValidators(t *testing.T) {
@@ -270,12 +259,88 @@ func TestElaboratedAttestationAliasesValidatorIndexesToValidators(t *testing.T) 
 		},
 	}
 
-	rows, err := elaboratedAttestationRoute.Flatten(event, metadata.Extract(event))
+	batch := elaboratedAttestationRoute.NewBatch()
+	err := batch.FlattenTo(event, metadata.Extract(event))
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
+	require.Equal(t, 1, batch.Rows())
 
-	assert.Contains(t, rows[0], "validators")
-	assert.NotContains(t, rows[0], "validator_indexes")
+	snap := batch.Snapshot()
+	require.Len(t, snap, 1)
+
+	_, hasValidators := snap[0]["validators"]
+	assert.True(t, hasValidators)
+
+	_, hasValidatorIndexes := snap[0]["validator_indexes"]
+	assert.False(t, hasValidatorIndexes)
+}
+
+func TestSyncCommitteeFanout(t *testing.T) {
+	syncCommitteeRoute := findRouteByTable(t, "canonical_beacon_sync_committee")
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE, DateTime: timestamppb.Now(), Id: "sync-1"},
+		Meta: &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV1BeaconSyncCommittee{
+			EthV1BeaconSyncCommittee: &xatu.ClientMeta_AdditionalEthV1BeaconSyncCommitteeData{
+				Epoch: &xatu.EpochV2{Number: wrapperspb.UInt64(321)},
+			},
+		}}},
+		Data: &xatu.DecoratedEvent_EthV1BeaconSyncCommittee{EthV1BeaconSyncCommittee: &xatu.SyncCommitteeData{SyncCommittee: &ethv1.SyncCommittee{
+			ValidatorAggregates: []*ethv1.SyncCommitteeValidatorAggregate{
+				{Validators: []*wrapperspb.UInt64Value{wrapperspb.UInt64(1), wrapperspb.UInt64(2)}},
+				{Validators: []*wrapperspb.UInt64Value{wrapperspb.UInt64(3)}},
+			},
+		}}},
+	}
+
+	batch := syncCommitteeRoute.NewBatch()
+	err := batch.FlattenTo(event, metadata.Extract(event))
+	require.NoError(t, err)
+	require.Equal(t, 1, batch.Rows())
+
+	snap := batch.Snapshot()
+	require.Len(t, snap, 1)
+
+	_, hasAggs := snap[0]["validator_aggregates"]
+	assert.True(t, hasAggs)
+}
+
+// TestColumnAlignment verifies that every FlattenTo call appends exactly one
+// value to every column in the batch. A mismatch (e.g. column "slot" has 6
+// rows while others have 3) indicates a double-append or missing-append bug
+// that would corrupt ClickHouse native protocol writes.
+func TestColumnAlignment(t *testing.T) {
+	for _, route := range tabledefs.All() {
+		t.Run(route.TableName(), func(t *testing.T) {
+			batch := route.NewBatch()
+
+			eventName := route.EventNames()[0]
+
+			// Flatten 3 minimal events into the batch.
+			for i := 0; i < 3; i++ {
+				event := &xatu.DecoratedEvent{
+					Event: &xatu.Event{
+						Name:     eventName,
+						DateTime: timestamppb.Now(),
+						Id:       fmt.Sprintf("alignment-%d", i),
+					},
+				}
+
+				err := batch.FlattenTo(event, nil)
+				require.NoError(t, err)
+			}
+
+			expectedRows := batch.Rows()
+			input := batch.Input()
+
+			for _, col := range input {
+				actual := col.Data.Rows()
+				assert.Equalf(t, expectedRows, actual,
+					"column %q has %d rows, expected %d — likely double or missing Append() call",
+					col.Name, actual, expectedRows,
+				)
+			}
+		})
+	}
 }
 
 func findRouteByTable(t *testing.T, table string) flattener.Route {

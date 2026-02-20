@@ -74,6 +74,10 @@ func New(
 
 	router := consrouter.New(log, registeredRoutes, disabledEvents, metrics)
 
+	// Register columnar batch factories from routes on the writer so
+	// each table gets zero-reflection inserts.
+	writer.RegisterBatchFactories(registeredRoutes)
+
 	c := &Consumoor{
 		log:     log.WithField("component", "consumoor"),
 		config:  config,

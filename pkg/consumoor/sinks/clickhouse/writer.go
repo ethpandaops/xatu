@@ -1,4 +1,3 @@
-//nolint:wsl_v5 // Conversion-heavy helper code intentionally stays compact.
 package clickhouse
 
 import (
@@ -7,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net"
 	"net/url"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,11 +19,12 @@ import (
 	"github.com/ClickHouse/ch-go/chpool"
 	"github.com/ClickHouse/ch-go/compress"
 	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
-
-var timeType = reflect.TypeOf(time.Time{})
 
 const (
 	defaultChGoRetryBaseDelay       = 100 * time.Millisecond
@@ -67,6 +65,13 @@ func resolvedChGoConfig(cfg ChGoConfig) ChGoConfig {
 	return out
 }
 
+// eventEntry holds a single event and its pre-extracted metadata for
+// buffering in the table writer.
+type eventEntry struct {
+	event *xatu.DecoratedEvent
+	meta  *metadata.CommonMetadata
+}
+
 // ChGoWriter manages batched inserts using the ch-go client.
 type ChGoWriter struct {
 	log     logrus.FieldLogger
@@ -84,6 +89,10 @@ type ChGoWriter struct {
 	tables map[string]*chTableWriter
 	mu     sync.RWMutex
 
+	// batchFactories maps base table names to ColumnarBatch constructors
+	// registered by route initialization.
+	batchFactories map[string]func() flattener.ColumnarBatch
+
 	done chan struct{}
 	wg   sync.WaitGroup
 
@@ -98,31 +107,25 @@ type chTableWriter struct {
 	config   TableConfig
 	metrics  *telemetry.Metrics
 	writer   *ChGoWriter
-	buffer   chan []map[string]any
+	buffer   chan eventEntry
 	flushReq chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
-	columnsMu sync.RWMutex
-	columns   []string
-	input     proto.Input
-	appenders []columnAppender
-}
-
-type columnAppender struct {
-	name   string
-	append reflect.Value
-	arg    reflect.Type
-}
-
-type rowConversionError struct {
-	table   string
-	skipped int
-	cause   error
+	newBatch func() flattener.ColumnarBatch
 }
 
 type tableWriteError struct {
 	table string
 	cause error
 }
+
+// inputPrepError wraps errors from batch factory initialization.
+// These are always permanent — retrying won't resolve them.
+type inputPrepError struct {
+	cause error
+}
+
+func (e *inputPrepError) Error() string { return e.cause.Error() }
+func (e *inputPrepError) Unwrap() error { return e.cause }
 
 // DefaultErrorClassifier classifies ClickHouse write errors for source retry
 // and reject handling.
@@ -134,14 +137,6 @@ func (DefaultErrorClassifier) IsPermanent(err error) bool {
 
 func (DefaultErrorClassifier) Table(err error) string {
 	return WriteErrorTable(err)
-}
-
-func (e *rowConversionError) Error() string {
-	return fmt.Sprintf("converting rows for %s: skipped %d row(s): %v", e.table, e.skipped, e.cause)
-}
-
-func (e *rowConversionError) Unwrap() error {
-	return e.cause
 }
 
 func (e *tableWriteError) Error() string {
@@ -169,15 +164,32 @@ func NewChGoWriter(
 	}
 
 	return &ChGoWriter{
-		log:      log.WithField("component", "chgo_writer"),
-		config:   config,
-		metrics:  metrics,
-		options:  opts,
-		chgoCfg:  chgoCfg,
-		database: opts.Database,
-		tables:   make(map[string]*chTableWriter, 16),
-		done:     make(chan struct{}),
+		log:            log.WithField("component", "chgo_writer"),
+		config:         config,
+		metrics:        metrics,
+		options:        opts,
+		chgoCfg:        chgoCfg,
+		database:       opts.Database,
+		tables:         make(map[string]*chTableWriter, 16),
+		batchFactories: make(map[string]func() flattener.ColumnarBatch, 64),
+		done:           make(chan struct{}),
 	}, nil
+}
+
+// RegisterBatchFactories extracts ColumnarBatch factories from routes and
+// stores them keyed by base table name. This must be called before Write.
+func (w *ChGoWriter) RegisterBatchFactories(routes []flattener.Route) {
+	for _, route := range routes {
+		batch := route.NewBatch()
+		if batch == nil {
+			continue
+		}
+
+		w.batchFactories[route.TableName()] = route.NewBatch
+	}
+
+	w.log.WithField("tables_with_batch", len(w.batchFactories)).
+		Info("Registered columnar batch factories")
 }
 
 // Start dials the pool and verifies connectivity.
@@ -247,22 +259,24 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 	return nil
 }
 
-// Write enqueues rows for table batching.
+// Write enqueues an event for table batching.
 // Write blocks if the buffer is full, propagating backpressure to the caller.
-func (w *ChGoWriter) Write(table string, rows []map[string]any) {
+func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent, meta *metadata.CommonMetadata) {
 	tw := w.getOrCreateTableWriter(table)
 
 	select {
-	case tw.buffer <- rows:
-		w.metrics.BufferUsage().WithLabelValues(table).Add(float64(len(rows)))
+	case tw.buffer <- eventEntry{event: event, meta: meta}:
+		w.metrics.BufferUsage().WithLabelValues(tw.table).Inc()
 	case <-w.done:
 		// Shutting down, discard.
 	}
 }
 
 func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
+	writeTable := table + w.config.TableSuffix
+
 	w.mu.RLock()
-	tw, ok := w.tables[table]
+	tw, ok := w.tables[writeTable]
 	w.mu.RUnlock()
 
 	if ok {
@@ -272,31 +286,35 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if tw, ok = w.tables[table]; ok {
+	if tw, ok = w.tables[writeTable]; ok {
 		return tw
 	}
 
+	// Config lookup uses the base table name so per-table overrides
+	// don't need to include the suffix.
 	cfg := w.config.TableConfigFor(table)
 	tw = &chTableWriter{
-		log:      w.log.WithField("table", table),
-		table:    table,
+		log:      w.log.WithField("table", writeTable),
+		table:    writeTable,
 		database: w.database,
 		config:   cfg,
 		metrics:  w.metrics,
 		writer:   w,
-		buffer:   make(chan []map[string]any, cfg.BufferSize),
+		buffer:   make(chan eventEntry, cfg.BufferSize),
 		flushReq: make(chan chan error, 1),
+		newBatch: w.batchFactories[table],
 	}
 
-	w.tables[table] = tw
+	w.tables[writeTable] = tw
 
 	w.wg.Go(func() {
 		tw.run(w.done)
 	})
 
-	w.log.WithField("table", table).
+	w.log.WithField("table", writeTable).
 		WithField("batch_size", cfg.BatchSize).
 		WithField("flush_interval", cfg.FlushInterval).
+		WithField("has_batch_factory", tw.newBatch != nil).
 		Info("Created ch-go table writer")
 
 	return tw
@@ -306,8 +324,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 	ticker := time.NewTicker(tw.config.FlushInterval)
 	defer ticker.Stop()
 
-	batch := make([]map[string]any, 0, tw.config.BatchSize)
-	batchBytes := 0
+	events := make([]eventEntry, 0, tw.config.BatchSize)
 	flushBlocked := false
 
 	for {
@@ -317,28 +334,24 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 		}
 
 		select {
-		case rows := <-bufferCh:
-			tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(float64(len(rows)))
+		case entry := <-bufferCh:
+			tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(1)
 
-			for _, row := range rows {
-				batch = append(batch, row)
-				batchBytes += len(row) * 100
-			}
+			events = append(events, entry)
 
-			if len(batch) >= tw.config.BatchSize || batchBytes >= tw.config.BatchBytes {
-				if err := tw.flush(context.Background(), batch); err != nil {
+			if len(events) >= tw.config.BatchSize {
+				if err := tw.flush(context.Background(), events); err != nil {
 					if IsPermanentWriteError(err) {
 						tw.log.WithError(err).
-							WithField("rows", len(batch)).
+							WithField("events", len(events)).
 							Warn("Dropping permanently invalid batch")
-						batch = make([]map[string]any, 0, tw.config.BatchSize)
-						batchBytes = 0
+						events = events[:0]
 						flushBlocked = false
 
 						continue
 					}
 
-					// Preserve batch for retry on next flush cycle. While
+					// Preserve events for retry on next flush cycle. While
 					// pending, stop draining tw.buffer so channel backpressure
 					// remains bounded by BufferSize.
 					flushBlocked = true
@@ -346,20 +359,18 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 					continue
 				}
 
-				batch = make([]map[string]any, 0, tw.config.BatchSize)
-				batchBytes = 0
+				events = events[:0]
 				flushBlocked = false
 			}
 
 		case <-ticker.C:
-			if len(batch) > 0 {
-				if err := tw.flush(context.Background(), batch); err != nil {
+			if len(events) > 0 {
+				if err := tw.flush(context.Background(), events); err != nil {
 					if IsPermanentWriteError(err) {
 						tw.log.WithError(err).
-							WithField("rows", len(batch)).
+							WithField("events", len(events)).
 							Warn("Dropping permanently invalid batch")
-						batch = make([]map[string]any, 0, tw.config.BatchSize)
-						batchBytes = 0
+						events = events[:0]
 						flushBlocked = false
 
 						continue
@@ -370,8 +381,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 					continue
 				}
 
-				batch = make([]map[string]any, 0, tw.config.BatchSize)
-				batchBytes = 0
+				events = events[:0]
 				flushBlocked = false
 			}
 
@@ -381,37 +391,32 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			drainReq:
 				for {
 					select {
-					case rows := <-tw.buffer:
-						tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(float64(len(rows)))
+					case entry := <-tw.buffer:
+						tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(1)
 
-						for _, row := range rows {
-							batch = append(batch, row)
-							batchBytes += len(row) * 100
-						}
+						events = append(events, entry)
 					default:
 						break drainReq
 					}
 				}
 			}
 
-			if len(batch) > 0 {
-				err := tw.flush(context.Background(), batch)
+			if len(events) > 0 {
+				err := tw.flush(context.Background(), events)
 				switch {
 				case err == nil:
-					batch = make([]map[string]any, 0, tw.config.BatchSize)
-					batchBytes = 0
+					events = events[:0]
 					flushBlocked = false
 				case IsPermanentWriteError(err):
 					tw.log.WithError(err).
-						WithField("rows", len(batch)).
+						WithField("events", len(events)).
 						Warn("Dropping permanently invalid batch")
-					batch = make([]map[string]any, 0, tw.config.BatchSize)
-					batchBytes = 0
+					events = events[:0]
 					flushBlocked = false
 				default:
 					flushBlocked = true
 				}
-				// On error: batch is PRESERVED for retry on next cycle
+				// On error: events are PRESERVED for retry on next cycle
 				errCh <- err
 			} else {
 				errCh <- nil
@@ -421,18 +426,15 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 		drainLoop:
 			for {
 				select {
-				case rows := <-tw.buffer:
-					for _, row := range rows {
-						batch = append(batch, row)
-						batchBytes += len(row) * 100
-					}
+				case entry := <-tw.buffer:
+					events = append(events, entry)
 				default:
 					break drainLoop
 				}
 			}
 
-			if len(batch) > 0 {
-				_ = tw.flush(context.Background(), batch)
+			if len(events) > 0 {
+				_ = tw.flush(context.Background(), events)
 			}
 
 			return
@@ -440,93 +442,53 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 	}
 }
 
-func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error {
-	if len(rows) == 0 {
+func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
+	if len(events) == 0 {
 		return nil
 	}
 
 	start := time.Now()
-	columns := sortedColumns(rows)
 
-	if err := tw.ensureInput(ctx, columns); err != nil {
-		tw.log.WithError(err).
-			WithField("rows", len(rows)).
-			Error("Failed to prepare ch-go input")
-		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(rows)))
+	if tw.newBatch == nil {
+		tw.log.WithField("events", len(events)).
+			Error("No columnar batch factory registered")
+		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(events)))
 
 		return &tableWriteError{
 			table: tw.table,
-			cause: fmt.Errorf("preparing ch-go input for %s: %w", tw.table, err),
+			cause: &inputPrepError{cause: fmt.Errorf("no columnar batch factory for %s", tw.table)},
 		}
 	}
 
-	tw.input.Reset()
+	batch := tw.newBatch()
 
-	skipped := 0
-	firstErr := error(nil)
-	converted := make([]reflect.Value, len(tw.appenders))
-	wrote := 0
+	for _, e := range events {
+		if err := batch.FlattenTo(e.event, e.meta); err != nil {
+			tw.log.WithError(err).
+				WithField("events", len(events)).
+				Error("Failed to flatten event into columnar batch")
+			tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(events)))
 
-	for _, row := range rows {
-		rowValid := true
-
-		for i := range tw.appenders {
-			value, ok := row[tw.appenders[i].name]
-			if !ok {
-				value = nil
+			return &tableWriteError{
+				table: tw.table,
+				cause: &inputPrepError{cause: fmt.Errorf("flattening event for %s: %w", tw.table, err)},
 			}
-
-			cv, err := convertForType(value, tw.appenders[i].arg, tw.appenders[i].name)
-			if err != nil {
-				if firstErr == nil {
-					firstErr = err
-				}
-
-				rowValid = false
-				skipped++
-
-				break
-			}
-
-			converted[i] = cv
 		}
-
-		if !rowValid {
-			continue
-		}
-
-		for i := range tw.appenders {
-			tw.appenders[i].append.Call([]reflect.Value{converted[i]})
-		}
-
-		wrote++
 	}
 
-	if skipped > 0 {
-		err := &rowConversionError{
-			table:   tw.table,
-			skipped: skipped,
-			cause:   firstErr,
-		}
-		tw.log.WithError(err).
-			WithField("rows_total", len(rows)).
-			WithField("rows_skipped", skipped).
-			Error("Failed to convert rows for ch-go input")
-		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(skipped))
-
-		return err
-	}
-
-	if wrote == 0 {
+	rows := batch.Rows()
+	if rows == 0 {
 		return nil
 	}
 
-	insertBody, err := insertQueryWithSettings(tw.input.Into(tw.table), tw.config.InsertSettings)
+	input := batch.Input()
+
+	insertBody, err := insertQueryWithSettings(input.Into(tw.table), tw.config.InsertSettings)
 	if err != nil {
 		tw.log.WithError(err).
-			WithField("rows", wrote).
+			WithField("rows", rows).
 			Error("Invalid insert settings")
-		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(wrote))
+		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
 		return &tableWriteError{
 			table: tw.table,
@@ -536,12 +498,12 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 
 	if err := tw.do(ctx, "insert_"+tw.table, &ch.Query{
 		Body:  insertBody,
-		Input: tw.input,
+		Input: input,
 	}, nil); err != nil {
 		tw.log.WithError(err).
-			WithField("rows", wrote).
+			WithField("rows", rows).
 			Error("Failed to send ch-go batch")
-		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(wrote))
+		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
 		return &tableWriteError{
 			table: tw.table,
@@ -551,11 +513,12 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 
 	duration := time.Since(start)
 
-	tw.metrics.RowsWritten().WithLabelValues(tw.table).Add(float64(wrote))
+	tw.metrics.RowsWritten().WithLabelValues(tw.table).Add(float64(rows))
 	tw.metrics.WriteDuration().WithLabelValues(tw.table).Observe(duration.Seconds())
-	tw.metrics.BatchSize().WithLabelValues(tw.table).Observe(float64(wrote))
+	tw.metrics.BatchSize().WithLabelValues(tw.table).Observe(float64(rows))
 
-	tw.log.WithField("rows", wrote).
+	tw.log.WithField("rows", rows).
+		WithField("events", len(events)).
 		WithField("duration", duration).
 		Debug("Flushed ch-go batch")
 
@@ -564,7 +527,7 @@ func (tw *chTableWriter) flush(ctx context.Context, rows []map[string]any) error
 
 // FlushAll forces all table writers to drain their buffers and flush
 // to ClickHouse synchronously. Returns the first error encountered;
-// on failure, unflushed rows are preserved in the table writers.
+// on failure, unflushed events are preserved in the table writers.
 func (w *ChGoWriter) FlushAll(ctx context.Context) error {
 	w.mu.RLock()
 	writers := make([]*chTableWriter, 0, len(w.tables))
@@ -647,10 +610,10 @@ func (w *ChGoWriter) doWithRetry(
 
 	for attempt := 0; attempt <= w.chgoCfg.MaxRetries; attempt++ {
 		if attempt > 0 {
-			delay := w.chgoCfg.RetryBaseDelay * time.Duration(1<<(attempt-1))
-			if delay > w.chgoCfg.RetryMaxDelay {
-				delay = w.chgoCfg.RetryMaxDelay
-			}
+			delay := min(
+				w.chgoCfg.RetryBaseDelay*time.Duration(1<<(attempt-1)),
+				w.chgoCfg.RetryMaxDelay,
+			)
 
 			w.log.WithFields(logrus.Fields{
 				"operation": operation,
@@ -739,105 +702,6 @@ func (w *ChGoWriter) collectPoolMetrics() {
 	}
 }
 
-func (tw *chTableWriter) ensureInput(ctx context.Context, columns []string) error {
-	tw.columnsMu.RLock()
-	if stringSlicesEqual(tw.columns, columns) && len(tw.input) == len(columns) {
-		tw.columnsMu.RUnlock()
-
-		return nil
-	}
-	tw.columnsMu.RUnlock()
-
-	tw.columnsMu.Lock()
-	defer tw.columnsMu.Unlock()
-
-	if stringSlicesEqual(tw.columns, columns) && len(tw.input) == len(columns) {
-		return nil
-	}
-
-	types, err := tw.loadColumnTypes(ctx, columns)
-	if err != nil {
-		return err
-	}
-
-	input := make(proto.Input, 0, len(columns))
-	appenders := make([]columnAppender, 0, len(columns))
-
-	for _, col := range columns {
-		typ, ok := types[col]
-		if !ok {
-			return fmt.Errorf("missing clickhouse type for column %q", col)
-		}
-
-		auto := &proto.ColAuto{}
-		if err := auto.Infer(typ); err != nil {
-			return fmt.Errorf("infer column %q type %q: %w", col, typ, err)
-		}
-
-		app, err := newColumnAppender(col, auto.Data)
-		if err != nil {
-			return fmt.Errorf("create appender for column %q: %w", col, err)
-		}
-
-		input = append(input, proto.InputColumn{
-			Name: col,
-			Data: auto,
-		})
-		appenders = append(appenders, app)
-	}
-
-	tw.columns = append([]string(nil), columns...)
-	tw.input = input
-	tw.appenders = appenders
-
-	return nil
-}
-
-func (tw *chTableWriter) loadColumnTypes(ctx context.Context, columns []string) (map[string]proto.ColumnType, error) {
-	nameList := make([]string, 0, len(columns))
-	for _, col := range columns {
-		nameList = append(nameList, quoteCHString(col))
-	}
-
-	query := fmt.Sprintf(
-		"SELECT name, type FROM system.columns WHERE database = %s AND table = %s AND name IN (%s)",
-		quoteCHString(tw.database),
-		quoteCHString(tw.table),
-		strings.Join(nameList, ", "),
-	)
-
-	var names proto.ColStr
-	var types proto.ColStr
-
-	if err := tw.do(ctx, "load_column_types_"+tw.table, &ch.Query{
-		Body: query,
-		Result: proto.Results{
-			{Name: "name", Data: &names},
-			{Name: "type", Data: &types},
-		},
-	}, func() {
-		names.Reset()
-		types.Reset()
-	}); err != nil {
-		return nil, fmt.Errorf("querying system.columns: %w", err)
-	}
-
-	if names.Rows() != types.Rows() {
-		return nil, fmt.Errorf(
-			"unexpected system.columns result mismatch: names=%d types=%d",
-			names.Rows(),
-			types.Rows(),
-		)
-	}
-
-	out := make(map[string]proto.ColumnType, names.Rows())
-	for i := 0; i < names.Rows(); i++ {
-		out[names.Row(i)] = proto.ColumnType(types.Row(i))
-	}
-
-	return out, nil
-}
-
 func (tw *chTableWriter) do(
 	ctx context.Context,
 	operation string,
@@ -856,25 +720,6 @@ func (tw *chTableWriter) do(
 
 		return pool.Do(attemptCtx, *query)
 	})
-}
-
-func newColumnAppender(name string, data any) (columnAppender, error) {
-	rv := reflect.ValueOf(data)
-	appendMethod := rv.MethodByName("Append")
-	if !appendMethod.IsValid() {
-		return columnAppender{}, fmt.Errorf("column type %T does not expose Append", data)
-	}
-
-	t := appendMethod.Type()
-	if t.NumIn() != 1 || t.NumOut() != 0 {
-		return columnAppender{}, fmt.Errorf("unexpected Append signature for %T", data)
-	}
-
-	return columnAppender{
-		name:   name,
-		append: appendMethod,
-		arg:    t.In(0),
-	}, nil
 }
 
 func parseChGoOptions(dsn string) (ch.Options, error) {
@@ -953,13 +798,15 @@ func parseChGoOptions(dsn string) (ch.Options, error) {
 	}, nil
 }
 
+// IsPermanentWriteError returns true for errors that will never succeed on
+// retry: schema mismatches, type errors, conversion failures.
 func IsPermanentWriteError(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	var conversionErr *rowConversionError
-	if errors.As(err, &conversionErr) {
+	var prepErr *inputPrepError
+	if errors.As(err, &prepErr) {
 		return true
 	}
 
@@ -992,14 +839,10 @@ func IsPermanentWriteError(err error) bool {
 	return false
 }
 
+// WriteErrorTable extracts the table name from a write error.
 func WriteErrorTable(err error) string {
 	if err == nil {
 		return ""
-	}
-
-	var conversionErr *rowConversionError
-	if errors.As(err, &conversionErr) {
-		return conversionErr.table
 	}
 
 	var tableErr *tableWriteError
@@ -1153,38 +996,6 @@ func quoteCHString(v string) string {
 	return "'" + strings.ReplaceAll(v, "'", "''") + "'"
 }
 
-func sortedColumns(rows []map[string]any) []string {
-	seen := make(map[string]struct{})
-	for _, row := range rows {
-		for col := range row {
-			seen[col] = struct{}{}
-		}
-	}
-
-	cols := make([]string, 0, len(seen))
-	for col := range seen {
-		cols = append(cols, col)
-	}
-
-	sort.Strings(cols)
-
-	return cols
-}
-
-func stringSlicesEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
 func isTrue(v string) bool {
 	switch strings.ToLower(strings.TrimSpace(v)) {
 	case "1", "true", "yes", "on":
@@ -1192,408 +1003,4 @@ func isTrue(v string) bool {
 	default:
 		return false
 	}
-}
-
-func convertForType(value any, target reflect.Type, columnName string) (reflect.Value, error) {
-	if target == nil {
-		return reflect.Value{}, fmt.Errorf("nil target type")
-	}
-
-	if value == nil {
-		return reflect.Zero(target), nil
-	}
-
-	rv := reflect.ValueOf(value)
-	if rv.IsValid() && rv.Type().AssignableTo(target) {
-		return rv, nil
-	}
-	if rv.IsValid() && rv.Type().ConvertibleTo(target) {
-		return rv.Convert(target), nil
-	}
-
-	if target == timeType {
-		t, err := toTime(value, columnName)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-
-		return reflect.ValueOf(t), nil
-	}
-
-	if target.Kind() == reflect.Struct &&
-		target.PkgPath() == "github.com/ClickHouse/ch-go/proto" &&
-		strings.HasPrefix(target.String(), "proto.Nullable[") {
-		return toNullableValue(value, target, columnName)
-	}
-
-	switch target.Kind() {
-	case reflect.String:
-		return reflect.ValueOf(fmt.Sprint(value)).Convert(target), nil
-	case reflect.Bool:
-		v, err := toBool(value)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-
-		out := reflect.New(target).Elem()
-		out.SetBool(v)
-
-		return out, nil
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, err := toInt64(value)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-
-		out := reflect.New(target).Elem()
-		if out.OverflowInt(v) {
-			return reflect.Value{}, fmt.Errorf("value %d overflows %s", v, target)
-		}
-		out.SetInt(v)
-
-		return out, nil
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		v, err := toUint64(value)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-
-		out := reflect.New(target).Elem()
-		if out.OverflowUint(v) {
-			return reflect.Value{}, fmt.Errorf("value %d overflows %s", v, target)
-		}
-		out.SetUint(v)
-
-		return out, nil
-	case reflect.Float32, reflect.Float64:
-		v, err := toFloat64(value)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-
-		out := reflect.New(target).Elem()
-		if out.OverflowFloat(v) {
-			return reflect.Value{}, fmt.Errorf("value %f overflows %s", v, target)
-		}
-		out.SetFloat(v)
-
-		return out, nil
-	case reflect.Slice:
-		return convertSlice(value, target, columnName)
-	case reflect.Map:
-		return convertMap(value, target, columnName)
-	default:
-		return reflect.Value{}, fmt.Errorf("unsupported conversion from %T to %s", value, target)
-	}
-}
-
-func toNullableValue(value any, target reflect.Type, columnName string) (reflect.Value, error) {
-	out := reflect.New(target).Elem()
-
-	valueField := out.FieldByName("Value")
-	validField := out.FieldByName("Valid")
-	if !valueField.IsValid() || !validField.IsValid() {
-		return reflect.Value{}, fmt.Errorf("invalid nullable type %s", target)
-	}
-
-	cv, err := convertForType(value, valueField.Type(), columnName)
-	if err != nil {
-		return reflect.Value{}, err
-	}
-
-	valueField.Set(cv)
-	validField.SetBool(true)
-
-	return out, nil
-}
-
-func convertSlice(value any, target reflect.Type, columnName string) (reflect.Value, error) {
-	if value == nil {
-		return reflect.Zero(target), nil
-	}
-
-	rv := reflect.ValueOf(value)
-	if rv.Type().AssignableTo(target) {
-		return rv, nil
-	}
-	if rv.Type().ConvertibleTo(target) {
-		return rv.Convert(target), nil
-	}
-	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-		return reflect.Value{}, fmt.Errorf("expected slice for %s, got %T", target, value)
-	}
-
-	out := reflect.MakeSlice(target, rv.Len(), rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		cv, err := convertForType(rv.Index(i).Interface(), target.Elem(), columnName)
-		if err != nil {
-			return reflect.Value{}, fmt.Errorf("slice index %d: %w", i, err)
-		}
-		out.Index(i).Set(cv)
-	}
-
-	return out, nil
-}
-
-func convertMap(value any, target reflect.Type, columnName string) (reflect.Value, error) {
-	if value == nil {
-		return reflect.Zero(target), nil
-	}
-
-	rv := reflect.ValueOf(value)
-	if rv.Type().AssignableTo(target) {
-		return rv, nil
-	}
-	if rv.Type().ConvertibleTo(target) {
-		return rv.Convert(target), nil
-	}
-	if rv.Kind() != reflect.Map {
-		return reflect.Value{}, fmt.Errorf("expected map for %s, got %T", target, value)
-	}
-
-	out := reflect.MakeMapWithSize(target, rv.Len())
-	iter := rv.MapRange()
-	for iter.Next() {
-		kv, err := convertForType(iter.Key().Interface(), target.Key(), columnName)
-		if err != nil {
-			return reflect.Value{}, fmt.Errorf("map key: %w", err)
-		}
-		vv, err := convertForType(iter.Value().Interface(), target.Elem(), columnName)
-		if err != nil {
-			return reflect.Value{}, fmt.Errorf("map value: %w", err)
-		}
-
-		out.SetMapIndex(kv, vv)
-	}
-
-	return out, nil
-}
-
-func toBool(value any) (bool, error) {
-	switch v := value.(type) {
-	case bool:
-		return v, nil
-	case string:
-		parsed, err := strconv.ParseBool(strings.TrimSpace(v))
-		if err != nil {
-			return false, fmt.Errorf("parse bool %q: %w", v, err)
-		}
-
-		return parsed, nil
-	case int, int8, int16, int32, int64:
-		n, err := toInt64(v)
-		if err != nil {
-			return false, err
-		}
-
-		return n != 0, nil
-	case uint, uint8, uint16, uint32, uint64:
-		n, err := toUint64(v)
-		if err != nil {
-			return false, err
-		}
-
-		return n != 0, nil
-	default:
-		return false, fmt.Errorf("cannot convert %T to bool", value)
-	}
-}
-
-func toInt64(value any) (int64, error) {
-	switch v := value.(type) {
-	case int:
-		return int64(v), nil
-	case int8:
-		return int64(v), nil
-	case int16:
-		return int64(v), nil
-	case int32:
-		return int64(v), nil
-	case int64:
-		return v, nil
-	case uint:
-		if uint64(v) > math.MaxInt64 {
-			return 0, fmt.Errorf("uint overflow to int64: %d", v)
-		}
-
-		//nolint:gosec // guarded by explicit overflow check above.
-		return int64(v), nil
-	case uint8:
-		return int64(v), nil
-	case uint16:
-		return int64(v), nil
-	case uint32:
-		return int64(v), nil
-	case uint64:
-		if v > math.MaxInt64 {
-			return 0, fmt.Errorf("uint64 overflow to int64: %d", v)
-		}
-
-		return int64(v), nil
-	case float32:
-		return int64(v), nil
-	case float64:
-		return int64(v), nil
-	case string:
-		parsed, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("parse int64 %q: %w", v, err)
-		}
-
-		return parsed, nil
-	default:
-		return 0, fmt.Errorf("cannot convert %T to int64", value)
-	}
-}
-
-func toUint64(value any) (uint64, error) {
-	switch v := value.(type) {
-	case int:
-		if v < 0 {
-			return 0, fmt.Errorf("negative int %d to uint64", v)
-		}
-
-		return uint64(v), nil
-	case int8:
-		if v < 0 {
-			return 0, fmt.Errorf("negative int8 %d to uint64", v)
-		}
-
-		return uint64(v), nil
-	case int16:
-		if v < 0 {
-			return 0, fmt.Errorf("negative int16 %d to uint64", v)
-		}
-
-		return uint64(v), nil
-	case int32:
-		if v < 0 {
-			return 0, fmt.Errorf("negative int32 %d to uint64", v)
-		}
-
-		return uint64(v), nil
-	case int64:
-		if v < 0 {
-			return 0, fmt.Errorf("negative int64 %d to uint64", v)
-		}
-
-		return uint64(v), nil
-	case uint:
-		return uint64(v), nil
-	case uint8:
-		return uint64(v), nil
-	case uint16:
-		return uint64(v), nil
-	case uint32:
-		return uint64(v), nil
-	case uint64:
-		return v, nil
-	case float32:
-		if v < 0 {
-			return 0, fmt.Errorf("negative float32 %f to uint64", v)
-		}
-
-		return uint64(v), nil
-	case float64:
-		if v < 0 {
-			return 0, fmt.Errorf("negative float64 %f to uint64", v)
-		}
-
-		return uint64(v), nil
-	case string:
-		parsed, err := strconv.ParseUint(strings.TrimSpace(v), 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("parse uint64 %q: %w", v, err)
-		}
-
-		return parsed, nil
-	default:
-		return 0, fmt.Errorf("cannot convert %T to uint64", value)
-	}
-}
-
-func toFloat64(value any) (float64, error) {
-	switch v := value.(type) {
-	case float32:
-		return float64(v), nil
-	case float64:
-		return v, nil
-	case int:
-		return float64(v), nil
-	case int8:
-		return float64(v), nil
-	case int16:
-		return float64(v), nil
-	case int32:
-		return float64(v), nil
-	case int64:
-		return float64(v), nil
-	case uint:
-		return float64(v), nil
-	case uint8:
-		return float64(v), nil
-	case uint16:
-		return float64(v), nil
-	case uint32:
-		return float64(v), nil
-	case uint64:
-		return float64(v), nil
-	case string:
-		parsed, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
-		if err != nil {
-			return 0, fmt.Errorf("parse float64 %q: %w", v, err)
-		}
-
-		return parsed, nil
-	default:
-		return 0, fmt.Errorf("cannot convert %T to float64", value)
-	}
-}
-
-func toTime(value any, columnName string) (time.Time, error) {
-	switch v := value.(type) {
-	case time.Time:
-		return v.UTC(), nil
-	case int64:
-		return unixNumericTime(v, columnName), nil
-	case int32:
-		return unixNumericTime(int64(v), columnName), nil
-	case int:
-		return unixNumericTime(int64(v), columnName), nil
-	case uint64:
-		if v > math.MaxInt64 {
-			return time.Time{}, fmt.Errorf("uint64 overflow to int64 for time: %d", v)
-		}
-
-		return unixNumericTime(int64(v), columnName), nil
-	case float64:
-		return unixNumericTime(int64(v), columnName), nil
-	case string:
-		trimmed := strings.TrimSpace(v)
-		if trimmed == "" {
-			return time.Time{}, fmt.Errorf("empty time string")
-		}
-
-		if parsed, err := time.Parse(time.RFC3339Nano, trimmed); err == nil {
-			return parsed.UTC(), nil
-		}
-
-		if unixMillis, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
-			return unixNumericTime(unixMillis, columnName), nil
-		}
-
-		return time.Time{}, fmt.Errorf("cannot parse time %q", v)
-	default:
-		return time.Time{}, fmt.Errorf("cannot convert %T to time.Time", value)
-	}
-}
-
-func unixNumericTime(value int64, columnName string) time.Time {
-	// event_date_time is emitted as Unix milliseconds; other *_date_time
-	// fields are emitted as Unix seconds.
-	if columnName == "event_date_time" {
-		return time.UnixMilli(value).UTC()
-	}
-
-	return time.Unix(value, 0).UTC()
 }

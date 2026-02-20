@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -28,12 +27,12 @@ func (r filterTestRoute) TableName() string {
 	return string(r.table)
 }
 
-func (r filterTestRoute) Flatten(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata) ([]map[string]any, error) {
-	return nil, nil
-}
-
 func (r filterTestRoute) ShouldProcess(_ *xatu.DecoratedEvent) bool {
 	return true
+}
+
+func (r filterTestRoute) NewBatch() flattener.ColumnarBatch {
+	return nil
 }
 
 func TestNewRouterSkipsDisabledEvents(t *testing.T) {

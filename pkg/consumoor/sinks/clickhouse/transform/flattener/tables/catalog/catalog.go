@@ -8,36 +8,21 @@ import (
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
 )
 
-// Builder constructs one route for registry registration.
-type Builder interface {
-	Table() flattener.TableName
-	Build() flattener.Route
-}
-
 var (
 	mu      sync.Mutex
 	routes  []flattener.Route
 	byTable = make(map[string]struct{}, 96)
 )
 
-// MustRegister adds a route built by builder and panics on invalid or duplicate registrations.
-func MustRegister(builder Builder) {
-	if builder == nil {
-		panic("nil route builder")
-	}
-
-	table := string(builder.Table())
-	if table == "" {
-		panic("route has empty table name")
-	}
-
-	route := builder.Build()
+// MustRegister adds route and panics on invalid or duplicate registrations.
+func MustRegister(route flattener.Route) {
 	if route == nil {
 		panic("nil route")
 	}
 
-	if route.TableName() != table {
-		panic(fmt.Sprintf("route table mismatch: builder=%q built=%q", table, route.TableName()))
+	table := route.TableName()
+	if table == "" {
+		panic("route has empty table name")
 	}
 
 	if len(route.EventNames()) == 0 {

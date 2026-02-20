@@ -91,6 +91,7 @@ func TestExtract(t *testing.T) {
 
 				// Consensus version parsing
 				assert.Equal(t, "lighthouse", m.MetaConsensusImplementation)
+				assert.Equal(t, "v4.5.6-abcdef", m.MetaConsensusVersion)
 				assert.Equal(t, "4", m.MetaConsensusVersionMajor)
 				assert.Equal(t, "5", m.MetaConsensusVersionMinor)
 				assert.Equal(t, "6", m.MetaConsensusVersionPatch)
@@ -146,16 +147,16 @@ func TestParseVersion(t *testing.T) {
 	}{
 		{"v1.2.3", "1", "2", "3"},
 		{"Lighthouse/v4.5.6-abcdef/x86_64-linux", "4", "5", "6"},
-		{"teku/teku/v1.2.3", "1", "2", "3"},
+		{"teku/teku/v1.2.3", "teku", "", ""},
 		{"1.13.4", "1", "13", "4"},
 		{"v0.1.0-rc1", "0", "1", "0"},
 		{"", "", "", ""},
-		{"not-a-version", "", "", ""},
+		{"not-a-version", "not-a-version", "", ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			major, minor, patch := parseVersion(tt.input)
+			major, minor, patch := parseVersion(normalizeConsensusVersion(tt.input))
 			assert.Equal(t, tt.major, major, "major")
 			assert.Equal(t, tt.minor, minor, "minor")
 			assert.Equal(t, tt.patch, patch, "patch")

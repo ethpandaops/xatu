@@ -1,31 +1,77 @@
 package libp2p
 
 import (
+	"time"
+
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
 	catalog "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables/catalog"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-type Libp2pRecvRpcRoute struct{}
-
-func (Libp2pRecvRpcRoute) Table() flattener.TableName {
-	return flattener.TableName("libp2p_recv_rpc")
-}
-
-func (r Libp2pRecvRpcRoute) Build() flattener.Route {
-	return flattener.
-		From(xatu.Event_LIBP2P_TRACE_RECV_RPC).
-		To(r.Table()).
-		Apply(flattener.AddCommonMetadataFields).
-		Apply(flattener.AddRuntimeColumns).
-		Apply(flattener.FlattenEventDataFields).
-		Apply(flattener.FlattenClientAdditionalDataFields).
-		Apply(flattener.FlattenServerAdditionalDataFields).
-		Apply(flattener.NormalizeDateTimeValues).
-		Apply(EnrichFields).
-		Build()
+var libp2pRecvRpcEventNames = []xatu.Event_Name{
+	xatu.Event_LIBP2P_TRACE_RECV_RPC,
 }
 
 func init() {
-	catalog.MustRegister(Libp2pRecvRpcRoute{})
+	catalog.MustRegister(flattener.NewStaticRoute(
+		libp2pRecvRpcTableName,
+		libp2pRecvRpcEventNames,
+		func() flattener.ColumnarBatch { return newlibp2pRecvRpcBatch() },
+	))
+}
+
+func (b *libp2pRecvRpcBatch) FlattenTo(
+	event *xatu.DecoratedEvent,
+	meta *metadata.CommonMetadata,
+) error {
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if meta == nil {
+		meta = metadata.Extract(event)
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(meta)
+	b.appendPayload(event, meta)
+	b.rows++
+
+	return nil
+}
+
+func (b *libp2pRecvRpcBatch) appendRuntime(event *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+
+	if ts := event.GetEvent().GetDateTime(); ts != nil {
+		b.EventDateTime.Append(ts.AsTime())
+	} else {
+		b.EventDateTime.Append(time.Time{})
+	}
+}
+
+func (b *libp2pRecvRpcBatch) appendPayload(
+	event *xatu.DecoratedEvent,
+	meta *metadata.CommonMetadata,
+) {
+	payload := event.GetLibp2PTraceRecvRpc()
+	if payload == nil {
+		b.UniqueKey.Append(0)
+		b.PeerIDUniqueKey.Append(0)
+
+		return
+	}
+
+	peerID := wrappedStringValue(payload.GetPeerId())
+
+	// Compute unique_key from event ID.
+	if event.GetEvent() != nil && event.GetEvent().GetId() != "" {
+		b.UniqueKey.Append(flattener.SeaHashInt64(event.GetEvent().GetId()))
+	} else {
+		b.UniqueKey.Append(0)
+	}
+
+	networkName := meta.MetaNetworkName
+	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 }

@@ -1,4 +1,3 @@
-//nolint:wsl_v5 // Tests are easier to scan with compact setup blocks.
 package source
 
 import (
@@ -32,10 +31,8 @@ import (
 var testMetricNSCounter uint64
 
 type testRoute struct {
-	eventName  xatu.Event_Name
-	table      string
-	rows       []map[string]any
-	flattenErr error
+	eventName xatu.Event_Name
+	table     string
 }
 
 func (r testRoute) EventNames() []xatu.Event_Name {
@@ -46,25 +43,12 @@ func (r testRoute) TableName() string {
 	return r.table
 }
 
-func (r testRoute) Flatten(_ *xatu.DecoratedEvent, _ *metadata.CommonMetadata) ([]map[string]any, error) {
-	if r.flattenErr != nil {
-		return nil, r.flattenErr
-	}
-
-	out := make([]map[string]any, len(r.rows))
-	for i := range r.rows {
-		copyRow := make(map[string]any, len(r.rows[i]))
-		for k, v := range r.rows[i] {
-			copyRow[k] = v
-		}
-		out[i] = copyRow
-	}
-
-	return out, nil
-}
-
 func (r testRoute) ShouldProcess(_ *xatu.DecoratedEvent) bool {
 	return true
+}
+
+func (r testRoute) NewBatch() flattener.ColumnarBatch {
+	return nil
 }
 
 type testWriter struct {
@@ -81,12 +65,12 @@ func (w *testWriter) Stop(context.Context) error {
 	return nil
 }
 
-func (w *testWriter) Write(table string, rows []map[string]any) {
+func (w *testWriter) Write(table string, _ *xatu.DecoratedEvent, _ *metadata.CommonMetadata) {
 	if w.writes == nil {
 		w.writes = make(map[string]int)
 	}
 
-	w.writes[table] += len(rows)
+	w.writes[table]++
 }
 
 func (w *testWriter) FlushAll(context.Context) error {
@@ -239,7 +223,6 @@ func TestWriteBatchBatchModeRejectsMalformedWithoutRetry(t *testing.T) {
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "beacon_head",
-				rows:      []map[string]any{{"slot": int64(1)}},
 			},
 		}),
 		writer:     writer,
@@ -276,12 +259,10 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "table_a",
-				rows:      []map[string]any{{"slot": int64(1)}},
 			},
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
 				table:     "table_b",
-				rows:      []map[string]any{{"slot": int64(2)}},
 			},
 		}),
 		writer:     writer,
@@ -315,7 +296,6 @@ func TestWriteBatchMessageModePermanentWriteErrorRejectsAndContinues(t *testing.
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "beacon_head",
-				rows:      []map[string]any{{"slot": int64(1)}},
 			},
 		}),
 		writer:     writer,
@@ -349,7 +329,6 @@ func TestWriteBatchMessageModeTransientFailureFailsRemaining(t *testing.T) {
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "beacon_head",
-				rows:      []map[string]any{{"slot": int64(1)}},
 			},
 		}),
 		writer:     writer,

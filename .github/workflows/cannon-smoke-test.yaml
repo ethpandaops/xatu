@@ -2,6 +2,15 @@ name: Cannon Smoke Test
 
 on:
   pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'deploy/**'
+      - '.github/cannon/**'
+      - '.github/workflows/cannon-smoke-test.yaml'
   workflow_dispatch:
 
 concurrency:
@@ -32,15 +41,21 @@ jobs:
     - name: Pull docker compose images in the background
       run: |
         docker compose pull &
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
     - name: Build xatu image
-      run: |
-        docker build -t ethpandaops/xatu:local .
-        echo "Xatu image is built."
+      uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+      with:
+        context: .
+        load: true
+        tags: ethpandaops/xatu:local
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
     - name: Fetch finalized epoch from beacon node
       id: beacon
       run: |
         # Read config
-        BEACON_NODE="https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
+        BEACON_NODE="https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
         EPOCH_OFFSET=$(yq '.epoch_offset' .github/cannon/seeding.yaml)
         NETWORK_ID=$(yq '.network.id' .github/cannon/seeding.yaml)
         NETWORK_NAME=$(yq '.network.name' .github/cannon/seeding.yaml)
@@ -78,7 +93,30 @@ jobs:
       timeout-minutes: 10
       shell: bash
       run: |
-        docker compose up --build --detach --quiet-pull
+        docker compose up --detach --quiet-pull
+    - name: Wait for Xatu stack to be ready
+      run: |
+        echo "Waiting for xatu-server gRPC to be ready on port 8080..."
+        for i in $(seq 1 30); do
+          if bash -c 'echo > /dev/tcp/localhost/8080' 2>/dev/null; then
+            echo "xatu-server is ready."
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "::error::xatu-server failed to become ready"
+            echo "=== Container status ==="
+            docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+            echo "=== xatu-server logs ==="
+            docker logs xatu-server 2>&1 | tail -50
+            exit 1
+          fi
+          echo "  attempt $i/30..."
+          sleep 2
+        done
+
+        echo ""
+        echo "=== Container status ==="
+        docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
     - name: Seed Postgres with cannon data
       run: |
         set -e
@@ -153,7 +191,7 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
           overrideNetworkName: "$NETWORK_NAME"
@@ -191,16 +229,30 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    - name: Dump diagnostic info on failure
+      if: failure() || cancelled()
+      run: |
+        echo "=== Container status ==="
+        docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+        echo ""
+        echo "=== Docker network ==="
+        docker network inspect xatu_xatu-net --format '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{"\n"}}{{end}}' 2>/dev/null || echo "Network not found"
+        echo ""
+        echo "=== xatu-server logs (last 50) ==="
+        docker logs xatu-server 2>&1 | tail -50 || echo "Container not found"
+        echo ""
+        echo "=== xatu-cannon logs (last 50) ==="
+        docker logs xatu-cannon 2>&1 | tail -50 || echo "Container not found"
     - name: Collect docker logs on failure
-      if: failure()
+      if: failure() || cancelled()
       uses: jwalton/gh-docker-logs@2741064ab9d7af54b0b1ffb6076cf64c16f0220e # v2.2.2
       with:
         dest: './logs'
     - name: Tar logs
-      if: failure()
+      if: failure() || cancelled()
       run: tar cvzf ./logs.tgz ./logs
     - name: Upload logs to GitHub
-      if: failure()
+      if: failure() || cancelled()
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: logs.tgz

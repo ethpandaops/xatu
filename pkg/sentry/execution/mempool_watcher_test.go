@@ -951,17 +951,14 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(make(chan string), make(chan error), nil).AnyTimes()
 		mockClient.EXPECT().Close().Return(nil).AnyTimes()
 
-		// Create watcher
+		// Create watcher without starting background goroutines to test
+		// fetchAndProcessPendingTransactions in isolation.
 		watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
-		// Start the watcher
-		err := watcher.Start(ctx)
-		assert.NoError(t, err)
-
 		// Call the method with partially invalid response
-		err = watcher.fetchAndProcessPendingTransactions(ctx)
+		err := watcher.fetchAndProcessPendingTransactions(ctx)
 		assert.NoError(t, err)
 
 		// Verify only the valid transaction was added
@@ -969,9 +966,6 @@ func TestFetchAndProcessTxPool(t *testing.T) {
 		assert.Contains(t, watcher.pendingTxs, txHashes[0], "Valid transaction should be added")
 		assert.Len(t, watcher.pendingTxs, 1, "Only valid transaction should be added")
 		watcher.pendingTxsMutex.RUnlock()
-
-		// Stop the watcher
-		watcher.Stop()
 	})
 
 	t.Run("ErrorHandlingDuringFetch", func(t *testing.T) {

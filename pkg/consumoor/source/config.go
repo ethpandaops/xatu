@@ -95,10 +95,6 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: commitInterval must be positive")
 	}
 
-	if c.DeliveryMode == "" {
-		c.DeliveryMode = DeliveryModeBatch
-	}
-
 	switch c.DeliveryMode {
 	case DeliveryModeBatch, DeliveryModeMessage:
 	default:

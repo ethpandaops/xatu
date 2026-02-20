@@ -1,21 +1,19 @@
-package catalog
+package flattener
 
 import (
 	"fmt"
 	"sort"
 	"sync"
-
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
 )
 
 var (
-	mu      sync.Mutex
-	routes  []flattener.Route
-	byTable = make(map[string]struct{}, 96)
+	catalogMu      sync.Mutex
+	catalogRoutes  []Route
+	catalogByTable = make(map[string]struct{}, 96)
 )
 
 // MustRegister adds route and panics on invalid or duplicate registrations.
-func MustRegister(route flattener.Route) {
+func MustRegister(route Route) {
 	if route == nil {
 		panic("nil route")
 	}
@@ -29,24 +27,24 @@ func MustRegister(route flattener.Route) {
 		panic(fmt.Sprintf("route %q has no event names", table))
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
+	catalogMu.Lock()
+	defer catalogMu.Unlock()
 
-	if _, exists := byTable[table]; exists {
+	if _, exists := catalogByTable[table]; exists {
 		panic(fmt.Sprintf("duplicate route registration for table %q", table))
 	}
 
-	byTable[table] = struct{}{}
+	catalogByTable[table] = struct{}{}
 
-	routes = append(routes, route)
+	catalogRoutes = append(catalogRoutes, route)
 }
 
 // All returns all registered routes in deterministic table-name order.
-func All() []flattener.Route {
-	mu.Lock()
-	defer mu.Unlock()
+func All() []Route {
+	catalogMu.Lock()
+	defer catalogMu.Unlock()
 
-	out := append([]flattener.Route(nil), routes...)
+	out := append([]Route(nil), catalogRoutes...)
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].TableName() < out[j].TableName()
 	})

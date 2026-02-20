@@ -17,9 +17,20 @@ type ColumnarBatch interface {
 	Reset()
 	// Rows returns the number of rows appended so far.
 	Rows() int
-	// Snapshot reads back accumulated columnar data as row maps for
-	// test assertions. Not used in production paths.
+}
+
+// Snapshotter extends ColumnarBatch with test-only read-back for assertions.
+type Snapshotter interface {
+	ColumnarBatch
+	// Snapshot reads back accumulated columnar data as row maps.
 	Snapshot() []map[string]any
+}
+
+// TableName is a typed ClickHouse target table identifier for flatteners.
+type TableName string
+
+func (t TableName) String() string {
+	return string(t)
 }
 
 // Route converts a DecoratedEvent into flat ClickHouse rows for a

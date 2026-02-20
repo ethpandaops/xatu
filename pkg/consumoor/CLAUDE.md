@@ -25,7 +25,7 @@ Kafka (Benthos kafka_franz) → xatu_clickhouse output (decode + route + classif
 2. Add a hand-written `$table.go` in `sinks/clickhouse/transform/flattener/tables/<domain>/` with:
    - `flattenXxx()` function returning `[]map[string]any`
    - `newXxxRow()` constructor calling `setRuntime()`, `SetMetadata()`, `setPayload()`, and optionally `setClientAdditionalData()` / `setServerAdditionalData()`
-   - `init()` registering via `catalog.MustRegister(flattener.NewStaticRoute(tableName, eventNames, flattenFn))`
+   - `init()` registering via `flattener.MustRegister(flattener.NewStaticRoute(tableName, eventNames, flattenFn))`
 3. For conditional routing, use `flattener.WithStaticRoutePredicate(...)` option
 4. Write a ClickHouse migration for the target table
 5. Add or update unit tests in `sinks/clickhouse/transform/flattener/routes_test.go`

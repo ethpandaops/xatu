@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -152,8 +153,10 @@ func (c *Consumoor) stop(ctx context.Context) error {
 	c.log.Info("Stopping consumoor")
 
 	if c.stream != nil {
+		// Benthos doesn't export a typed error for unstarted streams;
+		// use a substring match to tolerate minor message rewording.
 		if err := c.stream.StopWithin(30 * time.Second); err != nil &&
-			err.Error() != "stream has not been run yet" {
+			!strings.Contains(err.Error(), "not been run") {
 			c.log.WithError(err).Error("Error stopping benthos stream")
 		}
 	}

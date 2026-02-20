@@ -1178,6 +1178,10 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  message AdditionalLibP2PTraceIdentifyData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData: Holds additional data for a custody probe event in LibP2P Trace RPC.
   message AdditionalLibP2PTraceRpcDataColumnCustodyProbeData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -1758,6 +1762,7 @@ message ClientMeta {
     AdditionalEthV1BeaconSyncCommitteeData eth_v1_beacon_sync_committee = 92 [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
     // AdditionalEthV2BeaconBlockSyncAggregateData contains additional data about the sync aggregate.
     AdditionalEthV2BeaconBlockSyncAggregateData eth_v2_beacon_block_sync_aggregate = 93 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
+    AdditionalLibP2PTraceIdentifyData libp2p_trace_identify = 94 [ json_name = "LIBP2P_TRACE_IDENTIFY" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1970,6 +1975,7 @@ message Event {
     BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 85;
     BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
     EXECUTION_BLOCK_METRICS = 87;
+    LIBP2P_TRACE_IDENTIFY = 88;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2255,6 +2261,8 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR" ];
     xatu.libp2p.SyntheticHeartbeat libp2p_trace_synthetic_heartbeat = 78
         [ json_name = "LIBP2P_TRACE_SYNTHETIC_HEARTBEAT" ];
+    xatu.libp2p.Identify libp2p_trace_identify = 79
+        [ json_name = "LIBP2P_TRACE_IDENTIFY" ];
     xatu.libp2p.DataColumnCustodyProbe libp2p_trace_rpc_data_column_custody_probe = 200
         [ json_name = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE" ];
     ExecutionStateSize execution_state_size = 201

@@ -61,6 +61,8 @@ transforms:
       execution_engine_new_payload: .event.name == "EXECUTION_ENGINE_NEW_PAYLOAD"
       execution_engine_get_blobs: .event.name == "EXECUTION_ENGINE_GET_BLOBS"
       execution_block_metrics: .event.name == "EXECUTION_BLOCK_METRICS"
+      execution_state_size_delta: .event.name == "EXECUTION_STATE_SIZE_DELTA"
+      execution_mpt_depth: .event.name == "EXECUTION_MPT_DEPTH"
       libp2p_trace_connected: .event.name == "LIBP2P_TRACE_CONNECTED"
       libp2p_trace_disconnected: .event.name == "LIBP2P_TRACE_DISCONNECTED"
       libp2p_trace_add_peer: .event.name == "LIBP2P_TRACE_ADD_PEER"
@@ -535,6 +537,38 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: execution-block-metrics
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  execution_state_size_delta_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.execution_state_size_delta
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: execution-state-size-delta
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  execution_mpt_depth_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.execution_mpt_depth
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: execution-mpt-depth
     compression: snappy
     healthcheck:
       enabled: true

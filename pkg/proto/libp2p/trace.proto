@@ -37,6 +37,7 @@ enum EventType {
   RPC_META_MESSAGE = 24;
   SYNTHETIC_HEARTBEAT = 25;
   CUSTODY_PROBE = 26;
+  IDENTIFY = 27;
 }
 
 message AddPeer {
@@ -331,4 +332,20 @@ message DataColumnCustodyProbe {
   google.protobuf.StringValue result = 14 [json_name = "result"];
   google.protobuf.Int64Value response_time_ms = 15 [json_name = "response_time_ms"];
   google.protobuf.StringValue error = 16;
+}
+
+message Identify {
+  google.protobuf.StringValue remote_peer = 1 [json_name = "remote_peer"];
+  google.protobuf.BoolValue success = 2 [json_name = "success"];
+  google.protobuf.StringValue error = 3 [json_name = "error"];
+  google.protobuf.StringValue agent_version = 4 [json_name = "agent_version"];
+  google.protobuf.StringValue protocol_version = 5 [json_name = "protocol_version"];
+  repeated string protocols = 6;
+  repeated string listen_addrs = 7 [json_name = "listen_addrs"];
+  google.protobuf.StringValue observed_addr = 8 [json_name = "observed_addr"];
+  google.protobuf.StringValue transport = 9 [json_name = "transport"];
+  google.protobuf.StringValue security = 10 [json_name = "security"];
+  google.protobuf.StringValue muxer = 11 [json_name = "muxer"];
+  google.protobuf.StringValue direction = 12 [json_name = "direction"];
+  google.protobuf.StringValue remote_multiaddr = 13 [json_name = "remote_multiaddr"];
 }

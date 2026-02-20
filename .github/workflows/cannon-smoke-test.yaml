@@ -40,7 +40,7 @@ jobs:
       id: beacon
       run: |
         # Read config
-        BEACON_NODE="https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+        BEACON_NODE="https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
         EPOCH_OFFSET=$(yq '.epoch_offset' .github/cannon/seeding.yaml)
         NETWORK_ID=$(yq '.network.id' .github/cannon/seeding.yaml)
         NETWORK_NAME=$(yq '.network.name' .github/cannon/seeding.yaml)
@@ -153,7 +153,7 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
           overrideNetworkName: "$NETWORK_NAME"

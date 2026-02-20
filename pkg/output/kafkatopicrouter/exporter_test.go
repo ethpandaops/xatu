@@ -3,8 +3,10 @@ package kafkatopicrouter
 import (
 	"testing"
 
+	"github.com/ethpandaops/xatu/pkg/output/kafka"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestResolveTopic(t *testing.T) {
@@ -44,6 +46,24 @@ func TestResolveTopic(t *testing.T) {
 			eventName: xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK,
 			want:      "prefix-beacon-api-eth-v2-beacon-block-suffix",
 		},
+		{
+			name:      "empty pattern",
+			pattern:   "",
+			eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+			want:      "",
+		},
+		{
+			name:      "unknown event name uses numeric string",
+			pattern:   "xatu-${event-name}",
+			eventName: xatu.Event_Name(99999),
+			want:      "xatu-99999",
+		},
+		{
+			name:      "multiple kebab variables",
+			pattern:   "${event-name}/${event-name}",
+			eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+			want:      "beacon-api-eth-v1-events-block/beacon-api-eth-v1-events-block",
+		},
 	}
 
 	for _, tt := range tests {
@@ -56,6 +76,72 @@ func TestResolveTopic(t *testing.T) {
 
 			got := resolveTopic(tt.pattern, event)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestConfigValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  Config
+		wantErr string
+	}{
+		{
+			name:    "missing brokers and topic pattern",
+			config:  Config{},
+			wantErr: "brokers is required",
+		},
+		{
+			name: "missing topic pattern",
+			config: Config{
+				ProducerConfig: kafka.ProducerConfig{
+					Brokers: "localhost:9092",
+				},
+			},
+			wantErr: "topicPattern is required",
+		},
+		{
+			name: "valid config",
+			config: Config{
+				ProducerConfig: kafka.ProducerConfig{
+					Brokers: "localhost:9092",
+				},
+				TopicPattern: "xatu-${event-name}",
+			},
+		},
+		{
+			name: "valid config with static topic",
+			config: Config{
+				ProducerConfig: kafka.ProducerConfig{
+					Brokers: "localhost:9092",
+				},
+				TopicPattern: "static-topic",
+			},
+		},
+		{
+			name: "producer config validation propagates",
+			config: Config{
+				ProducerConfig: kafka.ProducerConfig{
+					Brokers: "localhost:9092",
+					TLSClientConfig: &kafka.TLSClientConfig{
+						CertificatePath: "/cert",
+					},
+				},
+				TopicPattern: "xatu-${event-name}",
+			},
+			wantErr: "client key is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

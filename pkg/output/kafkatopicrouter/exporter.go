@@ -67,9 +67,10 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	return nil
 }
 
-// Shutdown is a no-op for the ItemExporter.
+// Shutdown closes the underlying Sarama producer, flushing any pending
+// messages before returning.
 func (e ItemExporter) Shutdown(_ context.Context) error {
-	return nil
+	return e.client.Close()
 }
 
 func (e *ItemExporter) sendUpstream(items []*xatu.DecoratedEvent) error {

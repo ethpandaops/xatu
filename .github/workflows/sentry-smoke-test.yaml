@@ -96,9 +96,9 @@ jobs:
     - name: Wait for Xatu stack to be ready
       if: steps.canary.outputs.skip != 'true'
       run: |
-        echo "Waiting for xatu-server to be ready..."
+        echo "Waiting for xatu-server gRPC to be ready on port 8080..."
         for i in $(seq 1 30); do
-          if docker exec xatu-server wget -q --spider http://localhost:8080 2>/dev/null; then
+          if bash -c 'echo > /dev/tcp/localhost/8080' 2>/dev/null; then
             echo "xatu-server is ready."
             break
           fi

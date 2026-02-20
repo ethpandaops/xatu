@@ -89,8 +89,10 @@ func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error
 		}
 
 		g.log.WithFields(logrus.Fields{
-			"event_names": c.EventFilter.EventNames,
-			"modules":     c.EventFilter.Modules,
+			"event_names":         c.EventFilter.EventNames,
+			"exclude_event_names": c.EventFilter.ExcludeEventNames,
+			"modules":             c.EventFilter.Modules,
+			"exclude_modules":     c.EventFilter.ExcludeModules,
 		}).Info("Created a new event filter")
 
 		g.eventFilter = filter

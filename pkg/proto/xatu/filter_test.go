@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -209,4 +210,478 @@ func TestEventFilter_FilterByEventNamesAndModules(t *testing.T) {
 	}
 
 	assert.True(t, shouldBeDropped)
+}
+
+func TestEventFilterConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  *xatu.EventFilterConfig
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid excludeEventNames",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+		},
+		{
+			name: "invalid excludeEventNames",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{"INVALID_EVENT"},
+			},
+			wantErr: true,
+			errMsg:  "invalid exclude event name",
+		},
+		{
+			name: "valid excludeModules",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+		},
+		{
+			name: "invalid modules",
+			config: &xatu.EventFilterConfig{
+				Modules: []string{"INVALID_MODULE"},
+			},
+			wantErr: true,
+			errMsg:  "invalid module name",
+		},
+		{
+			name: "invalid excludeModules",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{"INVALID_MODULE"},
+			},
+			wantErr: true,
+			errMsg:  "invalid exclude module name",
+		},
+		{
+			name: "eventNames and excludeEventNames are mutually exclusive",
+			config: &xatu.EventFilterConfig{
+				EventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+			wantErr: true,
+			errMsg:  "mutually exclusive",
+		},
+		{
+			name: "modules and excludeModules are mutually exclusive",
+			config: &xatu.EventFilterConfig{
+				Modules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+				ExcludeModules: []string{
+					xatu.ModuleName_EL_MIMICRY.String(),
+				},
+			},
+			wantErr: true,
+			errMsg:  "mutually exclusive",
+		},
+		{
+			name: "eventNames with excludeModules is allowed",
+			config: &xatu.EventFilterConfig{
+				EventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+				ExcludeModules: []string{
+					xatu.ModuleName_EL_MIMICRY.String(),
+				},
+			},
+		},
+		{
+			name: "excludeEventNames with modules is allowed",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+				Modules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestEventFilter_ExcludeEventNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *xatu.EventFilterConfig
+		event    *xatu.DecoratedEvent
+		wantDrop bool
+		wantErr  bool
+	}{
+		{
+			name: "exclude single event name drops matching event",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "exclude single event name keeps non-matching event",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+			},
+			wantDrop: false,
+		},
+		{
+			name: "exclude multiple event names drops all excluded",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "exclude multiple event names keeps non-excluded",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				},
+			},
+			wantDrop: false,
+		},
+		{
+			name: "exclude with zero event name errors and drops",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN,
+				},
+			},
+			wantDrop: true,
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter, err := xatu.NewEventFilter(tt.config)
+			require.NoError(t, err)
+
+			dropped, err := filter.ShouldBeDropped(tt.event)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantDrop, dropped)
+			}
+		})
+	}
+}
+
+func TestEventFilter_ExcludeModules(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *xatu.EventFilterConfig
+		event    *xatu.DecoratedEvent
+		wantDrop bool
+	}{
+		{
+			name: "exclude module drops matching event",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_RELAY_MONITOR,
+					},
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "exclude module keeps non-matching event",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_EL_MIMICRY,
+					},
+				},
+			},
+			wantDrop: false,
+		},
+		{
+			name: "exclude module keeps event with no module set",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+			},
+			wantDrop: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter, err := xatu.NewEventFilter(tt.config)
+			require.NoError(t, err)
+
+			dropped, err := filter.ShouldBeDropped(tt.event)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantDrop, dropped)
+		})
+	}
+}
+
+func TestEventFilter_MixedIncludeExcludeAcrossDimensions(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *xatu.EventFilterConfig
+		event    *xatu.DecoratedEvent
+		wantDrop bool
+	}{
+		{
+			name: "include eventNames + exclude modules: both pass",
+			config: &xatu.EventFilterConfig{
+				EventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_EL_MIMICRY,
+					},
+				},
+			},
+			wantDrop: false,
+		},
+		{
+			name: "include eventNames + exclude modules: event name excluded",
+			config: &xatu.EventFilterConfig{
+				EventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_EL_MIMICRY,
+					},
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "include eventNames + exclude modules: module excluded",
+			config: &xatu.EventFilterConfig{
+				EventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK.String(),
+				},
+				ExcludeModules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_RELAY_MONITOR,
+					},
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "exclude eventNames + include modules: both pass",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+				Modules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_RELAY_MONITOR,
+					},
+				},
+			},
+			wantDrop: false,
+		},
+		{
+			name: "exclude eventNames + include modules: event excluded",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+				Modules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_RELAY_MONITOR,
+					},
+				},
+			},
+			wantDrop: true,
+		},
+		{
+			name: "exclude eventNames + include modules: module not included",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+				Modules: []string{
+					xatu.ModuleName_RELAY_MONITOR.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				},
+				Meta: &xatu.Meta{
+					Client: &xatu.ClientMeta{
+						ModuleName: xatu.ModuleName_EL_MIMICRY,
+					},
+				},
+			},
+			wantDrop: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter, err := xatu.NewEventFilter(tt.config)
+			require.NoError(t, err)
+
+			dropped, err := filter.ShouldBeDropped(tt.event)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantDrop, dropped)
+		})
+	}
+}
+
+func TestEventFilter_Accessors(t *testing.T) {
+	config := &xatu.EventFilterConfig{
+		ExcludeEventNames: []string{
+			xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+		},
+		ExcludeModules: []string{
+			xatu.ModuleName_RELAY_MONITOR.String(),
+		},
+	}
+
+	filter, err := xatu.NewEventFilter(config)
+	require.NoError(t, err)
+
+	assert.Equal(t, config.ExcludeEventNames, filter.ExcludeEventNames())
+	assert.Equal(t, config.ExcludeModules, filter.ExcludeModules())
+	assert.Empty(t, filter.EventNames())
+	assert.Empty(t, filter.Modules())
+}
+
+func TestEventFilter_EmptyExcludeLists(t *testing.T) {
+	config := &xatu.EventFilterConfig{
+		ExcludeEventNames: []string{},
+		ExcludeModules:    []string{},
+	}
+
+	filter, err := xatu.NewEventFilter(config)
+	require.NoError(t, err)
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+		},
+	}
+
+	dropped, err := filter.ShouldBeDropped(event)
+	require.NoError(t, err)
+	assert.False(t, dropped)
 }

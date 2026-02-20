@@ -6,18 +6,70 @@ import (
 	"github.com/pkg/errors"
 )
 
+// EventFilter defines the interface for filtering decorated events.
 type EventFilter interface {
-	// EventNames returns the list of event names to filter on.
+	// EventNames returns the list of event names to include.
 	EventNames() []string
-	// Modules returns the list of modules to filter on.
+	// ExcludeEventNames returns the list of event names to exclude.
+	ExcludeEventNames() []string
+	// Modules returns the list of modules to include.
 	Modules() []string
+	// ExcludeModules returns the list of modules to exclude.
+	ExcludeModules() []string
 	// ShouldBeDropped returns true if the event should be dropped.
 	ShouldBeDropped(event *DecoratedEvent) (bool, error)
 }
 
+// EventFilterConfig holds configuration for event filtering.
 type EventFilterConfig struct {
-	EventNames []string `yaml:"eventNames"`
-	Modules    []string `yaml:"modules"`
+	EventNames        []string `yaml:"eventNames"`
+	ExcludeEventNames []string `yaml:"excludeEventNames"`
+	Modules           []string `yaml:"modules"`
+	ExcludeModules    []string `yaml:"excludeModules"`
+}
+
+type eventFilter struct {
+	config *EventFilterConfig
+
+	eventNames        map[string]struct{}
+	excludeEventNames map[string]struct{}
+	modules           map[string]struct{}
+	excludeModules    map[string]struct{}
+}
+
+// NewEventFilter creates a new EventFilter from the given config.
+func NewEventFilter(config *EventFilterConfig) (EventFilter, error) {
+	if err := config.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid event filter config")
+	}
+
+	eventNames := make(map[string]struct{}, len(config.EventNames))
+	for _, eventName := range config.EventNames {
+		eventNames[eventName] = struct{}{}
+	}
+
+	excludeEventNames := make(map[string]struct{}, len(config.ExcludeEventNames))
+	for _, eventName := range config.ExcludeEventNames {
+		excludeEventNames[eventName] = struct{}{}
+	}
+
+	modules := make(map[string]struct{}, len(config.Modules))
+	for _, module := range config.Modules {
+		modules[module] = struct{}{}
+	}
+
+	excludeModules := make(map[string]struct{}, len(config.ExcludeModules))
+	for _, module := range config.ExcludeModules {
+		excludeModules[module] = struct{}{}
+	}
+
+	return &eventFilter{
+		config:            config,
+		eventNames:        eventNames,
+		excludeEventNames: excludeEventNames,
+		modules:           modules,
+		excludeModules:    excludeModules,
+	}, nil
 }
 
 func (f *EventFilterConfig) Validate() error {
@@ -27,46 +79,49 @@ func (f *EventFilterConfig) Validate() error {
 		}
 	}
 
+	for _, eventName := range f.ExcludeEventNames {
+		if _, ok := Event_Name_value[eventName]; !ok {
+			return fmt.Errorf("invalid exclude event name: %s", eventName)
+		}
+	}
+
+	for _, module := range f.Modules {
+		if _, ok := ModuleName_value[module]; !ok {
+			return fmt.Errorf("invalid module name: %s", module)
+		}
+	}
+
+	for _, module := range f.ExcludeModules {
+		if _, ok := ModuleName_value[module]; !ok {
+			return fmt.Errorf("invalid exclude module name: %s", module)
+		}
+	}
+
+	if len(f.EventNames) > 0 && len(f.ExcludeEventNames) > 0 {
+		return fmt.Errorf("eventNames and excludeEventNames are mutually exclusive")
+	}
+
+	if len(f.Modules) > 0 && len(f.ExcludeModules) > 0 {
+		return fmt.Errorf("modules and excludeModules are mutually exclusive")
+	}
+
 	return nil
-}
-
-func NewEventFilter(config *EventFilterConfig) (EventFilter, error) {
-	if err := config.Validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid event filter config")
-	}
-
-	eventNames := make(map[string]struct{}, len(config.EventNames))
-
-	for _, eventName := range config.EventNames {
-		eventNames[eventName] = struct{}{}
-	}
-
-	modules := make(map[string]struct{}, len(config.Modules))
-
-	for _, module := range config.Modules {
-		modules[module] = struct{}{}
-	}
-
-	return &eventFilter{
-		config:     config,
-		eventNames: eventNames,
-		modules:    modules,
-	}, nil
-}
-
-type eventFilter struct {
-	config *EventFilterConfig
-
-	eventNames map[string]struct{}
-	modules    map[string]struct{}
 }
 
 func (f *eventFilter) EventNames() []string {
 	return f.config.EventNames
 }
 
+func (f *eventFilter) ExcludeEventNames() []string {
+	return f.config.ExcludeEventNames
+}
+
 func (f *eventFilter) Modules() []string {
 	return f.config.Modules
+}
+
+func (f *eventFilter) ExcludeModules() []string {
+	return f.config.ExcludeModules
 }
 
 func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
@@ -78,11 +133,16 @@ func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
 		return true, errors.New("event.event is nil")
 	}
 
-	if len(f.eventNames) == 0 && len(f.modules) == 0 {
+	hasAnyFilter := len(f.eventNames) > 0 ||
+		len(f.excludeEventNames) > 0 ||
+		len(f.modules) > 0 ||
+		len(f.excludeModules) > 0
+
+	if !hasAnyFilter {
 		return false, nil
 	}
 
-	if len(f.eventNames) > 0 {
+	if len(f.eventNames) > 0 || len(f.excludeEventNames) > 0 {
 		shouldDrop, err := f.shouldDropFromEventNames(event)
 		if err != nil {
 			return true, errors.Wrap(err, "failed to apply event names filter")
@@ -93,7 +153,7 @@ func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
 		}
 	}
 
-	if len(f.modules) > 0 {
+	if len(f.modules) > 0 || len(f.excludeModules) > 0 {
 		shouldDrop, err := f.shouldDropFromModules(event)
 		if err != nil {
 			return true, errors.Wrap(err, "failed to apply modules filter")
@@ -108,31 +168,54 @@ func (f *eventFilter) ShouldBeDropped(event *DecoratedEvent) (bool, error) {
 }
 
 func (f *eventFilter) shouldDropFromEventNames(event *DecoratedEvent) (bool, error) {
-	if len(f.eventNames) == 0 {
-		return false, nil
-	}
-
 	if event.Event.Name == 0 {
 		return true, errors.New("event.event.name is invalid")
 	}
 
-	_, ok := f.eventNames[event.Event.Name.String()]
+	name := event.Event.Name.String()
 
-	return !ok, nil
+	// Include list: drop if NOT in list.
+	if len(f.eventNames) > 0 {
+		_, ok := f.eventNames[name]
+
+		return !ok, nil
+	}
+
+	// Exclude list: drop if IN list.
+	if len(f.excludeEventNames) > 0 {
+		_, ok := f.excludeEventNames[name]
+
+		return ok, nil
+	}
+
+	return false, nil
 }
 
 func (f *eventFilter) shouldDropFromModules(event *DecoratedEvent) (bool, error) {
-	if len(f.modules) == 0 {
-		return false, nil
+	moduleName := event.GetMeta().GetClient().GetModuleName()
+
+	// Include list: drop if NOT in list.
+	if len(f.modules) > 0 {
+		if moduleName == 0 {
+			return true, nil
+		}
+
+		_, ok := f.modules[moduleName.String()]
+
+		return !ok, nil
 	}
 
-	// If the event has no module set and we're filtering by modules,
-	// drop the event (it doesn't match any required module).
-	if event.GetMeta().GetClient().GetModuleName() == 0 {
-		return true, nil
+	// Exclude list: drop if IN list.
+	if len(f.excludeModules) > 0 {
+		// If the event has no module set, it doesn't match any exclude entry, so keep it.
+		if moduleName == 0 {
+			return false, nil
+		}
+
+		_, ok := f.excludeModules[moduleName.String()]
+
+		return ok, nil
 	}
 
-	_, ok := f.modules[event.GetMeta().GetClient().GetModuleName().String()]
-
-	return !ok, nil
+	return false, nil
 }

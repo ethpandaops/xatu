@@ -32,7 +32,7 @@ jobs:
     - name: Canary health check on beacon node
       id: canary
       run: |
-        BEACON_NODE="https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+        BEACON_NODE="https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
 
         echo "Checking beacon node health at $BEACON_NODE..."
         HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
@@ -107,7 +107,7 @@ jobs:
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+          beaconNodeAddress: "https://mainnet-lb-bn.utility.production.platform.ethpandaops.io"
           beaconNodeHeaders:
             Authorization: "AUTH_HEADER"
           overrideNetworkName: "$NETWORK_NAME"

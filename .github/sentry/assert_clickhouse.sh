@@ -60,8 +60,8 @@ assert_event_type() {
     echo "  Table: $TABLE"
     echo "  Description: $DESC"
 
-    local MAX_RETRIES=60
-    local RETRY_INTERVAL=5
+    local MAX_RETRIES=40
+    local RETRY_INTERVAL=3
     local RETRY_COUNT=0
 
     while true; do

@@ -157,6 +157,7 @@ services:
     entrypoint: ["/bin/sh", "/xatu-server-entrypoint.sh"]
     container_name: xatu-server
     hostname: xatu-server
+    image: ethpandaops/xatu:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -618,6 +619,7 @@ services:
       - ""
     container_name: xatu-sentry-logs
     hostname: xatu-sentry-logs
+    image: ethpandaops/xatu-sentry-logs:local
     build:
       context: ./sentry-logs
       dockerfile: Dockerfile
@@ -644,6 +646,7 @@ services:
     command: cannon --config /etc/cannon/config.yaml
     container_name: xatu-cannon
     hostname: xatu-cannon
+    image: ethpandaops/xatu:local
     build:
       context: .
       dockerfile: Dockerfile

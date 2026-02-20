@@ -93,7 +93,7 @@ jobs:
       timeout-minutes: 10
       shell: bash
       run: |
-        docker compose up --build --detach --quiet-pull
+        docker compose up --detach --quiet-pull
     - name: Wait for Xatu stack to be ready
       run: |
         echo "Waiting for xatu-server to be ready..."

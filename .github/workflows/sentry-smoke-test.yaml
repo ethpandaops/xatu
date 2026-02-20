@@ -92,7 +92,7 @@ jobs:
       if: steps.canary.outputs.skip != 'true'
       timeout-minutes: 5
       run: |
-        docker compose up --build --detach --quiet-pull
+        docker compose up --detach --quiet-pull
     - name: Wait for Xatu stack to be ready
       if: steps.canary.outputs.skip != 'true'
       run: |

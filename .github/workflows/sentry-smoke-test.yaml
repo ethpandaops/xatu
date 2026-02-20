@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   sentry-smoke-test:
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -93,6 +93,30 @@ jobs:
       timeout-minutes: 5
       run: |
         docker compose up --build --detach --quiet-pull
+    - name: Wait for Xatu stack to be ready
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        echo "Waiting for xatu-server to be ready..."
+        for i in $(seq 1 30); do
+          if docker exec xatu-server wget -q --spider http://localhost:8080 2>/dev/null; then
+            echo "xatu-server is ready."
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "::error::xatu-server failed to become ready"
+            echo "=== Container status ==="
+            docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+            echo "=== xatu-server logs ==="
+            docker logs xatu-server 2>&1 | tail -50
+            exit 1
+          fi
+          echo "  attempt $i/30..."
+          sleep 2
+        done
+
+        echo ""
+        echo "=== Container status ==="
+        docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
     - name: Inject sentry-logs test data
       if: steps.canary.outputs.skip != 'true'
       run: |
@@ -221,16 +245,33 @@ jobs:
         echo "Sample execution_block_metrics data:"
         docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT block_number, total_ms, mgas_per_sec, meta_client_name FROM default.execution_block_metrics LIMIT 5"
 
+    - name: Dump diagnostic info on failure
+      if: failure() || cancelled()
+      run: |
+        echo "=== Container status ==="
+        docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+        echo ""
+        echo "=== Docker network ==="
+        docker network inspect xatu_xatu-net --format '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{"\n"}}{{end}}' 2>/dev/null || echo "Network not found"
+        echo ""
+        echo "=== xatu-server logs (last 50) ==="
+        docker logs xatu-server 2>&1 | tail -50 || echo "Container not found"
+        echo ""
+        echo "=== xatu-sentry logs (last 50) ==="
+        docker logs xatu-sentry 2>&1 | tail -50 || echo "Container not found"
+        echo ""
+        echo "=== xatu-sentry-logs logs (last 30) ==="
+        docker logs xatu-sentry-logs 2>&1 | tail -30 || echo "Container not found"
     - name: Collect docker logs on failure
-      if: failure()
+      if: failure() || cancelled()
       uses: jwalton/gh-docker-logs@2741064ab9d7af54b0b1ffb6076cf64c16f0220e # v2.2.2
       with:
         dest: './logs'
     - name: Tar logs
-      if: failure()
+      if: failure() || cancelled()
       run: tar cvzf ./logs.tgz ./logs
     - name: Upload logs to GitHub
-      if: failure()
+      if: failure() || cancelled()
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: logs.tgz

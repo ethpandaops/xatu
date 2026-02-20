@@ -11,52 +11,6 @@ concurrency:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        go_version: [ 1.25.x ]
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
-        with:
-          go-version: ${{ matrix.go_version }}
-
-      - name: run tests
-        run: go test -json ./... | tee test.json
-
-      - name: Annotate tests
-        if: always()
-        uses: guyarb/golang-test-annotations@2941118d7ef622b1b3771d1ff6eae9e90659eb26 # v0.8.0
-        with:
-          test-results: test.json
-
-  race:
-    strategy:
-      matrix:
-        go_version: [ 1.25.x ]
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
-        with:
-          go-version: ${{ matrix.go_version }}
-
-      - name: run tests with race detector
-        env:
-          CGO_ENABLED: "1"
-        run: go test -race -timeout 10m ./...
-
-  mod-tidy:
     runs-on: ubuntu-latest
 
     steps:
@@ -73,3 +27,14 @@ jobs:
           go mod tidy
           go mod verify
           git diff --exit-code go.mod go.sum
+
+      - name: Run tests with race detector
+        env:
+          CGO_ENABLED: "1"
+        run: go test -race -json -timeout 10m ./... | tee test.json
+
+      - name: Annotate tests
+        if: always()
+        uses: guyarb/golang-test-annotations@2941118d7ef622b1b3771d1ff6eae9e90659eb26 # v0.8.0
+        with:
+          test-results: test.json

@@ -244,6 +244,22 @@ func TestEventFilterConfig_Validate(t *testing.T) {
 			},
 		},
 		{
+			name: "invalid modules",
+			config: &xatu.EventFilterConfig{
+				Modules: []string{"INVALID_MODULE"},
+			},
+			wantErr: true,
+			errMsg:  "invalid module name",
+		},
+		{
+			name: "invalid excludeModules",
+			config: &xatu.EventFilterConfig{
+				ExcludeModules: []string{"INVALID_MODULE"},
+			},
+			wantErr: true,
+			errMsg:  "invalid exclude module name",
+		},
+		{
 			name: "eventNames and excludeEventNames are mutually exclusive",
 			config: &xatu.EventFilterConfig{
 				EventNames: []string{
@@ -371,6 +387,21 @@ func TestEventFilter_ExcludeEventNames(t *testing.T) {
 				},
 			},
 			wantDrop: false,
+		},
+		{
+			name: "exclude with zero event name errors and drops",
+			config: &xatu.EventFilterConfig{
+				ExcludeEventNames: []string{
+					xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION.String(),
+				},
+			},
+			event: &xatu.DecoratedEvent{
+				Event: &xatu.Event{
+					Name: xatu.Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN,
+				},
+			},
+			wantDrop: true,
+			wantErr:  true,
 		},
 	}
 

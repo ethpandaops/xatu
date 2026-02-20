@@ -85,6 +85,18 @@ func (f *EventFilterConfig) Validate() error {
 		}
 	}
 
+	for _, module := range f.Modules {
+		if _, ok := ModuleName_value[module]; !ok {
+			return fmt.Errorf("invalid module name: %s", module)
+		}
+	}
+
+	for _, module := range f.ExcludeModules {
+		if _, ok := ModuleName_value[module]; !ok {
+			return fmt.Errorf("invalid exclude module name: %s", module)
+		}
+	}
+
 	if len(f.EventNames) > 0 && len(f.ExcludeEventNames) > 0 {
 		return fmt.Errorf("eventNames and excludeEventNames are mutually exclusive")
 	}

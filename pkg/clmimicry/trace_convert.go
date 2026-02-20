@@ -753,6 +753,43 @@ func TraceEventToSyntheticHeartbeat(event *TraceEvent) (*libp2p.SyntheticHeartbe
 	}, nil
 }
 
+func TraceEventToIdentify(event *TraceEvent) (*libp2p.Identify, error) {
+	payload, ok := event.Payload.(struct {
+		RemotePeer      string
+		Success         bool
+		Error           string
+		AgentVersion    string
+		ProtocolVersion string
+		Protocols       []string
+		ListenAddrs     []string
+		ObservedAddr    string
+		Transport       string
+		Security        string
+		Muxer           string
+		Direction       string
+		RemoteMultiaddr string
+	})
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Identify")
+	}
+
+	return &libp2p.Identify{
+		RemotePeer:      wrapperspb.String(payload.RemotePeer),
+		Success:         wrapperspb.Bool(payload.Success),
+		Error:           wrapperspb.String(payload.Error),
+		AgentVersion:    wrapperspb.String(payload.AgentVersion),
+		ProtocolVersion: wrapperspb.String(payload.ProtocolVersion),
+		Protocols:       payload.Protocols,
+		ListenAddrs:     payload.ListenAddrs,
+		ObservedAddr:    wrapperspb.String(payload.ObservedAddr),
+		Transport:       wrapperspb.String(payload.Transport),
+		Security:        wrapperspb.String(payload.Security),
+		Muxer:           wrapperspb.String(payload.Muxer),
+		Direction:       wrapperspb.String(payload.Direction),
+		RemoteMultiaddr: wrapperspb.String(payload.RemoteMultiaddr),
+	}, nil
+}
+
 // TraceEventToCustodyProbe converts a Hermes TraceEvent to a DataColumnCustodyProbe protobuf message.
 // Supports both typed *TraceEventCustodyProbe payloads (from direct callers like tysm)
 // and map[string]any payloads (for backwards compatibility with Hermes-style events).

@@ -17,7 +17,6 @@ func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {
 		"BEACON_API_ETH_V1_EVENTS_UNKNOWN": "unknown event type",
 		"LIBP2P_TRACE_UNKNOWN":             "unknown event type",
 		"LIBP2P_TRACE_DROP_RPC":            "not implemented yet",
-		"BLOCKPRINT_BLOCK_CLASSIFICATION":  "deprecated: Blockprint support has been removed",
 	}
 
 	// List of all event types from event_ingester.proto

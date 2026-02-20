@@ -1,0 +1,26 @@
+logging: "debug"
+metricsAddr: ":9091"
+
+kafka:
+  brokers:
+    - xatu-kafka:29092
+  topics:
+    - "^proto-.+"
+  consumerGroup: xatu-consumoor-v3
+  encoding: protobuf
+  commitInterval: 1s
+  deliveryMode: message
+
+clickhouse:
+  dsn: "clickhouse://xatu-clickhouse-01:9000/consumoor"
+  tableSuffix: "_local"
+  chgo:
+    maxConns: 32
+    queryTimeout: 120s
+  defaults:
+    batchSize: 1000
+    batchBytes: 10485760
+    flushInterval: 1s
+    bufferSize: 10000
+    insertSettings:
+      insert_quorum: 0

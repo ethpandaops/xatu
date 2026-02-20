@@ -31,7 +31,7 @@ func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu
 		return nil, err
 	}
 
-	producer, err := NewSyncProducer(&config.ProducerConfig)
+	producer, err := NewSyncProducer(&config.ProducerConfig, config.MaxExportBatchSize)
 	if err != nil {
 		log.
 			WithError(err).

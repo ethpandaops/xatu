@@ -209,7 +209,7 @@ func TestInitSaramaConfig(t *testing.T) {
 					Compression: tt.strategy,
 				}
 
-				sc, err := InitSaramaConfig(cfg)
+				sc, err := InitSaramaConfig(cfg, 0)
 				require.NoError(t, err)
 				assert.Equal(t, tt.want, sc.Producer.Compression)
 			})
@@ -234,7 +234,7 @@ func TestInitSaramaConfig(t *testing.T) {
 					RequiredAcks: tt.acks,
 				}
 
-				sc, err := InitSaramaConfig(cfg)
+				sc, err := InitSaramaConfig(cfg, 0)
 				require.NoError(t, err)
 				assert.Equal(t, tt.want, sc.Producer.RequiredAcks)
 			})
@@ -257,7 +257,7 @@ func TestInitSaramaConfig(t *testing.T) {
 					Partitioning: tt.strategy,
 				}
 
-				sc, err := InitSaramaConfig(cfg)
+				sc, err := InitSaramaConfig(cfg, 0)
 				require.NoError(t, err)
 				assert.NotNil(t, sc.Producer.Partitioner)
 
@@ -273,15 +273,14 @@ func TestInitSaramaConfig(t *testing.T) {
 		cfg := &ProducerConfig{
 			Brokers:        "localhost:9092",
 			FlushBytes:     2_000_000,
-			FlushMessages:  1000,
 			FlushFrequency: 5_000_000_000, // 5s as Duration
 			MaxRetries:     7,
 		}
 
-		sc, err := InitSaramaConfig(cfg)
+		sc, err := InitSaramaConfig(cfg, 1024)
 		require.NoError(t, err)
 		assert.Equal(t, 2_000_000, sc.Producer.Flush.Bytes)
-		assert.Equal(t, 1000, sc.Producer.Flush.Messages)
+		assert.Equal(t, 1024, sc.Producer.Flush.Messages)
 		assert.Equal(t, cfg.FlushFrequency, sc.Producer.Flush.Frequency)
 		assert.Equal(t, 7, sc.Producer.Retry.Max)
 		assert.True(t, sc.Producer.Return.Successes)
@@ -294,7 +293,7 @@ func TestInitSaramaConfig(t *testing.T) {
 			TLS:     true,
 		}
 
-		sc, err := InitSaramaConfig(cfg)
+		sc, err := InitSaramaConfig(cfg, 0)
 		require.NoError(t, err)
 		assert.True(t, sc.Net.TLS.Enable)
 	})
@@ -305,7 +304,7 @@ func TestInitSaramaConfig(t *testing.T) {
 			Version: "2.8.0",
 		}
 
-		sc, err := InitSaramaConfig(cfg)
+		sc, err := InitSaramaConfig(cfg, 0)
 		require.NoError(t, err)
 		assert.Equal(t, sarama.V2_8_0_0, sc.Version)
 	})
@@ -316,7 +315,7 @@ func TestInitSaramaConfig(t *testing.T) {
 			Version: "not-a-version",
 		}
 
-		_, err := InitSaramaConfig(cfg)
+		_, err := InitSaramaConfig(cfg, 0)
 		require.Error(t, err)
 	})
 
@@ -344,7 +343,7 @@ func TestInitSaramaConfig(t *testing.T) {
 					},
 				}
 
-				sc, err := InitSaramaConfig(cfg)
+				sc, err := InitSaramaConfig(cfg, 0)
 				require.NoError(t, err)
 				assert.True(t, sc.Net.SASL.Enable)
 				assert.Equal(t, tt.want, sc.Net.SASL.Mechanism)

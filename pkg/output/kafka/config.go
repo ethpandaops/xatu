@@ -17,7 +17,7 @@ type Config struct {
 	TopicPattern       string        `yaml:"topicPattern"`
 	MaxQueueSize       int           `yaml:"maxQueueSize" default:"51200"`
 	BatchTimeout       time.Duration `yaml:"batchTimeout" default:"5s"`
-	MaxExportBatchSize int           `yaml:"maxExportBatchSize" default:"512"`
+	MaxExportBatchSize int           `yaml:"maxExportBatchSize" default:"2048"`
 	Workers            int           `yaml:"workers" default:"5"`
 }
 

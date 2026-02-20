@@ -7,6 +7,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/kafka"
+	"github.com/ethpandaops/xatu/pkg/output/kafkatopicrouter"
 	"github.com/ethpandaops/xatu/pkg/output/stdout"
 	"github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -95,6 +96,20 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 		}
 
 		return kafka.New(name, conf, log, &filterConfig, shippingMethod)
+	case SinkTypeKafkaTopicRouter:
+		conf := &kafkatopicrouter.Config{}
+
+		if config != nil {
+			if err := config.Unmarshal(conf); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := defaults.Set(conf); err != nil {
+			return nil, err
+		}
+
+		return kafkatopicrouter.New(name, conf, log, &filterConfig, shippingMethod)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

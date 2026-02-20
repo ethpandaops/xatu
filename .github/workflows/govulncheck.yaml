@@ -1,0 +1,46 @@
+name: govulncheck
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.25.x'
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Run govulncheck
+        run: |
+          set +e
+          OUTPUT=$(govulncheck ./... 2>&1)
+          EXIT_CODE=$?
+          set -e
+
+          echo "$OUTPUT"
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo ""
+            echo "No vulnerabilities found"
+            exit 0
+          fi
+
+          # Only GO-2026-4479 (pion/dtls/v2) is expected — it has no fix available.
+          # Check that this is the ONLY vulnerability reported.
+          if echo "$OUTPUT" | grep -q "Your code is affected by 1 vulnerability" && \
+             echo "$OUTPUT" | grep -q "GO-2026-4479"; then
+            echo ""
+            echo "Only known unfixable vulnerability GO-2026-4479 (pion/dtls/v2) found — no fix available"
+            exit 0
+          fi
+
+          echo ""
+          echo "New vulnerabilities found! Please fix them before merging."
+          exit 1

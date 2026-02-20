@@ -9,233 +9,137 @@ concurrency:
   cancel-in-progress: true
 jobs:
   sentry-smoke-test:
-    timeout-minutes: 25
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install dependencies
+      run: |
+        # Install clickhouse client
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+        curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | sudo gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | sudo tee \
+        /etc/apt/sources.list.d/clickhouse.list
+        sudo apt-get update
+        sudo apt-get install -y clickhouse-client
+        clickhouse-client --version
+
+        # Install yq for YAML parsing
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+        yq --version
+    - name: Canary health check on beacon node
+      id: canary
+      run: |
+        BEACON_NODE="https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+
+        echo "Checking beacon node health at $BEACON_NODE..."
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+          -H "Authorization: ${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION_2 }}" \
+          "$BEACON_NODE/eth/v1/node/health" || echo "000")
+
+        if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 400 ]; then
+          echo "::warning::Beacon node unreachable (HTTP $HTTP_CODE). Skipping sentry smoke test."
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "Beacon node is healthy (HTTP $HTTP_CODE)."
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Pull docker compose images in the background
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        docker compose pull &
     - name: Build xatu image
+      if: steps.canary.outputs.skip != 'true'
       run: |
         docker build -t ethpandaops/xatu:local .
         echo "Xatu image is built."
     - name: Build sentry-logs image
+      if: steps.canary.outputs.skip != 'true'
       run: |
         docker build -t ethpandaops/xatu-sentry-logs:local ./sentry-logs
         echo "Sentry-logs image is built."
-    - name: Create Kurtosis config file
-      run: |
-        cat <<EOF > /tmp/network_params.yaml
-          participants:
-            - el_type: geth
-              cl_type: teku
-            - el_type: nethermind
-              cl_type: prysm
-            - el_type: erigon
-              cl_type: lighthouse
-            - el_type: besu
-              cl_type: lighthouse
-            - el_type: reth
-              cl_type: lodestar
-            - el_type: geth
-              cl_type: nimbus
-              cl_extra_params:
-                - --subscribe-all-subnets
-          additional_services: []
-          network_params:
-            genesis_delay: 180
-          xatu_sentry_enabled: true
-          xatu_sentry_params:
-            xatu_server_addr: xatu-server:8080
-            xatu_sentry_image: ethpandaops/xatu:local
-            beacon_subscriptions:
-            - attestation
-            - single_attestation
-            - block
-            - block_gossip
-            - chain_reorg
-            - finalized_checkpoint
-            - head
-            - voluntary_exit
-            - contribution_and_proof
-        <<EOF
     - name: Create sentry-logs directory and log file
+      if: steps.canary.outputs.skip != 'true'
       run: |
         mkdir -p deploy/local/docker-compose/sentry-logs/logs
         chmod 777 deploy/local/docker-compose/sentry-logs/logs
         touch deploy/local/docker-compose/sentry-logs/logs/geth.log
         chmod 666 deploy/local/docker-compose/sentry-logs/logs/geth.log
     - name: Run Xatu stack
-      timeout-minutes: 10
+      if: steps.canary.outputs.skip != 'true'
+      timeout-minutes: 5
       run: |
-        docker compose up --detach --quiet-pull
-        sleep 30
-    - name: Setup kurtosis testnet and run assertoor tests
-      id: kurtosis-setup
-      uses: ethpandaops/kurtosis-assertoor-github-action@5932604b244dbd2ddb811516b516a9094f4d2c2f # v1
-      with:
-        ethereum_package_args: /tmp/network_params.yaml
-        await_assertoor_tests: false
-        enclave_name: xatu
-    - name: Show all kurtosis containers
+        docker compose up --build --detach --quiet-pull
+    - name: Create sentry config
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        NETWORK_NAME=$(yq '.network.name' .github/sentry/seeding.yaml)
+
+        cat <<EOF > /tmp/sentry_config.yaml
+        logging: debug
+        name: sentry-smoke-test
+        labels:
+          ethpandaops: rocks
+
+        ntpServer: time.google.com
+
+        ethereum:
+          beaconNodeAddress: "https://bn-mainnet-lighthouse-geth-001.utility.production.platform.ethpandaops.io"
+          beaconNodeHeaders:
+            Authorization: "AUTH_HEADER"
+          overrideNetworkName: "$NETWORK_NAME"
+          beaconSubscriptions:
+          - head
+          - block
+          - finalized_checkpoint
+
+        beaconCommittees:
+          enabled: false
+
+        proposerDuty:
+          enabled: false
+
+        forkChoice:
+          enabled: false
+
+        attestationData:
+          enabled: false
+
+        outputs:
+          - name: xatu
+            type: xatu
+            config:
+              address: xatu-server:8080
+              tls: false
+              maxQueueSize: 51200
+              batchTimeout: 1s
+              exportTimeout: 30s
+              maxExportBatchSize: 512
+        EOF
+    - name: Set authorization header
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        sed -i 's/AUTH_HEADER/${{ secrets.PLATFORM_UTILITY_NODE_AUTHORIZATION_2 }}/' /tmp/sentry_config.yaml
+    - name: Start sentry
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        docker run -d --network xatu_xatu-net --name xatu-sentry -v /tmp/sentry_config.yaml:/etc/xatu/config.yaml ethpandaops/xatu:local sentry --config /etc/xatu/config.yaml
+    - name: Wait for sentry to start
+      if: steps.canary.outputs.skip != 'true'
+      run: |
+        sleep 5
+        docker logs xatu-sentry
+    - name: Verify ClickHouse has sentry data
+      if: steps.canary.outputs.skip != 'true'
+      timeout-minutes: 7
       env:
-        SERVICES: ${{ steps.kurtosis-setup.outputs.services }}
+        SENTRY_NAME: sentry-smoke-test
       run: |
-        echo $SERVICES
-    - name: Add all xatu-sentry containers to the xatu network
-      run: |
-        for container in $(docker ps --filter name=xatu-sentry --format "{{.Names}}" | grep -v xatu-sentry-logs); do docker network connect xatu_xatu-net $container; echo $container; docker restart $container; done
-    - name: Verify Clickhouse has data from all sentries
-      timeout-minutes: 15
-      run: |
-        echo "Checking Clickhouse for data from all sentries"
-
-        all_sentries=($(kurtosis enclave inspect xatu | grep cl- | grep http | awk '{ print $2 }' | grep -v validator | sed 's/^cl-//'))
-
-        tables=(
-            "beacon_api_eth_v1_events_attestation"
-            "beacon_api_eth_v1_events_block"
-            "beacon_api_eth_v1_events_head"
-        )
-
-        pretty_print() {
-            local message=$1
-            local color=$2
-            local no_color='\033[0m'
-            local green='\033[0;32m'
-            local red='\033[0;31m'
-            local bright_red='\033[1;31m'
-            local yellow='\033[0;33m'
-
-            if [ "$color" == "green" ]; then
-                color=$green
-            elif [ "$color" == "red" ]; then
-                color=$red
-            elif [ "$color" == "bright_red" ]; then
-                color=$bright_red
-            elif [ "$color" == "yellow" ]; then
-                color=$yellow
-            else
-                color=$no_color
-            fi
-
-            echo -e "${color}######################${no_color}"
-            echo -e "${color}      $message      ${no_color}"
-            echo -e "${color}######################${no_color}"
-        }
-
-        print_logs() {
-            for container in $(docker ps --filter name=$1 --format "{{.Names}}"); do
-                echo "Logs for $container:\n\n"
-                docker logs --tail 5 $container
-            done
-        }
-
-        # Track which sentries have exported at least one event
-        declare -A sentry_has_events
-
-        # Wait for each table to exist and have data from at least one sentry
-        for table in "${tables[@]}"; do
-            pretty_print "Waiting for $table to exist and have data..." "none"
-            while true; do
-                # First check if table exists
-                table_exists=$(docker exec xatu-clickhouse-01 clickhouse-client --query "EXISTS TABLE default.$table" 2>/dev/null || echo "0")
-                if [[ "$table_exists" != "1" ]]; then
-                    pretty_print "$table does not exist yet, waiting..." "yellow"
-                    print_logs xatu-server
-                    print_logs vector
-                    sleep 5
-                    continue
-                fi
-
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.$table" 2>/dev/null || echo "0")
-                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
-                    pretty_print "$table has $data_count entries" "green"
-                    break
-                else
-                    pretty_print "$table has no entries yet, waiting..." "yellow"
-                    print_logs xatu-server
-                    print_logs vector
-                    sleep 5
-                fi
-            done
-        done
-
-        # Check each sentry and record which ones have data in any table
-        for sentry in "${all_sentries[@]}"; do
-            pretty_print "Checking sentry $sentry..." "none"
-            for table in "${tables[@]}"; do
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
-                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
-                    pretty_print "$sentry has $data_count entries in $table" "green"
-                    sentry_has_events[$sentry]=1
-                else
-                    pretty_print "$sentry has no entries in $table" "yellow"
-                fi
-            done
-        done
-
-        # Now wait for any sentries that don't have events yet
-        max_retries=60  # 5 minutes max (60 * 5 seconds)
-        retry_count=0
-
-        while true; do
-            all_have_events=true
-            for sentry in "${all_sentries[@]}"; do
-                if [[ -z "${sentry_has_events[$sentry]}" ]]; then
-                    all_have_events=false
-                    # Check all tables for this sentry
-                    for table in "${tables[@]}"; do
-                        data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
-                        if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
-                            pretty_print "$sentry now has $data_count entries in $table" "green"
-                            sentry_has_events[$sentry]=1
-                            break
-                        fi
-                    done
-
-                    if [[ -z "${sentry_has_events[$sentry]}" ]]; then
-                        pretty_print "$sentry still has no events in any table" "yellow"
-                        print_logs $sentry
-                    fi
-                fi
-            done
-
-            if $all_have_events; then
-                pretty_print "All sentries have exported events!" "green"
-                break
-            fi
-
-            retry_count=$((retry_count + 1))
-            if [[ $retry_count -ge $max_retries ]]; then
-                pretty_print "Timeout waiting for all sentries" "bright_red"
-                echo "Sentries without events:"
-                for sentry in "${all_sentries[@]}"; do
-                    if [[ -z "${sentry_has_events[$sentry]}" ]]; then
-                        echo "  - $sentry"
-                        print_logs $sentry
-                    fi
-                done
-                exit 1
-            fi
-
-            sleep 5
-        done
-
-        # Final summary
-        pretty_print "Final Summary" "none"
-        for table in "${tables[@]}"; do
-            echo "=== $table ==="
-            for sentry in "${all_sentries[@]}"; do
-                data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --user=default --query "SELECT COUNT(*) FROM default.$table WHERE meta_client_name = '$sentry'" 2>/dev/null || echo "0")
-                if [[ "$data_count" =~ ^[0-9]+$ ]] && [[ "$data_count" -gt 0 ]]; then
-                    echo "  $sentry: $data_count entries"
-                else
-                    echo "  $sentry: no entries (client may not be synced)"
-                fi
-            done
-        done
-
+        .github/sentry/assert_clickhouse.sh .github/sentry/seeding.yaml
     - name: Verify sentry-logs (execution_block_metrics) pipeline
+      if: steps.canary.outputs.skip != 'true'
       timeout-minutes: 3
       run: |
         echo "Testing sentry-logs execution_block_metrics pipeline"

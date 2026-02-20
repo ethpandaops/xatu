@@ -1,0 +1,23 @@
+# Sentry smoke test configuration
+#
+# This config defines which event types to test in the sentry smoke test.
+# The test connects to a live beacon node and subscribes to real-time events.
+#
+# Only event types that fire frequently enough for CI assertions are included.
+# Events like finalized_checkpoint (~13 min interval) are subscribed to but
+# not gated on, since they're too slow for a smoke test.
+#
+# The assertions verify that data flows through the entire pipeline:
+# Beacon Node -> Sentry -> Xatu Server -> Kafka -> Vector -> ClickHouse
+
+network:
+  name: mainnet
+
+event_types:
+  - name: BEACON_API_ETH_V1_EVENTS_HEAD
+    table: beacon_api_eth_v1_events_head
+    description: "Head events - one per slot (~12s)"
+
+  - name: BEACON_API_ETH_V1_EVENTS_BLOCK
+    table: beacon_api_eth_v1_events_block
+    description: "Block events - most slots"

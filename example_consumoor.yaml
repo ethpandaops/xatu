@@ -1,0 +1,65 @@
+logging: "info"
+metricsAddr: ":9090"
+# pprofAddr: ":6060"
+
+kafka:
+  brokers:
+    - localhost:9092
+  topics:
+    - "^general-.+"
+  consumerGroup: xatu-consumoor-general
+  encoding: json  # switch to "protobuf" after Vector removal
+  # offsetDefault: oldest
+  # fetchMinBytes: 1
+  # fetchWaitMaxMs: 500
+  # maxPartitionFetchBytes: 10485760
+  # sessionTimeoutMs: 30000
+  # heartbeatIntervalMs: 3000
+  commitInterval: 5s      # Kafka offset commit interval
+  # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
+  # rejectedTopic: xatu-consumoor-rejected
+  # tls: false
+  # sasl:
+  #   mechanism: PLAIN
+  #   user: "username"
+  #   password: "password"
+
+clickhouse:
+  dsn: "clickhouse://localhost:9000/default"
+  # chgo:
+  #   queryTimeout: 30s
+  #   maxRetries: 3
+  #   retryBaseDelay: 100ms
+  #   retryMaxDelay: 2s
+  #   maxConns: 8
+  #   minConns: 1
+  #   connMaxLifetime: 1h
+  #   connMaxIdleTime: 10m
+  #   healthCheckPeriod: 30s
+  #   poolMetricsInterval: 15s
+  defaults:
+    batchSize: 200000
+    flushInterval: 1s
+    bufferSize: 200000
+  tables:
+    # Canonical tables default to insertSettings.insert_quorum: auto (majority).
+    # Set insertSettings.insert_quorum explicitly to override that behavior.
+    beacon_api_eth_v1_beacon_committee:
+      batchSize: 1000000
+      bufferSize: 1000000
+      # insertSettings:
+      #   insert_quorum: 2
+      #   insert_quorum_timeout: 60000
+    beacon_api_eth_v1_events_attestation:
+      batchSize: 1000000
+      flushInterval: 5s
+      bufferSize: 1000000
+    # canonical_beacon_block:
+    #   insertSettings:
+    #     insert_quorum: 3
+    #     insert_quorum_timeout: 60000
+
+# Optional: disable specific events (replaces Vector blackhole sinks)
+# disabledEvents:
+#   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE
+#   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2

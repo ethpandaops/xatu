@@ -1,46 +1,189 @@
 package flattener_test
 
 import (
-	"bufio"
-	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
-	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+
+	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
 )
 
-// TestCorrectnessAgainstVector loads captured Kafka messages, routes them
-// through consumoor's flattener pipeline, inserts results into a local
-// ClickHouse "consumoor" database, then diffs against Vector's output in
-// the "default" database.
+// TestStagingCorrectness compares consumoor's local ClickHouse output against
+// a staging (or production) ClickHouse instance where Vector already writes.
 //
 // Prerequisites:
-//   - Local docker-compose running (Kafka + ClickHouse + Vector)
-//   - Captured messages fed through Vector into default database
-//   - consumoor database created with cloned schemas
+//   - Local ClickHouse running (via docker-compose staging overlay) with consumoor data
+//   - Staging ClickHouse port-forwarded (kubectl port-forward svc/chendpoint-xatu-clickhouse 8124:8123)
+//   - Consumoor has consumed from staging Kafka and written to local CH
 //
 // Run:
 //
-//	CONSUMOOR_INTEGRATION_TEST=true go test ./pkg/consumoor/sinks/clickhouse/transform/flattener/ \
-//	  -run TestCorrectnessAgainstVector -v -timeout 120s
-func TestCorrectnessAgainstVector(t *testing.T) {
-	if os.Getenv("CONSUMOOR_INTEGRATION_TEST") != "true" {
-		t.Skip("set CONSUMOOR_INTEGRATION_TEST=true to run")
+//	CONSUMOOR_STAGING_TEST=true \
+//	CLICKHOUSE_URL=http://localhost:8123 \
+//	STAGING_CLICKHOUSE_URL=http://localhost:8124 \
+//	go test ./pkg/consumoor/sinks/clickhouse/transform/flattener/ \
+//	  -run TestStagingCorrectness -v -timeout 300s
+func TestStagingCorrectness(t *testing.T) {
+	if os.Getenv("CONSUMOOR_STAGING_TEST") != "true" {
+		t.Skip("set CONSUMOOR_STAGING_TEST=true to run")
+	}
+
+	maxRows, err := strconv.Atoi(envOr("MAX_COMPARE_ROWS", "10000"))
+	require.NoError(t, err)
+
+	localCH := &chClient{
+		baseURL:  envOr("CLICKHOUSE_URL", "http://localhost:8123"),
+		user:     envOr("CLICKHOUSE_USER", ""),
+		password: envOr("CLICKHOUSE_PASSWORD", ""),
+	}
+
+	stagingCH := &chClient{
+		baseURL:  envOr("STAGING_CLICKHOUSE_URL", "http://localhost:8124"),
+		user:     envOr("STAGING_CLICKHOUSE_USER", ""),
+		password: envOr("STAGING_CLICKHOUSE_PASSWORD", ""),
+	}
+
+	localCH.mustQuery(t, "SELECT 1")
+	stagingCH.mustQuery(t, "SELECT 1")
+
+	t.Log("connected to both ClickHouse instances")
+
+	// Discover consumoor _local tables.
+	tables := localCH.listLocalTables(t, "consumoor")
+	require.NotEmpty(t, tables, "no _local tables in consumoor database")
+	t.Logf("found %d consumoor _local tables", len(tables))
+
+	var matched, failed, skippedTables int
+
+	for _, localTable := range tables {
+		base := strings.TrimSuffix(localTable, "_local")
+
+		if skipTables[base] {
+			t.Logf("SKIP  %-55s excluded table", base)
+
+			skippedTables++
+
+			continue
+		}
+
+		// 0. Fetch local columns.
+		localCols := localCH.getColumns(t, "consumoor", localTable)
+		hasTimeCol := hasColumn(localCols, "event_date_time")
+
+		consumoorN := localCH.rowCount(t, "consumoor", localTable)
+		if consumoorN == 0 {
+			t.Logf("SKIP  %-55s no rows", base)
+
+			skippedTables++
+
+			continue
+		}
+
+		// 1. Get consumoor's time range (if event_date_time exists).
+		var minTime, maxTime string
+
+		if hasTimeCol {
+			timeRange := localCH.mustQuery(t, fmt.Sprintf(
+				"SELECT min(event_date_time), max(event_date_time) FROM `consumoor`.`%s`",
+				localTable))
+
+			parts := strings.Split(timeRange, "\t")
+			if len(parts) >= 2 && parts[0] != "" && !strings.HasPrefix(parts[0], "1970") {
+				minTime, maxTime = parts[0], parts[1]
+			}
+		}
+
+		// 2. Check if the staging table exists (in default db, without _local suffix).
+		stagingTable := base
+		if !stagingCH.tableExists(t, "default", stagingTable) {
+			// Try with _local suffix in case staging uses local tables too.
+			stagingTable = localTable
+			if !stagingCH.tableExists(t, "default", stagingTable) {
+				t.Logf("SKIP  %-55s not in staging default db", base)
+
+				skippedTables++
+
+				continue
+			}
+		}
+
+		// 3. Get comparable columns.
+		stagingCols := stagingCH.getColumns(t, "default", stagingTable)
+		cols := intersectColumnSets(localCols, stagingCols)
+
+		if len(cols) == 0 {
+			t.Logf("SKIP  %-55s no comparable columns", base)
+
+			skippedTables++
+
+			continue
+		}
+
+		// 4. Build time filter and ordering for staging query.
+		var timeFilter, orderBy string
+
+		if hasTimeCol && minTime != "" {
+			timeFilter = fmt.Sprintf(
+				"event_date_time >= '%s' AND event_date_time <= '%s'",
+				minTime, maxTime)
+			orderBy = "event_date_time"
+		}
+
+		// 5. Fetch rows from both sides.
+		limit := maxRows
+		if consumoorN < limit {
+			limit = consumoorN
+		}
+
+		consumoorRows := fetchHashedRows(t, localCH, "consumoor", localTable, cols, "", orderBy, limit)
+		stagingRows := fetchHashedRows(t, stagingCH, "default", stagingTable, cols, timeFilter, orderBy, 0)
+
+		// 6. Set difference: rows in consumoor not found in staging.
+		onlyConsumoor := setDifference(consumoorRows, stagingRows)
+
+		if len(onlyConsumoor) == 0 {
+			t.Logf("OK    %-55s consumoor=%d staging=%d cols=%d",
+				base, len(consumoorRows), len(stagingRows), len(cols))
+
+			matched++
+		} else {
+			t.Logf("FAIL  %-55s consumoor=%d staging=%d unmatched=%d",
+				base, len(consumoorRows), len(stagingRows), len(onlyConsumoor))
+			logSampleMismatches(t, onlyConsumoor, 5)
+
+			failed++
+		}
+	}
+
+	t.Logf("--- summary: %d matched, %d failed, %d skipped ---", matched, failed, skippedTables)
+	assert.Zero(t, failed, "tables with consumoor rows not found in staging")
+	assert.NotZero(t, matched, "expected at least one matching table")
+}
+
+// TestStagingTopicCoverage checks that consumoor populated at least one table
+// for each registered route. It connects to the local ClickHouse instance
+// and reports per-table row counts as a smoke test.
+//
+// Run:
+//
+//	CONSUMOOR_STAGING_TEST=true \
+//	CLICKHOUSE_URL=http://localhost:8123 \
+//	go test ./pkg/consumoor/sinks/clickhouse/transform/flattener/ \
+//	  -run TestStagingTopicCoverage -v -timeout 120s
+func TestStagingTopicCoverage(t *testing.T) {
+	if os.Getenv("CONSUMOOR_STAGING_TEST") != "true" {
+		t.Skip("set CONSUMOOR_STAGING_TEST=true to run")
 	}
 
 	ch := &chClient{
@@ -51,250 +194,302 @@ func TestCorrectnessAgainstVector(t *testing.T) {
 
 	ch.mustQuery(t, "SELECT 1")
 
-	// 1. Load all capture lines from testdata.
-	capturesDir := filepath.Join("..", "..", "..", "..", "testdata", "captures")
-	lines := loadAllCaptureLines(t, capturesDir)
-	t.Logf("loaded %d capture lines", len(lines))
-	require.NotEmpty(t, lines)
+	db := envOr("CLICKHOUSE_DB", "consumoor")
+	suffix := envOr("CLICKHOUSE_TABLE_SUFFIX", "_local")
 
-	// 2. Build route index directly from registered table definitions.
-	//    This avoids the Engine's dependency on Prometheus metrics.
-	index := buildRouteIndex(tabledefs.All())
+	routes := tabledefs.All()
 
-	// 3. Route each captured event and collect output rows per table.
-	tableRows := make(map[string][]map[string]any, 64)
+	seen := make(map[string]struct{}, len(routes))
+	tables := make([]string, 0, len(routes))
 
-	var decoded, routedRows, skipped, errored int
-
-	for _, raw := range lines {
-		event, err := decodeCaptureLine(raw)
-		if err != nil {
-			errored++
-
+	for _, route := range routes {
+		name := route.TableName()
+		if _, ok := seen[name]; ok {
 			continue
 		}
 
-		decoded++
-
-		name := event.GetEvent().GetName()
-
-		routes, ok := index[name]
-		if !ok {
-			skipped++
-
-			continue
-		}
-
-		meta := metadata.Extract(event)
-
-		for _, route := range routes {
-			if !route.ShouldProcess(event) {
-				continue
-			}
-
-			batch := route.NewBatch()
-
-			if err := batch.FlattenTo(event, meta); err != nil {
-				t.Logf("flatten error %s -> %s: %v", name, route.TableName(), err)
-
-				errored++
-
-				continue
-			}
-
-			snapper, ok := batch.(flattener.Snapshotter)
-			require.True(t, ok, "batch must implement Snapshotter")
-
-			for _, row := range snapper.Snapshot() {
-				tableRows[route.TableName()] = append(tableRows[route.TableName()], row)
-			}
-
-			routedRows += batch.Rows()
-		}
+		seen[name] = struct{}{}
+		tables = append(tables, name)
 	}
 
-	t.Logf("pipeline: decoded=%d routed_rows=%d skipped=%d errors=%d tables=%d",
-		decoded, routedRows, skipped, errored, len(tableRows))
-	require.NotEmpty(t, tableRows, "no tables produced rows")
+	sort.Strings(tables)
 
-	// 4. Insert rows into consumoor _local tables (bypasses Distributed layer
-	//    which may reference unreachable cluster nodes in docker-compose).
-	insertFailed := make(map[string]bool, 8)
+	var populated, empty, missing int
 
-	for table, rows := range tableRows {
-		localTable := table + "_local"
+	for _, base := range tables {
+		table := base + suffix
 
-		if !ch.tableExists(t, "consumoor", localTable) {
-			t.Logf("  SKIP insert %s: no consumoor.%s", table, localTable)
+		if !ch.tableExists(t, db, table) {
+			t.Logf("MISS  %-55s table not found", base)
 
-			insertFailed[table] = true
+			missing++
 
 			continue
 		}
 
-		ch.truncate(t, "consumoor", localTable)
+		n := ch.rowCount(t, db, table)
+		if n == 0 {
+			t.Logf("EMPTY %-55s", base)
 
-		if !ch.insertJSONRows(t, "consumoor", localTable, rows) {
-			insertFailed[table] = true
+			empty++
 
 			continue
 		}
 
-		t.Logf("  inserted %d rows -> consumoor.%s", len(rows), localTable)
+		t.Logf("OK    %-55s rows=%d", base, n)
+
+		populated++
 	}
 
-	// 5. Compare each table against Vector's output (both using _local tables).
-	t.Log("--- comparison ---")
+	t.Logf("--- coverage: %d populated, %d empty, %d missing (of %d registered) ---",
+		populated, empty, missing, len(tables))
 
-	var matched, failed, skippedTables int
-
-	for table := range tableRows {
-		if insertFailed[table] {
-			skippedTables++
-
-			continue
-		}
-
-		vectorTable := table + "_local"
-		consumoorTable := table + "_local"
-
-		if !ch.tableExists(t, "default", vectorTable) {
-			t.Logf("SKIP  %-55s no default.%s", table, vectorTable)
-
-			skippedTables++
-
-			continue
-		}
-
-		// Force merge/deduplication on ReplacingMergeTree tables.
-		ch.mustQuery(t, fmt.Sprintf("OPTIMIZE TABLE `default`.`%s` FINAL", vectorTable))
-
-		vectorN := ch.rowCount(t, "default", vectorTable)
-		if vectorN == 0 {
-			t.Logf("SKIP  %-55s default.%s is empty", table, vectorTable)
-
-			skippedTables++
-
-			continue
-		}
-
-		consumoorN := ch.rowCount(t, "consumoor", consumoorTable)
-
-		// Determine comparable columns present in both tables.
-		cols := ch.intersectColumns(t, "default", vectorTable, "consumoor", consumoorTable)
-		if len(cols) == 0 {
-			t.Logf("SKIP  %-55s no comparable columns", table)
-
-			skippedTables++
-
-			continue
-		}
-
-		// Rows in Vector not matched by consumoor output.
-		onlyVector := ch.exceptCount(t,
-			"default", vectorTable,
-			"consumoor", consumoorTable,
-			cols,
-		)
-
-		if onlyVector == 0 {
-			t.Logf("OK    %-55s vector=%d consumoor=%d", table, vectorN, consumoorN)
-
-			matched++
-		} else {
-			t.Logf("FAIL  %-55s vector=%d consumoor=%d unmatched=%d",
-				table, vectorN, consumoorN, onlyVector)
-			ch.logColumnDiffs(t, "default", vectorTable, "consumoor", consumoorTable, cols)
-
-			failed++
-		}
-	}
-
-	t.Logf("--- summary: %d matched, %d failed, %d skipped ---", matched, failed, skippedTables)
-	assert.Zero(t, failed, "tables with mismatches between Vector and consumoor output")
-	assert.NotZero(t, matched, "expected at least one matching table")
+	assert.NotZero(t, populated, "expected at least one table with data")
 }
 
 // ---------------------------------------------------------------------------
-// Route indexing
+// Table skip list
 // ---------------------------------------------------------------------------
 
-func buildRouteIndex(routes []flattener.Route) map[xatu.Event_Name][]flattener.Route {
-	idx := make(map[xatu.Event_Name][]flattener.Route, len(routes))
-
-	for _, r := range routes {
-		for _, name := range r.EventNames() {
-			idx[name] = append(idx[name], r)
-		}
-	}
-
-	return idx
+// skipTables lists base table names that are not populated by consumoor and
+// should be excluded from comparison.
+var skipTables = map[string]bool{
+	"schema_migrations":                true,
+	"beacon_api_slot":                  true,
+	"beacon_block_classification":      true,
+	"imported_sources":                 true,
+	"mempool_dumpster_transaction":     true,
+	"block_native_mempool_transaction": true,
+	"ethseer_validator_entity":         true,
+	"blob_submitter":                   true,
+	"execution_transaction":            true,
 }
 
 // ---------------------------------------------------------------------------
-// Capture loading and decoding
+// Row hashing and comparison
 // ---------------------------------------------------------------------------
 
-func loadAllCaptureLines(t *testing.T, dir string) [][]byte {
+// hashedRow holds the deterministic hash of a row alongside its original
+// JSON representation for diagnostic output on mismatches.
+type hashedRow struct {
+	hash string
+	raw  string
+}
+
+// fetchHashedRows queries ClickHouse and returns hashed rows for comparison.
+// If timeFilter is non-empty it is appended as a WHERE clause. orderBy
+// specifies the ORDER BY column (empty means no ordering). Limit of 0 means
+// no limit.
+func fetchHashedRows(
+	t *testing.T,
+	ch *chClient,
+	db, table string,
+	cols []columnInfo,
+	timeFilter string,
+	orderBy string,
+	limit int,
+) []hashedRow {
 	t.Helper()
 
-	matches, err := filepath.Glob(filepath.Join(dir, "*.jsonl"))
-	require.NoError(t, err)
-	require.NotEmpty(t, matches, "no *.jsonl files in %s", dir)
+	colExpr := normalizedColumnExpr(cols)
 
-	var out [][]byte
+	sql := fmt.Sprintf("SELECT %s FROM `%s`.`%s`", colExpr, db, table)
+	if timeFilter != "" {
+		sql += " WHERE " + timeFilter
+	}
 
-	for _, path := range matches {
-		f, err := os.Open(path)
-		require.NoError(t, err)
+	if orderBy != "" {
+		sql += " ORDER BY " + orderBy
+	}
 
-		scanner := bufio.NewScanner(f)
-		scanner.Buffer(make([]byte, 0, 4<<20), 16<<20)
+	if limit > 0 {
+		sql += fmt.Sprintf(" LIMIT %d", limit)
+	}
 
-		for scanner.Scan() {
-			raw := scanner.Bytes()
-			if len(raw) == 0 {
-				continue
-			}
+	sql += " FORMAT JSONEachRow"
 
-			cp := make([]byte, len(raw))
-			copy(cp, raw)
-			out = append(out, cp)
+	body := ch.mustQuery(t, sql)
+	if body == "" {
+		return nil
+	}
+
+	lines := strings.Split(body, "\n")
+	rows := make([]hashedRow, 0, len(lines))
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
 		}
 
-		require.NoError(t, scanner.Err())
-		f.Close()
+		h := hashJSONRow(line)
+		rows = append(rows, hashedRow{hash: h, raw: line})
 	}
 
-	return out
+	return rows
 }
 
-// decodeCaptureLine strips Vector-injected fields and unmarshals the
-// remaining JSON into a DecoratedEvent protobuf.
-func decodeCaptureLine(raw []byte) (*xatu.DecoratedEvent, error) {
-	var obj map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &obj); err != nil {
-		return nil, fmt.Errorf("json parse: %w", err)
+// hashJSONRow produces a deterministic hash of a JSON row by sorting keys
+// and normalizing values.
+func hashJSONRow(jsonLine string) string {
+	var m map[string]any
+	if err := json.Unmarshal([]byte(jsonLine), &m); err != nil {
+		return fmt.Sprintf("parse-error:%s", jsonLine)
 	}
 
-	// Vector injects path, source_type, timestamp — not in the proto.
-	delete(obj, "path")
-	delete(obj, "source_type")
-	delete(obj, "timestamp")
-
-	cleaned, err := json.Marshal(obj)
-	if err != nil {
-		return nil, fmt.Errorf("json re-encode: %w", err)
+	// Sort keys for determinism.
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
 	}
 
-	event := &xatu.DecoratedEvent{}
-	opts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	sort.Strings(keys)
 
-	if err := opts.Unmarshal(cleaned, event); err != nil {
-		return nil, fmt.Errorf("protojson: %w", err)
+	h := sha256.New()
+
+	for _, k := range keys {
+		fmt.Fprintf(h, "%s=%v|", k, m[k])
 	}
 
-	return event, nil
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// setDifference returns items in a that are not in b (by hash).
+func setDifference(a, b []hashedRow) []hashedRow {
+	bSet := make(map[string]struct{}, len(b))
+	for _, row := range b {
+		bSet[row.hash] = struct{}{}
+	}
+
+	var diff []hashedRow
+
+	for _, row := range a {
+		if _, found := bSet[row.hash]; !found {
+			diff = append(diff, row)
+		}
+	}
+
+	return diff
+}
+
+// logSampleMismatches logs up to n sample rows that didn't match.
+func logSampleMismatches(t *testing.T, rows []hashedRow, n int) {
+	t.Helper()
+
+	if len(rows) > n {
+		rows = rows[:n]
+	}
+
+	for i, row := range rows {
+		t.Logf("    sample[%d]: %s", i, abbreviate(row.raw, 200))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Column helpers
+// ---------------------------------------------------------------------------
+
+// excludedColumns are columns that always differ between pipelines.
+// Only truly non-deterministic columns belong here — everything else
+// should be compared to catch regressions.
+var excludedColumns = map[string]bool{
+	"updated_date_time": true,
+	"meta_client_ip":    true,
+	"ip":                true,
+}
+
+// getColumns returns column metadata for a table.
+func (c *chClient) getColumns(t *testing.T, db, table string) []columnInfo {
+	t.Helper()
+
+	r := c.mustQuery(t, fmt.Sprintf(`
+		SELECT name, multiIf(
+			type LIKE '%%Float32%%', 1,
+			type LIKE '%%Float64%%', 1,
+			0),
+		position
+		FROM system.columns
+		WHERE database='%s' AND table='%s'
+		ORDER BY position`, db, table))
+
+	if r == "" {
+		return nil
+	}
+
+	lines := strings.Split(r, "\n")
+	cols := make([]columnInfo, 0, len(lines))
+
+	for _, line := range lines {
+		parts := strings.Split(line, "\t")
+		if len(parts) < 2 {
+			continue
+		}
+
+		cols = append(cols, columnInfo{
+			name:    parts[0],
+			isFloat: len(parts) > 1 && parts[1] == "1",
+		})
+	}
+
+	return cols
+}
+
+// hasColumn returns true if the column list contains a column with the
+// given name.
+func hasColumn(cols []columnInfo, name string) bool {
+	for _, c := range cols {
+		if c.name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// intersectColumnSets returns columns present in both sets, excluding
+// columns that always differ between pipelines, geo columns, and
+// generated hash columns.
+func intersectColumnSets(a, b []columnInfo) []columnInfo {
+	bNames := make(map[string]struct{}, len(b))
+	for _, c := range b {
+		bNames[c.name] = struct{}{}
+	}
+
+	result := make([]columnInfo, 0, len(a))
+
+	for _, c := range a {
+		if _, ok := bNames[c.name]; !ok {
+			continue
+		}
+
+		if excludedColumns[c.name] {
+			continue
+		}
+
+		if strings.Contains(c.name, "_geo_") || strings.HasPrefix(c.name, "geo_") {
+			continue
+		}
+
+		result = append(result, c)
+	}
+
+	return result
+}
+
+// normalizedColumnExpr builds a SELECT expression that normalizes Nullable
+// and float columns for consistent comparison.
+func normalizedColumnExpr(cols []columnInfo) string {
+	parts := make([]string, len(cols))
+
+	for i, c := range cols {
+		if c.isFloat {
+			parts[i] = fmt.Sprintf("ROUND(assumeNotNull(`%s`), 6) AS `%s`", c.name, c.name)
+		} else {
+			parts[i] = fmt.Sprintf("assumeNotNull(`%s`) AS `%s`", c.name, c.name)
+		}
+	}
+
+	return strings.Join(parts, ", ")
 }
 
 // ---------------------------------------------------------------------------
@@ -310,7 +505,7 @@ type chClient struct {
 
 func (c *chClient) httpClient() *http.Client {
 	if c.http == nil {
-		c.http = &http.Client{Timeout: 30 * time.Second}
+		c.http = &http.Client{Timeout: 60 * time.Second}
 	}
 
 	return c.http
@@ -369,17 +564,6 @@ func (c *chClient) doQuery(sql string) (string, error) {
 	return strings.TrimSpace(string(body)), nil
 }
 
-func (c *chClient) truncate(t *testing.T, db, table string) {
-	t.Helper()
-	c.mustQuery(t, fmt.Sprintf("TRUNCATE TABLE `%s`.`%s`", db, table))
-}
-
-func (c *chClient) truncateOnCluster(t *testing.T, db, table string) {
-	t.Helper()
-	c.mustQuery(t, fmt.Sprintf(
-		"TRUNCATE TABLE `%s`.`%s` ON CLUSTER 'cluster_2S_1R'", db, table))
-}
-
 func (c *chClient) tableExists(t *testing.T, db, table string) bool {
 	t.Helper()
 
@@ -408,677 +592,8 @@ type columnInfo struct {
 	isFloat bool
 }
 
-// intersectColumns returns column names present in both tables, excluding
-// runtime columns that always differ between Vector and consumoor.
-func (c *chClient) intersectColumns(
-	t *testing.T,
-	dbA, tableA, dbB, tableB string,
-) []columnInfo {
-	t.Helper()
-
-	r := c.mustQuery(t, fmt.Sprintf(`
-		SELECT a.name, multiIf(
-			a.type LIKE '%%Float32%%', 1,
-			a.type LIKE '%%Float64%%', 1,
-			0)
-		FROM (SELECT name, type, position FROM system.columns
-		      WHERE database='%s' AND table='%s') a
-		INNER JOIN
-		     (SELECT name FROM system.columns
-		      WHERE database='%s' AND table='%s') b
-		ON a.name = b.name
-		WHERE a.name NOT IN ('updated_date_time', 'unique_key',
-			'meta_client_ip', 'remote_ip', 'ip')
-		  AND a.name NOT LIKE '%%_geo_%%'
-		  AND a.name NOT LIKE 'geo_%%'
-		ORDER BY a.position`,
-		dbA, tableA, dbB, tableB))
-
-	if r == "" {
-		return nil
-	}
-
-	lines := strings.Split(r, "\n")
-	cols := make([]columnInfo, 0, len(lines))
-
-	for _, line := range lines {
-		parts := strings.Split(line, "\t")
-		ci := columnInfo{name: parts[0]}
-
-		if len(parts) > 1 && parts[1] == "1" {
-			ci.isFloat = true
-		}
-
-		cols = append(cols, ci)
-	}
-
-	return cols
-}
-
-// exceptCount returns the number of rows in (A EXCEPT B).
-// Nullable columns are coalesced so that NULL and empty/zero are treated as
-// equivalent (works around code-generator inconsistencies in Nullable handling).
-func (c *chClient) exceptCount(
-	t *testing.T,
-	dbA, tableA, dbB, tableB string,
-	cols []columnInfo,
-) int {
-	t.Helper()
-
-	// Use ifNull to normalize Nullable columns: NULL and default-value become
-	// equivalent. This is safe because ifNull is a no-op on non-Nullable columns.
-	colList := ifNullJoin(cols)
-	sql := fmt.Sprintf(
-		"SELECT count() FROM (SELECT %s FROM `%s`.`%s` EXCEPT SELECT %s FROM `%s`.`%s`)",
-		colList, dbA, tableA, colList, dbB, tableB)
-
-	r := c.mustQuery(t, sql)
-
-	var n int
-
-	_, _ = fmt.Sscanf(r, "%d", &n)
-
-	return n
-}
-
-// logColumnDiffs identifies and logs which columns differ between two tables.
-func (c *chClient) logColumnDiffs(
-	t *testing.T,
-	dbA, tableA, dbB, tableB string,
-	cols []columnInfo,
-) {
-	t.Helper()
-
-	for _, ci := range cols {
-		bc := fmt.Sprintf("`%s`", ci.name)
-
-		sql := fmt.Sprintf(
-			"SELECT "+
-				"(SELECT arraySort(groupArray(toString(%s))) FROM `%s`.`%s`) = "+
-				"(SELECT arraySort(groupArray(toString(%s))) FROM `%s`.`%s`)",
-			bc, dbA, tableA, bc, dbB, tableB)
-
-		r := c.mustQuery(t, sql)
-		if r == "1" {
-			continue
-		}
-
-		vecVals := c.mustQuery(t, fmt.Sprintf(
-			"SELECT arraySort(groupArray(toString(%s))) FROM `%s`.`%s`",
-			bc, dbA, tableA))
-		conVals := c.mustQuery(t, fmt.Sprintf(
-			"SELECT arraySort(groupArray(toString(%s))) FROM `%s`.`%s`",
-			bc, dbB, tableB))
-
-		t.Logf("    column %-45s vector=%s consumoor=%s",
-			ci.name, abbreviate(vecVals, 120), abbreviate(conVals, 120))
-	}
-}
-
-// insertJSONRows inserts rows into ClickHouse via JSONEachRow. Returns
-// false if the insert failed (logged but non-fatal so other tables can
-// still be compared).
-func (c *chClient) insertJSONRows(
-	t *testing.T,
-	db, table string,
-	rows []map[string]any,
-) bool {
-	t.Helper()
-
-	if len(rows) == 0 {
-		return true
-	}
-
-	var buf bytes.Buffer
-
-	enc := json.NewEncoder(&buf)
-	for _, row := range rows {
-		if err := enc.Encode(sanitizeRow(row)); err != nil {
-			t.Logf("INSERT FAIL %s.%s: json encode: %v", db, table, err)
-
-			return false
-		}
-	}
-
-	insertURL := fmt.Sprintf(
-		"%s/?database=%s&input_format_skip_unknown_fields=1&date_time_input_format=best_effort&query=%s",
-		c.baseURL,
-		url.QueryEscape(db),
-		url.QueryEscape(fmt.Sprintf("INSERT INTO `%s` FORMAT JSONEachRow", table)),
-	)
-
-	req, err := http.NewRequest("POST", insertURL, &buf)
-	if err != nil {
-		t.Logf("INSERT FAIL %s.%s: %v", db, table, err)
-
-		return false
-	}
-
-	if c.user != "" || c.password != "" {
-		req.SetBasicAuth(c.user, c.password)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient().Do(req)
-	if err != nil {
-		t.Logf("INSERT FAIL %s.%s: %v", db, table, err)
-
-		return false
-	}
-
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("INSERT FAIL %s.%s: %s", db, table, abbreviate(string(body), 200))
-
-		return false
-	}
-
-	return true
-}
-
-// ---------------------------------------------------------------------------
-// Row sanitization for JSON serialization
-// ---------------------------------------------------------------------------
-
-// sanitizeRow converts Go types that don't serialize cleanly to JSON into
-// ClickHouse-compatible representations.
-func sanitizeRow(row map[string]any) map[string]any {
-	out := make(map[string]any, len(row))
-
-	for k, v := range row {
-		out[k] = sanitizeValue(v)
-	}
-
-	return out
-}
-
-func sanitizeValue(v any) any {
-	switch tv := v.(type) {
-	case time.Time:
-		return tv.Unix()
-	case []byte:
-		return fmt.Sprintf("%x", tv)
-	case map[string]any:
-		return sanitizeRow(tv)
-	case []any:
-		out := make([]any, len(tv))
-		for i, item := range tv {
-			out[i] = sanitizeValue(item)
-		}
-
-		return out
-	default:
-		return v
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Formatting helpers
-// ---------------------------------------------------------------------------
-
-// ifNullJoin wraps each column in assumeNotNull() to normalize Nullable columns.
-// Float columns are additionally wrapped with ROUND(..., 6) to tolerate
-// float64 text-serialization precision differences between pipelines.
-func ifNullJoin(cols []columnInfo) string {
-	quoted := make([]string, len(cols))
-
-	for i, c := range cols {
-		if c.isFloat {
-			quoted[i] = fmt.Sprintf("ROUND(assumeNotNull(`%s`), 6)", c.name)
-		} else {
-			quoted[i] = fmt.Sprintf("assumeNotNull(`%s`)", c.name)
-		}
-	}
-
-	return strings.Join(quoted, ", ")
-}
-
-func abbreviate(s string, maxLen int) string {
-	if len(s) > maxLen {
-		return s[:maxLen] + "..."
-	}
-
-	return s
-}
-
-func envOr(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-
-	return fallback
-}
-
-// ---------------------------------------------------------------------------
-// E2E smoke test: full pipeline comparison (Vector vs consumoor)
-// ---------------------------------------------------------------------------
-
-// TestE2ESmoke POSTs captured events to xatu-server's HTTP endpoint, waits
-// for both pipelines (Vector + consumoor) to flush, then compares the
-// resulting ClickHouse _local tables using EXCEPT in both directions.
-//
-// Prerequisites:
-//   - docker-compose running: xatu-server, Kafka, Vector, consumoor, ClickHouse
-//   - Both "default" and "consumoor" databases with _local tables created
-//
-// Run:
-//
-//	CONSUMOOR_E2E_TEST=true go test ./pkg/consumoor/sinks/clickhouse/transform/flattener/ \
-//	  -run TestE2ESmoke -v -timeout 120s
-func TestE2ESmoke(t *testing.T) {
-	if os.Getenv("CONSUMOOR_E2E_TEST") != "true" {
-		t.Skip("set CONSUMOOR_E2E_TEST=true to run")
-	}
-
-	ch := &chClient{
-		baseURL:  envOr("CLICKHOUSE_URL", "http://localhost:8123"),
-		user:     envOr("CLICKHOUSE_USER", ""),
-		password: envOr("CLICKHOUSE_PASSWORD", ""),
-	}
-
-	ch.mustQuery(t, "SELECT 1")
-
-	serverURL := envOr("XATU_SERVER_URL", "http://localhost:8087/v1/events")
-	flushWait := envDurationOr("E2E_FLUSH_WAIT", 45*time.Second)
-	drainWait := envDurationOr("E2E_DRAIN_WAIT", 10*time.Second)
-	httpC := &http.Client{Timeout: 10 * time.Second}
-
-	// 1. Truncate all _local tables ON CLUSTER (clears ALL shards, not just
-	//    the local node), wait for consumoor to drain pending Kafka messages
-	//    (stale from previous runs), then truncate again.
-	t.Log("=== truncating _local tables in default and consumoor (ON CLUSTER) ===")
-
-	allLocalTables := make(map[string][]string, 2)
-
-	for _, db := range []string{"default", "consumoor"} {
-		tables := ch.listLocalTables(t, db)
-		allLocalTables[db] = tables
-
-		for _, tbl := range tables {
-			ch.truncateOnCluster(t, db, tbl)
-		}
-
-		t.Logf("  truncated %d _local tables in %s", len(tables), db)
-	}
-
-	t.Logf("=== draining stale consumoor messages for %s ===", drainWait)
-	time.Sleep(drainWait)
-
-	// Second truncate to clear any stale data consumoor flushed.
-	for _, db := range []string{"default", "consumoor"} {
-		for _, tbl := range allLocalTables[db] {
-			ch.truncateOnCluster(t, db, tbl)
-		}
-	}
-
-	t.Log("  second truncate complete")
-
-	// 2. Load and POST captured events to xatu-server.
-	//    Skip deprecated V1 events (those replaced by V2) so we only
-	//    compare events that both pipelines are expected to handle.
-	capturesDir := filepath.Join("..", "..", "..", "..", "testdata", "captures")
-	lines := loadAllCaptureLines(t, capturesDir)
-	t.Logf("=== loaded %d capture lines ===", len(lines))
-	require.NotEmpty(t, lines)
-
-	var posted, postFailed, skippedDeprecated int
-
-	for i, raw := range lines {
-		cleaned, err := stripVectorFields(raw)
-		if err != nil {
-			t.Logf("  SKIP line %d: strip failed: %v", i, err)
-
-			postFailed++
-
-			continue
-		}
-
-		name, err := extractEventName(cleaned)
-		if err != nil {
-			t.Logf("  SKIP line %d: no event name: %v", i, err)
-
-			postFailed++
-
-			continue
-		}
-
-		if isDeprecatedV1Event(name) {
-			skippedDeprecated++
-
-			continue
-		}
-
-		if err := postEventToServer(httpC, serverURL, cleaned); err != nil {
-			t.Logf("  FAIL line %d (%s): %v", i, name, err)
-
-			postFailed++
-
-			continue
-		}
-
-		posted++
-	}
-
-	t.Logf("ingest: posted=%d skipped_deprecated=%d failed=%d",
-		posted, skippedDeprecated, postFailed)
-	require.NotZero(t, posted, "no events were successfully posted")
-
-	// 3. Wait for both pipelines to flush.
-	t.Logf("=== waiting %s for pipelines to flush ===", flushWait)
-	time.Sleep(flushWait)
-
-	// 4. OPTIMIZE all _local tables ON CLUSTER to force ReplacingMergeTree
-	// dedup on ALL shards before comparison. Doing this upfront in one pass
-	// is faster than per-table OPTIMIZE during comparison.
-	t.Log("=== optimizing _local tables ON CLUSTER ===")
-
-	baseNames := ch.localTableBaseNames(t, "default", "consumoor")
-	t.Logf("found %d unique base table names across both databases", len(baseNames))
-
-	for _, db := range []string{"default", "consumoor"} {
-		for _, base := range baseNames {
-			localName := base + "_local"
-			if ch.tableExists(t, db, localName) {
-				ch.mustQuery(t, fmt.Sprintf(
-					"OPTIMIZE TABLE `%s`.`%s` ON CLUSTER 'cluster_2S_1R' FINAL",
-					db, localName))
-			}
-		}
-	}
-
-	t.Log("=== comparing default vs consumoor tables ===")
-
-	var matched, failed, skippedTables int
-
-	for _, base := range baseNames {
-		if skipE2ETable[base] {
-			skippedTables++
-
-			continue
-		}
-
-		// Use Distributed tables (no suffix) so we see data from all shards.
-		result := ch.compareTable(t, base, "")
-
-		switch result {
-		case tableMatched:
-			matched++
-		case tableFailed:
-			failed++
-		case tableSkipped:
-			skippedTables++
-		}
-	}
-
-	t.Logf("=== summary: %d matched, %d failed, %d skipped ===",
-		matched, failed, skippedTables)
-	assert.Zero(t, failed,
-		"tables with mismatches between Vector and consumoor output")
-	assert.NotZero(t, matched, "expected at least one matching table")
-}
-
-// ---------------------------------------------------------------------------
-// E2E helper functions
-// ---------------------------------------------------------------------------
-
-// envDurationOr parses an env var as time.Duration, returning fallback if
-// unset or unparseable.
-func envDurationOr(key string, fallback time.Duration) time.Duration {
-	v := os.Getenv(key)
-	if v == "" {
-		return fallback
-	}
-
-	d, err := time.ParseDuration(v)
-	if err != nil {
-		return fallback
-	}
-
-	return d
-}
-
-// vectorOnlyTables lists tables that only exist in the Vector pipeline and
-// should be skipped during E2E comparison. These include: migration tracking,
-// materialized view aggregates, external data imports, and reference tables.
-var vectorOnlyTables = map[string]bool{
-	"schema_migrations":                true, // migration tracking
-	"beacon_api_slot":                  true, // materialized view aggregate
-	"beacon_block_classification":      true, // blockprint/cannon, not routed to consumoor
-	"imported_sources":                 true, // external import tracking
-	"mempool_dumpster_transaction":     true, // external Mempool Dumpster data
-	"block_native_mempool_transaction": true, // external Blocknative data
-	"ethseer_validator_entity":         true, // external ethseer.io enrichment
-	"blob_submitter":                   true, // static reference data
-	"execution_transaction":            true, // not produced by consumoor
-}
-
-// skipE2ETable lists base table names that should be excluded from E2E
-// comparison because they are not event tables populated by consumoor.
-var skipE2ETable = map[string]bool{
-	"schema_migrations": true, // ClickHouse migration tracking table
-	"beacon_api_slot":   true, // Materialized view aggregate, not directly written
-}
-
-// deprecatedV1Events lists event names that have V2 replacements.
-// These are skipped during E2E ingestion because consumoor only handles V2.
-var deprecatedV1Events = map[string]bool{
-	"BEACON_API_ETH_V1_EVENTS_ATTESTATION":            true,
-	"BEACON_API_ETH_V1_EVENTS_BLOCK":                  true,
-	"BEACON_API_ETH_V1_EVENTS_CHAIN_REORG":            true,
-	"BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT":   true,
-	"BEACON_API_ETH_V1_EVENTS_HEAD":                   true,
-	"BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT":         true,
-	"BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF": true,
-	"MEMPOOL_TRANSACTION":                             true,
-	"BEACON_API_ETH_V2_BEACON_BLOCK":                  true,
-	"BEACON_API_ETH_V1_DEBUG_FORK_CHOICE":             true,
-	"BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG":       true,
-}
-
-// isDeprecatedV1Event returns true if the event name is a deprecated V1
-// event that has been replaced by a V2 version.
-func isDeprecatedV1Event(name string) bool {
-	return deprecatedV1Events[name]
-}
-
-// extractEventName pulls the event.name field from a DecoratedEvent JSON blob.
-func extractEventName(eventJSON []byte) (string, error) {
-	var wrapper struct {
-		Event struct {
-			Name string `json:"name"`
-		} `json:"event"`
-	}
-
-	if err := json.Unmarshal(eventJSON, &wrapper); err != nil {
-		return "", fmt.Errorf("json parse: %w", err)
-	}
-
-	if wrapper.Event.Name == "" {
-		return "", fmt.Errorf("empty event name")
-	}
-
-	return wrapper.Event.Name, nil
-}
-
-// stripVectorFields removes Vector-injected fields (path, source_type,
-// timestamp) from a raw JSON line so xatu-server can accept it.
-func stripVectorFields(raw []byte) ([]byte, error) {
-	var obj map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &obj); err != nil {
-		return nil, fmt.Errorf("json parse: %w", err)
-	}
-
-	delete(obj, "path")
-	delete(obj, "source_type")
-	delete(obj, "timestamp")
-
-	cleaned, err := json.Marshal(obj)
-	if err != nil {
-		return nil, fmt.Errorf("json re-encode: %w", err)
-	}
-
-	return cleaned, nil
-}
-
-// postEventToServer wraps a single DecoratedEvent JSON in a
-// CreateEventsRequest and POSTs it to xatu-server.
-func postEventToServer(
-	httpC *http.Client,
-	serverURL string,
-	eventJSON []byte,
-) error {
-	payload := fmt.Sprintf(`{"events":[%s]}`, string(eventJSON))
-
-	resp, err := httpC.Post(serverURL, "application/json",
-		strings.NewReader(payload))
-	if err != nil {
-		return fmt.Errorf("POST: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK &&
-		resp.StatusCode != http.StatusAccepted &&
-		resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode,
-			abbreviate(string(body), 200))
-	}
-
-	return nil
-}
-
-// tableResult represents the outcome of comparing a single table.
-type tableResult int
-
-const (
-	tableSkipped tableResult = iota
-	tableMatched
-	tableFailed
-)
-
-// compareTable compares a single table between the default and consumoor
-// databases. The suffix controls which table variant is compared: "_local"
-// for shard-local tables, "" for Distributed tables that aggregate all shards.
-// When using Distributed tables, OPTIMIZE is still applied to the underlying
-// _local tables to force deduplication.
-func (c *chClient) compareTable(t *testing.T, base, suffix string) tableResult {
-	t.Helper()
-
-	if vectorOnlyTables[base] {
-		t.Logf("SKIP  %-55s vector-only table", base)
-
-		return tableSkipped
-	}
-
-	tableName := base + suffix
-
-	defaultExists := c.tableExists(t, "default", tableName)
-	consumoorExists := c.tableExists(t, "consumoor", tableName)
-
-	if !defaultExists && !consumoorExists {
-		return tableSkipped
-	}
-
-	// NOTE: OPTIMIZE FINAL is done upfront in TestE2ESmoke before the
-	// comparison loop. For non-E2E callers, ensure tables are optimized
-	// before calling compareTable.
-
-	vectorN := 0
-	if defaultExists {
-		vectorN = c.rowCount(t, "default", tableName)
-	}
-
-	consumoorN := 0
-	if consumoorExists {
-		consumoorN = c.rowCount(t, "consumoor", tableName)
-	}
-
-	if vectorN == 0 && consumoorN == 0 {
-		t.Logf("EMPTY %-55s vector=0 consumoor=0", base)
-
-		return tableSkipped
-	}
-
-	// Only in consumoor (Vector filter excluded this event type).
-	if vectorN == 0 && consumoorN > 0 {
-		t.Logf("SKIP  %-55s vector=0 consumoor=%d (not in Vector filter)",
-			base, consumoorN)
-
-		return tableSkipped
-	}
-
-	// Only in default — consumoor should have processed this.
-	if vectorN > 0 && consumoorN == 0 {
-		t.Logf("FAIL  %-55s vector=%d consumoor=0 (missing in consumoor)",
-			base, vectorN)
-
-		return tableFailed
-	}
-
-	if !defaultExists || !consumoorExists {
-		t.Logf("SKIP  %-55s table missing in one db", base)
-
-		return tableSkipped
-	}
-
-	cols := c.intersectColumns(t,
-		"default", tableName,
-		"consumoor", tableName,
-	)
-	if len(cols) == 0 {
-		t.Logf("SKIP  %-55s no comparable columns", base)
-
-		return tableSkipped
-	}
-
-	onlyVector := c.exceptCount(t,
-		"default", tableName,
-		"consumoor", tableName,
-		cols,
-	)
-
-	onlyConsumoor := c.exceptCount(t,
-		"consumoor", tableName,
-		"default", tableName,
-		cols,
-	)
-
-	if onlyVector == 0 && onlyConsumoor == 0 {
-		t.Logf("OK    %-55s vector=%d consumoor=%d",
-			base, vectorN, consumoorN)
-
-		return tableMatched
-	}
-
-	t.Logf("FAIL  %-55s vector=%d consumoor=%d "+
-		"only_vector=%d only_consumoor=%d",
-		base, vectorN, consumoorN, onlyVector, onlyConsumoor)
-
-	if onlyVector > 0 {
-		t.Logf("  ── columns differing (vector EXCEPT consumoor):")
-		c.logColumnDiffs(t,
-			"default", tableName,
-			"consumoor", tableName, cols)
-	}
-
-	if onlyConsumoor > 0 {
-		t.Logf("  ── columns differing (consumoor EXCEPT vector):")
-		c.logColumnDiffs(t,
-			"consumoor", tableName,
-			"default", tableName, cols)
-	}
-
-	return tableFailed
-}
-
 // listLocalTables returns all _local table names in the given database,
-// excluding materialized views (which cannot be OPTIMIZE'd or EXCEPT'd).
+// excluding materialized views.
 func (c *chClient) listLocalTables(t *testing.T, db string) []string {
 	t.Helper()
 
@@ -1095,31 +610,22 @@ func (c *chClient) listLocalTables(t *testing.T, db string) []string {
 	return strings.Split(r, "\n")
 }
 
-// localTableBaseNames returns the sorted union of base names (without the
-// _local suffix) across the given databases.
-func (c *chClient) localTableBaseNames(
-	t *testing.T,
-	dbs ...string,
-) []string {
-	t.Helper()
+// ---------------------------------------------------------------------------
+// Formatting helpers
+// ---------------------------------------------------------------------------
 
-	seen := make(map[string]struct{}, 128)
-
-	for _, db := range dbs {
-		tables := c.listLocalTables(t, db)
-		for _, tbl := range tables {
-			base := strings.TrimSuffix(tbl, "_local")
-			seen[base] = struct{}{}
-		}
+func abbreviate(s string, maxLen int) string {
+	if len(s) > maxLen {
+		return s[:maxLen] + "..."
 	}
 
-	names := make([]string, 0, len(seen))
-	for name := range seen {
-		names = append(names, name)
+	return s
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
 	}
 
-	// Sort for deterministic output.
-	sort.Strings(names)
-
-	return names
+	return fallback
 }

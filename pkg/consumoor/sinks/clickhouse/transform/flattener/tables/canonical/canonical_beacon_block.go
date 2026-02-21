@@ -469,11 +469,8 @@ func (b *canonicalBeaconBlockBatch) appendAdditionalData(event *xatu.DecoratedEv
 	}
 
 	if slot := additional.GetSlot(); slot != nil {
-		if slotNumber := slot.GetNumber(); slotNumber != nil {
-			b.Slot.Append(uint32(slotNumber.GetValue()))
-		}
-		// Note: Slot may have already been set from block payload; additional data overrides it.
-
+		// Note: Slot is already appended by appendPayload from the block's per-fork field.
+		// Do NOT append b.Slot here to avoid column double-append.
 		if startDateTime := slot.GetStartDateTime(); startDateTime != nil {
 			b.SlotStartDateTime.Append(startDateTime.AsTime())
 		} else {

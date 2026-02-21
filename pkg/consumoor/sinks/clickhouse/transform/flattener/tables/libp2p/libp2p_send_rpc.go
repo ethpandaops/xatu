@@ -69,7 +69,8 @@ func (b *libp2pSendRpcBatch) appendPayload(
 		b.UniqueKey.Append(0)
 	}
 
-	peerID := wrappedStringValue(payload.GetPeerId())
+	// Vector uses .data.meta.peer_id (RPCMeta.peer_id) for peer_id_unique_key.
+	peerID := wrappedStringValue(payload.GetMeta().GetPeerId())
 	networkName := meta.MetaNetworkName
 	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 }

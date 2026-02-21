@@ -145,6 +145,15 @@ func computeRPCMetaUniqueKey(rootEventID string) int64 {
 	return flattener.SeaHashInt64(rootEventID)
 }
 
+// computeRPCMetaChildUniqueKey builds a composite unique key matching
+// Vector's VRL format for RPC meta child tables:
+// seahash(to_string(seahash(rootEventID)) + "_" + suffix + "_" + idx1 + "_" + idx2)
+func computeRPCMetaChildUniqueKey(rootEventID, tableSuffix, idx1, idx2 string) int64 {
+	rootKey := strconv.FormatInt(computeRPCMetaUniqueKey(rootEventID), 10)
+
+	return flattener.SeaHashInt64(rootKey + "_" + tableSuffix + "_" + idx1 + "_" + idx2)
+}
+
 // peerIDMetadataProvider is implemented by libp2p additional data types
 // that contain trace metadata with a peer ID.
 type peerIDMetadataProvider interface {

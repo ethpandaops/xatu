@@ -62,8 +62,6 @@ func (b *libp2pDropRpcBatch) appendPayload(
 		return
 	}
 
-	peerID := wrappedStringValue(payload.GetPeerId())
-
 	// Compute unique_key from event ID.
 	if event.GetEvent() != nil && event.GetEvent().GetId() != "" {
 		b.UniqueKey.Append(flattener.SeaHashInt64(event.GetEvent().GetId()))
@@ -71,6 +69,8 @@ func (b *libp2pDropRpcBatch) appendPayload(
 		b.UniqueKey.Append(0)
 	}
 
+	// Vector uses .data.meta.peer_id (RPCMeta.peer_id) for peer_id_unique_key.
+	peerID := wrappedStringValue(payload.GetMeta().GetPeerId())
 	networkName := meta.MetaNetworkName
 	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 }

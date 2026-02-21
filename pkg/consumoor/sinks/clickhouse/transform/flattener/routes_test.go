@@ -125,11 +125,28 @@ func TestConditionalRoutingPredicates(t *testing.T) {
 
 	assert.True(t, canonicalBlock.ShouldProcess(finalizedBlockEvent))
 	assert.False(t, canonicalBlock.ShouldProcess(nonFinalizedBlockEvent))
+
+	// Proposer duty predicates.
+	canonicalProposerDuty := findRouteByTable(t, "canonical_beacon_proposer_duty")
+	headProposerDuty := findRouteByTable(t, "beacon_api_eth_v1_proposer_duty")
+
+	finalizedProposerDutyEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY, DateTime: timestamppb.Now(), Id: "5"},
+		Meta:  &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV1ProposerDuty{EthV1ProposerDuty: &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{StateId: "finalized"}}}},
+	}
+	headProposerDutyEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY, DateTime: timestamppb.Now(), Id: "6"},
+		Meta:  &xatu.Meta{Client: &xatu.ClientMeta{AdditionalData: &xatu.ClientMeta_EthV1ProposerDuty{EthV1ProposerDuty: &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{StateId: "head"}}}},
+	}
+
+	assert.True(t, canonicalProposerDuty.ShouldProcess(finalizedProposerDutyEvent))
+	assert.False(t, headProposerDuty.ShouldProcess(finalizedProposerDutyEvent))
+	assert.False(t, canonicalProposerDuty.ShouldProcess(headProposerDutyEvent))
+	assert.True(t, headProposerDuty.ShouldProcess(headProposerDutyEvent))
 }
 
 func TestValidatorsFanout(t *testing.T) {
-	pubkeysRoute := findRouteByTable(t, "canonical_beacon_validators_pubkeys")
-
+	// Event with 2 validators to verify fan-out produces 2 rows.
 	event := &xatu.DecoratedEvent{
 		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V1_BEACON_VALIDATORS, DateTime: timestamppb.Now(), Id: "validators-1"},
 		Meta: &xatu.Meta{
@@ -161,22 +178,46 @@ func TestValidatorsFanout(t *testing.T) {
 					ActivationEpoch:       wrapperspb.UInt64(10),
 				},
 			},
+			{
+				Index:   wrapperspb.UInt64(99),
+				Status:  wrapperspb.String("active_exiting"),
+				Balance: wrapperspb.UInt64(31_000_000_000),
+				Data: &ethv1.ValidatorData{
+					Pubkey:                wrapperspb.String("0xfff"),
+					WithdrawalCredentials: wrapperspb.String("0x123"),
+					Slashed:               wrapperspb.Bool(true),
+					EffectiveBalance:      wrapperspb.UInt64(31_000_000_000),
+					ActivationEpoch:       wrapperspb.UInt64(20),
+				},
+			},
 		}}},
 	}
 
-	batch := pubkeysRoute.NewBatch()
-	err := batch.FlattenTo(event, metadata.Extract(event))
-	require.NoError(t, err)
-	require.Equal(t, 1, batch.Rows())
+	// All three validators fan-out routes must produce 2 rows with correct indices.
+	for _, table := range []string{
+		"canonical_beacon_validators",
+		"canonical_beacon_validators_pubkeys",
+		"canonical_beacon_validators_withdrawal_credentials",
+	} {
+		t.Run(table, func(t *testing.T) {
+			route := findRouteByTable(t, table)
+			batch := route.NewBatch()
+			err := batch.FlattenTo(event, metadata.Extract(event))
+			require.NoError(t, err)
+			require.Equal(t, 2, batch.Rows(), "expected 2 rows from 2 validators")
 
-	snapper, ok := batch.(flattener.Snapshotter)
-	require.True(t, ok, "batch must implement Snapshotter")
+			snapper, ok := batch.(flattener.Snapshotter)
+			require.True(t, ok, "batch must implement Snapshotter")
 
-	snap := snapper.Snapshot()
-	require.Len(t, snap, 1)
+			snap := snapper.Snapshot()
+			require.Len(t, snap, 2)
 
-	assert.Equal(t, uint32(42), snap[0]["index"])
-	assert.Equal(t, uint32(123), snap[0]["epoch"])
+			assert.Equal(t, uint32(42), snap[0]["index"])
+			assert.Equal(t, uint32(99), snap[1]["index"])
+			assert.Equal(t, uint32(123), snap[0]["epoch"])
+			assert.Equal(t, uint32(123), snap[1]["epoch"])
+		})
+	}
 }
 
 func TestLibP2PEnrichment(t *testing.T) {

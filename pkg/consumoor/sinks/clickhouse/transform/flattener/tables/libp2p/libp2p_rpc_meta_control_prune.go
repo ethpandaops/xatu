@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -72,32 +73,37 @@ func (b *libp2pRpcMetaControlPruneBatch) appendPayload(
 		return
 	}
 
-	// Compute unique_key from the event ID.
-	if eventID := event.GetEvent().GetId(); eventID != "" {
-		b.UniqueKey.Append(flattener.SeaHashInt64(eventID))
+	// Extract values needed for key computations.
+	rootEventID := wrappedStringValue(payload.GetRootEventId())
+
+	var controlIdxVal, peerIdxVal uint32
+	if idx := payload.GetControlIndex(); idx != nil {
+		controlIdxVal = idx.GetValue()
+	}
+
+	if idx := payload.GetPeerIndex(); idx != nil {
+		peerIdxVal = idx.GetValue()
+	}
+
+	// Compute unique_key as composite key matching Vector's VRL format.
+	if rootEventID != "" {
+		b.UniqueKey.Append(computeRPCMetaChildUniqueKey(
+			rootEventID, "rpc_meta_control_prune",
+			strconv.FormatUint(uint64(controlIdxVal), 10),
+			strconv.FormatUint(uint64(peerIdxVal), 10)))
 	} else {
 		b.UniqueKey.Append(0)
 	}
 
 	// Compute rpc_meta_unique_key from root_event_id.
-	rootEventID := wrappedStringValue(payload.GetRootEventId())
 	if rootEventID != "" {
 		b.RPCMetaUniqueKey.Append(computeRPCMetaUniqueKey(rootEventID))
 	} else {
 		b.RPCMetaUniqueKey.Append(0)
 	}
 
-	if controlIdx := payload.GetControlIndex(); controlIdx != nil {
-		b.ControlIndex.Append(int32(controlIdx.GetValue()))
-	} else {
-		b.ControlIndex.Append(0)
-	}
-
-	if peerIdx := payload.GetPeerIndex(); peerIdx != nil {
-		b.PeerIDIndex.Append(int32(peerIdx.GetValue()))
-	} else {
-		b.PeerIDIndex.Append(0)
-	}
+	b.ControlIndex.Append(int32(controlIdxVal))
+	b.PeerIDIndex.Append(int32(peerIdxVal))
 
 	networkName := meta.MetaNetworkName
 

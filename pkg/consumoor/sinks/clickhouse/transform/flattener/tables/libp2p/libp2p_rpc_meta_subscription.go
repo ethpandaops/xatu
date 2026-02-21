@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
@@ -70,26 +71,33 @@ func (b *libp2pRpcMetaSubscriptionBatch) appendPayload(
 		return
 	}
 
-	// Compute unique_key from the event ID.
-	if eventID := event.GetEvent().GetId(); eventID != "" {
-		b.UniqueKey.Append(flattener.SeaHashInt64(eventID))
+	// Extract values needed for key computations.
+	rootEventID := wrappedStringValue(payload.GetRootEventId())
+	topicID := wrappedStringValue(payload.GetTopicId())
+
+	var controlIdxVal uint32
+	if idx := payload.GetControlIndex(); idx != nil {
+		controlIdxVal = idx.GetValue()
+	}
+
+	// Compute unique_key as composite key matching Vector's VRL format.
+	if rootEventID != "" {
+		b.UniqueKey.Append(computeRPCMetaChildUniqueKey(
+			rootEventID, "rpc_meta_subscription",
+			strconv.FormatUint(uint64(controlIdxVal), 10),
+			topicID))
 	} else {
 		b.UniqueKey.Append(0)
 	}
 
 	// Compute rpc_meta_unique_key from root_event_id.
-	rootEventID := wrappedStringValue(payload.GetRootEventId())
 	if rootEventID != "" {
 		b.RPCMetaUniqueKey.Append(computeRPCMetaUniqueKey(rootEventID))
 	} else {
 		b.RPCMetaUniqueKey.Append(0)
 	}
 
-	if controlIdx := payload.GetControlIndex(); controlIdx != nil {
-		b.ControlIndex.Append(int32(controlIdx.GetValue()))
-	} else {
-		b.ControlIndex.Append(0)
-	}
+	b.ControlIndex.Append(int32(controlIdxVal))
 
 	if subscribe := payload.GetSubscribe(); subscribe != nil {
 		b.Subscribe.Append(subscribe.GetValue())
@@ -98,7 +106,7 @@ func (b *libp2pRpcMetaSubscriptionBatch) appendPayload(
 	}
 
 	// Parse topic fields from topic_id.
-	if topic := wrappedStringValue(payload.GetTopicId()); topic != "" {
+	if topic := topicID; topic != "" {
 		parsed := parseTopicFields(topic)
 		b.TopicLayer.Append(parsed.Layer)
 		b.TopicForkDigestValue.Append(parsed.ForkDigestValue)

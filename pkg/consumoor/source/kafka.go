@@ -101,7 +101,8 @@ func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, e
 			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
 		}
 	default:
-		if err := protojson.Unmarshal(data, event); err != nil {
+		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
+		if err := opts.Unmarshal(data, event); err != nil {
 			return nil, fmt.Errorf("json unmarshal: %w", err)
 		}
 	}

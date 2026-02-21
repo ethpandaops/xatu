@@ -1,0 +1,54 @@
+# Staging overlay: disables local Kafka, Vector, and non-essential services.
+# Consumoor connects to staging Kafka via host.docker.internal (port-forwarded).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f deploy/local/docker-compose/docker-compose.staging.yml up -d
+#
+# See deploy/local/docker-compose/staging-correctness-test.sh for the full workflow.
+
+services:
+  # --- Disabled services (not needed for staging correctness test) ---
+  xatu-kafka:
+    profiles: ["disabled"]
+  xatu-kafka-storage-format:
+    profiles: ["disabled"]
+  xatu-init-kafka:
+    profiles: ["disabled"]
+  xatu-server:
+    profiles: ["disabled"]
+  xatu-postgres:
+    profiles: ["disabled"]
+  xatu-postgres-migrator:
+    profiles: ["disabled"]
+  xatu-vector-http-kafka:
+    profiles: ["disabled"]
+  xatu-vector-kafka-clickhouse:
+    profiles: ["disabled"]
+  xatu-vector-kafka-clickhouse-libp2p:
+    profiles: ["disabled"]
+  xatu-sentry-logs:
+    profiles: ["disabled"]
+  xatu-cannon:
+    profiles: ["disabled"]
+  xatu-nginx:
+    profiles: ["disabled"]
+  xatu-grafana:
+    profiles: ["disabled"]
+  xatu-prometheus:
+    profiles: ["disabled"]
+  tempo:
+    profiles: ["disabled"]
+  tempo-init:
+    profiles: ["disabled"]
+
+  # --- Override consumoor to use staging Kafka ---
+  xatu-consumoor:
+    volumes:
+      - ./deploy/local/docker-compose/xatu-consumoor-staging.yaml:/etc/consumoor/config.yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      xatu-clickhouse-01:
+        condition: service_healthy
+      xatu-clickhouse-consumoor-init:
+        condition: service_completed_successfully

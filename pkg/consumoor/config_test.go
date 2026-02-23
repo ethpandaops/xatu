@@ -184,6 +184,122 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 	)
 }
 
+func TestKafkaConfigValidateOffsetDefault(t *testing.T) {
+	base := func() *source.KafkaConfig {
+		return &source.KafkaConfig{
+			Brokers:          []string{"localhost:9092"},
+			Topics:           []string{"^test-.+"},
+			ConsumerGroup:    "test-group",
+			Encoding:         "json",
+			SessionTimeoutMs: 30000,
+			CommitInterval:   5 * time.Second,
+		}
+	}
+
+	t.Run("accepts earliest", func(t *testing.T) {
+		cfg := base()
+		cfg.OffsetDefault = "earliest"
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts latest", func(t *testing.T) {
+		cfg := base()
+		cfg.OffsetDefault = "latest"
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("rejects oldest", func(t *testing.T) {
+		cfg := base()
+		cfg.OffsetDefault = "oldest"
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "offsetDefault")
+	})
+
+	t.Run("rejects empty string", func(t *testing.T) {
+		cfg := base()
+		cfg.OffsetDefault = ""
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "offsetDefault")
+	})
+}
+
+func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
+	base := func() *source.KafkaConfig {
+		return &source.KafkaConfig{
+			Brokers:        []string{"localhost:9092"},
+			Topics:         []string{"^test-.+"},
+			ConsumerGroup:  "test-group",
+			Encoding:       "json",
+			OffsetDefault:  "earliest",
+			CommitInterval: 5 * time.Second,
+		}
+	}
+
+	t.Run("rejects zero", func(t *testing.T) {
+		cfg := base()
+		cfg.SessionTimeoutMs = 0
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "sessionTimeoutMs")
+	})
+
+	t.Run("accepts positive", func(t *testing.T) {
+		cfg := base()
+		cfg.SessionTimeoutMs = 30000
+		require.NoError(t, cfg.Validate())
+	})
+}
+
+func TestClickHouseConfigValidateBufferSize(t *testing.T) {
+	t.Run("rejects bufferSize less than batchSize", func(t *testing.T) {
+		cfg := &clickhouse.Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: clickhouse.TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    500,
+			},
+			ChGo: clickhouse.ChGoConfig{
+				RetryBaseDelay:    100 * time.Millisecond,
+				RetryMaxDelay:     2 * time.Second,
+				MaxConns:          8,
+				MinConns:          1,
+				ConnMaxLifetime:   time.Hour,
+				ConnMaxIdleTime:   10 * time.Minute,
+				HealthCheckPeriod: 30 * time.Second,
+			},
+		}
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "bufferSize must be >= batchSize")
+	})
+
+	t.Run("accepts bufferSize equal to batchSize", func(t *testing.T) {
+		cfg := &clickhouse.Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: clickhouse.TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			ChGo: clickhouse.ChGoConfig{
+				RetryBaseDelay:    100 * time.Millisecond,
+				RetryMaxDelay:     2 * time.Second,
+				MaxConns:          8,
+				MinConns:          1,
+				ConnMaxLifetime:   time.Hour,
+				ConnMaxIdleTime:   10 * time.Minute,
+				HealthCheckPeriod: 30 * time.Second,
+			},
+		}
+
+		require.NoError(t, cfg.Validate())
+	})
+}
+
 func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	t.Run("adds auto quorum for canonical tables when unset", func(t *testing.T) {
 		cfg := &clickhouse.Config{
@@ -245,48 +361,5 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
 		assert.Equal(t, map[string]any{"insert_quorum": 2}, got.InsertSettings)
-	})
-}
-
-func TestKafkaConfigValidateDeliveryMode(t *testing.T) {
-	base := source.KafkaConfig{
-		Brokers:        []string{"localhost:9092"},
-		Topics:         []string{"^general-.+"},
-		ConsumerGroup:  "xatu-consumoor",
-		Encoding:       "json",
-		OffsetDefault:  "oldest",
-		CommitInterval: 5 * time.Second,
-	}
-
-	t.Run("rejects empty mode", func(t *testing.T) {
-		cfg := base
-		cfg.DeliveryMode = ""
-
-		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "deliveryMode")
-	})
-
-	t.Run("accepts batch mode", func(t *testing.T) {
-		cfg := base
-		cfg.DeliveryMode = source.DeliveryModeBatch
-
-		require.NoError(t, cfg.Validate())
-	})
-
-	t.Run("accepts message mode", func(t *testing.T) {
-		cfg := base
-		cfg.DeliveryMode = source.DeliveryModeMessage
-
-		require.NoError(t, cfg.Validate())
-	})
-
-	t.Run("rejects unknown mode", func(t *testing.T) {
-		cfg := base
-		cfg.DeliveryMode = "ultra-fast"
-
-		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "deliveryMode")
 	})
 }

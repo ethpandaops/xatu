@@ -162,8 +162,7 @@ func TestBenthosConfigYAML(t *testing.T) {
 		FetchWaitMaxMs:         250,
 		MaxPartitionFetchBytes: 1048576,
 		SessionTimeoutMs:       30000,
-		HeartbeatIntervalMs:    3000,
-		OffsetDefault:          "newest",
+		OffsetDefault:          "latest",
 		CommitInterval:         7 * time.Second,
 	}
 
@@ -228,9 +227,8 @@ func TestWriteBatchBatchModeRejectsMalformedWithoutRetry(t *testing.T) {
 	writer := &testWriter{}
 	rejectSink := &testRejectSink{}
 	output := &xatuClickHouseOutput{
-		log:          logrus.New(),
-		encoding:     "json",
-		deliveryMode: DeliveryModeBatch,
+		log:      logrus.New(),
+		encoding: "json",
 		router: newRouter(t, []flattener.Route{
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
@@ -264,9 +262,8 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 	}
 
 	output := &xatuClickHouseOutput{
-		log:          logrus.New(),
-		encoding:     "json",
-		deliveryMode: DeliveryModeBatch,
+		log:      logrus.New(),
+		encoding: "json",
 		router: newRouter(t, []flattener.Route{
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
@@ -293,83 +290,14 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 	assert.Equal(t, []int{1}, failedIndexesFromBatchError(t, msgs, err))
 }
 
-func TestWriteBatchMessageModePermanentWriteErrorRejectsAndContinues(t *testing.T) {
-	writer := &testWriter{
-		flushErrs: []error{
-			&testWriteError{table: "beacon_head", permanent: true},
-		},
-	}
-	rejectSink := &testRejectSink{}
-	output := &xatuClickHouseOutput{
-		log:          logrus.New(),
-		encoding:     "json",
-		deliveryMode: DeliveryModeMessage,
-		router: newRouter(t, []flattener.Route{
-			testRoute{
-				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
-				table:     "beacon_head",
-			},
-		}),
-		writer:     writer,
-		metrics:    newTestMetrics(),
-		classifier: testErrorClassifier{},
-		rejectSink: rejectSink,
-	}
-
-	msgs := service.MessageBatch{
-		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
-		newKafkaMessage(mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 2),
-	}
-
-	err := output.WriteBatch(context.Background(), msgs)
-	require.NoError(t, err)
-	assert.Equal(t, 2, writer.flushCalls)
-	require.Len(t, rejectSink.records, 1)
-	assert.Equal(t, rejectReasonWritePermanent, rejectSink.records[0].Reason)
-	assert.Equal(t, int64(1), rejectSink.records[0].Kafka.Offset)
-}
-
-func TestWriteBatchMessageModeTransientFailureFailsRemaining(t *testing.T) {
-	writer := &testWriter{
-		flushErrs: []error{errors.New("clickhouse unavailable")},
-	}
-	output := &xatuClickHouseOutput{
-		log:          logrus.New(),
-		encoding:     "json",
-		deliveryMode: DeliveryModeMessage,
-		router: newRouter(t, []flattener.Route{
-			testRoute{
-				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
-				table:     "beacon_head",
-			},
-		}),
-		writer:     writer,
-		metrics:    newTestMetrics(),
-		classifier: testErrorClassifier{},
-		rejectSink: &testRejectSink{},
-	}
-
-	msgs := service.MessageBatch{
-		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
-		newKafkaMessage(mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 2),
-		newKafkaMessage(mustEventJSON(t, "evt-3", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 3),
-	}
-
-	err := output.WriteBatch(context.Background(), msgs)
-	require.Error(t, err)
-	assert.Equal(t, []int{0, 1, 2}, failedIndexesFromBatchError(t, msgs, err))
-	assert.Equal(t, 1, writer.flushCalls)
-}
-
 func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
 	output := &xatuClickHouseOutput{
-		log:          logrus.New(),
-		encoding:     "json",
-		deliveryMode: DeliveryModeBatch,
-		router:       newRouter(t, nil),
-		writer:       &testWriter{},
-		metrics:      newTestMetrics(),
-		classifier:   testErrorClassifier{},
+		log:        logrus.New(),
+		encoding:   "json",
+		router:     newRouter(t, nil),
+		writer:     &testWriter{},
+		metrics:    newTestMetrics(),
+		classifier: testErrorClassifier{},
 		rejectSink: &testRejectSink{
 			err: errors.New("dlq unavailable"),
 		},

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Survey which topics/tables consumoor handles from staging Kafka.
 #
-# Consumes from staging proto topics briefly, then reports which ClickHouse
-# tables received data and compares row counts against the staging reference.
+# Builds consumoor as a native binary and connects it to staging Kafka via
+# per-broker port-forwards (same approach as staging-correctness-test.sh).
+# After consuming briefly, reports which ClickHouse tables received data and
+# compares row counts against the staging reference.
 #
 # Usage:
 #   ./staging-topic-survey.sh [flags]
@@ -10,6 +12,7 @@
 # Flags:
 #   --consume-seconds SEC    How long to consume (default: 10)
 #   --topics PATTERN         Kafka topic regex (default: ^xatu-protobuf-.+)
+#   --skip-build             Skip building the consumoor binary
 #   --skip-portforward       Skip kubectl port-forward setup
 #   --compare-only           Skip consuming, just survey existing data
 #   --help                   Show this help
@@ -17,7 +20,6 @@
 # Environment:
 #   KUBE_CONTEXT             (default: platform-analytics-hel1-staging)
 #   KUBE_NAMESPACE           (default: xatu)
-#   KAFKA_SERVICE            (default: svc/xatu-internal-kafka-kafka-bootstrap)
 #   CLICKHOUSE_SERVICE       (default: svc/chendpoint-xatu-clickhouse)
 #   STAGING_CLICKHOUSE_USER  (default: empty)
 #   STAGING_CLICKHOUSE_PASSWORD (default: empty)
@@ -29,27 +31,35 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 # --- Defaults ---
 CONSUME_SECONDS="${CONSUME_SECONDS:-10}"
 TOPICS="${TOPICS:-^xatu-protobuf-.+}"
+SKIP_BUILD=false
 SKIP_PORTFORWARD=false
 COMPARE_ONLY=false
 KUBE_CONTEXT="${KUBE_CONTEXT:-platform-analytics-hel1-staging}"
 KUBE_NAMESPACE="${KUBE_NAMESPACE:-xatu}"
-KAFKA_SERVICE="${KAFKA_SERVICE:-svc/xatu-internal-kafka-kafka-bootstrap}"
 CLICKHOUSE_SERVICE="${CLICKHOUSE_SERVICE:-svc/chendpoint-xatu-clickhouse}"
 STAGING_CLICKHOUSE_USER="${STAGING_CLICKHOUSE_USER:-}"
 STAGING_CLICKHOUSE_PASSWORD="${STAGING_CLICKHOUSE_PASSWORD:-}"
 
-# Random ports in 20000s to avoid conflicts.
-KAFKA_PORT=$((20000 + RANDOM % 1000))
+# Broker discovery settings.
+BROKER_POD_LABEL="${BROKER_POD_LABEL:-strimzi.io/name=xatu-internal-kafka-kafka}"
+BROKER_SVC_SUFFIX="${BROKER_SVC_SUFFIX:-.xatu-internal-kafka-kafka-brokers.xatu.svc}"
+BROKER_PORT=9092
+
+# Paths.
+XATU_BINARY="/tmp/xatu-staging-test-$$"
+CONFIG_FILE="$SCRIPT_DIR/xatu-consumoor-staging.yaml"
+
+# Random port in 21000s for staging ClickHouse.
 CH_STAGING_PORT=$((21000 + RANDOM % 1000))
 
 RUN_ID="$(date +%s)"
-CONFIG_FILE="$SCRIPT_DIR/xatu-consumoor-staging.yaml"
 
 # --- Parse flags ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --consume-seconds)  CONSUME_SECONDS="$2"; shift 2 ;;
     --topics)           TOPICS="$2"; shift 2 ;;
+    --skip-build)       SKIP_BUILD=true; shift ;;
     --skip-portforward) SKIP_PORTFORWARD=true; shift ;;
     --compare-only)     COMPARE_ONLY=true; shift ;;
     --help)
@@ -62,20 +72,32 @@ done
 
 # --- Cleanup ---
 PF_PIDS=()
+CONSUMOOR_PID=""
 
 cleanup() {
   echo ""
   echo "=== Cleaning up ==="
+
+  # Kill consumoor if running.
+  if [[ -n "$CONSUMOOR_PID" ]] && kill -0 "$CONSUMOOR_PID" 2>/dev/null; then
+    echo "Stopping consumoor (PID $CONSUMOOR_PID)..."
+    kill "$CONSUMOOR_PID" 2>/dev/null || true
+    wait "$CONSUMOOR_PID" 2>/dev/null || true
+  fi
+
   if [[ "$COMPARE_ONLY" != "true" ]]; then
     cd "$REPO_ROOT"
     docker compose -f docker-compose.yml \
       -f deploy/local/docker-compose/docker-compose.staging.yml \
       down --timeout 5 2>/dev/null || true
   fi
+
   for pid in "${PF_PIDS[@]}"; do
     kill "$pid" 2>/dev/null || true
   done
+
   rm -f "$CONFIG_FILE"
+  rm -f "$XATU_BINARY"
   echo "Done."
 }
 trap cleanup EXIT
@@ -102,41 +124,121 @@ infer_topic() {
   echo "xatu-protobuf-$(echo "$base" | tr '_' '-')"
 }
 
+# --- Build binary ---
+if [[ "$COMPARE_ONLY" != "true" && "$SKIP_BUILD" != "true" ]]; then
+  echo "=== Building consumoor binary ==="
+  cd "$REPO_ROOT"
+  go build -o "$XATU_BINARY" .
+  echo "Binary built: $XATU_BINARY"
+elif [[ "$SKIP_BUILD" == "true" && ! -f "$XATU_BINARY" ]]; then
+  EXISTING=$(ls /tmp/xatu-staging-test-* 2>/dev/null | head -1 || true)
+  if [[ -n "$EXISTING" ]]; then
+    XATU_BINARY="$EXISTING"
+    echo "Reusing existing binary: $XATU_BINARY"
+  else
+    echo "ERROR: --skip-build specified but no binary found. Run without --skip-build first."
+    exit 1
+  fi
+fi
+
+# --- Discover broker pods and set up port-forwards ---
+if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
+  echo "=== Discovering Kafka broker pods (context: $KUBE_CONTEXT, namespace: $KUBE_NAMESPACE) ==="
+
+  BROKER_PODS=$(kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
+    get pods -l "$BROKER_POD_LABEL" -o jsonpath='{.items[*].metadata.name}')
+
+  if [[ -z "$BROKER_PODS" ]]; then
+    echo "ERROR: No broker pods found with label $BROKER_POD_LABEL"
+    exit 1
+  fi
+
+  read -ra BROKER_POD_ARRAY <<< "$BROKER_PODS"
+  NUM_BROKERS=${#BROKER_POD_ARRAY[@]}
+  echo "Found $NUM_BROKERS broker pods: ${BROKER_POD_ARRAY[*]}"
+
+  # Pre-flight: verify loopback aliases and /etc/hosts are set up.
+  MISSING_SETUP=false
+  for i in "${!BROKER_POD_ARRAY[@]}"; do
+    loopback_ip="127.0.0.$((i + 2))"
+    if ! ifconfig lo0 | grep -q "inet $loopback_ip "; then
+      echo "ERROR: Missing loopback alias for $loopback_ip"
+      MISSING_SETUP=true
+    fi
+  done
+
+  if [[ "$MISSING_SETUP" == "true" ]]; then
+    echo ""
+    echo "Loopback aliases are missing (they don't survive reboot). Run this once:"
+    echo ""
+    for i in "${!BROKER_POD_ARRAY[@]}"; do
+      echo "  sudo ifconfig lo0 alias 127.0.0.$((i + 2))"
+    done
+    echo ""
+    echo "Also ensure /etc/hosts has entries mapping broker hostnames to these IPs:"
+    echo ""
+    for i in "${!BROKER_POD_ARRAY[@]}"; do
+      pod="${BROKER_POD_ARRAY[$i]}"
+      echo "  127.0.0.$((i + 2)) ${pod}${BROKER_SVC_SUFFIX}"
+    done
+    exit 1
+  fi
+
+  echo ""
+  echo "=== Starting port-forwards ==="
+
+  # Port-forward each broker to its loopback IP.
+  SEED_BROKER=""
+  for i in "${!BROKER_POD_ARRAY[@]}"; do
+    pod="${BROKER_POD_ARRAY[$i]}"
+    loopback_ip="127.0.0.$((i + 2))"
+
+    echo "  $pod → $loopback_ip:$BROKER_PORT"
+
+    kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
+      port-forward --address "$loopback_ip" "pod/$pod" "${BROKER_PORT}:${BROKER_PORT}" &
+    PF_PIDS+=($!)
+
+    if [[ -z "$SEED_BROKER" ]]; then
+      SEED_BROKER="${loopback_ip}:${BROKER_PORT}"
+    fi
+  done
+
+  # Port-forward staging ClickHouse.
+  echo "  Staging ClickHouse → localhost:$CH_STAGING_PORT"
+  kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
+    port-forward "$CLICKHOUSE_SERVICE" "${CH_STAGING_PORT}:8123" &
+  PF_PIDS+=($!)
+
+  echo ""
+  echo "Waiting for port-forwards to establish..."
+  for i in $(seq 1 15); do
+    if curl -sf "http://localhost:${CH_STAGING_PORT}/?query=SELECT+1" >/dev/null 2>&1; then
+      echo "Port-forwards ready."
+      break
+    fi
+    if [[ "$i" -eq 15 ]]; then
+      echo "ERROR: Staging ClickHouse not reachable at localhost:${CH_STAGING_PORT} after 15s"
+      exit 1
+    fi
+    sleep 1
+  done
+else
+  echo "=== Skipping port-forward setup ==="
+  SEED_BROKER="${SEED_BROKER:-127.0.0.2:${BROKER_PORT}}"
+  CH_STAGING_PORT="${CH_STAGING_LOCAL_PORT:-$CH_STAGING_PORT}"
+fi
+
 # --- Banner ---
+echo ""
 echo "=== Staging Topic Survey ==="
-echo "  Kafka port-forward:     localhost:${KAFKA_PORT}"
+echo "  Seed broker:            ${SEED_BROKER}"
 echo "  Staging CH port-forward: localhost:${CH_STAGING_PORT}"
 echo "  Topics pattern:         ${TOPICS}"
 echo "  Consume duration:       ${CONSUME_SECONDS}s"
 echo ""
 
-# --- 1. Port-forwards ---
-if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
-  echo "=== Starting port-forwards (context: $KUBE_CONTEXT) ==="
-
-  kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
-    port-forward "$KAFKA_SERVICE" "${KAFKA_PORT}:9092" &
-  PF_PIDS+=($!)
-
-  kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
-    port-forward "$CLICKHOUSE_SERVICE" "${CH_STAGING_PORT}:8123" &
-  PF_PIDS+=($!)
-
-  sleep 3
-
-  if ! curl -sf "http://localhost:${CH_STAGING_PORT}/?query=SELECT+1" >/dev/null 2>&1; then
-    echo "ERROR: Staging ClickHouse not reachable at localhost:${CH_STAGING_PORT}"
-    exit 1
-  fi
-  echo "Port-forwards ready."
-else
-  echo "=== Skipping port-forward setup ==="
-  # If user manages port-forwards, they need to tell us the ports.
-  KAFKA_PORT="${KAFKA_LOCAL_PORT:-$KAFKA_PORT}"
-  CH_STAGING_PORT="${CH_STAGING_LOCAL_PORT:-$CH_STAGING_PORT}"
-fi
-
-# --- 2. Consume (unless --compare-only) ---
+# --- Consume (unless --compare-only) ---
 if [[ "$COMPARE_ONLY" != "true" ]]; then
   # Generate consumoor config.
   cat > "$CONFIG_FILE" <<YAML
@@ -145,31 +247,29 @@ metricsAddr: ":9091"
 
 kafka:
   brokers:
-    - host.docker.internal:${KAFKA_PORT}
+    - ${SEED_BROKER}
   topics:
     - "${TOPICS}"
   consumerGroup: survey-${RUN_ID}
   encoding: protobuf
-  offsetDefault: oldest
+  offsetDefault: earliest
   commitInterval: 1s
-  deliveryMode: message
 
 clickhouse:
-  dsn: "clickhouse://xatu-clickhouse-01:9000/consumoor"
+  dsn: "clickhouse://localhost:9000/consumoor"
   tableSuffix: "_local"
   chgo:
     maxConns: 32
     queryTimeout: 120s
   defaults:
     batchSize: 1000
-    batchBytes: 10485760
     flushInterval: 1s
     bufferSize: 10000
     insertSettings:
       insert_quorum: 0
 YAML
 
-  echo "=== Starting local ClickHouse + consumoor ==="
+  echo "=== Starting local ClickHouse ==="
   cd "$REPO_ROOT"
   docker compose -f docker-compose.yml \
     -f deploy/local/docker-compose/docker-compose.staging.yml \
@@ -203,17 +303,29 @@ YAML
     sleep 2
   done
 
+  # Start consumoor as native binary.
+  echo "=== Starting consumoor (native binary) ==="
+  "$XATU_BINARY" consumoor --config "$CONFIG_FILE" &
+  CONSUMOOR_PID=$!
+
+  sleep 3
+  if ! kill -0 "$CONSUMOOR_PID" 2>/dev/null; then
+    echo "ERROR: consumoor exited immediately. Check output above for errors."
+    exit 1
+  fi
+  echo "consumoor started (PID $CONSUMOOR_PID)."
+
   echo "=== Consuming for ${CONSUME_SECONDS}s ==="
   sleep "$CONSUME_SECONDS"
 
-  # Stop consumoor but keep ClickHouse running.
+  # Stop consumoor but keep ClickHouse running for the survey.
   echo "Stopping consumoor..."
-  docker compose -f docker-compose.yml \
-    -f deploy/local/docker-compose/docker-compose.staging.yml \
-    stop xatu-consumoor 2>/dev/null || true
+  kill "$CONSUMOOR_PID" 2>/dev/null || true
+  wait "$CONSUMOOR_PID" 2>/dev/null || true
+  CONSUMOOR_PID=""
 fi
 
-# --- 3. Survey tables ---
+# --- Survey tables ---
 echo ""
 echo "=== Survey Results ==="
 echo ""

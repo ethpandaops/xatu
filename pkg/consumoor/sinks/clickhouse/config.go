@@ -97,6 +97,10 @@ func (c *Config) Validate() error {
 		return errors.New("clickhouse.defaults: bufferSize must be > 0")
 	}
 
+	if c.Defaults.BufferSize < c.Defaults.BatchSize {
+		return errors.New("clickhouse.defaults: bufferSize must be >= batchSize")
+	}
+
 	if err := validateInsertSettings(c.Defaults.InsertSettings, "clickhouse.defaults.insertSettings"); err != nil {
 		return err
 	}

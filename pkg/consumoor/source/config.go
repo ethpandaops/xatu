@@ -5,15 +5,6 @@ import (
 	"time"
 )
 
-const (
-	// DeliveryModeBatch batches messages before flushing writes. This is the
-	// highest-throughput mode but can replay cross-table rows on partial failure.
-	DeliveryModeBatch = "batch"
-	// DeliveryModeMessage flushes writes per message. This is safer under
-	// failures but may reduce throughput due to smaller write batches.
-	DeliveryModeMessage = "message"
-)
-
 // KafkaConfig configures the Kafka consumer.
 type KafkaConfig struct {
 	// Brokers is a list of Kafka broker addresses.
@@ -33,25 +24,19 @@ type KafkaConfig struct {
 	// FetchMinBytes is the minimum number of bytes to fetch per request.
 	FetchMinBytes int32 `yaml:"fetchMinBytes" default:"1"`
 	// FetchWaitMaxMs is the maximum time to wait for fetch responses.
-	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"500"`
+	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"250"`
 	// MaxPartitionFetchBytes is the max bytes per partition per request.
 	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"10485760"`
 
 	// SessionTimeoutMs is the consumer group session timeout.
 	SessionTimeoutMs int `yaml:"sessionTimeoutMs" default:"30000"`
-	// HeartbeatIntervalMs is the consumer group heartbeat interval.
-	HeartbeatIntervalMs int `yaml:"heartbeatIntervalMs" default:"3000"`
 
 	// OffsetDefault controls where to start consuming when no offset exists.
-	// Valid values: "newest" or "oldest".
-	OffsetDefault string `yaml:"offsetDefault" default:"oldest"`
+	// Valid values: "earliest" or "latest".
+	OffsetDefault string `yaml:"offsetDefault" default:"earliest"`
 
 	// CommitInterval controls Kafka offset commit cadence for kafka_franz.
 	CommitInterval time.Duration `yaml:"commitInterval" default:"5s"`
-	// DeliveryMode controls write boundary behavior.
-	// "batch" writes whole Benthos batches together.
-	// "message" flushes each message independently.
-	DeliveryMode string `yaml:"deliveryMode" default:"batch"`
 	// RejectedTopic is an optional Kafka topic where permanently rejected
 	// messages are emitted as JSON envelopes.
 	RejectedTopic string `yaml:"rejectedTopic"`
@@ -87,18 +72,16 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: encoding must be 'json' or 'protobuf'")
 	}
 
-	if c.OffsetDefault != "newest" && c.OffsetDefault != "oldest" {
-		return errors.New("kafka: offsetDefault must be 'newest' or 'oldest'")
+	if c.OffsetDefault != "earliest" && c.OffsetDefault != "latest" {
+		return errors.New("kafka: offsetDefault must be 'earliest' or 'latest'")
+	}
+
+	if c.SessionTimeoutMs <= 0 {
+		return errors.New("kafka: sessionTimeoutMs must be > 0")
 	}
 
 	if c.CommitInterval <= 0 {
 		return errors.New("kafka: commitInterval must be positive")
-	}
-
-	switch c.DeliveryMode {
-	case DeliveryModeBatch, DeliveryModeMessage:
-	default:
-		return errors.New("kafka: deliveryMode must be 'batch' or 'message'")
 	}
 
 	if c.SASLConfig != nil {
@@ -108,6 +91,12 @@ func (c *KafkaConfig) Validate() error {
 	}
 
 	return nil
+}
+
+// heartbeatIntervalMs derives the heartbeat interval from the session timeout.
+// Kafka's standard practice is sessionTimeout / 10.
+func (c *KafkaConfig) heartbeatIntervalMs() int {
+	return c.SessionTimeoutMs / 10
 }
 
 // Validate checks the SASL configuration for errors.

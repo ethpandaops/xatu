@@ -9,14 +9,12 @@ kafka:
     - "^general-.+"            # regex patterns — each matched topic gets its own isolated stream
   consumerGroup: xatu-consumoor-general  # base name — per-topic suffix appended (e.g. xatu-consumoor-general-general-BEACON_API_ETH_V1_EVENTS_HEAD_V2)
   encoding: json  # switch to "protobuf" after Vector removal
-  # offsetDefault: oldest
+  # offsetDefault: earliest
   # fetchMinBytes: 1
-  # fetchWaitMaxMs: 500
+  # fetchWaitMaxMs: 250
   # maxPartitionFetchBytes: 10485760
   # sessionTimeoutMs: 30000
-  # heartbeatIntervalMs: 3000
   commitInterval: 5s      # Kafka offset commit interval
-  # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
   # rejectedTopic: xatu-consumoor-rejected
   # tls: false
   # sasl:

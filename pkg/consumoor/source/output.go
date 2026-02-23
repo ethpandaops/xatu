@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -32,15 +31,14 @@ type messageContext struct {
 }
 
 type xatuClickHouseOutput struct {
-	log          logrus.FieldLogger
-	encoding     string
-	deliveryMode string
-	router       *chtransform.Engine
-	writer       Writer
-	metrics      *telemetry.Metrics
-	classifier   WriteErrorClassifier
-	rejectSink   rejectSink
-	ownsWriter   bool
+	log        logrus.FieldLogger
+	encoding   string
+	router     *chtransform.Engine
+	writer     Writer
+	metrics    *telemetry.Metrics
+	classifier WriteErrorClassifier
+	rejectSink rejectSink
+	ownsWriter bool
 
 	mu      sync.Mutex
 	started bool
@@ -68,10 +66,6 @@ func (o *xatuClickHouseOutput) Connect(ctx context.Context) error {
 func (o *xatuClickHouseOutput) WriteBatch(ctx context.Context, msgs service.MessageBatch) error {
 	if len(msgs) == 0 {
 		return nil
-	}
-
-	if strings.EqualFold(o.deliveryMode, DeliveryModeMessage) {
-		return o.writeMessageMode(ctx, msgs)
 	}
 
 	return o.writeBatchMode(ctx, msgs)
@@ -104,114 +98,6 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 	}
 
 	return rejectErr
-}
-
-func (o *xatuClickHouseOutput) writeMessageMode(ctx context.Context, msgs service.MessageBatch) error {
-	var batchErr *service.BatchError
-
-	for i, msg := range msgs {
-		mctx := o.buildMessageContext(msg)
-		o.metrics.MessagesConsumed().WithLabelValues(mctx.kafka.Topic).Inc()
-
-		raw, err := msg.AsBytes()
-		if err != nil {
-			o.metrics.DecodeErrors().WithLabelValues(mctx.kafka.Topic).Inc()
-			o.log.WithError(err).WithField("topic", mctx.kafka.Topic).Warn("Failed to read message bytes")
-
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason: rejectReasonDecode,
-				Err:    err.Error(),
-				Kafka:  mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
-		}
-
-		mctx.raw = append(mctx.raw[:0], raw...)
-
-		event, err := decodeDecoratedEvent(o.encoding, raw)
-		if err != nil {
-			o.metrics.DecodeErrors().WithLabelValues(mctx.kafka.Topic).Inc()
-			o.log.WithError(err).WithField("topic", mctx.kafka.Topic).Warn("Failed to decode message")
-
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason:  rejectReasonDecode,
-				Err:     err.Error(),
-				Payload: raw,
-				Kafka:   mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
-		}
-
-		mctx.event = event
-		outcome := o.router.Route(event)
-
-		if outcome.Status == chtransform.StatusRejected {
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason:    rejectReasonRouteRejected,
-				Err:       "route rejected message",
-				Payload:   raw,
-				EventName: event.GetEvent().GetName().String(),
-				Kafka:     mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
-		}
-
-		if outcome.Status == chtransform.StatusErrored {
-			batchErr = addBatchFailure(batchErr, msgs, i, errors.New("route errored"))
-
-			continue
-		}
-
-		if len(outcome.Results) == 0 {
-			continue
-		}
-
-		tables := make([]string, 0, len(outcome.Results))
-		for _, result := range outcome.Results {
-			o.writer.Write(result.Table, event, outcome.Meta)
-			tables = append(tables, result.Table)
-		}
-
-		if err := o.writer.FlushTables(ctx, tables); err != nil {
-			if o.isPermanentWriteError(err) {
-				if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-					Reason:    rejectReasonWritePermanent,
-					Err:       err.Error(),
-					Payload:   raw,
-					EventName: event.GetEvent().GetName().String(),
-					Kafka:     mctx.kafka,
-				}); rejectErr != nil {
-					batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-				}
-
-				o.log.WithError(err).WithField("topic", mctx.kafka.Topic).Warn("Dropped permanently invalid message")
-
-				continue
-			}
-
-			batchErr = addBatchFailure(batchErr, msgs, i, err)
-			for j := i + 1; j < len(msgs); j++ {
-				batchErr = addBatchFailure(batchErr, msgs, j, err)
-			}
-
-			return batchErr
-		}
-	}
-
-	if batchErr != nil {
-		return batchErr
-	}
-
-	return nil
 }
 
 func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.MessageBatch) error {

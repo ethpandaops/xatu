@@ -54,15 +54,14 @@ func NewBenthosStream(
 		service.NewConfigSpec(),
 		func(_ *service.ParsedConfig, _ *service.Resources) (out service.BatchOutput, policy service.BatchPolicy, maxInFlight int, err error) {
 			return &xatuClickHouseOutput{
-				log:          log.WithField("component", "benthos_clickhouse_output"),
-				encoding:     kafkaConfig.Encoding,
-				deliveryMode: kafkaConfig.DeliveryMode,
-				router:       routeEngine,
-				writer:       writer,
-				metrics:      metrics,
-				classifier:   classifier,
-				rejectSink:   rejectSink,
-				ownsWriter:   ownsWriter,
+				log:        log.WithField("component", "benthos_clickhouse_output"),
+				encoding:   kafkaConfig.Encoding,
+				router:     routeEngine,
+				writer:     writer,
+				metrics:    metrics,
+				classifier: classifier,
+				rejectSink: rejectSink,
+				ownsWriter: ownsWriter,
 			}, service.BatchPolicy{}, 1, nil
 		},
 	); registerErr != nil {
@@ -104,13 +103,13 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"seed_brokers":              append([]string(nil), kafkaConfig.Brokers...),
 		"regexp_topics_include":     append([]string(nil), kafkaConfig.Topics...),
 		"consumer_group":            kafkaConfig.ConsumerGroup,
-		"start_offset":              benthosStartOffset(kafkaConfig.OffsetDefault),
+		"start_offset":              kafkaConfig.OffsetDefault,
 		"commit_period":             kafkaConfig.CommitInterval.String(),
 		"fetch_min_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMinBytes),
 		"fetch_max_wait":            fmt.Sprintf("%dms", kafkaConfig.FetchWaitMaxMs),
 		"fetch_max_partition_bytes": fmt.Sprintf("%dB", kafkaConfig.MaxPartitionFetchBytes),
 		"session_timeout":           fmt.Sprintf("%dms", kafkaConfig.SessionTimeoutMs),
-		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.HeartbeatIntervalMs),
+		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
 	}
 
 	if kafkaConfig.TLS {
@@ -148,14 +147,6 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 	}
 
 	return yaml.Marshal(streamConfig)
-}
-
-func benthosStartOffset(offsetDefault string) string {
-	if strings.EqualFold(offsetDefault, "newest") {
-		return "latest"
-	}
-
-	return "earliest"
 }
 
 func benthosLogLevel(level string) string {

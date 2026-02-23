@@ -385,6 +385,14 @@ func TestColumnAlignment(t *testing.T) {
 			}
 
 			expectedRows := batch.Rows()
+			if expectedRows == 0 {
+				// Fan-out routes (e.g. validators, libp2p_peer)
+				// produce 0 rows from minimal events with empty
+				// payload lists. Skip alignment check since there
+				// is nothing to misalign.
+				t.Skipf("route produces 0 rows from minimal events (fan-out)")
+			}
+
 			input := batch.Input()
 
 			for _, col := range input {

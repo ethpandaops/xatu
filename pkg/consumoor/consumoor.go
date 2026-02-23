@@ -7,7 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os/signal"
-	"strings"
+	"regexp"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,8 +26,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// topicStream pairs a discovered Kafka topic with its dedicated Benthos stream.
+type topicStream struct {
+	topic  string
+	stream *service.Stream
+}
+
 // Consumoor is the main service that consumes events from Kafka and
-// writes them to ClickHouse.
+// writes them to ClickHouse. Each matched Kafka topic gets its own
+// Benthos stream and consumer group while sharing a single ClickHouse
+// writer for efficient connection reuse.
 type Consumoor struct {
 	log    logrus.FieldLogger
 	config *Config
@@ -34,8 +43,9 @@ type Consumoor struct {
 	metrics *telemetry.Metrics
 	router  *consrouter.Engine
 	writer  source.Writer
-	stream  *service.Stream
+	streams []topicStream
 
+	mu            sync.Mutex
 	metricsServer *http.Server
 	pprofServer   *http.Server
 }
@@ -47,11 +57,11 @@ func New(
 	config *Config,
 	overrides *Override,
 ) (*Consumoor, error) {
+	config.ApplyOverrides(overrides)
+
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-
-	config.ApplyOverrides(overrides)
 
 	metrics := telemetry.NewMetrics("xatu")
 
@@ -79,30 +89,61 @@ func New(
 	// each table gets zero-reflection inserts.
 	writer.RegisterBatchFactories(registeredRoutes)
 
-	c := &Consumoor{
-		log:     log.WithField("component", "consumoor"),
+	// Discover matching Kafka topics and create one stream per topic.
+	topics, err := source.DiscoverTopics(ctx, &config.Kafka)
+	if err != nil {
+		return nil, fmt.Errorf("discovering kafka topics: %w", err)
+	}
+
+	if len(topics) == 0 {
+		return nil, fmt.Errorf(
+			"no kafka topics matched patterns %v",
+			config.Kafka.Topics,
+		)
+	}
+
+	cLog := log.WithField("component", "consumoor")
+	cLog.WithField("topics", topics).
+		WithField("count", len(topics)).
+		Info("Discovered Kafka topics for per-topic streams")
+
+	streams := make([]topicStream, 0, len(topics))
+
+	for _, topic := range topics {
+		topicKafkaCfg := config.Kafka
+		topicKafkaCfg.Topics = []string{"^" + regexp.QuoteMeta(topic) + "$"}
+		topicKafkaCfg.ConsumerGroup = config.Kafka.ConsumerGroup + "-" + topic
+
+		stream, sErr := source.NewBenthosStream(
+			log.WithField("topic", topic),
+			config.LoggingLevel,
+			&topicKafkaCfg,
+			metrics,
+			router,
+			writer,
+			clickhouse.DefaultErrorClassifier{},
+			false, // writer lifecycle owned by Consumoor, not the output plugin
+		)
+		if sErr != nil {
+			return nil, fmt.Errorf(
+				"creating benthos stream for topic %q: %w", topic, sErr,
+			)
+		}
+
+		streams = append(streams, topicStream{
+			topic:  topic,
+			stream: stream,
+		})
+	}
+
+	return &Consumoor{
+		log:     cLog,
 		config:  config,
 		metrics: metrics,
 		router:  router,
 		writer:  writer,
-	}
-
-	stream, err := source.NewBenthosStream(
-		log,
-		config.LoggingLevel,
-		&config.Kafka,
-		metrics,
-		router,
-		writer,
-		clickhouse.DefaultErrorClassifier{},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating benthos stream: %w", err)
-	}
-
-	c.stream = stream
-
-	return c, nil
+		streams: streams,
+	}, nil
 }
 
 // Start runs the consumoor service until the context is cancelled or
@@ -111,7 +152,12 @@ func (c *Consumoor) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	c.log.Info("Consumoor started (benthos runtime)")
+	if err := c.writer.Start(ctx); err != nil {
+		return fmt.Errorf("starting clickhouse writer: %w", err)
+	}
+
+	c.log.WithField("streams", len(c.streams)).
+		Info("Consumoor started (per-topic benthos streams)")
 
 	g, gCtx := errgroup.WithContext(nctx)
 
@@ -125,58 +171,71 @@ func (c *Consumoor) Start(ctx context.Context) error {
 		})
 	}
 
+	for _, ts := range c.streams {
+		g.Go(func() error {
+			c.log.WithField("topic", ts.topic).Info("Starting stream")
+
+			if err := ts.stream.Run(gCtx); err != nil && !errors.Is(err, context.Canceled) {
+				return fmt.Errorf("running stream for topic %q: %w", ts.topic, err)
+			}
+
+			return nil
+		})
+	}
+
+	// Shut down HTTP servers when the group context is cancelled so that
+	// g.Wait() can return. Writer cleanup happens after g.Wait() to
+	// guarantee no stream is mid-WriteBatch when the writer stops.
 	g.Go(func() error {
-		if err := c.stream.Run(gCtx); err != nil && !errors.Is(err, context.Canceled) {
-			return fmt.Errorf("running benthos stream: %w", err)
-		}
+		<-gCtx.Done()
+		c.stopHTTPServers(ctx)
 
 		return nil
 	})
 
-	g.Go(func() error {
-		<-gCtx.Done()
+	streamErr := g.Wait()
 
-		return c.stop(ctx)
-	})
+	// All streams and HTTP servers have exited. Now stop the writer.
+	c.stopWriter(ctx)
 
-	err := g.Wait()
-
-	if err != nil && err != context.Canceled {
-		return err
+	if streamErr != nil && streamErr != context.Canceled {
+		return streamErr
 	}
 
 	return nil
 }
 
-// stop gracefully shuts down all components.
-func (c *Consumoor) stop(ctx context.Context) error {
-	c.log.Info("Stopping consumoor")
+// stopHTTPServers shuts down the metrics and pprof servers. Called from
+// within the errgroup on context cancellation so that g.Wait() can return.
+func (c *Consumoor) stopHTTPServers(ctx context.Context) {
+	c.mu.Lock()
+	metricsServer := c.metricsServer
+	pprofServer := c.pprofServer
+	c.mu.Unlock()
 
-	if c.stream != nil {
-		// Benthos doesn't export a typed error for unstarted streams;
-		// use a substring match to tolerate minor message rewording.
-		if err := c.stream.StopWithin(30 * time.Second); err != nil &&
-			!strings.Contains(err.Error(), "not been run") {
-			c.log.WithError(err).Error("Error stopping benthos stream")
-		}
-	}
-
-	// Stop HTTP servers
-	if c.metricsServer != nil {
-		if err := c.metricsServer.Shutdown(ctx); err != nil {
+	if metricsServer != nil {
+		if err := metricsServer.Shutdown(ctx); err != nil {
 			c.log.WithError(err).Error("Error stopping metrics server")
 		}
 	}
 
-	if c.pprofServer != nil {
-		if err := c.pprofServer.Shutdown(ctx); err != nil {
+	if pprofServer != nil {
+		if err := pprofServer.Shutdown(ctx); err != nil {
 			c.log.WithError(err).Error("Error stopping pprof server")
 		}
 	}
+}
+
+// stopWriter drains the shared ClickHouse writer. Must be called after
+// all streams have fully exited to guarantee no in-flight writes.
+func (c *Consumoor) stopWriter(ctx context.Context) {
+	c.log.Info("Stopping consumoor")
+
+	if err := c.writer.Stop(ctx); err != nil {
+		c.log.WithError(err).Error("Error stopping clickhouse writer")
+	}
 
 	c.log.Info("Consumoor stopped")
-
-	return nil
 }
 
 func (c *Consumoor) startMetrics(ctx context.Context) error {
@@ -185,7 +244,7 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 
 	c.log.WithField("addr", c.config.MetricsAddr).Info("Starting metrics server")
 
-	c.metricsServer = &http.Server{
+	srv := &http.Server{
 		Addr:              c.config.MetricsAddr,
 		ReadHeaderTimeout: 15 * time.Second,
 		Handler:           sm,
@@ -194,7 +253,11 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 		},
 	}
 
-	if err := c.metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	c.mu.Lock()
+	c.metricsServer = srv
+	c.mu.Unlock()
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 
@@ -204,12 +267,16 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 func (c *Consumoor) startPProf(_ context.Context) error {
 	c.log.WithField("addr", c.config.PProfAddr).Info("Starting pprof server")
 
-	c.pprofServer = &http.Server{
+	srv := &http.Server{
 		Addr:              *c.config.PProfAddr,
 		ReadHeaderTimeout: 120 * time.Second,
 	}
 
-	if err := c.pprofServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	c.mu.Lock()
+	c.pprofServer = srv
+	c.mu.Unlock()
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 

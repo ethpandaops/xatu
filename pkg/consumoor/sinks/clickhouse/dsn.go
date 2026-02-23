@@ -29,18 +29,25 @@ func parseChGoOptions(dsn string) (ch.Options, error) {
 		return ch.Options{}, fmt.Errorf("unsupported DSN scheme %q for ch-go backend", u.Scheme)
 	}
 
-	hostPort := u.Host
-	if hostPort == "" {
+	host := u.Hostname()
+	if host == "" {
 		return ch.Options{}, fmt.Errorf("missing host in DSN")
 	}
 
-	if strings.Contains(hostPort, ",") {
+	if strings.Contains(host, ",") {
 		return ch.Options{}, fmt.Errorf("multiple hosts are not supported by ch-go backend")
 	}
 
-	if _, _, splitErr := net.SplitHostPort(hostPort); splitErr != nil {
-		hostPort = net.JoinHostPort(hostPort, "9000")
+	port := u.Port()
+	if port == "" {
+		if u.Scheme == "clickhouses" || isTrue(u.Query().Get("secure")) || isTrue(u.Query().Get("tls")) {
+			port = "9440"
+		} else {
+			port = "9000"
+		}
 	}
+
+	hostPort := net.JoinHostPort(host, port)
 
 	database := strings.TrimPrefix(u.Path, "/")
 	if database == "" {
@@ -60,18 +67,19 @@ func parseChGoOptions(dsn string) (ch.Options, error) {
 		}
 	}
 
-	q := u.Query()
-	if user := q.Get("username"); user != "" {
+	if user := u.Query().Get("username"); user != "" {
 		username = user
 	}
 
-	if pass := q.Get("password"); pass != "" {
+	if pass := u.Query().Get("password"); pass != "" {
 		password = pass
 	}
 
-	if db := q.Get("database"); db != "" {
+	if db := u.Query().Get("database"); db != "" {
 		database = db
 	}
+
+	q := u.Query()
 
 	var tlsConfig *tls.Config
 	if isTrue(q.Get("secure")) || isTrue(q.Get("tls")) || u.Scheme == "clickhouses" {

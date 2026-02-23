@@ -85,6 +85,18 @@ func (w *testWriter) FlushAll(context.Context) error {
 	return err
 }
 
+func (w *testWriter) FlushTables(_ context.Context, _ []string) error {
+	w.flushCalls++
+	if len(w.flushErrs) == 0 {
+		return nil
+	}
+
+	err := w.flushErrs[0]
+	w.flushErrs = w.flushErrs[1:]
+
+	return err
+}
+
 type testRejectSink struct {
 	enabled bool
 	err     error

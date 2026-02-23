@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
 	tabledefs "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
+	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -90,8 +91,15 @@ func FuzzFlattenNilSafety(f *testing.F) {
 
 			batch := route.NewBatch()
 
+			// Bit 6 of metaBits: pre-extract metadata to test
+			// the metadata.Extract path instead of in-FlattenTo extraction.
+			var meta *metadata.CommonMetadata
+			if metaBits&0x40 != 0 {
+				meta = metadata.Extract(event)
+			}
+
 			// Must not panic.
-			_ = batch.FlattenTo(event, nil)
+			_ = batch.FlattenTo(event, meta)
 
 			// Column alignment invariant.
 			expected := batch.Rows()

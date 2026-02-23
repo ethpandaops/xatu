@@ -19,6 +19,9 @@ const benthosOutputType = "xatu_clickhouse"
 
 // NewBenthosStream creates a Benthos stream that consumes from Kafka and writes
 // to ClickHouse via the custom xatu_clickhouse output plugin.
+// When ownsWriter is true the output plugin manages the writer lifecycle
+// (Start/Stop). When false the caller is responsible for the writer lifecycle,
+// which is the case when multiple streams share a single writer.
 func NewBenthosStream(
 	log logrus.FieldLogger,
 	logLevel string,
@@ -27,6 +30,7 @@ func NewBenthosStream(
 	routeEngine *chtransform.Engine,
 	writer Writer,
 	classifier WriteErrorClassifier,
+	ownsWriter bool,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
 		return nil, fmt.Errorf("nil kafka config")
@@ -38,6 +42,12 @@ func NewBenthosStream(
 	}
 
 	env := service.NewEnvironment()
+
+	closeRejectSink := func() {
+		if closer, ok := rejectSink.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+	}
 
 	if registerErr := env.RegisterBatchOutput(
 		benthosOutputType,
@@ -52,24 +62,33 @@ func NewBenthosStream(
 				metrics:      metrics,
 				classifier:   classifier,
 				rejectSink:   rejectSink,
+				ownsWriter:   ownsWriter,
 			}, service.BatchPolicy{}, 1, nil
 		},
 	); registerErr != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("registering output plugin: %w", registerErr)
 	}
 
 	streamConfigBytes, err := benthosConfigYAML(logLevel, kafkaConfig)
 	if err != nil {
+		closeRejectSink()
+
 		return nil, err
 	}
 
 	builder := env.NewStreamBuilder()
 	if setErr := builder.SetYAML(string(streamConfigBytes)); setErr != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("parsing benthos stream config: %w", setErr)
 	}
 
 	stream, err := builder.Build()
 	if err != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("building benthos stream: %w", err)
 	}
 

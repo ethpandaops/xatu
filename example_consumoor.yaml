@@ -6,8 +6,8 @@ kafka:
   brokers:
     - localhost:9092
   topics:
-    - "^general-.+"
-  consumerGroup: xatu-consumoor-general
+    - "^general-.+"            # regex patterns — each matched topic gets its own isolated stream
+  consumerGroup: xatu-consumoor-general  # base name — per-topic suffix appended (e.g. xatu-consumoor-general-general-BEACON_API_ETH_V1_EVENTS_HEAD_V2)
   encoding: json  # switch to "protobuf" after Vector removal
   # offsetDefault: oldest
   # fetchMinBytes: 1

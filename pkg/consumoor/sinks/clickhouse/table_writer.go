@@ -179,17 +179,23 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 
 	batch := tw.newBatch()
 
+	var flattenErrors int
+
 	for _, e := range events {
 		if err := batch.FlattenTo(e.event, e.meta); err != nil {
-			tw.log.WithError(err).
-				WithField("events", len(events)).
-				Error("Failed to flatten event into columnar batch")
-			tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(events)))
+			tw.log.WithError(err).Warn("Skipping unflattenable event")
+			tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
 
-			return &tableWriteError{
-				table: tw.table,
-				cause: &inputPrepError{cause: fmt.Errorf("flattening event for %s: %w", tw.table, err)},
-			}
+			flattenErrors++
+		}
+	}
+
+	if flattenErrors == len(events) {
+		return &tableWriteError{
+			table: tw.table,
+			cause: &inputPrepError{
+				cause: fmt.Errorf("all %d events failed FlattenTo for %s", len(events), tw.table),
+			},
 		}
 	}
 

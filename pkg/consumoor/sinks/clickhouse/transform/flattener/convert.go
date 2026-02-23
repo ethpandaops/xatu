@@ -63,7 +63,7 @@ func ParseUInt128(s string) proto.UInt128 {
 		return proto.UInt128{}
 	}
 
-	if n.Sign() < 0 {
+	if n.Sign() < 0 || n.BitLen() > 128 {
 		return proto.UInt128{}
 	}
 
@@ -95,7 +95,7 @@ func ParseUInt256(s string) proto.UInt256 {
 		}
 	}
 
-	if n.Sign() < 0 {
+	if n.Sign() < 0 || n.BitLen() > 256 {
 		return proto.UInt256{}
 	}
 

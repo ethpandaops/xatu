@@ -40,6 +40,7 @@ type xatuClickHouseOutput struct {
 	metrics      *telemetry.Metrics
 	classifier   WriteErrorClassifier
 	rejectSink   rejectSink
+	ownsWriter   bool
 
 	mu      sync.Mutex
 	started bool
@@ -53,8 +54,10 @@ func (o *xatuClickHouseOutput) Connect(ctx context.Context) error {
 		return nil
 	}
 
-	if err := o.writer.Start(ctx); err != nil {
-		return err
+	if o.ownsWriter {
+		if err := o.writer.Start(ctx); err != nil {
+			return err
+		}
 	}
 
 	o.started = true
@@ -82,7 +85,11 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 		return nil
 	}
 
-	writerErr := o.writer.Stop(ctx)
+	var writerErr error
+
+	if o.ownsWriter {
+		writerErr = o.writer.Stop(ctx)
+	}
 
 	var rejectErr error
 
@@ -168,11 +175,13 @@ func (o *xatuClickHouseOutput) writeMessageMode(ctx context.Context, msgs servic
 			continue
 		}
 
+		tables := make([]string, 0, len(outcome.Results))
 		for _, result := range outcome.Results {
 			o.writer.Write(result.Table, event, outcome.Meta)
+			tables = append(tables, result.Table)
 		}
 
-		if err := o.writer.FlushAll(ctx); err != nil {
+		if err := o.writer.FlushTables(ctx, tables); err != nil {
 			if o.isPermanentWriteError(err) {
 				if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 					Reason:    rejectReasonWritePermanent,
@@ -291,7 +300,12 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 		return nil
 	}
 
-	if err := o.writer.FlushAll(ctx); err != nil {
+	flushedTables := make([]string, 0, len(tableToMessageIndexes))
+	for table := range tableToMessageIndexes {
+		flushedTables = append(flushedTables, table)
+	}
+
+	if err := o.writer.FlushTables(ctx, flushedTables); err != nil {
 		failedIndexes := failedIndexesForWriteError(tableToMessageIndexes, err, o.classifier)
 		if len(failedIndexes) == 0 {
 			failedIndexes = allTableMessageIndexes(tableToMessageIndexes)
@@ -339,9 +353,9 @@ func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *reject
 		return errors.New("nil rejected record")
 	}
 
-	o.metrics.MessagesRejected().WithLabelValues(record.Reason).Inc()
-
 	if o.rejectSink == nil {
+		o.metrics.MessagesRejected().WithLabelValues(record.Reason).Inc()
+
 		return nil
 	}
 
@@ -350,6 +364,8 @@ func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *reject
 
 		return fmt.Errorf("writing rejected message to dlq: %w", err)
 	}
+
+	o.metrics.MessagesRejected().WithLabelValues(record.Reason).Inc()
 
 	if o.rejectSink.Enabled() {
 		o.metrics.DLQWrites().WithLabelValues(record.Reason).Inc()

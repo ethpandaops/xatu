@@ -28,7 +28,7 @@ func extractNodeGeo(event *xatu.DecoratedEvent, eventName xatu.Event_Name) nodeG
 
 	var geo *xatu.ServerMeta_Geo
 
-	switch eventName {
+	switch eventName { //nolint:exhaustive // only node events carry server geo
 	case xatu.Event_NODE_RECORD_CONSENSUS:
 		if additional := server.GetNODE_RECORD_CONSENSUS(); additional != nil {
 			geo = additional.GetGeo()

@@ -17,6 +17,10 @@ type Writer interface {
 	// On failure, unflushed events are preserved in the table writers for
 	// retry on the next cycle.
 	FlushAll(ctx context.Context) error
+	// FlushTables forces the specified table writers (by base table name)
+	// to drain their buffers and write to ClickHouse synchronously.
+	// An empty or nil slice is a no-op that returns nil.
+	FlushTables(ctx context.Context, tables []string) error
 }
 
 // WriteErrorClassifier classifies sink write errors for source-level retry

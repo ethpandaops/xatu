@@ -85,7 +85,9 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	// Look up routes for this event.
 	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
-		r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+		if r.metrics != nil {
+			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+		}
 
 		return Outcome{Status: StatusDelivered}
 	}
@@ -98,7 +100,9 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	for _, route := range routesForEvent {
 		// Check conditional routing
 		if !route.ShouldProcess(event) {
-			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "filtered").Inc()
+			if r.metrics != nil {
+				r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "filtered").Inc()
+			}
 
 			continue
 		}
@@ -109,8 +113,10 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 		})
 	}
 
-	for _, result := range results {
-		r.metrics.MessagesRouted().WithLabelValues(eventName.String(), result.Table).Inc()
+	if r.metrics != nil {
+		for _, result := range results {
+			r.metrics.MessagesRouted().WithLabelValues(eventName.String(), result.Table).Inc()
+		}
 	}
 
 	return Outcome{

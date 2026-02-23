@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -238,10 +239,13 @@ func cloneInsertSettings(settings map[string]any) map[string]any {
 	return out
 }
 
+// validSettingName matches ClickHouse setting identifiers.
+var validSettingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
 func validateInsertSettings(settings map[string]any, path string) error {
 	for name, value := range settings {
-		if strings.TrimSpace(name) == "" {
-			return fmt.Errorf("%s: setting name cannot be empty", path)
+		if !validSettingName.MatchString(name) {
+			return fmt.Errorf("%s: invalid setting name %q (must match [A-Za-z_][A-Za-z0-9_]*)", path, name)
 		}
 
 		switch value.(type) {

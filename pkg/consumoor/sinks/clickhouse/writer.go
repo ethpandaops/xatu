@@ -36,8 +36,9 @@ type ChGoWriter struct {
 	// registered by route initialization.
 	batchFactories map[string]func() flattener.ColumnarBatch
 
-	done chan struct{}
-	wg   sync.WaitGroup
+	done     chan struct{}
+	stopOnce sync.Once
+	wg       sync.WaitGroup
 
 	poolMetricsDone chan struct{}
 	poolMetricsWG   sync.WaitGroup
@@ -136,21 +137,24 @@ func (w *ChGoWriter) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop drains buffers and closes the connection pool.
+// Stop drains buffers and closes the connection pool. It is safe to
+// call multiple times; only the first call performs cleanup.
 func (w *ChGoWriter) Stop(_ context.Context) error {
-	w.log.Info("Stopping ch-go writer, flushing remaining buffers")
+	w.stopOnce.Do(func() {
+		w.log.Info("Stopping ch-go writer, flushing remaining buffers")
 
-	close(w.done)
-	w.wg.Wait()
+		close(w.done)
+		w.wg.Wait()
 
-	if w.poolMetricsDone != nil {
-		close(w.poolMetricsDone)
-		w.poolMetricsWG.Wait()
-	}
+		if w.poolMetricsDone != nil {
+			close(w.poolMetricsDone)
+			w.poolMetricsWG.Wait()
+		}
 
-	if pool := w.getPool(); pool != nil {
-		pool.Close()
-	}
+		if pool := w.getPool(); pool != nil {
+			pool.Close()
+		}
+	})
 
 	return nil
 }
@@ -208,6 +212,69 @@ func (w *ChGoWriter) FlushAll(ctx context.Context) error {
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
+		case <-ctx.Done():
+			if firstErr == nil {
+				firstErr = ctx.Err()
+			}
+		}
+	}
+
+	return firstErr
+}
+
+// FlushTables forces the specified table writers (by base table name)
+// to drain their buffers and write to ClickHouse synchronously.
+// Base names are resolved using the configured TableSuffix.
+// An empty or nil slice is a no-op that returns nil.
+func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
+	if len(tables) == 0 {
+		return nil
+	}
+
+	w.mu.RLock()
+
+	writers := make([]*chTableWriter, 0, len(tables))
+
+	for _, base := range tables {
+		writeTable := base + w.config.TableSuffix
+		if tw, ok := w.tables[writeTable]; ok {
+			writers = append(writers, tw)
+		}
+	}
+
+	w.mu.RUnlock()
+
+	if len(writers) == 0 {
+		return nil
+	}
+
+	// Send flush requests to matched table writers in parallel.
+	errChs := make([]chan error, len(writers))
+
+	for i, tw := range writers {
+		errCh := make(chan error, 1)
+		errChs[i] = errCh
+
+		select {
+		case tw.flushReq <- errCh:
+		case <-w.done:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	// Collect results — return first error.
+	var firstErr error
+
+	for _, errCh := range errChs {
+		select {
+		case err := <-errCh:
+			if err != nil && firstErr == nil {
+				firstErr = err
+			}
+		case <-w.done:
+			return firstErr
 		case <-ctx.Done():
 			if firstErr == nil {
 				firstErr = ctx.Err()

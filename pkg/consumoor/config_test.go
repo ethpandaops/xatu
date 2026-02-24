@@ -225,6 +225,47 @@ func TestKafkaConfigValidateOffsetDefault(t *testing.T) {
 	})
 }
 
+func TestSASLConfigValidateMechanism(t *testing.T) {
+	validSASL := func(mechanism string) *source.KafkaConfig {
+		return &source.KafkaConfig{
+			Brokers:          []string{"localhost:9092"},
+			Topics:           []string{"^test-.+"},
+			ConsumerGroup:    "test-group",
+			Encoding:         "json",
+			OffsetDefault:    "earliest",
+			SessionTimeoutMs: 30000,
+			CommitInterval:   5 * time.Second,
+			SASLConfig: &source.SASLConfig{
+				Mechanism: mechanism,
+				User:      "alice",
+				Password:  "secret",
+			},
+		}
+	}
+
+	for _, mech := range []string{
+		"PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512", "OAUTHBEARER",
+		"plain", "scram-sha-256", " PLAIN ",
+	} {
+		t.Run("accepts "+mech, func(t *testing.T) {
+			require.NoError(t, validSASL(mech).Validate())
+		})
+	}
+
+	t.Run("accepts empty mechanism (defaults to PLAIN)", func(t *testing.T) {
+		require.NoError(t, validSASL("").Validate())
+	})
+
+	for _, mech := range []string{"AWS_MSK_IAM", "GSSAPI", "nonsense"} {
+		t.Run("rejects "+mech, func(t *testing.T) {
+			err := validSASL(mech).Validate()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "unsupported mechanism")
+			assert.Contains(t, err.Error(), mech)
+		})
+	}
+}
+
 func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
 	base := func() *source.KafkaConfig {
 		return &source.KafkaConfig{

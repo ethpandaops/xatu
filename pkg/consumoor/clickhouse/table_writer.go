@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/ClickHouse/ch-go"
@@ -12,6 +13,9 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
+
+// bufferWarningInterval is the minimum time between warning logs per table.
+const bufferWarningInterval = time.Minute
 
 // eventEntry holds a single event for buffering in the table writer.
 type eventEntry struct {
@@ -34,6 +38,10 @@ type chTableWriter struct {
 
 	newBatch func() route.ColumnarBatch
 	batch    route.ColumnarBatch // reused across flushes via Reset()
+
+	// lastWarnAt tracks the last time a buffer warning was emitted (Unix nanos).
+	// Accessed atomically from the Write goroutine for rate limiting.
+	lastWarnAt atomic.Int64
 }
 
 func (tw *chTableWriter) run(done <-chan struct{}) {
@@ -52,7 +60,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 		select {
 		case entry := <-bufferCh:
-			tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(1)
+			tw.decrBuffer(1)
 
 			events = append(events, entry)
 
@@ -135,7 +143,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 				for {
 					select {
 					case entry := <-tw.buffer:
-						tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(1)
+						tw.decrBuffer(1)
 
 						events = append(events, entry)
 					default:
@@ -179,7 +187,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			for {
 				select {
 				case entry := <-tw.buffer:
-					tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(1)
+					tw.decrBuffer(1)
 
 					events = append(events, entry)
 				default:
@@ -361,4 +369,42 @@ func (tw *chTableWriter) do(
 
 		return pool.Do(attemptCtx, *query)
 	})
+}
+
+// checkBufferWarning emits a rate-limited warning when the buffer usage
+// exceeds the configured BufferWarningThreshold. Safe to call from any
+// goroutine.
+func (tw *chTableWriter) checkBufferWarning() {
+	threshold := tw.writer.config.BufferWarningThreshold
+	if threshold <= 0 {
+		return
+	}
+
+	current := len(tw.buffer)
+	limit := tw.config.BufferSize
+
+	if float64(current) < threshold*float64(limit) {
+		return
+	}
+
+	now := time.Now().UnixNano()
+	last := tw.lastWarnAt.Load()
+
+	if now-last < int64(bufferWarningInterval) {
+		return
+	}
+
+	if tw.lastWarnAt.CompareAndSwap(last, now) {
+		tw.log.WithFields(logrus.Fields{
+			"current":   current,
+			"max":       limit,
+			"threshold": threshold,
+		}).Warn("Buffer usage exceeds warning threshold")
+	}
+}
+
+// decrBuffer decrements both the per-table and aggregate buffer gauges.
+func (tw *chTableWriter) decrBuffer(n int) {
+	tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(float64(n))
+	tw.metrics.BufferUsageTotal().Sub(float64(n))
 }

@@ -84,6 +84,9 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			}
 
 		case <-ticker.C:
+			// Organic flush: these writes are independent of Kafka offset commits.
+			// Rows written here may be replayed if the process crashes before the
+			// next Benthos commit_period tick commits the corresponding offsets.
 			if len(events) > 0 {
 				if err := tw.flush(context.Background(), events); err != nil {
 					var flatErr *flattenError
@@ -155,6 +158,9 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			}
 
 		case <-done:
+			// Shutdown drain: flushing remaining events here can produce duplicates
+			// if the process restarts and the consumer group rebalances before
+			// offsets are committed, causing the same messages to be reprocessed.
 		drainLoop:
 			for {
 				select {

@@ -1,3 +1,17 @@
+// Package consumoor provides at-least-once delivery from Kafka to ClickHouse.
+//
+// Duplicate rows are possible after process crashes, Kafka consumer group
+// rebalances, or pod restarts. The window for duplicates is bounded by the
+// Kafka commit_period (default 5 s): Benthos commits offsets on a periodic
+// timer, not per-INSERT, so a crash between a successful ClickHouse write and
+// the next offset commit causes the consumer to replay those messages.
+//
+// Exactly-once is not achievable here because Kafka offset commits and
+// ClickHouse INSERTs are independent, non-transactional operations.
+// ClickHouse ReplicatedMergeTree provides block-level deduplication within
+// replicated_deduplication_window, which reduces but does not eliminate
+// duplicates across all failure scenarios. See
+// docs/consumoor-delivery-semantics.md for mitigation strategies.
 package consumoor
 
 import (
@@ -231,6 +245,9 @@ func (c *Consumoor) stopHTTPServers(ctx context.Context) {
 
 // stopWriter drains the shared ClickHouse writer. Must be called after
 // all streams have fully exited to guarantee no in-flight writes.
+// The final buffer drain in each table writer can produce duplicate rows if the
+// process restarts and the consumer group replays messages whose offsets were
+// not yet committed. See the package-level doc comment for delivery semantics.
 func (c *Consumoor) stopWriter(ctx context.Context) {
 	c.log.Info("Stopping consumoor")
 

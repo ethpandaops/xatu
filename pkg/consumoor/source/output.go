@@ -229,6 +229,9 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 		return batchErr
 	}
 
+	// At-least-once: returning nil marks the batch as acknowledged by Benthos,
+	// but the Kafka offset is not committed until the next commit_period tick.
+	// A crash in that window causes the consumer to replay these messages.
 	return nil
 }
 

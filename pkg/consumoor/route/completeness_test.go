@@ -1,6 +1,7 @@
 package route_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -42,6 +43,12 @@ func TestCompletenessMinimalFlatten(t *testing.T) {
 			}
 
 			err := batch.FlattenTo(event)
+			if errors.Is(err, route.ErrInvalidEvent) {
+				// Nil-payload events are expected to be rejected with
+				// ErrInvalidEvent — the table writer skips these.
+				return
+			}
+
 			require.NoError(t, err)
 
 			// If the route produced rows, verify column alignment.

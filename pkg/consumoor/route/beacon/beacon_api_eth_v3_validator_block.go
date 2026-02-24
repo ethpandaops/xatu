@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"

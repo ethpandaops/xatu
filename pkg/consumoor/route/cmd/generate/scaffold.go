@@ -14,7 +14,6 @@ var routeScaffoldTmpl = template.Must(template.New("route").Parse(`package {{.Pa
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -43,37 +42,16 @@ func init() {
 func (b *{{.BatchName}}) FlattenTo(
 	event *xatu.DecoratedEvent,
 ) error {
-	if event == nil || event.GetEvent() == nil {
-		return nil
-	}
-
-	b.appendRuntime(event)
-	b.appendMetadata(event)
-
-	// TODO: Implement appendPayload to extract event-specific fields from the proto.
-	if err := b.appendPayload(event); err != nil {
-		return err
-	}
-
-	b.rows++
-
-	return nil
-}
-
-func (b *{{.BatchName}}) appendRuntime(event *xatu.DecoratedEvent) {
-	b.UpdatedDateTime.Append(time.Now())
-
-	if ts := event.GetEvent().GetDateTime(); ts != nil {
-		b.EventDateTime.Append(ts.AsTime())
-	} else {
-		b.EventDateTime.Append(time.Time{})
-	}
-}
-
-// TODO: Implement this method to extract the event payload fields into the batch columns.
-// The generated .gen.go file contains the available column fields for this table.
-func (b *{{.BatchName}}) appendPayload(_ *xatu.DecoratedEvent) error {
-	return fmt.Errorf("{{.TypeName}}: appendPayload not implemented")
+	// TODO: Implement this method to flatten the event into columnar batch columns.
+	// The generated .gen.go file contains the available column fields for this table.
+	//
+	// Typical structure:
+	//   b.appendRuntime(event)
+	//   b.appendMetadata(event)
+	//   b.appendPayload(event)
+	//   b.rows++
+	//   return nil
+	return fmt.Errorf("{{.TypeName}}: FlattenTo not implemented")
 }
 `))
 

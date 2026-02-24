@@ -193,6 +193,9 @@ func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent) {
 	select {
 	case tw.buffer <- eventEntry{event: event}:
 		w.metrics.BufferUsage().WithLabelValues(tw.table).Inc()
+		w.metrics.BufferUsageTotal().Inc()
+
+		tw.checkBufferWarning()
 	case <-w.done:
 		// Shutting down, discard.
 	}

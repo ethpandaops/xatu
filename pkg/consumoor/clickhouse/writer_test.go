@@ -451,6 +451,193 @@ func TestGetOrCreateTableWriter_DifferentTablesGetDifferentWriters(t *testing.T)
 	assert.Len(t, w.tables, 2)
 }
 
+func TestBufferWarningThresholdValidation(t *testing.T) {
+	validChGo := ChGoConfig{
+		RetryBaseDelay:    100 * time.Millisecond,
+		RetryMaxDelay:     2 * time.Second,
+		MaxConns:          8,
+		MinConns:          1,
+		ConnMaxLifetime:   time.Hour,
+		ConnMaxIdleTime:   10 * time.Minute,
+		HealthCheckPeriod: 30 * time.Second,
+	}
+
+	t.Run("accepts 0", func(t *testing.T) {
+		cfg := &Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			OrganicRetryInitDelay:  time.Second,
+			OrganicRetryMaxDelay:   30 * time.Second,
+			BufferWarningThreshold: 0,
+			ChGo:                   validChGo,
+		}
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts 0.8", func(t *testing.T) {
+		cfg := &Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			OrganicRetryInitDelay:  time.Second,
+			OrganicRetryMaxDelay:   30 * time.Second,
+			BufferWarningThreshold: 0.8,
+			ChGo:                   validChGo,
+		}
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts 1", func(t *testing.T) {
+		cfg := &Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			OrganicRetryInitDelay:  time.Second,
+			OrganicRetryMaxDelay:   30 * time.Second,
+			BufferWarningThreshold: 1.0,
+			ChGo:                   validChGo,
+		}
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("rejects negative", func(t *testing.T) {
+		cfg := &Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			OrganicRetryInitDelay:  time.Second,
+			OrganicRetryMaxDelay:   30 * time.Second,
+			BufferWarningThreshold: -0.1,
+			ChGo:                   validChGo,
+		}
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "bufferWarningThreshold")
+	})
+
+	t.Run("rejects greater than 1", func(t *testing.T) {
+		cfg := &Config{
+			DSN: "clickhouse://localhost:9000/default",
+			Defaults: TableConfig{
+				BatchSize:     1000,
+				FlushInterval: time.Second,
+				BufferSize:    1000,
+			},
+			OrganicRetryInitDelay:  time.Second,
+			OrganicRetryMaxDelay:   30 * time.Second,
+			BufferWarningThreshold: 1.5,
+			ChGo:                   validChGo,
+		}
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "bufferWarningThreshold")
+	})
+}
+
+func TestCheckBufferWarning(t *testing.T) {
+	t.Run("no warning below threshold", func(t *testing.T) {
+		tw := &chTableWriter{
+			log:    logrus.New().WithField("test", true),
+			table:  "test_table",
+			config: TableConfig{BufferSize: 100},
+			writer: &ChGoWriter{
+				config: &Config{BufferWarningThreshold: 0.8},
+			},
+			buffer: make(chan eventEntry, 100),
+		}
+
+		// Fill to 50% -- below 80% threshold
+		for i := 0; i < 50; i++ {
+			tw.buffer <- eventEntry{}
+		}
+
+		tw.checkBufferWarning()
+		assert.Equal(t, int64(0), tw.lastWarnAt.Load(),
+			"should not warn when below threshold")
+	})
+
+	t.Run("warns above threshold", func(t *testing.T) {
+		tw := &chTableWriter{
+			log:    logrus.New().WithField("test", true),
+			table:  "test_table",
+			config: TableConfig{BufferSize: 100},
+			writer: &ChGoWriter{
+				config: &Config{BufferWarningThreshold: 0.8},
+			},
+			buffer: make(chan eventEntry, 100),
+		}
+
+		// Fill to 85% -- above 80% threshold
+		for i := 0; i < 85; i++ {
+			tw.buffer <- eventEntry{}
+		}
+
+		tw.checkBufferWarning()
+		assert.NotEqual(t, int64(0), tw.lastWarnAt.Load(),
+			"should warn when above threshold")
+	})
+
+	t.Run("rate limits warnings", func(t *testing.T) {
+		tw := &chTableWriter{
+			log:    logrus.New().WithField("test", true),
+			table:  "test_table",
+			config: TableConfig{BufferSize: 100},
+			writer: &ChGoWriter{
+				config: &Config{BufferWarningThreshold: 0.8},
+			},
+			buffer: make(chan eventEntry, 100),
+		}
+
+		// Fill above threshold
+		for i := 0; i < 85; i++ {
+			tw.buffer <- eventEntry{}
+		}
+
+		tw.checkBufferWarning()
+		firstWarn := tw.lastWarnAt.Load()
+		require.NotEqual(t, int64(0), firstWarn)
+
+		// Second call should not update the timestamp (rate limited)
+		tw.checkBufferWarning()
+		assert.Equal(t, firstWarn, tw.lastWarnAt.Load(),
+			"should rate-limit warnings within the interval")
+	})
+
+	t.Run("disabled when threshold is 0", func(t *testing.T) {
+		tw := &chTableWriter{
+			log:    logrus.New().WithField("test", true),
+			table:  "test_table",
+			config: TableConfig{BufferSize: 100},
+			writer: &ChGoWriter{
+				config: &Config{BufferWarningThreshold: 0},
+			},
+			buffer: make(chan eventEntry, 100),
+		}
+
+		// Fill to 100%
+		for i := 0; i < 100; i++ {
+			tw.buffer <- eventEntry{}
+		}
+
+		tw.checkBufferWarning()
+		assert.Equal(t, int64(0), tw.lastWarnAt.Load(),
+			"should not warn when threshold is disabled (0)")
+	})
+}
+
 func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("default inherits from defaults", func(t *testing.T) {
 		cfg := &Config{

@@ -44,6 +44,7 @@ clickhouse:
   #   connMaxIdleTime: 10m
   #   healthCheckPeriod: 30s
   #   poolMetricsInterval: 15s
+  # bufferWarningThreshold: 0.8  # log warning when any table buffer exceeds this fraction (0-1)
   defaults:
     batchSize: 200000
     flushInterval: 1s

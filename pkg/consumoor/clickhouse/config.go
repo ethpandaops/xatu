@@ -30,6 +30,12 @@ type Config struct {
 	// false to downgrade to warnings and allow startup to proceed.
 	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"true"`
 
+	// BufferWarningThreshold is the fraction (0-1) of a table's bufferSize
+	// at which a rate-limited warning is logged. Provides early visibility
+	// into memory pressure before full backpressure kicks in.
+	// Default: 0.8
+	BufferWarningThreshold float64 `yaml:"bufferWarningThreshold" default:"0.8"`
+
 	// Defaults are the default batch settings for all tables.
 	Defaults TableConfig `yaml:"defaults"`
 
@@ -117,6 +123,10 @@ func (c *Config) Validate() error {
 
 	if err := c.ChGo.Validate(); err != nil {
 		return err
+	}
+
+	if c.BufferWarningThreshold < 0 || c.BufferWarningThreshold > 1 {
+		return errors.New("clickhouse: bufferWarningThreshold must be between 0 and 1")
 	}
 
 	if c.Defaults.BatchSize <= 0 {

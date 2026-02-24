@@ -19,6 +19,7 @@ type Metrics struct {
 	writeDuration    *prometheus.HistogramVec
 	batchSize        *prometheus.HistogramVec
 	bufferUsage      *prometheus.GaugeVec
+	bufferUsageTotal prometheus.Gauge
 	flattenErrors    *prometheus.CounterVec
 	activeTopics     prometheus.Gauge
 
@@ -130,6 +131,13 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Current number of rows buffered per table.",
 		}, []string{"table"}),
 
+		bufferUsageTotal: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "buffer_usage_total",
+			Help:      "Sum of all table buffer usages. Single number for aggregate memory pressure alerting.",
+		}),
+
 		flattenErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
@@ -228,6 +236,7 @@ func (m *Metrics) WriteErrors() *prometheus.CounterVec      { return m.writeErro
 func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDuration }
 func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
 func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsage }
+func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsageTotal }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
 func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
 

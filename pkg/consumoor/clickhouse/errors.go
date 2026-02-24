@@ -45,20 +45,6 @@ type flattenError struct {
 func (e *flattenError) Error() string { return fmt.Sprintf("flatten failed: %v", e.cause) }
 func (e *flattenError) Unwrap() error { return e.cause }
 
-// DefaultErrorClassifier classifies ClickHouse write errors for source retry
-// and reject handling.
-type DefaultErrorClassifier struct{}
-
-// IsPermanent returns true if the error is a permanent write error.
-func (DefaultErrorClassifier) IsPermanent(err error) bool {
-	return IsPermanentWriteError(err)
-}
-
-// Table extracts the table name from a write error.
-func (DefaultErrorClassifier) Table(err error) string {
-	return WriteErrorTable(err)
-}
-
 // IsPermanentWriteError returns true for errors that will never succeed on
 // retry: schema mismatches, type errors, conversion failures.
 func IsPermanentWriteError(err error) bool {
@@ -98,20 +84,6 @@ func IsPermanentWriteError(err error) bool {
 	}
 
 	return false
-}
-
-// WriteErrorTable extracts the table name from a write error.
-func WriteErrorTable(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	var tableErr *tableWriteError
-	if errors.As(err, &tableErr) {
-		return tableErr.table
-	}
-
-	return ""
 }
 
 func isRetryableError(err error) bool {

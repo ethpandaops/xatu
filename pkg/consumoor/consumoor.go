@@ -126,7 +126,6 @@ func New(
 			metrics,
 			rtr,
 			writer,
-			clickhouse.DefaultErrorClassifier{},
 			false, // writer lifecycle owned by Consumoor, not the output plugin
 		)
 		if sErr != nil {

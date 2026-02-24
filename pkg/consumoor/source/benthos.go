@@ -29,7 +29,6 @@ func NewBenthosStream(
 	metrics *telemetry.Metrics,
 	routeEngine *router.Engine,
 	writer Writer,
-	classifier WriteErrorClassifier,
 	ownsWriter bool,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
@@ -59,7 +58,6 @@ func NewBenthosStream(
 				router:     routeEngine,
 				writer:     writer,
 				metrics:    metrics,
-				classifier: classifier,
 				rejectSink: rejectSink,
 				ownsWriter: ownsWriter,
 			}, service.BatchPolicy{}, 1, nil

@@ -152,8 +152,8 @@ func BenchmarkWriteThroughput(b *testing.B) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer ctxCancel()
 
-	if err := w.FlushAll(ctx); err != nil {
-		b.Logf("FlushAll: %v", err)
+	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
+		b.Logf("FlushTables: %v", err)
 	}
 
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "events/sec")
@@ -186,8 +186,8 @@ func BenchmarkWriteConcurrent(b *testing.B) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer ctxCancel()
 
-	if err := w.FlushAll(ctx); err != nil {
-		b.Logf("FlushAll: %v", err)
+	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
+		b.Logf("FlushTables: %v", err)
 	}
 
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "events/sec")
@@ -225,8 +225,8 @@ func BenchmarkAccumulatorBatching(b *testing.B) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer ctxCancel()
 
-	if err := w.FlushAll(ctx); err != nil {
-		b.Logf("FlushAll: %v", err)
+	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
+		b.Logf("FlushTables: %v", err)
 	}
 
 	// Count total flushes by reading the metrics.
@@ -304,8 +304,8 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer ctxCancel()
 
-	if err := w.FlushAll(ctx); err != nil {
-		b.Logf("FlushAll: %v", err)
+	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
+		b.Logf("FlushTables: %v", err)
 	}
 
 	// Shut down the table writer goroutines.

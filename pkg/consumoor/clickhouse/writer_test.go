@@ -157,14 +157,6 @@ func TestIsPermanentWriteError(t *testing.T) {
 	assert.False(t, IsPermanentWriteError(errors.New("dial tcp timeout")))
 }
 
-func TestWriteErrorTable(t *testing.T) {
-	assert.Equal(t, "table_b", WriteErrorTable(&tableWriteError{
-		table: "table_b",
-		cause: errors.New("boom"),
-	}))
-	assert.Equal(t, "", WriteErrorTable(errors.New("boom")))
-}
-
 func TestFlattenErrorIsNotPermanent(t *testing.T) {
 	err := &tableWriteError{
 		table: "beacon_head",
@@ -183,35 +175,6 @@ func TestFlattenErrorMessage(t *testing.T) {
 	err := &flattenError{cause: errors.New("missing field")}
 	assert.Equal(t, "flatten failed: missing field", err.Error())
 	assert.Equal(t, "missing field", errors.Unwrap(err).Error())
-}
-
-func TestBaseTableUsedInWriteError(t *testing.T) {
-	err := &tableWriteError{
-		table: "beacon_head",
-		cause: errors.New("boom"),
-	}
-	assert.Equal(t, "beacon_head", WriteErrorTable(err))
-
-	// Simulates suffixed writer: baseTable != table.
-	errSuffixed := &tableWriteError{
-		table: "beacon_head", // baseTable, not "beacon_head_local"
-		cause: errors.New("boom"),
-	}
-	assert.Equal(t, "beacon_head", WriteErrorTable(errSuffixed))
-}
-
-func TestWriteErrorTableJoinedErrors(t *testing.T) {
-	errA := &tableWriteError{table: "table_a", cause: errors.New("boom a")}
-	errB := &tableWriteError{table: "table_b", cause: errors.New("boom b")}
-
-	joined := errors.Join(errA, errB)
-
-	// errors.As on a joined error finds the first match, so
-	// WriteErrorTable only returns one table for the top-level error.
-	// The source package handles unwrapping all sub-errors.
-	table := WriteErrorTable(joined)
-	assert.Contains(t, []string{"table_a", "table_b"}, table,
-		"should extract a table name from joined error via errors.As")
 }
 
 func TestIsPermanentWriteErrorJoined(t *testing.T) {

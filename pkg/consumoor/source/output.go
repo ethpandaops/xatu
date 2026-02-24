@@ -5,11 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"sync"
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
+	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -24,10 +24,18 @@ const (
 
 var errBatchWriteFailed = errors.New("clickhouse batch write failed")
 
-type messageContext struct {
-	raw   []byte
-	event *xatu.DecoratedEvent
-	kafka kafkaMessageMetadata
+// groupMessage holds a successfully decoded message within an event group.
+type groupMessage struct {
+	batchIndex int
+	raw        []byte
+	event      *xatu.DecoratedEvent
+	kafka      kafkaMessageMetadata
+	tables     []string
+}
+
+// eventGroup collects all successfully decoded messages for one event type.
+type eventGroup struct {
+	messages []groupMessage
 }
 
 type xatuClickHouseOutput struct {
@@ -36,7 +44,6 @@ type xatuClickHouseOutput struct {
 	router     *router.Engine
 	writer     Writer
 	metrics    *telemetry.Metrics
-	classifier WriteErrorClassifier
 	rejectSink rejectSink
 	ownsWriter bool
 
@@ -63,12 +70,130 @@ func (o *xatuClickHouseOutput) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (o *xatuClickHouseOutput) WriteBatch(ctx context.Context, msgs service.MessageBatch) error {
+// WriteBatch processes a Benthos message batch by grouping messages by event
+// type, then processing each group independently.
+func (o *xatuClickHouseOutput) WriteBatch(
+	ctx context.Context,
+	msgs service.MessageBatch,
+) error {
 	if len(msgs) == 0 {
 		return nil
 	}
 
-	return o.writeBatchMode(ctx, msgs)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	var batchErr *service.BatchError
+
+	groups := make(map[xatu.Event_Name]*eventGroup, 16)
+
+	// Phase 1: decode, route, and group by event type.
+	for i, msg := range msgs {
+		kafka := kafkaMetadata(msg)
+		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
+
+		raw, err := msg.AsBytes()
+		if err != nil {
+			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
+			o.log.WithError(err).
+				WithField("topic", kafka.Topic).
+				Warn("Failed to read message bytes")
+
+			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason: rejectReasonDecode,
+				Err:    err.Error(),
+				Kafka:  kafka,
+			}); rejectErr != nil {
+				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
+			}
+
+			continue
+		}
+
+		event, err := decodeDecoratedEvent(o.encoding, raw)
+		if err != nil {
+			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
+			o.log.WithError(err).
+				WithField("topic", kafka.Topic).
+				Warn("Failed to decode message")
+
+			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason:  rejectReasonDecode,
+				Err:     err.Error(),
+				Payload: raw,
+				Kafka:   kafka,
+			}); rejectErr != nil {
+				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
+			}
+
+			continue
+		}
+
+		outcome := o.router.Route(event)
+
+		if outcome.Status == router.StatusRejected {
+			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason:    rejectReasonRouteRejected,
+				Err:       "route rejected message",
+				Payload:   raw,
+				EventName: event.GetEvent().GetName().String(),
+				Kafka:     kafka,
+			}); rejectErr != nil {
+				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
+			}
+
+			continue
+		}
+
+		if outcome.Status == router.StatusErrored {
+			batchErr = addBatchFailure(
+				batchErr, msgs, i, errors.New("route errored"),
+			)
+
+			continue
+		}
+
+		if len(outcome.Results) == 0 {
+			continue
+		}
+
+		tables := make([]string, len(outcome.Results))
+		for j, result := range outcome.Results {
+			tables[j] = result.Table
+		}
+
+		eventName := event.GetEvent().GetName()
+
+		g, ok := groups[eventName]
+		if !ok {
+			g = &eventGroup{
+				messages: make([]groupMessage, 0, 8),
+			}
+			groups[eventName] = g
+		}
+
+		g.messages = append(g.messages, groupMessage{
+			batchIndex: i,
+			raw:        append([]byte(nil), raw...),
+			event:      event,
+			kafka:      kafka,
+			tables:     tables,
+		})
+	}
+
+	// Phase 2: process each event group independently.
+	for _, g := range groups {
+		if err := o.processGroup(ctx, msgs, g); err != nil {
+			batchErr = err
+		}
+	}
+
+	if batchErr != nil {
+		return batchErr
+	}
+
+	return nil
 }
 
 func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
@@ -100,145 +225,72 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 	return rejectErr
 }
 
-func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.MessageBatch) error {
-	msgContexts := make([]messageContext, len(msgs))
-	tableToMessageIndexes := make(map[string]map[int]struct{}, 32)
-	hasResults := false
+// processGroup writes all messages in the group to their target tables, then
+// flushes only those tables. On failure the entire group is NAK'd or DLQ'd.
+func (o *xatuClickHouseOutput) processGroup(
+	ctx context.Context,
+	msgs service.MessageBatch,
+	g *eventGroup,
+) *service.BatchError {
+	// Collect the unique set of tables for this group.
+	tableSet := make(map[string]struct{}, 4)
 
-	var batchErr *service.BatchError
-
-	for i, msg := range msgs {
-		mctx := o.buildMessageContext(msg)
-		msgContexts[i] = mctx
-		o.metrics.MessagesConsumed().WithLabelValues(mctx.kafka.Topic).Inc()
-
-		raw, err := msg.AsBytes()
-		if err != nil {
-			o.metrics.DecodeErrors().WithLabelValues(mctx.kafka.Topic).Inc()
-			o.log.WithError(err).WithField("topic", mctx.kafka.Topic).Warn("Failed to read message bytes")
-
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason: rejectReasonDecode,
-				Err:    err.Error(),
-				Kafka:  mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
+	for _, gm := range g.messages {
+		for _, table := range gm.tables {
+			tableSet[table] = struct{}{}
 		}
 
-		msgContexts[i].raw = append(msgContexts[i].raw[:0], raw...)
-
-		event, err := decodeDecoratedEvent(o.encoding, raw)
-		if err != nil {
-			o.metrics.DecodeErrors().WithLabelValues(mctx.kafka.Topic).Inc()
-			o.log.WithError(err).WithField("topic", mctx.kafka.Topic).Warn("Failed to decode message")
-
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason:  rejectReasonDecode,
-				Err:     err.Error(),
-				Payload: raw,
-				Kafka:   mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
-		}
-
-		msgContexts[i].event = event
-		outcome := o.router.Route(event)
-
-		if outcome.Status == router.StatusRejected {
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-				Reason:    rejectReasonRouteRejected,
-				Err:       "route rejected message",
-				Payload:   raw,
-				EventName: event.GetEvent().GetName().String(),
-				Kafka:     mctx.kafka,
-			}); rejectErr != nil {
-				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
-			}
-
-			continue
-		}
-
-		if outcome.Status == router.StatusErrored {
-			batchErr = addBatchFailure(batchErr, msgs, i, errors.New("route errored"))
-
-			continue
-		}
-
-		for _, result := range outcome.Results {
-			hasResults = true
-
-			o.writer.Write(result.Table, event)
-			addTableMessageIndex(tableToMessageIndexes, result.Table, i)
+		for _, table := range gm.tables {
+			o.writer.Write(table, gm.event)
 		}
 	}
 
-	if !hasResults {
-		if batchErr != nil {
-			return batchErr
-		}
+	tables := make([]string, 0, len(tableSet))
+	for t := range tableSet {
+		tables = append(tables, t)
+	}
 
+	err := o.writer.FlushTables(ctx, tables)
+	if err == nil {
 		return nil
 	}
 
-	flushedTables := make([]string, 0, len(tableToMessageIndexes))
-	for table := range tableToMessageIndexes {
-		flushedTables = append(flushedTables, table)
-	}
+	// Flush failed — attribute to all messages in the group.
+	var batchErr *service.BatchError
 
-	if err := o.writer.FlushTables(ctx, flushedTables); err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		failedIndexes := failedIndexesForWriteError(tableToMessageIndexes, err, o.classifier)
-		if len(failedIndexes) == 0 {
-			return fmt.Errorf("flush failed (table unidentified): %w", err)
-		}
-
-		if o.isPermanentWriteError(err) {
-			for _, idx := range failedIndexes {
-				rejectErr := o.rejectMessage(ctx, &rejectedRecord{
-					Reason:    rejectReasonWritePermanent,
-					Err:       err.Error(),
-					Payload:   msgContexts[idx].raw,
-					EventName: eventNameFromContext(msgContexts[idx]),
-					Kafka:     msgContexts[idx].kafka,
-				})
-				if rejectErr != nil {
-					batchErr = addBatchFailure(batchErr, msgs, idx, rejectErr)
-
-					continue
-				}
-			}
-
-			o.log.WithError(err).Warn("Dropped permanently invalid rows during batch flush")
-		} else {
-			for _, idx := range failedIndexes {
-				batchErr = addBatchFailure(batchErr, msgs, idx, err)
+	if clickhouse.IsPermanentWriteError(err) {
+		for _, gm := range g.messages {
+			rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason:    rejectReasonWritePermanent,
+				Err:       err.Error(),
+				Payload:   gm.raw,
+				EventName: gm.event.GetEvent().GetName().String(),
+				Kafka:     gm.kafka,
+			})
+			if rejectErr != nil {
+				batchErr = addBatchFailure(
+					batchErr, msgs, gm.batchIndex, rejectErr,
+				)
 			}
 		}
+
+		o.log.WithError(err).
+			Warn("Dropped permanently invalid rows during group flush")
+	} else {
+		for _, gm := range g.messages {
+			batchErr = addBatchFailure(
+				batchErr, msgs, gm.batchIndex, err,
+			)
+		}
 	}
 
-	if batchErr != nil {
-		return batchErr
-	}
-
-	return nil
+	return batchErr
 }
 
-func (o *xatuClickHouseOutput) buildMessageContext(msg *service.Message) messageContext {
-	return messageContext{
-		kafka: kafkaMetadata(msg),
-	}
-}
-
-func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *rejectedRecord) error {
+func (o *xatuClickHouseOutput) rejectMessage(
+	ctx context.Context,
+	record *rejectedRecord,
+) error {
 	if record == nil {
 		return errors.New("nil rejected record")
 	}
@@ -273,31 +325,6 @@ func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *reject
 	return nil
 }
 
-// isPermanentWriteError returns true if any constituent error in a
-// (possibly joined) error is classified as permanent. A single
-// permanent sub-error means the affected rows will never succeed on
-// retry, so the entire set of failed indexes should be rejected.
-func (o *xatuClickHouseOutput) isPermanentWriteError(err error) bool {
-	if o.classifier == nil {
-		return false
-	}
-
-	if o.classifier.IsPermanent(err) {
-		return true
-	}
-
-	// Check sub-errors inside a joined error.
-	if joined, ok := err.(interface{ Unwrap() []error }); ok {
-		for _, subErr := range joined.Unwrap() {
-			if o.classifier.IsPermanent(subErr) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 func addBatchFailure(
 	batchErr *service.BatchError,
 	msgs service.MessageBatch,
@@ -309,85 +336,4 @@ func addBatchFailure(
 	}
 
 	return batchErr.Failed(index, err)
-}
-
-func addTableMessageIndex(indexes map[string]map[int]struct{}, table string, idx int) {
-	perTable, ok := indexes[table]
-	if !ok {
-		perTable = make(map[int]struct{}, 8)
-		indexes[table] = perTable
-	}
-
-	perTable[idx] = struct{}{}
-}
-
-// failedIndexesForWriteError extracts message indexes for all tables
-// that failed. The error may be a single tableWriteError or a joined
-// error (from errors.Join) containing multiple tableWriteErrors when
-// several tables fail in the same flush.
-func failedIndexesForWriteError(
-	tableToMessageIndexes map[string]map[int]struct{},
-	err error,
-	classifier WriteErrorClassifier,
-) []int {
-	if classifier == nil {
-		return nil
-	}
-
-	// Collect table names from all constituent errors.
-	tables := make(map[string]struct{}, 4)
-
-	// Check if this is a joined error containing multiple sub-errors.
-	if joined, ok := err.(interface{ Unwrap() []error }); ok {
-		for _, subErr := range joined.Unwrap() {
-			if t := classifier.Table(subErr); t != "" {
-				tables[t] = struct{}{}
-			}
-		}
-	}
-
-	// Also try the top-level error itself (handles single-error case
-	// and any wrapper that embeds a table name directly).
-	if t := classifier.Table(err); t != "" {
-		tables[t] = struct{}{}
-	}
-
-	if len(tables) == 0 {
-		return nil
-	}
-
-	// Collect unique message indexes across all failed tables.
-	seen := make(map[int]struct{}, 16)
-
-	for table := range tables {
-		perTable, ok := tableToMessageIndexes[table]
-		if !ok {
-			continue
-		}
-
-		for idx := range perTable {
-			seen[idx] = struct{}{}
-		}
-	}
-
-	if len(seen) == 0 {
-		return nil
-	}
-
-	out := make([]int, 0, len(seen))
-	for idx := range seen {
-		out = append(out, idx)
-	}
-
-	sort.Ints(out)
-
-	return out
-}
-
-func eventNameFromContext(mctx messageContext) string {
-	if mctx.event == nil || mctx.event.GetEvent() == nil {
-		return ""
-	}
-
-	return mctx.event.GetEvent().GetName().String()
 }

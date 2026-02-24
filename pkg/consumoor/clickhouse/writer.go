@@ -206,55 +206,6 @@ func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent) {
 	}
 }
 
-// FlushAll forces all table writers to drain their buffers and flush
-// to ClickHouse synchronously. Returns a joined error containing all
-// table failures; on failure, unflushed events are preserved in the
-// table writers.
-func (w *ChGoWriter) FlushAll(ctx context.Context) error {
-	w.mu.RLock()
-	writers := make([]*chTableWriter, 0, len(w.tables))
-
-	for _, tw := range w.tables {
-		writers = append(writers, tw)
-	}
-
-	w.mu.RUnlock()
-
-	if len(writers) == 0 {
-		return nil
-	}
-
-	// Send flush requests to all table writers in parallel
-	errChs := make([]chan error, len(writers))
-
-	for i, tw := range writers {
-		errCh := make(chan error, 1)
-		errChs[i] = errCh
-
-		select {
-		case tw.flushReq <- errCh:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-
-	// Collect results — return all errors joined.
-	errs := make([]error, 0, len(errChs))
-
-	for _, errCh := range errChs {
-		select {
-		case err := <-errCh:
-			if err != nil {
-				errs = append(errs, err)
-			}
-		case <-ctx.Done():
-			errs = append(errs, ctx.Err())
-		}
-	}
-
-	return errors.Join(errs...)
-}
-
 // FlushTables forces the specified table writers (by base table name)
 // to drain their buffers and write to ClickHouse synchronously.
 // Base names are resolved using the configured TableSuffix.

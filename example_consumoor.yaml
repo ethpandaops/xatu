@@ -29,6 +29,7 @@ clickhouse:
   dsn: "clickhouse://localhost:9000/default"
   # organicRetryInitDelay: 1s   # initial backoff when a table flush fails
   # organicRetryMaxDelay: 30s   # max backoff cap for organic retries
+  # failOnMissingTables: false  # set to true to abort startup if route tables are missing
   # chgo:
   #   dialTimeout: 5s
   #   readTimeout: 30s

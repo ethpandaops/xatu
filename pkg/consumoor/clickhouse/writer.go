@@ -138,6 +138,18 @@ func (w *ChGoWriter) Start(ctx context.Context) error {
 		WithField("min_conns", w.chgoCfg.MinConns).
 		Info("ch-go ClickHouse connection pool established")
 
+	// Validate that all registered route tables exist in the target
+	// database. This catches missing migrations early before INSERTs
+	// silently fail with ErrUnknownTable (classified as permanent).
+	routeTableNames := make([]string, 0, len(w.batchFactories))
+	for name := range w.batchFactories {
+		routeTableNames = append(routeTableNames, name)
+	}
+
+	if err := w.ValidateTables(ctx, routeTableNames); err != nil {
+		return fmt.Errorf("validating clickhouse tables: %w", err)
+	}
+
 	return nil
 }
 

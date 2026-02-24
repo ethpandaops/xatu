@@ -1,0 +1,98 @@
+groups:
+  - name: consumoor
+    rules:
+      - alert: ConsumoorBufferNearCapacity
+        expr: xatu_consumoor_buffer_usage > 160000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor buffer near capacity for table {{ $labels.table }}"
+          description: >-
+            Buffer usage for table {{ $labels.table }} is {{ $value }} rows,
+            exceeding 80% of the default 200k capacity. The pipeline may start
+            dropping or blocking messages if the buffer fills up.
+
+      - alert: ConsumoorWriteErrorsHigh
+        expr: rate(xatu_consumoor_write_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor write errors on table {{ $labels.table }}"
+          description: >-
+            ClickHouse write errors are occurring for table {{ $labels.table }}
+            at {{ $value | humanize }} errors/s. Check ClickHouse connectivity
+            and table schema.
+
+      - alert: ConsumoorPipelineStalled
+        expr: rate(xatu_consumoor_rows_written_total[10m]) == 0 and rate(xatu_consumoor_messages_consumed_total[10m]) > 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consumoor pipeline stalled"
+          description: >-
+            Messages are being consumed from Kafka but no rows have been
+            written to ClickHouse in the last 10 minutes. The pipeline is
+            stalled and data is not reaching its destination.
+
+      - alert: ConsumoorFlattenErrorsHigh
+        expr: rate(xatu_consumoor_flatten_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor flatten errors for {{ $labels.event_name }} -> {{ $labels.table }}"
+          description: >-
+            Flatten errors are occurring for event {{ $labels.event_name }}
+            targeting table {{ $labels.table }} at {{ $value | humanize }}
+            errors/s. This typically indicates a code or schema mismatch bug.
+
+      - alert: ConsumoorDLQErrorsHigh
+        expr: rate(xatu_consumoor_dlq_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consumoor DLQ write failures"
+          description: >-
+            Dead letter queue writes are failing at {{ $value | humanize }}
+            errors/s (reason: {{ $labels.reason }}). Rejected messages cannot
+            be persisted for later inspection, risking silent data loss.
+
+      - alert: ConsumoorKafkaLagHigh
+        expr: xatu_consumoor_kafka_consumer_lag > 100000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor Kafka consumer lag is high"
+          description: >-
+            Kafka consumer lag is {{ $value }} messages, sustained above
+            100k for 10 minutes. The consumoor pipeline is falling behind
+            the incoming message rate.
+
+      - alert: ConsumoorPoolExhausted
+        expr: xatu_consumoor_chgo_pool_idle_resources == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor ClickHouse connection pool exhausted"
+          description: >-
+            The ch-go connection pool has had zero idle resources for 5
+            minutes. All connections are in use, which may cause write
+            latency or timeouts. Consider increasing the pool size.
+
+      - alert: ConsumoorDecodeErrorsHigh
+        expr: rate(xatu_consumoor_decode_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consumoor decode errors on topic {{ $labels.topic }}"
+          description: >-
+            Message decode failures on topic {{ $labels.topic }} are
+            occurring at {{ $value | humanize }} errors/s. This indicates
+            upstream data quality issues or a protobuf schema mismatch.

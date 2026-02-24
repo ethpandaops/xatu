@@ -264,12 +264,29 @@ func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *reject
 	return nil
 }
 
+// isPermanentWriteError returns true if any constituent error in a
+// (possibly joined) error is classified as permanent. A single
+// permanent sub-error means the affected rows will never succeed on
+// retry, so the entire set of failed indexes should be rejected.
 func (o *xatuClickHouseOutput) isPermanentWriteError(err error) bool {
 	if o.classifier == nil {
 		return false
 	}
 
-	return o.classifier.IsPermanent(err)
+	if o.classifier.IsPermanent(err) {
+		return true
+	}
+
+	// Check sub-errors inside a joined error.
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, subErr := range joined.Unwrap() {
+			if o.classifier.IsPermanent(subErr) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func addBatchFailure(
@@ -295,6 +312,10 @@ func addTableMessageIndex(indexes map[string]map[int]struct{}, table string, idx
 	perTable[idx] = struct{}{}
 }
 
+// failedIndexesForWriteError extracts message indexes for all tables
+// that failed. The error may be a single tableWriteError or a joined
+// error (from errors.Join) containing multiple tableWriteErrors when
+// several tables fail in the same flush.
 func failedIndexesForWriteError(
 	tableToMessageIndexes map[string]map[int]struct{},
 	err error,
@@ -304,18 +325,48 @@ func failedIndexesForWriteError(
 		return nil
 	}
 
-	table := classifier.Table(err)
-	if table == "" {
+	// Collect table names from all constituent errors.
+	tables := make(map[string]struct{}, 4)
+
+	// Check if this is a joined error containing multiple sub-errors.
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, subErr := range joined.Unwrap() {
+			if t := classifier.Table(subErr); t != "" {
+				tables[t] = struct{}{}
+			}
+		}
+	}
+
+	// Also try the top-level error itself (handles single-error case
+	// and any wrapper that embeds a table name directly).
+	if t := classifier.Table(err); t != "" {
+		tables[t] = struct{}{}
+	}
+
+	if len(tables) == 0 {
 		return nil
 	}
 
-	perTable, ok := tableToMessageIndexes[table]
-	if !ok {
+	// Collect unique message indexes across all failed tables.
+	seen := make(map[int]struct{}, 16)
+
+	for table := range tables {
+		perTable, ok := tableToMessageIndexes[table]
+		if !ok {
+			continue
+		}
+
+		for idx := range perTable {
+			seen[idx] = struct{}{}
+		}
+	}
+
+	if len(seen) == 0 {
 		return nil
 	}
 
-	out := make([]int, 0, len(perTable))
-	for idx := range perTable {
+	out := make([]int, 0, len(seen))
+	for idx := range seen {
 		out = append(out, idx)
 	}
 

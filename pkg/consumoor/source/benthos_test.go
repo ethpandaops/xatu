@@ -372,6 +372,155 @@ func newKafkaMessage(payload []byte, topic string, partition int32, offset int64
 	return msg
 }
 
+func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing.T) {
+	// When FlushTables returns a joined error with two table failures,
+	// messages routed to BOTH tables must be marked as failed — not just
+	// the first table's messages.
+	writer := &testWriter{
+		flushErrs: []error{
+			errors.Join(
+				&testWriteError{table: "table_a", permanent: false},
+				&testWriteError{table: "table_b", permanent: false},
+			),
+		},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_a",
+			},
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				table:     "table_b",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		classifier: testErrorClassifier{},
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(
+			mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 1,
+		),
+		newKafkaMessage(
+			mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK),
+			"topic-a", 0, 2,
+		),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+	assert.Equal(t, []int{0, 1}, failedIndexesFromBatchError(t, msgs, err),
+		"both messages should be marked as failed when both tables fail")
+}
+
+func TestWriteBatchMultiTablePermanentFailureRejectsAllImpactedMessages(t *testing.T) {
+	// When FlushTables returns a joined error where at least one sub-error
+	// is permanent, all impacted messages should be rejected (not retried).
+	writer := &testWriter{
+		flushErrs: []error{
+			errors.Join(
+				&testWriteError{table: "table_a", permanent: true},
+				&testWriteError{table: "table_b", permanent: false},
+			),
+		},
+	}
+
+	rejectSink := &testRejectSink{}
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_a",
+			},
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				table:     "table_b",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		classifier: testErrorClassifier{},
+		rejectSink: rejectSink,
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(
+			mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 1,
+		),
+		newKafkaMessage(
+			mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK),
+			"topic-a", 0, 2,
+		),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	// All messages should be committed (no batch error) since they were
+	// rejected via the reject sink path.
+	require.NoError(t, err,
+		"permanent write errors should be rejected, not returned as batch error")
+	require.Len(t, rejectSink.records, 2,
+		"both messages should be sent to the reject sink")
+
+	for _, rec := range rejectSink.records {
+		assert.Equal(t, rejectReasonWritePermanent, rec.Reason)
+	}
+}
+
+func TestFailedIndexesForWriteErrorMultiTable(t *testing.T) {
+	tableToMessageIndexes := map[string]map[int]struct{}{
+		"table_a": {0: {}, 2: {}},
+		"table_b": {1: {}},
+		"table_c": {3: {}},
+	}
+
+	t.Run("single error returns single table indexes", func(t *testing.T) {
+		err := &testWriteError{table: "table_a"}
+		out := failedIndexesForWriteError(
+			tableToMessageIndexes, err, testErrorClassifier{},
+		)
+		assert.Equal(t, []int{0, 2}, out)
+	})
+
+	t.Run("joined error returns indexes from all failed tables", func(t *testing.T) {
+		err := errors.Join(
+			&testWriteError{table: "table_a"},
+			&testWriteError{table: "table_b"},
+		)
+		out := failedIndexesForWriteError(
+			tableToMessageIndexes, err, testErrorClassifier{},
+		)
+		assert.Equal(t, []int{0, 1, 2}, out)
+	})
+
+	t.Run("joined error with unknown table ignores it", func(t *testing.T) {
+		err := errors.Join(
+			&testWriteError{table: "table_b"},
+			&testWriteError{table: "table_unknown"},
+		)
+		out := failedIndexesForWriteError(
+			tableToMessageIndexes, err, testErrorClassifier{},
+		)
+		assert.Equal(t, []int{1}, out)
+	})
+
+	t.Run("nil classifier returns nil", func(t *testing.T) {
+		err := &testWriteError{table: "table_a"}
+		out := failedIndexesForWriteError(tableToMessageIndexes, err, nil)
+		assert.Nil(t, out)
+	})
+}
+
 func TestWriteBatchCtxCancelledReturnsCtxErr(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

@@ -146,6 +146,47 @@ func TestBaseTableUsedInWriteError(t *testing.T) {
 	assert.Equal(t, "beacon_head", WriteErrorTable(errSuffixed))
 }
 
+func TestWriteErrorTableJoinedErrors(t *testing.T) {
+	errA := &tableWriteError{table: "table_a", cause: errors.New("boom a")}
+	errB := &tableWriteError{table: "table_b", cause: errors.New("boom b")}
+
+	joined := errors.Join(errA, errB)
+
+	// errors.As on a joined error finds the first match, so
+	// WriteErrorTable only returns one table for the top-level error.
+	// The source package handles unwrapping all sub-errors.
+	table := WriteErrorTable(joined)
+	assert.Contains(t, []string{"table_a", "table_b"}, table,
+		"should extract a table name from joined error via errors.As")
+}
+
+func TestIsPermanentWriteErrorJoined(t *testing.T) {
+	permanent := &tableWriteError{
+		table: "table_a",
+		cause: &inputPrepError{cause: errors.New("schema mismatch")},
+	}
+	transient := &tableWriteError{
+		table: "table_b",
+		cause: errors.New("connection reset"),
+	}
+
+	t.Run("joined with permanent sub-error", func(t *testing.T) {
+		joined := errors.Join(permanent, transient)
+		assert.True(t, IsPermanentWriteError(joined),
+			"joined error containing a permanent sub-error should be permanent")
+	})
+
+	t.Run("joined with only transient sub-errors", func(t *testing.T) {
+		transient2 := &tableWriteError{
+			table: "table_c",
+			cause: errors.New("timeout"),
+		}
+		joined := errors.Join(transient, transient2)
+		assert.False(t, IsPermanentWriteError(joined),
+			"joined error with only transient sub-errors should not be permanent")
+	})
+}
+
 func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("default inherits from defaults", func(t *testing.T) {
 		cfg := &Config{

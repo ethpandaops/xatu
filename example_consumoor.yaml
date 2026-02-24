@@ -21,7 +21,12 @@ kafka:
   # lagPollInterval: 30s  # consumer lag poll interval (0 to disable)
   # rejectedTopic: xatu-consumoor-rejected
   # topicRefreshInterval: 60s  # How often to re-discover topics matching regex patterns (0 to disable)
-  # tls: false
+  # tls:
+  #   enabled: false
+  #   caFile: /path/to/ca.pem
+  #   certFile: /path/to/client-cert.pem
+  #   keyFile: /path/to/client-key.pem
+  #   insecureSkipVerify: false
   # sasl:
   #   mechanism: PLAIN
   #   user: "username"
@@ -32,6 +37,12 @@ clickhouse:
   # organicRetryInitDelay: 1s   # initial backoff when a table flush fails
   # organicRetryMaxDelay: 30s   # max backoff cap for organic retries
   # failOnMissingTables: true  # set to false to downgrade missing table errors to warnings
+  # tls:
+  #   enabled: false
+  #   caFile: /path/to/ca.pem
+  #   certFile: /path/to/client-cert.pem
+  #   keyFile: /path/to/client-key.pem
+  #   insecureSkipVerify: false
   # chgo:
   #   dialTimeout: 5s
   #   readTimeout: 30s

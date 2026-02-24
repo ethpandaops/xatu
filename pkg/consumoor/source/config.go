@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
 )
 
 // Supported SASL mechanism values.
@@ -35,8 +37,8 @@ type KafkaConfig struct {
 	// Encoding is the message encoding format ("json" or "protobuf").
 	Encoding string `yaml:"encoding" default:"json"`
 
-	// TLS enables TLS for the Kafka connection.
-	TLS bool `yaml:"tls" default:"false"`
+	// TLS configures TLS for the Kafka connection.
+	TLS xtls.Config `yaml:"tls"`
 	// SASLConfig is the SASL authentication configuration.
 	SASLConfig *SASLConfig `yaml:"sasl"`
 
@@ -122,6 +124,10 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New(
 			"kafka: topicRefreshInterval must be >= 0",
 		)
+	}
+
+	if err := c.TLS.Validate(); err != nil {
+		return fmt.Errorf("kafka.%w", err)
 	}
 
 	if c.SASLConfig != nil {

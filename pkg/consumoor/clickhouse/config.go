@@ -6,12 +6,19 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
 )
 
 // Config configures the ClickHouse writer.
 type Config struct {
 	// DSN is the ClickHouse connection string.
 	DSN string `yaml:"dsn"`
+
+	// TLS configures TLS for the ClickHouse connection. The DSN scheme
+	// "clickhouses://" still triggers TLS, but this allows custom CA and
+	// client certificate settings.
+	TLS xtls.Config `yaml:"tls"`
 
 	// TableSuffix is appended to every table name before writing.
 	// For example, set to "_local" to bypass Distributed tables and write
@@ -105,6 +112,10 @@ type ChGoConfig struct {
 func (c *Config) Validate() error {
 	if c.DSN == "" {
 		return errors.New("clickhouse: dsn is required")
+	}
+
+	if err := c.TLS.Validate(); err != nil {
+		return fmt.Errorf("clickhouse.%w", err)
 	}
 
 	if c.OrganicRetryInitDelay <= 0 {

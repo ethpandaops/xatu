@@ -9,9 +9,15 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go"
+
+	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
 )
 
-func parseChGoOptions(dsn string, dialTimeout, readTimeout time.Duration) (ch.Options, error) {
+func parseChGoOptions(
+	dsn string,
+	dialTimeout, readTimeout time.Duration,
+	tlsCfg *xtls.Config,
+) (ch.Options, error) {
 	if !strings.Contains(dsn, "://") {
 		dsn = "clickhouse://" + dsn
 	}
@@ -23,10 +29,12 @@ func parseChGoOptions(dsn string, dialTimeout, readTimeout time.Duration) (ch.Op
 
 	switch u.Scheme {
 	case "http", "https":
-		return ch.Options{}, fmt.Errorf("ch-go backend supports native tcp only, got DSN scheme %q", u.Scheme)
+		return ch.Options{},
+			fmt.Errorf("ch-go backend supports native tcp only, got DSN scheme %q", u.Scheme)
 	case "clickhouse", "tcp", "clickhouses":
 	default:
-		return ch.Options{}, fmt.Errorf("unsupported DSN scheme %q for ch-go backend", u.Scheme)
+		return ch.Options{},
+			fmt.Errorf("unsupported DSN scheme %q for ch-go backend", u.Scheme)
 	}
 
 	host := u.Hostname()
@@ -81,11 +89,9 @@ func parseChGoOptions(dsn string, dialTimeout, readTimeout time.Duration) (ch.Op
 
 	q := u.Query()
 
-	var tlsConfig *tls.Config
-	if isTrue(q.Get("secure")) || isTrue(q.Get("tls")) || u.Scheme == "clickhouses" {
-		tlsConfig = &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}
+	tlsConfig, err := resolveTLSConfig(u, q, tlsCfg)
+	if err != nil {
+		return ch.Options{}, fmt.Errorf("resolving TLS config: %w", err)
 	}
 
 	return ch.Options{
@@ -97,6 +103,41 @@ func parseChGoOptions(dsn string, dialTimeout, readTimeout time.Duration) (ch.Op
 		ReadTimeout: readTimeout,
 		TLS:         tlsConfig,
 	}, nil
+}
+
+// resolveTLSConfig determines the TLS configuration for the connection.
+// TLS is enabled if the DSN scheme is "clickhouses", query params contain
+// secure=true or tls=true, or the TLS config has Enabled set. When TLS is
+// triggered by the DSN but no explicit TLS config is provided, a minimal
+// TLS 1.2 config is used for backward compatibility.
+func resolveTLSConfig(
+	u *url.URL,
+	q url.Values,
+	tlsCfg *xtls.Config,
+) (*tls.Config, error) {
+	dsnWantsTLS := isTrue(q.Get("secure")) ||
+		isTrue(q.Get("tls")) ||
+		u.Scheme == "clickhouses"
+
+	// If the explicit config has TLS enabled, use it — it takes priority.
+	if tlsCfg != nil && tlsCfg.Enabled {
+		cfg, err := tlsCfg.Build()
+		if err != nil {
+			return nil, err
+		}
+
+		return cfg, nil
+	}
+
+	// DSN-triggered TLS with no explicit config: bare TLS 1.2 (backward
+	// compatible).
+	if dsnWantsTLS {
+		return &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}, nil
+	}
+
+	return nil, nil //nolint:nilnil // nil TLS config means plaintext
 }
 
 func isTrue(v string) bool {

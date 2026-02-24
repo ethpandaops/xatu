@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -115,10 +114,13 @@ func newRejectSink(cfg *KafkaConfig) (rejectSink, error) {
 		kgo.MaxBufferedRecords(256),
 	}
 
-	if cfg.TLS {
-		opts = append(opts, kgo.DialTLSConfig(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}))
+	if cfg.TLS.Enabled {
+		tlsCfg, err := cfg.TLS.Build()
+		if err != nil {
+			return nil, fmt.Errorf("building kafka TLS config: %w", err)
+		}
+
+		opts = append(opts, kgo.DialTLSConfig(tlsCfg))
 	}
 
 	if cfg.SASLConfig != nil {

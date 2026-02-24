@@ -62,6 +62,11 @@ type KafkaConfig struct {
 	// RejectedTopic is an optional Kafka topic where permanently rejected
 	// messages are emitted as JSON envelopes.
 	RejectedTopic string `yaml:"rejectedTopic"`
+
+	// TopicRefreshInterval controls how often Kafka metadata is refreshed to
+	// discover new topics matching the configured regex patterns. Defaults to
+	// 60s. Set to 0 to disable periodic refresh (startup-only discovery).
+	TopicRefreshInterval time.Duration `yaml:"topicRefreshInterval" default:"60s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -108,6 +113,12 @@ func (c *KafkaConfig) Validate() error {
 
 	if c.ShutdownTimeout <= 0 {
 		return errors.New("kafka: shutdownTimeout must be > 0")
+	}
+
+	if c.TopicRefreshInterval < 0 {
+		return errors.New(
+			"kafka: topicRefreshInterval must be >= 0",
+		)
 	}
 
 	if c.SASLConfig != nil {

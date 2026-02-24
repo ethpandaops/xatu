@@ -19,6 +19,7 @@ kafka:
   # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
   # shutdownTimeout: 30s  # max wait for in-flight messages during graceful shutdown
   # rejectedTopic: xatu-consumoor-rejected
+  # topicRefreshInterval: 60s  # How often to re-discover topics matching regex patterns (0 to disable)
   # tls: false
   # sasl:
   #   mechanism: PLAIN

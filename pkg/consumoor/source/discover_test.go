@@ -7,7 +7,25 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kmsg"
 )
+
+// toMetadataTopics converts a slice of topic name strings into
+// kmsg.MetadataResponseTopic values for use in matchTopics tests.
+func toMetadataTopics(names []string) []kmsg.MetadataResponseTopic {
+	out := make([]kmsg.MetadataResponseTopic, 0, len(names))
+
+	for _, n := range names {
+		name := n // capture for pointer
+
+		t := kmsg.NewMetadataResponseTopic()
+		t.Topic = &name
+
+		out = append(out, t)
+	}
+
+	return out
+}
 
 func TestMatchTopics(t *testing.T) {
 	tests := []struct {
@@ -90,7 +108,7 @@ func TestMatchTopics(t *testing.T) {
 				compiled = append(compiled, regexp.MustCompile(p))
 			}
 
-			got := matchTopics(compiled, tt.topics)
+			got := matchTopics(toMetadataTopics(tt.topics), compiled)
 
 			if len(tt.want) == 0 {
 				assert.Empty(t, got)

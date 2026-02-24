@@ -20,6 +20,7 @@ type Metrics struct {
 	batchSize        *prometheus.HistogramVec
 	bufferUsage      *prometheus.GaugeVec
 	flattenErrors    *prometheus.CounterVec
+	activeTopics     prometheus.Gauge
 
 	// ch-go pool metrics
 	chgoPoolAcquiredResources     prometheus.Gauge
@@ -136,6 +137,13 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
 
+		activeTopics: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "active_topics",
+			Help:      "Current number of Kafka topics matching configured patterns.",
+		}),
+
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
@@ -221,6 +229,7 @@ func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDura
 func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
 func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsage }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
+func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

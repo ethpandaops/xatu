@@ -25,10 +25,10 @@ type Config struct {
 	OrganicRetryMaxDelay time.Duration `yaml:"organicRetryMaxDelay" default:"30s"`
 
 	// FailOnMissingTables controls whether missing ClickHouse tables cause
-	// a fatal startup error. When false (default), missing tables are logged
-	// as warnings. When true, startup is aborted if any registered route
-	// table does not exist in the target database.
-	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"false"`
+	// a fatal startup error. When true (default), startup is aborted if any
+	// registered route table does not exist in the target database. Set to
+	// false to downgrade to warnings and allow startup to proceed.
+	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"true"`
 
 	// Defaults are the default batch settings for all tables.
 	Defaults TableConfig `yaml:"defaults"`

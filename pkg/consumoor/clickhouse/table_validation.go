@@ -11,9 +11,9 @@ import (
 )
 
 // ValidateTables queries ClickHouse system.tables and checks that every
-// registered route table (with TableSuffix applied) exists. Missing tables
-// are logged as warnings. If Config.FailOnMissingTables is true, an error
-// is returned instead.
+// registered route table (with TableSuffix applied) exists. By default,
+// missing tables cause a fatal startup error. Set FailOnMissingTables to
+// false to downgrade to warnings.
 func (w *ChGoWriter) ValidateTables(ctx context.Context, routeTableNames []string) error {
 	existing, err := w.fetchExistingTables(ctx)
 	if err != nil {
@@ -42,20 +42,20 @@ func (w *ChGoWriter) ValidateTables(ctx context.Context, routeTableNames []strin
 			"INSERTs to this table will be permanently dropped")
 	}
 
-	if w.config.FailOnMissingTables {
-		return fmt.Errorf(
-			"clickhouse: %d registered route table(s) missing in database %q "+
-				"(set failOnMissingTables: false to downgrade to warnings)",
-			len(missing), w.database,
-		)
+	if !w.config.FailOnMissingTables {
+		w.log.WithField("missing_count", len(missing)).
+			WithField("total_checked", len(expected)).
+			Warn("Some registered route tables are missing — data for these " +
+				"tables will be silently dropped (failOnMissingTables is disabled)")
+
+		return nil
 	}
 
-	w.log.WithField("missing_count", len(missing)).
-		WithField("total_checked", len(expected)).
-		Warn("Some registered route tables are missing — data for these " +
-			"tables will be silently dropped")
-
-	return nil
+	return fmt.Errorf(
+		"clickhouse: %d registered route table(s) missing in database %q "+
+			"(set failOnMissingTables: false to downgrade to warnings)",
+		len(missing), w.database,
+	)
 }
 
 // fetchExistingTables returns the set of table names present in the

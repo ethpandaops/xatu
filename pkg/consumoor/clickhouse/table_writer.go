@@ -35,6 +35,7 @@ type chTableWriter struct {
 
 	organicRetryInitDelay time.Duration
 	organicRetryMaxDelay  time.Duration
+	drainTimeout          time.Duration
 
 	newBatch func() route.ColumnarBatch
 	batch    route.ColumnarBatch // reused across flushes via Reset()
@@ -196,9 +197,13 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 			}
 
 			if len(events) > 0 {
-				if err := tw.flush(context.Background(), events); err != nil {
+				drainCtx, drainCancel := context.WithTimeout(context.Background(), tw.drainTimeout)
+
+				if err := tw.flush(drainCtx, events); err != nil {
 					tw.log.WithError(err).WithField("events", len(events)).Warn("Flush error during shutdown drain")
 				}
+
+				drainCancel()
 			}
 
 			return

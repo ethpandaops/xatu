@@ -36,7 +36,11 @@ func (b *canonicalBeaconBlockWithdrawalBatch) FlattenTo(event *xatu.DecoratedEve
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -48,15 +52,20 @@ func (b *canonicalBeaconBlockWithdrawalBatch) appendRuntime(_ *xatu.DecoratedEve
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
-func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	withdrawal := event.GetEthV2BeaconBlockWithdrawal()
 	if withdrawal == nil {
+		zeroAmount, err := route.ParseUInt128("0")
+		if err != nil {
+			return fmt.Errorf("parsing withdrawal_amount: %w", err)
+		}
+
 		b.WithdrawalAddress.Append(nil)
 		b.WithdrawalIndex.Append(0)
 		b.WithdrawalValidatorIndex.Append(0)
-		b.WithdrawalAmount.Append(route.ParseUInt128("0"))
+		b.WithdrawalAmount.Append(zeroAmount)
 
-		return
+		return nil
 	}
 
 	b.WithdrawalAddress.Append([]byte(withdrawal.GetAddress()))
@@ -74,10 +83,22 @@ func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.Decorate
 	}
 
 	if amount := withdrawal.GetAmount(); amount != nil {
-		b.WithdrawalAmount.Append(route.ParseUInt128(fmt.Sprintf("%d", amount.GetValue())))
+		parsedAmount, err := route.ParseUInt128(fmt.Sprintf("%d", amount.GetValue()))
+		if err != nil {
+			return fmt.Errorf("parsing withdrawal_amount: %w", err)
+		}
+
+		b.WithdrawalAmount.Append(parsedAmount)
 	} else {
-		b.WithdrawalAmount.Append(route.ParseUInt128("0"))
+		zeroAmount, err := route.ParseUInt128("0")
+		if err != nil {
+			return fmt.Errorf("parsing withdrawal_amount: %w", err)
+		}
+
+		b.WithdrawalAmount.Append(zeroAmount)
 	}
+
+	return nil
 }
 
 func (b *canonicalBeaconBlockWithdrawalBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

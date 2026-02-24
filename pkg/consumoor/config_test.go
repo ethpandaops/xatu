@@ -40,6 +40,7 @@ func validClickHouseConfig() *clickhouse.Config {
 		},
 		OrganicRetryInitDelay: time.Second,
 		OrganicRetryMaxDelay:  30 * time.Second,
+		DrainTimeout:          30 * time.Second,
 		ChGo:                  validChGoConfig(),
 	}
 }

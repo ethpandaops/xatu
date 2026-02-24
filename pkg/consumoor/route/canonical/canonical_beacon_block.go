@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -47,7 +48,11 @@ func (b *canonicalBeaconBlockBatch) FlattenTo(event *xatu.DecoratedEvent) error 
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -58,7 +63,7 @@ func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 	b.UpdatedDateTime.Append(time.Now())
 }
 
-func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
 	if eventBlock == nil {
 		b.Slot.Append(0)
@@ -69,14 +74,14 @@ func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
 		b.Eth1DataDepositRoot.Append(nil)
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
 	}
 
-	b.appendPayloadFromEventBlockV2(eventBlock)
+	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
-func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2) {
+func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
 		if slot := phase0Block.GetSlot(); slot != nil {
 			b.Slot.Append(uint32(slot.GetValue()))
@@ -95,7 +100,7 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		b.appendEth1Data(phase0Block.GetBody().GetEth1Data())
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if altairBlock := eventBlock.GetAltairBlock(); altairBlock != nil {
@@ -116,7 +121,7 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		b.appendEth1Data(altairBlock.GetBody().GetEth1Data())
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if bellatrixBlock := eventBlock.GetBellatrixBlock(); bellatrixBlock != nil {
@@ -137,9 +142,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 
 		body := bellatrixBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
-		b.appendExecutionPayloadV2(body.GetExecutionPayload())
 
-		return
+		return b.appendExecutionPayloadV2(body.GetExecutionPayload())
 	}
 
 	if capellaBlock := eventBlock.GetCapellaBlock(); capellaBlock != nil {
@@ -160,9 +164,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 
 		body := capellaBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
-		b.appendExecutionPayloadCapellaV2(body.GetExecutionPayload())
 
-		return
+		return b.appendExecutionPayloadCapellaV2(body.GetExecutionPayload())
 	}
 
 	if denebBlock := eventBlock.GetDenebBlock(); denebBlock != nil {
@@ -183,9 +186,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 
 		body := denebBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
-		b.appendExecutionPayloadDeneb(body.GetExecutionPayload())
 
-		return
+		return b.appendExecutionPayloadDeneb(body.GetExecutionPayload())
 	}
 
 	if electraBlock := eventBlock.GetElectraBlock(); electraBlock != nil {
@@ -206,9 +208,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 
 		body := electraBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
-		b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 
-		return
+		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
 	if fuluBlock := eventBlock.GetFuluBlock(); fuluBlock != nil {
@@ -229,9 +230,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 
 		body := fuluBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
-		b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 
-		return
+		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
 	// Unknown block version - append zeros.
@@ -242,6 +242,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	b.Eth1DataBlockHash.Append(nil)
 	b.Eth1DataDepositRoot.Append(nil)
 	b.appendNullExecutionPayload()
+
+	return nil
 }
 
 func (b *canonicalBeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data) {
@@ -270,16 +272,21 @@ func (b *canonicalBeaconBlockBatch) appendNullExecutionPayload() {
 }
 
 //nolint:gosec // G115
-func (b *canonicalBeaconBlockBatch) appendExecutionPayloadV2(payload *ethv1.ExecutionPayloadV2) {
+func (b *canonicalBeaconBlockBatch) appendExecutionPayloadV2(payload *ethv1.ExecutionPayloadV2) error {
 	if payload == nil {
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
+	}
+
+	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
+	if err != nil {
+		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(payload.GetBaseFeePerGas())))
+	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -303,19 +310,26 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadV2(payload *ethv1.Exec
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+
+	return nil
 }
 
 //nolint:gosec // G115
-func (b *canonicalBeaconBlockBatch) appendExecutionPayloadCapellaV2(payload *ethv1.ExecutionPayloadCapellaV2) {
+func (b *canonicalBeaconBlockBatch) appendExecutionPayloadCapellaV2(payload *ethv1.ExecutionPayloadCapellaV2) error {
 	if payload == nil {
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
+	}
+
+	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
+	if err != nil {
+		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(payload.GetBaseFeePerGas())))
+	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -339,19 +353,26 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadCapellaV2(payload *eth
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+
+	return nil
 }
 
 //nolint:gosec // G115
-func (b *canonicalBeaconBlockBatch) appendExecutionPayloadDeneb(payload *ethv1.ExecutionPayloadDeneb) {
+func (b *canonicalBeaconBlockBatch) appendExecutionPayloadDeneb(payload *ethv1.ExecutionPayloadDeneb) error {
 	if payload == nil {
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
+	}
+
+	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
+	if err != nil {
+		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(payload.GetBaseFeePerGas())))
+	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -384,19 +405,26 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadDeneb(payload *ethv1.E
 	} else {
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
+
+	return nil
 }
 
 //nolint:gosec // G115
-func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1.ExecutionPayloadElectra) {
+func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1.ExecutionPayloadElectra) error {
 	if payload == nil {
 		b.appendNullExecutionPayload()
 
-		return
+		return nil
+	}
+
+	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
+	if err != nil {
+		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(payload.GetBaseFeePerGas())))
+	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -429,6 +457,8 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1
 	} else {
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
+
+	return nil
 }
 
 //nolint:gosec // G115

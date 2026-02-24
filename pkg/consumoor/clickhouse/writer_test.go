@@ -43,7 +43,8 @@ func newTestWriter(maxRetries int, baseDelay, maxDelay time.Duration) *ChGoWrite
 	return &ChGoWriter{
 		log: log.WithField("component", "test"),
 		config: &Config{
-			DSN: "clickhouse://localhost:9000/default",
+			DSN:          "clickhouse://localhost:9000/default",
+			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
 				BatchSize:     100,
 				FlushInterval: time.Second,
@@ -474,6 +475,7 @@ func TestBufferWarningThresholdValidation(t *testing.T) {
 			},
 			OrganicRetryInitDelay:  time.Second,
 			OrganicRetryMaxDelay:   30 * time.Second,
+			DrainTimeout:           30 * time.Second,
 			BufferWarningThreshold: 0,
 			ChGo:                   validChGo,
 		}
@@ -490,6 +492,7 @@ func TestBufferWarningThresholdValidation(t *testing.T) {
 			},
 			OrganicRetryInitDelay:  time.Second,
 			OrganicRetryMaxDelay:   30 * time.Second,
+			DrainTimeout:           30 * time.Second,
 			BufferWarningThreshold: 0.8,
 			ChGo:                   validChGo,
 		}
@@ -506,6 +509,7 @@ func TestBufferWarningThresholdValidation(t *testing.T) {
 			},
 			OrganicRetryInitDelay:  time.Second,
 			OrganicRetryMaxDelay:   30 * time.Second,
+			DrainTimeout:           30 * time.Second,
 			BufferWarningThreshold: 1.0,
 			ChGo:                   validChGo,
 		}
@@ -522,6 +526,7 @@ func TestBufferWarningThresholdValidation(t *testing.T) {
 			},
 			OrganicRetryInitDelay:  time.Second,
 			OrganicRetryMaxDelay:   30 * time.Second,
+			DrainTimeout:           30 * time.Second,
 			BufferWarningThreshold: -0.1,
 			ChGo:                   validChGo,
 		}
@@ -540,6 +545,7 @@ func TestBufferWarningThresholdValidation(t *testing.T) {
 			},
 			OrganicRetryInitDelay:  time.Second,
 			OrganicRetryMaxDelay:   30 * time.Second,
+			DrainTimeout:           30 * time.Second,
 			BufferWarningThreshold: 1.5,
 			ChGo:                   validChGo,
 		}

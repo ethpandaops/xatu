@@ -1,6 +1,7 @@
 package route
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"net/netip"
@@ -141,20 +142,20 @@ func ParseUUID(s string) uuid.UUID {
 }
 
 // ParseUInt128 converts a decimal string to proto.UInt128.
-// Returns zero value on parse failure.
-func ParseUInt128(s string) proto.UInt128 {
+// Returns an error on parse failure.
+func ParseUInt128(s string) (proto.UInt128, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return proto.UInt128{}
+		return proto.UInt128{}, nil
 	}
 
 	n := new(big.Int)
 	if _, ok := n.SetString(s, 10); !ok {
-		return proto.UInt128{}
+		return proto.UInt128{}, fmt.Errorf("invalid UInt128 value: %q", s)
 	}
 
 	if n.Sign() < 0 || n.BitLen() > 128 {
-		return proto.UInt128{}
+		return proto.UInt128{}, fmt.Errorf("UInt128 value out of range: %q", s)
 	}
 
 	var buf [16]byte
@@ -166,27 +167,27 @@ func ParseUInt128(s string) proto.UInt128 {
 	lo := uint64(buf[8])<<56 | uint64(buf[9])<<48 | uint64(buf[10])<<40 | uint64(buf[11])<<32 |
 		uint64(buf[12])<<24 | uint64(buf[13])<<16 | uint64(buf[14])<<8 | uint64(buf[15])
 
-	return proto.UInt128{Low: lo, High: hi}
+	return proto.UInt128{Low: lo, High: hi}, nil
 }
 
 // ParseUInt256 converts a decimal or hex string to proto.UInt256.
-// Returns zero value on parse failure.
-func ParseUInt256(s string) proto.UInt256 {
+// Returns an error on parse failure.
+func ParseUInt256(s string) (proto.UInt256, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return proto.UInt256{}
+		return proto.UInt256{}, nil
 	}
 
 	n := new(big.Int)
 	if _, ok := n.SetString(s, 10); !ok {
 		hexStr := strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
 		if _, ok := n.SetString(hexStr, 16); !ok {
-			return proto.UInt256{}
+			return proto.UInt256{}, fmt.Errorf("invalid UInt256 value: %q", s)
 		}
 	}
 
 	if n.Sign() < 0 || n.BitLen() > 256 {
-		return proto.UInt256{}
+		return proto.UInt256{}, fmt.Errorf("UInt256 value out of range: %q", s)
 	}
 
 	var buf [32]byte
@@ -206,7 +207,7 @@ func ParseUInt256(s string) proto.UInt256 {
 			High: uint64(buf[0])<<56 | uint64(buf[1])<<48 | uint64(buf[2])<<40 | uint64(buf[3])<<32 |
 				uint64(buf[4])<<24 | uint64(buf[5])<<16 | uint64(buf[6])<<8 | uint64(buf[7]),
 		},
-	}
+	}, nil
 }
 
 // UInt128ToString converts a proto.UInt128 to its decimal string representation.
@@ -286,18 +287,23 @@ func FormatDecimal(v int64, scale int) string {
 
 // ScaleDecimal converts a string decimal value to a scaled int64 for
 // ch-go Decimal columns. For example, "1.618" with scale 3 becomes 1618.
-// Returns 0 on parse failure.
-func ScaleDecimal(s string, scale int) int64 {
+// Returns an error on parse failure.
+func ScaleDecimal(s string, scale int) (int64, error) {
 	if scale <= 0 {
-		return 0
+		return 0, fmt.Errorf("invalid decimal scale: %d", scale)
 	}
 
-	f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	trimmed := strings.TrimSpace(s)
+	if trimmed == "" {
+		return 0, nil
+	}
+
+	f, err := strconv.ParseFloat(trimmed, 64)
 	if err != nil {
-		return 0
+		return 0, fmt.Errorf("invalid decimal value: %w", err)
 	}
 
-	return int64(math.Round(f * math.Pow10(scale)))
+	return int64(math.Round(f * math.Pow10(scale))), nil
 }
 
 // PadToFixed pads or truncates b to exactly size bytes.

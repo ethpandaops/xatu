@@ -1,6 +1,7 @@
 package mev
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -36,7 +37,11 @@ func (b *mevRelayBidTraceBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return fmt.Errorf("appending payload: %w", err)
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -53,12 +58,12 @@ func (b *mevRelayBidTraceBatch) appendRuntime(event *xatu.DecoratedEvent) {
 	}
 }
 
-func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayBidTraceBuilderBlockSubmission()
 	if payload == nil {
 		b.appendZeroPayload()
 
-		return
+		return nil
 	}
 
 	if slot := payload.GetSlot(); slot != nil {
@@ -116,7 +121,12 @@ func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) {
 	}
 
 	if value := payload.GetValue(); value != nil {
-		b.Value.Append(route.ParseUInt256(value.GetValue()))
+		parsedValue, err := route.ParseUInt256(value.GetValue())
+		if err != nil {
+			return fmt.Errorf("parsing value: %w", err)
+		}
+
+		b.Value.Append(parsedValue)
 	} else {
 		b.Value.Append(proto.UInt256{})
 	}
@@ -144,6 +154,8 @@ func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) {
 	} else {
 		b.OptimisticSubmission.Append(false)
 	}
+
+	return nil
 }
 
 func (b *mevRelayBidTraceBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

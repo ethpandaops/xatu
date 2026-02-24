@@ -37,6 +37,11 @@ type Config struct {
 	// false to downgrade to warnings and allow startup to proceed.
 	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"true"`
 
+	// DrainTimeout bounds how long each table writer waits for its final
+	// flush during shutdown. If ClickHouse is unresponsive the drain is
+	// cancelled after this duration rather than hanging indefinitely.
+	DrainTimeout time.Duration `yaml:"drainTimeout" default:"30s"`
+
 	// BufferWarningThreshold is the fraction (0-1) of a table's bufferSize
 	// at which a rate-limited warning is logged. Provides early visibility
 	// into memory pressure before full backpressure kicks in.
@@ -134,6 +139,10 @@ func (c *Config) Validate() error {
 
 	if err := c.ChGo.Validate(); err != nil {
 		return err
+	}
+
+	if c.DrainTimeout <= 0 {
+		return errors.New("clickhouse: drainTimeout must be > 0")
 	}
 
 	if c.BufferWarningThreshold < 0 || c.BufferWarningThreshold > 1 {

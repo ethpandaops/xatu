@@ -13,6 +13,7 @@ func validConfig() Config {
 		DSN:                   "clickhouse://localhost:9000/default",
 		OrganicRetryInitDelay: 1 * time.Second,
 		OrganicRetryMaxDelay:  30 * time.Second,
+		DrainTimeout:          30 * time.Second,
 		Defaults: TableConfig{
 			BatchSize:     200000,
 			FlushInterval: 1 * time.Second,

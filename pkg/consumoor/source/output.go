@@ -246,7 +246,16 @@ func (o *xatuClickHouseOutput) rejectMessage(ctx context.Context, record *reject
 	if o.rejectSink == nil {
 		o.metrics.MessagesRejected().WithLabelValues(record.Reason).Inc()
 
-		return nil
+		// Route rejections are intentional — the event type simply isn't
+		// routed to any table. Safe to ack without a DLQ.
+		if record.Reason == rejectReasonRouteRejected {
+			return nil
+		}
+
+		// For all other reasons (decode errors, permanent write failures)
+		// failing the message forces Kafka to redeliver rather than
+		// silently dropping data when no DLQ is configured.
+		return fmt.Errorf("no DLQ configured for rejected message (%s): %s", record.Reason, record.Err)
 	}
 
 	if err := o.rejectSink.Write(ctx, record); err != nil {

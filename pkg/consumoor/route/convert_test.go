@@ -99,25 +99,33 @@ func TestParseUUID(t *testing.T) {
 
 func TestParseUInt128(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
-		want  proto.UInt128
+		name    string
+		input   string
+		want    proto.UInt128
+		wantErr bool
 	}{
-		{"zero", "0", proto.UInt128{Low: 0, High: 0}},
-		{"small", "42", proto.UInt128{Low: 42, High: 0}},
-		{"max_uint64", "18446744073709551615", proto.UInt128{Low: 18446744073709551615, High: 0}},
-		{"above_uint64", "18446744073709551616", proto.UInt128{Low: 0, High: 1}},
-		{"large", "340282366920938463463374607431768211455", proto.UInt128{Low: ^uint64(0), High: ^uint64(0)}},
-		// Error cases → zero.
-		{"empty", "", proto.UInt128{}},
-		{"negative", "-1", proto.UInt128{}},
-		{"invalid", "abc", proto.UInt128{}},
-		{"whitespace", "  42  ", proto.UInt128{Low: 42, High: 0}},
+		{"zero", "0", proto.UInt128{Low: 0, High: 0}, false},
+		{"small", "42", proto.UInt128{Low: 42, High: 0}, false},
+		{"max_uint64", "18446744073709551615", proto.UInt128{Low: 18446744073709551615, High: 0}, false},
+		{"above_uint64", "18446744073709551616", proto.UInt128{Low: 0, High: 1}, false},
+		{"large", "340282366920938463463374607431768211455", proto.UInt128{Low: ^uint64(0), High: ^uint64(0)}, false},
+		{"empty", "", proto.UInt128{}, false},
+		{"whitespace", "  42  ", proto.UInt128{Low: 42, High: 0}, false},
+		// Error cases.
+		{"negative", "-1", proto.UInt128{}, true},
+		{"invalid", "abc", proto.UInt128{}, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ParseUInt128(tt.input))
+			result, err := ParseUInt128(tt.input)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.want, result)
 		})
 	}
 }
@@ -154,7 +162,8 @@ func TestUInt128RoundTrip(t *testing.T) {
 
 	for _, v := range values {
 		t.Run(v, func(t *testing.T) {
-			parsed := ParseUInt128(v)
+			parsed, err := ParseUInt128(v)
+			require.NoError(t, err)
 			assert.Equal(t, v, UInt128ToString(parsed))
 		})
 	}
@@ -162,23 +171,30 @@ func TestUInt128RoundTrip(t *testing.T) {
 
 func TestParseUInt256(t *testing.T) {
 	tests := []struct {
-		name   string
-		input  string
-		isZero bool
+		name    string
+		input   string
+		isZero  bool
+		wantErr bool
 	}{
-		{"small", "42", false},
-		{"hex", "0xff", false},
-		{"hex_upper", "0xFF", false},
-		{"large_decimal", "115792089237316195423570985008687907853269984665640564039457584007913129639935", false},
+		{"small", "42", false, false},
+		{"hex", "0xff", false, false},
+		{"hex_upper", "0xFF", false, false},
+		{"large_decimal", "115792089237316195423570985008687907853269984665640564039457584007913129639935", false, false},
+		{"empty", "", true, false},
 		// Error cases.
-		{"empty", "", true},
-		{"negative", "-1", true},
-		{"invalid", "not_a_number", true},
+		{"negative", "-1", true, true},
+		{"invalid", "not_a_number", true, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ParseUInt256(tt.input)
+			result, err := ParseUInt256(tt.input)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
 			if tt.isZero {
 				assert.Equal(t, proto.UInt256{}, result)
 			} else {
@@ -216,7 +232,8 @@ func TestUInt256RoundTrip(t *testing.T) {
 
 	for _, v := range values {
 		t.Run(v, func(t *testing.T) {
-			parsed := ParseUInt256(v)
+			parsed, err := ParseUInt256(v)
+			require.NoError(t, err)
 			assert.Equal(t, v, UInt256ToString(parsed))
 		})
 	}
@@ -224,10 +241,12 @@ func TestUInt256RoundTrip(t *testing.T) {
 
 func TestUInt256HexRoundTrip(t *testing.T) {
 	// Hex input should parse, and the decimal output should match.
-	parsed := ParseUInt256("0xff")
+	parsed, err := ParseUInt256("0xff")
+	require.NoError(t, err)
 	assert.Equal(t, "255", UInt256ToString(parsed))
 
-	parsed = ParseUInt256("0x100")
+	parsed, err = ParseUInt256("0x100")
+	require.NoError(t, err)
 	assert.Equal(t, "256", UInt256ToString(parsed))
 }
 
@@ -256,36 +275,46 @@ func TestFormatDecimal(t *testing.T) {
 
 func TestScaleDecimal(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
-		scale int
-		want  int64
+		name    string
+		input   string
+		scale   int
+		want    int64
+		wantErr bool
 	}{
-		{"simple", "1.618", 3, 1618},
-		{"integer", "42", 3, 42000},
-		{"zero", "0", 3, 0},
-		{"negative", "-1.5", 3, -1500},
-		{"whitespace", "  1.5  ", 3, 1500},
-		// Error/edge cases.
-		{"invalid", "abc", 3, 0},
-		{"empty", "", 3, 0},
-		{"zero_scale", "1.5", 0, 0},
-		{"negative_scale", "1.5", -1, 0},
+		{"simple", "1.618", 3, 1618, false},
+		{"integer", "42", 3, 42000, false},
+		{"zero", "0", 3, 0, false},
+		{"negative", "-1.5", 3, -1500, false},
+		{"whitespace", "  1.5  ", 3, 1500, false},
+		{"empty", "", 3, 0, false},
+		// Error cases.
+		{"invalid", "abc", 3, 0, true},
+		{"zero_scale", "1.5", 0, 0, true},
+		{"negative_scale", "1.5", -1, 0, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ScaleDecimal(tt.input, tt.scale))
+			result, err := ScaleDecimal(tt.input, tt.scale)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.want, result)
 		})
 	}
 }
 
 func TestFormatScaleDecimalRoundTrip(t *testing.T) {
 	// Scale then format should return the original string (with fixed decimal places).
-	scaled := ScaleDecimal("272.800", 3)
+	scaled, err := ScaleDecimal("272.800", 3)
+	require.NoError(t, err)
 	assert.Equal(t, "272.800", FormatDecimal(scaled, 3))
 
-	scaled = ScaleDecimal("1.618", 3)
+	scaled, err = ScaleDecimal("1.618", 3)
+	require.NoError(t, err)
 	assert.Equal(t, "1.618", FormatDecimal(scaled, 3))
 }
 

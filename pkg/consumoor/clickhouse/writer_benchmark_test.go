@@ -92,6 +92,7 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 		log:     log.WithField("component", "bench"),
 		metrics: metrics,
 		config: &Config{
+			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
 				BatchSize:     batchSize,
 				FlushInterval: 10 * time.Second,
@@ -252,6 +253,7 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 		log:     log.WithField("component", "bench_e2e"),
 		metrics: metrics,
 		config: &Config{
+			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
 				BatchSize:     batchSize,
 				FlushInterval: 10 * time.Second,

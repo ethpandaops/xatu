@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -38,7 +39,11 @@ func (b *mempoolTransactionBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendAdditionalData(event)
+
+	if err := b.appendAdditionalData(event); err != nil {
+		return fmt.Errorf("appending additional data: %w", err)
+	}
+
 	b.rows++
 
 	return nil
@@ -54,30 +59,28 @@ func (b *mempoolTransactionBatch) appendRuntime(event *xatu.DecoratedEvent) {
 	}
 }
 
-func (b *mempoolTransactionBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+func (b *mempoolTransactionBatch) appendAdditionalData(event *xatu.DecoratedEvent) error {
 	if event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
 		b.appendZeroPayload()
 
-		return
+		return nil
 	}
 
 	client := event.GetMeta().GetClient()
 
 	// Try V2 additional data first (has more fields).
 	if v2 := client.GetMempoolTransactionV2(); v2 != nil {
-		b.appendMempoolTransactionV2(v2)
-
-		return
+		return b.appendMempoolTransactionV2(v2)
 	}
 
 	// Fall back to V1 additional data.
 	if v1 := client.GetMempoolTransaction(); v1 != nil {
-		b.appendMempoolTransactionV1(v1)
-
-		return
+		return b.appendMempoolTransactionV1(v1)
 	}
 
 	b.appendZeroPayload()
+
+	return nil
 }
 
 func (b *mempoolTransactionBatch) appendZeroPayload() {
@@ -102,7 +105,7 @@ func (b *mempoolTransactionBatch) appendZeroPayload() {
 
 func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	v2 *xatu.ClientMeta_AdditionalMempoolTransactionV2Data,
-) {
+) error {
 	b.Hash.Append([]byte(v2.GetHash()))
 	b.From.Append([]byte(v2.GetFrom()))
 
@@ -118,7 +121,12 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 		b.Nonce.Append(0)
 	}
 
-	b.GasPrice.Append(route.ParseUInt128(v2.GetGasPrice()))
+	gasPrice, err := route.ParseUInt128(v2.GetGasPrice())
+	if err != nil {
+		return fmt.Errorf("parsing gas_price: %w", err)
+	}
+
+	b.GasPrice.Append(gasPrice)
 
 	if gas := v2.GetGas(); gas != nil {
 		b.Gas.Append(gas.GetValue())
@@ -127,18 +135,37 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	}
 
 	if gtc := v2.GetGasTipCap(); gtc != "" {
-		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(gtc)))
+		var gasTipCap proto.UInt128
+
+		gasTipCap, err = route.ParseUInt128(gtc)
+		if err != nil {
+			return fmt.Errorf("parsing gas_tip_cap: %w", err)
+		}
+
+		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](gasTipCap))
 	} else {
 		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 	}
 
 	if gfc := v2.GetGasFeeCap(); gfc != "" {
-		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(gfc)))
+		var gasFeeCap proto.UInt128
+
+		gasFeeCap, err = route.ParseUInt128(gfc)
+		if err != nil {
+			return fmt.Errorf("parsing gas_fee_cap: %w", err)
+		}
+
+		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](gasFeeCap))
 	} else {
 		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
 
-	b.Value.Append(route.ParseUInt128(v2.GetValue()))
+	value, err := route.ParseUInt128(v2.GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
+	}
+
+	b.Value.Append(value)
 
 	if txType := v2.GetType(); txType != nil {
 		b.Type.Append(proto.NewNullable[uint8](uint8(txType.GetValue()))) //nolint:gosec // tx type fits uint8
@@ -159,7 +186,14 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	}
 
 	if bgfc := v2.GetBlobGasFeeCap(); bgfc != "" {
-		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(bgfc)))
+		var blobGasFeeCap proto.UInt128
+
+		blobGasFeeCap, err = route.ParseUInt128(bgfc)
+		if err != nil {
+			return fmt.Errorf("parsing blob_gas_fee_cap: %w", err)
+		}
+
+		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](blobGasFeeCap))
 	} else {
 		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -179,11 +213,13 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	} else {
 		b.BlobSidecarsEmptySize.Append(proto.Nullable[uint32]{})
 	}
+
+	return nil
 }
 
 func (b *mempoolTransactionBatch) appendMempoolTransactionV1(
 	v1 *xatu.ClientMeta_AdditionalMempoolTransactionData,
-) {
+) error {
 	b.Hash.Append([]byte(v1.GetHash()))
 	b.From.Append([]byte(v1.GetFrom()))
 
@@ -194,11 +230,23 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV1(
 	}
 
 	b.Nonce.Append(v1.GetNonce())
-	b.GasPrice.Append(route.ParseUInt128(v1.GetGasPrice()))
+
+	gasPrice, err := route.ParseUInt128(v1.GetGasPrice())
+	if err != nil {
+		return fmt.Errorf("parsing gas_price: %w", err)
+	}
+
+	b.GasPrice.Append(gasPrice)
 	b.Gas.Append(v1.GetGas())
 	b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 	b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
-	b.Value.Append(route.ParseUInt128(v1.GetValue()))
+
+	value, err := route.ParseUInt128(v1.GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
+	}
+
+	b.Value.Append(value)
 	b.Type.Append(proto.Nullable[uint8]{})
 
 	size, _ := parseUint32(v1.GetSize())
@@ -212,6 +260,8 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV1(
 	b.BlobHashes.Append(nil)
 	b.BlobSidecarsSize.Append(proto.Nullable[uint32]{})
 	b.BlobSidecarsEmptySize.Append(proto.Nullable[uint32]{})
+
+	return nil
 }
 
 func parseUint32(s string) (uint32, error) {

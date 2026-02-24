@@ -36,7 +36,11 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -47,16 +51,21 @@ func (b *canonicalBeaconBlockDepositBatch) appendRuntime(_ *xatu.DecoratedEvent)
 	b.UpdatedDateTime.Append(time.Now())
 }
 
-func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	deposit := event.GetEthV2BeaconBlockDeposit()
 	if deposit == nil {
+		zeroAmount, err := route.ParseUInt128("0")
+		if err != nil {
+			return fmt.Errorf("parsing deposit_data_amount: %w", err)
+		}
+
 		b.DepositProof.Append([]string{})
 		b.DepositDataPubkey.Append("")
 		b.DepositDataWithdrawalCredentials.Append(nil)
 		b.DepositDataSignature.Append("")
-		b.DepositDataAmount.Append(route.ParseUInt128("0"))
+		b.DepositDataAmount.Append(zeroAmount)
 
-		return
+		return nil
 	}
 
 	b.DepositProof.Append(deposit.GetProof())
@@ -67,16 +76,33 @@ func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEv
 		b.DepositDataSignature.Append(data.GetSignature())
 
 		if amount := data.GetAmount(); amount != nil {
-			b.DepositDataAmount.Append(route.ParseUInt128(fmt.Sprintf("%d", amount.GetValue())))
+			parsedAmount, err := route.ParseUInt128(fmt.Sprintf("%d", amount.GetValue()))
+			if err != nil {
+				return fmt.Errorf("parsing deposit_data_amount: %w", err)
+			}
+
+			b.DepositDataAmount.Append(parsedAmount)
 		} else {
-			b.DepositDataAmount.Append(route.ParseUInt128("0"))
+			zeroAmount, err := route.ParseUInt128("0")
+			if err != nil {
+				return fmt.Errorf("parsing deposit_data_amount: %w", err)
+			}
+
+			b.DepositDataAmount.Append(zeroAmount)
 		}
 	} else {
+		zeroAmount, err := route.ParseUInt128("0")
+		if err != nil {
+			return fmt.Errorf("parsing deposit_data_amount: %w", err)
+		}
+
 		b.DepositDataPubkey.Append("")
 		b.DepositDataWithdrawalCredentials.Append(nil)
 		b.DepositDataSignature.Append("")
-		b.DepositDataAmount.Append(route.ParseUInt128("0"))
+		b.DepositDataAmount.Append(zeroAmount)
 	}
+
+	return nil
 }
 
 func (b *canonicalBeaconBlockDepositBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

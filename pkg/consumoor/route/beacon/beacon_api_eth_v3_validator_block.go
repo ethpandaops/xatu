@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +43,11 @@ func (b *beaconApiEthV3ValidatorBlockBatch) FlattenTo(
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -59,7 +64,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendRuntime(event *xatu.DecoratedE
 	}
 }
 
-func (b *beaconApiEthV3ValidatorBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *beaconApiEthV3ValidatorBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV3ValidatorBlock()
 	if eventBlock == nil {
 		b.Slot.Append(0)
@@ -71,10 +76,12 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayload(event *xatu.DecoratedE
 		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 
-		return
+		return nil
 	}
 
-	b.appendPayloadFromEventBlockV2(eventBlock)
+	if err := b.appendPayloadFromEventBlockV2(eventBlock); err != nil {
+		return err
+	}
 
 	version := eventBlock.GetVersion()
 	if version != ethv2.BlockVersion_UNKNOWN {
@@ -82,11 +89,13 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayload(event *xatu.DecoratedE
 	} else {
 		b.BlockVersion.Append("")
 	}
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 	eventBlock *ethv2.EventBlockV2,
-) {
+) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
 		if slot := phase0Block.GetSlot(); slot != nil {
 			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
@@ -96,7 +105,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if altairBlock := eventBlock.GetAltairBlock(); altairBlock != nil {
@@ -108,7 +117,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if bellatrixBlock := eventBlock.GetBellatrixBlock(); bellatrixBlock != nil {
@@ -118,9 +127,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 			b.Slot.Append(0)
 		}
 
-		b.appendExecutionPayloadV2(bellatrixBlock.GetBody().GetExecutionPayload())
-
-		return
+		return b.appendExecutionPayloadV2(bellatrixBlock.GetBody().GetExecutionPayload())
 	}
 
 	if capellaBlock := eventBlock.GetCapellaBlock(); capellaBlock != nil {
@@ -130,9 +137,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 			b.Slot.Append(0)
 		}
 
-		b.appendExecutionPayloadCapellaV2(capellaBlock.GetBody().GetExecutionPayload())
-
-		return
+		return b.appendExecutionPayloadCapellaV2(capellaBlock.GetBody().GetExecutionPayload())
 	}
 
 	if denebBlock := eventBlock.GetDenebBlock(); denebBlock != nil {
@@ -142,9 +147,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 			b.Slot.Append(0)
 		}
 
-		b.appendExecutionPayloadDeneb(denebBlock.GetBody().GetExecutionPayload())
-
-		return
+		return b.appendExecutionPayloadDeneb(denebBlock.GetBody().GetExecutionPayload())
 	}
 
 	if electraBlock := eventBlock.GetElectraBlock(); electraBlock != nil {
@@ -154,9 +157,7 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 			b.Slot.Append(0)
 		}
 
-		b.appendExecutionPayloadElectra(electraBlock.GetBody().GetExecutionPayload())
-
-		return
+		return b.appendExecutionPayloadElectra(electraBlock.GetBody().GetExecutionPayload())
 	}
 
 	if fuluBlock := eventBlock.GetFuluBlock(); fuluBlock != nil {
@@ -166,14 +167,14 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 			b.Slot.Append(0)
 		}
 
-		b.appendExecutionPayloadElectra(fuluBlock.GetBody().GetExecutionPayload())
-
-		return
+		return b.appendExecutionPayloadElectra(fuluBlock.GetBody().GetExecutionPayload())
 	}
 
 	// Unknown block type.
 	b.Slot.Append(0)
 	b.appendNoExecutionPayload()
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendNoExecutionPayload() {
@@ -187,15 +188,20 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendNoExecutionPayload() {
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadV2(
 	payload *ethv1.ExecutionPayloadV2,
-) {
+) error {
 	if payload == nil {
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(baseFee)))
+		parsedBaseFee, err := route.ParseUInt128(baseFee)
+		if err != nil {
+			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		}
+
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -220,19 +226,26 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadV2(
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadCapellaV2(
 	payload *ethv1.ExecutionPayloadCapellaV2,
-) {
+) error {
 	if payload == nil {
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(baseFee)))
+		parsedBaseFee, err := route.ParseUInt128(baseFee)
+		if err != nil {
+			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		}
+
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -257,19 +270,26 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadCapellaV2(
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadDeneb(
 	payload *ethv1.ExecutionPayloadDeneb,
-) {
+) error {
 	if payload == nil {
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(baseFee)))
+		parsedBaseFee, err := route.ParseUInt128(baseFee)
+		if err != nil {
+			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		}
+
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -303,19 +323,26 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadDeneb(
 	} else {
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadElectra(
 	payload *ethv1.ExecutionPayloadElectra,
-) {
+) error {
 	if payload == nil {
 		b.appendNoExecutionPayload()
 
-		return
+		return nil
 	}
 
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(baseFee)))
+		parsedBaseFee, err := route.ParseUInt128(baseFee)
+		if err != nil {
+			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		}
+
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -349,6 +376,8 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadElectra(
 	} else {
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
+
+	return nil
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

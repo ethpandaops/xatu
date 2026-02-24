@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -37,7 +38,11 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.De
 
 	b.appendRuntime(event)
 	b.appendMetadata(event)
-	b.appendPayload(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
 	b.appendAdditionalData(event)
 	b.rows++
 
@@ -48,24 +53,29 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendRuntime(_ *xatu.De
 	b.UpdatedDateTime.Append(time.Now())
 }
 
-func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xatu.DecoratedEvent) {
+func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	tx := event.GetEthV2BeaconBlockExecutionTransaction()
 	if tx == nil {
+		zeroVal, err := route.ParseUInt128("0")
+		if err != nil {
+			return fmt.Errorf("parsing zero value: %w", err)
+		}
+
 		b.Hash.Append(nil)
 		b.From.Append(nil)
 		b.To.Append(proto.Nullable[[]byte]{})
 		b.Nonce.Append(0)
-		b.GasPrice.Append(route.ParseUInt128("0"))
+		b.GasPrice.Append(zeroVal)
 		b.Gas.Append(0)
 		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
-		b.Value.Append(route.ParseUInt128("0"))
+		b.Value.Append(zeroVal)
 		b.Type.Append(0)
 		b.BlobGas.Append(proto.Nullable[uint64]{})
 		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 		b.BlobHashes.Append([]string{})
 
-		return
+		return nil
 	}
 
 	b.Hash.Append([]byte(tx.GetHash()))
@@ -78,27 +88,50 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 		b.To.Append(proto.Nullable[[]byte]{})
 	}
 
-	b.GasPrice.Append(route.ParseUInt128(tx.GetGasPrice()))
+	gasPrice, err := route.ParseUInt128(tx.GetGasPrice())
+	if err != nil {
+		return fmt.Errorf("parsing gas_price: %w", err)
+	}
 
-	gasTipCap := tx.GetGasTipCap()
-	if gasTipCap != "" {
-		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(gasTipCap)))
+	b.GasPrice.Append(gasPrice)
+
+	if gasTipCap := tx.GetGasTipCap(); gasTipCap != "" {
+		parsedGasTipCap, parseErr := route.ParseUInt128(gasTipCap)
+		if parseErr != nil {
+			return fmt.Errorf("parsing gas_tip_cap: %w", parseErr)
+		}
+
+		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](parsedGasTipCap))
 	} else {
 		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 	}
 
-	gasFeeCap := tx.GetGasFeeCap()
-	if gasFeeCap != "" {
-		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(gasFeeCap)))
+	if gasFeeCap := tx.GetGasFeeCap(); gasFeeCap != "" {
+		parsedGasFeeCap, parseErr := route.ParseUInt128(gasFeeCap)
+		if parseErr != nil {
+			return fmt.Errorf("parsing gas_fee_cap: %w", parseErr)
+		}
+
+		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedGasFeeCap))
 	} else {
 		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
 
-	b.Value.Append(route.ParseUInt128(tx.GetValue()))
+	txValue, err := route.ParseUInt128(tx.GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
+	}
+
+	b.Value.Append(txValue)
 
 	blobGasFeeCap := tx.GetBlobGasFeeCap()
 	if blobGasFeeCap != "" {
-		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](route.ParseUInt128(blobGasFeeCap)))
+		parsedBlobGasFeeCap, err := route.ParseUInt128(blobGasFeeCap)
+		if err != nil {
+			return fmt.Errorf("parsing blob_gas_fee_cap: %w", err)
+		}
+
+		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedBlobGasFeeCap))
 	} else {
 		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -128,6 +161,8 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	} else {
 		b.BlobGas.Append(proto.Nullable[uint64]{})
 	}
+
+	return nil
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema

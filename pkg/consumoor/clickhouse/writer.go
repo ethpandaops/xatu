@@ -351,6 +351,7 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 		flushReq:              make(chan chan error, 1),
 		organicRetryInitDelay: w.config.OrganicRetryInitDelay,
 		organicRetryMaxDelay:  w.config.OrganicRetryMaxDelay,
+		drainTimeout:          w.config.DrainTimeout,
 		newBatch:              w.batchFactories[table],
 	}
 

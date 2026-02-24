@@ -64,10 +64,17 @@ func DiscoverTopics(ctx context.Context, cfg *KafkaConfig) ([]string, error) {
 
 	allNames := details.Names()
 
-	matched := make([]string, 0, len(allNames))
+	return matchTopics(compiled, allNames), nil
+}
 
-	for _, name := range allNames {
-		for _, re := range compiled {
+// matchTopics returns the subset of topics that match at least one of the
+// compiled patterns. Each topic appears at most once (deduplication via the
+// break-on-first-match loop). The result is sorted lexicographically.
+func matchTopics(patterns []*regexp.Regexp, topics []string) []string {
+	matched := make([]string, 0, len(topics))
+
+	for _, name := range topics {
+		for _, re := range patterns {
 			if re.MatchString(name) {
 				matched = append(matched, name)
 
@@ -78,5 +85,5 @@ func DiscoverTopics(ctx context.Context, cfg *KafkaConfig) ([]string, error) {
 
 	sort.Strings(matched)
 
-	return matched, nil
+	return matched
 }

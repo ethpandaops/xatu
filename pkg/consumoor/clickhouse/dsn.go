@@ -11,7 +11,7 @@ import (
 	"github.com/ClickHouse/ch-go"
 )
 
-func parseChGoOptions(dsn string) (ch.Options, error) {
+func parseChGoOptions(dsn string, dialTimeout, readTimeout time.Duration) (ch.Options, error) {
 	if !strings.Contains(dsn, "://") {
 		dsn = "clickhouse://" + dsn
 	}
@@ -93,8 +93,8 @@ func parseChGoOptions(dsn string) (ch.Options, error) {
 		Database:    database,
 		User:        username,
 		Password:    password,
-		DialTimeout: 5 * time.Second,
-		ReadTimeout: 30 * time.Second,
+		DialTimeout: dialTimeout,
+		ReadTimeout: readTimeout,
 		TLS:         tlsConfig,
 	}, nil
 }

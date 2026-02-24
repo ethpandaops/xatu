@@ -18,6 +18,12 @@ type Config struct {
 	// directly to ReplicatedMergeTree tables in a clustered setup.
 	TableSuffix string `yaml:"tableSuffix"`
 
+	// OrganicRetryInitDelay is the initial backoff delay when a table writer
+	// flush fails and the batch is preserved for retry on the next cycle.
+	OrganicRetryInitDelay time.Duration `yaml:"organicRetryInitDelay" default:"1s"`
+	// OrganicRetryMaxDelay caps the exponential backoff for organic retries.
+	OrganicRetryMaxDelay time.Duration `yaml:"organicRetryMaxDelay" default:"30s"`
+
 	// Defaults are the default batch settings for all tables.
 	Defaults TableConfig `yaml:"defaults"`
 
@@ -51,6 +57,11 @@ type TableConfig struct {
 
 // ChGoConfig configures the ch-go backend query retries and connection pooling.
 type ChGoConfig struct {
+	// DialTimeout is the timeout for establishing a connection to ClickHouse.
+	DialTimeout time.Duration `yaml:"dialTimeout" default:"5s"`
+	// ReadTimeout is the timeout for reading responses from ClickHouse.
+	ReadTimeout time.Duration `yaml:"readTimeout" default:"30s"`
+
 	// QueryTimeout is the per-attempt timeout for ch-go operations.
 	// Set to 0 to disable timeout wrapping.
 	QueryTimeout time.Duration `yaml:"queryTimeout" default:"30s"`
@@ -82,6 +93,20 @@ type ChGoConfig struct {
 func (c *Config) Validate() error {
 	if c.DSN == "" {
 		return errors.New("clickhouse: dsn is required")
+	}
+
+	if c.OrganicRetryInitDelay <= 0 {
+		return errors.New("clickhouse: organicRetryInitDelay must be > 0")
+	}
+
+	if c.OrganicRetryMaxDelay <= 0 {
+		return errors.New("clickhouse: organicRetryMaxDelay must be > 0")
+	}
+
+	if c.OrganicRetryInitDelay > c.OrganicRetryMaxDelay {
+		return errors.New(
+			"clickhouse: organicRetryInitDelay must be <= organicRetryMaxDelay",
+		)
 	}
 
 	if err := c.ChGo.Validate(); err != nil {
@@ -132,6 +157,14 @@ func (c *Config) Validate() error {
 
 // Validate checks the ch-go backend configuration for errors.
 func (c *ChGoConfig) Validate() error {
+	if c.DialTimeout <= 0 {
+		return errors.New("clickhouse.chgo: dialTimeout must be > 0")
+	}
+
+	if c.ReadTimeout <= 0 {
+		return errors.New("clickhouse.chgo: readTimeout must be > 0")
+	}
+
 	if c.QueryTimeout < 0 {
 		return errors.New("clickhouse.chgo: queryTimeout must be >= 0")
 	}

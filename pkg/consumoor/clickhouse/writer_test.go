@@ -80,6 +80,8 @@ func TestChGoConfigValidateRejectsZeroValues(t *testing.T) {
 
 func TestChGoConfigValidateAcceptsValidConfig(t *testing.T) {
 	cfg := ChGoConfig{
+		DialTimeout:       5 * time.Second,
+		ReadTimeout:       30 * time.Second,
 		RetryBaseDelay:    100 * time.Millisecond,
 		RetryMaxDelay:     2 * time.Second,
 		MaxConns:          8,
@@ -93,6 +95,8 @@ func TestChGoConfigValidateAcceptsValidConfig(t *testing.T) {
 
 func TestChGoConfigValidateHonorsExplicitZeroMinConns(t *testing.T) {
 	cfg := ChGoConfig{
+		DialTimeout:       5 * time.Second,
+		ReadTimeout:       30 * time.Second,
 		RetryBaseDelay:    100 * time.Millisecond,
 		RetryMaxDelay:     2 * time.Second,
 		MaxConns:          5,

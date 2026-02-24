@@ -2,6 +2,7 @@ package clickhouse
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -198,7 +199,7 @@ func TestParseChGoOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts, err := parseChGoOptions(tt.dsn)
+			opts, err := parseChGoOptions(tt.dsn, 5*time.Second, 30*time.Second, nil)
 
 			if tt.wantErr != "" {
 				require.Error(t, err)

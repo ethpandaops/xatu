@@ -54,7 +54,12 @@ func NewChGoWriter(
 	config *Config,
 	metrics *telemetry.Metrics,
 ) (*ChGoWriter, error) {
-	opts, err := parseChGoOptions(config.DSN, config.ChGo.DialTimeout, config.ChGo.ReadTimeout)
+	opts, err := parseChGoOptions(
+		config.DSN,
+		config.ChGo.DialTimeout,
+		config.ChGo.ReadTimeout,
+		&config.TLS,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("parsing clickhouse DSN for ch-go backend: %w", err)
 	}

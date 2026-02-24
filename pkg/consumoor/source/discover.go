@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"regexp"
 	"sort"
@@ -30,10 +29,13 @@ func DiscoverTopics(
 		kgo.SeedBrokers(cfg.Brokers...),
 	}
 
-	if cfg.TLS {
-		opts = append(opts, kgo.DialTLSConfig(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}))
+	if cfg.TLS.Enabled {
+		tlsCfg, tlsErr := cfg.TLS.Build()
+		if tlsErr != nil {
+			return nil, fmt.Errorf("building TLS config for topic discovery: %w", tlsErr)
+		}
+
+		opts = append(opts, kgo.DialTLSConfig(tlsCfg))
 	}
 
 	if cfg.SASLConfig != nil {

@@ -116,10 +116,29 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
 	}
 
-	if kafkaConfig.TLS {
-		inputKafka["tls"] = map[string]any{
+	if kafkaConfig.TLS.Enabled {
+		tlsObj := map[string]any{
 			"enabled": true,
 		}
+
+		if kafkaConfig.TLS.CAFile != "" {
+			tlsObj["root_cas_file"] = kafkaConfig.TLS.CAFile
+		}
+
+		if kafkaConfig.TLS.CertFile != "" {
+			tlsObj["client_certs"] = []map[string]any{
+				{
+					"cert_file": kafkaConfig.TLS.CertFile,
+					"key_file":  kafkaConfig.TLS.KeyFile,
+				},
+			}
+		}
+
+		if kafkaConfig.TLS.InsecureSkipVerify {
+			tlsObj["skip_cert_verify"] = true
+		}
+
+		inputKafka["tls"] = tlsObj
 	}
 
 	if kafkaConfig.SASLConfig != nil {

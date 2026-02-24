@@ -17,6 +17,7 @@ kafka:
   # heartbeatIntervalMs: 3000
   commitInterval: 5s      # Kafka offset commit interval
   # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
+  # shutdownTimeout: 30s  # max wait for in-flight messages during graceful shutdown
   # rejectedTopic: xatu-consumoor-rejected
   # tls: false
   # sasl:
@@ -26,7 +27,11 @@ kafka:
 
 clickhouse:
   dsn: "clickhouse://localhost:9000/default"
+  # organicRetryInitDelay: 1s   # initial backoff when a table flush fails
+  # organicRetryMaxDelay: 30s   # max backoff cap for organic retries
   # chgo:
+  #   dialTimeout: 5s
+  #   readTimeout: 30s
   #   queryTimeout: 30s
   #   maxRetries: 3
   #   retryBaseDelay: 100ms

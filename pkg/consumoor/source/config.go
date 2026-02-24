@@ -56,6 +56,9 @@ type KafkaConfig struct {
 
 	// CommitInterval controls Kafka offset commit cadence for kafka_franz.
 	CommitInterval time.Duration `yaml:"commitInterval" default:"5s"`
+	// ShutdownTimeout is the maximum time the Benthos stream waits for
+	// in-flight messages to complete during graceful shutdown.
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout" default:"30s"`
 	// RejectedTopic is an optional Kafka topic where permanently rejected
 	// messages are emitted as JSON envelopes.
 	RejectedTopic string `yaml:"rejectedTopic"`
@@ -101,6 +104,10 @@ func (c *KafkaConfig) Validate() error {
 
 	if c.CommitInterval <= 0 {
 		return errors.New("kafka: commitInterval must be positive")
+	}
+
+	if c.ShutdownTimeout <= 0 {
+		return errors.New("kafka: shutdownTimeout must be > 0")
 	}
 
 	if c.SASLConfig != nil {

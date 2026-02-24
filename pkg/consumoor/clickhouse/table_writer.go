@@ -29,6 +29,9 @@ type chTableWriter struct {
 	buffer    chan eventEntry
 	flushReq  chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
+	organicRetryInitDelay time.Duration
+	organicRetryMaxDelay  time.Duration
+
 	newBatch func() route.ColumnarBatch
 	batch    route.ColumnarBatch // reused across flushes via Reset()
 }
@@ -39,6 +42,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 
 	events := make([]eventEntry, 0, tw.config.BatchSize)
 	flushBlocked := false
+	retryAttempt := 0
 
 	for {
 		bufferCh := tw.buffer
@@ -67,6 +71,7 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 							Warn("Dropping permanently invalid batch")
 						events = events[:0]
 						flushBlocked = false
+						retryAttempt = 0
 
 						continue
 					}
@@ -76,11 +81,15 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 					// remains bounded by BufferSize.
 					flushBlocked = true
 
+					tw.scheduleOrganicRetry(ticker, retryAttempt)
+					retryAttempt++
+
 					continue
 				}
 
 				events = events[:0]
 				flushBlocked = false
+				retryAttempt = 0
 			}
 
 		case <-ticker.C:
@@ -100,16 +109,23 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 						events = events[:0]
 						flushBlocked = false
 
+						tw.resetRetryState(ticker, &retryAttempt)
+
 						continue
 					}
 
 					flushBlocked = true
+
+					tw.scheduleOrganicRetry(ticker, retryAttempt)
+					retryAttempt++
 
 					continue
 				}
 
 				events = events[:0]
 				flushBlocked = false
+
+				tw.resetRetryState(ticker, &retryAttempt)
 			}
 
 		case errCh := <-tw.flushReq:
@@ -137,6 +153,8 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 				case err == nil:
 					events = events[:0]
 					flushBlocked = false
+
+					tw.resetRetryState(ticker, &retryAttempt)
 				case errors.As(err, &flatErr):
 					events = events[:0]
 				case IsPermanentWriteError(err):
@@ -145,6 +163,8 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 						Warn("Dropping permanently invalid batch")
 					events = events[:0]
 					flushBlocked = false
+
+					tw.resetRetryState(ticker, &retryAttempt)
 				default:
 					flushBlocked = true
 				}
@@ -292,6 +312,31 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 		Debug("Flushed ch-go batch")
 
 	return nil
+}
+
+// scheduleOrganicRetry resets the ticker interval to an exponential backoff
+// delay so the next ticker.C fires after the computed retry delay.
+func (tw *chTableWriter) scheduleOrganicRetry(ticker *time.Ticker, attempt int) {
+	delay := min(
+		tw.organicRetryInitDelay*time.Duration(1<<attempt),
+		tw.organicRetryMaxDelay,
+	)
+
+	ticker.Reset(delay)
+
+	tw.log.WithField("delay", delay).
+		WithField("attempt", attempt+1).
+		Debug("Scheduled organic retry")
+}
+
+// resetRetryState restores the ticker to the normal flush interval and zeroes
+// the retry attempt counter when recovering from a blocked state.
+func (tw *chTableWriter) resetRetryState(ticker *time.Ticker, attempt *int) {
+	if *attempt > 0 {
+		ticker.Reset(tw.config.FlushInterval)
+	}
+
+	*attempt = 0
 }
 
 func (tw *chTableWriter) do(

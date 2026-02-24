@@ -50,7 +50,7 @@ func NewChGoWriter(
 	config *Config,
 	metrics *telemetry.Metrics,
 ) (*ChGoWriter, error) {
-	opts, err := parseChGoOptions(config.DSN)
+	opts, err := parseChGoOptions(config.DSN, config.ChGo.DialTimeout, config.ChGo.ReadTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("parsing clickhouse DSN for ch-go backend: %w", err)
 	}
@@ -306,16 +306,18 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 	// don't need to include the suffix.
 	cfg := w.config.TableConfigFor(table)
 	tw = &chTableWriter{
-		log:       w.log.WithField("table", writeTable),
-		table:     writeTable,
-		baseTable: table,
-		database:  w.database,
-		config:    cfg,
-		metrics:   w.metrics,
-		writer:    w,
-		buffer:    make(chan eventEntry, cfg.BufferSize),
-		flushReq:  make(chan chan error, 1),
-		newBatch:  w.batchFactories[table],
+		log:                   w.log.WithField("table", writeTable),
+		table:                 writeTable,
+		baseTable:             table,
+		database:              w.database,
+		config:                cfg,
+		metrics:               w.metrics,
+		writer:                w,
+		buffer:                make(chan eventEntry, cfg.BufferSize),
+		flushReq:              make(chan chan error, 1),
+		organicRetryInitDelay: w.config.OrganicRetryInitDelay,
+		organicRetryMaxDelay:  w.config.OrganicRetryMaxDelay,
+		newBatch:              w.batchFactories[table],
 	}
 
 	w.tables[writeTable] = tw

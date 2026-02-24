@@ -137,7 +137,7 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"logger": map[string]any{
 			"level": benthosLogLevel(logLevel),
 		},
-		"shutdown_timeout": "30s",
+		"shutdown_timeout": kafkaConfig.ShutdownTimeout.String(),
 		"input": map[string]any{
 			"kafka_franz": inputKafka,
 		},

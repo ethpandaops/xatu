@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -34,6 +35,10 @@ func (b *canonicalBeaconBlobSidecarBatch) FlattenTo(event *xatu.DecoratedEvent) 
 		return nil
 	}
 
+	if event.GetEthV1BeaconBlockBlobSidecar() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_block_blob_sidecar payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -49,18 +54,6 @@ func (b *canonicalBeaconBlobSidecarBatch) appendRuntime(_ *xatu.DecoratedEvent) 
 
 func (b *canonicalBeaconBlobSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blob := event.GetEthV1BeaconBlockBlobSidecar()
-	if blob == nil {
-		b.Slot.Append(0)
-		b.BlockRoot.Append(nil)
-		b.BlockParentRoot.Append(nil)
-		b.ProposerIndex.Append(0)
-		b.KzgCommitment.Append(nil)
-		b.KzgProof.Append(nil)
-		b.BlobIndex.Append(0)
-
-		return
-	}
-
 	if slot := blob.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
 	} else {

@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -33,6 +34,10 @@ func (b *executionBlockMetricsBatch) FlattenTo(event *xatu.DecoratedEvent) error
 		return nil
 	}
 
+	if event.GetExecutionBlockMetrics() == nil {
+		return fmt.Errorf("nil execution_block_metrics payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -53,19 +58,6 @@ func (b *executionBlockMetricsBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *executionBlockMetricsBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetExecutionBlockMetrics()
-	if payload == nil {
-		b.Source.Append("")
-		b.BlockNumber.Append(0)
-		b.BlockHash.Append(nil)
-		b.GasUsed.Append(0)
-		b.TxCount.Append(0)
-		b.appendPayloadTiming(nil)
-		b.appendPayloadStateIO(nil)
-		b.appendPayloadCaches(nil)
-
-		return
-	}
-
 	b.Source.Append(payload.GetSource())
 
 	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {

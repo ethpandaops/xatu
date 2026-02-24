@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	chProto "github.com/ClickHouse/ch-go/proto"
@@ -36,6 +37,10 @@ func (b *libp2pDisconnectedBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceDisconnected() == nil {
+		return fmt.Errorf("nil libp2p_trace_disconnected payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -59,25 +64,6 @@ func (b *libp2pDisconnectedBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceDisconnected()
-	if payload == nil {
-		b.Direction.Append("")
-		b.Opened.Append(time.Time{})
-		b.Transient.Append(false)
-		b.RemoteProtocol.Append("")
-		b.RemoteIP.Append(chProto.Nullable[chProto.IPv6]{})
-		b.RemoteTransportProtocol.Append("")
-		b.RemotePort.Append(0)
-		b.RemoteAgentImplementation.Append("")
-		b.RemoteAgentVersion.Append("")
-		b.RemoteAgentVersionMajor.Append("")
-		b.RemoteAgentVersionMinor.Append("")
-		b.RemoteAgentVersionPatch.Append("")
-		b.RemoteAgentPlatform.Append("")
-		b.RemotePeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	remotePeer := wrappedStringValue(payload.GetRemotePeer())
 	b.Direction.Append(wrappedStringValue(payload.GetDirection()))
 

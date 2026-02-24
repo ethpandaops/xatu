@@ -34,6 +34,10 @@ func (b *canonicalBeaconBlockWithdrawalBatch) FlattenTo(event *xatu.DecoratedEve
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockWithdrawal() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_withdrawal payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -54,20 +58,6 @@ func (b *canonicalBeaconBlockWithdrawalBatch) appendRuntime(_ *xatu.DecoratedEve
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	withdrawal := event.GetEthV2BeaconBlockWithdrawal()
-	if withdrawal == nil {
-		zeroAmount, err := route.ParseUInt128("0")
-		if err != nil {
-			return fmt.Errorf("parsing withdrawal_amount: %w", err)
-		}
-
-		b.WithdrawalAddress.Append(nil)
-		b.WithdrawalIndex.Append(0)
-		b.WithdrawalValidatorIndex.Append(0)
-		b.WithdrawalAmount.Append(zeroAmount)
-
-		return nil
-	}
-
 	b.WithdrawalAddress.Append([]byte(withdrawal.GetAddress()))
 
 	if index := withdrawal.GetIndex(); index != nil {

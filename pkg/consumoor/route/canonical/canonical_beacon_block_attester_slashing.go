@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -36,6 +37,10 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) FlattenTo(event *xatu.Decora
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockAttesterSlashing() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_attester_slashing payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -51,13 +56,6 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) appendRuntime(_ *xatu.Decora
 
 func (b *canonicalBeaconBlockAttesterSlashingBatch) appendPayload(event *xatu.DecoratedEvent) {
 	slashing := event.GetEthV2BeaconBlockAttesterSlashing()
-	if slashing == nil {
-		b.appendNullIndexedAttestation1()
-		b.appendNullIndexedAttestation2()
-
-		return
-	}
-
 	b.appendIndexedAttestation1(slashing.GetAttestation_1())
 	b.appendIndexedAttestation2(slashing.GetAttestation_2())
 }

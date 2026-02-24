@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -47,6 +48,10 @@ func (b *beaconApiEthV1ProposerDutyBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1ProposerDuty() == nil {
+		return fmt.Errorf("nil eth_v1_proposer_duty payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -68,14 +73,6 @@ func (b *beaconApiEthV1ProposerDutyBatch) appendRuntime(event *xatu.DecoratedEve
 
 func (b *beaconApiEthV1ProposerDutyBatch) appendPayload(event *xatu.DecoratedEvent) {
 	duty := event.GetEthV1ProposerDuty()
-	if duty == nil {
-		b.Slot.Append(0)
-		b.ProposerValidatorIndex.Append(0)
-		b.ProposerPubkey.Append("")
-
-		return
-	}
-
 	if slot := duty.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

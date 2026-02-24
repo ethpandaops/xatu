@@ -35,6 +35,10 @@ func (b *beaconApiEthV1EventsAttestationBatch) FlattenTo(event *xatu.DecoratedEv
 		return nil
 	}
 
+	if event.GetEthV1EventsAttestationV2() == nil {
+		return fmt.Errorf("nil eth_v1_events_attestation_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -54,19 +58,6 @@ func (b *beaconApiEthV1EventsAttestationBatch) appendRuntime(event *xatu.Decorat
 
 func (b *beaconApiEthV1EventsAttestationBatch) appendPayload(event *xatu.DecoratedEvent) {
 	attestationV2 := event.GetEthV1EventsAttestationV2()
-	if attestationV2 == nil {
-		b.AggregationBits.Append("")
-		b.Slot.Append(0)
-		b.CommitteeIndex.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
 	b.AggregationBits.Append(attestationV2.GetAggregationBits())
 
 	data := attestationV2.GetData()

@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -34,6 +35,10 @@ func (b *canonicalBeaconSyncCommitteeBatch) FlattenTo(event *xatu.DecoratedEvent
 		return nil
 	}
 
+	if event.GetEthV1BeaconSyncCommittee() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_sync_committee payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -55,12 +60,6 @@ func (b *canonicalBeaconSyncCommitteeBatch) appendRuntime(event *xatu.DecoratedE
 
 func (b *canonicalBeaconSyncCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committeeData := event.GetEthV1BeaconSyncCommittee()
-	if committeeData == nil {
-		b.ValidatorAggregates.Append([][]uint32{})
-
-		return
-	}
-
 	syncCommittee := committeeData.GetSyncCommittee()
 	if syncCommittee == nil {
 		b.ValidatorAggregates.Append([][]uint32{})

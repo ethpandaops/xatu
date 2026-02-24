@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pAddPeerBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceAddPeer() == nil {
+		return fmt.Errorf("nil libp2p_trace_add_peer payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,13 +62,6 @@ func (b *libp2pAddPeerBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceAddPeer()
-	if payload == nil {
-		b.Protocol.Append("")
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	peerID := wrappedStringValue(payload.GetPeerId())
 	b.Protocol.Append(wrappedStringValue(payload.GetProtocol()))
 

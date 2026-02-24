@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -33,6 +34,10 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) FlattenTo(event *xatu.De
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockBlsToExecutionChange() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_bls_to_execution_change payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -49,15 +54,6 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) appendRuntime(_ *xatu.De
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	change := event.GetEthV2BeaconBlockBlsToExecutionChange()
-	if change == nil {
-		b.ExchangingSignature.Append("")
-		b.ExchangingMessageValidatorIndex.Append(0)
-		b.ExchangingMessageFromBlsPubkey.Append("")
-		b.ExchangingMessageToExecutionAddress.Append(nil)
-
-		return
-	}
-
 	b.ExchangingSignature.Append(change.GetSignature())
 
 	if msg := change.GetMessage(); msg != nil {

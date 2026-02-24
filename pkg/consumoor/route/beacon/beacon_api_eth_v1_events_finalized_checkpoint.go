@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1EventsFinalizedCheckpointV2() == nil {
+		return fmt.Errorf("nil eth_v1_events_finalized_checkpoint_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -56,15 +61,6 @@ func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) appendRuntime(event *xatu
 
 func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) appendPayload(event *xatu.DecoratedEvent) {
 	checkpointV2 := event.GetEthV1EventsFinalizedCheckpointV2()
-	if checkpointV2 == nil {
-		b.Block.Append(nil)
-		b.State.Append(nil)
-		b.Epoch.Append(0)
-		b.ExecutionOptimistic.Append(false)
-
-		return
-	}
-
 	b.Block.Append([]byte(checkpointV2.GetBlock()))
 	b.State.Append([]byte(checkpointV2.GetState()))
 

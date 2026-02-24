@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pDuplicateMessageBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceDuplicateMessage() == nil {
+		return fmt.Errorf("nil libp2p_trace_duplicate_message payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,20 +62,6 @@ func (b *libp2pDuplicateMessageBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceDuplicateMessage()
-	if payload == nil {
-		b.MessageID.Append("")
-		b.MessageSize.Append(0)
-		b.SeqNumber.Append(0)
-		b.LocalDelivery.Append(false)
-		b.TopicLayer.Append("")
-		b.TopicForkDigestValue.Append("")
-		b.TopicName.Append("")
-		b.TopicEncoding.Append("")
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	b.MessageID.Append(wrappedStringValue(payload.GetMsgId()))
 
 	if msgSize := payload.GetMsgSize(); msgSize != nil {

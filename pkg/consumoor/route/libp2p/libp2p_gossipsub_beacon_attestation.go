@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -37,6 +38,10 @@ func (b *libp2pGossipsubBeaconAttestationBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceGossipsubBeaconAttestation() == nil {
+		return fmt.Errorf("nil libp2p_trace_gossipsub_beacon_attestation payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -59,18 +64,6 @@ func (b *libp2pGossipsubBeaconAttestationBatch) appendRuntime(event *xatu.Decora
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *libp2pGossipsubBeaconAttestationBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubBeaconAttestation()
-	if payload == nil {
-		b.AggregationBits.Append("")
-		b.CommitteeIndex.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
 	b.AggregationBits.Append(payload.GetAggregationBits())
 
 	if data := payload.GetData(); data != nil {

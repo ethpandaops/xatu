@@ -46,6 +46,10 @@ func (b *canonicalBeaconBlockBatch) FlattenTo(event *xatu.DecoratedEvent) error 
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockV2() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -65,18 +69,6 @@ func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 
 func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
-	if eventBlock == nil {
-		b.Slot.Append(0)
-		b.ProposerIndex.Append(0)
-		b.ParentRoot.Append(nil)
-		b.StateRoot.Append(nil)
-		b.Eth1DataBlockHash.Append(nil)
-		b.Eth1DataDepositRoot.Append(nil)
-		b.appendNullExecutionPayload()
-
-		return nil
-	}
-
 	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 

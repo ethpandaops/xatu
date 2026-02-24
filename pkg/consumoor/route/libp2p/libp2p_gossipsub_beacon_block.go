@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pGossipsubBeaconBlockBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceGossipsubBeaconBlock() == nil {
+		return fmt.Errorf("nil libp2p_trace_gossipsub_beacon_block payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,13 +62,6 @@ func (b *libp2pGossipsubBeaconBlockBatch) appendRuntime(event *xatu.DecoratedEve
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *libp2pGossipsubBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubBeaconBlock()
-	if payload == nil {
-		b.Block.Append(nil)
-		b.ProposerIndex.Append(0)
-
-		return
-	}
-
 	b.Block.Append([]byte(wrappedStringValue(payload.GetBlock())))
 
 	if proposerIndex := payload.GetProposerIndex(); proposerIndex != nil {

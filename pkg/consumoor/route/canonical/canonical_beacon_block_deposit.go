@@ -34,6 +34,10 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockDeposit() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_deposit payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -53,21 +57,6 @@ func (b *canonicalBeaconBlockDepositBatch) appendRuntime(_ *xatu.DecoratedEvent)
 
 func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	deposit := event.GetEthV2BeaconBlockDeposit()
-	if deposit == nil {
-		zeroAmount, err := route.ParseUInt128("0")
-		if err != nil {
-			return fmt.Errorf("parsing deposit_data_amount: %w", err)
-		}
-
-		b.DepositProof.Append([]string{})
-		b.DepositDataPubkey.Append("")
-		b.DepositDataWithdrawalCredentials.Append(nil)
-		b.DepositDataSignature.Append("")
-		b.DepositDataAmount.Append(zeroAmount)
-
-		return nil
-	}
-
 	b.DepositProof.Append(deposit.GetProof())
 
 	if data := deposit.GetData(); data != nil {

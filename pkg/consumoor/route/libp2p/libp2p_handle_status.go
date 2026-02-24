@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -36,6 +37,10 @@ func (b *libp2pHandleStatusBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceHandleStatus() == nil {
+		return fmt.Errorf("nil libp2p_trace_handle_status payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -59,28 +64,6 @@ func (b *libp2pHandleStatusBatch) appendPayload(
 	event *xatuProto.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceHandleStatus()
-	if payload == nil {
-		b.PeerIDUniqueKey.Append(0)
-		b.Error.Append(proto.Nullable[string]{})
-		b.Protocol.Append("")
-		b.Direction.Append(proto.Nullable[string]{})
-		b.RequestForkDigest.Append("")
-		b.RequestFinalizedRoot.Append(proto.Nullable[string]{})
-		b.RequestHeadRoot.Append(proto.Nullable[[]byte]{})
-		b.RequestFinalizedEpoch.Append(proto.Nullable[uint32]{})
-		b.RequestHeadSlot.Append(proto.Nullable[uint32]{})
-		b.RequestEarliestAvailableSlot.Append(proto.Nullable[uint32]{})
-		b.ResponseForkDigest.Append("")
-		b.ResponseFinalizedRoot.Append(proto.Nullable[[]byte]{})
-		b.ResponseHeadRoot.Append(proto.Nullable[[]byte]{})
-		b.ResponseFinalizedEpoch.Append(proto.Nullable[uint32]{})
-		b.ResponseHeadSlot.Append(proto.Nullable[uint32]{})
-		b.ResponseEarliestAvailableSlot.Append(proto.Nullable[uint32]{})
-		b.LatencyMilliseconds.Append(0)
-
-		return
-	}
-
 	// Error (nullable string).
 	if errVal := wrappedStringValue(payload.GetError()); errVal != "" {
 		b.Error.Append(proto.NewNullable[string](errVal))

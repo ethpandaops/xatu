@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -37,6 +38,10 @@ func (b *nodeRecordConsensusBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetNodeRecordConsensus() == nil {
+		return fmt.Errorf("nil node_record_consensus payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -60,35 +65,6 @@ func (b *nodeRecordConsensusBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	consensus := event.GetNodeRecordConsensus()
-	if consensus == nil {
-		b.Enr.Append("")
-		b.NodeID.Append(chProto.Nullable[string]{})
-		b.PeerIDUniqueKey.Append(chProto.Nullable[int64]{})
-		b.Timestamp.Append(0)
-		b.Name.Append("")
-		b.Version.Append("")
-		b.VersionMajor.Append("")
-		b.VersionMinor.Append("")
-		b.VersionPatch.Append("")
-		b.Implementation.Append("")
-		b.ForkDigest.Append("")
-		b.NextForkDigest.Append(chProto.Nullable[string]{})
-		b.FinalizedRoot.Append("")
-		b.FinalizedEpoch.Append(0)
-		b.HeadRoot.Append("")
-		b.HeadSlot.Append(0)
-		b.Cgc.Append(chProto.Nullable[string]{})
-		b.FinalizedEpochStartDateTime.Append(chProto.Nullable[time.Time]{})
-		b.HeadSlotStartDateTime.Append(chProto.Nullable[time.Time]{})
-		b.IP.Append(chProto.Nullable[chProto.IPv6]{})
-		b.Tcp.Append(chProto.Nullable[uint16]{})
-		b.Udp.Append(chProto.Nullable[uint16]{})
-		b.Quic.Append(chProto.Nullable[uint16]{})
-		b.HasIpv6.Append(false)
-
-		return
-	}
-
 	b.Enr.Append(nodeStringValue(consensus.GetEnr()))
 
 	// NodeID is Nullable[string].

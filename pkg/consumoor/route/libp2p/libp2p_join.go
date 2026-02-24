@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pJoinBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceJoin() == nil {
+		return fmt.Errorf("nil libp2p_trace_join payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,16 +62,6 @@ func (b *libp2pJoinBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceJoin()
-	if payload == nil {
-		b.TopicLayer.Append("")
-		b.TopicForkDigestValue.Append("")
-		b.TopicName.Append("")
-		b.TopicEncoding.Append("")
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	// Parse topic fields.
 	if topic := wrappedStringValue(payload.GetTopic()); topic != "" {
 		parsed := parseTopicFields(topic)

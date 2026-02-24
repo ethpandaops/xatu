@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -34,6 +35,10 @@ func (b *executionStateSizeBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 		return nil
 	}
 
+	if event.GetExecutionStateSize() == nil {
+		return fmt.Errorf("nil execution_state_size payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -54,23 +59,6 @@ func (b *executionStateSizeBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *executionStateSizeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetExecutionStateSize()
-	if payload == nil {
-		b.BlockNumber.Append(0)
-		b.StateRoot.Append(nil)
-		b.Accounts.Append(0)
-		b.AccountBytes.Append(0)
-		b.AccountTrienodes.Append(0)
-		b.AccountTrienodeBytes.Append(0)
-		b.ContractCodes.Append(0)
-		b.ContractCodeBytes.Append(0)
-		b.Storages.Append(0)
-		b.StorageBytes.Append(0)
-		b.StorageTrienodes.Append(0)
-		b.StorageTrienodeBytes.Append(0)
-
-		return
-	}
-
 	blockNumber, _ := strconv.ParseUint(payload.GetBlockNumber(), 10, 64)
 	b.BlockNumber.Append(blockNumber)
 

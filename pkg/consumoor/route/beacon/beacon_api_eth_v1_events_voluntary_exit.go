@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *beaconApiEthV1EventsVoluntaryExitBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1EventsVoluntaryExitV2() == nil {
+		return fmt.Errorf("nil eth_v1_events_voluntary_exit_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -56,14 +61,6 @@ func (b *beaconApiEthV1EventsVoluntaryExitBatch) appendRuntime(event *xatu.Decor
 
 func (b *beaconApiEthV1EventsVoluntaryExitBatch) appendPayload(event *xatu.DecoratedEvent) {
 	voluntaryExitV2 := event.GetEthV1EventsVoluntaryExitV2()
-	if voluntaryExitV2 == nil {
-		b.Signature.Append("")
-		b.ValidatorIndex.Append(0)
-		b.Epoch.Append(0)
-
-		return
-	}
-
 	b.Signature.Append(voluntaryExitV2.GetSignature())
 
 	message := voluntaryExitV2.GetMessage()

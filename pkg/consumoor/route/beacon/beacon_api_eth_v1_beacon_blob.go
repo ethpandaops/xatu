@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -33,6 +34,10 @@ func (b *beaconApiEthV1BeaconBlobBatch) FlattenTo(event *xatu.DecoratedEvent) er
 		return nil
 	}
 
+	if event.GetEthV1BeaconBlob() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_blob payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -52,18 +57,6 @@ func (b *beaconApiEthV1BeaconBlobBatch) appendRuntime(event *xatu.DecoratedEvent
 
 func (b *beaconApiEthV1BeaconBlobBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blob := event.GetEthV1BeaconBlob()
-	if blob == nil {
-		b.Slot.Append(0)
-		b.BlockRoot.Append(nil)
-		b.BlockParentRoot.Append(nil)
-		b.ProposerIndex.Append(0)
-		b.BlobIndex.Append(0)
-		b.KzgCommitment.Append(nil)
-		b.VersionedHash.Append(nil)
-
-		return
-	}
-
 	if slot := blob.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

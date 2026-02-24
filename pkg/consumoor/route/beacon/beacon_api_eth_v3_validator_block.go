@@ -41,6 +41,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV3ValidatorBlock() == nil {
+		return fmt.Errorf("nil eth_v3_validator_block payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -66,19 +70,6 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendRuntime(event *xatu.DecoratedE
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV3ValidatorBlock()
-	if eventBlock == nil {
-		b.Slot.Append(0)
-		b.BlockVersion.Append("")
-		b.ExecutionPayloadBlockNumber.Append(0)
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
-		b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
-
-		return nil
-	}
-
 	if err := b.appendPayloadFromEventBlockV2(eventBlock); err != nil {
 		return err
 	}

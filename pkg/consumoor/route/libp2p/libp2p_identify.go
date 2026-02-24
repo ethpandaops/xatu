@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	chProto "github.com/ClickHouse/ch-go/proto"
@@ -36,6 +37,10 @@ func (b *libp2pIdentifyBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceIdentify() == nil {
+		return fmt.Errorf("nil libp2p_trace_identify payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,33 +62,6 @@ func (b *libp2pIdentifyBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *libp2pIdentifyBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceIdentify()
-	if payload == nil {
-		b.RemotePeerIDUniqueKey.Append(0)
-		b.Success.Append(false)
-		b.Error.Append(chProto.Nullable[string]{})
-		b.RemoteProtocol.Append("")
-		b.RemoteTransportProtocol.Append("")
-		b.RemotePort.Append(0)
-		b.RemoteIP.Append(chProto.Nullable[chProto.IPv6]{})
-		b.RemoteAgentImplementation.Append("")
-		b.RemoteAgentVersion.Append("")
-		b.RemoteAgentVersionMajor.Append("")
-		b.RemoteAgentVersionMinor.Append("")
-		b.RemoteAgentVersionPatch.Append("")
-		b.RemoteAgentPlatform.Append("")
-		b.ProtocolVersion.Append("")
-		b.Protocols.Append([]string{})
-		b.ListenAddrs.Append([]string{})
-		b.ObservedAddr.Append("")
-		b.Transport.Append("")
-		b.Security.Append("")
-		b.Muxer.Append("")
-		b.Direction.Append("")
-		b.RemoteMultiaddr.Append("")
-
-		return
-	}
-
 	b.Success.Append(payload.GetSuccess().GetValue())
 
 	// Error (nullable string).

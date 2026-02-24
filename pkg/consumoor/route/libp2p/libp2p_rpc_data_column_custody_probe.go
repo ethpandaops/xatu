@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -35,6 +36,10 @@ func (b *libp2pRpcDataColumnCustodyProbeBatch) FlattenTo(
 ) error {
 	if event == nil || event.GetEvent() == nil {
 		return nil
+	}
+
+	if event.GetLibp2PTraceRpcDataColumnCustodyProbe() == nil {
+		return fmt.Errorf("nil libp2p_trace_rpc_data_column_custody_probe payload: %w", route.ErrInvalidEvent)
 	}
 
 	b.appendRuntime(event)
@@ -161,26 +166,6 @@ func (b *libp2pRpcDataColumnCustodyProbeBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceRpcDataColumnCustodyProbe()
-	if payload == nil {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
-		b.WallclockRequestSlot.Append(0)
-		b.WallclockRequestSlotStartDateTime.Append(time.Time{})
-		b.WallclockRequestEpoch.Append(0)
-		b.WallclockRequestEpochStartDateTime.Append(time.Time{})
-		b.ColumnIndex.Append(0)
-		b.ColumnRowsCount.Append(0)
-		b.BeaconBlockRoot.Append(nil)
-		b.PeerIDUniqueKey.Append(0)
-		b.Result.Append("")
-		b.ResponseTimeMs.Append(0)
-		b.Error.Append(proto.Nullable[string]{})
-
-		return
-	}
-
 	f := resolveSlotEpochFields(payload, event)
 
 	b.Slot.Append(f.slot)

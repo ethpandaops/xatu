@@ -18,6 +18,7 @@ kafka:
   commitInterval: 5s      # Kafka offset commit interval
   # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
   # shutdownTimeout: 30s  # max wait for in-flight messages during graceful shutdown
+  # lagPollInterval: 30s  # consumer lag poll interval (0 to disable)
   # rejectedTopic: xatu-consumoor-rejected
   # topicRefreshInterval: 60s  # How often to re-discover topics matching regex patterns (0 to disable)
   # tls: false

@@ -22,6 +22,7 @@ type Metrics struct {
 	bufferUsageTotal prometheus.Gauge
 	flattenErrors    *prometheus.CounterVec
 	activeTopics     prometheus.Gauge
+	kafkaConsumerLag *prometheus.GaugeVec
 
 	// ch-go pool metrics
 	chgoPoolAcquiredResources     prometheus.Gauge
@@ -152,6 +153,13 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Current number of Kafka topics matching configured patterns.",
 		}),
 
+		kafkaConsumerLag: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "kafka_consumer_lag",
+			Help:      "Kafka consumer group lag per topic and partition.",
+		}, []string{"topic", "partition", "consumer_group"}),
+
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
@@ -239,6 +247,7 @@ func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsa
 func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsageTotal }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
 func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
+func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -37,6 +38,10 @@ func (b *libp2pRpcMetaControlPruneBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceRpcMetaControlPrune() == nil {
+		return fmt.Errorf("nil libp2p_trace_rpc_meta_control_prune payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -60,21 +65,6 @@ func (b *libp2pRpcMetaControlPruneBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceRpcMetaControlPrune()
-	if payload == nil {
-		b.UniqueKey.Append(0)
-		b.RPCMetaUniqueKey.Append(0)
-		b.ControlIndex.Append(0)
-		b.PeerIDIndex.Append(0)
-		b.PeerIDUniqueKey.Append(0)
-		b.GraftPeerIDUniqueKey.Append(proto.Nullable[int64]{})
-		b.TopicLayer.Append("")
-		b.TopicForkDigestValue.Append("")
-		b.TopicName.Append("")
-		b.TopicEncoding.Append("")
-
-		return
-	}
-
 	// Extract values needed for key computations.
 	rootEventID := wrappedStringValue(payload.GetRootEventId())
 

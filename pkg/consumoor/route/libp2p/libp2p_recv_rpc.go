@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pRecvRpcBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceRecvRpc() == nil {
+		return fmt.Errorf("nil libp2p_trace_recv_rpc payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,13 +62,6 @@ func (b *libp2pRecvRpcBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceRecvRpc()
-	if payload == nil {
-		b.UniqueKey.Append(0)
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	// Compute unique_key from event ID.
 	if event.GetEvent() != nil && event.GetEvent().GetId() != "" {
 		b.UniqueKey.Append(route.SeaHashInt64(event.GetEvent().GetId()))

@@ -244,6 +244,13 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 
 	for _, e := range events {
 		if err := batch.FlattenTo(e.event); err != nil {
+			if errors.Is(err, route.ErrInvalidEvent) {
+				tw.log.WithError(err).Warn("Skipping invalid event")
+				tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
+
+				continue
+			}
+
 			flattenErrs++
 			lastErr = err
 

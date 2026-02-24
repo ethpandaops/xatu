@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -33,6 +34,10 @@ func (b *canonicalBeaconBlockVoluntaryExitBatch) FlattenTo(event *xatu.Decorated
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockVoluntaryExit() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_voluntary_exit payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -49,14 +54,6 @@ func (b *canonicalBeaconBlockVoluntaryExitBatch) appendRuntime(_ *xatu.Decorated
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockVoluntaryExitBatch) appendPayload(event *xatu.DecoratedEvent) {
 	exit := event.GetEthV2BeaconBlockVoluntaryExit()
-	if exit == nil {
-		b.VoluntaryExitSignature.Append("")
-		b.VoluntaryExitMessageEpoch.Append(0)
-		b.VoluntaryExitMessageValidatorIndex.Append(0)
-
-		return
-	}
-
 	b.VoluntaryExitSignature.Append(exit.GetSignature())
 
 	if msg := exit.GetMessage(); msg != nil {

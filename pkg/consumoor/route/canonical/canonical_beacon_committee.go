@@ -46,6 +46,10 @@ func (b *canonicalBeaconCommitteeBatch) FlattenTo(event *xatu.DecoratedEvent) er
 		return nil
 	}
 
+	if event.GetEthV1BeaconCommittee() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_committee payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -61,13 +65,6 @@ func (b *canonicalBeaconCommitteeBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 
 func (b *canonicalBeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
-	if committee == nil {
-		b.CommitteeIndex.Append("")
-		b.Validators.Append([]uint32{})
-
-		return
-	}
-
 	if index := committee.GetIndex(); index != nil {
 		b.CommitteeIndex.Append(fmt.Sprintf("%d", index.GetValue()))
 	} else {

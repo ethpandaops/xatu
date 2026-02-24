@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -34,6 +35,10 @@ func (b *consensusEngineApiNewPayloadBatch) FlattenTo(event *xatu.DecoratedEvent
 		return nil
 	}
 
+	if event.GetConsensusEngineApiNewPayload() == nil {
+		return fmt.Errorf("nil consensus_engine_api_new_payload payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -55,28 +60,6 @@ func (b *consensusEngineApiNewPayloadBatch) appendRuntime(event *xatu.DecoratedE
 
 func (b *consensusEngineApiNewPayloadBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetConsensusEngineApiNewPayload()
-	if payload == nil {
-		b.RequestedDateTime.Append(time.Time{})
-		b.DurationMs.Append(0)
-		b.Slot.Append(0)
-		b.BlockRoot.Append(nil)
-		b.ParentBlockRoot.Append(nil)
-		b.ProposerIndex.Append(0)
-		b.BlockNumber.Append(0)
-		b.BlockHash.Append(nil)
-		b.ParentHash.Append(nil)
-		b.GasUsed.Append(0)
-		b.GasLimit.Append(0)
-		b.TxCount.Append(0)
-		b.BlobCount.Append(0)
-		b.Status.Append("")
-		b.LatestValidHash.Append(proto.Nullable[[]byte]{})
-		b.ValidationError.Append(proto.Nullable[string]{})
-		b.MethodVersion.Append("")
-
-		return
-	}
-
 	if requestedAt := payload.GetRequestedAt(); requestedAt != nil {
 		b.RequestedDateTime.Append(requestedAt.AsTime().UTC())
 	} else {

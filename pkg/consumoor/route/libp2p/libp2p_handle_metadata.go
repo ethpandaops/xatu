@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -36,6 +37,10 @@ func (b *libp2pHandleMetadataBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceHandleMetadata() == nil {
+		return fmt.Errorf("nil libp2p_trace_handle_metadata payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -59,20 +64,6 @@ func (b *libp2pHandleMetadataBatch) appendPayload(
 	event *xatuProto.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceHandleMetadata()
-	if payload == nil {
-		b.PeerIDUniqueKey.Append(0)
-		b.Error.Append(proto.Nullable[string]{})
-		b.Protocol.Append("")
-		b.Direction.Append(proto.Nullable[string]{})
-		b.Attnets.Append("")
-		b.SeqNumber.Append(0)
-		b.Syncnets.Append("")
-		b.CustodyGroupCount.Append(proto.Nullable[uint8]{})
-		b.LatencyMilliseconds.Append(0)
-
-		return
-	}
-
 	// Error (nullable string).
 	if errVal := wrappedStringValue(payload.GetError()); errVal != "" {
 		b.Error.Append(proto.NewNullable[string](errVal))

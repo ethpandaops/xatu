@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *beaconApiEthV1EventsChainReorgBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1EventsChainReorgV2() == nil {
+		return fmt.Errorf("nil eth_v1_events_chain_reorg_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -56,19 +61,6 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendRuntime(event *xatu.Decorate
 
 func (b *beaconApiEthV1EventsChainReorgBatch) appendPayload(event *xatu.DecoratedEvent) {
 	chainReorgV2 := event.GetEthV1EventsChainReorgV2()
-	if chainReorgV2 == nil {
-		b.Slot.Append(0)
-		b.Depth.Append(0)
-		b.OldHeadBlock.Append(nil)
-		b.NewHeadBlock.Append(nil)
-		b.OldHeadState.Append(nil)
-		b.NewHeadState.Append(nil)
-		b.Epoch.Append(0)
-		b.ExecutionOptimistic.Append(false)
-
-		return
-	}
-
 	if slot := chainReorgV2.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

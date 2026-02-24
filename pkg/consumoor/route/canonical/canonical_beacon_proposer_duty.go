@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -45,6 +46,10 @@ func (b *canonicalBeaconProposerDutyBatch) FlattenTo(event *xatu.DecoratedEvent)
 		return nil
 	}
 
+	if event.GetEthV1ProposerDuty() == nil {
+		return fmt.Errorf("nil eth_v1_proposer_duty payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -61,13 +66,6 @@ func (b *canonicalBeaconProposerDutyBatch) appendRuntime(_ *xatu.DecoratedEvent)
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconProposerDutyBatch) appendPayload(event *xatu.DecoratedEvent) {
 	duty := event.GetEthV1ProposerDuty()
-	if duty == nil {
-		b.ProposerPubkey.Append("")
-		b.ProposerValidatorIndex.Append(0)
-
-		return
-	}
-
 	b.ProposerPubkey.Append(duty.GetPubkey())
 
 	if validatorIndex := duty.GetValidatorIndex(); validatorIndex != nil {

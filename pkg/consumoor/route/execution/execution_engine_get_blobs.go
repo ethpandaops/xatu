@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -34,6 +35,10 @@ func (b *executionEngineGetBlobsBatch) FlattenTo(event *xatu.DecoratedEvent) err
 		return nil
 	}
 
+	if event.GetExecutionEngineGetBlobs() == nil {
+		return fmt.Errorf("nil execution_engine_get_blobs payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -54,21 +59,6 @@ func (b *executionEngineGetBlobsBatch) appendRuntime(event *xatu.DecoratedEvent)
 
 func (b *executionEngineGetBlobsBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetExecutionEngineGetBlobs()
-	if payload == nil {
-		b.RequestedDateTime.Append(time.Time{})
-		b.DurationMs.Append(0)
-		b.Source.Append("")
-		b.RequestedCount.Append(0)
-		b.VersionedHashes.Append(nil)
-		b.ReturnedCount.Append(0)
-		b.ReturnedBlobIndexes.Append(nil)
-		b.Status.Append("")
-		b.ErrorMessage.Append(proto.Nullable[string]{})
-		b.MethodVersion.Append("")
-
-		return
-	}
-
 	b.Source.Append(payload.GetSource().String())
 
 	if requestedAt := payload.GetRequestedAt(); requestedAt != nil {

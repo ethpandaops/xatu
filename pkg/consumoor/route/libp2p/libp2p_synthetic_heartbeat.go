@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	chProto "github.com/ClickHouse/ch-go/proto"
@@ -36,6 +37,10 @@ func (b *libp2pSyntheticHeartbeatBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceSyntheticHeartbeat() == nil {
+		return fmt.Errorf("nil libp2p_trace_synthetic_heartbeat payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -59,25 +64,6 @@ func (b *libp2pSyntheticHeartbeatBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceSyntheticHeartbeat()
-	if payload == nil {
-		b.RemotePeerIDUniqueKey.Append(0)
-		b.RemoteMaddrs.Append("")
-		b.LatencyMs.Append(chProto.Nullable[int64]{})
-		b.Direction.Append("")
-		b.Protocols.Append(nil)
-		b.ConnectionAgeMs.Append(chProto.Nullable[int64]{})
-		b.RemoteAgentImplementation.Append("")
-		b.RemoteAgentVersion.Append("")
-		b.RemoteAgentVersionMajor.Append("")
-		b.RemoteAgentVersionMinor.Append("")
-		b.RemoteAgentVersionPatch.Append("")
-		b.RemoteAgentPlatform.Append("")
-		b.RemoteIP.Append(chProto.Nullable[chProto.IPv6]{})
-		b.RemotePort.Append(chProto.Nullable[uint16]{})
-
-		return
-	}
-
 	// Parse remote address fields from maddrs.
 	if maddrs := wrappedStringValue(payload.GetRemoteMaddrs()); maddrs != "" {
 		b.RemoteMaddrs.Append(maddrs)

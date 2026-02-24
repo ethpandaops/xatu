@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -34,6 +35,10 @@ func (b *executionEngineNewPayloadBatch) FlattenTo(event *xatu.DecoratedEvent) e
 		return nil
 	}
 
+	if event.GetExecutionEngineNewPayload() == nil {
+		return fmt.Errorf("nil execution_engine_new_payload payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -54,25 +59,6 @@ func (b *executionEngineNewPayloadBatch) appendRuntime(event *xatu.DecoratedEven
 
 func (b *executionEngineNewPayloadBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetExecutionEngineNewPayload()
-	if payload == nil {
-		b.RequestedDateTime.Append(time.Time{})
-		b.DurationMs.Append(0)
-		b.Source.Append("")
-		b.BlockNumber.Append(0)
-		b.BlockHash.Append(nil)
-		b.ParentHash.Append(nil)
-		b.GasUsed.Append(0)
-		b.GasLimit.Append(0)
-		b.TxCount.Append(0)
-		b.BlobCount.Append(0)
-		b.Status.Append("")
-		b.LatestValidHash.Append(proto.Nullable[[]byte]{})
-		b.ValidationError.Append(proto.Nullable[string]{})
-		b.MethodVersion.Append("")
-
-		return
-	}
-
 	b.Source.Append(payload.GetSource().String())
 
 	if requestedAt := payload.GetRequestedAt(); requestedAt != nil {

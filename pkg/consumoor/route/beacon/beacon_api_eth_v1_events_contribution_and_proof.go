@@ -36,6 +36,10 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1EventsContributionAndProofV2() == nil {
+		return fmt.Errorf("nil eth_v1_events_contribution_and_proof_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,19 +61,6 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) appendRuntime(event *xat
 
 func (b *beaconApiEthV1EventsContributionAndProofBatch) appendPayload(event *xatu.DecoratedEvent) {
 	eventContributionV2 := event.GetEthV1EventsContributionAndProofV2()
-	if eventContributionV2 == nil {
-		b.Signature.Append("")
-		b.AggregatorIndex.Append(0)
-		b.SelectionProof.Append("")
-		b.ContributionSlot.Append(0)
-		b.ContributionBeaconBlockRoot.Append(nil)
-		b.ContributionSubcommitteeIndex.Append("")
-		b.ContributionAggregationBits.Append("")
-		b.ContributionSignature.Append("")
-
-		return
-	}
-
 	b.Signature.Append(eventContributionV2.GetSignature())
 
 	message := eventContributionV2.GetMessage()

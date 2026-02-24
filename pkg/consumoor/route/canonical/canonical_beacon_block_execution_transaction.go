@@ -36,6 +36,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.De
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockExecutionTransaction() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_execution_transaction payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -55,29 +59,6 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendRuntime(_ *xatu.De
 
 func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	tx := event.GetEthV2BeaconBlockExecutionTransaction()
-	if tx == nil {
-		zeroVal, err := route.ParseUInt128("0")
-		if err != nil {
-			return fmt.Errorf("parsing zero value: %w", err)
-		}
-
-		b.Hash.Append(nil)
-		b.From.Append(nil)
-		b.To.Append(proto.Nullable[[]byte]{})
-		b.Nonce.Append(0)
-		b.GasPrice.Append(zeroVal)
-		b.Gas.Append(0)
-		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
-		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
-		b.Value.Append(zeroVal)
-		b.Type.Append(0)
-		b.BlobGas.Append(proto.Nullable[uint64]{})
-		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
-		b.BlobHashes.Append([]string{})
-
-		return nil
-	}
-
 	b.Hash.Append([]byte(tx.GetHash()))
 	b.From.Append([]byte(tx.GetFrom()))
 

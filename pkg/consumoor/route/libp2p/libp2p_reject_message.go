@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pRejectMessageBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceRejectMessage() == nil {
+		return fmt.Errorf("nil libp2p_trace_reject_message payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,21 +62,6 @@ func (b *libp2pRejectMessageBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceRejectMessage()
-	if payload == nil {
-		b.MessageID.Append("")
-		b.Reason.Append("")
-		b.MessageSize.Append(0)
-		b.SeqNumber.Append(0)
-		b.LocalDelivery.Append(false)
-		b.TopicLayer.Append("")
-		b.TopicForkDigestValue.Append("")
-		b.TopicName.Append("")
-		b.TopicEncoding.Append("")
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	b.MessageID.Append(wrappedStringValue(payload.GetMsgId()))
 	b.Reason.Append(wrappedStringValue(payload.GetReason()))
 

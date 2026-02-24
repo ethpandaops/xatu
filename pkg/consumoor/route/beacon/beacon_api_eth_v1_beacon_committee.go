@@ -46,6 +46,10 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) FlattenTo(event *xatu.DecoratedEven
 		return nil
 	}
 
+	if event.GetEthV1BeaconCommittee() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_committee payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -67,14 +71,6 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) appendRuntime(event *xatu.Decorated
 
 func (b *beaconApiEthV1BeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
-	if committee == nil {
-		b.Slot.Append(0)
-		b.CommitteeIndex.Append("")
-		b.Validators.Append(nil)
-
-		return
-	}
-
 	if slot := committee.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

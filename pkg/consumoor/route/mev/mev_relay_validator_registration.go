@@ -1,6 +1,7 @@
 package mev
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -33,6 +34,10 @@ func (b *mevRelayValidatorRegistrationBatch) FlattenTo(event *xatu.DecoratedEven
 		return nil
 	}
 
+	if event.GetMevRelayValidatorRegistration() == nil {
+		return fmt.Errorf("nil mev_relay_validator_registration payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -54,12 +59,6 @@ func (b *mevRelayValidatorRegistrationBatch) appendRuntime(event *xatu.Decorated
 
 func (b *mevRelayValidatorRegistrationBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetMevRelayValidatorRegistration()
-	if payload == nil {
-		b.appendZeroPayload()
-
-		return
-	}
-
 	msg := payload.GetMessage()
 	if msg == nil {
 		b.appendZeroPayload()

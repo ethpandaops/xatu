@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -34,6 +35,10 @@ func (b *canonicalBeaconBlockSyncAggregateBatch) FlattenTo(event *xatu.Decorated
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockSyncAggregate() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_sync_aggregate payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -56,16 +61,6 @@ func (b *canonicalBeaconBlockSyncAggregateBatch) appendRuntime(event *xatu.Decor
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *canonicalBeaconBlockSyncAggregateBatch) appendPayload(event *xatu.DecoratedEvent) {
 	aggregate := event.GetEthV2BeaconBlockSyncAggregate()
-	if aggregate == nil {
-		b.SyncCommitteeBits.Append("")
-		b.SyncCommitteeSignature.Append("")
-		b.ValidatorsParticipated.Append([]uint32{})
-		b.ValidatorsMissed.Append([]uint32{})
-		b.ParticipationCount.Append(0)
-
-		return
-	}
-
 	b.SyncCommitteeBits.Append(aggregate.GetSyncCommitteeBits())
 	b.SyncCommitteeSignature.Append(aggregate.GetSyncCommitteeSignature())
 	b.ValidatorsParticipated.Append(syncAggregateWrappedUint32Slice(aggregate.GetValidatorsParticipated()))

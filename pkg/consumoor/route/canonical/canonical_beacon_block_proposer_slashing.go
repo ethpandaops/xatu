@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -34,6 +35,10 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) FlattenTo(event *xatu.Decora
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockProposerSlashing() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_proposer_slashing payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -49,13 +54,6 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) appendRuntime(_ *xatu.Decora
 
 func (b *canonicalBeaconBlockProposerSlashingBatch) appendPayload(event *xatu.DecoratedEvent) {
 	slashing := event.GetEthV2BeaconBlockProposerSlashing()
-	if slashing == nil {
-		b.appendNullSignedHeader1()
-		b.appendNullSignedHeader2()
-
-		return
-	}
-
 	b.appendSignedHeader1(slashing.GetSignedHeader_1())
 	b.appendSignedHeader2(slashing.GetSignedHeader_2())
 }

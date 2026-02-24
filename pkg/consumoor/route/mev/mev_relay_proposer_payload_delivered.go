@@ -35,6 +35,10 @@ func (b *mevRelayProposerPayloadDeliveredBatch) FlattenTo(event *xatu.DecoratedE
 		return nil
 	}
 
+	if event.GetMevRelayPayloadDelivered() == nil {
+		return fmt.Errorf("nil mev_relay_payload_delivered payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -60,12 +64,6 @@ func (b *mevRelayProposerPayloadDeliveredBatch) appendRuntime(event *xatu.Decora
 
 func (b *mevRelayProposerPayloadDeliveredBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayPayloadDelivered()
-	if payload == nil {
-		b.appendZeroPayload()
-
-		return nil
-	}
-
 	if slot := payload.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
 	} else {

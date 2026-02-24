@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -34,6 +35,10 @@ func (b *consensusEngineApiGetBlobsBatch) FlattenTo(event *xatu.DecoratedEvent) 
 		return nil
 	}
 
+	if event.GetConsensusEngineApiGetBlobs() == nil {
+		return fmt.Errorf("nil consensus_engine_api_get_blobs payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -55,22 +60,6 @@ func (b *consensusEngineApiGetBlobsBatch) appendRuntime(event *xatu.DecoratedEve
 
 func (b *consensusEngineApiGetBlobsBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetConsensusEngineApiGetBlobs()
-	if payload == nil {
-		b.RequestedDateTime.Append(time.Time{})
-		b.DurationMs.Append(0)
-		b.Slot.Append(0)
-		b.BlockRoot.Append(nil)
-		b.ParentBlockRoot.Append(nil)
-		b.RequestedCount.Append(0)
-		b.VersionedHashes.Append(nil)
-		b.ReturnedCount.Append(0)
-		b.Status.Append("")
-		b.ErrorMessage.Append(proto.Nullable[string]{})
-		b.MethodVersion.Append("")
-
-		return
-	}
-
 	if requestedAt := payload.GetRequestedAt(); requestedAt != nil {
 		b.RequestedDateTime.Append(requestedAt.AsTime().UTC())
 	} else {

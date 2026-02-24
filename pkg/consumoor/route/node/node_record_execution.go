@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -37,6 +38,10 @@ func (b *nodeRecordExecutionBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetNodeRecordExecution() == nil {
+		return fmt.Errorf("nil node_record_execution payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -58,30 +63,6 @@ func (b *nodeRecordExecutionBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *nodeRecordExecutionBatch) appendPayload(event *xatu.DecoratedEvent) {
 	execution := event.GetNodeRecordExecution()
-	if execution == nil {
-		b.Enr.Append("")
-		b.Name.Append("")
-		b.Version.Append("")
-		b.VersionMajor.Append("")
-		b.VersionMinor.Append("")
-		b.VersionPatch.Append("")
-		b.Implementation.Append("")
-		b.Capabilities.Append(nil)
-		b.ProtocolVersion.Append("")
-		b.TotalDifficulty.Append("")
-		b.Head.Append("")
-		b.Genesis.Append("")
-		b.ForkIDHash.Append("")
-		b.ForkIDNext.Append("")
-		b.NodeID.Append("")
-		b.IP.Append(chProto.Nullable[chProto.IPv6]{})
-		b.Tcp.Append(chProto.Nullable[uint16]{})
-		b.Udp.Append(chProto.Nullable[uint16]{})
-		b.HasIpv6.Append(false)
-
-		return
-	}
-
 	b.Enr.Append(nodeStringValue(execution.GetEnr()))
 
 	// Name and parsed implementation/version.

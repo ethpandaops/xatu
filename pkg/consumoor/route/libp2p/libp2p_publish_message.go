@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pPublishMessageBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTracePublishMessage() == nil {
+		return fmt.Errorf("nil libp2p_trace_publish_message payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -55,16 +60,6 @@ func (b *libp2pPublishMessageBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *libp2pPublishMessageBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTracePublishMessage()
-	if payload == nil {
-		b.MessageID.Append("")
-		b.TopicLayer.Append("")
-		b.TopicForkDigestValue.Append("")
-		b.TopicName.Append("")
-		b.TopicEncoding.Append("")
-
-		return
-	}
-
 	b.MessageID.Append(wrappedStringValue(payload.GetMsgId()))
 
 	// Parse topic fields.

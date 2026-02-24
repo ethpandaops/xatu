@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *libp2pRemovePeerBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetLibp2PTraceRemovePeer() == nil {
+		return fmt.Errorf("nil libp2p_trace_remove_peer payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,12 +62,6 @@ func (b *libp2pRemovePeerBatch) appendPayload(
 	event *xatu.DecoratedEvent,
 ) {
 	payload := event.GetLibp2PTraceRemovePeer()
-	if payload == nil {
-		b.PeerIDUniqueKey.Append(0)
-
-		return
-	}
-
 	peerID := wrappedStringValue(payload.GetPeerId())
 
 	networkName := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName()

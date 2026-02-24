@@ -39,6 +39,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockV2() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_v2 payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -64,27 +68,6 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendRuntime(event *xatu.DecoratedEven
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
-	if eventBlock == nil {
-		b.Slot.Append(0)
-		b.ParentRoot.Append(nil)
-		b.StateRoot.Append(nil)
-		b.ProposerIndex.Append(0)
-		b.Eth1DataBlockHash.Append(nil)
-		b.Eth1DataDepositRoot.Append(nil)
-		b.ExecutionPayloadBlockHash.Append(nil)
-		b.ExecutionPayloadBlockNumber.Append(0)
-		b.ExecutionPayloadFeeRecipient.Append("")
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
-		b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
-		b.ExecutionPayloadStateRoot.Append(nil)
-		b.ExecutionPayloadParentHash.Append(nil)
-
-		return nil
-	}
-
 	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 

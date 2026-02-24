@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -35,6 +36,10 @@ func (b *beaconApiEthV1EventsBlockGossipBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1EventsBlockGossip() == nil {
+		return fmt.Errorf("nil eth_v1_events_block_gossip payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -56,13 +61,6 @@ func (b *beaconApiEthV1EventsBlockGossipBatch) appendRuntime(event *xatu.Decorat
 
 func (b *beaconApiEthV1EventsBlockGossipBatch) appendPayload(event *xatu.DecoratedEvent) {
 	gossip := event.GetEthV1EventsBlockGossip()
-	if gossip == nil {
-		b.Slot.Append(0)
-		b.Block.Append(nil)
-
-		return
-	}
-
 	if slot := gossip.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

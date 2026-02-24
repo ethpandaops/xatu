@@ -36,6 +36,10 @@ func (b *beaconApiEthV1ValidatorAttestationDataBatch) FlattenTo(
 		return nil
 	}
 
+	if event.GetEthV1ValidatorAttestationData() == nil {
+		return fmt.Errorf("nil eth_v1_validator_attestation_data payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -57,18 +61,6 @@ func (b *beaconApiEthV1ValidatorAttestationDataBatch) appendRuntime(event *xatu.
 
 func (b *beaconApiEthV1ValidatorAttestationDataBatch) appendPayload(event *xatu.DecoratedEvent) {
 	attestationData := event.GetEthV1ValidatorAttestationData()
-	if attestationData == nil {
-		b.Slot.Append(0)
-		b.CommitteeIndex.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
 	if slot := attestationData.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
 	} else {

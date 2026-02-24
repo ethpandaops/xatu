@@ -35,6 +35,10 @@ func (b *mevRelayBidTraceBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 		return nil
 	}
 
+	if event.GetMevRelayBidTraceBuilderBlockSubmission() == nil {
+		return fmt.Errorf("nil mev_relay_bid_trace_builder_block_submission payload: %w", route.ErrInvalidEvent)
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -60,12 +64,6 @@ func (b *mevRelayBidTraceBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayBidTraceBuilderBlockSubmission()
-	if payload == nil {
-		b.appendZeroPayload()
-
-		return nil
-	}
-
 	if slot := payload.GetSlot(); slot != nil {
 		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
 	} else {

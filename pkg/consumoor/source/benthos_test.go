@@ -96,6 +96,10 @@ func (w *testWriter) FlushTables(_ context.Context, _ []string) error {
 	return err
 }
 
+func (w *testWriter) Ping(context.Context) error {
+	return nil
+}
+
 type testRejectSink struct {
 	enabled bool
 	err     error

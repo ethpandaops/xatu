@@ -20,6 +20,8 @@ type Writer interface {
 	// to drain their buffers and write to ClickHouse synchronously.
 	// An empty or nil slice is a no-op that returns nil.
 	FlushTables(ctx context.Context, tables []string) error
+	// Ping checks connectivity to the underlying datastore.
+	Ping(ctx context.Context) error
 }
 
 // WriteErrorClassifier classifies sink write errors for source-level retry

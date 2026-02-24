@@ -2,6 +2,7 @@ package consumoor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -241,9 +242,43 @@ func (c *Consumoor) stopWriter(ctx context.Context) {
 	c.log.Info("Consumoor stopped")
 }
 
+// healthResponse is the JSON body returned by health check endpoints.
+type healthResponse struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+func (c *Consumoor) handleHealthz(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(healthResponse{Status: "ok"}) //nolint:errcheck // best-effort response
+}
+
+func (c *Consumoor) handleReadyz(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := c.writer.Ping(r.Context()); err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+
+		json.NewEncoder(w).Encode(healthResponse{ //nolint:errcheck // best-effort response
+			Status: "not ready",
+			Error:  err.Error(),
+		})
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(healthResponse{Status: "ok"}) //nolint:errcheck // best-effort response
+}
+
 func (c *Consumoor) startMetrics(ctx context.Context) error {
 	sm := http.NewServeMux()
 	sm.Handle("/metrics", promhttp.Handler())
+	sm.HandleFunc("/healthz", c.handleHealthz)
+	sm.HandleFunc("/readyz", c.handleReadyz)
 
 	c.log.WithField("addr", c.config.MetricsAddr).Info("Starting metrics server")
 

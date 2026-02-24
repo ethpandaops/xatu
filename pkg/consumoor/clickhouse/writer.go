@@ -137,6 +137,16 @@ func (w *ChGoWriter) Start(ctx context.Context) error {
 	return nil
 }
 
+// Ping checks connectivity to the ClickHouse pool.
+func (w *ChGoWriter) Ping(ctx context.Context) error {
+	pool := w.getPool()
+	if pool == nil {
+		return fmt.Errorf("clickhouse pool not initialized")
+	}
+
+	return pool.Ping(ctx)
+}
+
 // Stop drains buffers and closes the connection pool. It is safe to
 // call multiple times; only the first call performs cleanup.
 func (w *ChGoWriter) Stop(_ context.Context) error {

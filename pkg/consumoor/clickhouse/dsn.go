@@ -13,6 +13,8 @@ import (
 	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
 )
 
+const schemeClickHouseSecure = "clickhouses"
+
 func parseChGoOptions(
 	dsn string,
 	dialTimeout, readTimeout time.Duration,
@@ -31,7 +33,7 @@ func parseChGoOptions(
 	case "http", "https":
 		return ch.Options{},
 			fmt.Errorf("ch-go backend supports native tcp only, got DSN scheme %q", u.Scheme)
-	case "clickhouse", "tcp", "clickhouses":
+	case "clickhouse", "tcp", schemeClickHouseSecure:
 	default:
 		return ch.Options{},
 			fmt.Errorf("unsupported DSN scheme %q for ch-go backend", u.Scheme)
@@ -48,7 +50,7 @@ func parseChGoOptions(
 
 	port := u.Port()
 	if port == "" {
-		if u.Scheme == "clickhouses" || isTrue(u.Query().Get("secure")) || isTrue(u.Query().Get("tls")) {
+		if u.Scheme == schemeClickHouseSecure || isTrue(u.Query().Get("secure")) || isTrue(u.Query().Get("tls")) {
 			port = "9440"
 		} else {
 			port = "9000"
@@ -117,7 +119,7 @@ func resolveTLSConfig(
 ) (*tls.Config, error) {
 	dsnWantsTLS := isTrue(q.Get("secure")) ||
 		isTrue(q.Get("tls")) ||
-		u.Scheme == "clickhouses"
+		u.Scheme == schemeClickHouseSecure
 
 	// If the explicit config has TLS enabled, use it — it takes priority.
 	if tlsCfg != nil && tlsCfg.Enabled {

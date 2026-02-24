@@ -2,6 +2,11 @@ name: Go Test
 
 on:
   pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/test.yaml'
   workflow_dispatch:
     branches: [ '**' ]
 

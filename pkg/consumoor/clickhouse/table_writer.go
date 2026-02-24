@@ -305,6 +305,10 @@ func (tw *chTableWriter) do(
 			beforeAttempt()
 		}
 
+		if fn := tw.writer.poolDoFn; fn != nil {
+			return fn(attemptCtx, *query)
+		}
+
 		pool := tw.writer.getPool()
 		if pool == nil {
 			return ch.ErrClosed

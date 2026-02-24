@@ -67,6 +67,9 @@ type KafkaConfig struct {
 	// discover new topics matching the configured regex patterns. Defaults to
 	// 60s. Set to 0 to disable periodic refresh (startup-only discovery).
 	TopicRefreshInterval time.Duration `yaml:"topicRefreshInterval" default:"60s"`
+	// LagPollInterval controls how often consumer lag is polled from Kafka.
+	// Set to 0 to disable lag monitoring. Default: 30s.
+	LagPollInterval time.Duration `yaml:"lagPollInterval" default:"30s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.

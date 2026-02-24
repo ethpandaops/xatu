@@ -41,10 +41,11 @@ type Consumoor struct {
 	log    logrus.FieldLogger
 	config *Config
 
-	metrics *telemetry.Metrics
-	router  *router.Engine
-	writer  source.Writer
-	streams []topicStream
+	metrics    *telemetry.Metrics
+	router     *router.Engine
+	writer     source.Writer
+	streams    []topicStream
+	lagMonitor *source.LagMonitor
 
 	mu            sync.Mutex
 	metricsServer *http.Server
@@ -140,14 +141,26 @@ func New(
 		})
 	}
 
-	return &Consumoor{
+	c := &Consumoor{
 		log:     cLog,
 		config:  config,
 		metrics: metrics,
 		router:  rtr,
 		writer:  writer,
 		streams: streams,
-	}, nil
+	}
+
+	// Optionally create the Kafka consumer lag monitor.
+	if config.Kafka.LagPollInterval > 0 {
+		lagMon, lagErr := source.NewLagMonitor(log, &config.Kafka, metrics)
+		if lagErr != nil {
+			return nil, fmt.Errorf("creating lag monitor: %w", lagErr)
+		}
+
+		c.lagMonitor = lagMon
+	}
+
+	return c, nil
 }
 
 // Start runs the consumoor service until the context is cancelled or
@@ -184,6 +197,12 @@ func (c *Consumoor) Start(ctx context.Context) error {
 			}
 
 			return nil
+		})
+	}
+
+	if c.lagMonitor != nil {
+		g.Go(func() error {
+			return c.lagMonitor.Start(gCtx)
 		})
 	}
 
@@ -242,6 +261,12 @@ func (c *Consumoor) stopHTTPServers(ctx context.Context) {
 // all streams have fully exited to guarantee no in-flight writes.
 func (c *Consumoor) stopWriter(ctx context.Context) {
 	c.log.Info("Stopping consumoor")
+
+	if c.lagMonitor != nil {
+		if err := c.lagMonitor.Stop(); err != nil {
+			c.log.WithError(err).Error("Error stopping lag monitor")
+		}
+	}
 
 	if err := c.writer.Stop(ctx); err != nil {
 		c.log.WithError(err).Error("Error stopping clickhouse writer")

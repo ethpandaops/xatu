@@ -42,6 +42,10 @@ type ChGoWriter struct {
 
 	poolMetricsDone chan struct{}
 	poolMetricsWG   sync.WaitGroup
+
+	// poolDoFn, when non-nil, replaces pool.Do in chTableWriter.do().
+	// Used by benchmarks to inject a noop ClickHouse sink.
+	poolDoFn func(ctx context.Context, query ch.Query) error
 }
 
 // NewChGoWriter creates a new ch-go writer.

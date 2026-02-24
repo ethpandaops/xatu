@@ -2,6 +2,7 @@ package clickhouse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -172,8 +173,9 @@ func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent) {
 }
 
 // FlushAll forces all table writers to drain their buffers and flush
-// to ClickHouse synchronously. Returns the first error encountered;
-// on failure, unflushed events are preserved in the table writers.
+// to ClickHouse synchronously. Returns a joined error containing all
+// table failures; on failure, unflushed events are preserved in the
+// table writers.
 func (w *ChGoWriter) FlushAll(ctx context.Context) error {
 	w.mu.RLock()
 	writers := make([]*chTableWriter, 0, len(w.tables))
@@ -202,29 +204,29 @@ func (w *ChGoWriter) FlushAll(ctx context.Context) error {
 		}
 	}
 
-	// Collect results — return first error
-	var firstErr error
+	// Collect results — return all errors joined.
+	errs := make([]error, 0, len(errChs))
 
 	for _, errCh := range errChs {
 		select {
 		case err := <-errCh:
-			if err != nil && firstErr == nil {
-				firstErr = err
+			if err != nil {
+				errs = append(errs, err)
 			}
 		case <-ctx.Done():
-			if firstErr == nil {
-				firstErr = ctx.Err()
-			}
+			errs = append(errs, ctx.Err())
 		}
 	}
 
-	return firstErr
+	return errors.Join(errs...)
 }
 
 // FlushTables forces the specified table writers (by base table name)
 // to drain their buffers and write to ClickHouse synchronously.
 // Base names are resolved using the configured TableSuffix.
 // An empty or nil slice is a no-op that returns nil.
+// Returns a joined error containing all table failures so callers can
+// identify every failed table in the batch.
 func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
 	if len(tables) == 0 {
 		return nil
@@ -263,25 +265,23 @@ func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
 		}
 	}
 
-	// Collect results — return first error.
-	var firstErr error
+	// Collect results — return all errors joined.
+	errs := make([]error, 0, len(errChs))
 
 	for _, errCh := range errChs {
 		select {
 		case err := <-errCh:
-			if err != nil && firstErr == nil {
-				firstErr = err
+			if err != nil {
+				errs = append(errs, err)
 			}
 		case <-w.done:
-			return firstErr
+			return errors.Join(errs...)
 		case <-ctx.Done():
-			if firstErr == nil {
-				firstErr = ctx.Err()
-			}
+			errs = append(errs, ctx.Err())
 		}
 	}
 
-	return firstErr
+	return errors.Join(errs...)
 }
 
 func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {

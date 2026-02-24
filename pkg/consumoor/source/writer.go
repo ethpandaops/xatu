@@ -12,9 +12,9 @@ type Writer interface {
 	Stop(ctx context.Context) error
 	Write(table string, event *xatu.DecoratedEvent)
 	// FlushAll forces all table writers to drain their buffers and write
-	// to ClickHouse synchronously. Returns the first error encountered.
-	// On failure, unflushed events are preserved in the table writers for
-	// retry on the next cycle.
+	// to ClickHouse synchronously. Returns a joined error containing all
+	// table failures. On failure, unflushed events are preserved in the
+	// table writers for retry on the next cycle.
 	FlushAll(ctx context.Context) error
 	// FlushTables forces the specified table writers (by base table name)
 	// to drain their buffers and write to ClickHouse synchronously.

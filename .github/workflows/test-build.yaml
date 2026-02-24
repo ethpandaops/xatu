@@ -2,6 +2,15 @@ name: test-build
 
 on:
   pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
+      - 'sentry-logs/Dockerfile'
+      - '.goreleaser.yaml'
+      - 'Makefile'
+      - '.github/workflows/test-build.yaml'
   workflow_dispatch:
 
 concurrency:

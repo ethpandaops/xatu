@@ -1,6 +1,13 @@
 name: golangci-lint
 on:
   pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.golangci.yml'
+      - '.golangci.yaml'
+      - '.github/workflows/golangci-lint.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

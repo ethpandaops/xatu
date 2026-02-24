@@ -79,10 +79,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	if gasTipCap := tx.GetGasTipCap(); gasTipCap != "" {
 		parsedGasTipCap, parseErr := route.ParseUInt128(gasTipCap)
 		if parseErr != nil {
-			return fmt.Errorf("parsing gas_tip_cap: %w", parseErr)
+			b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasTipCap.Append(proto.NewNullable[proto.UInt128](parsedGasTipCap))
 		}
-
-		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](parsedGasTipCap))
 	} else {
 		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -90,10 +90,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	if gasFeeCap := tx.GetGasFeeCap(); gasFeeCap != "" {
 		parsedGasFeeCap, parseErr := route.ParseUInt128(gasFeeCap)
 		if parseErr != nil {
-			return fmt.Errorf("parsing gas_fee_cap: %w", parseErr)
+			b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedGasFeeCap))
 		}
-
-		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedGasFeeCap))
 	} else {
 		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -109,10 +109,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	if blobGasFeeCap != "" {
 		parsedBlobGasFeeCap, err := route.ParseUInt128(blobGasFeeCap)
 		if err != nil {
-			return fmt.Errorf("parsing blob_gas_fee_cap: %w", err)
+			b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedBlobGasFeeCap))
 		}
-
-		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedBlobGasFeeCap))
 	} else {
 		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}

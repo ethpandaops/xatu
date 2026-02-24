@@ -1,7 +1,6 @@
 package beacon
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -275,12 +274,13 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
 	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
@@ -319,12 +319,13 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadCapellaV2(
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
 	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
@@ -363,12 +364,13 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadDeneb(
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
 	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
@@ -416,12 +418,13 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadElectra(
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
 	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 

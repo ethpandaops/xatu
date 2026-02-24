@@ -1,7 +1,6 @@
 package canonical
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -273,12 +272,13 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadV2(payload *ethv1.Exec
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -316,12 +316,13 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadCapellaV2(payload *eth
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -359,12 +360,13 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadDeneb(payload *ethv1.E
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 
@@ -411,12 +413,13 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1
 
 	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
 	if err != nil {
-		return fmt.Errorf("parsing execution_payload_base_fee_per_gas: %w", err)
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
 	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
 	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
 	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
 

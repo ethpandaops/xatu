@@ -1,7 +1,6 @@
 package beacon
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -189,10 +188,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadV2(
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
 		parsedBaseFee, err := route.ParseUInt128(baseFee)
 		if err != nil {
-			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 		}
-
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -233,10 +232,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadCapellaV2(
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
 		parsedBaseFee, err := route.ParseUInt128(baseFee)
 		if err != nil {
-			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 		}
-
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -277,10 +276,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadDeneb(
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
 		parsedBaseFee, err := route.ParseUInt128(baseFee)
 		if err != nil {
-			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 		}
-
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -330,10 +329,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendExecutionPayloadElectra(
 	if baseFee := payload.GetBaseFeePerGas(); baseFee != "" {
 		parsedBaseFee, err := route.ParseUInt128(baseFee)
 		if err != nil {
-			return fmt.Errorf("parsing base_fee_per_gas: %w", err)
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 		}
-
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](parsedBaseFee))
 	} else {
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	}

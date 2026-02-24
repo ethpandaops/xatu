@@ -135,27 +135,23 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	}
 
 	if gtc := v2.GetGasTipCap(); gtc != "" {
-		var gasTipCap proto.UInt128
-
-		gasTipCap, err = route.ParseUInt128(gtc)
-		if err != nil {
-			return fmt.Errorf("parsing gas_tip_cap: %w", err)
+		gasTipCap, parseErr := route.ParseUInt128(gtc)
+		if parseErr != nil {
+			b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasTipCap.Append(proto.NewNullable[proto.UInt128](gasTipCap))
 		}
-
-		b.GasTipCap.Append(proto.NewNullable[proto.UInt128](gasTipCap))
 	} else {
 		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
 	}
 
 	if gfc := v2.GetGasFeeCap(); gfc != "" {
-		var gasFeeCap proto.UInt128
-
-		gasFeeCap, err = route.ParseUInt128(gfc)
-		if err != nil {
-			return fmt.Errorf("parsing gas_fee_cap: %w", err)
+		gasFeeCap, parseErr := route.ParseUInt128(gfc)
+		if parseErr != nil {
+			b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](gasFeeCap))
 		}
-
-		b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](gasFeeCap))
 	} else {
 		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}
@@ -186,14 +182,12 @@ func (b *mempoolTransactionBatch) appendMempoolTransactionV2(
 	}
 
 	if bgfc := v2.GetBlobGasFeeCap(); bgfc != "" {
-		var blobGasFeeCap proto.UInt128
-
-		blobGasFeeCap, err = route.ParseUInt128(bgfc)
-		if err != nil {
-			return fmt.Errorf("parsing blob_gas_fee_cap: %w", err)
+		blobGasFeeCap, parseErr := route.ParseUInt128(bgfc)
+		if parseErr != nil {
+			b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](blobGasFeeCap))
 		}
-
-		b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](blobGasFeeCap))
 	} else {
 		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
 	}

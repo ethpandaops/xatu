@@ -453,6 +453,8 @@ func TestGetOrCreateTableWriter_DifferentTablesGetDifferentWriters(t *testing.T)
 
 func TestBufferWarningThresholdValidation(t *testing.T) {
 	validChGo := ChGoConfig{
+		DialTimeout:       5 * time.Second,
+		ReadTimeout:       30 * time.Second,
 		RetryBaseDelay:    100 * time.Millisecond,
 		RetryMaxDelay:     2 * time.Second,
 		MaxConns:          8,

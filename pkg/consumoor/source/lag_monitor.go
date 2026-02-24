@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"strconv"
 	"time"
@@ -44,10 +43,13 @@ func NewLagMonitor(
 		kgo.SeedBrokers(cfg.Brokers...),
 	}
 
-	if cfg.TLS {
-		opts = append(opts, kgo.DialTLSConfig(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}))
+	if cfg.TLS.Enabled {
+		tlsCfg, err := cfg.TLS.Build()
+		if err != nil {
+			return nil, fmt.Errorf("building TLS config for lag monitor: %w", err)
+		}
+
+		opts = append(opts, kgo.DialTLSConfig(tlsCfg))
 	}
 
 	if cfg.SASLConfig != nil {

@@ -11,6 +11,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// validChGoConfig returns a ChGoConfig that passes validation.
+func validChGoConfig() clickhouse.ChGoConfig {
+	return clickhouse.ChGoConfig{
+		QueryTimeout:        30 * time.Second,
+		DialTimeout:         5 * time.Second,
+		ReadTimeout:         30 * time.Second,
+		MaxRetries:          3,
+		RetryBaseDelay:      100 * time.Millisecond,
+		RetryMaxDelay:       2 * time.Second,
+		MaxConns:            8,
+		MinConns:            1,
+		ConnMaxLifetime:     time.Hour,
+		ConnMaxIdleTime:     10 * time.Minute,
+		HealthCheckPeriod:   30 * time.Second,
+		PoolMetricsInterval: 15 * time.Second,
+	}
+}
+
+// validClickHouseConfig returns a clickhouse.Config that passes validation.
+func validClickHouseConfig() *clickhouse.Config {
+	return &clickhouse.Config{
+		DSN: "clickhouse://localhost:9000/default",
+		Defaults: clickhouse.TableConfig{
+			BatchSize:     1000,
+			FlushInterval: time.Second,
+			BufferSize:    1000,
+		},
+		OrganicRetryInitDelay: time.Second,
+		OrganicRetryMaxDelay:  30 * time.Second,
+		ChGo:                  validChGoConfig(),
+	}
+}
+
+// validKafkaConfig returns a KafkaConfig that passes validation.
+func validKafkaConfig() *source.KafkaConfig {
+	return &source.KafkaConfig{
+		Brokers:          []string{"localhost:9092"},
+		Topics:           []string{"^test-.+"},
+		ConsumerGroup:    "test-group",
+		Encoding:         "json",
+		OffsetDefault:    "earliest",
+		SessionTimeoutMs: 30000,
+		CommitInterval:   5 * time.Second,
+		ShutdownTimeout:  30 * time.Second,
+	}
+}
+
 func TestDisabledEventEnums(t *testing.T) {
 	t.Run("parses valid names", func(t *testing.T) {
 		cfg := &Config{
@@ -48,48 +95,14 @@ func TestDisabledEventEnums(t *testing.T) {
 
 func TestClickHouseConfigValidateChGo(t *testing.T) {
 	t.Run("accepts valid ch-go settings", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1,
-				FlushInterval: time.Second,
-				BufferSize:    1,
-			},
-			ChGo: clickhouse.ChGoConfig{
-				QueryTimeout:        30 * time.Second,
-				MaxRetries:          3,
-				RetryBaseDelay:      100 * time.Millisecond,
-				RetryMaxDelay:       2 * time.Second,
-				MaxConns:            8,
-				MinConns:            1,
-				ConnMaxLifetime:     time.Hour,
-				ConnMaxIdleTime:     10 * time.Minute,
-				HealthCheckPeriod:   30 * time.Second,
-				PoolMetricsInterval: 15 * time.Second,
-			},
-		}
-
+		cfg := validClickHouseConfig()
 		require.NoError(t, cfg.Validate())
 	})
 
 	t.Run("rejects invalid pool bounds", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1,
-				FlushInterval: time.Second,
-				BufferSize:    1,
-			},
-			ChGo: clickhouse.ChGoConfig{
-				RetryBaseDelay:    100 * time.Millisecond,
-				RetryMaxDelay:     2 * time.Second,
-				MaxConns:          2,
-				MinConns:          3,
-				ConnMaxLifetime:   time.Hour,
-				ConnMaxIdleTime:   10 * time.Minute,
-				HealthCheckPeriod: 30 * time.Second,
-			},
-		}
+		cfg := validClickHouseConfig()
+		cfg.ChGo.MaxConns = 2
+		cfg.ChGo.MinConns = 3
 
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -97,24 +110,8 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 	})
 
 	t.Run("rejects negative retries", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1,
-				FlushInterval: time.Second,
-				BufferSize:    1,
-			},
-			ChGo: clickhouse.ChGoConfig{
-				MaxRetries:        -1,
-				RetryBaseDelay:    100 * time.Millisecond,
-				RetryMaxDelay:     2 * time.Second,
-				MaxConns:          8,
-				MinConns:          1,
-				ConnMaxLifetime:   time.Hour,
-				ConnMaxIdleTime:   10 * time.Minute,
-				HealthCheckPeriod: 30 * time.Second,
-			},
-		}
+		cfg := validClickHouseConfig()
+		cfg.ChGo.MaxRetries = -1
 
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -122,25 +119,9 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 	})
 
 	t.Run("rejects unsupported insertSettings value type", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1,
-				FlushInterval: time.Second,
-				BufferSize:    1,
-				InsertSettings: map[string]any{
-					"bad_setting": []int{1, 2},
-				},
-			},
-			ChGo: clickhouse.ChGoConfig{
-				RetryBaseDelay:    100 * time.Millisecond,
-				RetryMaxDelay:     2 * time.Second,
-				MaxConns:          8,
-				MinConns:          1,
-				ConnMaxLifetime:   time.Hour,
-				ConnMaxIdleTime:   10 * time.Minute,
-				HealthCheckPeriod: 30 * time.Second,
-			},
+		cfg := validClickHouseConfig()
+		cfg.Defaults.InsertSettings = map[string]any{
+			"bad_setting": []int{1, 2},
 		}
 
 		err := cfg.Validate()
@@ -185,31 +166,20 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 }
 
 func TestKafkaConfigValidateOffsetDefault(t *testing.T) {
-	base := func() *source.KafkaConfig {
-		return &source.KafkaConfig{
-			Brokers:          []string{"localhost:9092"},
-			Topics:           []string{"^test-.+"},
-			ConsumerGroup:    "test-group",
-			Encoding:         "json",
-			SessionTimeoutMs: 30000,
-			CommitInterval:   5 * time.Second,
-		}
-	}
-
 	t.Run("accepts earliest", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.OffsetDefault = "earliest"
 		require.NoError(t, cfg.Validate())
 	})
 
 	t.Run("accepts latest", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.OffsetDefault = "latest"
 		require.NoError(t, cfg.Validate())
 	})
 
 	t.Run("rejects oldest", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.OffsetDefault = "oldest"
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -217,7 +187,7 @@ func TestKafkaConfigValidateOffsetDefault(t *testing.T) {
 	})
 
 	t.Run("rejects empty string", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.OffsetDefault = ""
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -227,20 +197,14 @@ func TestKafkaConfigValidateOffsetDefault(t *testing.T) {
 
 func TestSASLConfigValidateMechanism(t *testing.T) {
 	validSASL := func(mechanism string) *source.KafkaConfig {
-		return &source.KafkaConfig{
-			Brokers:          []string{"localhost:9092"},
-			Topics:           []string{"^test-.+"},
-			ConsumerGroup:    "test-group",
-			Encoding:         "json",
-			OffsetDefault:    "earliest",
-			SessionTimeoutMs: 30000,
-			CommitInterval:   5 * time.Second,
-			SASLConfig: &source.SASLConfig{
-				Mechanism: mechanism,
-				User:      "alice",
-				Password:  "secret",
-			},
+		cfg := validKafkaConfig()
+		cfg.SASLConfig = &source.SASLConfig{
+			Mechanism: mechanism,
+			User:      "alice",
+			Password:  "secret",
 		}
+
+		return cfg
 	}
 
 	for _, mech := range []string{
@@ -267,19 +231,8 @@ func TestSASLConfigValidateMechanism(t *testing.T) {
 }
 
 func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
-	base := func() *source.KafkaConfig {
-		return &source.KafkaConfig{
-			Brokers:        []string{"localhost:9092"},
-			Topics:         []string{"^test-.+"},
-			ConsumerGroup:  "test-group",
-			Encoding:       "json",
-			OffsetDefault:  "earliest",
-			CommitInterval: 5 * time.Second,
-		}
-	}
-
 	t.Run("rejects zero", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.SessionTimeoutMs = 0
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -287,7 +240,7 @@ func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
 	})
 
 	t.Run("accepts positive", func(t *testing.T) {
-		cfg := base()
+		cfg := validKafkaConfig()
 		cfg.SessionTimeoutMs = 30000
 		require.NoError(t, cfg.Validate())
 	})
@@ -295,23 +248,9 @@ func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
 
 func TestClickHouseConfigValidateBufferSize(t *testing.T) {
 	t.Run("rejects bufferSize less than batchSize", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    500,
-			},
-			ChGo: clickhouse.ChGoConfig{
-				RetryBaseDelay:    100 * time.Millisecond,
-				RetryMaxDelay:     2 * time.Second,
-				MaxConns:          8,
-				MinConns:          1,
-				ConnMaxLifetime:   time.Hour,
-				ConnMaxIdleTime:   10 * time.Minute,
-				HealthCheckPeriod: 30 * time.Second,
-			},
-		}
+		cfg := validClickHouseConfig()
+		cfg.Defaults.BatchSize = 1000
+		cfg.Defaults.BufferSize = 500
 
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -319,24 +258,9 @@ func TestClickHouseConfigValidateBufferSize(t *testing.T) {
 	})
 
 	t.Run("accepts bufferSize equal to batchSize", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			ChGo: clickhouse.ChGoConfig{
-				RetryBaseDelay:    100 * time.Millisecond,
-				RetryMaxDelay:     2 * time.Second,
-				MaxConns:          8,
-				MinConns:          1,
-				ConnMaxLifetime:   time.Hour,
-				ConnMaxIdleTime:   10 * time.Minute,
-				HealthCheckPeriod: 30 * time.Second,
-			},
-		}
-
+		cfg := validClickHouseConfig()
+		cfg.Defaults.BatchSize = 1000
+		cfg.Defaults.BufferSize = 1000
 		require.NoError(t, cfg.Validate())
 	})
 }

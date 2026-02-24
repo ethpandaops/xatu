@@ -9,7 +9,7 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 	_ "github.com/redpanda-data/connect/v4/public/components/kafka"
 
-	chtransform "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
@@ -27,7 +27,7 @@ func NewBenthosStream(
 	logLevel string,
 	kafkaConfig *KafkaConfig,
 	metrics *telemetry.Metrics,
-	routeEngine *chtransform.Engine,
+	routeEngine *router.Engine,
 	writer Writer,
 	classifier WriteErrorClassifier,
 	ownsWriter bool,

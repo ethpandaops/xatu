@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )

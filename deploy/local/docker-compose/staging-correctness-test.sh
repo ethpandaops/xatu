@@ -3,8 +3,9 @@
 #
 # Builds consumoor as a native binary and connects it to a staging/production
 # Kafka cluster via per-broker port-forwards. Each broker pod is forwarded to
-# a unique loopback IP (127.0.0.{2,3,4,...}:9092) and /etc/hosts entries map
-# the broker's internal K8s DNS name to that IP.
+# a unique loopback IP (127.0.0.{2,3,4,...}:9092). Broker hostnames are mapped
+# to these loopback IPs via /etc/hosts entries managed by this script (entries
+# are tagged with "# xatu-staging-test" and cleaned up on exit).
 #
 # After consuming for a configurable duration, the script compares consumoor's
 # ClickHouse output against the reference ClickHouse (staging Vector output).
@@ -13,7 +14,8 @@
 #   - kubectl access to the target cluster
 #   - Docker running locally (for ClickHouse)
 #   - Go toolchain for building consumoor and running the comparison test
-#   - Loopback aliases + /etc/hosts for Kafka brokers (see one-time setup below)
+#   - Loopback aliases for Kafka brokers (see one-time setup below)
+#   - sudo access (for /etc/hosts management)
 #
 # Usage:
 #   ./staging-correctness-test.sh [flags]
@@ -114,6 +116,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# --- Sudo pre-check ---
+echo "This script needs sudo to manage /etc/hosts entries."
+sudo -v || { echo "ERROR: sudo access required"; exit 1; }
+
 # --- PID / resource tracking for cleanup ---
 PF_PIDS=()
 CONSUMOOR_PID=""
@@ -145,6 +151,11 @@ cleanup() {
       kill "$pid" 2>/dev/null || true
     fi
   done
+
+  # Clean /etc/hosts entries.
+  sudo sed -i '' '/# xatu-staging-test$/d' /etc/hosts 2>/dev/null || true
+  sudo dscacheutil -flushcache 2>/dev/null || true
+  sudo killall -HUP mDNSResponder 2>/dev/null || true
 
   # Remove generated files.
   rm -f "$CONFIG_FILE"
@@ -207,13 +218,6 @@ if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
     for i in "${!BROKER_POD_ARRAY[@]}"; do
       echo "  sudo ifconfig lo0 alias 127.0.0.$((i + 2))"
     done
-    echo ""
-    echo "Also ensure /etc/hosts has entries mapping broker hostnames to these IPs:"
-    echo ""
-    for i in "${!BROKER_POD_ARRAY[@]}"; do
-      pod="${BROKER_POD_ARRAY[$i]}"
-      echo "  127.0.0.$((i + 2)) ${pod}${BROKER_SVC_SUFFIX}"
-    done
     exit 1
   fi
 
@@ -242,6 +246,17 @@ if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
   kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
     port-forward "$CLICKHOUSE_SERVICE" "${CH_LOCAL_PORT}:8123" &
   PF_PIDS+=($!)
+
+  # Add /etc/hosts entries for broker hostnames.
+  sudo sed -i '' '/# xatu-staging-test$/d' /etc/hosts
+  for i in "${!BROKER_POD_ARRAY[@]}"; do
+    pod="${BROKER_POD_ARRAY[$i]}"
+    loopback_ip="127.0.0.$((i + 2))"
+    printf '%s %s%s # xatu-staging-test\n' "$loopback_ip" "$pod" "$BROKER_SVC_SUFFIX" | sudo tee -a /etc/hosts >/dev/null
+  done
+  sudo dscacheutil -flushcache 2>/dev/null || true
+  sudo killall -HUP mDNSResponder 2>/dev/null || true
+  echo "  /etc/hosts entries added for ${NUM_BROKERS} brokers"
 
   echo ""
   echo "Waiting for port-forwards to establish..."
@@ -343,8 +358,9 @@ YAML
   done
 
   # --- Run consumoor as native binary ---
-  echo "=== Starting consumoor (native binary) ==="
-  "$XATU_BINARY" consumoor --config "$CONFIG_FILE" &
+  CONSUMOOR_LOG="/tmp/xatu-consumoor-staging-$$.log"
+  echo "=== Starting consumoor (native binary, logs: $CONSUMOOR_LOG) ==="
+  "$XATU_BINARY" consumoor --config "$CONFIG_FILE" >"$CONSUMOOR_LOG" 2>&1 &
   CONSUMOOR_PID=$!
 
   # Give it a moment to start and check it's still alive.
@@ -378,7 +394,7 @@ STAGING_CLICKHOUSE_URL="http://localhost:${CH_LOCAL_PORT}" \
 STAGING_CLICKHOUSE_USER="${STAGING_CLICKHOUSE_USER}" \
 STAGING_CLICKHOUSE_PASSWORD="${STAGING_CLICKHOUSE_PASSWORD}" \
 MAX_COMPARE_ROWS="${MAX_COMPARE_ROWS}" \
-go test ./pkg/consumoor/sinks/clickhouse/transform/flattener/ \
+go test ./pkg/consumoor/route/ \
   -run TestStagingCorrectness -v -timeout 300s
 
 echo "=== Done ==="

@@ -15,9 +15,9 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse"
-	consrouter "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener/tables"
+	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/consumoor/route/all"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,7 +41,7 @@ type Consumoor struct {
 	config *Config
 
 	metrics *telemetry.Metrics
-	router  *consrouter.Engine
+	router  *router.Engine
 	writer  source.Writer
 	streams []topicStream
 
@@ -76,14 +76,17 @@ func New(
 	}
 
 	// Create the router with all registered routes.
-	registeredRoutes := tables.All()
+	registeredRoutes, err := all.All()
+	if err != nil {
+		return nil, fmt.Errorf("route registration: %w", err)
+	}
 
 	disabledEvents, err := config.DisabledEventEnums()
 	if err != nil {
 		return nil, fmt.Errorf("invalid disabledEvents config: %w", err)
 	}
 
-	router := consrouter.New(log, registeredRoutes, disabledEvents, metrics)
+	rtr := router.New(log, registeredRoutes, disabledEvents, metrics)
 
 	// Register columnar batch factories from routes on the writer so
 	// each table gets zero-reflection inserts.
@@ -119,7 +122,7 @@ func New(
 			config.LoggingLevel,
 			&topicKafkaCfg,
 			metrics,
-			router,
+			rtr,
 			writer,
 			clickhouse.DefaultErrorClassifier{},
 			false, // writer lifecycle owned by Consumoor, not the output plugin
@@ -140,7 +143,7 @@ func New(
 		log:     cLog,
 		config:  config,
 		metrics: metrics,
-		router:  router,
+		router:  rtr,
 		writer:  writer,
 		streams: streams,
 	}, nil

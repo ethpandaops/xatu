@@ -3,6 +3,8 @@
 #
 # Builds consumoor as a native binary and connects it to staging Kafka via
 # per-broker port-forwards (same approach as staging-correctness-test.sh).
+# Broker hostnames are mapped to loopback IPs via /etc/hosts entries managed
+# by this script (tagged with "# xatu-staging-test", cleaned up on exit).
 # After consuming briefly, reports which ClickHouse tables received data and
 # compares row counts against the staging reference.
 #
@@ -70,6 +72,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# --- Sudo pre-check ---
+echo "This script needs sudo to manage /etc/hosts entries."
+sudo -v || { echo "ERROR: sudo access required"; exit 1; }
+
 # --- Cleanup ---
 PF_PIDS=()
 CONSUMOOR_PID=""
@@ -95,6 +101,11 @@ cleanup() {
   for pid in "${PF_PIDS[@]}"; do
     kill "$pid" 2>/dev/null || true
   done
+
+  # Clean /etc/hosts entries.
+  sudo sed -i '' '/# xatu-staging-test$/d' /etc/hosts 2>/dev/null || true
+  sudo dscacheutil -flushcache 2>/dev/null || true
+  sudo killall -HUP mDNSResponder 2>/dev/null || true
 
   rm -f "$CONFIG_FILE"
   rm -f "$XATU_BINARY"
@@ -157,7 +168,7 @@ if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
   NUM_BROKERS=${#BROKER_POD_ARRAY[@]}
   echo "Found $NUM_BROKERS broker pods: ${BROKER_POD_ARRAY[*]}"
 
-  # Pre-flight: verify loopback aliases and /etc/hosts are set up.
+  # Pre-flight: verify loopback aliases are set up.
   MISSING_SETUP=false
   for i in "${!BROKER_POD_ARRAY[@]}"; do
     loopback_ip="127.0.0.$((i + 2))"
@@ -173,13 +184,6 @@ if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
     echo ""
     for i in "${!BROKER_POD_ARRAY[@]}"; do
       echo "  sudo ifconfig lo0 alias 127.0.0.$((i + 2))"
-    done
-    echo ""
-    echo "Also ensure /etc/hosts has entries mapping broker hostnames to these IPs:"
-    echo ""
-    for i in "${!BROKER_POD_ARRAY[@]}"; do
-      pod="${BROKER_POD_ARRAY[$i]}"
-      echo "  127.0.0.$((i + 2)) ${pod}${BROKER_SVC_SUFFIX}"
     done
     exit 1
   fi
@@ -209,6 +213,17 @@ if [[ "$SKIP_PORTFORWARD" != "true" ]]; then
   kubectl --context "$KUBE_CONTEXT" -n "$KUBE_NAMESPACE" \
     port-forward "$CLICKHOUSE_SERVICE" "${CH_STAGING_PORT}:8123" &
   PF_PIDS+=($!)
+
+  # Add /etc/hosts entries for broker hostnames.
+  sudo sed -i '' '/# xatu-staging-test$/d' /etc/hosts
+  for i in "${!BROKER_POD_ARRAY[@]}"; do
+    pod="${BROKER_POD_ARRAY[$i]}"
+    loopback_ip="127.0.0.$((i + 2))"
+    printf '%s %s%s # xatu-staging-test\n' "$loopback_ip" "$pod" "$BROKER_SVC_SUFFIX" | sudo tee -a /etc/hosts >/dev/null
+  done
+  sudo dscacheutil -flushcache 2>/dev/null || true
+  sudo killall -HUP mDNSResponder 2>/dev/null || true
+  echo "  /etc/hosts entries added for ${NUM_BROKERS} brokers"
 
   echo ""
   echo "Waiting for port-forwards to establish..."

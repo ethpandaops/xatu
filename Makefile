@@ -1,3 +1,8 @@
+.PHONY: consumoor
+consumoor:
+	@echo "Generating consumoor route code (requires Docker)..."
+	go run ./pkg/consumoor/route/cmd/generate
+
 proto:
 	@echo "Buf generate:" ; \
 	echo "-----------------" ; \

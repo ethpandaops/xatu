@@ -3,7 +3,6 @@ package source
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -11,7 +10,7 @@ import (
 type Writer interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
-	Write(table string, event *xatu.DecoratedEvent, meta *metadata.CommonMetadata)
+	Write(table string, event *xatu.DecoratedEvent)
 	// FlushAll forces all table writers to drain their buffers and write
 	// to ClickHouse synchronously. Returns the first error encountered.
 	// On failure, unflushed events are preserved in the table writers for

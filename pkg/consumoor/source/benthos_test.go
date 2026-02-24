@@ -21,9 +21,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	yaml "gopkg.in/yaml.v3"
 
-	consrouter "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/flattener"
-	"github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform/metadata"
+	"github.com/ethpandaops/xatu/pkg/consumoor/route"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -47,7 +46,7 @@ func (r testRoute) ShouldProcess(_ *xatu.DecoratedEvent) bool {
 	return true
 }
 
-func (r testRoute) NewBatch() flattener.ColumnarBatch {
+func (r testRoute) NewBatch() route.ColumnarBatch {
 	return nil
 }
 
@@ -65,7 +64,7 @@ func (w *testWriter) Stop(context.Context) error {
 	return nil
 }
 
-func (w *testWriter) Write(table string, _ *xatu.DecoratedEvent, _ *metadata.CommonMetadata) {
+func (w *testWriter) Write(table string, _ *xatu.DecoratedEvent) {
 	if w.writes == nil {
 		w.writes = make(map[string]int)
 	}
@@ -229,7 +228,7 @@ func TestWriteBatchBatchModeRejectsMalformedWithoutRetry(t *testing.T) {
 	output := &xatuClickHouseOutput{
 		log:      logrus.New(),
 		encoding: "json",
-		router: newRouter(t, []flattener.Route{
+		router: newRouter(t, []route.Route{
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "beacon_head",
@@ -264,7 +263,7 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 	output := &xatuClickHouseOutput{
 		log:      logrus.New(),
 		encoding: "json",
-		router: newRouter(t, []flattener.Route{
+		router: newRouter(t, []route.Route{
 			testRoute{
 				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
 				table:     "table_a",
@@ -335,10 +334,10 @@ func failedIndexesFromBatchError(t *testing.T, msgs service.MessageBatch, err er
 	return out
 }
 
-func newRouter(t *testing.T, routes []flattener.Route) *consrouter.Engine {
+func newRouter(t *testing.T, routes []route.Route) *router.Engine {
 	t.Helper()
 
-	return consrouter.New(logrus.New(), routes, nil, newTestMetrics())
+	return router.New(logrus.New(), routes, nil, newTestMetrics())
 }
 
 func newTestMetrics() *telemetry.Metrics {
@@ -371,6 +370,74 @@ func newKafkaMessage(payload []byte, topic string, partition int32, offset int64
 	msg.MetaSet("kafka_offset", strconv.FormatInt(offset, 10))
 
 	return msg
+}
+
+func TestWriteBatchCtxCancelledReturnsCtxErr(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	writer := &testWriter{
+		flushErrs: []error{errors.New("some write error")},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		classifier: testErrorClassifier{},
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+	}
+
+	err := output.WriteBatch(ctx, msgs)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestWriteBatchUnidentifiedTableReturnsPlainError(t *testing.T) {
+	// When classifier can't identify the table, the error should be a plain
+	// error (not a BatchError) so the whole batch retries.
+	writer := &testWriter{
+		flushErrs: []error{errors.New("unknown failure")},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		classifier: testErrorClassifier{},
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "table unidentified")
+
+	// Should NOT be a BatchError — whole batch retries.
+	var batchErr *service.BatchError
+	assert.False(t, errors.As(err, &batchErr),
+		"unidentified table error should be a plain error, not BatchError")
 }
 
 func TestKafkaTopicMetadataFallback(t *testing.T) {

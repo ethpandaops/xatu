@@ -54,7 +54,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "messages_routed_total",
-			Help:      "Total number of messages routed to a flattener.",
+			Help:      "Total number of messages routed to a route.",
 		}, []string{"event_name", "table"}),
 
 		messagesDropped: promauto.NewCounterVec(prometheus.CounterOpts{

@@ -10,7 +10,7 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
-	chtransform "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -33,7 +33,7 @@ type messageContext struct {
 type xatuClickHouseOutput struct {
 	log        logrus.FieldLogger
 	encoding   string
-	router     *chtransform.Engine
+	router     *router.Engine
 	writer     Writer
 	metrics    *telemetry.Metrics
 	classifier WriteErrorClassifier
@@ -150,7 +150,7 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 		msgContexts[i].event = event
 		outcome := o.router.Route(event)
 
-		if outcome.Status == chtransform.StatusRejected {
+		if outcome.Status == router.StatusRejected {
 			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason:    rejectReasonRouteRejected,
 				Err:       "route rejected message",
@@ -164,7 +164,7 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 			continue
 		}
 
-		if outcome.Status == chtransform.StatusErrored {
+		if outcome.Status == router.StatusErrored {
 			batchErr = addBatchFailure(batchErr, msgs, i, errors.New("route errored"))
 
 			continue
@@ -173,7 +173,7 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 		for _, result := range outcome.Results {
 			hasResults = true
 
-			o.writer.Write(result.Table, event, outcome.Meta)
+			o.writer.Write(result.Table, event)
 			addTableMessageIndex(tableToMessageIndexes, result.Table, i)
 		}
 	}
@@ -192,9 +192,13 @@ func (o *xatuClickHouseOutput) writeBatchMode(ctx context.Context, msgs service.
 	}
 
 	if err := o.writer.FlushTables(ctx, flushedTables); err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		failedIndexes := failedIndexesForWriteError(tableToMessageIndexes, err, o.classifier)
 		if len(failedIndexes) == 0 {
-			failedIndexes = allTableMessageIndexes(tableToMessageIndexes)
+			return fmt.Errorf("flush failed (table unidentified): %w", err)
 		}
 
 		if o.isPermanentWriteError(err) {
@@ -312,24 +316,6 @@ func failedIndexesForWriteError(
 
 	out := make([]int, 0, len(perTable))
 	for idx := range perTable {
-		out = append(out, idx)
-	}
-
-	sort.Ints(out)
-
-	return out
-}
-
-func allTableMessageIndexes(tableToMessageIndexes map[string]map[int]struct{}) []int {
-	seen := make(map[int]struct{}, 32)
-	for _, perTable := range tableToMessageIndexes {
-		for idx := range perTable {
-			seen[idx] = struct{}{}
-		}
-	}
-
-	out := make([]int, 0, len(seen))
-	for idx := range seen {
 		out = append(out, idx)
 	}
 

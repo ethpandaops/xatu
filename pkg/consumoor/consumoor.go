@@ -197,6 +197,14 @@ func (c *Consumoor) Start(ctx context.Context) error {
 		return nil
 	})
 
+	if c.config.Kafka.TopicRefreshInterval > 0 {
+		g.Go(func() error {
+			c.watchTopics(gCtx)
+
+			return nil
+		})
+	}
+
 	streamErr := g.Wait()
 
 	// All streams and HTTP servers have exited. Now stop the writer.
@@ -300,6 +308,82 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// watchTopics periodically queries Kafka metadata to discover topics matching
+// the configured regex patterns. It logs newly appeared and disappeared topics
+// and updates the active_topics gauge. The actual consumption of new topics is
+// handled by Benthos via metadata_max_age; this goroutine provides visibility.
+func (c *Consumoor) watchTopics(ctx context.Context) {
+	interval := c.config.Kafka.TopicRefreshInterval
+
+	c.log.WithField("interval", interval).
+		Info("Starting topic discovery watcher")
+
+	// Perform an initial discovery so the metric is populated immediately.
+	knownTopics := c.discoverAndDiff(ctx, nil)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			c.log.Info("Topic discovery watcher stopped")
+
+			return
+		case <-ticker.C:
+			knownTopics = c.discoverAndDiff(ctx, knownTopics)
+		}
+	}
+}
+
+// discoverAndDiff calls DiscoverTopics, compares the result to the previously
+// known set, logs any changes, and updates the active_topics gauge. It returns
+// the current set of discovered topics for the next comparison cycle.
+func (c *Consumoor) discoverAndDiff(
+	ctx context.Context,
+	previous map[string]struct{},
+) map[string]struct{} {
+	topics, err := source.DiscoverTopics(ctx, &c.config.Kafka)
+	if err != nil {
+		c.log.WithError(err).Warn("Topic discovery failed")
+
+		return previous
+	}
+
+	current := make(map[string]struct{}, len(topics))
+	for _, t := range topics {
+		current[t] = struct{}{}
+	}
+
+	c.metrics.ActiveTopics().Set(float64(len(current)))
+
+	if previous == nil {
+		c.log.WithField("topics", topics).
+			WithField("count", len(topics)).
+			Info("Initial topic discovery complete")
+
+		return current
+	}
+
+	// Find newly appeared topics.
+	for _, t := range topics {
+		if _, ok := previous[t]; !ok {
+			c.log.WithField("topic", t).
+				Info("Discovered new topic matching pattern")
+		}
+	}
+
+	// Find disappeared topics.
+	for t := range previous {
+		if _, ok := current[t]; !ok {
+			c.log.WithField("topic", t).
+				Warn("Previously matched topic no longer found")
+		}
+	}
+
+	return current
 }
 
 func (c *Consumoor) startPProf(_ context.Context) error {

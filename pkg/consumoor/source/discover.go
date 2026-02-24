@@ -7,26 +7,23 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/kmsg"
 )
 
-// DiscoverTopics connects to Kafka, lists all topics, and returns
-// those whose names match any of the regex patterns in cfg.Topics.
-// The returned slice is sorted lexicographically.
-func DiscoverTopics(ctx context.Context, cfg *KafkaConfig) ([]string, error) {
+// DiscoverTopics queries Kafka metadata and returns topic names that match
+// at least one of the configured regex patterns, sorted alphabetically.
+func DiscoverTopics(
+	ctx context.Context,
+	cfg *KafkaConfig,
+) ([]string, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("nil kafka config")
 	}
 
-	compiled := make([]*regexp.Regexp, 0, len(cfg.Topics))
-	for _, pattern := range cfg.Topics {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("compiling topic pattern %q: %w", pattern, err)
-		}
-
-		compiled = append(compiled, re)
+	patterns, err := compileTopicPatterns(cfg.Topics)
+	if err != nil {
+		return nil, err
 	}
 
 	opts := []kgo.Opt{
@@ -40,9 +37,9 @@ func DiscoverTopics(ctx context.Context, cfg *KafkaConfig) ([]string, error) {
 	}
 
 	if cfg.SASLConfig != nil {
-		mechanism, err := franzSASLMechanism(cfg.SASLConfig)
-		if err != nil {
-			return nil, fmt.Errorf("configuring SASL for topic discovery: %w", err)
+		mechanism, saslErr := franzSASLMechanism(cfg.SASLConfig)
+		if saslErr != nil {
+			return nil, fmt.Errorf("configuring SASL: %w", saslErr)
 		}
 
 		opts = append(opts, kgo.SASL(mechanism))
@@ -50,32 +47,64 @@ func DiscoverTopics(ctx context.Context, cfg *KafkaConfig) ([]string, error) {
 
 	cl, err := kgo.NewClient(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("creating kafka admin client: %w", err)
+		return nil, fmt.Errorf("creating discovery client: %w", err)
 	}
 	defer cl.Close()
 
-	admin := kadm.NewClient(cl)
-	defer admin.Close()
+	req := kmsg.NewMetadataRequest()
 
-	details, err := admin.ListTopics(ctx)
+	resp, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return nil, fmt.Errorf("listing kafka topics: %w", err)
+		return nil, fmt.Errorf("fetching kafka metadata: %w", err)
 	}
 
-	allNames := details.Names()
-
-	return matchTopics(compiled, allNames), nil
+	return matchTopics(resp.Topics, patterns), nil
 }
 
-// matchTopics returns the subset of topics that match at least one of the
-// compiled patterns. Each topic appears at most once (deduplication via the
-// break-on-first-match loop). The result is sorted lexicographically.
-func matchTopics(patterns []*regexp.Regexp, topics []string) []string {
+// compileTopicPatterns compiles the topic regex strings into regexp objects.
+func compileTopicPatterns(topics []string) ([]*regexp.Regexp, error) {
+	patterns := make([]*regexp.Regexp, 0, len(topics))
+
+	for _, t := range topics {
+		re, err := regexp.Compile(t)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"compiling topic pattern %q: %w", t, err,
+			)
+		}
+
+		patterns = append(patterns, re)
+	}
+
+	return patterns, nil
+}
+
+// matchTopics filters Kafka metadata topics against compiled regex patterns
+// and returns sorted, deduplicated topic names.
+func matchTopics(
+	topics []kmsg.MetadataResponseTopic,
+	patterns []*regexp.Regexp,
+) []string {
+	seen := make(map[string]struct{}, len(topics))
 	matched := make([]string, 0, len(topics))
 
-	for _, name := range topics {
+	for _, t := range topics {
+		name := ""
+		if t.Topic != nil {
+			name = *t.Topic
+		}
+
+		if name == "" {
+			continue
+		}
+
+		if _, ok := seen[name]; ok {
+			continue
+		}
+
 		for _, re := range patterns {
 			if re.MatchString(name) {
+				seen[name] = struct{}{}
 				matched = append(matched, name)
 
 				break

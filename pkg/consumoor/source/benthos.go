@@ -112,6 +112,10 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
 	}
 
+	if kafkaConfig.TopicRefreshInterval > 0 {
+		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
+	}
+
 	if kafkaConfig.TLS {
 		inputKafka["tls"] = map[string]any{
 			"enabled": true,

@@ -2,8 +2,27 @@ package source
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 )
+
+// Supported SASL mechanism values.
+const (
+	SASLMechanismPLAIN       = "PLAIN"
+	SASLMechanismSCRAMSHA256 = "SCRAM-SHA-256"
+	SASLMechanismSCRAMSHA512 = "SCRAM-SHA-512"
+	SASLMechanismOAUTHBEARER = "OAUTHBEARER"
+)
+
+// supportedSASLMechanisms is the set of SASL mechanisms accepted by Validate.
+// An empty mechanism string is also valid and defaults to PLAIN.
+var supportedSASLMechanisms = map[string]struct{}{
+	SASLMechanismPLAIN:       {},
+	SASLMechanismSCRAMSHA256: {},
+	SASLMechanismSCRAMSHA512: {},
+	SASLMechanismOAUTHBEARER: {},
+}
 
 // KafkaConfig configures the Kafka consumer.
 type KafkaConfig struct {
@@ -101,6 +120,17 @@ func (c *KafkaConfig) heartbeatIntervalMs() int {
 
 // Validate checks the SASL configuration for errors.
 func (c *SASLConfig) Validate() error {
+	mechanism := strings.ToUpper(strings.TrimSpace(c.Mechanism))
+	if mechanism != "" {
+		if _, ok := supportedSASLMechanisms[mechanism]; !ok {
+			return fmt.Errorf(
+				"kafka.sasl: unsupported mechanism %q (supported: %s)",
+				c.Mechanism,
+				"PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER",
+			)
+		}
+	}
+
 	if c.User == "" {
 		return errors.New("kafka.sasl: user is required")
 	}

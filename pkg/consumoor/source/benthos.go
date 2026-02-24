@@ -178,14 +178,14 @@ func benthosSASLObject(cfg *SASLConfig) (map[string]any, error) {
 
 	mechanism := strings.TrimSpace(cfg.Mechanism)
 	if mechanism == "" {
-		mechanism = "PLAIN"
+		mechanism = SASLMechanismPLAIN
 	}
 
 	out := map[string]any{
 		"mechanism": mechanism,
 	}
 
-	if strings.EqualFold(mechanism, "OAUTHBEARER") {
+	if strings.EqualFold(mechanism, SASLMechanismOAUTHBEARER) {
 		out["token"] = password
 
 		return out, nil

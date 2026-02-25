@@ -1,0 +1,548 @@
+package source
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	yaml "gopkg.in/yaml.v3"
+
+	ch "github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ethpandaops/xatu/pkg/consumoor/route"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
+	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
+
+var testMetricNSCounter uint64
+
+type testRoute struct {
+	eventName xatu.Event_Name
+	table     string
+}
+
+func (r testRoute) EventNames() []xatu.Event_Name {
+	return []xatu.Event_Name{r.eventName}
+}
+
+func (r testRoute) TableName() string {
+	return r.table
+}
+
+func (r testRoute) ShouldProcess(_ *xatu.DecoratedEvent) bool {
+	return true
+}
+
+func (r testRoute) NewBatch() route.ColumnarBatch {
+	return nil
+}
+
+type testWriter struct {
+	writes     map[string]int
+	flushErrs  []error
+	flushCalls int
+}
+
+func (w *testWriter) Start(context.Context) error {
+	return nil
+}
+
+func (w *testWriter) Stop(context.Context) error {
+	return nil
+}
+
+func (w *testWriter) Write(table string, _ *xatu.DecoratedEvent) {
+	if w.writes == nil {
+		w.writes = make(map[string]int)
+	}
+
+	w.writes[table]++
+}
+
+func (w *testWriter) FlushTables(_ context.Context, tables []string) error {
+	w.flushCalls++
+
+	tableSet := make(map[string]struct{}, len(tables))
+	for _, t := range tables {
+		tableSet[t] = struct{}{}
+	}
+
+	for i, err := range w.flushErrs {
+		if twe, ok := err.(*testWriteError); ok {
+			if _, found := tableSet[twe.table]; !found {
+				continue
+			}
+		}
+
+		w.flushErrs = append(w.flushErrs[:i], w.flushErrs[i+1:]...)
+
+		return err
+	}
+
+	return nil
+}
+
+func (w *testWriter) Ping(context.Context) error {
+	return nil
+}
+
+type testRejectSink struct {
+	enabled bool
+	err     error
+	records []rejectedRecord
+}
+
+type testWriteError struct {
+	table     string
+	permanent bool
+}
+
+func (e *testWriteError) Error() string {
+	return fmt.Sprintf("table=%s permanent=%t", e.table, e.permanent)
+}
+
+func (s *testRejectSink) Write(_ context.Context, record *rejectedRecord) error {
+	if s.err != nil {
+		return s.err
+	}
+
+	if record != nil {
+		s.records = append(s.records, *record)
+	}
+
+	return nil
+}
+
+func (s *testRejectSink) Close() error {
+	return nil
+}
+
+func (s *testRejectSink) Enabled() bool {
+	return s.enabled
+}
+
+func TestBenthosConfigYAML(t *testing.T) {
+	cfg := &KafkaConfig{
+		Brokers:                []string{"kafka-1:9092", "kafka-2:9092"},
+		Topics:                 []string{"^general-.+"},
+		ConsumerGroup:          "xatu-consumoor",
+		Encoding:               "protobuf",
+		FetchMinBytes:          64,
+		FetchWaitMaxMs:         250,
+		MaxPartitionFetchBytes: 1048576,
+		SessionTimeoutMs:       30000,
+		OffsetDefault:          "latest",
+		CommitInterval:         7 * time.Second,
+	}
+
+	raw, err := benthosConfigYAML("debug", cfg)
+	require.NoError(t, err)
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal(raw, &parsed))
+
+	input, ok := parsed["input"].(map[string]any)
+	require.True(t, ok)
+
+	kafka, ok := input["kafka_franz"].(map[string]any)
+	require.True(t, ok)
+
+	assert.Equal(t, "xatu-consumoor", kafka["consumer_group"])
+	assert.Equal(t, "latest", kafka["start_offset"])
+	assert.Equal(t, "7s", kafka["commit_period"])
+
+	output, ok := parsed["output"].(map[string]any)
+	require.True(t, ok)
+
+	_, hasOutput := output[benthosOutputType]
+	assert.True(t, hasOutput)
+}
+
+func TestBenthosSASLObjectUsesPasswordFile(t *testing.T) {
+	dir := t.TempDir()
+	secretPath := filepath.Join(dir, "secret.txt")
+	require.NoError(t, os.WriteFile(secretPath, []byte("token-from-file\n"), 0o600))
+
+	obj, err := benthosSASLObject(&SASLConfig{
+		Mechanism:    "OAUTHBEARER",
+		User:         "ignored",
+		PasswordFile: secretPath,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "OAUTHBEARER", obj["mechanism"])
+	assert.Equal(t, "token-from-file", obj["token"])
+	_, hasPassword := obj["password"]
+	assert.False(t, hasPassword)
+}
+
+func TestKafkaMetadataFallback(t *testing.T) {
+	assert.Equal(t, unknownKafkaTopic, kafkaTopicMetadata(nil))
+
+	msg := service.NewMessage(nil)
+	assert.Equal(t, unknownKafkaTopic, kafkaTopicMetadata(msg))
+
+	msg.MetaSet("kafka_topic", "xatu-mainnet")
+	msg.MetaSet("kafka_partition", "2")
+	msg.MetaSet("kafka_offset", "42")
+
+	meta := kafkaMetadata(msg)
+	assert.Equal(t, "xatu-mainnet", meta.Topic)
+	assert.Equal(t, int32(2), meta.Partition)
+	assert.Equal(t, int64(42), meta.Offset)
+}
+
+func TestWriteBatchBatchModeRejectsMalformedWithoutRetry(t *testing.T) {
+	writer := &testWriter{}
+	rejectSink := &testRejectSink{}
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: rejectSink,
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage([]byte("{"), "topic-a", 0, 1),
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 2),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	assert.Equal(t, 1, writer.flushCalls)
+	assert.Equal(t, 1, writer.writes["beacon_head"])
+	require.Len(t, rejectSink.records, 1)
+	assert.Equal(t, rejectReasonDecode, rejectSink.records[0].Reason)
+}
+
+func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testing.T) {
+	writer := &testWriter{
+		flushErrs: []error{
+			&testWriteError{table: "table_b", permanent: false},
+		},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_a",
+			},
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK,
+				table:     "table_b",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+		newKafkaMessage(mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK), "topic-a", 0, 2),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+	assert.Equal(t, []int{1}, failedIndexesFromBatchError(t, msgs, err))
+}
+
+func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router:   newRouter(t, nil),
+		writer:   &testWriter{},
+		metrics:  newTestMetrics(),
+		rejectSink: &testRejectSink{
+			err: errors.New("dlq unavailable"),
+		},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage([]byte("{"), "topic-a", 0, 1),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+	assert.Equal(t, []int{0}, failedIndexesFromBatchError(t, msgs, err))
+}
+
+func failedIndexesFromBatchError(t *testing.T, msgs service.MessageBatch, err error) []int {
+	t.Helper()
+
+	var batchErr *service.BatchError
+	require.ErrorAs(t, err, &batchErr)
+
+	out := make([]int, 0, 4)
+	_ = msgs
+
+	//nolint:staticcheck // Tests intentionally use direct indexes from this batch.
+	batchErr.WalkMessages(func(index int, _ *service.Message, msgErr error) bool {
+		if msgErr != nil {
+			out = append(out, index)
+		}
+
+		return true
+	})
+
+	sort.Ints(out)
+
+	return out
+}
+
+func newRouter(t *testing.T, routes []route.Route) *router.Engine {
+	t.Helper()
+
+	return router.New(logrus.New(), routes, nil, newTestMetrics())
+}
+
+func newTestMetrics() *telemetry.Metrics {
+	ns := atomic.AddUint64(&testMetricNSCounter, 1)
+
+	return telemetry.NewMetrics(fmt.Sprintf("xatu_consumoor_test_%d", ns))
+}
+
+func mustEventJSON(t *testing.T, id string, name xatu.Event_Name) []byte {
+	t.Helper()
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:       id,
+			Name:     name,
+			DateTime: timestamppb.New(time.Unix(1_700_000_000, 0)),
+		},
+	}
+
+	raw, err := protojson.Marshal(event)
+	require.NoError(t, err)
+
+	return raw
+}
+
+func newKafkaMessage(payload []byte, topic string, partition int32, offset int64) *service.Message {
+	msg := service.NewMessage(payload)
+	msg.MetaSet("kafka_topic", topic)
+	msg.MetaSet("kafka_partition", strconv.FormatInt(int64(partition), 10))
+	msg.MetaSet("kafka_offset", strconv.FormatInt(offset, 10))
+
+	return msg
+}
+
+func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing.T) {
+	// Same event type routes to two tables. When FlushTables returns a
+	// joined error, all messages in the group must be marked as failed.
+	writer := &testWriter{
+		flushErrs: []error{
+			errors.Join(
+				&testWriteError{table: "table_a", permanent: false},
+				&testWriteError{table: "table_b", permanent: false},
+			),
+		},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_a",
+			},
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_b",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(
+			mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 1,
+		),
+		newKafkaMessage(
+			mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 2,
+		),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+	assert.Equal(t, []int{0, 1}, failedIndexesFromBatchError(t, msgs, err),
+		"both messages should be marked as failed when group flush fails")
+}
+
+func TestWriteBatchMultiTablePermanentFailureRejectsAllImpactedMessages(t *testing.T) {
+	// Same event type routes to two tables. When FlushTables returns a
+	// permanent error, all messages in the group should be DLQ'd.
+	writer := &testWriter{
+		flushErrs: []error{
+			&ch.Exception{Code: proto.ErrUnknownTable, Name: "DB::Exception", Message: "test permanent error"},
+		},
+	}
+
+	rejectSink := &testRejectSink{}
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_a",
+			},
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "table_b",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: rejectSink,
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(
+			mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 1,
+		),
+		newKafkaMessage(
+			mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD),
+			"topic-a", 0, 2,
+		),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.NoError(t, err,
+		"permanent write errors should be rejected, not returned as batch error")
+	require.Len(t, rejectSink.records, 2,
+		"both messages should be sent to the reject sink")
+
+	for _, rec := range rejectSink.records {
+		assert.Equal(t, rejectReasonWritePermanent, rec.Reason)
+	}
+}
+
+func TestWriteBatchCtxCancelledReturnsCtxErr(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	writer := &testWriter{
+		flushErrs: []error{errors.New("some write error")},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+	}
+
+	err := output.WriteBatch(ctx, msgs)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestWriteBatchUnknownFlushFailureFailsGroupMessages(t *testing.T) {
+	// When flush returns an unknown failure, group processing produces a
+	// BatchError marking all messages in the group as failed.
+	writer := &testWriter{
+		flushErrs: []error{errors.New("unknown failure")},
+	}
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		rejectSink: &testRejectSink{},
+	}
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+	}
+
+	err := output.WriteBatch(context.Background(), msgs)
+	require.Error(t, err)
+
+	// Should be a BatchError with all messages marked as failed.
+	failed := failedIndexesFromBatchError(t, msgs, err)
+	assert.Equal(t, []int{0}, failed,
+		"all messages in the batch should be marked as failed")
+}
+
+func TestKafkaTopicMetadataFallback(t *testing.T) {
+	assert.Equal(t, unknownKafkaTopic, kafkaTopicMetadata(nil))
+
+	msg := service.NewMessage(nil)
+	assert.Equal(t, unknownKafkaTopic, kafkaTopicMetadata(msg))
+
+	msg.MetaSet("kafka_topic", "xatu-mainnet")
+	assert.Equal(t, "xatu-mainnet", kafkaTopicMetadata(msg))
+}
+
+func TestFranzSASLMechanism(t *testing.T) {
+	t.Run("defaults to PLAIN", func(t *testing.T) {
+		mech, err := franzSASLMechanism(&SASLConfig{
+			User:     "user",
+			Password: "pass",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "PLAIN", mech.Name())
+	})
+
+	t.Run("rejects unsupported mechanism", func(t *testing.T) {
+		_, err := franzSASLMechanism(&SASLConfig{
+			User:      "user",
+			Password:  "pass",
+			Mechanism: "KERBEROS",
+		})
+		require.Error(t, err)
+		assert.True(t, strings.Contains(err.Error(), "unsupported"))
+	})
+}

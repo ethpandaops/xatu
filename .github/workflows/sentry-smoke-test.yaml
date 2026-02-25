@@ -90,7 +90,7 @@ jobs:
         chmod 666 deploy/local/docker-compose/sentry-logs/logs/geth.log
     - name: Run Xatu stack
       if: steps.canary.outputs.skip != 'true'
-      timeout-minutes: 5
+      timeout-minutes: 7
       run: |
         docker compose up --detach --quiet-pull
     - name: Wait for Xatu stack to be ready

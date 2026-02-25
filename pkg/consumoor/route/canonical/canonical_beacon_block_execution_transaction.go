@@ -1,0 +1,238 @@
+package canonical
+
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ethpandaops/xatu/pkg/consumoor/route"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
+
+var canonicalBeaconBlockExecutionTransactionEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION,
+}
+
+func init() {
+	r, err := route.NewStaticRoute(
+		canonicalBeaconBlockExecutionTransactionTableName,
+		canonicalBeaconBlockExecutionTransactionEventNames,
+		func() route.ColumnarBatch { return newcanonicalBeaconBlockExecutionTransactionBatch() },
+	)
+	if err != nil {
+		route.RecordError(err)
+
+		return
+	}
+
+	if err := route.Register(r); err != nil {
+		route.RecordError(err)
+	}
+}
+
+func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.DecoratedEvent) error {
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if event.GetEthV2BeaconBlockExecutionTransaction() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_execution_transaction payload: %w", route.ErrInvalidEvent)
+	}
+
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+
+	if err := b.appendPayload(event); err != nil {
+		return err
+	}
+
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockExecutionTransactionBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockExecutionTransaction()
+
+	if payload.GetNonce() == nil {
+		return fmt.Errorf("nil Nonce: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGas() == nil {
+		return fmt.Errorf("nil Gas: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetType() == nil {
+		return fmt.Errorf("nil Type: %w", route.ErrInvalidEvent)
+	}
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockExecutionTransactionBatch) appendRuntime(_ *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xatu.DecoratedEvent) error {
+	tx := event.GetEthV2BeaconBlockExecutionTransaction()
+	b.Hash.Append([]byte(tx.GetHash()))
+	b.From.Append([]byte(tx.GetFrom()))
+
+	toStr := tx.GetTo()
+	if toStr != "" {
+		b.To.Append(proto.NewNullable[[]byte]([]byte(toStr)))
+	} else {
+		b.To.Append(proto.Nullable[[]byte]{})
+	}
+
+	gasPrice, err := route.ParseUInt128(tx.GetGasPrice())
+	if err != nil {
+		return fmt.Errorf("parsing gas_price: %w", err)
+	}
+
+	b.GasPrice.Append(gasPrice)
+
+	if gasTipCap := tx.GetGasTipCap(); gasTipCap != "" {
+		parsedGasTipCap, parseErr := route.ParseUInt128(gasTipCap)
+		if parseErr != nil {
+			b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasTipCap.Append(proto.NewNullable[proto.UInt128](parsedGasTipCap))
+		}
+	} else {
+		b.GasTipCap.Append(proto.Nullable[proto.UInt128]{})
+	}
+
+	if gasFeeCap := tx.GetGasFeeCap(); gasFeeCap != "" {
+		parsedGasFeeCap, parseErr := route.ParseUInt128(gasFeeCap)
+		if parseErr != nil {
+			b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.GasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedGasFeeCap))
+		}
+	} else {
+		b.GasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+	}
+
+	txValue, err := route.ParseUInt128(tx.GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
+	}
+
+	b.Value.Append(txValue)
+
+	blobGasFeeCap := tx.GetBlobGasFeeCap()
+	if blobGasFeeCap != "" {
+		parsedBlobGasFeeCap, err := route.ParseUInt128(blobGasFeeCap)
+		if err != nil {
+			b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+		} else {
+			b.BlobGasFeeCap.Append(proto.NewNullable[proto.UInt128](parsedBlobGasFeeCap))
+		}
+	} else {
+		b.BlobGasFeeCap.Append(proto.Nullable[proto.UInt128]{})
+	}
+
+	b.BlobHashes.Append(tx.GetBlobHashes())
+
+	if nonce := tx.GetNonce(); nonce != nil {
+		b.Nonce.Append(nonce.GetValue())
+	} else {
+		b.Nonce.Append(0)
+	}
+
+	if gas := tx.GetGas(); gas != nil {
+		b.Gas.Append(gas.GetValue())
+	} else {
+		b.Gas.Append(0)
+	}
+
+	if txType := tx.GetType(); txType != nil {
+		b.Type.Append(uint8(txType.GetValue())) //nolint:gosec // G115
+	} else {
+		b.Type.Append(0)
+	}
+
+	if blobGas := tx.GetBlobGas(); blobGas != nil {
+		b.BlobGas.Append(proto.NewNullable[uint64](blobGas.GetValue()))
+	} else {
+		b.BlobGas.Append(proto.Nullable[uint64]{})
+	}
+
+	return nil
+}
+
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
+func (b *canonicalBeaconBlockExecutionTransactionBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+		b.BlockVersion.Append("")
+		b.BlockRoot.Append(nil)
+		b.Position.Append(0)
+		b.Size.Append(0)
+		b.CallDataSize.Append(0)
+		b.BlobSidecarsSize.Append(proto.Nullable[uint32]{})
+		b.BlobSidecarsEmptySize.Append(proto.Nullable[uint32]{})
+
+		return
+	}
+
+	appendBlockIdentifier(additional.GetBlock(),
+		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
+
+	if positionInBlock := additional.GetPositionInBlock(); positionInBlock != nil {
+		b.Position.Append(uint32(positionInBlock.GetValue()))
+	} else {
+		b.Position.Append(0)
+	}
+
+	if sizeStr := additional.GetSize(); sizeStr != "" {
+		if parsed, err := strconv.ParseUint(sizeStr, 10, 32); err == nil {
+			b.Size.Append(uint32(parsed))
+		} else {
+			b.Size.Append(0)
+		}
+	} else {
+		b.Size.Append(0)
+	}
+
+	if callDataSizeStr := additional.GetCallDataSize(); callDataSizeStr != "" {
+		if parsed, err := strconv.ParseUint(callDataSizeStr, 10, 32); err == nil {
+			b.CallDataSize.Append(uint32(parsed))
+		} else {
+			b.CallDataSize.Append(0)
+		}
+	} else {
+		b.CallDataSize.Append(0)
+	}
+
+	if blobSidecarsSizeStr := additional.GetBlobSidecarsSize(); blobSidecarsSizeStr != "" {
+		if parsed, err := strconv.ParseUint(blobSidecarsSizeStr, 10, 32); err == nil {
+			b.BlobSidecarsSize.Append(proto.NewNullable[uint32](uint32(parsed)))
+		} else {
+			b.BlobSidecarsSize.Append(proto.Nullable[uint32]{})
+		}
+	} else {
+		b.BlobSidecarsSize.Append(proto.Nullable[uint32]{})
+	}
+
+	if blobSidecarsEmptySizeStr := additional.GetBlobSidecarsEmptySize(); blobSidecarsEmptySizeStr != "" {
+		if parsed, err := strconv.ParseUint(blobSidecarsEmptySizeStr, 10, 32); err == nil {
+			b.BlobSidecarsEmptySize.Append(proto.NewNullable[uint32](uint32(parsed)))
+		} else {
+			b.BlobSidecarsEmptySize.Append(proto.Nullable[uint32]{})
+		}
+	} else {
+		b.BlobSidecarsEmptySize.Append(proto.Nullable[uint32]{})
+	}
+}

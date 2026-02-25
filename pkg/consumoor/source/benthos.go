@@ -9,7 +9,7 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 	_ "github.com/redpanda-data/connect/v4/public/components/kafka"
 
-	chtransform "github.com/ethpandaops/xatu/pkg/consumoor/sinks/clickhouse/transform"
+	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
@@ -19,14 +19,17 @@ const benthosOutputType = "xatu_clickhouse"
 
 // NewBenthosStream creates a Benthos stream that consumes from Kafka and writes
 // to ClickHouse via the custom xatu_clickhouse output plugin.
+// When ownsWriter is true the output plugin manages the writer lifecycle
+// (Start/Stop). When false the caller is responsible for the writer lifecycle,
+// which is the case when multiple streams share a single writer.
 func NewBenthosStream(
 	log logrus.FieldLogger,
 	logLevel string,
 	kafkaConfig *KafkaConfig,
 	metrics *telemetry.Metrics,
-	routeEngine *chtransform.Engine,
+	routeEngine *router.Engine,
 	writer Writer,
-	classifier WriteErrorClassifier,
+	ownsWriter bool,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
 		return nil, fmt.Errorf("nil kafka config")
@@ -39,37 +42,50 @@ func NewBenthosStream(
 
 	env := service.NewEnvironment()
 
+	closeRejectSink := func() {
+		if closer, ok := rejectSink.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+	}
+
 	if registerErr := env.RegisterBatchOutput(
 		benthosOutputType,
 		service.NewConfigSpec(),
 		func(_ *service.ParsedConfig, _ *service.Resources) (out service.BatchOutput, policy service.BatchPolicy, maxInFlight int, err error) {
 			return &xatuClickHouseOutput{
-				log:          log.WithField("component", "benthos_clickhouse_output"),
-				encoding:     kafkaConfig.Encoding,
-				deliveryMode: kafkaConfig.DeliveryMode,
-				router:       routeEngine,
-				writer:       writer,
-				metrics:      metrics,
-				classifier:   classifier,
-				rejectSink:   rejectSink,
+				log:        log.WithField("component", "benthos_clickhouse_output"),
+				encoding:   kafkaConfig.Encoding,
+				router:     routeEngine,
+				writer:     writer,
+				metrics:    metrics,
+				rejectSink: rejectSink,
+				ownsWriter: ownsWriter,
 			}, service.BatchPolicy{}, 1, nil
 		},
 	); registerErr != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("registering output plugin: %w", registerErr)
 	}
 
 	streamConfigBytes, err := benthosConfigYAML(logLevel, kafkaConfig)
 	if err != nil {
+		closeRejectSink()
+
 		return nil, err
 	}
 
 	builder := env.NewStreamBuilder()
 	if setErr := builder.SetYAML(string(streamConfigBytes)); setErr != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("parsing benthos stream config: %w", setErr)
 	}
 
 	stream, err := builder.Build()
 	if err != nil {
+		closeRejectSink()
+
 		return nil, fmt.Errorf("building benthos stream: %w", err)
 	}
 
@@ -85,19 +101,42 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"seed_brokers":              append([]string(nil), kafkaConfig.Brokers...),
 		"regexp_topics_include":     append([]string(nil), kafkaConfig.Topics...),
 		"consumer_group":            kafkaConfig.ConsumerGroup,
-		"start_offset":              benthosStartOffset(kafkaConfig.OffsetDefault),
+		"start_offset":              kafkaConfig.OffsetDefault,
 		"commit_period":             kafkaConfig.CommitInterval.String(),
 		"fetch_min_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMinBytes),
 		"fetch_max_wait":            fmt.Sprintf("%dms", kafkaConfig.FetchWaitMaxMs),
 		"fetch_max_partition_bytes": fmt.Sprintf("%dB", kafkaConfig.MaxPartitionFetchBytes),
 		"session_timeout":           fmt.Sprintf("%dms", kafkaConfig.SessionTimeoutMs),
-		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.HeartbeatIntervalMs),
+		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
 	}
 
-	if kafkaConfig.TLS {
-		inputKafka["tls"] = map[string]any{
+	if kafkaConfig.TopicRefreshInterval > 0 {
+		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
+	}
+
+	if kafkaConfig.TLS.Enabled {
+		tlsObj := map[string]any{
 			"enabled": true,
 		}
+
+		if kafkaConfig.TLS.CAFile != "" {
+			tlsObj["root_cas_file"] = kafkaConfig.TLS.CAFile
+		}
+
+		if kafkaConfig.TLS.CertFile != "" {
+			tlsObj["client_certs"] = []map[string]any{
+				{
+					"cert_file": kafkaConfig.TLS.CertFile,
+					"key_file":  kafkaConfig.TLS.KeyFile,
+				},
+			}
+		}
+
+		if kafkaConfig.TLS.InsecureSkipVerify {
+			tlsObj["skip_cert_verify"] = true
+		}
+
+		inputKafka["tls"] = tlsObj
 	}
 
 	if kafkaConfig.SASLConfig != nil {
@@ -119,7 +158,7 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"logger": map[string]any{
 			"level": benthosLogLevel(logLevel),
 		},
-		"shutdown_timeout": "30s",
+		"shutdown_timeout": kafkaConfig.ShutdownTimeout.String(),
 		"input": map[string]any{
 			"kafka_franz": inputKafka,
 		},
@@ -129,14 +168,6 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 	}
 
 	return yaml.Marshal(streamConfig)
-}
-
-func benthosStartOffset(offsetDefault string) string {
-	if strings.EqualFold(offsetDefault, "newest") {
-		return "latest"
-	}
-
-	return "earliest"
 }
 
 func benthosLogLevel(level string) string {
@@ -168,14 +199,14 @@ func benthosSASLObject(cfg *SASLConfig) (map[string]any, error) {
 
 	mechanism := strings.TrimSpace(cfg.Mechanism)
 	if mechanism == "" {
-		mechanism = "PLAIN"
+		mechanism = SASLMechanismPLAIN
 	}
 
 	out := map[string]any{
 		"mechanism": mechanism,
 	}
 
-	if strings.EqualFold(mechanism, "OAUTHBEARER") {
+	if strings.EqualFold(mechanism, SASLMechanismOAUTHBEARER) {
 		out["token"] = password
 
 		return out, nil

@@ -9,16 +9,23 @@ kafka:
     - "^general-.+"
   consumerGroup: xatu-consumoor-general
   encoding: json  # switch to "protobuf" after Vector removal
-  # offsetDefault: oldest
+  # offsetDefault: earliest
   # fetchMinBytes: 1
   # fetchWaitMaxMs: 500
   # maxPartitionFetchBytes: 10485760
   # sessionTimeoutMs: 30000
   # heartbeatIntervalMs: 3000
   commitInterval: 5s      # Kafka offset commit interval
-  # deliveryMode: batch   # batch (faster) or message (safer, per-message flush)
+  # shutdownTimeout: 30s  # max wait for in-flight messages during graceful shutdown
+  # lagPollInterval: 30s  # consumer lag poll interval (0 to disable)
   # rejectedTopic: xatu-consumoor-rejected
-  # tls: false
+  # topicRefreshInterval: 60s  # How often to re-discover topics matching regex patterns (0 to disable)
+  # tls:
+  #   enabled: false
+  #   caFile: /path/to/ca.pem
+  #   certFile: /path/to/client-cert.pem
+  #   keyFile: /path/to/client-key.pem
+  #   insecureSkipVerify: false
   # sasl:
   #   mechanism: PLAIN
   #   user: "username"
@@ -26,7 +33,18 @@ kafka:
 
 clickhouse:
   dsn: "clickhouse://localhost:9000/default"
+  # organicRetryInitDelay: 1s   # initial backoff when a table flush fails
+  # organicRetryMaxDelay: 30s   # max backoff cap for organic retries
+  # failOnMissingTables: true  # set to false to downgrade missing table errors to warnings
+  # tls:
+  #   enabled: false
+  #   caFile: /path/to/ca.pem
+  #   certFile: /path/to/client-cert.pem
+  #   keyFile: /path/to/client-key.pem
+  #   insecureSkipVerify: false
   # chgo:
+  #   dialTimeout: 5s
+  #   readTimeout: 30s
   #   queryTimeout: 30s
   #   maxRetries: 3
   #   retryBaseDelay: 100ms
@@ -37,6 +55,7 @@ clickhouse:
   #   connMaxIdleTime: 10m
   #   healthCheckPeriod: 30s
   #   poolMetricsInterval: 15s
+  # bufferWarningThreshold: 0.8  # log warning when any table buffer exceeds this fraction (0-1)
   defaults:
     batchSize: 200000
     flushInterval: 1s

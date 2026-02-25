@@ -2,17 +2,29 @@ package source
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
+
+	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
 )
 
+// Supported SASL mechanism values.
 const (
-	// DeliveryModeBatch batches messages before flushing writes. This is the
-	// highest-throughput mode but can replay cross-table rows on partial failure.
-	DeliveryModeBatch = "batch"
-	// DeliveryModeMessage flushes writes per message. This is safer under
-	// failures but may reduce throughput due to smaller write batches.
-	DeliveryModeMessage = "message"
+	SASLMechanismPLAIN       = "PLAIN"
+	SASLMechanismSCRAMSHA256 = "SCRAM-SHA-256"
+	SASLMechanismSCRAMSHA512 = "SCRAM-SHA-512"
+	SASLMechanismOAUTHBEARER = "OAUTHBEARER"
 )
+
+// supportedSASLMechanisms is the set of SASL mechanisms accepted by Validate.
+// An empty mechanism string is also valid and defaults to PLAIN.
+var supportedSASLMechanisms = map[string]struct{}{
+	SASLMechanismPLAIN:       {},
+	SASLMechanismSCRAMSHA256: {},
+	SASLMechanismSCRAMSHA512: {},
+	SASLMechanismOAUTHBEARER: {},
+}
 
 // KafkaConfig configures the Kafka consumer.
 type KafkaConfig struct {
@@ -25,36 +37,41 @@ type KafkaConfig struct {
 	// Encoding is the message encoding format ("json" or "protobuf").
 	Encoding string `yaml:"encoding" default:"json"`
 
-	// TLS enables TLS for the Kafka connection.
-	TLS bool `yaml:"tls" default:"false"`
+	// TLS configures TLS for the Kafka connection.
+	TLS xtls.Config `yaml:"tls"`
 	// SASLConfig is the SASL authentication configuration.
 	SASLConfig *SASLConfig `yaml:"sasl"`
 
 	// FetchMinBytes is the minimum number of bytes to fetch per request.
 	FetchMinBytes int32 `yaml:"fetchMinBytes" default:"1"`
 	// FetchWaitMaxMs is the maximum time to wait for fetch responses.
-	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"500"`
+	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"250"`
 	// MaxPartitionFetchBytes is the max bytes per partition per request.
 	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"10485760"`
 
 	// SessionTimeoutMs is the consumer group session timeout.
 	SessionTimeoutMs int `yaml:"sessionTimeoutMs" default:"30000"`
-	// HeartbeatIntervalMs is the consumer group heartbeat interval.
-	HeartbeatIntervalMs int `yaml:"heartbeatIntervalMs" default:"3000"`
 
 	// OffsetDefault controls where to start consuming when no offset exists.
-	// Valid values: "newest" or "oldest".
-	OffsetDefault string `yaml:"offsetDefault" default:"oldest"`
+	// Valid values: "earliest" or "latest".
+	OffsetDefault string `yaml:"offsetDefault" default:"earliest"`
 
 	// CommitInterval controls Kafka offset commit cadence for kafka_franz.
 	CommitInterval time.Duration `yaml:"commitInterval" default:"5s"`
-	// DeliveryMode controls write boundary behavior.
-	// "batch" writes whole Benthos batches together.
-	// "message" flushes each message independently.
-	DeliveryMode string `yaml:"deliveryMode" default:"batch"`
+	// ShutdownTimeout is the maximum time the Benthos stream waits for
+	// in-flight messages to complete during graceful shutdown.
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout" default:"30s"`
 	// RejectedTopic is an optional Kafka topic where permanently rejected
 	// messages are emitted as JSON envelopes.
 	RejectedTopic string `yaml:"rejectedTopic"`
+
+	// TopicRefreshInterval controls how often Kafka metadata is refreshed to
+	// discover new topics matching the configured regex patterns. Defaults to
+	// 60s. Set to 0 to disable periodic refresh (startup-only discovery).
+	TopicRefreshInterval time.Duration `yaml:"topicRefreshInterval" default:"60s"`
+	// LagPollInterval controls how often consumer lag is polled from Kafka.
+	// Set to 0 to disable lag monitoring. Default: 30s.
+	LagPollInterval time.Duration `yaml:"lagPollInterval" default:"30s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -87,18 +104,30 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: encoding must be 'json' or 'protobuf'")
 	}
 
-	if c.OffsetDefault != "newest" && c.OffsetDefault != "oldest" {
-		return errors.New("kafka: offsetDefault must be 'newest' or 'oldest'")
+	if c.OffsetDefault != "earliest" && c.OffsetDefault != "latest" {
+		return errors.New("kafka: offsetDefault must be 'earliest' or 'latest'")
+	}
+
+	if c.SessionTimeoutMs <= 0 {
+		return errors.New("kafka: sessionTimeoutMs must be > 0")
 	}
 
 	if c.CommitInterval <= 0 {
 		return errors.New("kafka: commitInterval must be positive")
 	}
 
-	switch c.DeliveryMode {
-	case DeliveryModeBatch, DeliveryModeMessage:
-	default:
-		return errors.New("kafka: deliveryMode must be 'batch' or 'message'")
+	if c.ShutdownTimeout <= 0 {
+		return errors.New("kafka: shutdownTimeout must be > 0")
+	}
+
+	if c.TopicRefreshInterval < 0 {
+		return errors.New(
+			"kafka: topicRefreshInterval must be >= 0",
+		)
+	}
+
+	if err := c.TLS.Validate(); err != nil {
+		return fmt.Errorf("kafka.%w", err)
 	}
 
 	if c.SASLConfig != nil {
@@ -110,8 +139,25 @@ func (c *KafkaConfig) Validate() error {
 	return nil
 }
 
+// heartbeatIntervalMs derives the heartbeat interval from the session timeout.
+// Kafka's standard practice is sessionTimeout / 10.
+func (c *KafkaConfig) heartbeatIntervalMs() int {
+	return c.SessionTimeoutMs / 10
+}
+
 // Validate checks the SASL configuration for errors.
 func (c *SASLConfig) Validate() error {
+	mechanism := strings.ToUpper(strings.TrimSpace(c.Mechanism))
+	if mechanism != "" {
+		if _, ok := supportedSASLMechanisms[mechanism]; !ok {
+			return fmt.Errorf(
+				"kafka.sasl: unsupported mechanism %q (supported: %s)",
+				c.Mechanism,
+				"PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, OAUTHBEARER",
+			)
+		}
+	}
+
 	if c.User == "" {
 		return errors.New("kafka.sasl: user is required")
 	}

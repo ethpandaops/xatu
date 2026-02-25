@@ -19,7 +19,10 @@ type Metrics struct {
 	writeDuration    *prometheus.HistogramVec
 	batchSize        *prometheus.HistogramVec
 	bufferUsage      *prometheus.GaugeVec
+	bufferUsageTotal prometheus.Gauge
 	flattenErrors    *prometheus.CounterVec
+	activeTopics     prometheus.Gauge
+	kafkaConsumerLag *prometheus.GaugeVec
 
 	// ch-go pool metrics
 	chgoPoolAcquiredResources     prometheus.Gauge
@@ -54,7 +57,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "messages_routed_total",
-			Help:      "Total number of messages routed to a flattener.",
+			Help:      "Total number of messages routed to a route.",
 		}, []string{"event_name", "table"}),
 
 		messagesDropped: promauto.NewCounterVec(prometheus.CounterOpts{
@@ -129,12 +132,33 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Current number of rows buffered per table.",
 		}, []string{"table"}),
 
+		bufferUsageTotal: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "buffer_usage_total",
+			Help:      "Sum of all table buffer usages. Single number for aggregate memory pressure alerting.",
+		}),
+
 		flattenErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "flatten_errors_total",
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
+
+		activeTopics: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "active_topics",
+			Help:      "Current number of Kafka topics matching configured patterns.",
+		}),
+
+		kafkaConsumerLag: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "kafka_consumer_lag",
+			Help:      "Kafka consumer group lag per topic and partition.",
+		}, []string{"topic", "partition", "consumer_group"}),
 
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -220,7 +244,10 @@ func (m *Metrics) WriteErrors() *prometheus.CounterVec      { return m.writeErro
 func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDuration }
 func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
 func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsage }
+func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsageTotal }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
+func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
+func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

@@ -1,0 +1,137 @@
+package canonical
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/ethpandaops/xatu/pkg/consumoor/route"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+)
+
+var canonicalBeaconProposerDutyEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V1_PROPOSER_DUTY,
+}
+
+var canonicalBeaconProposerDutyPredicate = func(event *xatu.DecoratedEvent) bool {
+	if event == nil || event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
+		return false
+	}
+
+	stateID := event.GetMeta().GetClient().GetEthV1ProposerDuty().GetStateId()
+
+	return strings.EqualFold(stateID, "finalized")
+}
+
+func init() {
+	r, err := route.NewStaticRoute(
+		canonicalBeaconProposerDutyTableName,
+		canonicalBeaconProposerDutyEventNames,
+		func() route.ColumnarBatch { return newcanonicalBeaconProposerDutyBatch() },
+		route.WithStaticRoutePredicate(canonicalBeaconProposerDutyPredicate),
+	)
+	if err != nil {
+		route.RecordError(err)
+
+		return
+	}
+
+	if err := route.Register(r); err != nil {
+		route.RecordError(err)
+	}
+}
+
+func (b *canonicalBeaconProposerDutyBatch) FlattenTo(event *xatu.DecoratedEvent) error {
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if event.GetEthV1ProposerDuty() == nil {
+		return fmt.Errorf("nil eth_v1_proposer_duty payload: %w", route.ErrInvalidEvent)
+	}
+
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconProposerDutyBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1ProposerDuty()
+
+	if payload.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	return nil
+}
+
+func (b *canonicalBeaconProposerDutyBatch) appendRuntime(_ *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
+func (b *canonicalBeaconProposerDutyBatch) appendPayload(event *xatu.DecoratedEvent) {
+	duty := event.GetEthV1ProposerDuty()
+	b.ProposerPubkey.Append(duty.GetPubkey())
+
+	if validatorIndex := duty.GetValidatorIndex(); validatorIndex != nil {
+		b.ProposerValidatorIndex.Append(uint32(validatorIndex.GetValue()))
+	} else {
+		b.ProposerValidatorIndex.Append(0)
+	}
+}
+
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
+func (b *canonicalBeaconProposerDutyBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	additional := event.GetMeta().GetClient().GetEthV1ProposerDuty()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+
+		return
+	}
+
+	if epochData := additional.GetEpoch(); epochData != nil {
+		if epochNumber := epochData.GetNumber(); epochNumber != nil {
+			b.Epoch.Append(uint32(epochNumber.GetValue()))
+		} else {
+			b.Epoch.Append(0)
+		}
+
+		if startDateTime := epochData.GetStartDateTime(); startDateTime != nil {
+			b.EpochStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.EpochStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+	}
+
+	if slotData := additional.GetSlot(); slotData != nil {
+		if slotNumber := slotData.GetNumber(); slotNumber != nil {
+			b.Slot.Append(uint32(slotNumber.GetValue()))
+		} else {
+			b.Slot.Append(0)
+		}
+
+		if startDateTime := slotData.GetStartDateTime(); startDateTime != nil {
+			b.SlotStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.SlotStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+	}
+}

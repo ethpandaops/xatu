@@ -52,6 +52,23 @@ func (w *ChGoWriter) collectPoolMetrics() {
 			}
 
 			prevCanceledAcquireCount = canceledAcquireCount
+
+			w.collectAdaptiveLimiterMetrics()
 		}
+	}
+}
+
+func (w *ChGoWriter) collectAdaptiveLimiterMetrics() {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	for _, tw := range w.tables {
+		if tw.limiter == nil {
+			continue
+		}
+
+		w.metrics.AdaptiveLimiterLimit().WithLabelValues(tw.table).Set(float64(tw.limiter.Limit()))
+		w.metrics.AdaptiveLimiterInflight().WithLabelValues(tw.table).Set(float64(tw.limiter.Inflight()))
+		w.metrics.AdaptiveLimiterQueued().WithLabelValues(tw.table).Set(float64(tw.limiter.Queued()))
 	}
 }

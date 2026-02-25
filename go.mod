@@ -21,6 +21,7 @@ require (
 	github.com/ethpandaops/beacon v0.65.0
 	github.com/ethpandaops/ethcore v0.0.0-20260112064422-e7fe02956738
 	github.com/ethpandaops/ethwallclock v0.4.0
+	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4
@@ -83,7 +84,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.24.0 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -155,6 +156,7 @@ require (
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/go-syslog/v3 v3.0.0 // indirect
+	github.com/influxdata/tdigest v0.0.1 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-log/v2 v2.8.0 // indirect
 	github.com/itchyny/gojq v0.12.18 // indirect

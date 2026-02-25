@@ -301,6 +301,22 @@ func TestDoWithRetry_NonRetryableExitsImmediately(t *testing.T) {
 	assert.Equal(t, int32(1), calls.Load())
 }
 
+func TestDoWithRetry_LimiterRejectionExitsImmediately(t *testing.T) {
+	w := newTestWriter(5, time.Millisecond, 10*time.Millisecond)
+
+	var calls atomic.Int32
+
+	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+		calls.Add(1)
+
+		return &limiterRejectedError{cause: errors.New("limit exceeded")}
+	})
+
+	require.Error(t, err)
+	assert.True(t, IsLimiterRejected(err), "error should be classified as limiter rejected")
+	assert.Equal(t, int32(1), calls.Load(), "should not retry on limiter rejection")
+}
+
 func TestDoWithRetry_BackoffTiming(t *testing.T) {
 	baseDelay := 20 * time.Millisecond
 	maxDelay := 100 * time.Millisecond

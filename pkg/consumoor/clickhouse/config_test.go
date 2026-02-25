@@ -175,3 +175,113 @@ func TestConfig_Validate_OrganicRetry(t *testing.T) {
 		})
 	}
 }
+
+func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     AdaptiveLimiterConfig
+		wantErr string
+	}{
+		{
+			name: "disabled passes",
+			cfg:  AdaptiveLimiterConfig{Enabled: false},
+		},
+		{
+			name: "valid enabled",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:                     true,
+				MinLimit:                    1,
+				MaxLimit:                    50,
+				InitialLimit:                8,
+				QueueInitialRejectionFactor: 2,
+				QueueMaxRejectionFactor:     3,
+			},
+		},
+		{
+			name: "zero minLimit",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:      true,
+				MinLimit:     0,
+				MaxLimit:     50,
+				InitialLimit: 8,
+			},
+			wantErr: "minLimit must be > 0",
+		},
+		{
+			name: "zero maxLimit",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:      true,
+				MinLimit:     1,
+				MaxLimit:     0,
+				InitialLimit: 1,
+			},
+			wantErr: "maxLimit must be > 0",
+		},
+		{
+			name: "minLimit exceeds maxLimit",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:      true,
+				MinLimit:     10,
+				MaxLimit:     5,
+				InitialLimit: 5,
+			},
+			wantErr: "minLimit must be <= maxLimit",
+		},
+		{
+			name: "initialLimit below minLimit",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:      true,
+				MinLimit:     5,
+				MaxLimit:     50,
+				InitialLimit: 2,
+			},
+			wantErr: "initialLimit must be between minLimit and maxLimit",
+		},
+		{
+			name: "initialLimit above maxLimit",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:      true,
+				MinLimit:     1,
+				MaxLimit:     10,
+				InitialLimit: 20,
+			},
+			wantErr: "initialLimit must be between minLimit and maxLimit",
+		},
+		{
+			name: "zero queueInitialRejectionFactor",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:                     true,
+				MinLimit:                    1,
+				MaxLimit:                    50,
+				InitialLimit:                8,
+				QueueInitialRejectionFactor: 0,
+				QueueMaxRejectionFactor:     3,
+			},
+			wantErr: "queueInitialRejectionFactor must be > 0",
+		},
+		{
+			name: "zero queueMaxRejectionFactor",
+			cfg: AdaptiveLimiterConfig{
+				Enabled:                     true,
+				MinLimit:                    1,
+				MaxLimit:                    50,
+				InitialLimit:                8,
+				QueueInitialRejectionFactor: 2,
+				QueueMaxRejectionFactor:     0,
+			},
+			wantErr: "queueMaxRejectionFactor must be > 0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cfg.Validate()
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

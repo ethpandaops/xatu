@@ -40,6 +40,10 @@ type chTableWriter struct {
 	newBatch func() route.ColumnarBatch
 	batch    route.ColumnarBatch // reused across flushes via Reset()
 
+	// limiter is the per-table adaptive concurrency limiter.
+	// nil when adaptive limiting is disabled.
+	limiter *adaptiveConcurrencyLimiter
+
 	// lastWarnAt tracks the last time a buffer warning was emitted (Unix nanos).
 	// Accessed atomically from the Write goroutine for rate limiting.
 	lastWarnAt atomic.Int64
@@ -85,6 +89,12 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 						continue
 					}
 
+					if IsLimiterRejected(err) {
+						flushBlocked = true
+
+						continue
+					}
+
 					// Preserve events for retry on next flush cycle. While
 					// pending, stop draining tw.buffer so channel backpressure
 					// remains bounded by BufferSize.
@@ -119,6 +129,12 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 						flushBlocked = false
 
 						tw.resetRetryState(ticker, &retryAttempt)
+
+						continue
+					}
+
+					if IsLimiterRejected(err) {
+						flushBlocked = true
 
 						continue
 					}
@@ -174,6 +190,8 @@ func (tw *chTableWriter) run(done <-chan struct{}) {
 					flushBlocked = false
 
 					tw.resetRetryState(ticker, &retryAttempt)
+				case IsLimiterRejected(err):
+					flushBlocked = true
 				default:
 					flushBlocked = true
 				}
@@ -368,7 +386,7 @@ func (tw *chTableWriter) do(
 	query *ch.Query,
 	beforeAttempt func(),
 ) error {
-	return tw.writer.doWithRetry(ctx, operation, func(attemptCtx context.Context) error {
+	poolFn := func(attemptCtx context.Context) error {
 		if beforeAttempt != nil {
 			beforeAttempt()
 		}
@@ -383,6 +401,14 @@ func (tw *chTableWriter) do(
 		}
 
 		return pool.Do(attemptCtx, *query)
+	}
+
+	return tw.writer.doWithRetry(ctx, operation, func(attemptCtx context.Context) error {
+		if tw.limiter == nil {
+			return poolFn(attemptCtx)
+		}
+
+		return tw.limiter.doWithLimiter(attemptCtx, poolFn)
 	})
 }
 

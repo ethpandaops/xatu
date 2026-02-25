@@ -24,6 +24,11 @@ type Metrics struct {
 	activeTopics     prometheus.Gauge
 	kafkaConsumerLag *prometheus.GaugeVec
 
+	// adaptive limiter metrics (per-table)
+	adaptiveLimiterLimit    *prometheus.GaugeVec
+	adaptiveLimiterInflight *prometheus.GaugeVec
+	adaptiveLimiterQueued   *prometheus.GaugeVec
+
 	// ch-go pool metrics
 	chgoPoolAcquiredResources     prometheus.Gauge
 	chgoPoolIdleResources         prometheus.Gauge
@@ -160,6 +165,27 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Kafka consumer group lag per topic and partition.",
 		}, []string{"topic", "partition", "consumer_group"}),
 
+		adaptiveLimiterLimit: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_limit",
+			Help:      "Current adaptive concurrency limit per table.",
+		}, []string{"table"}),
+
+		adaptiveLimiterInflight: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_inflight",
+			Help:      "Current number of in-flight permits per table.",
+		}, []string{"table"}),
+
+		adaptiveLimiterQueued: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_queued",
+			Help:      "Current number of queued permit requests per table.",
+		}, []string{"table"}),
+
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
@@ -248,6 +274,10 @@ func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsa
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
 func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
 func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
+
+func (m *Metrics) AdaptiveLimiterLimit() *prometheus.GaugeVec    { return m.adaptiveLimiterLimit }
+func (m *Metrics) AdaptiveLimiterInflight() *prometheus.GaugeVec { return m.adaptiveLimiterInflight }
+func (m *Metrics) AdaptiveLimiterQueued() *prometheus.GaugeVec   { return m.adaptiveLimiterQueued }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

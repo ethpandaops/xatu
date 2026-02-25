@@ -79,6 +79,68 @@ type TableConfig struct {
 	InsertSettings map[string]any `yaml:"insertSettings"`
 }
 
+// AdaptiveLimiterConfig configures per-table adaptive concurrency limiting.
+// When enabled, each table writer independently adjusts its INSERT concurrency
+// based on observed ClickHouse latency using an AIMD algorithm.
+type AdaptiveLimiterConfig struct {
+	// Enabled turns on adaptive concurrency limiting. Disabled by default
+	// for zero behavior change unless explicitly opted in.
+	Enabled bool `yaml:"enabled" default:"false"`
+	// MinLimit is the minimum concurrent INSERTs the limiter allows.
+	MinLimit uint `yaml:"minLimit" default:"1"`
+	// MaxLimit caps the maximum concurrent INSERTs the limiter allows.
+	MaxLimit uint `yaml:"maxLimit" default:"50"`
+	// InitialLimit is the starting concurrency before adaptation.
+	InitialLimit uint `yaml:"initialLimit" default:"8"`
+	// QueueInitialRejectionFactor controls the queue size below which
+	// requests are rejected during the initial learning phase.
+	QueueInitialRejectionFactor float64 `yaml:"queueInitialRejectionFactor" default:"2"`
+	// QueueMaxRejectionFactor controls the queue size below which
+	// requests are rejected after the initial learning phase.
+	QueueMaxRejectionFactor float64 `yaml:"queueMaxRejectionFactor" default:"3"`
+}
+
+// Validate checks the adaptive limiter configuration for errors.
+func (c *AdaptiveLimiterConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+
+	if c.MinLimit == 0 {
+		return errors.New("clickhouse.chgo.adaptiveLimiter: minLimit must be > 0")
+	}
+
+	if c.MaxLimit == 0 {
+		return errors.New("clickhouse.chgo.adaptiveLimiter: maxLimit must be > 0")
+	}
+
+	if c.MinLimit > c.MaxLimit {
+		return errors.New(
+			"clickhouse.chgo.adaptiveLimiter: minLimit must be <= maxLimit",
+		)
+	}
+
+	if c.InitialLimit < c.MinLimit || c.InitialLimit > c.MaxLimit {
+		return errors.New(
+			"clickhouse.chgo.adaptiveLimiter: initialLimit must be between minLimit and maxLimit",
+		)
+	}
+
+	if c.QueueInitialRejectionFactor <= 0 {
+		return errors.New(
+			"clickhouse.chgo.adaptiveLimiter: queueInitialRejectionFactor must be > 0",
+		)
+	}
+
+	if c.QueueMaxRejectionFactor <= 0 {
+		return errors.New(
+			"clickhouse.chgo.adaptiveLimiter: queueMaxRejectionFactor must be > 0",
+		)
+	}
+
+	return nil
+}
+
 // ChGoConfig configures the ch-go backend query retries and connection pooling.
 type ChGoConfig struct {
 	// DialTimeout is the timeout for establishing a connection to ClickHouse.
@@ -111,6 +173,9 @@ type ChGoConfig struct {
 	// PoolMetricsInterval controls how often pool stats are sampled.
 	// Set to 0 to disable pool metrics collection.
 	PoolMetricsInterval time.Duration `yaml:"poolMetricsInterval" default:"15s"`
+
+	// AdaptiveLimiter configures per-table adaptive concurrency limiting.
+	AdaptiveLimiter AdaptiveLimiterConfig `yaml:"adaptiveLimiter"`
 }
 
 // Validate checks the ClickHouse configuration for errors.
@@ -243,6 +308,10 @@ func (c *ChGoConfig) Validate() error {
 
 	if c.PoolMetricsInterval < 0 {
 		return errors.New("clickhouse.chgo: poolMetricsInterval must be >= 0")
+	}
+
+	if err := c.AdaptiveLimiter.Validate(); err != nil {
+		return err
 	}
 
 	return nil

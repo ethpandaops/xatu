@@ -45,6 +45,27 @@ type flattenError struct {
 func (e *flattenError) Error() string { return fmt.Sprintf("flatten failed: %v", e.cause) }
 func (e *flattenError) Unwrap() error { return e.cause }
 
+// limiterRejectedError indicates the adaptive concurrency limiter rejected
+// the request. This is not retryable (doWithRetry exits immediately) and not
+// permanent — the table writer simply waits for the next flush cycle.
+type limiterRejectedError struct {
+	cause error
+}
+
+func (e *limiterRejectedError) Error() string {
+	return fmt.Sprintf("adaptive limiter rejected: %v", e.cause)
+}
+
+func (e *limiterRejectedError) Unwrap() error { return e.cause }
+
+// IsLimiterRejected reports whether err was caused by adaptive concurrency
+// limiter rejection.
+func IsLimiterRejected(err error) bool {
+	var lre *limiterRejectedError
+
+	return errors.As(err, &lre)
+}
+
 // IsPermanentWriteError returns true for errors that will never succeed on
 // retry: schema mismatches, type errors, conversion failures.
 func IsPermanentWriteError(err error) bool {

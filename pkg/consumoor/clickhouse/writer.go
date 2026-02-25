@@ -304,6 +304,7 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 		organicRetryMaxDelay:  w.config.OrganicRetryMaxDelay,
 		drainTimeout:          w.config.DrainTimeout,
 		newBatch:              w.batchFactories[table],
+		limiter:               newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
 	}
 
 	w.tables[writeTable] = tw
@@ -386,6 +387,10 @@ func (w *ChGoWriter) doWithRetry(
 		}
 
 		lastErr = err
+
+		if IsLimiterRejected(err) {
+			return err
+		}
 
 		if !isRetryableError(err) {
 			return err

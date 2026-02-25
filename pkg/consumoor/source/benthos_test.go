@@ -74,16 +74,27 @@ func (w *testWriter) Write(table string, _ *xatu.DecoratedEvent) {
 	w.writes[table]++
 }
 
-func (w *testWriter) FlushTables(_ context.Context, _ []string) error {
+func (w *testWriter) FlushTables(_ context.Context, tables []string) error {
 	w.flushCalls++
-	if len(w.flushErrs) == 0 {
-		return nil
+
+	tableSet := make(map[string]struct{}, len(tables))
+	for _, t := range tables {
+		tableSet[t] = struct{}{}
 	}
 
-	err := w.flushErrs[0]
-	w.flushErrs = w.flushErrs[1:]
+	for i, err := range w.flushErrs {
+		if twe, ok := err.(*testWriteError); ok {
+			if _, found := tableSet[twe.table]; !found {
+				continue
+			}
+		}
 
-	return err
+		w.flushErrs = append(w.flushErrs[:i], w.flushErrs[i+1:]...)
+
+		return err
+	}
+
+	return nil
 }
 
 func (w *testWriter) Ping(context.Context) error {

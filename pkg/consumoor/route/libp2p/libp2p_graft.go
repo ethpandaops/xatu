@@ -40,10 +40,34 @@ func (b *libp2pGraftBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_graft payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pGraftBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetLibp2PTraceGraft()
+
+	peerID := wrappedStringValue(payload.GetPeerId())
+
+	metaPeerID := peerIDFromMetadata(event, func(c *xatu.ClientMeta) peerIDMetadataProvider {
+		return c.GetLibp2PTraceGraft()
+	})
+
+	if metaPeerID != "" {
+		peerID = metaPeerID
+	}
+
+	if peerID == "" {
+		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

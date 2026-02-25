@@ -28,10 +28,17 @@ func TestSnapshot_mev_relay_bid_trace(t *testing.T) {
 		Data: &xatu.DecoratedEvent_MevRelayBidTraceBuilderBlockSubmission{
 			MevRelayBidTraceBuilderBlockSubmission: &mevrelay.BidTrace{
 				Slot:                 wrapperspb.UInt64(100),
+				BlockNumber:          wrapperspb.UInt64(1000),
 				BuilderPubkey:        wrapperspb.String("0xbuilder"),
 				ProposerPubkey:       wrapperspb.String("0xproposer"),
 				ProposerFeeRecipient: wrapperspb.String("0xfee"),
+				GasLimit:             wrapperspb.UInt64(30000000),
+				GasUsed:              wrapperspb.UInt64(15000000),
 				Value:                wrapperspb.String("1000000000000000000"),
+				NumTx:                wrapperspb.UInt64(50),
+				Timestamp:            wrapperspb.Int64(1705312800),
+				TimestampMs:          wrapperspb.Int64(1705312800000),
+				OptimisticSubmission: wrapperspb.Bool(false),
 			},
 		},
 	}, 1, map[string]any{

@@ -50,6 +50,10 @@ func (b *canonicalBeaconBlockBatch) FlattenTo(event *xatu.DecoratedEvent) error 
 		return fmt.Errorf("nil eth_v2_beacon_block_v2 payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -59,6 +63,16 @@ func (b *canonicalBeaconBlockBatch) FlattenTo(event *xatu.DecoratedEvent) error 
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockV2()
+
+	if payload.GetMessage() == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

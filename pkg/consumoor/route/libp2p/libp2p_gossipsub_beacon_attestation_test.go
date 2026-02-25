@@ -28,8 +28,11 @@ func TestSnapshot_libp2p_gossipsub_beacon_attestation(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_Libp2PTraceGossipsubBeaconAttestation{
 				Libp2PTraceGossipsubBeaconAttestation: &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{
-					Slot:  testfixture.SlotEpochAdditional(),
-					Epoch: testfixture.EpochAdditional(),
+					Slot:           testfixture.SlotEpochAdditional(),
+					Epoch:          testfixture.EpochAdditional(),
+					WallclockSlot:  testfixture.WallclockSlotAdditional(),
+					WallclockEpoch: testfixture.WallclockEpochAdditional(),
+					Propagation:    testfixture.PropagationAdditional(),
 					Metadata: &libp2ppb.TraceEventMetadata{
 						PeerId: wrapperspb.String(testPeerID),
 					},

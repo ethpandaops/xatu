@@ -1,4 +1,3 @@
-//nolint:wsl_v5 // Pipeline branches are clearer when kept compact.
 package source
 
 import (

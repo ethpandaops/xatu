@@ -6,6 +6,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/consumoor/route/testfixture"
 	mevrelay "github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_mev_relay_validator_registration(t *testing.T) {
@@ -17,7 +18,9 @@ func TestSnapshot_mev_relay_validator_registration(t *testing.T) {
 		},
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_MevRelayValidatorRegistration{
-				MevRelayValidatorRegistration: &xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData{},
+				MevRelayValidatorRegistration: &xatu.ClientMeta_AdditionalMevRelayValidatorRegistrationData{
+					ValidatorIndex: wrapperspb.UInt64(42),
+				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_MevRelayValidatorRegistration{

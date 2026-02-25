@@ -37,6 +37,10 @@ func (b *mempoolTransactionBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 		return nil
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -46,6 +50,10 @@ func (b *mempoolTransactionBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 
 	b.rows++
 
+	return nil
+}
+
+func (b *mempoolTransactionBatch) validate(_ *xatu.DecoratedEvent) error {
 	return nil
 }
 

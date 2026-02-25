@@ -28,6 +28,7 @@ func TestSnapshot_beacon_api_eth_v1_events_chain_reorg(t *testing.T) {
 			EthV1EventsChainReorgV2: &ethv1.EventChainReorgV2{
 				Slot:  wrapperspb.UInt64(100),
 				Depth: wrapperspb.UInt64(3),
+				Epoch: wrapperspb.UInt64(3),
 			},
 		},
 	}, 1, map[string]any{

@@ -40,10 +40,24 @@ func (b *libp2pRemovePeerBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_remove_peer payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pRemovePeerBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetLibp2PTraceRemovePeer()
+
+	if payload.GetPeerId() == nil {
+		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

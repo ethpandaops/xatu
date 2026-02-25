@@ -42,11 +42,33 @@ func (b *nodeRecordConsensusBatch) FlattenTo(
 		return fmt.Errorf("nil node_record_consensus payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendServerGeo(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *nodeRecordConsensusBatch) validate(event *xatu.DecoratedEvent) error {
+	consensus := event.GetNodeRecordConsensus()
+
+	if consensus.GetTimestamp() == nil {
+		return fmt.Errorf("nil Timestamp: %w", route.ErrInvalidEvent)
+	}
+
+	if consensus.GetFinalizedEpoch() == nil {
+		return fmt.Errorf("nil FinalizedEpoch: %w", route.ErrInvalidEvent)
+	}
+
+	if consensus.GetHeadSlot() == nil {
+		return fmt.Errorf("nil HeadSlot: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

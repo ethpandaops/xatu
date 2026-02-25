@@ -40,11 +40,38 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v1_events_contribution_and_proof_v2 payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1EventsContributionAndProofBatch) validate(
+	event *xatu.DecoratedEvent,
+) error {
+	payload := event.GetEthV1EventsContributionAndProofV2()
+
+	message := payload.GetMessage()
+	if message == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	if message.GetAggregatorIndex() == nil {
+		return fmt.Errorf("nil AggregatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if contribution := message.GetContribution(); contribution != nil {
+		if contribution.GetSlot() == nil {
+			return fmt.Errorf("nil ContributionSlot: %w", route.ErrInvalidEvent)
+		}
+	}
 
 	return nil
 }

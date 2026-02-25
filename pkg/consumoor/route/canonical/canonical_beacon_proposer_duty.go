@@ -50,11 +50,25 @@ func (b *canonicalBeaconProposerDutyBatch) FlattenTo(event *xatu.DecoratedEvent)
 		return fmt.Errorf("nil eth_v1_proposer_duty payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconProposerDutyBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1ProposerDuty()
+
+	if payload.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

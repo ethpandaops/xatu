@@ -26,9 +26,10 @@ func TestSnapshot_beacon_api_eth_v1_events_data_column_sidecar(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsDataColumnSidecar{
 			EthV1EventsDataColumnSidecar: &ethv1.EventDataColumnSidecar{
-				BlockRoot: "0xdcsblock",
-				Slot:      wrapperspb.UInt64(100),
-				Index:     wrapperspb.UInt64(7),
+				BlockRoot:           "0xdcsblock",
+				Slot:                wrapperspb.UInt64(100),
+				Index:               wrapperspb.UInt64(7),
+				KzgCommitmentsCount: wrapperspb.UInt32(5),
 			},
 		},
 	}, 1, map[string]any{

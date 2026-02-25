@@ -39,11 +39,33 @@ func (b *canonicalBeaconBlobSidecarBatch) FlattenTo(event *xatu.DecoratedEvent) 
 		return fmt.Errorf("nil eth_v1_beacon_block_blob_sidecar payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlobSidecarBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconBlockBlobSidecar()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerIndex() == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

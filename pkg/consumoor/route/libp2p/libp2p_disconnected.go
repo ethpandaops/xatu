@@ -41,11 +41,25 @@ func (b *libp2pDisconnectedBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_disconnected payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendServerAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pDisconnectedBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetLibp2PTraceDisconnected()
+
+	if payload.GetRemotePeer() == nil {
+		return fmt.Errorf("nil RemotePeer: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

@@ -40,11 +40,34 @@ func (b *beaconApiEthV1EventsVoluntaryExitBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v1_events_voluntary_exit_v2 payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1EventsVoluntaryExitBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1EventsVoluntaryExitV2()
+
+	message := payload.GetMessage()
+	if message == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	if message.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if message.GetEpoch() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

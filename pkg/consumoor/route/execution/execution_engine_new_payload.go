@@ -39,10 +39,44 @@ func (b *executionEngineNewPayloadBatch) FlattenTo(event *xatu.DecoratedEvent) e
 		return fmt.Errorf("nil execution_engine_new_payload payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *executionEngineNewPayloadBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetExecutionEngineNewPayload()
+
+	if payload.GetDurationMs() == nil {
+		return fmt.Errorf("nil DurationMs: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockNumber() == nil {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasUsed() == nil {
+		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasLimit() == nil {
+		return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetTxCount() == nil {
+		return fmt.Errorf("nil TxCount: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlobCount() == nil {
+		return fmt.Errorf("nil BlobCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

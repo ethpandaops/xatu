@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	chProto "github.com/ClickHouse/ch-go/proto"
@@ -30,8 +31,16 @@ func init() {
 }
 
 func (b *canonicalBeaconValidatorsBatch) FlattenTo(event *xatu.DecoratedEvent) error {
-	if event == nil || event.GetEvent() == nil || event.GetEthV1Validators() == nil {
+	if event == nil || event.GetEvent() == nil {
 		return nil
+	}
+
+	if event.GetEthV1Validators() == nil {
+		return fmt.Errorf("nil payload: %w", route.ErrInvalidEvent)
+	}
+
+	if err := b.validate(event); err != nil {
+		return err
 	}
 
 	// Extract epoch info from additional data.
@@ -61,15 +70,15 @@ func (b *canonicalBeaconValidatorsBatch) FlattenTo(event *xatu.DecoratedEvent) e
 			continue
 		}
 
+		if validator.GetIndex() == nil {
+			continue
+		}
+
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
-		if idx := validator.GetIndex(); idx != nil {
-			b.Index.Append(uint32(idx.GetValue())) //nolint:gosec // bounded by uint32 column
-		} else {
-			b.Index.Append(0)
-		}
+		b.Index.Append(uint32(validator.GetIndex().GetValue())) //nolint:gosec // bounded by uint32 column
 
 		if balance := validator.GetBalance(); balance != nil && balance.GetValue() != 0 {
 			b.Balance.Append(chProto.NewNullable[uint64](balance.GetValue()))
@@ -131,6 +140,15 @@ func (b *canonicalBeaconValidatorsBatch) FlattenTo(event *xatu.DecoratedEvent) e
 
 		b.appendMetadata(event)
 		b.rows++
+	}
+
+	return nil
+}
+
+func (b *canonicalBeaconValidatorsBatch) validate(event *xatu.DecoratedEvent) error {
+	extra := event.GetMeta().GetClient().GetEthV1Validators()
+	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
 	return nil

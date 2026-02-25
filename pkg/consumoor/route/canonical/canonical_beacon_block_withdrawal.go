@@ -38,6 +38,10 @@ func (b *canonicalBeaconBlockWithdrawalBatch) FlattenTo(event *xatu.DecoratedEve
 		return fmt.Errorf("nil eth_v2_beacon_block_withdrawal payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -47,6 +51,24 @@ func (b *canonicalBeaconBlockWithdrawalBatch) FlattenTo(event *xatu.DecoratedEve
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockWithdrawalBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockWithdrawal()
+
+	if payload.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAmount() == nil {
+		return fmt.Errorf("nil Amount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/consumoor/route/testfixture"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_canonical_beacon_block_execution_transaction(t *testing.T) {
@@ -26,9 +27,12 @@ func TestSnapshot_canonical_beacon_block_execution_transaction(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockExecutionTransaction{
 			EthV2BeaconBlockExecutionTransaction: &ethv1.Transaction{
-				Hash: "0xtxhash",
-				From: "0xfrom",
-				To:   "0xto",
+				Hash:  "0xtxhash",
+				From:  "0xfrom",
+				To:    "0xto",
+				Nonce: wrapperspb.UInt64(1),
+				Gas:   wrapperspb.UInt64(21000),
+				Type:  wrapperspb.UInt32(2),
 			},
 		},
 	}, 1, map[string]any{

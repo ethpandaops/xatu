@@ -18,7 +18,15 @@ func TestSnapshot_libp2p_join(t *testing.T) {
 			DateTime: testfixture.TS(),
 			Id:       "join-1",
 		},
-		Meta: testfixture.BaseMeta(),
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_Libp2PTraceJoin{
+				Libp2PTraceJoin: &xatu.ClientMeta_AdditionalLibP2PTraceJoinData{
+					Metadata: &libp2ppb.TraceEventMetadata{
+						PeerId: wrapperspb.String("16Uiu2HAmPeer1"),
+					},
+				},
+			},
+		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceJoin{
 			Libp2PTraceJoin: &libp2ppb.Join{
 				Topic: wrapperspb.String(testTopic),

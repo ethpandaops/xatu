@@ -29,6 +29,7 @@ func TestSnapshot_canonical_beacon_block_withdrawal(t *testing.T) {
 			EthV2BeaconBlockWithdrawal: &ethv1.WithdrawalV2{
 				Index:          wrapperspb.UInt64(10),
 				ValidatorIndex: wrapperspb.UInt64(42),
+				Amount:         wrapperspb.UInt64(1000000),
 			},
 		},
 	}, 1, map[string]any{

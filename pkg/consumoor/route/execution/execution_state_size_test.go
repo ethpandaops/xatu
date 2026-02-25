@@ -16,7 +16,19 @@ func TestSnapshot_execution_state_size(t *testing.T) {
 		},
 		Meta: testfixture.BaseMeta(),
 		Data: &xatu.DecoratedEvent_ExecutionStateSize{
-			ExecutionStateSize: &xatu.ExecutionStateSize{},
+			ExecutionStateSize: &xatu.ExecutionStateSize{
+				BlockNumber:          "1000",
+				Accounts:             "500",
+				AccountBytes:         "1024",
+				AccountTrienodes:     "100",
+				AccountTrienodeBytes: "2048",
+				ContractCodes:        "50",
+				ContractCodeBytes:    "4096",
+				Storages:             "200",
+				StorageBytes:         "8192",
+				StorageTrienodes:     "150",
+				StorageTrienodeBytes: "16384",
+			},
 		},
 	}, 1, map[string]any{
 		"meta_client_name": "test-client",

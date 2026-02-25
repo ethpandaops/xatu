@@ -50,11 +50,25 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) FlattenTo(event *xatu.DecoratedEven
 		return fmt.Errorf("nil eth_v1_beacon_committee payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1BeaconCommitteeBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconCommittee()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

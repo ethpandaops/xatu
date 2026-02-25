@@ -40,11 +40,54 @@ func (b *libp2pGossipsubBeaconBlockBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_gossipsub_beacon_block payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendClientAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pGossipsubBeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetLibp2PTraceGossipsubBeaconBlock()
+
+	if payload.GetProposerIndex() == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetLibp2PTraceGossipsubBeaconBlock()
+	if additional == nil {
+		return fmt.Errorf("nil additional data: %w", route.ErrInvalidEvent)
+	}
+
+	if traceMeta := additional.GetMetadata(); traceMeta == nil || traceMeta.GetPeerId() == nil {
+		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetWallclockSlot() == nil {
+		return fmt.Errorf("nil WallclockSlot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetWallclockEpoch() == nil {
+		return fmt.Errorf("nil WallclockEpoch: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetPropagation() == nil || additional.GetPropagation().GetSlotStartDiff() == nil {
+		return fmt.Errorf("nil Propagation.SlotStartDiff: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

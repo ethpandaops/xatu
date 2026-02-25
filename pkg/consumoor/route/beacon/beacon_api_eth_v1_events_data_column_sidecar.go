@@ -40,11 +40,35 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v1_events_data_column_sidecar payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1EventsDataColumnSidecarBatch) validate(
+	event *xatu.DecoratedEvent,
+) error {
+	payload := event.GetEthV1EventsDataColumnSidecar()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetKzgCommitmentsCount() == nil {
+		return fmt.Errorf("nil KzgCommitmentsCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

@@ -18,7 +18,15 @@ func TestSnapshot_libp2p_leave(t *testing.T) {
 			DateTime: testfixture.TS(),
 			Id:       "leave-1",
 		},
-		Meta: testfixture.BaseMeta(),
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_Libp2PTraceLeave{
+				Libp2PTraceLeave: &xatu.ClientMeta_AdditionalLibP2PTraceLeaveData{
+					Metadata: &libp2ppb.TraceEventMetadata{
+						PeerId: wrapperspb.String("16Uiu2HAmPeer1"),
+					},
+				},
+			},
+		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceLeave{
 			Libp2PTraceLeave: &libp2ppb.Leave{
 				Topic: wrapperspb.String(testTopic),

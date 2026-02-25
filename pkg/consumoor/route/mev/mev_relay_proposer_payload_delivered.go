@@ -39,6 +39,10 @@ func (b *mevRelayProposerPayloadDeliveredBatch) FlattenTo(event *xatu.DecoratedE
 		return fmt.Errorf("nil mev_relay_payload_delivered payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -48,6 +52,54 @@ func (b *mevRelayProposerPayloadDeliveredBatch) FlattenTo(event *xatu.DecoratedE
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *mevRelayProposerPayloadDeliveredBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetMevRelayPayloadDelivered()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockNumber() == nil {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasLimit() == nil {
+		return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasUsed() == nil {
+		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetNumTx() == nil {
+		return fmt.Errorf("nil NumTx: %w", route.ErrInvalidEvent)
+	}
+
+	if client := event.GetMeta().GetClient(); client != nil {
+		if additional := client.GetMevRelayPayloadDelivered(); additional != nil {
+			if epoch := additional.GetEpoch(); epoch != nil {
+				if epoch.GetNumber() == nil {
+					return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+				}
+			}
+
+			if wallclockSlot := additional.GetWallclockSlot(); wallclockSlot != nil {
+				if wallclockSlot.GetNumber() == nil {
+					return fmt.Errorf("nil WallclockSlot: %w", route.ErrInvalidEvent)
+				}
+			}
+
+			if wallclockEpoch := additional.GetWallclockEpoch(); wallclockEpoch != nil {
+				if wallclockEpoch.GetNumber() == nil {
+					return fmt.Errorf("nil WallclockEpoch: %w", route.ErrInvalidEvent)
+				}
+			}
+		}
+	}
 
 	return nil
 }

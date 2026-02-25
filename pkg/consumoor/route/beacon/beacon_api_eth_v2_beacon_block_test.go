@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route/testfixture"
+	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	ethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_beacon_api_eth_v2_beacon_block(t *testing.T) {
@@ -25,9 +27,16 @@ func TestSnapshot_beacon_api_eth_v2_beacon_block(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockV2{
-			EthV2BeaconBlockV2: &ethv2.EventBlockV2{},
+			EthV2BeaconBlockV2: &ethv2.EventBlockV2{
+				Message: &ethv2.EventBlockV2_Phase0Block{
+					Phase0Block: &ethv1.BeaconBlockV2{
+						Slot: wrapperspb.UInt64(100),
+					},
+				},
+			},
 		},
 	}, 1, map[string]any{
+		"slot":              uint32(100),
 		"meta_client_name":  "test-client",
 		"meta_network_name": "mainnet",
 	})

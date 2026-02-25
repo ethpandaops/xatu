@@ -40,11 +40,25 @@ func (b *beaconApiEthV1EventsBlockGossipBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v1_events_block_gossip payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1EventsBlockGossipBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1EventsBlockGossip()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

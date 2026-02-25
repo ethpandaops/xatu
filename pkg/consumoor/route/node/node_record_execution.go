@@ -42,12 +42,20 @@ func (b *nodeRecordExecutionBatch) FlattenTo(
 		return fmt.Errorf("nil node_record_execution payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendServerGeo(event)
 	b.rows++
 
+	return nil
+}
+
+func (b *nodeRecordExecutionBatch) validate(_ *xatu.DecoratedEvent) error {
 	return nil
 }
 

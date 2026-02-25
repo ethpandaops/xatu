@@ -29,9 +29,12 @@ func TestSnapshot_libp2p_gossipsub_data_column_sidecar(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_Libp2PTraceGossipsubDataColumnSidecar{
 				Libp2PTraceGossipsubDataColumnSidecar: &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData{
-					Slot:  testfixture.SlotEpochAdditional(),
-					Epoch: testfixture.EpochAdditional(),
-					Topic: wrapperspb.String(testTopic),
+					Slot:           testfixture.SlotEpochAdditional(),
+					Epoch:          testfixture.EpochAdditional(),
+					WallclockSlot:  testfixture.WallclockSlotAdditional(),
+					WallclockEpoch: testfixture.WallclockEpochAdditional(),
+					Propagation:    testfixture.PropagationAdditional(),
+					Topic:          wrapperspb.String(testTopic),
 					Metadata: &libp2ppb.TraceEventMetadata{
 						PeerId: wrapperspb.String(testPeerID),
 					},
@@ -39,7 +42,11 @@ func TestSnapshot_libp2p_gossipsub_data_column_sidecar(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar{
-			Libp2PTraceGossipsubDataColumnSidecar: &gossipsub.DataColumnSidecar{},
+			Libp2PTraceGossipsubDataColumnSidecar: &gossipsub.DataColumnSidecar{
+				Index:               wrapperspb.UInt64(1),
+				ProposerIndex:       wrapperspb.UInt64(42),
+				KzgCommitmentsCount: wrapperspb.UInt32(6),
+			},
 		},
 	}, 1, map[string]any{
 		"peer_id_unique_key": expectedPeerIDKey,

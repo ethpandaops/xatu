@@ -89,6 +89,29 @@ func EpochAdditional() *xatu.EpochV2 {
 	}
 }
 
+// WallclockSlotAdditional returns common wallclock slot additional data.
+func WallclockSlotAdditional() *xatu.SlotV2 {
+	return &xatu.SlotV2{
+		Number:        wrapperspb.UInt64(100),
+		StartDateTime: timestamppb.New(time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)),
+	}
+}
+
+// WallclockEpochAdditional returns common wallclock epoch additional data.
+func WallclockEpochAdditional() *xatu.EpochV2 {
+	return &xatu.EpochV2{
+		Number:        wrapperspb.UInt64(3),
+		StartDateTime: timestamppb.New(time.Date(2024, 1, 14, 0, 0, 0, 0, time.UTC)),
+	}
+}
+
+// PropagationAdditional returns common propagation additional data.
+func PropagationAdditional() *xatu.PropagationV2 {
+	return &xatu.PropagationV2{
+		SlotStartDiff: wrapperspb.UInt64(500),
+	}
+}
+
 // AssertSnapshot flattens the event into the batch and asserts row count,
 // column values, and column alignment. FixedString null-byte padding is
 // trimmed before string comparisons.

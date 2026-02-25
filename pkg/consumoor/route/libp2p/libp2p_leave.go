@@ -40,10 +40,26 @@ func (b *libp2pLeaveBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_leave payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pLeaveBatch) validate(event *xatu.DecoratedEvent) error {
+	peerID := peerIDFromMetadata(event, func(c *xatu.ClientMeta) peerIDMetadataProvider {
+		return c.GetLibp2PTraceLeave()
+	})
+
+	if peerID == "" {
+		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

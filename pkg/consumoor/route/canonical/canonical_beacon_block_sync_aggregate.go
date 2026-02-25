@@ -39,11 +39,25 @@ func (b *canonicalBeaconBlockSyncAggregateBatch) FlattenTo(event *xatu.Decorated
 		return fmt.Errorf("nil eth_v2_beacon_block_sync_aggregate payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockSyncAggregateBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockSyncAggregate()
+
+	if payload.GetParticipationCount() == nil {
+		return fmt.Errorf("nil ParticipationCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

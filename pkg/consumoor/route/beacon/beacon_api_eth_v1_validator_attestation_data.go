@@ -40,11 +40,39 @@ func (b *beaconApiEthV1ValidatorAttestationDataBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v1_validator_attestation_data payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1ValidatorAttestationDataBatch) validate(
+	event *xatu.DecoratedEvent,
+) error {
+	payload := event.GetEthV1ValidatorAttestationData()
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if source := payload.GetSource(); source != nil {
+		if source.GetEpoch() == nil {
+			return fmt.Errorf("nil SourceEpoch: %w", route.ErrInvalidEvent)
+		}
+	}
+
+	if target := payload.GetTarget(); target != nil {
+		if target.GetEpoch() == nil {
+			return fmt.Errorf("nil TargetEpoch: %w", route.ErrInvalidEvent)
+		}
+	}
 
 	return nil
 }

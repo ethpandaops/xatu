@@ -40,6 +40,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.De
 		return fmt.Errorf("nil eth_v2_beacon_block_execution_transaction payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -49,6 +53,24 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.De
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockExecutionTransactionBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockExecutionTransaction()
+
+	if payload.GetNonce() == nil {
+		return fmt.Errorf("nil Nonce: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGas() == nil {
+		return fmt.Errorf("nil Gas: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetType() == nil {
+		return fmt.Errorf("nil Type: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

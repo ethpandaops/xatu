@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route/testfixture"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_execution_block_metrics(t *testing.T) {
@@ -16,7 +17,11 @@ func TestSnapshot_execution_block_metrics(t *testing.T) {
 		},
 		Meta: testfixture.BaseMeta(),
 		Data: &xatu.DecoratedEvent_ExecutionBlockMetrics{
-			ExecutionBlockMetrics: &xatu.ExecutionBlockMetrics{},
+			ExecutionBlockMetrics: &xatu.ExecutionBlockMetrics{
+				BlockNumber: wrapperspb.UInt64(1000),
+				GasUsed:     wrapperspb.UInt64(21000),
+				TxCount:     wrapperspb.UInt32(5),
+			},
 		},
 	}, 1, map[string]any{
 		"meta_client_name": "test-client",

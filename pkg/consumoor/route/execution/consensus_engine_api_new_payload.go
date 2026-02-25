@@ -39,11 +39,53 @@ func (b *consensusEngineApiNewPayloadBatch) FlattenTo(event *xatu.DecoratedEvent
 		return fmt.Errorf("nil consensus_engine_api_new_payload payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *consensusEngineApiNewPayloadBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetConsensusEngineApiNewPayload()
+
+	if payload.GetDurationMs() == nil {
+		return fmt.Errorf("nil DurationMs: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerIndex() == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockNumber() == nil {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasUsed() == nil {
+		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasLimit() == nil {
+		return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetTxCount() == nil {
+		return fmt.Errorf("nil TxCount: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlobCount() == nil {
+		return fmt.Errorf("nil BlobCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

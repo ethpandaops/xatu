@@ -25,8 +25,9 @@ func TestSnapshot_beacon_api_eth_v1_beacon_blob(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlob{
 			EthV1BeaconBlob: &ethv1.Blob{
-				Slot:  wrapperspb.UInt64(100),
-				Index: wrapperspb.UInt64(1),
+				Slot:          wrapperspb.UInt64(100),
+				Index:         wrapperspb.UInt64(1),
+				ProposerIndex: wrapperspb.UInt64(42),
 			},
 		},
 	}, 1, map[string]any{

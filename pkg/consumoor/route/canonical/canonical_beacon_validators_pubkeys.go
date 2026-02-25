@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -30,8 +31,16 @@ func init() {
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconValidatorsPubkeysBatch) FlattenTo(event *xatu.DecoratedEvent) error {
-	if event == nil || event.GetEvent() == nil || event.GetEthV1Validators() == nil {
+	if event == nil || event.GetEvent() == nil {
 		return nil
+	}
+
+	if event.GetEthV1Validators() == nil {
+		return fmt.Errorf("nil payload: %w", route.ErrInvalidEvent)
+	}
+
+	if err := b.validate(event); err != nil {
+		return err
 	}
 
 	var (
@@ -60,16 +69,16 @@ func (b *canonicalBeaconValidatorsPubkeysBatch) FlattenTo(event *xatu.DecoratedE
 			continue
 		}
 
+		if validator.GetIndex() == nil {
+			continue
+		}
+
 		b.UpdatedDateTime.Append(now)
 		b.Version.Append(uint32(4294967295 - epochStartTime.Unix())) //nolint:gosec // inverse timestamp for ReplacingMergeTree dedup
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
-		if idx := validator.GetIndex(); idx != nil {
-			b.Index.Append(uint32(idx.GetValue()))
-		} else {
-			b.Index.Append(0)
-		}
+		b.Index.Append(uint32(validator.GetIndex().GetValue()))
 
 		if data := validator.GetData(); data != nil && data.GetPubkey() != nil {
 			b.Pubkey.Append(data.GetPubkey().GetValue())
@@ -79,6 +88,15 @@ func (b *canonicalBeaconValidatorsPubkeysBatch) FlattenTo(event *xatu.DecoratedE
 
 		b.appendMetadata(event)
 		b.rows++
+	}
+
+	return nil
+}
+
+func (b *canonicalBeaconValidatorsPubkeysBatch) validate(event *xatu.DecoratedEvent) error {
+	extra := event.GetMeta().GetClient().GetEthV1Validators()
+	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
 	return nil

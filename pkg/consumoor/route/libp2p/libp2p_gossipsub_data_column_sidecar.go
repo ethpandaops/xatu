@@ -40,11 +40,62 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) FlattenTo(
 		return fmt.Errorf("nil libp2p_trace_gossipsub_data_column_sidecar payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendClientAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *libp2pGossipsubDataColumnSidecarBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetLibp2PTraceGossipsubDataColumnSidecar()
+
+	if payload.GetIndex() == nil {
+		return fmt.Errorf("nil ColumnIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerIndex() == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetKzgCommitmentsCount() == nil {
+		return fmt.Errorf("nil KzgCommitmentsCount: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetLibp2PTraceGossipsubDataColumnSidecar()
+	if additional == nil {
+		return fmt.Errorf("nil additional data: %w", route.ErrInvalidEvent)
+	}
+
+	if traceMeta := additional.GetMetadata(); traceMeta == nil || traceMeta.GetPeerId() == nil {
+		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetWallclockSlot() == nil {
+		return fmt.Errorf("nil WallclockSlot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetWallclockEpoch() == nil {
+		return fmt.Errorf("nil WallclockEpoch: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetPropagation() == nil || additional.GetPropagation().GetSlotStartDiff() == nil {
+		return fmt.Errorf("nil Propagation.SlotStartDiff: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

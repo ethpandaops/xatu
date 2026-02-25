@@ -45,6 +45,10 @@ func (b *beaconApiEthV3ValidatorBlockBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v3_validator_block payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -54,6 +58,22 @@ func (b *beaconApiEthV3ValidatorBlockBatch) FlattenTo(
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV3ValidatorBlockBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV3ValidatorBlock()
+
+	if payload.GetPhase0Block() == nil &&
+		payload.GetAltairBlock() == nil &&
+		payload.GetBellatrixBlock() == nil &&
+		payload.GetCapellaBlock() == nil &&
+		payload.GetDenebBlock() == nil &&
+		payload.GetElectraBlock() == nil &&
+		payload.GetFuluBlock() == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

@@ -43,6 +43,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) FlattenTo(
 		return fmt.Errorf("nil eth_v2_beacon_block_v2 payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -52,6 +56,22 @@ func (b *beaconApiEthV2BeaconBlockBatch) FlattenTo(
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV2BeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockV2()
+
+	if payload.GetPhase0Block() == nil &&
+		payload.GetAltairBlock() == nil &&
+		payload.GetBellatrixBlock() == nil &&
+		payload.GetCapellaBlock() == nil &&
+		payload.GetDenebBlock() == nil &&
+		payload.GetElectraBlock() == nil &&
+		payload.GetFuluBlock() == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

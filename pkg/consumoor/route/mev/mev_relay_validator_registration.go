@@ -38,11 +38,63 @@ func (b *mevRelayValidatorRegistrationBatch) FlattenTo(event *xatu.DecoratedEven
 		return fmt.Errorf("nil mev_relay_validator_registration payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *mevRelayValidatorRegistrationBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetMevRelayValidatorRegistration()
+
+	if msg := payload.GetMessage(); msg != nil {
+		if msg.GetTimestamp() == nil {
+			return fmt.Errorf("nil Timestamp: %w", route.ErrInvalidEvent)
+		}
+
+		if msg.GetGasLimit() == nil {
+			return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
+		}
+	}
+
+	if client := event.GetMeta().GetClient(); client != nil {
+		if additional := client.GetMevRelayValidatorRegistration(); additional != nil {
+			if additional.GetValidatorIndex() == nil {
+				return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+			}
+
+			if slot := additional.GetSlot(); slot != nil {
+				if slot.GetNumber() == nil {
+					return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+				}
+			}
+
+			if epoch := additional.GetEpoch(); epoch != nil {
+				if epoch.GetNumber() == nil {
+					return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+				}
+			}
+
+			if wallclockSlot := additional.GetWallclockSlot(); wallclockSlot != nil {
+				if wallclockSlot.GetNumber() == nil {
+					return fmt.Errorf("nil WallclockSlot: %w", route.ErrInvalidEvent)
+				}
+			}
+
+			if wallclockEpoch := additional.GetWallclockEpoch(); wallclockEpoch != nil {
+				if wallclockEpoch.GetNumber() == nil {
+					return fmt.Errorf("nil WallclockEpoch: %w", route.ErrInvalidEvent)
+				}
+			}
+		}
+	}
 
 	return nil
 }

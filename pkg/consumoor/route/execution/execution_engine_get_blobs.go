@@ -39,10 +39,32 @@ func (b *executionEngineGetBlobsBatch) FlattenTo(event *xatu.DecoratedEvent) err
 		return fmt.Errorf("nil execution_engine_get_blobs payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *executionEngineGetBlobsBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetExecutionEngineGetBlobs()
+
+	if payload.GetDurationMs() == nil {
+		return fmt.Errorf("nil DurationMs: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetRequestedCount() == nil {
+		return fmt.Errorf("nil RequestedCount: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetReturnedCount() == nil {
+		return fmt.Errorf("nil ReturnedCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

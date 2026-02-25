@@ -29,9 +29,12 @@ func TestSnapshot_libp2p_gossipsub_blob_sidecar(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_Libp2PTraceGossipsubBlobSidecar{
 				Libp2PTraceGossipsubBlobSidecar: &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{
-					Slot:  testfixture.SlotEpochAdditional(),
-					Epoch: testfixture.EpochAdditional(),
-					Topic: wrapperspb.String(testTopic),
+					Slot:           testfixture.SlotEpochAdditional(),
+					Epoch:          testfixture.EpochAdditional(),
+					WallclockSlot:  testfixture.WallclockSlotAdditional(),
+					WallclockEpoch: testfixture.WallclockEpochAdditional(),
+					Propagation:    testfixture.PropagationAdditional(),
+					Topic:          wrapperspb.String(testTopic),
 					Metadata: &libp2ppb.TraceEventMetadata{
 						PeerId: wrapperspb.String(testPeerID),
 					},
@@ -39,7 +42,10 @@ func TestSnapshot_libp2p_gossipsub_blob_sidecar(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceGossipsubBlobSidecar{
-			Libp2PTraceGossipsubBlobSidecar: &gossipsub.BlobSidecar{},
+			Libp2PTraceGossipsubBlobSidecar: &gossipsub.BlobSidecar{
+				Index:         wrapperspb.UInt64(0),
+				ProposerIndex: wrapperspb.UInt64(42),
+			},
 		},
 	}, 1, map[string]any{
 		"peer_id_unique_key": expectedPeerIDKey,

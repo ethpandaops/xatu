@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route/testfixture"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_canonical_beacon_block_sync_aggregate(t *testing.T) {
@@ -16,7 +17,9 @@ func TestSnapshot_canonical_beacon_block_sync_aggregate(t *testing.T) {
 		},
 		Meta: testfixture.BaseMeta(),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockSyncAggregate{
-			EthV2BeaconBlockSyncAggregate: &xatu.SyncAggregateData{},
+			EthV2BeaconBlockSyncAggregate: &xatu.SyncAggregateData{
+				ParticipationCount: wrapperspb.UInt64(128),
+			},
 		},
 	}, 1, map[string]any{
 		"meta_client_name": "test-client",

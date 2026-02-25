@@ -38,10 +38,32 @@ func (b *executionBlockMetricsBatch) FlattenTo(event *xatu.DecoratedEvent) error
 		return fmt.Errorf("nil execution_block_metrics payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *executionBlockMetricsBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetExecutionBlockMetrics()
+
+	if payload.GetBlockNumber() == nil {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasUsed() == nil {
+		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetTxCount() == nil {
+		return fmt.Errorf("nil TxCount: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

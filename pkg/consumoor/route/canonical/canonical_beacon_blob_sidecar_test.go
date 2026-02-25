@@ -25,8 +25,9 @@ func TestSnapshot_canonical_beacon_blob_sidecar(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlockBlobSidecar{
 			EthV1BeaconBlockBlobSidecar: &ethv1.BlobSidecar{
-				Slot:  wrapperspb.UInt64(100),
-				Index: wrapperspb.UInt64(0),
+				Slot:          wrapperspb.UInt64(100),
+				ProposerIndex: wrapperspb.UInt64(5),
+				Index:         wrapperspb.UInt64(0),
 			},
 		},
 	}, 1, map[string]any{

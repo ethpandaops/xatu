@@ -39,10 +39,64 @@ func (b *executionStateSizeBatch) FlattenTo(event *xatu.DecoratedEvent) error {
 		return fmt.Errorf("nil execution_state_size payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *executionStateSizeBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetExecutionStateSize()
+
+	if payload.GetBlockNumber() == "" {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAccounts() == "" {
+		return fmt.Errorf("nil Accounts: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAccountBytes() == "" {
+		return fmt.Errorf("nil AccountBytes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAccountTrienodes() == "" {
+		return fmt.Errorf("nil AccountTrienodes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAccountTrienodeBytes() == "" {
+		return fmt.Errorf("nil AccountTrienodeBytes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetContractCodes() == "" {
+		return fmt.Errorf("nil ContractCodes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetContractCodeBytes() == "" {
+		return fmt.Errorf("nil ContractCodeBytes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetStorages() == "" {
+		return fmt.Errorf("nil Storages: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetStorageBytes() == "" {
+		return fmt.Errorf("nil StorageBytes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetStorageTrienodes() == "" {
+		return fmt.Errorf("nil StorageTrienodes: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetStorageTrienodeBytes() == "" {
+		return fmt.Errorf("nil StorageTrienodeBytes: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

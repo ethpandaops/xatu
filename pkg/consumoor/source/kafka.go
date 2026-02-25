@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 const unknownKafkaTopic = "unknown"
@@ -99,7 +98,7 @@ func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, e
 
 	switch encoding {
 	case "protobuf":
-		if err := proto.Unmarshal(data, event); err != nil {
+		if err := event.UnmarshalVT(data); err != nil {
 			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
 		}
 	default:

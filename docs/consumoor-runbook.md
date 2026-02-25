@@ -265,7 +265,7 @@ Common causes of startup failure:
 
 ### Vertical Scaling
 
-- Increase `maxConns` to allow more concurrent ClickHouse writes (default: 8)
+- Increase `maxConns` to allow more concurrent ClickHouse writes (default: 32)
 - Increase `batchSize` to write more rows per INSERT (default: 200000)
 - Increase `bufferSize` to absorb more backpressure spikes (default: 200000), at the cost of higher memory usage
 - Increase pod CPU/memory to handle more concurrent table writers
@@ -280,7 +280,7 @@ Common causes of startup failure:
 | `flushInterval` | `clickhouse.defaults.flushInterval` | 1s | Decrease for lower latency; increase if batches are too small |
 | `bufferSize` | `clickhouse.defaults.bufferSize` | 200000 | Increase to absorb ClickHouse hiccups without backpressure; decrease to limit memory |
 | `commitInterval` | `kafka.commitInterval` | 5s | Decrease to reduce duplicate replay window on crash; increase to reduce Kafka commit overhead |
-| `maxConns` | `clickhouse.chgo.maxConns` | 8 | Increase when `chgo_pool_empty_acquire_total` is high |
+| `maxConns` | `clickhouse.chgo.maxConns` | 32 | Increase when `chgo_pool_empty_acquire_total` is high |
 | `queryTimeout` | `clickhouse.chgo.queryTimeout` | 30s | Increase if large batches legitimately take longer to insert |
 | `maxRetries` | `clickhouse.chgo.maxRetries` | 3 | Increase if transient ClickHouse errors are frequent but recover quickly |
 | `deliveryMode` | `kafka.deliveryMode` | batch | Use `message` for safer per-message delivery; use `batch` for higher throughput |

@@ -98,7 +98,7 @@ type ChGoConfig struct {
 	RetryMaxDelay time.Duration `yaml:"retryMaxDelay" default:"2s"`
 
 	// MaxConns is the maximum number of pooled ClickHouse connections.
-	MaxConns int32 `yaml:"maxConns" default:"8"`
+	MaxConns int32 `yaml:"maxConns" default:"32"`
 	// MinConns is the minimum number of pooled ClickHouse connections.
 	MinConns int32 `yaml:"minConns" default:"1"`
 	// ConnMaxLifetime is the maximum lifetime for pooled connections.

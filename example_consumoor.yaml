@@ -49,7 +49,7 @@ clickhouse:
   #   maxRetries: 3
   #   retryBaseDelay: 100ms
   #   retryMaxDelay: 2s
-  #   maxConns: 8
+  #   maxConns: 32
   #   minConns: 1
   #   connMaxLifetime: 1h
   #   connMaxIdleTime: 10m

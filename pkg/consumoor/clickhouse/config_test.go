@@ -31,7 +31,7 @@ func validChGoConfig() ChGoConfig {
 		MaxRetries:          3,
 		RetryBaseDelay:      100 * time.Millisecond,
 		RetryMaxDelay:       2 * time.Second,
-		MaxConns:            8,
+		MaxConns:            32,
 		MinConns:            1,
 		ConnMaxLifetime:     1 * time.Hour,
 		ConnMaxIdleTime:     10 * time.Minute,

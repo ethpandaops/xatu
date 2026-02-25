@@ -151,7 +151,12 @@ func New(
 
 	// Optionally create the Kafka consumer lag monitor.
 	if config.Kafka.LagPollInterval > 0 {
-		lagMon, lagErr := source.NewLagMonitor(log, &config.Kafka, metrics)
+		consumerGroups := make([]string, 0, len(topics))
+		for _, topic := range topics {
+			consumerGroups = append(consumerGroups, config.Kafka.ConsumerGroup+"-"+topic)
+		}
+
+		lagMon, lagErr := source.NewLagMonitor(log, &config.Kafka, consumerGroups, metrics)
 		if lagErr != nil {
 			return nil, fmt.Errorf("creating lag monitor: %w", lagErr)
 		}

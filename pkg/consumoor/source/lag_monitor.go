@@ -20,8 +20,8 @@ type LagMonitor struct {
 	log     logrus.FieldLogger
 	metrics *telemetry.Metrics
 
-	interval      time.Duration
-	consumerGroup string
+	interval       time.Duration
+	consumerGroups []string
 
 	admClient *kadm.Client
 	kgoClient *kgo.Client
@@ -30,13 +30,20 @@ type LagMonitor struct {
 }
 
 // NewLagMonitor creates a new LagMonitor. Call Start to begin polling.
+// The consumerGroups slice should contain the actual per-topic consumer
+// group names used by the Benthos streams (e.g. "base-group-topicA").
 func NewLagMonitor(
 	log logrus.FieldLogger,
 	cfg *KafkaConfig,
+	consumerGroups []string,
 	metrics *telemetry.Metrics,
 ) (*LagMonitor, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("nil kafka config")
+	}
+
+	if len(consumerGroups) == 0 {
+		return nil, fmt.Errorf("no consumer groups to monitor")
 	}
 
 	opts := []kgo.Opt{
@@ -67,14 +74,14 @@ func NewLagMonitor(
 	}
 
 	return &LagMonitor{
-		log:           log.WithField("component", "lag_monitor"),
-		metrics:       metrics,
-		interval:      cfg.LagPollInterval,
-		consumerGroup: cfg.ConsumerGroup,
-		admClient:     kadm.NewClient(kgoClient),
-		kgoClient:     kgoClient,
-		done:          make(chan struct{}),
-		exited:        make(chan struct{}),
+		log:            log.WithField("component", "lag_monitor"),
+		metrics:        metrics,
+		interval:       cfg.LagPollInterval,
+		consumerGroups: consumerGroups,
+		admClient:      kadm.NewClient(kgoClient),
+		kgoClient:      kgoClient,
+		done:           make(chan struct{}),
+		exited:         make(chan struct{}),
 	}, nil
 }
 
@@ -111,51 +118,58 @@ func (m *LagMonitor) Stop() error {
 	return nil
 }
 
-// poll uses kadm.Client.Lag to fetch and publish consumer group lag.
+// poll uses kadm.Client.Lag to fetch and publish consumer group lag
+// for all per-topic consumer groups.
 func (m *LagMonitor) poll(ctx context.Context) {
-	lags, err := m.admClient.Lag(ctx, m.consumerGroup)
+	lags, err := m.admClient.Lag(ctx, m.consumerGroups...)
 	if err != nil {
 		m.log.WithError(err).Warn("Failed to fetch consumer group lag")
 
 		return
 	}
 
-	groupLag, ok := lags[m.consumerGroup]
-	if !ok {
-		m.log.Debug("Consumer group not found in lag response")
+	for _, group := range m.consumerGroups {
+		groupLag, ok := lags[group]
+		if !ok {
+			m.log.WithField("consumer_group", group).
+				Debug("Consumer group not found in lag response")
 
-		return
-	}
+			continue
+		}
 
-	if groupLag.Error() != nil {
-		m.log.WithError(groupLag.Error()).Warn("Error in consumer group lag response")
+		if groupLag.Error() != nil {
+			m.log.WithError(groupLag.Error()).
+				WithField("consumer_group", group).
+				Warn("Error in consumer group lag response")
 
-		return
-	}
+			continue
+		}
 
-	for topic, partitions := range groupLag.Lag {
-		for partition := range partitions {
-			ml := partitions[partition]
+		for topic, partitions := range groupLag.Lag {
+			for partition := range partitions {
+				ml := partitions[partition]
 
-			if ml.Err != nil {
-				m.log.WithError(ml.Err).
-					WithField("topic", topic).
-					WithField("partition", partition).
-					Warn("Error computing lag for partition")
+				if ml.Err != nil {
+					m.log.WithError(ml.Err).
+						WithField("topic", topic).
+						WithField("partition", partition).
+						WithField("consumer_group", group).
+						Warn("Error computing lag for partition")
 
-				continue
+					continue
+				}
+
+				lag := ml.Lag
+				if lag < 0 {
+					lag = 0
+				}
+
+				m.metrics.KafkaConsumerLag().WithLabelValues(
+					topic,
+					strconv.FormatInt(int64(partition), 10),
+					group,
+				).Set(float64(lag))
 			}
-
-			lag := ml.Lag
-			if lag < 0 {
-				lag = 0
-			}
-
-			m.metrics.KafkaConsumerLag().WithLabelValues(
-				topic,
-				strconv.FormatInt(int64(partition), 10),
-				m.consumerGroup,
-			).Set(float64(lag))
 		}
 	}
 }

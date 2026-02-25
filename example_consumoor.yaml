@@ -23,6 +23,14 @@ kafka:
   # outputBatchCount: 1000  # messages per Benthos output batch (0 to disable)
   # outputBatchPeriod: 1s   # max wait before flushing partial batch
   # maxInFlight: 64         # concurrent WriteBatch calls per stream (higher = more throughput)
+  # topicOverrides:         # per-topic batch settings (exact topic name match)
+  #   general-beacon-block:
+  #     outputBatchCount: 100
+  #     outputBatchPeriod: 100ms
+  #     maxInFlight: 4
+  #   general-beacon-attestation:
+  #     outputBatchCount: 50000
+  #     outputBatchPeriod: 5s
   # tls:
   #   enabled: false
   #   caFile: /path/to/ca.pem

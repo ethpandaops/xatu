@@ -283,6 +283,7 @@ Common causes of startup failure:
 | `adaptiveLimiter.enabled` | `clickhouse.chgo.adaptiveLimiter.enabled` | true | Per-table AIMD concurrency limiting; disable if all tables have uniform latency |
 | `adaptiveLimiter.initialLimit` | `clickhouse.chgo.adaptiveLimiter.initialLimit` | 8 | Starting concurrent INSERTs per table before adaptation |
 | `adaptiveLimiter.maxLimit` | `clickhouse.chgo.adaptiveLimiter.maxLimit` | 50 | Upper bound on concurrent INSERTs per table |
+| `topicOverrides` | `kafka.topicOverrides.<topic>` | (none) | Per-topic overrides for `outputBatchCount`, `outputBatchPeriod`, and `maxInFlight`; matched by exact topic name |
 | `tableSuffix` | `clickhouse.tableSuffix` | (empty) | Set to `_local` to bypass Distributed tables in clustered setups |
 
 ### Per-Table Overrides

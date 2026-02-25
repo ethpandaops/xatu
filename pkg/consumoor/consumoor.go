@@ -115,9 +115,16 @@ func New(
 	streams := make([]topicStream, 0, len(topics))
 
 	for _, topic := range topics {
-		topicKafkaCfg := config.Kafka
+		topicKafkaCfg := config.Kafka.ApplyTopicOverride(topic)
 		topicKafkaCfg.Topics = []string{"^" + regexp.QuoteMeta(topic) + "$"}
-		topicKafkaCfg.ConsumerGroup = config.Kafka.ConsumerGroup + "-" + topic
+
+		if _, hasOverride := config.Kafka.TopicOverrides[topic]; hasOverride {
+			cLog.WithField("topic", topic).
+				WithField("outputBatchCount", topicKafkaCfg.OutputBatchCount).
+				WithField("outputBatchPeriod", topicKafkaCfg.OutputBatchPeriod).
+				WithField("maxInFlight", topicKafkaCfg.MaxInFlight).
+				Info("Applied per-topic batch overrides")
+		}
 
 		stream, sErr := source.NewBenthosStream(
 			log.WithField("topic", topic),
@@ -140,6 +147,8 @@ func New(
 		})
 	}
 
+	metrics.OutputMaxInFlight().Set(float64(config.Kafka.MaxInFlight))
+
 	c := &Consumoor{
 		log:     cLog,
 		config:  config,
@@ -151,12 +160,12 @@ func New(
 
 	// Optionally create the Kafka consumer lag monitor.
 	if config.Kafka.LagPollInterval > 0 {
-		consumerGroups := make([]string, 0, len(topics))
-		for _, topic := range topics {
-			consumerGroups = append(consumerGroups, config.Kafka.ConsumerGroup+"-"+topic)
-		}
-
-		lagMon, lagErr := source.NewLagMonitor(log, &config.Kafka, consumerGroups, metrics)
+		lagMon, lagErr := source.NewLagMonitor(
+			log,
+			&config.Kafka,
+			[]string{config.Kafka.ConsumerGroup},
+			metrics,
+		)
 		if lagErr != nil {
 			return nil, fmt.Errorf("creating lag monitor: %w", lagErr)
 		}

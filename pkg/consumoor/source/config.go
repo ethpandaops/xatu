@@ -26,6 +26,31 @@ var supportedSASLMechanisms = map[string]struct{}{
 	SASLMechanismOAUTHBEARER: {},
 }
 
+// TopicOverride holds per-topic batch settings that override KafkaConfig defaults.
+// Nil pointer fields inherit the global default.
+type TopicOverride struct {
+	OutputBatchCount  *int           `yaml:"outputBatchCount"`
+	OutputBatchPeriod *time.Duration `yaml:"outputBatchPeriod"`
+	MaxInFlight       *int           `yaml:"maxInFlight"`
+}
+
+// Validate checks the per-topic override for errors.
+func (o *TopicOverride) Validate(topic string) error {
+	if o.OutputBatchCount != nil && *o.OutputBatchCount < 0 {
+		return fmt.Errorf("kafka.topicOverrides.%s: outputBatchCount must be >= 0", topic)
+	}
+
+	if o.OutputBatchPeriod != nil && *o.OutputBatchPeriod < 0 {
+		return fmt.Errorf("kafka.topicOverrides.%s: outputBatchPeriod must be >= 0", topic)
+	}
+
+	if o.MaxInFlight != nil && *o.MaxInFlight < 1 {
+		return fmt.Errorf("kafka.topicOverrides.%s: maxInFlight must be >= 1", topic)
+	}
+
+	return nil
+}
+
 // KafkaConfig configures the Kafka consumer.
 type KafkaConfig struct {
 	// Brokers is a list of Kafka broker addresses.
@@ -86,12 +111,23 @@ type KafkaConfig struct {
 	// OutputBatchCount is the number of messages Benthos accumulates before
 	// calling WriteBatch on the output plugin. Higher values increase INSERT
 	// throughput by writing more rows per ClickHouse INSERT. Set to 0 to
-	// disable count-based batching. Default: 1000.
-	OutputBatchCount int `yaml:"outputBatchCount" default:"1000"`
+	// disable count-based batching. Default: 10000.
+	OutputBatchCount int `yaml:"outputBatchCount" default:"10000"`
 	// OutputBatchPeriod is the maximum time Benthos waits to fill a batch
 	// before flushing a partial batch. Ensures low-volume topics still make
 	// progress. Default: 1s. Set to 0 to disable period-based flushing.
 	OutputBatchPeriod time.Duration `yaml:"outputBatchPeriod" default:"1s"`
+
+	// MaxInFlight is the maximum number of concurrent WriteBatch calls
+	// Benthos makes for each stream's output. Higher values increase
+	// throughput by allowing concurrent ClickHouse INSERTs and bigger
+	// natural batches. Default: 8.
+	MaxInFlight int `yaml:"maxInFlight" default:"64"`
+
+	// TopicOverrides contains per-topic batch settings keyed by exact topic name.
+	// Overrides are matched against discovered concrete topic names. Unset fields
+	// inherit the global defaults from this KafkaConfig.
+	TopicOverrides map[string]TopicOverride `yaml:"topicOverrides"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -154,6 +190,16 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: outputBatchPeriod must be >= 0")
 	}
 
+	if c.MaxInFlight < 1 {
+		return errors.New("kafka: maxInFlight must be >= 1")
+	}
+
+	for topic, override := range c.TopicOverrides {
+		if err := override.Validate(topic); err != nil {
+			return err
+		}
+	}
+
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("kafka.%w", err)
 	}
@@ -165,6 +211,31 @@ func (c *KafkaConfig) Validate() error {
 	}
 
 	return nil
+}
+
+// ApplyTopicOverride returns a shallow copy with per-topic overrides merged in.
+// Fields not set in the override keep the global default.
+func (c *KafkaConfig) ApplyTopicOverride(topic string) KafkaConfig {
+	out := *c
+
+	override, ok := c.TopicOverrides[topic]
+	if !ok {
+		return out
+	}
+
+	if override.OutputBatchCount != nil {
+		out.OutputBatchCount = *override.OutputBatchCount
+	}
+
+	if override.OutputBatchPeriod != nil {
+		out.OutputBatchPeriod = *override.OutputBatchPeriod
+	}
+
+	if override.MaxInFlight != nil {
+		out.MaxInFlight = *override.MaxInFlight
+	}
+
+	return out
 }
 
 // heartbeatIntervalMs derives the heartbeat interval from the session timeout.

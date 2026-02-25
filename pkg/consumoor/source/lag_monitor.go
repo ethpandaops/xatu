@@ -31,7 +31,7 @@ type LagMonitor struct {
 
 // NewLagMonitor creates a new LagMonitor. Call Start to begin polling.
 // The consumerGroups slice contains the consumer group names to monitor
-// for lag (typically the single base consumer group shared by all streams).
+// for lag (one per-topic consumer group).
 func NewLagMonitor(
 	log logrus.FieldLogger,
 	cfg *KafkaConfig,

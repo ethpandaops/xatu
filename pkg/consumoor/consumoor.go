@@ -113,10 +113,14 @@ func New(
 		Info("Discovered Kafka topics for per-topic streams")
 
 	streams := make([]topicStream, 0, len(topics))
+	consumerGroups := make([]string, 0, len(topics))
 
 	for _, topic := range topics {
 		topicKafkaCfg := config.Kafka.ApplyTopicOverride(topic)
 		topicKafkaCfg.Topics = []string{"^" + regexp.QuoteMeta(topic) + "$"}
+		topicKafkaCfg.ConsumerGroup = config.Kafka.ConsumerGroup + "-" + topic
+
+		consumerGroups = append(consumerGroups, topicKafkaCfg.ConsumerGroup)
 
 		if _, hasOverride := config.Kafka.TopicOverrides[topic]; hasOverride {
 			cLog.WithField("topic", topic).
@@ -163,7 +167,7 @@ func New(
 		lagMon, lagErr := source.NewLagMonitor(
 			log,
 			&config.Kafka,
-			[]string{config.Kafka.ConsumerGroup},
+			consumerGroups,
 			metrics,
 		)
 		if lagErr != nil {

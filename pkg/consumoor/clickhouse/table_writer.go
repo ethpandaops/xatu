@@ -243,28 +243,31 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 	)
 
 	for _, e := range events {
-		if err := batch.FlattenTo(e.event); err != nil {
-			if errors.Is(err, route.ErrInvalidEvent) {
-				tw.log.WithError(err).Warn("Skipping invalid event")
-				tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
+		err := batch.FlattenTo(e.event)
+		if err == nil {
+			continue
+		}
 
-				continue
-			}
-
-			flattenErrs++
-			lastErr = err
-
+		if errors.Is(err, route.ErrInvalidEvent) {
+			tw.log.WithError(err).Warn("Skipping invalid event")
 			tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
 
-			if !tw.config.SkipFlattenErrors {
-				tw.log.WithError(err).
-					WithField("events", len(events)).
-					Error("Flatten failed (fail-fast)")
+			continue
+		}
 
-				return &tableWriteError{
-					table: tw.baseTable,
-					cause: &flattenError{cause: err},
-				}
+		flattenErrs++
+		lastErr = err
+
+		tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
+
+		if !tw.config.SkipFlattenErrors {
+			tw.log.WithError(err).
+				WithField("events", len(events)).
+				Error("Flatten failed (fail-fast)")
+
+			return &tableWriteError{
+				table: tw.baseTable,
+				cause: &flattenError{cause: err},
 			}
 		}
 	}

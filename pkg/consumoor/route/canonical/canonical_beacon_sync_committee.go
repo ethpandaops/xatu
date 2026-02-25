@@ -60,6 +60,7 @@ func (b *canonicalBeaconSyncCommitteeBatch) appendRuntime(event *xatu.DecoratedE
 
 func (b *canonicalBeaconSyncCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committeeData := event.GetEthV1BeaconSyncCommittee()
+
 	syncCommittee := committeeData.GetSyncCommittee()
 	if syncCommittee == nil {
 		b.ValidatorAggregates.Append([][]uint32{})

@@ -262,23 +262,6 @@ func (b *mevRelayBidTraceBatch) appendMevSlotEpoch(
 	}
 }
 
-func (b *mevRelayBidTraceBatch) appendZeroPayload() {
-	b.Slot.Append(0)
-	b.ParentHash.Append(nil)
-	b.BlockNumber.Append(0)
-	b.BlockHash.Append(nil)
-	b.BuilderPubkey.Append("")
-	b.ProposerPubkey.Append("")
-	b.ProposerFeeRecipient.Append(nil)
-	b.GasLimit.Append(0)
-	b.GasUsed.Append(0)
-	b.Value.Append(proto.UInt256{})
-	b.NumTx.Append(0)
-	b.Timestamp.Append(0)
-	b.TimestampMs.Append(0)
-	b.OptimisticSubmission.Append(false)
-}
-
 func (b *mevRelayBidTraceBatch) appendZeroAdditionalData() {
 	b.RelayName.Append("")
 	b.SlotStartDateTime.Append(time.Time{})

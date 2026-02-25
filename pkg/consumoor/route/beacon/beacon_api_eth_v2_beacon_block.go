@@ -68,6 +68,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendRuntime(event *xatu.DecoratedEven
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
+
 	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 

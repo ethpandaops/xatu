@@ -220,19 +220,6 @@ func (b *mevRelayProposerPayloadDeliveredBatch) appendAdditionalData(event *xatu
 	}
 }
 
-func (b *mevRelayProposerPayloadDeliveredBatch) appendZeroPayload() {
-	b.Slot.Append(0)
-	b.BlockNumber.Append(0)
-	b.BlockHash.Append(nil)
-	b.ProposerPubkey.Append("")
-	b.BuilderPubkey.Append("")
-	b.ProposerFeeRecipient.Append(nil)
-	b.GasLimit.Append(0)
-	b.GasUsed.Append(0)
-	b.Value.Append(proto.UInt256{})
-	b.NumTx.Append(0)
-}
-
 func (b *mevRelayProposerPayloadDeliveredBatch) appendZeroAdditionalData() {
 	b.RelayName.Append("")
 	b.SlotStartDateTime.Append(time.Time{})

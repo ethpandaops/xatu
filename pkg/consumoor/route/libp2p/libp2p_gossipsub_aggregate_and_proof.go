@@ -63,6 +63,7 @@ func (b *libp2pGossipsubAggregateAndProofBatch) appendRuntime(event *xatu.Decora
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *libp2pGossipsubAggregateAndProofBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubAggregateAndProof()
+
 	msg := payload.GetMessage()
 	if msg == nil {
 		b.AggregationBits.Append("")

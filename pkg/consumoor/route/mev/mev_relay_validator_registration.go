@@ -59,6 +59,7 @@ func (b *mevRelayValidatorRegistrationBatch) appendRuntime(event *xatu.Decorated
 
 func (b *mevRelayValidatorRegistrationBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetMevRelayValidatorRegistration()
+
 	msg := payload.GetMessage()
 	if msg == nil {
 		b.appendZeroPayload()

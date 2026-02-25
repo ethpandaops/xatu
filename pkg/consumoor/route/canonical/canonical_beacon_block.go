@@ -69,6 +69,7 @@ func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 
 func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
+
 	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 

@@ -15,9 +15,9 @@ func validConfig() Config {
 		OrganicRetryMaxDelay:  30 * time.Second,
 		DrainTimeout:          30 * time.Second,
 		Defaults: TableConfig{
-			BatchSize:     200000,
+			BatchSize:     50000,
 			FlushInterval: 1 * time.Second,
-			BufferSize:    200000,
+			BufferSize:    50000,
 		},
 		ChGo: validChGoConfig(),
 	}

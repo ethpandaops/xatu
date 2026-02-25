@@ -145,6 +145,7 @@ func TestBenthosConfigYAML(t *testing.T) {
 		FetchMinBytes:          64,
 		FetchWaitMaxMs:         250,
 		MaxPartitionFetchBytes: 1048576,
+		FetchMaxBytes:          5242880,
 		SessionTimeoutMs:       30000,
 		OffsetDefault:          "latest",
 		CommitInterval:         7 * time.Second,
@@ -166,6 +167,8 @@ func TestBenthosConfigYAML(t *testing.T) {
 	assert.Equal(t, "xatu-consumoor", kafka["consumer_group"])
 	assert.Equal(t, "latest", kafka["start_offset"])
 	assert.Equal(t, "7s", kafka["commit_period"])
+	assert.Equal(t, "5242880B", kafka["fetch_max_bytes"])
+	assert.Equal(t, "1048576B", kafka["fetch_max_partition_bytes"])
 
 	tcp, ok := kafka["tcp"].(map[string]any)
 	require.True(t, ok, "tcp block should be present when ConnectTimeout > 0")
@@ -187,6 +190,7 @@ func TestBenthosConfigYAML_NoTCPBlockWhenConnectTimeoutZero(t *testing.T) {
 		FetchMinBytes:          1,
 		FetchWaitMaxMs:         250,
 		MaxPartitionFetchBytes: 1048576,
+		FetchMaxBytes:          10485760,
 		SessionTimeoutMs:       30000,
 		OffsetDefault:          "earliest",
 		CommitInterval:         5 * time.Second,
@@ -560,6 +564,127 @@ func TestKafkaTopicMetadataFallback(t *testing.T) {
 
 	msg.MetaSet("kafka_topic", "xatu-mainnet")
 	assert.Equal(t, "xatu-mainnet", kafkaTopicMetadata(msg))
+}
+
+func TestKafkaConfig_Validate_OutputBatch(t *testing.T) {
+	validKafka := func() *KafkaConfig {
+		return &KafkaConfig{
+			Brokers:                []string{"kafka-1:9092"},
+			Topics:                 []string{"^test-.+"},
+			ConsumerGroup:          "xatu-consumoor",
+			Encoding:               "json",
+			FetchMinBytes:          1,
+			FetchWaitMaxMs:         250,
+			MaxPartitionFetchBytes: 1048576,
+			FetchMaxBytes:          10485760,
+			SessionTimeoutMs:       30000,
+			OffsetDefault:          "earliest",
+			CommitInterval:         5 * time.Second,
+			ShutdownTimeout:        30 * time.Second,
+			OutputBatchCount:       1000,
+			OutputBatchPeriod:      1 * time.Second,
+		}
+	}
+
+	tests := []struct {
+		name    string
+		mutate  func(*KafkaConfig)
+		wantErr string
+	}{
+		{
+			name:   "defaults valid",
+			mutate: func(_ *KafkaConfig) {},
+		},
+		{
+			name:   "zero count valid (opt-out)",
+			mutate: func(c *KafkaConfig) { c.OutputBatchCount = 0 },
+		},
+		{
+			name:   "zero period valid (opt-out)",
+			mutate: func(c *KafkaConfig) { c.OutputBatchPeriod = 0 },
+		},
+		{
+			name:    "negative count",
+			mutate:  func(c *KafkaConfig) { c.OutputBatchCount = -1 },
+			wantErr: "outputBatchCount must be >= 0",
+		},
+		{
+			name:    "negative period",
+			mutate:  func(c *KafkaConfig) { c.OutputBatchPeriod = -1 * time.Second },
+			wantErr: "outputBatchPeriod must be >= 0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := validKafka()
+			tt.mutate(cfg)
+
+			err := cfg.Validate()
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestBenthosOutputBatchPolicy(t *testing.T) {
+	tests := []struct {
+		name       string
+		count      int
+		period     time.Duration
+		wantCount  int
+		wantPeriod string
+	}{
+		{
+			name:       "defaults",
+			count:      1000,
+			period:     1 * time.Second,
+			wantCount:  1000,
+			wantPeriod: "1s",
+		},
+		{
+			name:       "zero count disables count batching",
+			count:      0,
+			period:     1 * time.Second,
+			wantCount:  0,
+			wantPeriod: "1s",
+		},
+		{
+			name:       "zero period disables period flushing",
+			count:      500,
+			period:     0,
+			wantCount:  500,
+			wantPeriod: "",
+		},
+		{
+			name:       "both zero preserves opt-out",
+			count:      0,
+			period:     0,
+			wantCount:  0,
+			wantPeriod: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Mirror the batch policy construction from NewBenthosStream.
+			policy := service.BatchPolicy{}
+			if tt.count > 0 {
+				policy.Count = tt.count
+			}
+
+			if tt.period > 0 {
+				policy.Period = tt.period.String()
+			}
+
+			assert.Equal(t, tt.wantCount, policy.Count)
+			assert.Equal(t, tt.wantPeriod, policy.Period)
+		})
+	}
 }
 
 func TestFranzSASLMechanism(t *testing.T) {

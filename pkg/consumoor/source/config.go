@@ -47,7 +47,12 @@ type KafkaConfig struct {
 	// FetchWaitMaxMs is the maximum time to wait for fetch responses.
 	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"250"`
 	// MaxPartitionFetchBytes is the max bytes per partition per request.
-	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"10485760"`
+	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"3145728"`
+	// FetchMaxBytes is the max total bytes per fetch request across all
+	// partitions from a single broker. With many independent consumers
+	// (one per topic) this is the primary lever for capping in-flight
+	// memory from Kafka fetch buffers. Default: 10 MiB.
+	FetchMaxBytes int32 `yaml:"fetchMaxBytes" default:"10485760"`
 
 	// SessionTimeoutMs is the consumer group session timeout.
 	SessionTimeoutMs int `yaml:"sessionTimeoutMs" default:"30000"`
@@ -77,6 +82,16 @@ type KafkaConfig struct {
 	// hung dials from generating noisy warnings when some brokers are
 	// temporarily unreachable. Default: 10s. Set to 0 to disable.
 	ConnectTimeout time.Duration `yaml:"connectTimeout" default:"10s"`
+
+	// OutputBatchCount is the number of messages Benthos accumulates before
+	// calling WriteBatch on the output plugin. Higher values increase INSERT
+	// throughput by writing more rows per ClickHouse INSERT. Set to 0 to
+	// disable count-based batching. Default: 1000.
+	OutputBatchCount int `yaml:"outputBatchCount" default:"1000"`
+	// OutputBatchPeriod is the maximum time Benthos waits to fill a batch
+	// before flushing a partial batch. Ensures low-volume topics still make
+	// progress. Default: 1s. Set to 0 to disable period-based flushing.
+	OutputBatchPeriod time.Duration `yaml:"outputBatchPeriod" default:"1s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -129,6 +144,14 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New(
 			"kafka: topicRefreshInterval must be >= 0",
 		)
+	}
+
+	if c.OutputBatchCount < 0 {
+		return errors.New("kafka: outputBatchCount must be >= 0")
+	}
+
+	if c.OutputBatchPeriod < 0 {
+		return errors.New("kafka: outputBatchPeriod must be >= 0")
 	}
 
 	if err := c.TLS.Validate(); err != nil {

@@ -61,11 +61,11 @@ type Config struct {
 // TableConfig holds batching parameters for a ClickHouse table.
 type TableConfig struct {
 	// BatchSize is the maximum number of rows per batch insert.
-	BatchSize int `yaml:"batchSize" default:"200000"`
+	BatchSize int `yaml:"batchSize" default:"50000"`
 	// FlushInterval is the maximum time between flushes.
 	FlushInterval time.Duration `yaml:"flushInterval" default:"1s"`
 	// BufferSize is the channel buffer capacity for pending rows.
-	BufferSize int `yaml:"bufferSize" default:"200000"`
+	BufferSize int `yaml:"bufferSize" default:"50000"`
 	// SkipFlattenErrors when true skips events that fail FlattenTo
 	// instead of failing the entire batch. Default false = fail-fast.
 	SkipFlattenErrors bool `yaml:"skipFlattenErrors"`

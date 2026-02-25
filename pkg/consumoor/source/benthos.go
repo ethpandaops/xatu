@@ -48,6 +48,15 @@ func NewBenthosStream(
 		}
 	}
 
+	batchPolicy := service.BatchPolicy{}
+	if kafkaConfig.OutputBatchCount > 0 {
+		batchPolicy.Count = kafkaConfig.OutputBatchCount
+	}
+
+	if kafkaConfig.OutputBatchPeriod > 0 {
+		batchPolicy.Period = kafkaConfig.OutputBatchPeriod.String()
+	}
+
 	if registerErr := env.RegisterBatchOutput(
 		benthosOutputType,
 		service.NewConfigSpec(),
@@ -60,7 +69,7 @@ func NewBenthosStream(
 				metrics:    metrics,
 				rejectSink: rejectSink,
 				ownsWriter: ownsWriter,
-			}, service.BatchPolicy{}, 1, nil
+			}, batchPolicy, 1, nil
 		},
 	); registerErr != nil {
 		closeRejectSink()
@@ -106,6 +115,7 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"fetch_min_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMinBytes),
 		"fetch_max_wait":            fmt.Sprintf("%dms", kafkaConfig.FetchWaitMaxMs),
 		"fetch_max_partition_bytes": fmt.Sprintf("%dB", kafkaConfig.MaxPartitionFetchBytes),
+		"fetch_max_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMaxBytes),
 		"session_timeout":           fmt.Sprintf("%dms", kafkaConfig.SessionTimeoutMs),
 		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
 	}

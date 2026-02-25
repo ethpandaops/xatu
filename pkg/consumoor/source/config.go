@@ -81,6 +81,10 @@ type KafkaConfig struct {
 
 	// SessionTimeoutMs is the consumer group session timeout.
 	SessionTimeoutMs int `yaml:"sessionTimeoutMs" default:"30000"`
+	// RebalanceTimeout is the maximum time group members are allowed to
+	// take when a rebalance has begun (finish work, commit offsets, rejoin).
+	// Lower values speed up partition reassignment when scaling. Default: 15s.
+	RebalanceTimeout time.Duration `yaml:"rebalanceTimeout" default:"15s"`
 
 	// OffsetDefault controls where to start consuming when no offset exists.
 	// Valid values: "earliest" or "latest".
@@ -166,6 +170,10 @@ func (c *KafkaConfig) Validate() error {
 
 	if c.SessionTimeoutMs <= 0 {
 		return errors.New("kafka: sessionTimeoutMs must be > 0")
+	}
+
+	if c.RebalanceTimeout < 100*time.Millisecond {
+		return errors.New("kafka: rebalanceTimeout must be >= 100ms")
 	}
 
 	if c.CommitInterval <= 0 {

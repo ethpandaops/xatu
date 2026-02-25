@@ -16,6 +16,7 @@ func validKafkaConfig() KafkaConfig {
 		Encoding:         "json",
 		OffsetDefault:    "earliest",
 		SessionTimeoutMs: 30000,
+		RebalanceTimeout: 15 * time.Second,
 		CommitInterval:   5 * time.Second,
 		ShutdownTimeout:  30 * time.Second,
 		MaxInFlight:      64,

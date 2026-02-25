@@ -118,6 +118,7 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"fetch_max_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMaxBytes),
 		"session_timeout":           fmt.Sprintf("%dms", kafkaConfig.SessionTimeoutMs),
 		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
+		"rebalance_timeout":         kafkaConfig.RebalanceTimeout.String(),
 	}
 
 	if kafkaConfig.TopicRefreshInterval > 0 {

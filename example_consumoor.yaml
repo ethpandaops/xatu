@@ -15,6 +15,7 @@ kafka:
   # maxPartitionFetchBytes: 3145728
   # fetchMaxBytes: 10485760
   # sessionTimeoutMs: 30000
+  # rebalanceTimeout: 15s   # max time for members to rejoin during rebalance
   commitInterval: 5s      # Kafka offset commit interval
   # shutdownTimeout: 30s  # max wait for in-flight messages during graceful shutdown
   # lagPollInterval: 30s  # consumer lag poll interval (0 to disable)

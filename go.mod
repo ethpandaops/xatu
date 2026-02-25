@@ -17,9 +17,9 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.16.8
+	github.com/ethereum/go-ethereum v1.17.0
 	github.com/ethpandaops/beacon v0.65.0
-	github.com/ethpandaops/ethcore v0.0.0-20260112064422-e7fe02956738
+	github.com/ethpandaops/ethcore v0.0.0-20260225041126-afac0c250cdf
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -85,8 +85,6 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/consensys/gnark-crypto v0.18.1 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
@@ -96,7 +94,6 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
-	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
@@ -116,7 +113,6 @@ require (
 	github.com/emicklei/dot v1.9.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
-	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/filecoin-project/go-clock v0.1.0 // indirect
@@ -186,7 +182,6 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/miekg/dns v1.1.68 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
@@ -214,7 +209,6 @@ require (
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1 // indirect
-	github.com/olekukonko/tablewriter v1.0.9 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect

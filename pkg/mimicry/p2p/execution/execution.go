@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
@@ -274,7 +275,14 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 
-			for _, tx := range *txs {
+			transactions, decErr := (*eth.TransactionsPacket)(txs).Items()
+			if decErr != nil {
+				p.log.WithError(decErr).Error("failed to decode transactions")
+
+				return nil
+			}
+
+			for _, tx := range transactions {
 				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
 				if !retrieved {

@@ -72,6 +72,11 @@ type KafkaConfig struct {
 	// LagPollInterval controls how often consumer lag is polled from Kafka.
 	// Set to 0 to disable lag monitoring. Default: 30s.
 	LagPollInterval time.Duration `yaml:"lagPollInterval" default:"30s"`
+	// ConnectTimeout is the maximum time a TCP dial to a broker will wait
+	// for a connection to complete. A reasonable value (e.g. 10s) prevents
+	// hung dials from generating noisy warnings when some brokers are
+	// temporarily unreachable. Default: 10s. Set to 0 to disable.
+	ConnectTimeout time.Duration `yaml:"connectTimeout" default:"10s"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.

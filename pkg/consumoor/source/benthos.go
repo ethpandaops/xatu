@@ -114,6 +114,12 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
 	}
 
+	if kafkaConfig.ConnectTimeout > 0 {
+		inputKafka["tcp"] = map[string]any{
+			"connect_timeout": kafkaConfig.ConnectTimeout.String(),
+		}
+	}
+
 	if kafkaConfig.TLS.Enabled {
 		tlsObj := map[string]any{
 			"enabled": true,

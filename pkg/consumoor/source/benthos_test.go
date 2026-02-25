@@ -148,6 +148,7 @@ func TestBenthosConfigYAML(t *testing.T) {
 		SessionTimeoutMs:       30000,
 		OffsetDefault:          "latest",
 		CommitInterval:         7 * time.Second,
+		ConnectTimeout:         10 * time.Second,
 	}
 
 	raw, err := benthosConfigYAML("debug", cfg)
@@ -166,11 +167,46 @@ func TestBenthosConfigYAML(t *testing.T) {
 	assert.Equal(t, "latest", kafka["start_offset"])
 	assert.Equal(t, "7s", kafka["commit_period"])
 
+	tcp, ok := kafka["tcp"].(map[string]any)
+	require.True(t, ok, "tcp block should be present when ConnectTimeout > 0")
+	assert.Equal(t, "10s", tcp["connect_timeout"])
+
 	output, ok := parsed["output"].(map[string]any)
 	require.True(t, ok)
 
 	_, hasOutput := output[benthosOutputType]
 	assert.True(t, hasOutput)
+}
+
+func TestBenthosConfigYAML_NoTCPBlockWhenConnectTimeoutZero(t *testing.T) {
+	cfg := &KafkaConfig{
+		Brokers:                []string{"kafka-1:9092"},
+		Topics:                 []string{"^test-.+"},
+		ConsumerGroup:          "xatu-consumoor",
+		Encoding:               "json",
+		FetchMinBytes:          1,
+		FetchWaitMaxMs:         250,
+		MaxPartitionFetchBytes: 1048576,
+		SessionTimeoutMs:       30000,
+		OffsetDefault:          "earliest",
+		CommitInterval:         5 * time.Second,
+		ConnectTimeout:         0,
+	}
+
+	raw, err := benthosConfigYAML("info", cfg)
+	require.NoError(t, err)
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal(raw, &parsed))
+
+	input, ok := parsed["input"].(map[string]any)
+	require.True(t, ok)
+
+	kafka, ok := input["kafka_franz"].(map[string]any)
+	require.True(t, ok)
+
+	_, hasTCP := kafka["tcp"]
+	assert.False(t, hasTCP, "tcp block should be absent when ConnectTimeout is 0")
 }
 
 func TestBenthosSASLObjectUsesPasswordFile(t *testing.T) {

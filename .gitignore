@@ -18,3 +18,4 @@ sage.yaml
 relay-monitor.yaml
 cities1000.txt
 countries.txt
+deploy/local/docker-compose/xatu-consumoor-staging.yaml

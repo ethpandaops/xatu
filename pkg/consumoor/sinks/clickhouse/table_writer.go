@@ -2,6 +2,7 @@ package clickhouse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -181,6 +182,14 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 
 	for _, e := range events {
 		if err := batch.FlattenTo(e.event, e.meta); err != nil {
+			if errors.Is(err, flattener.ErrInvalidEvent) {
+				tw.log.WithError(err).
+					Debug("Skipping invalid event")
+				tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(1)
+
+				continue
+			}
+
 			tw.log.WithError(err).
 				WithField("events", len(events)).
 				Error("Failed to flatten event into columnar batch")

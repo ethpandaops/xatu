@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,7 +75,7 @@ func TestAdaptiveConcurrencyLimiter_AcquireAndDropOnError(t *testing.T) {
 	assert.Equal(t, 0, limiter.Inflight())
 }
 
-func TestAdaptiveConcurrencyLimiter_RejectsWhenFull(t *testing.T) {
+func TestAdaptiveConcurrencyLimiter_BlocksWhenFullAndCancels(t *testing.T) {
 	// Create a limiter with limit=1 so we can saturate it.
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
 		Enabled:      true,
@@ -89,8 +90,11 @@ func TestAdaptiveConcurrencyLimiter_RejectsWhenFull(t *testing.T) {
 	permit, ok := limiter.limiter.TryAcquirePermit()
 	require.True(t, ok, "should acquire the single permit")
 
-	// Second attempt should be rejected.
-	err := limiter.doWithLimiter(context.Background(), func(_ context.Context) error {
+	// Second attempt should block and then fail when context is cancelled.
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	err := limiter.doWithLimiter(ctx, func(_ context.Context) error {
 		return nil
 	})
 

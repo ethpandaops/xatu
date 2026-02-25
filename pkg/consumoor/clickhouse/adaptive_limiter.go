@@ -51,7 +51,8 @@ func (l *adaptiveConcurrencyLimiter) Queued() int {
 	return l.limiter.Queued()
 }
 
-// doWithLimiter acquires a permit, executes fn, and records the outcome.
+// doWithLimiter acquires a permit (blocking until one is available or ctx
+// is cancelled), executes fn, and records the outcome.
 // On success the permit is recorded (RTT measured); on failure the permit
 // is dropped (signals the limiter to decrease concurrency).
 // Returns limiterRejectedError if the limiter rejects the request.
@@ -59,14 +60,12 @@ func (l *adaptiveConcurrencyLimiter) doWithLimiter(
 	ctx context.Context,
 	fn func(context.Context) error,
 ) error {
-	permit, ok := l.limiter.TryAcquirePermit()
-	if !ok {
-		return &limiterRejectedError{
-			cause: adaptivelimiter.ErrExceeded,
-		}
+	permit, err := l.limiter.AcquirePermit(ctx)
+	if err != nil {
+		return &limiterRejectedError{cause: err}
 	}
 
-	err := fn(ctx)
+	err = fn(ctx)
 	if err != nil {
 		permit.Drop()
 

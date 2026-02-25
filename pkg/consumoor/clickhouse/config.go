@@ -25,12 +25,6 @@ type Config struct {
 	// directly to ReplicatedMergeTree tables in a clustered setup.
 	TableSuffix string `yaml:"tableSuffix"`
 
-	// OrganicRetryInitDelay is the initial backoff delay when a table writer
-	// flush fails and the batch is preserved for retry on the next cycle.
-	OrganicRetryInitDelay time.Duration `yaml:"organicRetryInitDelay" default:"1s"`
-	// OrganicRetryMaxDelay caps the exponential backoff for organic retries.
-	OrganicRetryMaxDelay time.Duration `yaml:"organicRetryMaxDelay" default:"30s"`
-
 	// FailOnMissingTables controls whether missing ClickHouse tables cause
 	// a fatal startup error. When true (default), startup is aborted if any
 	// registered route table does not exist in the target database. Set to
@@ -42,13 +36,7 @@ type Config struct {
 	// cancelled after this duration rather than hanging indefinitely.
 	DrainTimeout time.Duration `yaml:"drainTimeout" default:"30s"`
 
-	// BufferWarningThreshold is the fraction (0-1) of a table's bufferSize
-	// at which a rate-limited warning is logged. Provides early visibility
-	// into memory pressure before full backpressure kicks in.
-	// Default: 0.8
-	BufferWarningThreshold float64 `yaml:"bufferWarningThreshold" default:"0.8"`
-
-	// Defaults are the default batch settings for all tables.
+	// Defaults are the default table settings.
 	Defaults TableConfig `yaml:"defaults"`
 
 	// Tables contains per-table overrides for batch settings.
@@ -58,13 +46,11 @@ type Config struct {
 	ChGo ChGoConfig `yaml:"chgo"`
 }
 
-// TableConfig holds batching parameters for a ClickHouse table.
+// TableConfig holds per-table settings for the ClickHouse writer.
 type TableConfig struct {
-	// BatchSize is the maximum number of rows per batch insert.
-	BatchSize int `yaml:"batchSize" default:"50000"`
-	// FlushInterval is the maximum time between flushes.
-	FlushInterval time.Duration `yaml:"flushInterval" default:"1s"`
 	// BufferSize is the channel buffer capacity for pending rows.
+	// When the buffer is full, Write() blocks, propagating backpressure
+	// through Benthos to the Kafka consumer.
 	BufferSize int `yaml:"bufferSize" default:"50000"`
 	// SkipFlattenErrors when true skips events that fail FlattenTo
 	// instead of failing the entire batch. Default false = fail-fast.
@@ -83,9 +69,8 @@ type TableConfig struct {
 // When enabled, each table writer independently adjusts its INSERT concurrency
 // based on observed ClickHouse latency using an AIMD algorithm.
 type AdaptiveLimiterConfig struct {
-	// Enabled turns on adaptive concurrency limiting. Disabled by default
-	// for zero behavior change unless explicitly opted in.
-	Enabled bool `yaml:"enabled" default:"false"`
+	// Enabled turns on adaptive concurrency limiting.
+	Enabled bool `yaml:"enabled" default:"true"`
 	// MinLimit is the minimum concurrent INSERTs the limiter allows.
 	MinLimit uint `yaml:"minLimit" default:"1"`
 	// MaxLimit caps the maximum concurrent INSERTs the limiter allows.
@@ -160,7 +145,7 @@ type ChGoConfig struct {
 	RetryMaxDelay time.Duration `yaml:"retryMaxDelay" default:"2s"`
 
 	// MaxConns is the maximum number of pooled ClickHouse connections.
-	MaxConns int32 `yaml:"maxConns" default:"32"`
+	MaxConns int32 `yaml:"maxConns" default:"64"`
 	// MinConns is the minimum number of pooled ClickHouse connections.
 	MinConns int32 `yaml:"minConns" default:"1"`
 	// ConnMaxLifetime is the maximum lifetime for pooled connections.
@@ -188,20 +173,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("clickhouse.%w", err)
 	}
 
-	if c.OrganicRetryInitDelay <= 0 {
-		return errors.New("clickhouse: organicRetryInitDelay must be > 0")
-	}
-
-	if c.OrganicRetryMaxDelay <= 0 {
-		return errors.New("clickhouse: organicRetryMaxDelay must be > 0")
-	}
-
-	if c.OrganicRetryInitDelay > c.OrganicRetryMaxDelay {
-		return errors.New(
-			"clickhouse: organicRetryInitDelay must be <= organicRetryMaxDelay",
-		)
-	}
-
 	if err := c.ChGo.Validate(); err != nil {
 		return err
 	}
@@ -210,24 +181,8 @@ func (c *Config) Validate() error {
 		return errors.New("clickhouse: drainTimeout must be > 0")
 	}
 
-	if c.BufferWarningThreshold < 0 || c.BufferWarningThreshold > 1 {
-		return errors.New("clickhouse: bufferWarningThreshold must be between 0 and 1")
-	}
-
-	if c.Defaults.BatchSize <= 0 {
-		return errors.New("clickhouse.defaults: batchSize must be > 0")
-	}
-
-	if c.Defaults.FlushInterval <= 0 {
-		return errors.New("clickhouse.defaults: flushInterval must be > 0")
-	}
-
 	if c.Defaults.BufferSize <= 0 {
 		return errors.New("clickhouse.defaults: bufferSize must be > 0")
-	}
-
-	if c.Defaults.BufferSize < c.Defaults.BatchSize {
-		return errors.New("clickhouse.defaults: bufferSize must be >= batchSize")
 	}
 
 	if err := validateInsertSettings(c.Defaults.InsertSettings, "clickhouse.defaults.insertSettings"); err != nil {
@@ -235,14 +190,6 @@ func (c *Config) Validate() error {
 	}
 
 	for table, override := range c.Tables {
-		if override.BatchSize < 0 {
-			return fmt.Errorf("clickhouse.tables.%s: batchSize must be >= 0", table)
-		}
-
-		if override.FlushInterval < 0 {
-			return fmt.Errorf("clickhouse.tables.%s: flushInterval must be >= 0", table)
-		}
-
 		if override.BufferSize < 0 {
 			return fmt.Errorf("clickhouse.tables.%s: bufferSize must be >= 0", table)
 		}
@@ -328,14 +275,6 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 		applyCanonicalTableDefaults(table, &cfg)
 
 		return cfg
-	}
-
-	if override.BatchSize > 0 {
-		cfg.BatchSize = override.BatchSize
-	}
-
-	if override.FlushInterval > 0 {
-		cfg.FlushInterval = override.FlushInterval
 	}
 
 	if override.BufferSize > 0 {

@@ -38,7 +38,6 @@ type ChGoWriter struct {
 
 	done     chan struct{}
 	stopOnce sync.Once
-	wg       sync.WaitGroup
 
 	poolMetricsDone chan struct{}
 	poolMetricsWG   sync.WaitGroup
@@ -175,7 +174,21 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 		w.log.Info("Stopping ch-go writer, flushing remaining buffers")
 
 		close(w.done)
-		w.wg.Wait()
+
+		// Drain all table writers. Benthos guarantees all WriteBatch
+		// goroutines have returned before calling Close/Stop, so no
+		// in-flight flushes race with this drain.
+		w.mu.RLock()
+
+		for _, tw := range w.tables {
+			if err := tw.drainAndFlush(w.config.DrainTimeout); err != nil {
+				w.log.WithError(err).
+					WithField("table", tw.table).
+					Warn("Flush error during shutdown drain")
+			}
+		}
+
+		w.mu.RUnlock()
 
 		if w.poolMetricsDone != nil {
 			close(w.poolMetricsDone)
@@ -197,10 +210,6 @@ func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent) {
 
 	select {
 	case tw.buffer <- eventEntry{event: event}:
-		w.metrics.BufferUsage().WithLabelValues(tw.table).Inc()
-		w.metrics.BufferUsageTotal().Inc()
-
-		tw.checkBufferWarning()
 	case <-w.done:
 		// Shutting down, discard.
 	}
@@ -234,37 +243,22 @@ func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
 		return nil
 	}
 
-	// Send flush requests to matched table writers in parallel.
-	errChs := make([]chan error, len(writers))
+	// Flush each table writer concurrently from the calling goroutines.
+	errs := make([]error, len(writers))
+
+	var wg sync.WaitGroup
+
+	wg.Add(len(writers))
 
 	for i, tw := range writers {
-		errCh := make(chan error, 1)
-		errChs[i] = errCh
+		go func(idx int, tw *chTableWriter) {
+			defer wg.Done()
 
-		select {
-		case tw.flushReq <- errCh:
-		case <-w.done:
-			return nil
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+			errs[idx] = tw.flushBuffer(ctx)
+		}(i, tw)
 	}
 
-	// Collect results — return all errors joined.
-	errs := make([]error, 0, len(errChs))
-
-	for _, errCh := range errChs {
-		select {
-		case err := <-errCh:
-			if err != nil {
-				errs = append(errs, err)
-			}
-		case <-w.done:
-			return errors.Join(errs...)
-		case <-ctx.Done():
-			errs = append(errs, ctx.Err())
-		}
-	}
+	wg.Wait()
 
 	return errors.Join(errs...)
 }
@@ -291,31 +285,23 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 	// don't need to include the suffix.
 	cfg := w.config.TableConfigFor(table)
 	tw = &chTableWriter{
-		log:                   w.log.WithField("table", writeTable),
-		table:                 writeTable,
-		baseTable:             table,
-		database:              w.database,
-		config:                cfg,
-		metrics:               w.metrics,
-		writer:                w,
-		buffer:                make(chan eventEntry, cfg.BufferSize),
-		flushReq:              make(chan chan error, 1),
-		organicRetryInitDelay: w.config.OrganicRetryInitDelay,
-		organicRetryMaxDelay:  w.config.OrganicRetryMaxDelay,
-		drainTimeout:          w.config.DrainTimeout,
-		newBatch:              w.batchFactories[table],
-		limiter:               newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
+		log:          w.log.WithField("table", writeTable),
+		table:        writeTable,
+		baseTable:    table,
+		database:     w.database,
+		config:       cfg,
+		metrics:      w.metrics,
+		writer:       w,
+		buffer:       make(chan eventEntry, cfg.BufferSize),
+		drainTimeout: w.config.DrainTimeout,
+		newBatch:     w.batchFactories[table],
+		limiter:      newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
 	}
 
 	w.tables[writeTable] = tw
 
-	w.wg.Go(func() {
-		tw.run(w.done)
-	})
-
 	w.log.WithField("table", writeTable).
-		WithField("batch_size", cfg.BatchSize).
-		WithField("flush_interval", cfg.FlushInterval).
+		WithField("buffer_size", cfg.BufferSize).
 		WithField("has_batch_factory", tw.newBatch != nil).
 		Info("Created ch-go table writer")
 

@@ -8,21 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func validConfig() Config {
-	return Config{
-		DSN:                   "clickhouse://localhost:9000/default",
-		OrganicRetryInitDelay: 1 * time.Second,
-		OrganicRetryMaxDelay:  30 * time.Second,
-		DrainTimeout:          30 * time.Second,
-		Defaults: TableConfig{
-			BatchSize:     50000,
-			FlushInterval: 1 * time.Second,
-			BufferSize:    50000,
-		},
-		ChGo: validChGoConfig(),
-	}
-}
-
 func validChGoConfig() ChGoConfig {
 	return ChGoConfig{
 		DialTimeout:         5 * time.Second,
@@ -31,12 +16,20 @@ func validChGoConfig() ChGoConfig {
 		MaxRetries:          3,
 		RetryBaseDelay:      100 * time.Millisecond,
 		RetryMaxDelay:       2 * time.Second,
-		MaxConns:            32,
+		MaxConns:            64,
 		MinConns:            1,
 		ConnMaxLifetime:     1 * time.Hour,
 		ConnMaxIdleTime:     10 * time.Minute,
 		HealthCheckPeriod:   30 * time.Second,
 		PoolMetricsInterval: 15 * time.Second,
+		AdaptiveLimiter: AdaptiveLimiterConfig{
+			Enabled:                     true,
+			MinLimit:                    1,
+			MaxLimit:                    50,
+			InitialLimit:                8,
+			QueueInitialRejectionFactor: 2,
+			QueueMaxRejectionFactor:     3,
+		},
 	}
 }
 
@@ -104,66 +97,6 @@ func TestChGoConfig_Validate_ReadTimeout(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := validChGoConfig()
 			cfg.ReadTimeout = tt.readTimeout
-
-			err := cfg.Validate()
-			if tt.wantErr != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestConfig_Validate_OrganicRetry(t *testing.T) {
-	tests := []struct {
-		name      string
-		initDelay time.Duration
-		maxDelay  time.Duration
-		wantErr   string
-	}{
-		{
-			name:      "valid",
-			initDelay: 1 * time.Second,
-			maxDelay:  30 * time.Second,
-		},
-		{
-			name:      "equal init and max",
-			initDelay: 5 * time.Second,
-			maxDelay:  5 * time.Second,
-		},
-		{
-			name:      "zero init delay",
-			initDelay: 0,
-			maxDelay:  30 * time.Second,
-			wantErr:   "organicRetryInitDelay must be > 0",
-		},
-		{
-			name:      "negative init delay",
-			initDelay: -1 * time.Second,
-			maxDelay:  30 * time.Second,
-			wantErr:   "organicRetryInitDelay must be > 0",
-		},
-		{
-			name:      "zero max delay",
-			initDelay: 1 * time.Second,
-			maxDelay:  0,
-			wantErr:   "organicRetryMaxDelay must be > 0",
-		},
-		{
-			name:      "init exceeds max",
-			initDelay: 30 * time.Second,
-			maxDelay:  1 * time.Second,
-			wantErr:   "organicRetryInitDelay must be <= organicRetryMaxDelay",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := validConfig()
-			cfg.OrganicRetryInitDelay = tt.initDelay
-			cfg.OrganicRetryMaxDelay = tt.maxDelay
 
 			err := cfg.Validate()
 			if tt.wantErr != "" {

@@ -79,7 +79,7 @@ func benchHeadEvent() *xatu.DecoratedEvent {
 
 // benchWriter creates a ChGoWriter with a noop pool.Do for benchmarking.
 // The returned cancel function must be called to stop background goroutines.
-func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context.CancelFunc) {
+func benchWriter(tb testing.TB, bufferSize int) (*ChGoWriter, context.CancelFunc) {
 	tb.Helper()
 
 	ns := fmt.Sprintf("xatu_bench_%d", time.Now().UnixNano())
@@ -94,9 +94,7 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 		config: &Config{
 			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
-				BatchSize:     batchSize,
-				FlushInterval: 10 * time.Second,
-				BufferSize:    bufferSize,
+				BufferSize: bufferSize,
 			},
 		},
 		chgoCfg: ChGoConfig{
@@ -120,7 +118,6 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 	cancel := func() {
 		w.stopOnce.Do(func() {
 			close(w.done)
-			w.wg.Wait()
 		})
 	}
 
@@ -130,12 +127,9 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 // BenchmarkWriteThroughput measures events/sec through the full
 // Write() -> accumulator -> worker -> noop-flush path.
 func BenchmarkWriteThroughput(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
+	const bufferSize = 50_000
 
-	w, cancel := benchWriter(b, batchSize, bufferSize)
+	w, cancel := benchWriter(b, bufferSize)
 	defer cancel()
 
 	event := benchHeadEvent()
@@ -162,12 +156,9 @@ func BenchmarkWriteThroughput(b *testing.B) {
 // BenchmarkWriteConcurrent measures channel contention when multiple
 // goroutines write to the same ChGoWriter concurrently.
 func BenchmarkWriteConcurrent(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 100_000
-	)
+	const bufferSize = 100_000
 
-	w, cancel := benchWriter(b, batchSize, bufferSize)
+	w, cancel := benchWriter(b, bufferSize)
 	defer cancel()
 
 	event := benchHeadEvent()
@@ -196,12 +187,9 @@ func BenchmarkWriteConcurrent(b *testing.B) {
 // BenchmarkAccumulatorBatching measures how fast the table writer's
 // run loop drains the buffer channel and builds batches via flush.
 func BenchmarkAccumulatorBatching(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
+	const bufferSize = 50_000
 
-	w, cancel := benchWriter(b, batchSize, bufferSize)
+	w, cancel := benchWriter(b, bufferSize)
 	defer cancel()
 
 	event := benchHeadEvent()
@@ -236,10 +224,7 @@ func BenchmarkAccumulatorBatching(b *testing.B) {
 // BenchmarkEndToEndWithFlatten measures the full cost of processing one
 // event from proto through FlattenTo and the Write path to batch-ready.
 func BenchmarkEndToEndWithFlatten(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
+	const bufferSize = 50_000
 
 	var flushCount atomic.Int64
 
@@ -255,9 +240,7 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 		config: &Config{
 			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
-				BatchSize:     batchSize,
-				FlushInterval: 10 * time.Second,
-				BufferSize:    bufferSize,
+				BufferSize: bufferSize,
 			},
 		},
 		chgoCfg: ChGoConfig{
@@ -308,14 +291,50 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 		b.Logf("FlushTables: %v", err)
 	}
 
-	// Shut down the table writer goroutines.
+	// Signal shutdown.
 	w.stopOnce.Do(func() {
 		close(w.done)
-		w.wg.Wait()
 	})
 
 	elapsed := b.Elapsed().Seconds()
 	b.ReportMetric(float64(b.N)/elapsed, "events/sec")
 	b.ReportMetric(float64(flushCount.Load()), "flushes")
 	b.ReportMetric(float64(b.N)/float64(max(flushCount.Load(), 1)), "events/flush")
+}
+
+// BenchmarkConcurrentFlush measures throughput when multiple goroutines
+// write and flush concurrently, exercising the concurrent INSERT path.
+func BenchmarkConcurrentFlush(b *testing.B) {
+	const (
+		bufferSize = 100_000
+		flushers   = 8
+		batchSize  = 500
+	)
+
+	w, cancel := benchWriter(b, bufferSize)
+	defer cancel()
+
+	event := benchHeadEvent()
+
+	// Pre-create the table writer.
+	w.Write(benchTable, event)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			// Write a small batch then flush, simulating concurrent WriteBatch calls.
+			for j := 0; j < batchSize; j++ {
+				w.Write(benchTable, event)
+			}
+
+			if err := w.FlushTables(context.Background(), []string{benchTable}); err != nil {
+				b.Logf("FlushTables: %v", err)
+			}
+		}
+	})
+
+	b.StopTimer()
+	b.ReportMetric(float64(b.N*batchSize)/b.Elapsed().Seconds(), "events/sec")
 }

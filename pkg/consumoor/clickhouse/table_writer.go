@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/ClickHouse/ch-go"
@@ -13,9 +13,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
-
-// bufferWarningInterval is the minimum time between warning logs per table.
-const bufferWarningInterval = time.Minute
 
 // eventEntry holds a single event for buffering in the table writer.
 type eventEntry struct {
@@ -31,202 +28,76 @@ type chTableWriter struct {
 	metrics   *telemetry.Metrics
 	writer    *ChGoWriter
 	buffer    chan eventEntry
-	flushReq  chan chan error // coordinator sends a response channel; tableWriter flushes and replies
 
-	organicRetryInitDelay time.Duration
-	organicRetryMaxDelay  time.Duration
-	drainTimeout          time.Duration
+	drainTimeout time.Duration
+
+	// drainMu serializes buffer drains so that the first goroutine gets a
+	// large batch while subsequent concurrent flushers find an empty buffer.
+	drainMu sync.Mutex
 
 	newBatch func() route.ColumnarBatch
-	batch    route.ColumnarBatch // reused across flushes via Reset()
 
 	// limiter is the per-table adaptive concurrency limiter.
 	// nil when adaptive limiting is disabled.
 	limiter *adaptiveConcurrencyLimiter
-
-	// lastWarnAt tracks the last time a buffer warning was emitted (Unix nanos).
-	// Accessed atomically from the Write goroutine for rate limiting.
-	lastWarnAt atomic.Int64
 }
 
-func (tw *chTableWriter) run(done <-chan struct{}) {
-	ticker := time.NewTicker(tw.config.FlushInterval)
-	defer ticker.Stop()
+// flushBuffer drains the buffer channel and flushes all accumulated events.
+// The drain is serialized via drainMu so that the first caller gets a large
+// batch while concurrent callers find an empty buffer and return nil.
+func (tw *chTableWriter) flushBuffer(ctx context.Context) error {
+	tw.drainMu.Lock()
 
-	events := make([]eventEntry, 0, tw.config.BatchSize)
-	flushBlocked := false
-	retryAttempt := 0
+	events := make([]eventEntry, 0, len(tw.buffer))
 
 	for {
-		bufferCh := tw.buffer
-		if flushBlocked {
-			bufferCh = nil
-		}
-
 		select {
-		case entry := <-bufferCh:
-			tw.decrBuffer(1)
-
+		case entry := <-tw.buffer:
 			events = append(events, entry)
-
-			if len(events) >= tw.config.BatchSize {
-				if err := tw.flush(context.Background(), events); err != nil {
-					var flatErr *flattenError
-					if errors.As(err, &flatErr) {
-						events = events[:0]
-
-						continue
-					}
-
-					if IsPermanentWriteError(err) {
-						tw.log.WithError(err).
-							WithField("events", len(events)).
-							Warn("Dropping permanently invalid batch")
-						events = events[:0]
-						flushBlocked = false
-						retryAttempt = 0
-
-						continue
-					}
-
-					if IsLimiterRejected(err) {
-						flushBlocked = true
-
-						continue
-					}
-
-					// Preserve events for retry on next flush cycle. While
-					// pending, stop draining tw.buffer so channel backpressure
-					// remains bounded by BufferSize.
-					flushBlocked = true
-
-					tw.scheduleOrganicRetry(ticker, retryAttempt)
-					retryAttempt++
-
-					continue
-				}
-
-				events = events[:0]
-				flushBlocked = false
-				retryAttempt = 0
-			}
-
-		case <-ticker.C:
-			if len(events) > 0 {
-				if err := tw.flush(context.Background(), events); err != nil {
-					var flatErr *flattenError
-					if errors.As(err, &flatErr) {
-						events = events[:0]
-
-						continue
-					}
-
-					if IsPermanentWriteError(err) {
-						tw.log.WithError(err).
-							WithField("events", len(events)).
-							Warn("Dropping permanently invalid batch")
-						events = events[:0]
-						flushBlocked = false
-
-						tw.resetRetryState(ticker, &retryAttempt)
-
-						continue
-					}
-
-					if IsLimiterRejected(err) {
-						flushBlocked = true
-
-						continue
-					}
-
-					flushBlocked = true
-
-					tw.scheduleOrganicRetry(ticker, retryAttempt)
-					retryAttempt++
-
-					continue
-				}
-
-				events = events[:0]
-				flushBlocked = false
-
-				tw.resetRetryState(ticker, &retryAttempt)
-			}
-
-		case errCh := <-tw.flushReq:
-			if !flushBlocked {
-				// Drain anything still in the channel into the batch.
-			drainReq:
-				for {
-					select {
-					case entry := <-tw.buffer:
-						tw.decrBuffer(1)
-
-						events = append(events, entry)
-					default:
-						break drainReq
-					}
-				}
-			}
-
-			if len(events) > 0 {
-				err := tw.flush(context.Background(), events)
-
-				var flatErr *flattenError
-
-				switch {
-				case err == nil:
-					events = events[:0]
-					flushBlocked = false
-
-					tw.resetRetryState(ticker, &retryAttempt)
-				case errors.As(err, &flatErr):
-					events = events[:0]
-				case IsPermanentWriteError(err):
-					tw.log.WithError(err).
-						WithField("events", len(events)).
-						Warn("Dropping permanently invalid batch")
-					events = events[:0]
-					flushBlocked = false
-
-					tw.resetRetryState(ticker, &retryAttempt)
-				case IsLimiterRejected(err):
-					flushBlocked = true
-				default:
-					flushBlocked = true
-				}
-				// On error: events are PRESERVED for retry on next cycle
-				errCh <- err
-			} else {
-				errCh <- nil
-			}
-
-		case <-done:
-		drainLoop:
-			for {
-				select {
-				case entry := <-tw.buffer:
-					tw.decrBuffer(1)
-
-					events = append(events, entry)
-				default:
-					break drainLoop
-				}
-			}
-
-			if len(events) > 0 {
-				drainCtx, drainCancel := context.WithTimeout(context.Background(), tw.drainTimeout)
-
-				if err := tw.flush(drainCtx, events); err != nil {
-					tw.log.WithError(err).WithField("events", len(events)).Warn("Flush error during shutdown drain")
-				}
-
-				drainCancel()
-			}
-
-			return
+		default:
+			goto drained
 		}
 	}
+
+drained:
+
+	tw.drainMu.Unlock()
+
+	if len(events) == 0 {
+		return nil
+	}
+
+	return tw.flush(ctx, events)
+}
+
+// drainAndFlush drains the buffer and flushes with a timeout context.
+// Used during shutdown to flush any remaining events.
+func (tw *chTableWriter) drainAndFlush(timeout time.Duration) error {
+	tw.drainMu.Lock()
+
+	events := make([]eventEntry, 0, len(tw.buffer))
+
+	for {
+		select {
+		case entry := <-tw.buffer:
+			events = append(events, entry)
+		default:
+			goto drained
+		}
+	}
+
+drained:
+
+	tw.drainMu.Unlock()
+
+	if len(events) == 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return tw.flush(ctx, events)
 }
 
 func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
@@ -247,13 +118,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 		}
 	}
 
-	if tw.batch == nil {
-		tw.batch = tw.newBatch()
-	} else {
-		tw.batch.Reset()
-	}
-
-	batch := tw.batch
+	batch := tw.newBatch()
 
 	var (
 		flattenErrs int
@@ -355,31 +220,6 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 	return nil
 }
 
-// scheduleOrganicRetry resets the ticker interval to an exponential backoff
-// delay so the next ticker.C fires after the computed retry delay.
-func (tw *chTableWriter) scheduleOrganicRetry(ticker *time.Ticker, attempt int) {
-	delay := min(
-		tw.organicRetryInitDelay*time.Duration(1<<attempt),
-		tw.organicRetryMaxDelay,
-	)
-
-	ticker.Reset(delay)
-
-	tw.log.WithField("delay", delay).
-		WithField("attempt", attempt+1).
-		Debug("Scheduled organic retry")
-}
-
-// resetRetryState restores the ticker to the normal flush interval and zeroes
-// the retry attempt counter when recovering from a blocked state.
-func (tw *chTableWriter) resetRetryState(ticker *time.Ticker, attempt *int) {
-	if *attempt > 0 {
-		ticker.Reset(tw.config.FlushInterval)
-	}
-
-	*attempt = 0
-}
-
 func (tw *chTableWriter) do(
 	ctx context.Context,
 	operation string,
@@ -410,42 +250,4 @@ func (tw *chTableWriter) do(
 
 		return tw.limiter.doWithLimiter(attemptCtx, poolFn)
 	})
-}
-
-// checkBufferWarning emits a rate-limited warning when the buffer usage
-// exceeds the configured BufferWarningThreshold. Safe to call from any
-// goroutine.
-func (tw *chTableWriter) checkBufferWarning() {
-	threshold := tw.writer.config.BufferWarningThreshold
-	if threshold <= 0 {
-		return
-	}
-
-	current := len(tw.buffer)
-	limit := tw.config.BufferSize
-
-	if float64(current) < threshold*float64(limit) {
-		return
-	}
-
-	now := time.Now().UnixNano()
-	last := tw.lastWarnAt.Load()
-
-	if now-last < int64(bufferWarningInterval) {
-		return
-	}
-
-	if tw.lastWarnAt.CompareAndSwap(last, now) {
-		tw.log.WithFields(logrus.Fields{
-			"current":   current,
-			"max":       limit,
-			"threshold": threshold,
-		}).Warn("Buffer usage exceeds warning threshold")
-	}
-}
-
-// decrBuffer decrements both the per-table and aggregate buffer gauges.
-func (tw *chTableWriter) decrBuffer(n int) {
-	tw.metrics.BufferUsage().WithLabelValues(tw.table).Sub(float64(n))
-	tw.metrics.BufferUsageTotal().Sub(float64(n))
 }

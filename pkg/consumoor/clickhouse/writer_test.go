@@ -14,6 +14,7 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,9 +47,7 @@ func newTestWriter(maxRetries int, baseDelay, maxDelay time.Duration) *ChGoWrite
 			DSN:          "clickhouse://localhost:9000/default",
 			DrainTimeout: 30 * time.Second,
 			Defaults: TableConfig{
-				BatchSize:     100,
-				FlushInterval: time.Second,
-				BufferSize:    100,
+				BufferSize: 100,
 			},
 		},
 		metrics: sharedTestMetrics(),
@@ -431,207 +430,111 @@ func TestGetOrCreateTableWriter_DifferentTablesGetDifferentWriters(t *testing.T)
 	assert.Len(t, w.tables, 2)
 }
 
-func TestBufferWarningThresholdValidation(t *testing.T) {
-	validChGo := ChGoConfig{
-		DialTimeout:       5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		RetryBaseDelay:    100 * time.Millisecond,
-		RetryMaxDelay:     2 * time.Second,
-		MaxConns:          32,
-		MinConns:          1,
-		ConnMaxLifetime:   time.Hour,
-		ConnMaxIdleTime:   10 * time.Minute,
-		HealthCheckPeriod: 30 * time.Second,
+func TestFlushTables_ConcurrentDrain(t *testing.T) {
+	w := newTestWriter(0, time.Millisecond, time.Millisecond)
+	w.poolDoFn = func(_ context.Context, _ ch.Query) error {
+		return nil
 	}
 
-	t.Run("accepts 0", func(t *testing.T) {
-		cfg := &Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			OrganicRetryInitDelay:  time.Second,
-			OrganicRetryMaxDelay:   30 * time.Second,
-			DrainTimeout:           30 * time.Second,
-			BufferWarningThreshold: 0,
-			ChGo:                   validChGo,
-		}
-		require.NoError(t, cfg.Validate())
-	})
+	const table = "beacon_block"
 
-	t.Run("accepts 0.8", func(t *testing.T) {
-		cfg := &Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			OrganicRetryInitDelay:  time.Second,
-			OrganicRetryMaxDelay:   30 * time.Second,
-			DrainTimeout:           30 * time.Second,
-			BufferWarningThreshold: 0.8,
-			ChGo:                   validChGo,
-		}
-		require.NoError(t, cfg.Validate())
-	})
+	// Register a batch factory so flush actually works.
+	w.batchFactories[table] = func() route.ColumnarBatch {
+		return &stubBatch{}
+	}
 
-	t.Run("accepts 1", func(t *testing.T) {
-		cfg := &Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			OrganicRetryInitDelay:  time.Second,
-			OrganicRetryMaxDelay:   30 * time.Second,
-			DrainTimeout:           30 * time.Second,
-			BufferWarningThreshold: 1.0,
-			ChGo:                   validChGo,
-		}
-		require.NoError(t, cfg.Validate())
-	})
+	tw := w.getOrCreateTableWriter(table)
 
-	t.Run("rejects negative", func(t *testing.T) {
-		cfg := &Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			OrganicRetryInitDelay:  time.Second,
-			OrganicRetryMaxDelay:   30 * time.Second,
-			DrainTimeout:           30 * time.Second,
-			BufferWarningThreshold: -0.1,
-			ChGo:                   validChGo,
-		}
-		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "bufferWarningThreshold")
-	})
+	// Fill the buffer with some events.
+	const eventCount = 50
 
-	t.Run("rejects greater than 1", func(t *testing.T) {
-		cfg := &Config{
-			DSN: "clickhouse://localhost:9000/default",
-			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
-			},
-			OrganicRetryInitDelay:  time.Second,
-			OrganicRetryMaxDelay:   30 * time.Second,
-			DrainTimeout:           30 * time.Second,
-			BufferWarningThreshold: 1.5,
-			ChGo:                   validChGo,
-		}
-		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "bufferWarningThreshold")
-	})
+	for i := 0; i < eventCount; i++ {
+		tw.buffer <- eventEntry{}
+	}
+
+	// Launch multiple concurrent FlushTables calls.
+	const flushers = 10
+
+	errs := make([]error, flushers)
+
+	var wg sync.WaitGroup
+
+	wg.Add(flushers)
+
+	for i := 0; i < flushers; i++ {
+		go func(idx int) {
+			defer wg.Done()
+
+			errs[idx] = w.FlushTables(context.Background(), []string{table})
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, err := range errs {
+		assert.NoError(t, err, "flusher %d returned error", i)
+	}
+
+	// Buffer should be fully drained.
+	assert.Equal(t, 0, len(tw.buffer))
 }
 
-func TestCheckBufferWarning(t *testing.T) {
-	t.Run("no warning below threshold", func(t *testing.T) {
-		tw := &chTableWriter{
-			log:    logrus.New().WithField("test", true),
-			table:  "test_table",
-			config: TableConfig{BufferSize: 100},
-			writer: &ChGoWriter{
-				config: &Config{BufferWarningThreshold: 0.8},
-			},
-			buffer: make(chan eventEntry, 100),
-		}
+func TestStop_DrainsRemainingEvents(t *testing.T) {
+	w := newTestWriter(0, time.Millisecond, time.Millisecond)
 
-		// Fill to 50% -- below 80% threshold
-		for i := 0; i < 50; i++ {
-			tw.buffer <- eventEntry{}
-		}
+	var flushed atomic.Int32
 
-		tw.checkBufferWarning()
-		assert.Equal(t, int64(0), tw.lastWarnAt.Load(),
-			"should not warn when below threshold")
-	})
+	w.poolDoFn = func(_ context.Context, _ ch.Query) error {
+		flushed.Add(1)
 
-	t.Run("warns above threshold", func(t *testing.T) {
-		tw := &chTableWriter{
-			log:    logrus.New().WithField("test", true),
-			table:  "test_table",
-			config: TableConfig{BufferSize: 100},
-			writer: &ChGoWriter{
-				config: &Config{BufferWarningThreshold: 0.8},
-			},
-			buffer: make(chan eventEntry, 100),
-		}
+		return nil
+	}
 
-		// Fill to 85% -- above 80% threshold
-		for i := 0; i < 85; i++ {
-			tw.buffer <- eventEntry{}
-		}
+	const table = "beacon_block"
 
-		tw.checkBufferWarning()
-		assert.NotEqual(t, int64(0), tw.lastWarnAt.Load(),
-			"should warn when above threshold")
-	})
+	w.batchFactories[table] = func() route.ColumnarBatch {
+		return &stubBatch{}
+	}
 
-	t.Run("rate limits warnings", func(t *testing.T) {
-		tw := &chTableWriter{
-			log:    logrus.New().WithField("test", true),
-			table:  "test_table",
-			config: TableConfig{BufferSize: 100},
-			writer: &ChGoWriter{
-				config: &Config{BufferWarningThreshold: 0.8},
-			},
-			buffer: make(chan eventEntry, 100),
-		}
+	tw := w.getOrCreateTableWriter(table)
 
-		// Fill above threshold
-		for i := 0; i < 85; i++ {
-			tw.buffer <- eventEntry{}
-		}
+	// Buffer some events.
+	const eventCount = 25
 
-		tw.checkBufferWarning()
-		firstWarn := tw.lastWarnAt.Load()
-		require.NotEqual(t, int64(0), firstWarn)
+	for i := 0; i < eventCount; i++ {
+		tw.buffer <- eventEntry{}
+	}
 
-		// Second call should not update the timestamp (rate limited)
-		tw.checkBufferWarning()
-		assert.Equal(t, firstWarn, tw.lastWarnAt.Load(),
-			"should rate-limit warnings within the interval")
-	})
+	// Stop should drain and flush remaining events.
+	err := w.Stop(context.Background())
+	require.NoError(t, err)
 
-	t.Run("disabled when threshold is 0", func(t *testing.T) {
-		tw := &chTableWriter{
-			log:    logrus.New().WithField("test", true),
-			table:  "test_table",
-			config: TableConfig{BufferSize: 100},
-			writer: &ChGoWriter{
-				config: &Config{BufferWarningThreshold: 0},
-			},
-			buffer: make(chan eventEntry, 100),
-		}
-
-		// Fill to 100%
-		for i := 0; i < 100; i++ {
-			tw.buffer <- eventEntry{}
-		}
-
-		tw.checkBufferWarning()
-		assert.Equal(t, int64(0), tw.lastWarnAt.Load(),
-			"should not warn when threshold is disabled (0)")
-	})
+	assert.Greater(t, flushed.Load(), int32(0), "should have flushed at least once")
+	assert.Equal(t, 0, len(tw.buffer), "buffer should be empty after stop")
 }
+
+// stubBatch is a minimal ColumnarBatch implementation for unit tests.
+type stubBatch struct {
+	rows int
+}
+
+func (s *stubBatch) FlattenTo(_ *xatu.DecoratedEvent) error {
+	s.rows++
+
+	return nil
+}
+
+func (s *stubBatch) Rows() int { return s.rows }
+
+func (s *stubBatch) Input() proto.Input { return proto.Input{} }
+
+func (s *stubBatch) Reset() { s.rows = 0 }
 
 func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("default inherits from defaults", func(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BatchSize:         1000,
-				FlushInterval:     time.Second,
 				BufferSize:        1000,
 				SkipFlattenErrors: true,
 			},
@@ -644,9 +547,7 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
+				BufferSize: 1000,
 			},
 			Tables: map[string]TableConfig{
 				"some_table": {SkipFlattenErrors: true},
@@ -660,8 +561,6 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BatchSize:         1000,
-				FlushInterval:     time.Second,
 				BufferSize:        1000,
 				SkipFlattenErrors: true,
 			},
@@ -677,9 +576,7 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BatchSize:     1000,
-				FlushInterval: time.Second,
-				BufferSize:    1000,
+				BufferSize: 1000,
 			},
 			Tables: map[string]TableConfig{
 				"some_table": {},

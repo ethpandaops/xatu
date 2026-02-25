@@ -32,16 +32,8 @@ func validChGoConfig() clickhouse.ChGoConfig {
 // validClickHouseConfig returns a clickhouse.Config that passes validation.
 func validClickHouseConfig() *clickhouse.Config {
 	return &clickhouse.Config{
-		DSN: "clickhouse://localhost:9000/default",
-		Defaults: clickhouse.TableConfig{
-			BatchSize:     1000,
-			FlushInterval: time.Second,
-			BufferSize:    1000,
-		},
-		OrganicRetryInitDelay: time.Second,
-		OrganicRetryMaxDelay:  30 * time.Second,
-		DrainTimeout:          30 * time.Second,
-		ChGo:                  validChGoConfig(),
+		DSN:  "clickhouse://localhost:9000/default",
+		ChGo: validChGoConfig(),
 	}
 }
 
@@ -56,6 +48,7 @@ func validKafkaConfig() *source.KafkaConfig {
 		SessionTimeoutMs: 30000,
 		CommitInterval:   5 * time.Second,
 		ShutdownTimeout:  30 * time.Second,
+		MaxInFlight:      64,
 	}
 }
 
@@ -134,9 +127,6 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 func TestTableConfigForMergesInsertSettings(t *testing.T) {
 	cfg := &clickhouse.Config{
 		Defaults: clickhouse.TableConfig{
-			BatchSize:     100,
-			FlushInterval: time.Second,
-			BufferSize:    300,
 			InsertSettings: map[string]any{
 				"insert_quorum":         2,
 				"insert_quorum_timeout": 30000,
@@ -144,7 +134,6 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 		},
 		Tables: map[string]clickhouse.TableConfig{
 			"canonical_beacon_block": {
-				BatchSize: 500,
 				InsertSettings: map[string]any{
 					"insert_quorum": 3,
 				},
@@ -154,8 +143,6 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 
 	got := cfg.TableConfigFor("canonical_beacon_block")
 
-	assert.Equal(t, 500, got.BatchSize)
-	assert.Equal(t, 300, got.BufferSize)
 	assert.Equal(
 		t,
 		map[string]any{
@@ -247,47 +234,16 @@ func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
 	})
 }
 
-func TestClickHouseConfigValidateBufferSize(t *testing.T) {
-	t.Run("rejects bufferSize less than batchSize", func(t *testing.T) {
-		cfg := validClickHouseConfig()
-		cfg.Defaults.BatchSize = 1000
-		cfg.Defaults.BufferSize = 500
-
-		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "bufferSize must be >= batchSize")
-	})
-
-	t.Run("accepts bufferSize equal to batchSize", func(t *testing.T) {
-		cfg := validClickHouseConfig()
-		cfg.Defaults.BatchSize = 1000
-		cfg.Defaults.BufferSize = 1000
-		require.NoError(t, cfg.Validate())
-	})
-}
-
 func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	t.Run("adds auto quorum for canonical tables when unset", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     100,
-				FlushInterval: time.Second,
-				BufferSize:    300,
-			},
-		}
+		cfg := &clickhouse.Config{}
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
 		assert.Equal(t, map[string]any{"insert_quorum": "auto"}, got.InsertSettings)
 	})
 
 	t.Run("does not add quorum for non-canonical tables", func(t *testing.T) {
-		cfg := &clickhouse.Config{
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     100,
-				FlushInterval: time.Second,
-				BufferSize:    300,
-			},
-		}
+		cfg := &clickhouse.Config{}
 
 		got := cfg.TableConfigFor("beacon_api_eth_v1_events_head")
 		assert.Nil(t, got.InsertSettings)
@@ -295,11 +251,6 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 
 	t.Run("preserves explicit per-table quorum", func(t *testing.T) {
 		cfg := &clickhouse.Config{
-			Defaults: clickhouse.TableConfig{
-				BatchSize:     100,
-				FlushInterval: time.Second,
-				BufferSize:    300,
-			},
 			Tables: map[string]clickhouse.TableConfig{
 				"canonical_beacon_block": {
 					InsertSettings: map[string]any{
@@ -316,9 +267,6 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	t.Run("preserves explicit default quorum", func(t *testing.T) {
 		cfg := &clickhouse.Config{
 			Defaults: clickhouse.TableConfig{
-				BatchSize:     100,
-				FlushInterval: time.Second,
-				BufferSize:    300,
 				InsertSettings: map[string]any{
 					"insert_quorum": 2,
 				},

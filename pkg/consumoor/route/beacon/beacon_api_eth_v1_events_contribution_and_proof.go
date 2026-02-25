@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -131,7 +132,7 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) appendPayload(event *xat
 	b.ContributionBeaconBlockRoot.Append([]byte(contribution.GetBeaconBlockRoot()))
 
 	if subcommitteeIndex := contribution.GetSubcommitteeIndex(); subcommitteeIndex != nil {
-		b.ContributionSubcommitteeIndex.Append(fmt.Sprint(subcommitteeIndex.GetValue()))
+		b.ContributionSubcommitteeIndex.Append(strconv.FormatUint(subcommitteeIndex.GetValue(), 10))
 	} else {
 		b.ContributionSubcommitteeIndex.Append("")
 	}

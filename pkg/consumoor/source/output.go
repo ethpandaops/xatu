@@ -174,7 +174,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 		g.messages = append(g.messages, groupMessage{
 			batchIndex: i,
-			raw:        append([]byte(nil), raw...),
+			raw:        raw,
 			event:      event,
 			kafka:      kafka,
 			tables:     tables,
@@ -182,10 +182,11 @@ func (o *xatuClickHouseOutput) WriteBatch(
 	}
 
 	// Phase 2: process each event group independently.
+	// Pass batchErr through so Phase 1 failures (decode errors) are preserved
+	// when a group also fails — otherwise processGroup would create a new
+	// BatchError that silently drops the earlier failures.
 	for _, g := range groups {
-		if err := o.processGroup(ctx, msgs, g); err != nil {
-			batchErr = err
-		}
+		batchErr = o.processGroup(ctx, msgs, batchErr, g)
 	}
 
 	if batchErr != nil {
@@ -226,43 +227,35 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 
 // processGroup writes all messages in the group to their target tables, then
 // flushes only those tables. On failure the entire group is NAK'd or DLQ'd.
+// The caller's accumulated batchErr is threaded through so that failures from
+// earlier phases (e.g. decode errors) are preserved.
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,
+	batchErr *service.BatchError,
 	g *eventGroup,
 ) *service.BatchError {
-	// Collect the unique set of tables for this group.
-	tableSet := make(map[string]struct{}, 4)
-
+	tableEvents := make(map[string][]*xatu.DecoratedEvent, 4)
 	for _, gm := range g.messages {
 		for _, table := range gm.tables {
-			tableSet[table] = struct{}{}
-		}
-
-		for _, table := range gm.tables {
-			o.writer.Write(table, gm.event)
+			tableEvents[table] = append(tableEvents[table], gm.event)
 		}
 	}
 
-	tables := make([]string, 0, len(tableSet))
-	for t := range tableSet {
-		tables = append(tables, t)
-	}
-
-	err := o.writer.FlushTables(ctx, tables)
+	err := o.writer.FlushTableEvents(ctx, tableEvents)
 	if err == nil {
-		return nil
+		return batchErr
 	}
 
 	// Flush failed — attribute to all messages in the group.
-	var batchErr *service.BatchError
-
 	if clickhouse.IsPermanentWriteError(err) {
 		for _, gm := range g.messages {
+			// Copy raw bytes only when needed for DLQ; the success path
+			// avoids the copy entirely by referencing the Benthos-owned slice.
 			rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason:    rejectReasonWritePermanent,
 				Err:       err.Error(),
-				Payload:   gm.raw,
+				Payload:   append([]byte(nil), gm.raw...),
 				EventName: gm.event.GetEvent().GetName().String(),
 				Kafka:     gm.kafka,
 			})

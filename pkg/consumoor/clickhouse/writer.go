@@ -36,7 +36,6 @@ type ChGoWriter struct {
 	// registered by route initialization.
 	batchFactories map[string]func() route.ColumnarBatch
 
-	done     chan struct{}
 	stopOnce sync.Once
 
 	poolMetricsDone chan struct{}
@@ -77,7 +76,6 @@ func NewChGoWriter(
 		database:       opts.Database,
 		tables:         make(map[string]*chTableWriter, 16),
 		batchFactories: make(map[string]func() route.ColumnarBatch, 64),
-		done:           make(chan struct{}),
 	}, nil
 }
 
@@ -167,28 +165,11 @@ func (w *ChGoWriter) Ping(ctx context.Context) error {
 	return pool.Ping(ctx)
 }
 
-// Stop drains buffers and closes the connection pool. It is safe to
-// call multiple times; only the first call performs cleanup.
+// Stop closes the connection pool. It is safe to call multiple times;
+// only the first call performs cleanup.
 func (w *ChGoWriter) Stop(_ context.Context) error {
 	w.stopOnce.Do(func() {
-		w.log.Info("Stopping ch-go writer, flushing remaining buffers")
-
-		close(w.done)
-
-		// Drain all table writers. Benthos guarantees all WriteBatch
-		// goroutines have returned before calling Close/Stop, so no
-		// in-flight flushes race with this drain.
-		w.mu.RLock()
-
-		for _, tw := range w.tables {
-			if err := tw.drainAndFlush(w.config.DrainTimeout); err != nil {
-				w.log.WithError(err).
-					WithField("table", tw.table).
-					Warn("Flush error during shutdown drain")
-			}
-		}
-
-		w.mu.RUnlock()
+		w.log.Info("Stopping ch-go writer")
 
 		if w.poolMetricsDone != nil {
 			close(w.poolMetricsDone)
@@ -203,59 +184,49 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 	return nil
 }
 
-// Write enqueues an event for table batching.
-// Write blocks if the buffer is full, propagating backpressure to the caller.
-func (w *ChGoWriter) Write(table string, event *xatu.DecoratedEvent) {
-	tw := w.getOrCreateTableWriter(table)
-
-	select {
-	case tw.buffer <- eventEntry{event: event}:
-	case <-w.done:
-		// Shutting down, discard.
-	}
-}
-
-// FlushTables forces the specified table writers (by base table name)
-// to drain their buffers and write to ClickHouse synchronously.
-// Base names are resolved using the configured TableSuffix.
-// An empty or nil slice is a no-op that returns nil.
-// Returns a joined error containing all table failures so callers can
-// identify every failed table in the batch.
-func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
-	if len(tables) == 0 {
+// FlushTableEvents writes the given events directly to their respective
+// ClickHouse tables concurrently. The map keys are base table names
+// (without suffix). Returns a joined error containing all table failures.
+func (w *ChGoWriter) FlushTableEvents(
+	ctx context.Context,
+	tableEvents map[string][]*xatu.DecoratedEvent,
+) error {
+	if len(tableEvents) == 0 {
 		return nil
 	}
 
-	w.mu.RLock()
+	type tableFlush struct {
+		tw     *chTableWriter
+		events []*xatu.DecoratedEvent
+	}
 
-	writers := make([]*chTableWriter, 0, len(tables))
+	flushes := make([]tableFlush, 0, len(tableEvents))
 
-	for _, base := range tables {
-		writeTable := base + w.config.TableSuffix
-		if tw, ok := w.tables[writeTable]; ok {
-			writers = append(writers, tw)
+	for base, events := range tableEvents {
+		if len(events) == 0 {
+			continue
 		}
+
+		tw := w.getOrCreateTableWriter(base)
+		flushes = append(flushes, tableFlush{tw: tw, events: events})
 	}
 
-	w.mu.RUnlock()
-
-	if len(writers) == 0 {
+	if len(flushes) == 0 {
 		return nil
 	}
 
-	// Flush each table writer concurrently from the calling goroutines.
-	errs := make([]error, len(writers))
+	errs := make([]error, len(flushes))
 
 	var wg sync.WaitGroup
 
-	wg.Add(len(writers))
+	wg.Add(len(flushes))
 
-	for i, tw := range writers {
-		go func(idx int, tw *chTableWriter) {
+	for i, f := range flushes {
+		go func(idx int, f tableFlush) {
 			defer wg.Done()
 
-			errs[idx] = tw.flushBuffer(ctx)
-		}(i, tw)
+			errs[idx] = f.tw.flush(ctx, f.events)
+		}(i, f)
 	}
 
 	wg.Wait()
@@ -264,7 +235,12 @@ func (w *ChGoWriter) FlushTables(ctx context.Context, tables []string) error {
 }
 
 func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
-	writeTable := table + w.config.TableSuffix
+	var writeTable string
+	if w.config.TableSuffix == "" {
+		writeTable = table
+	} else {
+		writeTable = table + w.config.TableSuffix
+	}
 
 	w.mu.RLock()
 	tw, ok := w.tables[writeTable]
@@ -285,23 +261,20 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 	// don't need to include the suffix.
 	cfg := w.config.TableConfigFor(table)
 	tw = &chTableWriter{
-		log:          w.log.WithField("table", writeTable),
-		table:        writeTable,
-		baseTable:    table,
-		database:     w.database,
-		config:       cfg,
-		metrics:      w.metrics,
-		writer:       w,
-		buffer:       make(chan eventEntry, cfg.BufferSize),
-		drainTimeout: w.config.DrainTimeout,
-		newBatch:     w.batchFactories[table],
-		limiter:      newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
+		log:       w.log.WithField("table", writeTable),
+		table:     writeTable,
+		baseTable: table,
+		database:  w.database,
+		config:    cfg,
+		metrics:   w.metrics,
+		writer:    w,
+		newBatch:  w.batchFactories[table],
+		limiter:   newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
 	}
 
 	w.tables[writeTable] = tw
 
 	w.log.WithField("table", writeTable).
-		WithField("buffer_size", cfg.BufferSize).
 		WithField("has_batch_factory", tw.newBatch != nil).
 		Info("Created ch-go table writer")
 

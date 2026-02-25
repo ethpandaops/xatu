@@ -19,12 +19,12 @@ type mockWriter struct {
 	pingErr error
 }
 
-func (m *mockWriter) Start(_ context.Context) error                   { return nil }
-func (m *mockWriter) Stop(_ context.Context) error                    { return nil }
-func (m *mockWriter) Write(_ string, _ *xatu.DecoratedEvent)          {}
-func (m *mockWriter) FlushAll(_ context.Context) error                { return nil }
-func (m *mockWriter) FlushTables(_ context.Context, _ []string) error { return nil }
-func (m *mockWriter) Ping(_ context.Context) error                    { return m.pingErr }
+func (m *mockWriter) Start(_ context.Context) error { return nil }
+func (m *mockWriter) Stop(_ context.Context) error  { return nil }
+func (m *mockWriter) FlushTableEvents(_ context.Context, _ map[string][]*xatu.DecoratedEvent) error {
+	return nil
+}
+func (m *mockWriter) Ping(_ context.Context) error { return m.pingErr }
 
 func TestHandleHealthz(t *testing.T) {
 	c := &Consumoor{

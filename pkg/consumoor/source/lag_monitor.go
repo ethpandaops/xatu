@@ -30,8 +30,8 @@ type LagMonitor struct {
 }
 
 // NewLagMonitor creates a new LagMonitor. Call Start to begin polling.
-// The consumerGroups slice should contain the actual per-topic consumer
-// group names used by the Benthos streams (e.g. "base-group-topicA").
+// The consumerGroups slice contains the consumer group names to monitor
+// for lag (typically the single base consumer group shared by all streams).
 func NewLagMonitor(
 	log logrus.FieldLogger,
 	cfg *KafkaConfig,
@@ -119,7 +119,7 @@ func (m *LagMonitor) Stop() error {
 }
 
 // poll uses kadm.Client.Lag to fetch and publish consumer group lag
-// for all per-topic consumer groups.
+// for all monitored consumer groups.
 func (m *LagMonitor) poll(ctx context.Context) {
 	lags, err := m.admClient.Lag(ctx, m.consumerGroups...)
 	if err != nil {

@@ -7,22 +7,21 @@ import (
 
 // Metrics holds all Prometheus metrics for the consumoor service.
 type Metrics struct {
-	messagesConsumed *prometheus.CounterVec
-	messagesRouted   *prometheus.CounterVec
-	messagesDropped  *prometheus.CounterVec
-	messagesRejected *prometheus.CounterVec
-	decodeErrors     *prometheus.CounterVec
-	dlqWrites        *prometheus.CounterVec
-	dlqErrors        *prometheus.CounterVec
-	rowsWritten      *prometheus.CounterVec
-	writeErrors      *prometheus.CounterVec
-	writeDuration    *prometheus.HistogramVec
-	batchSize        *prometheus.HistogramVec
-	bufferUsage      *prometheus.GaugeVec
-	bufferUsageTotal prometheus.Gauge
-	flattenErrors    *prometheus.CounterVec
-	activeTopics     prometheus.Gauge
-	kafkaConsumerLag *prometheus.GaugeVec
+	messagesConsumed  *prometheus.CounterVec
+	messagesRouted    *prometheus.CounterVec
+	messagesDropped   *prometheus.CounterVec
+	messagesRejected  *prometheus.CounterVec
+	decodeErrors      *prometheus.CounterVec
+	dlqWrites         *prometheus.CounterVec
+	dlqErrors         *prometheus.CounterVec
+	rowsWritten       *prometheus.CounterVec
+	writeErrors       *prometheus.CounterVec
+	writeDuration     *prometheus.HistogramVec
+	batchSize         *prometheus.HistogramVec
+	flattenErrors     *prometheus.CounterVec
+	activeTopics      prometheus.Gauge
+	kafkaConsumerLag  *prometheus.GaugeVec
+	outputMaxInFlight prometheus.Gauge
 
 	// adaptive limiter metrics (per-table)
 	adaptiveLimiterLimit    *prometheus.GaugeVec
@@ -130,20 +129,6 @@ func NewMetrics(namespace string) *Metrics {
 			Buckets:   []float64{1, 10, 100, 1000, 10000, 50000, 100000, 200000, 500000, 1000000},
 		}, []string{"table"}),
 
-		bufferUsage: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "buffer_usage",
-			Help:      "Current number of rows buffered per table.",
-		}, []string{"table"}),
-
-		bufferUsageTotal: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "buffer_usage_total",
-			Help:      "Sum of all table buffer usages. Single number for aggregate memory pressure alerting.",
-		}),
-
 		flattenErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
@@ -164,6 +149,13 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "kafka_consumer_lag",
 			Help:      "Kafka consumer group lag per topic and partition.",
 		}, []string{"topic", "partition", "consumer_group"}),
+
+		outputMaxInFlight: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "output_max_in_flight",
+			Help:      "Configured maximum number of concurrent Benthos WriteBatch calls per stream.",
+		}),
 
 		adaptiveLimiterLimit: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -269,11 +261,10 @@ func (m *Metrics) RowsWritten() *prometheus.CounterVec      { return m.rowsWritt
 func (m *Metrics) WriteErrors() *prometheus.CounterVec      { return m.writeErrors }
 func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDuration }
 func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
-func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsage }
-func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsageTotal }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
 func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
 func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
+func (m *Metrics) OutputMaxInFlight() prometheus.Gauge      { return m.outputMaxInFlight }
 
 func (m *Metrics) AdaptiveLimiterLimit() *prometheus.GaugeVec    { return m.adaptiveLimiterLimit }
 func (m *Metrics) AdaptiveLimiterInflight() *prometheus.GaugeVec { return m.adaptiveLimiterInflight }

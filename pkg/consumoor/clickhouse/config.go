@@ -31,11 +31,6 @@ type Config struct {
 	// false to downgrade to warnings and allow startup to proceed.
 	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"true"`
 
-	// DrainTimeout bounds how long each table writer waits for its final
-	// flush during shutdown. If ClickHouse is unresponsive the drain is
-	// cancelled after this duration rather than hanging indefinitely.
-	DrainTimeout time.Duration `yaml:"drainTimeout" default:"30s"`
-
 	// Defaults are the default table settings.
 	Defaults TableConfig `yaml:"defaults"`
 
@@ -48,10 +43,6 @@ type Config struct {
 
 // TableConfig holds per-table settings for the ClickHouse writer.
 type TableConfig struct {
-	// BufferSize is the channel buffer capacity for pending rows.
-	// When the buffer is full, Write() blocks, propagating backpressure
-	// through Benthos to the Kafka consumer.
-	BufferSize int `yaml:"bufferSize" default:"50000"`
 	// SkipFlattenErrors when true skips events that fail FlattenTo
 	// instead of failing the entire batch. Default false = fail-fast.
 	SkipFlattenErrors bool `yaml:"skipFlattenErrors"`
@@ -177,23 +168,11 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.DrainTimeout <= 0 {
-		return errors.New("clickhouse: drainTimeout must be > 0")
-	}
-
-	if c.Defaults.BufferSize <= 0 {
-		return errors.New("clickhouse.defaults: bufferSize must be > 0")
-	}
-
 	if err := validateInsertSettings(c.Defaults.InsertSettings, "clickhouse.defaults.insertSettings"); err != nil {
 		return err
 	}
 
 	for table, override := range c.Tables {
-		if override.BufferSize < 0 {
-			return fmt.Errorf("clickhouse.tables.%s: bufferSize must be >= 0", table)
-		}
-
 		path := fmt.Sprintf("clickhouse.tables.%s.insertSettings", table)
 		if err := validateInsertSettings(override.InsertSettings, path); err != nil {
 			return err
@@ -275,10 +254,6 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 		applyCanonicalTableDefaults(table, &cfg)
 
 		return cfg
-	}
-
-	if override.BufferSize > 0 {
-		cfg.BufferSize = override.BufferSize
 	}
 
 	cfg.SkipFlattenErrors = cfg.SkipFlattenErrors || override.SkipFlattenErrors

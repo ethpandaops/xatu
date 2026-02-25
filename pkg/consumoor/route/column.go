@@ -71,12 +71,13 @@ func ConsensusVersionPatch(raw string) string {
 	return patch
 }
 
-// parseConsensusVersion normalizes and splits a consensus version string
-// into major, minor, patch components.
-func parseConsensusVersion(raw string) (major, minor, patch string) {
-	normalized := NormalizeConsensusVersion(raw)
+// ParseConsensusVersion normalizes a raw consensus version string and
+// splits it into its four components in a single pass.
+// This avoids repeated SplitN calls when each component is needed.
+func ParseConsensusVersion(raw string) (normalized, major, minor, patch string) {
+	normalized = NormalizeConsensusVersion(raw)
 	if normalized == "" {
-		return "", "", ""
+		return "", "", "", ""
 	}
 
 	version := strings.TrimPrefix(normalized, "v")
@@ -98,6 +99,14 @@ func parseConsensusVersion(raw string) (major, minor, patch string) {
 			patch = patch[:idx]
 		}
 	}
+
+	return normalized, major, minor, patch
+}
+
+// parseConsensusVersion normalizes and splits a consensus version string
+// into major, minor, patch components.
+func parseConsensusVersion(raw string) (major, minor, patch string) {
+	_, major, minor, patch = ParseConsensusVersion(raw)
 
 	return major, minor, patch
 }

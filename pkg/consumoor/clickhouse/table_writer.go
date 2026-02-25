@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/ClickHouse/ch-go"
@@ -14,11 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// eventEntry holds a single event for buffering in the table writer.
-type eventEntry struct {
-	event *xatu.DecoratedEvent
-}
-
 type chTableWriter struct {
 	log       logrus.FieldLogger
 	table     string
@@ -27,80 +21,20 @@ type chTableWriter struct {
 	config    TableConfig
 	metrics   *telemetry.Metrics
 	writer    *ChGoWriter
-	buffer    chan eventEntry
-
-	drainTimeout time.Duration
-
-	// drainMu serializes buffer drains so that the first goroutine gets a
-	// large batch while subsequent concurrent flushers find an empty buffer.
-	drainMu sync.Mutex
 
 	newBatch func() route.ColumnarBatch
 
 	// limiter is the per-table adaptive concurrency limiter.
 	// nil when adaptive limiting is disabled.
 	limiter *adaptiveConcurrencyLimiter
+
+	// Cached per-table strings computed once and reused every flush.
+	operationName string
+	insertQuery   string
+	insertQueryOK bool
 }
 
-// flushBuffer drains the buffer channel and flushes all accumulated events.
-// The drain is serialized via drainMu so that the first caller gets a large
-// batch while concurrent callers find an empty buffer and return nil.
-func (tw *chTableWriter) flushBuffer(ctx context.Context) error {
-	tw.drainMu.Lock()
-
-	events := make([]eventEntry, 0, len(tw.buffer))
-
-	for {
-		select {
-		case entry := <-tw.buffer:
-			events = append(events, entry)
-		default:
-			goto drained
-		}
-	}
-
-drained:
-
-	tw.drainMu.Unlock()
-
-	if len(events) == 0 {
-		return nil
-	}
-
-	return tw.flush(ctx, events)
-}
-
-// drainAndFlush drains the buffer and flushes with a timeout context.
-// Used during shutdown to flush any remaining events.
-func (tw *chTableWriter) drainAndFlush(timeout time.Duration) error {
-	tw.drainMu.Lock()
-
-	events := make([]eventEntry, 0, len(tw.buffer))
-
-	for {
-		select {
-		case entry := <-tw.buffer:
-			events = append(events, entry)
-		default:
-			goto drained
-		}
-	}
-
-drained:
-
-	tw.drainMu.Unlock()
-
-	if len(events) == 0 {
-		return nil
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	return tw.flush(ctx, events)
-}
-
-func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
+func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
@@ -125,8 +59,8 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 		lastErr     error
 	)
 
-	for _, e := range events {
-		err := batch.FlattenTo(e.event)
+	for _, event := range events {
+		err := batch.FlattenTo(event)
 		if err == nil {
 			continue
 		}
@@ -178,21 +112,29 @@ func (tw *chTableWriter) flush(ctx context.Context, events []eventEntry) error {
 
 	input := batch.Input()
 
-	insertBody, err := insertQueryWithSettings(input.Into(tw.table), tw.config.InsertSettings)
-	if err != nil {
-		tw.log.WithError(err).
-			WithField("rows", rows).
-			Error("Invalid insert settings")
-		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
+	// Cache the INSERT query body and operation name on first use.
+	// Both are invariant between flushes for a given table.
+	if !tw.insertQueryOK {
+		body, err := insertQueryWithSettings(input.Into(tw.table), tw.config.InsertSettings)
+		if err != nil {
+			tw.log.WithError(err).
+				WithField("rows", rows).
+				Error("Invalid insert settings")
+			tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
-		return &tableWriteError{
-			table: tw.baseTable,
-			cause: fmt.Errorf("building insert query for %s: %w", tw.table, err),
+			return &tableWriteError{
+				table: tw.baseTable,
+				cause: fmt.Errorf("building insert query for %s: %w", tw.table, err),
+			}
 		}
+
+		tw.insertQuery = body
+		tw.operationName = "insert_" + tw.table
+		tw.insertQueryOK = true
 	}
 
-	if err := tw.do(ctx, "insert_"+tw.table, &ch.Query{
-		Body:  insertBody,
+	if err := tw.do(ctx, tw.operationName, &ch.Query{
+		Body:  tw.insertQuery,
 		Input: input,
 	}, nil); err != nil {
 		tw.log.WithError(err).

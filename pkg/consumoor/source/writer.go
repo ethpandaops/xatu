@@ -10,11 +10,10 @@ import (
 type Writer interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
-	Write(table string, event *xatu.DecoratedEvent)
-	// FlushTables forces the specified table writers (by base table name)
-	// to drain their buffers and write to ClickHouse synchronously.
-	// An empty or nil slice is a no-op that returns nil.
-	FlushTables(ctx context.Context, tables []string) error
+	// FlushTableEvents writes the given events directly to their respective
+	// ClickHouse tables concurrently. The map keys are base table names
+	// (without suffix). Returns a joined error containing all table failures.
+	FlushTableEvents(ctx context.Context, tableEvents map[string][]*xatu.DecoratedEvent) error
 	// Ping checks connectivity to the underlying datastore.
 	Ping(ctx context.Context) error
 }

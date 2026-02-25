@@ -69,7 +69,7 @@ func NewBenthosStream(
 				metrics:    metrics,
 				rejectSink: rejectSink,
 				ownsWriter: ownsWriter,
-			}, batchPolicy, 1, nil
+			}, batchPolicy, kafkaConfig.MaxInFlight, nil
 		},
 	); registerErr != nil {
 		closeRejectSink()

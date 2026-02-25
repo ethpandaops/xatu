@@ -1024,10 +1024,10 @@ var metaColumnDefs = map[string]metaColumnDef{
 
 	// Consensus client
 	"meta_consensus_implementation": {expr: "event.GetMeta().GetClient().GetEthereum().GetConsensus().GetImplementation()"},
-	"meta_consensus_version":        {expr: "route.NormalizeConsensusVersion(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion())"},
-	"meta_consensus_version_major":  {expr: "route.ConsensusVersionMajor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion())"},
-	"meta_consensus_version_minor":  {expr: "route.ConsensusVersionMinor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion())"},
-	"meta_consensus_version_patch":  {expr: "route.ConsensusVersionPatch(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion())"},
+	"meta_consensus_version":        {special: "consensus_version_normalized"},
+	"meta_consensus_version_major":  {special: "consensus_version_major"},
+	"meta_consensus_version_minor":  {special: "consensus_version_minor"},
+	"meta_consensus_version_patch":  {special: "consensus_version_patch"},
 
 	// Execution client
 	"meta_execution_implementation": {expr: "event.GetMeta().GetClient().GetEthereum().GetExecution().GetImplementation()"},
@@ -1059,6 +1059,26 @@ func writeAppendMetadata(b *bytes.Buffer, batchName string, cols []column, gens 
 	b.WriteString("\t}\n\n")
 
 	// Non-nil case: append from proto getters.
+	//
+	// Emit a single ParseConsensusVersion call if any of the four
+	// consensus_version columns are present, so the version string is
+	// parsed once instead of four separate times per event.
+	cvEmitted := false
+	cvFieldMap := map[string]string{
+		"consensus_version_normalized": "",
+		"consensus_version_major":      "",
+		"consensus_version_minor":      "",
+		"consensus_version_patch":      "",
+	}
+
+	for _, col := range cols {
+		if def, ok := metaColumnDefs[col.Name]; ok {
+			if _, isCv := cvFieldMap[def.special]; isCv {
+				cvFieldMap[def.special] = col.Field
+			}
+		}
+	}
+
 	for i, col := range cols {
 		if !strings.HasPrefix(col.Name, "meta_") {
 			continue
@@ -1081,6 +1101,33 @@ func writeAppendMetadata(b *bytes.Buffer, batchName string, cols []column, gens 
 			b.WriteString("\t} else {\n")
 			b.WriteString("\t\tb.MetaLabels.Append(map[string]string{})\n")
 			b.WriteString("\t}\n")
+
+			continue
+		}
+
+		// Consensus version columns: emit the single parse call on
+		// first encounter, then reference the local variables.
+		if _, isCv := cvFieldMap[def.special]; isCv {
+			if !cvEmitted {
+				b.WriteString("\tcvNorm, cvMajor, cvMinor, cvPatch := route.ParseConsensusVersion(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion())\n")
+
+				cvEmitted = true
+			}
+
+			var localVar string
+
+			switch def.special {
+			case "consensus_version_normalized":
+				localVar = "cvNorm"
+			case "consensus_version_major":
+				localVar = "cvMajor"
+			case "consensus_version_minor":
+				localVar = "cvMinor"
+			case "consensus_version_patch":
+				localVar = "cvPatch"
+			}
+
+			fmt.Fprintf(b, "\tb.%s.Append(%s)\n", col.Field, localVar)
 
 			continue
 		}

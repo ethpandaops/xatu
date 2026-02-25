@@ -2,6 +2,7 @@ package canonical
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,7 +67,7 @@ func (b *canonicalBeaconCommitteeBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 func (b *canonicalBeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
 	if index := committee.GetIndex(); index != nil {
-		b.CommitteeIndex.Append(fmt.Sprintf("%d", index.GetValue()))
+		b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
 	} else {
 		b.CommitteeIndex.Append("")
 	}

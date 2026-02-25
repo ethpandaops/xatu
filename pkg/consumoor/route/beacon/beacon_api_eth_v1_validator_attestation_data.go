@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -96,7 +97,7 @@ func (b *beaconApiEthV1ValidatorAttestationDataBatch) appendPayload(event *xatu.
 	}
 
 	if committeeIndex := attestationData.GetIndex(); committeeIndex != nil {
-		b.CommitteeIndex.Append(fmt.Sprint(committeeIndex.GetValue()))
+		b.CommitteeIndex.Append(strconv.FormatUint(committeeIndex.GetValue(), 10))
 	} else {
 		b.CommitteeIndex.Append("")
 	}

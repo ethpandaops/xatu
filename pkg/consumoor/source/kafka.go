@@ -13,6 +13,8 @@ import (
 
 const unknownKafkaTopic = "unknown"
 
+var jsonUnmarshalOpts = protojson.UnmarshalOptions{DiscardUnknown: true}
+
 type kafkaMessageMetadata struct {
 	Topic     string
 	Partition int32
@@ -101,8 +103,7 @@ func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, e
 			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
 		}
 	default:
-		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
-		if err := opts.Unmarshal(data, event); err != nil {
+		if err := jsonUnmarshalOpts.Unmarshal(data, event); err != nil {
 			return nil, fmt.Errorf("json unmarshal: %w", err)
 		}
 	}

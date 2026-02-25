@@ -1,7 +1,7 @@
 package canonical
 
 import (
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -61,7 +61,7 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 			b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
 
 			if index := data.GetIndex(); index != nil {
-				b.CommitteeIndex.Append(fmt.Sprintf("%d", index.GetValue()))
+				b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
 			} else {
 				b.CommitteeIndex.Append("")
 			}

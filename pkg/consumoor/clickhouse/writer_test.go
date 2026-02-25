@@ -42,14 +42,8 @@ func newTestWriter(maxRetries int, baseDelay, maxDelay time.Duration) *ChGoWrite
 	log.SetLevel(logrus.DebugLevel)
 
 	return &ChGoWriter{
-		log: log.WithField("component", "test"),
-		config: &Config{
-			DSN:          "clickhouse://localhost:9000/default",
-			DrainTimeout: 30 * time.Second,
-			Defaults: TableConfig{
-				BufferSize: 100,
-			},
-		},
+		log:     log.WithField("component", "test"),
+		config:  &Config{},
 		metrics: sharedTestMetrics(),
 		chgoCfg: ChGoConfig{
 			MaxRetries:     maxRetries,
@@ -59,7 +53,6 @@ func newTestWriter(maxRetries int, baseDelay, maxDelay time.Duration) *ChGoWrite
 		},
 		tables:         make(map[string]*chTableWriter, 16),
 		batchFactories: make(map[string]func() route.ColumnarBatch, 8),
-		done:           make(chan struct{}),
 	}
 }
 
@@ -430,29 +423,26 @@ func TestGetOrCreateTableWriter_DifferentTablesGetDifferentWriters(t *testing.T)
 	assert.Len(t, w.tables, 2)
 }
 
-func TestFlushTables_ConcurrentDrain(t *testing.T) {
+func TestFlushTableEvents_ConcurrentFlush(t *testing.T) {
 	w := newTestWriter(0, time.Millisecond, time.Millisecond)
+
+	var flushCount atomic.Int32
+
 	w.poolDoFn = func(_ context.Context, _ ch.Query) error {
+		flushCount.Add(1)
+
 		return nil
 	}
 
 	const table = "beacon_block"
 
-	// Register a batch factory so flush actually works.
 	w.batchFactories[table] = func() route.ColumnarBatch {
 		return &stubBatch{}
 	}
 
-	tw := w.getOrCreateTableWriter(table)
+	event := &xatu.DecoratedEvent{}
 
-	// Fill the buffer with some events.
-	const eventCount = 50
-
-	for i := 0; i < eventCount; i++ {
-		tw.buffer <- eventEntry{}
-	}
-
-	// Launch multiple concurrent FlushTables calls.
+	// Launch multiple concurrent FlushTableEvents calls.
 	const flushers = 10
 
 	errs := make([]error, flushers)
@@ -465,7 +455,9 @@ func TestFlushTables_ConcurrentDrain(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 
-			errs[idx] = w.FlushTables(context.Background(), []string{table})
+			errs[idx] = w.FlushTableEvents(context.Background(), map[string][]*xatu.DecoratedEvent{
+				table: {event},
+			})
 		}(i)
 	}
 
@@ -475,42 +467,7 @@ func TestFlushTables_ConcurrentDrain(t *testing.T) {
 		assert.NoError(t, err, "flusher %d returned error", i)
 	}
 
-	// Buffer should be fully drained.
-	assert.Equal(t, 0, len(tw.buffer))
-}
-
-func TestStop_DrainsRemainingEvents(t *testing.T) {
-	w := newTestWriter(0, time.Millisecond, time.Millisecond)
-
-	var flushed atomic.Int32
-
-	w.poolDoFn = func(_ context.Context, _ ch.Query) error {
-		flushed.Add(1)
-
-		return nil
-	}
-
-	const table = "beacon_block"
-
-	w.batchFactories[table] = func() route.ColumnarBatch {
-		return &stubBatch{}
-	}
-
-	tw := w.getOrCreateTableWriter(table)
-
-	// Buffer some events.
-	const eventCount = 25
-
-	for i := 0; i < eventCount; i++ {
-		tw.buffer <- eventEntry{}
-	}
-
-	// Stop should drain and flush remaining events.
-	err := w.Stop(context.Background())
-	require.NoError(t, err)
-
-	assert.Greater(t, flushed.Load(), int32(0), "should have flushed at least once")
-	assert.Equal(t, 0, len(tw.buffer), "buffer should be empty after stop")
+	assert.Equal(t, int32(flushers), flushCount.Load(), "each flush should have triggered a pool.Do call")
 }
 
 // stubBatch is a minimal ColumnarBatch implementation for unit tests.
@@ -535,7 +492,6 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BufferSize:        1000,
 				SkipFlattenErrors: true,
 			},
 		}
@@ -546,9 +502,6 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("override enables skip", func(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
-			Defaults: TableConfig{
-				BufferSize: 1000,
-			},
 			Tables: map[string]TableConfig{
 				"some_table": {SkipFlattenErrors: true},
 			},
@@ -561,7 +514,6 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
 			Defaults: TableConfig{
-				BufferSize:        1000,
 				SkipFlattenErrors: true,
 			},
 			Tables: map[string]TableConfig{
@@ -575,9 +527,6 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("both false stays false", func(t *testing.T) {
 		cfg := &Config{
 			DSN: "clickhouse://localhost",
-			Defaults: TableConfig{
-				BufferSize: 1000,
-			},
 			Tables: map[string]TableConfig{
 				"some_table": {},
 			},

@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -199,6 +200,69 @@ func (m *ValidatorRegistration) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Relay = sync.Pool{
+	New: func() interface{} {
+		return &Relay{}
+	},
+}
+
+func (m *Relay) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Relay) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Relay.Put(m)
+	}
+}
+func RelayFromVTPool() *Relay {
+	return vtprotoPool_Relay.Get().(*Relay)
+}
+
+var vtprotoPool_ValidatorRegistrationMessage = sync.Pool{
+	New: func() interface{} {
+		return &ValidatorRegistrationMessage{}
+	},
+}
+
+func (m *ValidatorRegistrationMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ValidatorRegistrationMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ValidatorRegistrationMessage.Put(m)
+	}
+}
+func ValidatorRegistrationMessageFromVTPool() *ValidatorRegistrationMessage {
+	return vtprotoPool_ValidatorRegistrationMessage.Get().(*ValidatorRegistrationMessage)
+}
+
+var vtprotoPool_ValidatorRegistration = sync.Pool{
+	New: func() interface{} {
+		return &ValidatorRegistration{}
+	},
+}
+
+func (m *ValidatorRegistration) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ValidatorRegistration) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ValidatorRegistration.Put(m)
+	}
+}
+func ValidatorRegistrationFromVTPool() *ValidatorRegistration {
+	return vtprotoPool_ValidatorRegistration.Get().(*ValidatorRegistration)
+}
 func (m *Relay) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -638,7 +702,7 @@ func (m *ValidatorRegistration) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &ValidatorRegistrationMessage{}
+				m.Message = ValidatorRegistrationMessageFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err

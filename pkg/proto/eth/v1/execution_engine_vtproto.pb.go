@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -1950,6 +1951,340 @@ func (m *Transaction) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_ExecutionPayload = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayload{}
+	},
+}
+
+func (m *ExecutionPayload) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		m.Reset()
+		m.Transactions = f0
+	}
+}
+func (m *ExecutionPayload) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayload.Put(m)
+	}
+}
+func ExecutionPayloadFromVTPool() *ExecutionPayload {
+	return vtprotoPool_ExecutionPayload.Get().(*ExecutionPayload)
+}
+
+var vtprotoPool_ExecutionPayloadV2 = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadV2{}
+	},
+}
+
+func (m *ExecutionPayloadV2) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		m.Reset()
+		m.Transactions = f0
+	}
+}
+func (m *ExecutionPayloadV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadV2.Put(m)
+	}
+}
+func ExecutionPayloadV2FromVTPool() *ExecutionPayloadV2 {
+	return vtprotoPool_ExecutionPayloadV2.Get().(*ExecutionPayloadV2)
+}
+
+var vtprotoPool_ExecutionPayloadHeader = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadHeader{}
+	},
+}
+
+func (m *ExecutionPayloadHeader) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionPayloadHeader) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadHeader.Put(m)
+	}
+}
+func ExecutionPayloadHeaderFromVTPool() *ExecutionPayloadHeader {
+	return vtprotoPool_ExecutionPayloadHeader.Get().(*ExecutionPayloadHeader)
+}
+
+var vtprotoPool_ExecutionPayloadHeaderV2 = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadHeaderV2{}
+	},
+}
+
+func (m *ExecutionPayloadHeaderV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionPayloadHeaderV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadHeaderV2.Put(m)
+	}
+}
+func ExecutionPayloadHeaderV2FromVTPool() *ExecutionPayloadHeaderV2 {
+	return vtprotoPool_ExecutionPayloadHeaderV2.Get().(*ExecutionPayloadHeaderV2)
+}
+
+var vtprotoPool_ExecutionPayloadCapella = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadCapella{}
+	},
+}
+
+func (m *ExecutionPayloadCapella) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		m.Reset()
+		m.Transactions = f0
+		m.Withdrawals = f1
+	}
+}
+func (m *ExecutionPayloadCapella) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadCapella.Put(m)
+	}
+}
+func ExecutionPayloadCapellaFromVTPool() *ExecutionPayloadCapella {
+	return vtprotoPool_ExecutionPayloadCapella.Get().(*ExecutionPayloadCapella)
+}
+
+var vtprotoPool_ExecutionPayloadCapellaV2 = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadCapellaV2{}
+	},
+}
+
+func (m *ExecutionPayloadCapellaV2) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		m.Reset()
+		m.Transactions = f0
+		m.Withdrawals = f1
+	}
+}
+func (m *ExecutionPayloadCapellaV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadCapellaV2.Put(m)
+	}
+}
+func ExecutionPayloadCapellaV2FromVTPool() *ExecutionPayloadCapellaV2 {
+	return vtprotoPool_ExecutionPayloadCapellaV2.Get().(*ExecutionPayloadCapellaV2)
+}
+
+var vtprotoPool_ExecutionPayloadDeneb = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadDeneb{}
+	},
+}
+
+func (m *ExecutionPayloadDeneb) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		m.Reset()
+		m.Transactions = f0
+		m.Withdrawals = f1
+	}
+}
+func (m *ExecutionPayloadDeneb) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadDeneb.Put(m)
+	}
+}
+func ExecutionPayloadDenebFromVTPool() *ExecutionPayloadDeneb {
+	return vtprotoPool_ExecutionPayloadDeneb.Get().(*ExecutionPayloadDeneb)
+}
+
+var vtprotoPool_ExecutionPayloadElectra = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadElectra{}
+	},
+}
+
+func (m *ExecutionPayloadElectra) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		m.Reset()
+		m.Transactions = f0
+		m.Withdrawals = f1
+	}
+}
+func (m *ExecutionPayloadElectra) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadElectra.Put(m)
+	}
+}
+func ExecutionPayloadElectraFromVTPool() *ExecutionPayloadElectra {
+	return vtprotoPool_ExecutionPayloadElectra.Get().(*ExecutionPayloadElectra)
+}
+
+var vtprotoPool_ExecutionPayloadFulu = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadFulu{}
+	},
+}
+
+func (m *ExecutionPayloadFulu) ResetVT() {
+	if m != nil {
+		f0 := m.Transactions[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		m.Reset()
+		m.Transactions = f0
+		m.Withdrawals = f1
+	}
+}
+func (m *ExecutionPayloadFulu) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadFulu.Put(m)
+	}
+}
+func ExecutionPayloadFuluFromVTPool() *ExecutionPayloadFulu {
+	return vtprotoPool_ExecutionPayloadFulu.Get().(*ExecutionPayloadFulu)
+}
+
+var vtprotoPool_Withdrawal = sync.Pool{
+	New: func() interface{} {
+		return &Withdrawal{}
+	},
+}
+
+func (m *Withdrawal) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Withdrawal) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Withdrawal.Put(m)
+	}
+}
+func WithdrawalFromVTPool() *Withdrawal {
+	return vtprotoPool_Withdrawal.Get().(*Withdrawal)
+}
+
+var vtprotoPool_WithdrawalV2 = sync.Pool{
+	New: func() interface{} {
+		return &WithdrawalV2{}
+	},
+}
+
+func (m *WithdrawalV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *WithdrawalV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_WithdrawalV2.Put(m)
+	}
+}
+func WithdrawalV2FromVTPool() *WithdrawalV2 {
+	return vtprotoPool_WithdrawalV2.Get().(*WithdrawalV2)
+}
+
+var vtprotoPool_ExecutionPayloadHeaderCapella = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadHeaderCapella{}
+	},
+}
+
+func (m *ExecutionPayloadHeaderCapella) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionPayloadHeaderCapella) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadHeaderCapella.Put(m)
+	}
+}
+func ExecutionPayloadHeaderCapellaFromVTPool() *ExecutionPayloadHeaderCapella {
+	return vtprotoPool_ExecutionPayloadHeaderCapella.Get().(*ExecutionPayloadHeaderCapella)
+}
+
+var vtprotoPool_ExecutionPayloadHeaderCapellaV2 = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadHeaderCapellaV2{}
+	},
+}
+
+func (m *ExecutionPayloadHeaderCapellaV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionPayloadHeaderCapellaV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadHeaderCapellaV2.Put(m)
+	}
+}
+func ExecutionPayloadHeaderCapellaV2FromVTPool() *ExecutionPayloadHeaderCapellaV2 {
+	return vtprotoPool_ExecutionPayloadHeaderCapellaV2.Get().(*ExecutionPayloadHeaderCapellaV2)
+}
+
+var vtprotoPool_Transaction = sync.Pool{
+	New: func() interface{} {
+		return &Transaction{}
+	},
+}
+
+func (m *Transaction) ResetVT() {
+	if m != nil {
+		f0 := m.BlobHashes[:0]
+		m.Reset()
+		m.BlobHashes = f0
+	}
+}
+func (m *Transaction) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Transaction.Put(m)
+	}
+}
+func TransactionFromVTPool() *Transaction {
+	return vtprotoPool_Transaction.Get().(*Transaction)
+}
 func (m *ExecutionPayload) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -5235,7 +5570,14 @@ func (m *ExecutionPayloadCapella) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &Withdrawal{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &Withdrawal{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &Withdrawal{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -5784,7 +6126,14 @@ func (m *ExecutionPayloadCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &WithdrawalV2{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6333,7 +6682,14 @@ func (m *ExecutionPayloadDeneb) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &WithdrawalV2{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6954,7 +7310,14 @@ func (m *ExecutionPayloadElectra) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &WithdrawalV2{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -7575,7 +7938,14 @@ func (m *ExecutionPayloadFulu) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &WithdrawalV2{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &WithdrawalV2{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

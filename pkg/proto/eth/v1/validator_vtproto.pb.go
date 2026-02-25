@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -206,6 +207,48 @@ func (m *Validator) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_ValidatorData = sync.Pool{
+	New: func() interface{} {
+		return &ValidatorData{}
+	},
+}
+
+func (m *ValidatorData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ValidatorData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ValidatorData.Put(m)
+	}
+}
+func ValidatorDataFromVTPool() *ValidatorData {
+	return vtprotoPool_ValidatorData.Get().(*ValidatorData)
+}
+
+var vtprotoPool_Validator = sync.Pool{
+	New: func() interface{} {
+		return &Validator{}
+	},
+}
+
+func (m *Validator) ResetVT() {
+	if m != nil {
+		m.Data.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *Validator) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Validator.Put(m)
+	}
+}
+func ValidatorFromVTPool() *Validator {
+	return vtprotoPool_Validator.Get().(*Validator)
+}
 func (m *ValidatorData) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -672,7 +715,7 @@ func (m *Validator) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &ValidatorData{}
+				m.Data = ValidatorDataFromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err

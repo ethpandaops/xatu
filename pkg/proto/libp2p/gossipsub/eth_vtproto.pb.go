@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -279,6 +280,68 @@ func (m *DataColumnSidecar) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_BeaconBlock = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlock{}
+	},
+}
+
+func (m *BeaconBlock) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BeaconBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlock.Put(m)
+	}
+}
+func BeaconBlockFromVTPool() *BeaconBlock {
+	return vtprotoPool_BeaconBlock.Get().(*BeaconBlock)
+}
+
+var vtprotoPool_BlobSidecar = sync.Pool{
+	New: func() interface{} {
+		return &BlobSidecar{}
+	},
+}
+
+func (m *BlobSidecar) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BlobSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BlobSidecar.Put(m)
+	}
+}
+func BlobSidecarFromVTPool() *BlobSidecar {
+	return vtprotoPool_BlobSidecar.Get().(*BlobSidecar)
+}
+
+var vtprotoPool_DataColumnSidecar = sync.Pool{
+	New: func() interface{} {
+		return &DataColumnSidecar{}
+	},
+}
+
+func (m *DataColumnSidecar) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *DataColumnSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DataColumnSidecar.Put(m)
+	}
+}
+func DataColumnSidecarFromVTPool() *DataColumnSidecar {
+	return vtprotoPool_DataColumnSidecar.Get().(*DataColumnSidecar)
+}
 func (m *BeaconBlock) SizeVT() (n int) {
 	if m == nil {
 		return 0

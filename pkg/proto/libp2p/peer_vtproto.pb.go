@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -110,6 +111,28 @@ func (m *Peer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Peer = sync.Pool{
+	New: func() interface{} {
+		return &Peer{}
+	},
+}
+
+func (m *Peer) ResetVT() {
+	if m != nil {
+		f0 := m.Protocols[:0]
+		m.Reset()
+		m.Protocols = f0
+	}
+}
+func (m *Peer) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Peer.Put(m)
+	}
+}
+func PeerFromVTPool() *Peer {
+	return vtprotoPool_Peer.Get().(*Peer)
+}
 func (m *Peer) SizeVT() (n int) {
 	if m == nil {
 		return 0

@@ -13,6 +13,7 @@ import (
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -253,6 +254,26 @@ func (m *Consensus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Consensus = sync.Pool{
+	New: func() interface{} {
+		return &Consensus{}
+	},
+}
+
+func (m *Consensus) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Consensus) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Consensus.Put(m)
+	}
+}
+func ConsensusFromVTPool() *Consensus {
+	return vtprotoPool_Consensus.Get().(*Consensus)
+}
 func (m *Consensus) SizeVT() (n int) {
 	if m == nil {
 		return 0

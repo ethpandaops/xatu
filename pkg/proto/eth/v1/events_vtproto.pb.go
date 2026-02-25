@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -1192,6 +1193,412 @@ func (m *EventDataColumnSidecar) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_EventHead = sync.Pool{
+	New: func() interface{} {
+		return &EventHead{}
+	},
+}
+
+func (m *EventHead) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventHead) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventHead.Put(m)
+	}
+}
+func EventHeadFromVTPool() *EventHead {
+	return vtprotoPool_EventHead.Get().(*EventHead)
+}
+
+var vtprotoPool_EventHeadV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventHeadV2{}
+	},
+}
+
+func (m *EventHeadV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventHeadV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventHeadV2.Put(m)
+	}
+}
+func EventHeadV2FromVTPool() *EventHeadV2 {
+	return vtprotoPool_EventHeadV2.Get().(*EventHeadV2)
+}
+
+var vtprotoPool_EventBlock = sync.Pool{
+	New: func() interface{} {
+		return &EventBlock{}
+	},
+}
+
+func (m *EventBlock) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlock.Put(m)
+	}
+}
+func EventBlockFromVTPool() *EventBlock {
+	return vtprotoPool_EventBlock.Get().(*EventBlock)
+}
+
+var vtprotoPool_EventBlockV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventBlockV2{}
+	},
+}
+
+func (m *EventBlockV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventBlockV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlockV2.Put(m)
+	}
+}
+func EventBlockV2FromVTPool() *EventBlockV2 {
+	return vtprotoPool_EventBlockV2.Get().(*EventBlockV2)
+}
+
+var vtprotoPool_EventChainReorg = sync.Pool{
+	New: func() interface{} {
+		return &EventChainReorg{}
+	},
+}
+
+func (m *EventChainReorg) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventChainReorg) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventChainReorg.Put(m)
+	}
+}
+func EventChainReorgFromVTPool() *EventChainReorg {
+	return vtprotoPool_EventChainReorg.Get().(*EventChainReorg)
+}
+
+var vtprotoPool_EventChainReorgV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventChainReorgV2{}
+	},
+}
+
+func (m *EventChainReorgV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventChainReorgV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventChainReorgV2.Put(m)
+	}
+}
+func EventChainReorgV2FromVTPool() *EventChainReorgV2 {
+	return vtprotoPool_EventChainReorgV2.Get().(*EventChainReorgV2)
+}
+
+var vtprotoPool_EventFinalizedCheckpoint = sync.Pool{
+	New: func() interface{} {
+		return &EventFinalizedCheckpoint{}
+	},
+}
+
+func (m *EventFinalizedCheckpoint) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventFinalizedCheckpoint) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventFinalizedCheckpoint.Put(m)
+	}
+}
+func EventFinalizedCheckpointFromVTPool() *EventFinalizedCheckpoint {
+	return vtprotoPool_EventFinalizedCheckpoint.Get().(*EventFinalizedCheckpoint)
+}
+
+var vtprotoPool_EventFinalizedCheckpointV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventFinalizedCheckpointV2{}
+	},
+}
+
+func (m *EventFinalizedCheckpointV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventFinalizedCheckpointV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventFinalizedCheckpointV2.Put(m)
+	}
+}
+func EventFinalizedCheckpointV2FromVTPool() *EventFinalizedCheckpointV2 {
+	return vtprotoPool_EventFinalizedCheckpointV2.Get().(*EventFinalizedCheckpointV2)
+}
+
+var vtprotoPool_EventVoluntaryExitMessage = sync.Pool{
+	New: func() interface{} {
+		return &EventVoluntaryExitMessage{}
+	},
+}
+
+func (m *EventVoluntaryExitMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventVoluntaryExitMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventVoluntaryExitMessage.Put(m)
+	}
+}
+func EventVoluntaryExitMessageFromVTPool() *EventVoluntaryExitMessage {
+	return vtprotoPool_EventVoluntaryExitMessage.Get().(*EventVoluntaryExitMessage)
+}
+
+var vtprotoPool_EventVoluntaryExitMessageV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventVoluntaryExitMessageV2{}
+	},
+}
+
+func (m *EventVoluntaryExitMessageV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventVoluntaryExitMessageV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventVoluntaryExitMessageV2.Put(m)
+	}
+}
+func EventVoluntaryExitMessageV2FromVTPool() *EventVoluntaryExitMessageV2 {
+	return vtprotoPool_EventVoluntaryExitMessageV2.Get().(*EventVoluntaryExitMessageV2)
+}
+
+var vtprotoPool_EventVoluntaryExit = sync.Pool{
+	New: func() interface{} {
+		return &EventVoluntaryExit{}
+	},
+}
+
+func (m *EventVoluntaryExit) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *EventVoluntaryExit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventVoluntaryExit.Put(m)
+	}
+}
+func EventVoluntaryExitFromVTPool() *EventVoluntaryExit {
+	return vtprotoPool_EventVoluntaryExit.Get().(*EventVoluntaryExit)
+}
+
+var vtprotoPool_EventVoluntaryExitV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventVoluntaryExitV2{}
+	},
+}
+
+func (m *EventVoluntaryExitV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *EventVoluntaryExitV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventVoluntaryExitV2.Put(m)
+	}
+}
+func EventVoluntaryExitV2FromVTPool() *EventVoluntaryExitV2 {
+	return vtprotoPool_EventVoluntaryExitV2.Get().(*EventVoluntaryExitV2)
+}
+
+var vtprotoPool_ContributionAndProof = sync.Pool{
+	New: func() interface{} {
+		return &ContributionAndProof{}
+	},
+}
+
+func (m *ContributionAndProof) ResetVT() {
+	if m != nil {
+		m.Contribution.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ContributionAndProof) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ContributionAndProof.Put(m)
+	}
+}
+func ContributionAndProofFromVTPool() *ContributionAndProof {
+	return vtprotoPool_ContributionAndProof.Get().(*ContributionAndProof)
+}
+
+var vtprotoPool_ContributionAndProofV2 = sync.Pool{
+	New: func() interface{} {
+		return &ContributionAndProofV2{}
+	},
+}
+
+func (m *ContributionAndProofV2) ResetVT() {
+	if m != nil {
+		m.Contribution.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ContributionAndProofV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ContributionAndProofV2.Put(m)
+	}
+}
+func ContributionAndProofV2FromVTPool() *ContributionAndProofV2 {
+	return vtprotoPool_ContributionAndProofV2.Get().(*ContributionAndProofV2)
+}
+
+var vtprotoPool_EventContributionAndProof = sync.Pool{
+	New: func() interface{} {
+		return &EventContributionAndProof{}
+	},
+}
+
+func (m *EventContributionAndProof) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *EventContributionAndProof) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventContributionAndProof.Put(m)
+	}
+}
+func EventContributionAndProofFromVTPool() *EventContributionAndProof {
+	return vtprotoPool_EventContributionAndProof.Get().(*EventContributionAndProof)
+}
+
+var vtprotoPool_EventContributionAndProofV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventContributionAndProofV2{}
+	},
+}
+
+func (m *EventContributionAndProofV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *EventContributionAndProofV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventContributionAndProofV2.Put(m)
+	}
+}
+func EventContributionAndProofV2FromVTPool() *EventContributionAndProofV2 {
+	return vtprotoPool_EventContributionAndProofV2.Get().(*EventContributionAndProofV2)
+}
+
+var vtprotoPool_EventBlobSidecar = sync.Pool{
+	New: func() interface{} {
+		return &EventBlobSidecar{}
+	},
+}
+
+func (m *EventBlobSidecar) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventBlobSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlobSidecar.Put(m)
+	}
+}
+func EventBlobSidecarFromVTPool() *EventBlobSidecar {
+	return vtprotoPool_EventBlobSidecar.Get().(*EventBlobSidecar)
+}
+
+var vtprotoPool_EventBlockGossip = sync.Pool{
+	New: func() interface{} {
+		return &EventBlockGossip{}
+	},
+}
+
+func (m *EventBlockGossip) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EventBlockGossip) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlockGossip.Put(m)
+	}
+}
+func EventBlockGossipFromVTPool() *EventBlockGossip {
+	return vtprotoPool_EventBlockGossip.Get().(*EventBlockGossip)
+}
+
+var vtprotoPool_EventDataColumnSidecar = sync.Pool{
+	New: func() interface{} {
+		return &EventDataColumnSidecar{}
+	},
+}
+
+func (m *EventDataColumnSidecar) ResetVT() {
+	if m != nil {
+		f0 := m.KzgCommitments[:0]
+		m.Reset()
+		m.KzgCommitments = f0
+	}
+}
+func (m *EventDataColumnSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventDataColumnSidecar.Put(m)
+	}
+}
+func EventDataColumnSidecarFromVTPool() *EventDataColumnSidecar {
+	return vtprotoPool_EventDataColumnSidecar.Get().(*EventDataColumnSidecar)
+}
 func (m *EventHead) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -3480,7 +3887,7 @@ func (m *EventVoluntaryExit) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &EventVoluntaryExitMessage{}
+				m.Message = EventVoluntaryExitMessageFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3599,7 +4006,7 @@ func (m *EventVoluntaryExitV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &EventVoluntaryExitMessageV2{}
+				m.Message = EventVoluntaryExitMessageV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3737,7 +4144,7 @@ func (m *ContributionAndProof) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Contribution == nil {
-				m.Contribution = &SyncCommitteeContribution{}
+				m.Contribution = SyncCommitteeContributionFromVTPool()
 			}
 			if err := m.Contribution.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3892,7 +4299,7 @@ func (m *ContributionAndProofV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Contribution == nil {
-				m.Contribution = &SyncCommitteeContributionV2{}
+				m.Contribution = SyncCommitteeContributionV2FromVTPool()
 			}
 			if err := m.Contribution.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4043,7 +4450,7 @@ func (m *EventContributionAndProof) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &ContributionAndProof{}
+				m.Message = ContributionAndProofFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4162,7 +4569,7 @@ func (m *EventContributionAndProofV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &ContributionAndProofV2{}
+				m.Message = ContributionAndProofV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err

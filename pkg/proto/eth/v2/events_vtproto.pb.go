@@ -10,6 +10,7 @@ import (
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -393,6 +394,90 @@ func (m *EventBlockV2_FuluBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
+
+var vtprotoPool_EventBlock = sync.Pool{
+	New: func() interface{} {
+		return &EventBlock{}
+	},
+}
+
+func (m *EventBlock) ResetVT() {
+	if m != nil {
+		if oneof, ok := m.Message.(*EventBlock_Phase0Block); ok {
+			oneof.Phase0Block.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_AltairBlock); ok {
+			oneof.AltairBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_BellatrixBlock); ok {
+			oneof.BellatrixBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_CapellaBlock); ok {
+			oneof.CapellaBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_DenebBlock); ok {
+			oneof.DenebBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_ElectraBlock); ok {
+			oneof.ElectraBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_FuluBlock); ok {
+			oneof.FuluBlock.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *EventBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlock.Put(m)
+	}
+}
+func EventBlockFromVTPool() *EventBlock {
+	return vtprotoPool_EventBlock.Get().(*EventBlock)
+}
+
+var vtprotoPool_EventBlockV2 = sync.Pool{
+	New: func() interface{} {
+		return &EventBlockV2{}
+	},
+}
+
+func (m *EventBlockV2) ResetVT() {
+	if m != nil {
+		if oneof, ok := m.Message.(*EventBlockV2_Phase0Block); ok {
+			oneof.Phase0Block.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_AltairBlock); ok {
+			oneof.AltairBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_BellatrixBlock); ok {
+			oneof.BellatrixBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_CapellaBlock); ok {
+			oneof.CapellaBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_DenebBlock); ok {
+			oneof.DenebBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_ElectraBlock); ok {
+			oneof.ElectraBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlockV2_FuluBlock); ok {
+			oneof.FuluBlock.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *EventBlockV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EventBlockV2.Put(m)
+	}
+}
+func EventBlockV2FromVTPool() *EventBlockV2 {
+	return vtprotoPool_EventBlockV2.Get().(*EventBlockV2)
+}
 func (m *EventBlock) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -664,7 +749,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.BeaconBlock{}
+				v := v1.BeaconBlockFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -705,7 +790,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockAltair{}
+				v := BeaconBlockAltairFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -746,7 +831,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockBellatrix{}
+				v := BeaconBlockBellatrixFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -787,7 +872,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockCapella{}
+				v := BeaconBlockCapellaFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -879,7 +964,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockDeneb{}
+				v := BeaconBlockDenebFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -920,7 +1005,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockElectra{}
+				v := BeaconBlockElectraFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -961,7 +1046,7 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockFulu{}
+				v := BeaconBlockFuluFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1053,7 +1138,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.BeaconBlockV2{}
+				v := v1.BeaconBlockV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1094,7 +1179,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockAltairV2{}
+				v := BeaconBlockAltairV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1135,7 +1220,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockBellatrixV2{}
+				v := BeaconBlockBellatrixV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1176,7 +1261,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockCapellaV2{}
+				v := BeaconBlockCapellaV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1268,7 +1353,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockDeneb{}
+				v := BeaconBlockDenebFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1309,7 +1394,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockElectra{}
+				v := BeaconBlockElectraFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1350,7 +1435,7 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &BeaconBlockFulu{}
+				v := BeaconBlockFuluFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}

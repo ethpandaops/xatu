@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -193,6 +194,26 @@ func (m *BidTrace) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_BidTrace = sync.Pool{
+	New: func() interface{} {
+		return &BidTrace{}
+	},
+}
+
+func (m *BidTrace) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BidTrace) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BidTrace.Put(m)
+	}
+}
+func BidTraceFromVTPool() *BidTrace {
+	return vtprotoPool_BidTrace.Get().(*BidTrace)
+}
 func (m *BidTrace) SizeVT() (n int) {
 	if m == nil {
 		return 0

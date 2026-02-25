@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -274,6 +275,117 @@ func (m *SubmitBLSToExecutionChangesRequest) MarshalToSizedBufferVT(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_BLSToExecutionChange = sync.Pool{
+	New: func() interface{} {
+		return &BLSToExecutionChange{}
+	},
+}
+
+func (m *BLSToExecutionChange) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BLSToExecutionChange) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BLSToExecutionChange.Put(m)
+	}
+}
+func BLSToExecutionChangeFromVTPool() *BLSToExecutionChange {
+	return vtprotoPool_BLSToExecutionChange.Get().(*BLSToExecutionChange)
+}
+
+var vtprotoPool_BLSToExecutionChangeV2 = sync.Pool{
+	New: func() interface{} {
+		return &BLSToExecutionChangeV2{}
+	},
+}
+
+func (m *BLSToExecutionChangeV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BLSToExecutionChangeV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BLSToExecutionChangeV2.Put(m)
+	}
+}
+func BLSToExecutionChangeV2FromVTPool() *BLSToExecutionChangeV2 {
+	return vtprotoPool_BLSToExecutionChangeV2.Get().(*BLSToExecutionChangeV2)
+}
+
+var vtprotoPool_SignedBLSToExecutionChange = sync.Pool{
+	New: func() interface{} {
+		return &SignedBLSToExecutionChange{}
+	},
+}
+
+func (m *SignedBLSToExecutionChange) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBLSToExecutionChange) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBLSToExecutionChange.Put(m)
+	}
+}
+func SignedBLSToExecutionChangeFromVTPool() *SignedBLSToExecutionChange {
+	return vtprotoPool_SignedBLSToExecutionChange.Get().(*SignedBLSToExecutionChange)
+}
+
+var vtprotoPool_SignedBLSToExecutionChangeV2 = sync.Pool{
+	New: func() interface{} {
+		return &SignedBLSToExecutionChangeV2{}
+	},
+}
+
+func (m *SignedBLSToExecutionChangeV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBLSToExecutionChangeV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBLSToExecutionChangeV2.Put(m)
+	}
+}
+func SignedBLSToExecutionChangeV2FromVTPool() *SignedBLSToExecutionChangeV2 {
+	return vtprotoPool_SignedBLSToExecutionChangeV2.Get().(*SignedBLSToExecutionChangeV2)
+}
+
+var vtprotoPool_SubmitBLSToExecutionChangesRequest = sync.Pool{
+	New: func() interface{} {
+		return &SubmitBLSToExecutionChangesRequest{}
+	},
+}
+
+func (m *SubmitBLSToExecutionChangesRequest) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Changes {
+			mm.ResetVT()
+		}
+		f0 := m.Changes[:0]
+		m.Reset()
+		m.Changes = f0
+	}
+}
+func (m *SubmitBLSToExecutionChangesRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SubmitBLSToExecutionChangesRequest.Put(m)
+	}
+}
+func SubmitBLSToExecutionChangesRequestFromVTPool() *SubmitBLSToExecutionChangesRequest {
+	return vtprotoPool_SubmitBLSToExecutionChangesRequest.Get().(*SubmitBLSToExecutionChangesRequest)
+}
 func (m *BLSToExecutionChange) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -713,7 +825,7 @@ func (m *SignedBLSToExecutionChange) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &BLSToExecutionChange{}
+				m.Message = BLSToExecutionChangeFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -832,7 +944,7 @@ func (m *SignedBLSToExecutionChangeV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &BLSToExecutionChangeV2{}
+				m.Message = BLSToExecutionChangeV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -950,7 +1062,14 @@ func (m *SubmitBLSToExecutionChangesRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Changes = append(m.Changes, &SignedBLSToExecutionChange{})
+			if len(m.Changes) == cap(m.Changes) {
+				m.Changes = append(m.Changes, &SignedBLSToExecutionChange{})
+			} else {
+				m.Changes = m.Changes[:len(m.Changes)+1]
+				if m.Changes[len(m.Changes)-1] == nil {
+					m.Changes[len(m.Changes)-1] = &SignedBLSToExecutionChange{}
+				}
+			}
 			if err := m.Changes[len(m.Changes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

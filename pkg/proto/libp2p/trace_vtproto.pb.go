@@ -13,6 +13,7 @@ import (
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -2834,6 +2835,850 @@ func (m *Identify) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_AddPeer = sync.Pool{
+	New: func() interface{} {
+		return &AddPeer{}
+	},
+}
+
+func (m *AddPeer) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *AddPeer) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AddPeer.Put(m)
+	}
+}
+func AddPeerFromVTPool() *AddPeer {
+	return vtprotoPool_AddPeer.Get().(*AddPeer)
+}
+
+var vtprotoPool_RemovePeer = sync.Pool{
+	New: func() interface{} {
+		return &RemovePeer{}
+	},
+}
+
+func (m *RemovePeer) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *RemovePeer) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RemovePeer.Put(m)
+	}
+}
+func RemovePeerFromVTPool() *RemovePeer {
+	return vtprotoPool_RemovePeer.Get().(*RemovePeer)
+}
+
+var vtprotoPool_RecvRPC = sync.Pool{
+	New: func() interface{} {
+		return &RecvRPC{}
+	},
+}
+
+func (m *RecvRPC) ResetVT() {
+	if m != nil {
+		m.Meta.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *RecvRPC) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RecvRPC.Put(m)
+	}
+}
+func RecvRPCFromVTPool() *RecvRPC {
+	return vtprotoPool_RecvRPC.Get().(*RecvRPC)
+}
+
+var vtprotoPool_SendRPC = sync.Pool{
+	New: func() interface{} {
+		return &SendRPC{}
+	},
+}
+
+func (m *SendRPC) ResetVT() {
+	if m != nil {
+		m.Meta.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SendRPC) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SendRPC.Put(m)
+	}
+}
+func SendRPCFromVTPool() *SendRPC {
+	return vtprotoPool_SendRPC.Get().(*SendRPC)
+}
+
+var vtprotoPool_DropRPC = sync.Pool{
+	New: func() interface{} {
+		return &DropRPC{}
+	},
+}
+
+func (m *DropRPC) ResetVT() {
+	if m != nil {
+		m.Meta.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *DropRPC) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DropRPC.Put(m)
+	}
+}
+func DropRPCFromVTPool() *DropRPC {
+	return vtprotoPool_DropRPC.Get().(*DropRPC)
+}
+
+var vtprotoPool_Join = sync.Pool{
+	New: func() interface{} {
+		return &Join{}
+	},
+}
+
+func (m *Join) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Join) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Join.Put(m)
+	}
+}
+func JoinFromVTPool() *Join {
+	return vtprotoPool_Join.Get().(*Join)
+}
+
+var vtprotoPool_Leave = sync.Pool{
+	New: func() interface{} {
+		return &Leave{}
+	},
+}
+
+func (m *Leave) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Leave) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Leave.Put(m)
+	}
+}
+func LeaveFromVTPool() *Leave {
+	return vtprotoPool_Leave.Get().(*Leave)
+}
+
+var vtprotoPool_Graft = sync.Pool{
+	New: func() interface{} {
+		return &Graft{}
+	},
+}
+
+func (m *Graft) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Graft) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Graft.Put(m)
+	}
+}
+func GraftFromVTPool() *Graft {
+	return vtprotoPool_Graft.Get().(*Graft)
+}
+
+var vtprotoPool_Prune = sync.Pool{
+	New: func() interface{} {
+		return &Prune{}
+	},
+}
+
+func (m *Prune) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Prune) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Prune.Put(m)
+	}
+}
+func PruneFromVTPool() *Prune {
+	return vtprotoPool_Prune.Get().(*Prune)
+}
+
+var vtprotoPool_PublishMessage = sync.Pool{
+	New: func() interface{} {
+		return &PublishMessage{}
+	},
+}
+
+func (m *PublishMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *PublishMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_PublishMessage.Put(m)
+	}
+}
+func PublishMessageFromVTPool() *PublishMessage {
+	return vtprotoPool_PublishMessage.Get().(*PublishMessage)
+}
+
+var vtprotoPool_RejectMessage = sync.Pool{
+	New: func() interface{} {
+		return &RejectMessage{}
+	},
+}
+
+func (m *RejectMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *RejectMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RejectMessage.Put(m)
+	}
+}
+func RejectMessageFromVTPool() *RejectMessage {
+	return vtprotoPool_RejectMessage.Get().(*RejectMessage)
+}
+
+var vtprotoPool_DuplicateMessage = sync.Pool{
+	New: func() interface{} {
+		return &DuplicateMessage{}
+	},
+}
+
+func (m *DuplicateMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *DuplicateMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DuplicateMessage.Put(m)
+	}
+}
+func DuplicateMessageFromVTPool() *DuplicateMessage {
+	return vtprotoPool_DuplicateMessage.Get().(*DuplicateMessage)
+}
+
+var vtprotoPool_DeliverMessage = sync.Pool{
+	New: func() interface{} {
+		return &DeliverMessage{}
+	},
+}
+
+func (m *DeliverMessage) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *DeliverMessage) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DeliverMessage.Put(m)
+	}
+}
+func DeliverMessageFromVTPool() *DeliverMessage {
+	return vtprotoPool_DeliverMessage.Get().(*DeliverMessage)
+}
+
+var vtprotoPool_TraceEventMetadata = sync.Pool{
+	New: func() interface{} {
+		return &TraceEventMetadata{}
+	},
+}
+
+func (m *TraceEventMetadata) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *TraceEventMetadata) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_TraceEventMetadata.Put(m)
+	}
+}
+func TraceEventMetadataFromVTPool() *TraceEventMetadata {
+	return vtprotoPool_TraceEventMetadata.Get().(*TraceEventMetadata)
+}
+
+var vtprotoPool_Connected = sync.Pool{
+	New: func() interface{} {
+		return &Connected{}
+	},
+}
+
+func (m *Connected) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Connected) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Connected.Put(m)
+	}
+}
+func ConnectedFromVTPool() *Connected {
+	return vtprotoPool_Connected.Get().(*Connected)
+}
+
+var vtprotoPool_Disconnected = sync.Pool{
+	New: func() interface{} {
+		return &Disconnected{}
+	},
+}
+
+func (m *Disconnected) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Disconnected) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Disconnected.Put(m)
+	}
+}
+func DisconnectedFromVTPool() *Disconnected {
+	return vtprotoPool_Disconnected.Get().(*Disconnected)
+}
+
+var vtprotoPool_HandleStatus = sync.Pool{
+	New: func() interface{} {
+		return &HandleStatus{}
+	},
+}
+
+func (m *HandleStatus) ResetVT() {
+	if m != nil {
+		m.Request.ReturnToVTPool()
+		m.Response.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *HandleStatus) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_HandleStatus.Put(m)
+	}
+}
+func HandleStatusFromVTPool() *HandleStatus {
+	return vtprotoPool_HandleStatus.Get().(*HandleStatus)
+}
+
+var vtprotoPool_HandleMetadata = sync.Pool{
+	New: func() interface{} {
+		return &HandleMetadata{}
+	},
+}
+
+func (m *HandleMetadata) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *HandleMetadata) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_HandleMetadata.Put(m)
+	}
+}
+func HandleMetadataFromVTPool() *HandleMetadata {
+	return vtprotoPool_HandleMetadata.Get().(*HandleMetadata)
+}
+
+var vtprotoPool_SyntheticHeartbeat = sync.Pool{
+	New: func() interface{} {
+		return &SyntheticHeartbeat{}
+	},
+}
+
+func (m *SyntheticHeartbeat) ResetVT() {
+	if m != nil {
+		f0 := m.Protocols[:0]
+		m.Reset()
+		m.Protocols = f0
+	}
+}
+func (m *SyntheticHeartbeat) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyntheticHeartbeat.Put(m)
+	}
+}
+func SyntheticHeartbeatFromVTPool() *SyntheticHeartbeat {
+	return vtprotoPool_SyntheticHeartbeat.Get().(*SyntheticHeartbeat)
+}
+
+var vtprotoPool_RPCMeta = sync.Pool{
+	New: func() interface{} {
+		return &RPCMeta{}
+	},
+}
+
+func (m *RPCMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Messages {
+			mm.ResetVT()
+		}
+		f0 := m.Messages[:0]
+		for _, mm := range m.Subscriptions {
+			mm.ResetVT()
+		}
+		f1 := m.Subscriptions[:0]
+		m.Control.ReturnToVTPool()
+		m.Reset()
+		m.Messages = f0
+		m.Subscriptions = f1
+	}
+}
+func (m *RPCMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RPCMeta.Put(m)
+	}
+}
+func RPCMetaFromVTPool() *RPCMeta {
+	return vtprotoPool_RPCMeta.Get().(*RPCMeta)
+}
+
+var vtprotoPool_MessageMeta = sync.Pool{
+	New: func() interface{} {
+		return &MessageMeta{}
+	},
+}
+
+func (m *MessageMeta) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *MessageMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_MessageMeta.Put(m)
+	}
+}
+func MessageMetaFromVTPool() *MessageMeta {
+	return vtprotoPool_MessageMeta.Get().(*MessageMeta)
+}
+
+var vtprotoPool_MessageMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &MessageMetaItem{}
+	},
+}
+
+func (m *MessageMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *MessageMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_MessageMetaItem.Put(m)
+	}
+}
+func MessageMetaItemFromVTPool() *MessageMetaItem {
+	return vtprotoPool_MessageMetaItem.Get().(*MessageMetaItem)
+}
+
+var vtprotoPool_SubMeta = sync.Pool{
+	New: func() interface{} {
+		return &SubMeta{}
+	},
+}
+
+func (m *SubMeta) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SubMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SubMeta.Put(m)
+	}
+}
+func SubMetaFromVTPool() *SubMeta {
+	return vtprotoPool_SubMeta.Get().(*SubMeta)
+}
+
+var vtprotoPool_SubMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &SubMetaItem{}
+	},
+}
+
+func (m *SubMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SubMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SubMetaItem.Put(m)
+	}
+}
+func SubMetaItemFromVTPool() *SubMetaItem {
+	return vtprotoPool_SubMetaItem.Get().(*SubMetaItem)
+}
+
+var vtprotoPool_ControlMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlMeta{}
+	},
+}
+
+func (m *ControlMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Ihave {
+			mm.ResetVT()
+		}
+		f0 := m.Ihave[:0]
+		for _, mm := range m.Iwant {
+			mm.ResetVT()
+		}
+		f1 := m.Iwant[:0]
+		for _, mm := range m.Graft {
+			mm.ResetVT()
+		}
+		f2 := m.Graft[:0]
+		for _, mm := range m.Prune {
+			mm.ResetVT()
+		}
+		f3 := m.Prune[:0]
+		for _, mm := range m.Idontwant {
+			mm.ResetVT()
+		}
+		f4 := m.Idontwant[:0]
+		m.Reset()
+		m.Ihave = f0
+		m.Iwant = f1
+		m.Graft = f2
+		m.Prune = f3
+		m.Idontwant = f4
+	}
+}
+func (m *ControlMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlMeta.Put(m)
+	}
+}
+func ControlMetaFromVTPool() *ControlMeta {
+	return vtprotoPool_ControlMeta.Get().(*ControlMeta)
+}
+
+var vtprotoPool_ControlIHaveMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlIHaveMeta{}
+	},
+}
+
+func (m *ControlIHaveMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.MessageIds {
+			mm.Reset()
+		}
+		f0 := m.MessageIds[:0]
+		m.Reset()
+		m.MessageIds = f0
+	}
+}
+func (m *ControlIHaveMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIHaveMeta.Put(m)
+	}
+}
+func ControlIHaveMetaFromVTPool() *ControlIHaveMeta {
+	return vtprotoPool_ControlIHaveMeta.Get().(*ControlIHaveMeta)
+}
+
+var vtprotoPool_ControlIHaveMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &ControlIHaveMetaItem{}
+	},
+}
+
+func (m *ControlIHaveMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlIHaveMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIHaveMetaItem.Put(m)
+	}
+}
+func ControlIHaveMetaItemFromVTPool() *ControlIHaveMetaItem {
+	return vtprotoPool_ControlIHaveMetaItem.Get().(*ControlIHaveMetaItem)
+}
+
+var vtprotoPool_ControlIWantMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlIWantMeta{}
+	},
+}
+
+func (m *ControlIWantMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.MessageIds {
+			mm.Reset()
+		}
+		f0 := m.MessageIds[:0]
+		m.Reset()
+		m.MessageIds = f0
+	}
+}
+func (m *ControlIWantMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIWantMeta.Put(m)
+	}
+}
+func ControlIWantMetaFromVTPool() *ControlIWantMeta {
+	return vtprotoPool_ControlIWantMeta.Get().(*ControlIWantMeta)
+}
+
+var vtprotoPool_ControlIWantMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &ControlIWantMetaItem{}
+	},
+}
+
+func (m *ControlIWantMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlIWantMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIWantMetaItem.Put(m)
+	}
+}
+func ControlIWantMetaItemFromVTPool() *ControlIWantMetaItem {
+	return vtprotoPool_ControlIWantMetaItem.Get().(*ControlIWantMetaItem)
+}
+
+var vtprotoPool_ControlGraftMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlGraftMeta{}
+	},
+}
+
+func (m *ControlGraftMeta) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlGraftMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlGraftMeta.Put(m)
+	}
+}
+func ControlGraftMetaFromVTPool() *ControlGraftMeta {
+	return vtprotoPool_ControlGraftMeta.Get().(*ControlGraftMeta)
+}
+
+var vtprotoPool_ControlGraftMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &ControlGraftMetaItem{}
+	},
+}
+
+func (m *ControlGraftMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlGraftMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlGraftMetaItem.Put(m)
+	}
+}
+func ControlGraftMetaItemFromVTPool() *ControlGraftMetaItem {
+	return vtprotoPool_ControlGraftMetaItem.Get().(*ControlGraftMetaItem)
+}
+
+var vtprotoPool_ControlPruneMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlPruneMeta{}
+	},
+}
+
+func (m *ControlPruneMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.PeerIds {
+			mm.Reset()
+		}
+		f0 := m.PeerIds[:0]
+		m.Reset()
+		m.PeerIds = f0
+	}
+}
+func (m *ControlPruneMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlPruneMeta.Put(m)
+	}
+}
+func ControlPruneMetaFromVTPool() *ControlPruneMeta {
+	return vtprotoPool_ControlPruneMeta.Get().(*ControlPruneMeta)
+}
+
+var vtprotoPool_ControlPruneMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &ControlPruneMetaItem{}
+	},
+}
+
+func (m *ControlPruneMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlPruneMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlPruneMetaItem.Put(m)
+	}
+}
+func ControlPruneMetaItemFromVTPool() *ControlPruneMetaItem {
+	return vtprotoPool_ControlPruneMetaItem.Get().(*ControlPruneMetaItem)
+}
+
+var vtprotoPool_ControlIDontWantMeta = sync.Pool{
+	New: func() interface{} {
+		return &ControlIDontWantMeta{}
+	},
+}
+
+func (m *ControlIDontWantMeta) ResetVT() {
+	if m != nil {
+		for _, mm := range m.MessageIds {
+			mm.Reset()
+		}
+		f0 := m.MessageIds[:0]
+		m.Reset()
+		m.MessageIds = f0
+	}
+}
+func (m *ControlIDontWantMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIDontWantMeta.Put(m)
+	}
+}
+func ControlIDontWantMetaFromVTPool() *ControlIDontWantMeta {
+	return vtprotoPool_ControlIDontWantMeta.Get().(*ControlIDontWantMeta)
+}
+
+var vtprotoPool_ControlIDontWantMetaItem = sync.Pool{
+	New: func() interface{} {
+		return &ControlIDontWantMetaItem{}
+	},
+}
+
+func (m *ControlIDontWantMetaItem) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ControlIDontWantMetaItem) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ControlIDontWantMetaItem.Put(m)
+	}
+}
+func ControlIDontWantMetaItemFromVTPool() *ControlIDontWantMetaItem {
+	return vtprotoPool_ControlIDontWantMetaItem.Get().(*ControlIDontWantMetaItem)
+}
+
+var vtprotoPool_DataColumnCustodyProbe = sync.Pool{
+	New: func() interface{} {
+		return &DataColumnCustodyProbe{}
+	},
+}
+
+func (m *DataColumnCustodyProbe) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *DataColumnCustodyProbe) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DataColumnCustodyProbe.Put(m)
+	}
+}
+func DataColumnCustodyProbeFromVTPool() *DataColumnCustodyProbe {
+	return vtprotoPool_DataColumnCustodyProbe.Get().(*DataColumnCustodyProbe)
+}
+
+var vtprotoPool_Identify = sync.Pool{
+	New: func() interface{} {
+		return &Identify{}
+	},
+}
+
+func (m *Identify) ResetVT() {
+	if m != nil {
+		f0 := m.Protocols[:0]
+		f1 := m.ListenAddrs[:0]
+		m.Reset()
+		m.Protocols = f0
+		m.ListenAddrs = f1
+	}
+}
+func (m *Identify) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Identify.Put(m)
+	}
+}
+func IdentifyFromVTPool() *Identify {
+	return vtprotoPool_Identify.Get().(*Identify)
+}
 func (m *AddPeer) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4165,7 +5010,7 @@ func (m *RecvRPC) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Meta == nil {
-				m.Meta = &RPCMeta{}
+				m.Meta = RPCMetaFromVTPool()
 			}
 			if err := m.Meta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4288,7 +5133,7 @@ func (m *SendRPC) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Meta == nil {
-				m.Meta = &RPCMeta{}
+				m.Meta = RPCMetaFromVTPool()
 			}
 			if err := m.Meta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4411,7 +5256,7 @@ func (m *DropRPC) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Meta == nil {
-				m.Meta = &RPCMeta{}
+				m.Meta = RPCMetaFromVTPool()
 			}
 			if err := m.Meta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6715,7 +7560,7 @@ func (m *HandleStatus) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Request == nil {
-				m.Request = &Status{}
+				m.Request = StatusFromVTPool()
 			}
 			if err := m.Request.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6751,7 +7596,7 @@ func (m *HandleStatus) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Response == nil {
-				m.Response = &Status{}
+				m.Response = StatusFromVTPool()
 			}
 			if err := m.Response.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7018,7 +7863,7 @@ func (m *HandleMetadata) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &Metadata{}
+				m.Metadata = MetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7475,7 +8320,14 @@ func (m *RPCMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Messages = append(m.Messages, &MessageMeta{})
+			if len(m.Messages) == cap(m.Messages) {
+				m.Messages = append(m.Messages, &MessageMeta{})
+			} else {
+				m.Messages = m.Messages[:len(m.Messages)+1]
+				if m.Messages[len(m.Messages)-1] == nil {
+					m.Messages[len(m.Messages)-1] = &MessageMeta{}
+				}
+			}
 			if err := m.Messages[len(m.Messages)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -7509,7 +8361,14 @@ func (m *RPCMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Subscriptions = append(m.Subscriptions, &SubMeta{})
+			if len(m.Subscriptions) == cap(m.Subscriptions) {
+				m.Subscriptions = append(m.Subscriptions, &SubMeta{})
+			} else {
+				m.Subscriptions = m.Subscriptions[:len(m.Subscriptions)+1]
+				if m.Subscriptions[len(m.Subscriptions)-1] == nil {
+					m.Subscriptions[len(m.Subscriptions)-1] = &SubMeta{}
+				}
+			}
 			if err := m.Subscriptions[len(m.Subscriptions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -7544,7 +8403,7 @@ func (m *RPCMeta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Control == nil {
-				m.Control = &ControlMeta{}
+				m.Control = ControlMetaFromVTPool()
 			}
 			if err := m.Control.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8374,7 +9233,14 @@ func (m *ControlMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Ihave = append(m.Ihave, &ControlIHaveMeta{})
+			if len(m.Ihave) == cap(m.Ihave) {
+				m.Ihave = append(m.Ihave, &ControlIHaveMeta{})
+			} else {
+				m.Ihave = m.Ihave[:len(m.Ihave)+1]
+				if m.Ihave[len(m.Ihave)-1] == nil {
+					m.Ihave[len(m.Ihave)-1] = &ControlIHaveMeta{}
+				}
+			}
 			if err := m.Ihave[len(m.Ihave)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8408,7 +9274,14 @@ func (m *ControlMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Iwant = append(m.Iwant, &ControlIWantMeta{})
+			if len(m.Iwant) == cap(m.Iwant) {
+				m.Iwant = append(m.Iwant, &ControlIWantMeta{})
+			} else {
+				m.Iwant = m.Iwant[:len(m.Iwant)+1]
+				if m.Iwant[len(m.Iwant)-1] == nil {
+					m.Iwant[len(m.Iwant)-1] = &ControlIWantMeta{}
+				}
+			}
 			if err := m.Iwant[len(m.Iwant)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8442,7 +9315,14 @@ func (m *ControlMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Graft = append(m.Graft, &ControlGraftMeta{})
+			if len(m.Graft) == cap(m.Graft) {
+				m.Graft = append(m.Graft, &ControlGraftMeta{})
+			} else {
+				m.Graft = m.Graft[:len(m.Graft)+1]
+				if m.Graft[len(m.Graft)-1] == nil {
+					m.Graft[len(m.Graft)-1] = &ControlGraftMeta{}
+				}
+			}
 			if err := m.Graft[len(m.Graft)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8476,7 +9356,14 @@ func (m *ControlMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Prune = append(m.Prune, &ControlPruneMeta{})
+			if len(m.Prune) == cap(m.Prune) {
+				m.Prune = append(m.Prune, &ControlPruneMeta{})
+			} else {
+				m.Prune = m.Prune[:len(m.Prune)+1]
+				if m.Prune[len(m.Prune)-1] == nil {
+					m.Prune[len(m.Prune)-1] = &ControlPruneMeta{}
+				}
+			}
 			if err := m.Prune[len(m.Prune)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8510,7 +9397,14 @@ func (m *ControlMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Idontwant = append(m.Idontwant, &ControlIDontWantMeta{})
+			if len(m.Idontwant) == cap(m.Idontwant) {
+				m.Idontwant = append(m.Idontwant, &ControlIDontWantMeta{})
+			} else {
+				m.Idontwant = m.Idontwant[:len(m.Idontwant)+1]
+				if m.Idontwant[len(m.Idontwant)-1] == nil {
+					m.Idontwant[len(m.Idontwant)-1] = &ControlIDontWantMeta{}
+				}
+			}
 			if err := m.Idontwant[len(m.Idontwant)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8631,7 +9525,14 @@ func (m *ControlIHaveMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			if len(m.MessageIds) == cap(m.MessageIds) {
+				m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			} else {
+				m.MessageIds = m.MessageIds[:len(m.MessageIds)+1]
+				if m.MessageIds[len(m.MessageIds)-1] == nil {
+					m.MessageIds[len(m.MessageIds)-1] = &wrapperspb1.StringValue{}
+				}
+			}
 			if err := (*wrapperspb.StringValue)(m.MessageIds[len(m.MessageIds)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -8983,7 +9884,14 @@ func (m *ControlIWantMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			if len(m.MessageIds) == cap(m.MessageIds) {
+				m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			} else {
+				m.MessageIds = m.MessageIds[:len(m.MessageIds)+1]
+				if m.MessageIds[len(m.MessageIds)-1] == nil {
+					m.MessageIds[len(m.MessageIds)-1] = &wrapperspb1.StringValue{}
+				}
+			}
 			if err := (*wrapperspb.StringValue)(m.MessageIds[len(m.MessageIds)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -9617,7 +10525,14 @@ func (m *ControlPruneMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PeerIds = append(m.PeerIds, &wrapperspb1.StringValue{})
+			if len(m.PeerIds) == cap(m.PeerIds) {
+				m.PeerIds = append(m.PeerIds, &wrapperspb1.StringValue{})
+			} else {
+				m.PeerIds = m.PeerIds[:len(m.PeerIds)+1]
+				if m.PeerIds[len(m.PeerIds)-1] == nil {
+					m.PeerIds[len(m.PeerIds)-1] = &wrapperspb1.StringValue{}
+				}
+			}
 			if err := (*wrapperspb.StringValue)(m.PeerIds[len(m.PeerIds)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -9969,7 +10884,14 @@ func (m *ControlIDontWantMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			if len(m.MessageIds) == cap(m.MessageIds) {
+				m.MessageIds = append(m.MessageIds, &wrapperspb1.StringValue{})
+			} else {
+				m.MessageIds = m.MessageIds[:len(m.MessageIds)+1]
+				if m.MessageIds[len(m.MessageIds)-1] == nil {
+					m.MessageIds[len(m.MessageIds)-1] = &wrapperspb1.StringValue{}
+				}
+			}
 			if err := (*wrapperspb.StringValue)(m.MessageIds[len(m.MessageIds)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

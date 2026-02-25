@@ -10,4 +10,11 @@ plugins:
     out: .
     opt:
       - paths=source_relative
-      - features=marshal+unmarshal+size
+      - features=marshal+unmarshal+size+pool
+      - pool=github.com/ethpandaops/xatu/pkg/proto/xatu.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/eth/v1.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/eth/v2.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/libp2p.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/mevrelay.*
+      - pool=github.com/ethpandaops/xatu/pkg/proto/noderecord.*

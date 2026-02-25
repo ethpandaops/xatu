@@ -85,6 +85,13 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 	var batchErr *service.BatchError
 
+	var pooledEvents []*xatu.DecoratedEvent
+	defer func() {
+		for _, ev := range pooledEvents {
+			ev.ReturnToVTPool()
+		}
+	}()
+
 	groups := make(map[xatu.Event_Name]*eventGroup, 16)
 
 	// Phase 1: decode, route, and group by event type.
@@ -128,6 +135,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			continue
 		}
+
+		pooledEvents = append(pooledEvents, event)
 
 		outcome := o.router.Route(event)
 

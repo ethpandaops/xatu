@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -209,6 +210,47 @@ func (m *Blob) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_BlobSidecar = sync.Pool{
+	New: func() interface{} {
+		return &BlobSidecar{}
+	},
+}
+
+func (m *BlobSidecar) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BlobSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BlobSidecar.Put(m)
+	}
+}
+func BlobSidecarFromVTPool() *BlobSidecar {
+	return vtprotoPool_BlobSidecar.Get().(*BlobSidecar)
+}
+
+var vtprotoPool_Blob = sync.Pool{
+	New: func() interface{} {
+		return &Blob{}
+	},
+}
+
+func (m *Blob) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Blob) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Blob.Put(m)
+	}
+}
+func BlobFromVTPool() *Blob {
+	return vtprotoPool_Blob.Get().(*Blob)
+}
 func (m *BlobSidecar) SizeVT() (n int) {
 	if m == nil {
 		return 0

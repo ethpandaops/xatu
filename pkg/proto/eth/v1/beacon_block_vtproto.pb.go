@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -1485,6 +1486,587 @@ func (m *SyncAggregate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_BeaconBlock = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlock{}
+	},
+}
+
+func (m *BeaconBlock) ResetVT() {
+	if m != nil {
+		m.Body.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *BeaconBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlock.Put(m)
+	}
+}
+func BeaconBlockFromVTPool() *BeaconBlock {
+	return vtprotoPool_BeaconBlock.Get().(*BeaconBlock)
+}
+
+var vtprotoPool_BeaconBlockV2 = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockV2{}
+	},
+}
+
+func (m *BeaconBlockV2) ResetVT() {
+	if m != nil {
+		m.Body.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *BeaconBlockV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockV2.Put(m)
+	}
+}
+func BeaconBlockV2FromVTPool() *BeaconBlockV2 {
+	return vtprotoPool_BeaconBlockV2.Get().(*BeaconBlockV2)
+}
+
+var vtprotoPool_SignedBeaconBlock = sync.Pool{
+	New: func() interface{} {
+		return &SignedBeaconBlock{}
+	},
+}
+
+func (m *SignedBeaconBlock) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBeaconBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBeaconBlock.Put(m)
+	}
+}
+func SignedBeaconBlockFromVTPool() *SignedBeaconBlock {
+	return vtprotoPool_SignedBeaconBlock.Get().(*SignedBeaconBlock)
+}
+
+var vtprotoPool_SignedBeaconBlockV2 = sync.Pool{
+	New: func() interface{} {
+		return &SignedBeaconBlockV2{}
+	},
+}
+
+func (m *SignedBeaconBlockV2) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBeaconBlockV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBeaconBlockV2.Put(m)
+	}
+}
+func SignedBeaconBlockV2FromVTPool() *SignedBeaconBlockV2 {
+	return vtprotoPool_SignedBeaconBlockV2.Get().(*SignedBeaconBlockV2)
+}
+
+var vtprotoPool_BeaconBlockBody = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockBody{}
+	},
+}
+
+func (m *BeaconBlockBody) ResetVT() {
+	if m != nil {
+		m.Eth1Data.ReturnToVTPool()
+		for _, mm := range m.ProposerSlashings {
+			mm.ResetVT()
+		}
+		f0 := m.ProposerSlashings[:0]
+		for _, mm := range m.AttesterSlashings {
+			mm.ResetVT()
+		}
+		f1 := m.AttesterSlashings[:0]
+		for _, mm := range m.Attestations {
+			mm.ResetVT()
+		}
+		f2 := m.Attestations[:0]
+		for _, mm := range m.Deposits {
+			mm.ResetVT()
+		}
+		f3 := m.Deposits[:0]
+		for _, mm := range m.VoluntaryExits {
+			mm.ResetVT()
+		}
+		f4 := m.VoluntaryExits[:0]
+		m.Reset()
+		m.ProposerSlashings = f0
+		m.AttesterSlashings = f1
+		m.Attestations = f2
+		m.Deposits = f3
+		m.VoluntaryExits = f4
+	}
+}
+func (m *BeaconBlockBody) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockBody.Put(m)
+	}
+}
+func BeaconBlockBodyFromVTPool() *BeaconBlockBody {
+	return vtprotoPool_BeaconBlockBody.Get().(*BeaconBlockBody)
+}
+
+var vtprotoPool_ProposerSlashing = sync.Pool{
+	New: func() interface{} {
+		return &ProposerSlashing{}
+	},
+}
+
+func (m *ProposerSlashing) ResetVT() {
+	if m != nil {
+		m.SignedHeader_1.ReturnToVTPool()
+		m.SignedHeader_2.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ProposerSlashing) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ProposerSlashing.Put(m)
+	}
+}
+func ProposerSlashingFromVTPool() *ProposerSlashing {
+	return vtprotoPool_ProposerSlashing.Get().(*ProposerSlashing)
+}
+
+var vtprotoPool_ProposerSlashingV2 = sync.Pool{
+	New: func() interface{} {
+		return &ProposerSlashingV2{}
+	},
+}
+
+func (m *ProposerSlashingV2) ResetVT() {
+	if m != nil {
+		m.SignedHeader_1.ReturnToVTPool()
+		m.SignedHeader_2.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ProposerSlashingV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ProposerSlashingV2.Put(m)
+	}
+}
+func ProposerSlashingV2FromVTPool() *ProposerSlashingV2 {
+	return vtprotoPool_ProposerSlashingV2.Get().(*ProposerSlashingV2)
+}
+
+var vtprotoPool_AttesterSlashing = sync.Pool{
+	New: func() interface{} {
+		return &AttesterSlashing{}
+	},
+}
+
+func (m *AttesterSlashing) ResetVT() {
+	if m != nil {
+		m.Attestation_1.ReturnToVTPool()
+		m.Attestation_2.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AttesterSlashing) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttesterSlashing.Put(m)
+	}
+}
+func AttesterSlashingFromVTPool() *AttesterSlashing {
+	return vtprotoPool_AttesterSlashing.Get().(*AttesterSlashing)
+}
+
+var vtprotoPool_AttesterSlashingV2 = sync.Pool{
+	New: func() interface{} {
+		return &AttesterSlashingV2{}
+	},
+}
+
+func (m *AttesterSlashingV2) ResetVT() {
+	if m != nil {
+		m.Attestation_1.ReturnToVTPool()
+		m.Attestation_2.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AttesterSlashingV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttesterSlashingV2.Put(m)
+	}
+}
+func AttesterSlashingV2FromVTPool() *AttesterSlashingV2 {
+	return vtprotoPool_AttesterSlashingV2.Get().(*AttesterSlashingV2)
+}
+
+var vtprotoPool_Deposit_Data = sync.Pool{
+	New: func() interface{} {
+		return &Deposit_Data{}
+	},
+}
+
+func (m *Deposit_Data) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Deposit_Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Deposit_Data.Put(m)
+	}
+}
+func Deposit_DataFromVTPool() *Deposit_Data {
+	return vtprotoPool_Deposit_Data.Get().(*Deposit_Data)
+}
+
+var vtprotoPool_Deposit = sync.Pool{
+	New: func() interface{} {
+		return &Deposit{}
+	},
+}
+
+func (m *Deposit) ResetVT() {
+	if m != nil {
+		f0 := m.Proof[:0]
+		m.Data.ReturnToVTPool()
+		m.Reset()
+		m.Proof = f0
+	}
+}
+func (m *Deposit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Deposit.Put(m)
+	}
+}
+func DepositFromVTPool() *Deposit {
+	return vtprotoPool_Deposit.Get().(*Deposit)
+}
+
+var vtprotoPool_DepositV2_Data = sync.Pool{
+	New: func() interface{} {
+		return &DepositV2_Data{}
+	},
+}
+
+func (m *DepositV2_Data) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *DepositV2_Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DepositV2_Data.Put(m)
+	}
+}
+func DepositV2_DataFromVTPool() *DepositV2_Data {
+	return vtprotoPool_DepositV2_Data.Get().(*DepositV2_Data)
+}
+
+var vtprotoPool_DepositV2 = sync.Pool{
+	New: func() interface{} {
+		return &DepositV2{}
+	},
+}
+
+func (m *DepositV2) ResetVT() {
+	if m != nil {
+		f0 := m.Proof[:0]
+		m.Data.ReturnToVTPool()
+		m.Reset()
+		m.Proof = f0
+	}
+}
+func (m *DepositV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DepositV2.Put(m)
+	}
+}
+func DepositV2FromVTPool() *DepositV2 {
+	return vtprotoPool_DepositV2.Get().(*DepositV2)
+}
+
+var vtprotoPool_VoluntaryExit = sync.Pool{
+	New: func() interface{} {
+		return &VoluntaryExit{}
+	},
+}
+
+func (m *VoluntaryExit) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *VoluntaryExit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_VoluntaryExit.Put(m)
+	}
+}
+func VoluntaryExitFromVTPool() *VoluntaryExit {
+	return vtprotoPool_VoluntaryExit.Get().(*VoluntaryExit)
+}
+
+var vtprotoPool_VoluntaryExitV2 = sync.Pool{
+	New: func() interface{} {
+		return &VoluntaryExitV2{}
+	},
+}
+
+func (m *VoluntaryExitV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *VoluntaryExitV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_VoluntaryExitV2.Put(m)
+	}
+}
+func VoluntaryExitV2FromVTPool() *VoluntaryExitV2 {
+	return vtprotoPool_VoluntaryExitV2.Get().(*VoluntaryExitV2)
+}
+
+var vtprotoPool_SignedVoluntaryExit = sync.Pool{
+	New: func() interface{} {
+		return &SignedVoluntaryExit{}
+	},
+}
+
+func (m *SignedVoluntaryExit) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedVoluntaryExit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedVoluntaryExit.Put(m)
+	}
+}
+func SignedVoluntaryExitFromVTPool() *SignedVoluntaryExit {
+	return vtprotoPool_SignedVoluntaryExit.Get().(*SignedVoluntaryExit)
+}
+
+var vtprotoPool_SignedVoluntaryExitV2 = sync.Pool{
+	New: func() interface{} {
+		return &SignedVoluntaryExitV2{}
+	},
+}
+
+func (m *SignedVoluntaryExitV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedVoluntaryExitV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedVoluntaryExitV2.Put(m)
+	}
+}
+func SignedVoluntaryExitV2FromVTPool() *SignedVoluntaryExitV2 {
+	return vtprotoPool_SignedVoluntaryExitV2.Get().(*SignedVoluntaryExitV2)
+}
+
+var vtprotoPool_Eth1Data = sync.Pool{
+	New: func() interface{} {
+		return &Eth1Data{}
+	},
+}
+
+func (m *Eth1Data) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Eth1Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Eth1Data.Put(m)
+	}
+}
+func Eth1DataFromVTPool() *Eth1Data {
+	return vtprotoPool_Eth1Data.Get().(*Eth1Data)
+}
+
+var vtprotoPool_BeaconBlockHeader = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockHeader{}
+	},
+}
+
+func (m *BeaconBlockHeader) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BeaconBlockHeader) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockHeader.Put(m)
+	}
+}
+func BeaconBlockHeaderFromVTPool() *BeaconBlockHeader {
+	return vtprotoPool_BeaconBlockHeader.Get().(*BeaconBlockHeader)
+}
+
+var vtprotoPool_BeaconBlockHeaderV2 = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockHeaderV2{}
+	},
+}
+
+func (m *BeaconBlockHeaderV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BeaconBlockHeaderV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockHeaderV2.Put(m)
+	}
+}
+func BeaconBlockHeaderV2FromVTPool() *BeaconBlockHeaderV2 {
+	return vtprotoPool_BeaconBlockHeaderV2.Get().(*BeaconBlockHeaderV2)
+}
+
+var vtprotoPool_SignedBeaconBlockHeader = sync.Pool{
+	New: func() interface{} {
+		return &SignedBeaconBlockHeader{}
+	},
+}
+
+func (m *SignedBeaconBlockHeader) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBeaconBlockHeader) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBeaconBlockHeader.Put(m)
+	}
+}
+func SignedBeaconBlockHeaderFromVTPool() *SignedBeaconBlockHeader {
+	return vtprotoPool_SignedBeaconBlockHeader.Get().(*SignedBeaconBlockHeader)
+}
+
+var vtprotoPool_SignedBeaconBlockHeaderV2 = sync.Pool{
+	New: func() interface{} {
+		return &SignedBeaconBlockHeaderV2{}
+	},
+}
+
+func (m *SignedBeaconBlockHeaderV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBeaconBlockHeaderV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBeaconBlockHeaderV2.Put(m)
+	}
+}
+func SignedBeaconBlockHeaderV2FromVTPool() *SignedBeaconBlockHeaderV2 {
+	return vtprotoPool_SignedBeaconBlockHeaderV2.Get().(*SignedBeaconBlockHeaderV2)
+}
+
+var vtprotoPool_IndexedAttestation = sync.Pool{
+	New: func() interface{} {
+		return &IndexedAttestation{}
+	},
+}
+
+func (m *IndexedAttestation) ResetVT() {
+	if m != nil {
+		f0 := m.AttestingIndices[:0]
+		m.Data.ReturnToVTPool()
+		m.Reset()
+		m.AttestingIndices = f0
+	}
+}
+func (m *IndexedAttestation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_IndexedAttestation.Put(m)
+	}
+}
+func IndexedAttestationFromVTPool() *IndexedAttestation {
+	return vtprotoPool_IndexedAttestation.Get().(*IndexedAttestation)
+}
+
+var vtprotoPool_IndexedAttestationV2 = sync.Pool{
+	New: func() interface{} {
+		return &IndexedAttestationV2{}
+	},
+}
+
+func (m *IndexedAttestationV2) ResetVT() {
+	if m != nil {
+		for _, mm := range m.AttestingIndices {
+			mm.Reset()
+		}
+		f0 := m.AttestingIndices[:0]
+		m.Data.ReturnToVTPool()
+		m.Reset()
+		m.AttestingIndices = f0
+	}
+}
+func (m *IndexedAttestationV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_IndexedAttestationV2.Put(m)
+	}
+}
+func IndexedAttestationV2FromVTPool() *IndexedAttestationV2 {
+	return vtprotoPool_IndexedAttestationV2.Get().(*IndexedAttestationV2)
+}
+
+var vtprotoPool_SyncAggregate = sync.Pool{
+	New: func() interface{} {
+		return &SyncAggregate{}
+	},
+}
+
+func (m *SyncAggregate) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SyncAggregate) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncAggregate.Put(m)
+	}
+}
+func SyncAggregateFromVTPool() *SyncAggregate {
+	return vtprotoPool_SyncAggregate.Get().(*SyncAggregate)
+}
 func (m *BeaconBlock) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2207,7 +2789,7 @@ func (m *BeaconBlock) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Body == nil {
-				m.Body = &BeaconBlockBody{}
+				m.Body = BeaconBlockBodyFromVTPool()
 			}
 			if err := m.Body.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2430,7 +3012,7 @@ func (m *BeaconBlockV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Body == nil {
-				m.Body = &BeaconBlockBody{}
+				m.Body = BeaconBlockBodyFromVTPool()
 			}
 			if err := m.Body.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2517,7 +3099,7 @@ func (m *SignedBeaconBlock) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BeaconBlock{}
+				m.Block = BeaconBlockFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2636,7 +3218,7 @@ func (m *SignedBeaconBlockV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BeaconBlockV2{}
+				m.Block = BeaconBlockV2FromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2787,7 +3369,7 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Eth1Data == nil {
-				m.Eth1Data = &Eth1Data{}
+				m.Eth1Data = Eth1DataFromVTPool()
 			}
 			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2854,7 +3436,14 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ProposerSlashings = append(m.ProposerSlashings, &ProposerSlashing{})
+			if len(m.ProposerSlashings) == cap(m.ProposerSlashings) {
+				m.ProposerSlashings = append(m.ProposerSlashings, &ProposerSlashing{})
+			} else {
+				m.ProposerSlashings = m.ProposerSlashings[:len(m.ProposerSlashings)+1]
+				if m.ProposerSlashings[len(m.ProposerSlashings)-1] == nil {
+					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &ProposerSlashing{}
+				}
+			}
 			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -2888,7 +3477,14 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AttesterSlashings = append(m.AttesterSlashings, &AttesterSlashing{})
+			if len(m.AttesterSlashings) == cap(m.AttesterSlashings) {
+				m.AttesterSlashings = append(m.AttesterSlashings, &AttesterSlashing{})
+			} else {
+				m.AttesterSlashings = m.AttesterSlashings[:len(m.AttesterSlashings)+1]
+				if m.AttesterSlashings[len(m.AttesterSlashings)-1] == nil {
+					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &AttesterSlashing{}
+				}
+			}
 			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -2922,7 +3518,14 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Attestations = append(m.Attestations, &Attestation{})
+			if len(m.Attestations) == cap(m.Attestations) {
+				m.Attestations = append(m.Attestations, &Attestation{})
+			} else {
+				m.Attestations = m.Attestations[:len(m.Attestations)+1]
+				if m.Attestations[len(m.Attestations)-1] == nil {
+					m.Attestations[len(m.Attestations)-1] = &Attestation{}
+				}
+			}
 			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -2956,7 +3559,14 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Deposits = append(m.Deposits, &Deposit{})
+			if len(m.Deposits) == cap(m.Deposits) {
+				m.Deposits = append(m.Deposits, &Deposit{})
+			} else {
+				m.Deposits = m.Deposits[:len(m.Deposits)+1]
+				if m.Deposits[len(m.Deposits)-1] == nil {
+					m.Deposits[len(m.Deposits)-1] = &Deposit{}
+				}
+			}
 			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -2990,7 +3600,14 @@ func (m *BeaconBlockBody) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.VoluntaryExits = append(m.VoluntaryExits, &SignedVoluntaryExit{})
+			if len(m.VoluntaryExits) == cap(m.VoluntaryExits) {
+				m.VoluntaryExits = append(m.VoluntaryExits, &SignedVoluntaryExit{})
+			} else {
+				m.VoluntaryExits = m.VoluntaryExits[:len(m.VoluntaryExits)+1]
+				if m.VoluntaryExits[len(m.VoluntaryExits)-1] == nil {
+					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &SignedVoluntaryExit{}
+				}
+			}
 			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -3076,7 +3693,7 @@ func (m *ProposerSlashing) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SignedHeader_1 == nil {
-				m.SignedHeader_1 = &SignedBeaconBlockHeader{}
+				m.SignedHeader_1 = SignedBeaconBlockHeaderFromVTPool()
 			}
 			if err := m.SignedHeader_1.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3112,7 +3729,7 @@ func (m *ProposerSlashing) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SignedHeader_2 == nil {
-				m.SignedHeader_2 = &SignedBeaconBlockHeader{}
+				m.SignedHeader_2 = SignedBeaconBlockHeaderFromVTPool()
 			}
 			if err := m.SignedHeader_2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3199,7 +3816,7 @@ func (m *ProposerSlashingV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SignedHeader_1 == nil {
-				m.SignedHeader_1 = &SignedBeaconBlockHeaderV2{}
+				m.SignedHeader_1 = SignedBeaconBlockHeaderV2FromVTPool()
 			}
 			if err := m.SignedHeader_1.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3235,7 +3852,7 @@ func (m *ProposerSlashingV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SignedHeader_2 == nil {
-				m.SignedHeader_2 = &SignedBeaconBlockHeaderV2{}
+				m.SignedHeader_2 = SignedBeaconBlockHeaderV2FromVTPool()
 			}
 			if err := m.SignedHeader_2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3322,7 +3939,7 @@ func (m *AttesterSlashing) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Attestation_1 == nil {
-				m.Attestation_1 = &IndexedAttestation{}
+				m.Attestation_1 = IndexedAttestationFromVTPool()
 			}
 			if err := m.Attestation_1.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3358,7 +3975,7 @@ func (m *AttesterSlashing) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Attestation_2 == nil {
-				m.Attestation_2 = &IndexedAttestation{}
+				m.Attestation_2 = IndexedAttestationFromVTPool()
 			}
 			if err := m.Attestation_2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3445,7 +4062,7 @@ func (m *AttesterSlashingV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Attestation_1 == nil {
-				m.Attestation_1 = &IndexedAttestationV2{}
+				m.Attestation_1 = IndexedAttestationV2FromVTPool()
 			}
 			if err := m.Attestation_1.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3481,7 +4098,7 @@ func (m *AttesterSlashingV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Attestation_2 == nil {
-				m.Attestation_2 = &IndexedAttestationV2{}
+				m.Attestation_2 = IndexedAttestationV2FromVTPool()
 			}
 			if err := m.Attestation_2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3766,7 +4383,7 @@ func (m *Deposit) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &Deposit_Data{}
+				m.Data = Deposit_DataFromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4068,7 +4685,7 @@ func (m *DepositV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &DepositV2_Data{}
+				m.Data = DepositV2_DataFromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4367,7 +4984,7 @@ func (m *SignedVoluntaryExit) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &VoluntaryExit{}
+				m.Message = VoluntaryExitFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4486,7 +5103,7 @@ func (m *SignedVoluntaryExitV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &VoluntaryExitV2{}
+				m.Message = VoluntaryExitV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5143,7 +5760,7 @@ func (m *SignedBeaconBlockHeader) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &BeaconBlockHeader{}
+				m.Message = BeaconBlockHeaderFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5262,7 +5879,7 @@ func (m *SignedBeaconBlockHeaderV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &BeaconBlockHeaderV2{}
+				m.Message = BeaconBlockHeaderV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5403,7 +6020,7 @@ func (m *IndexedAttestation) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.AttestingIndices) == 0 {
+				if elementCount != 0 && len(m.AttestingIndices) == 0 && cap(m.AttestingIndices) < elementCount {
 					m.AttestingIndices = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -5457,7 +6074,7 @@ func (m *IndexedAttestation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &AttestationData{}
+				m.Data = AttestationDataFromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5575,7 +6192,14 @@ func (m *IndexedAttestationV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AttestingIndices = append(m.AttestingIndices, &wrapperspb1.UInt64Value{})
+			if len(m.AttestingIndices) == cap(m.AttestingIndices) {
+				m.AttestingIndices = append(m.AttestingIndices, &wrapperspb1.UInt64Value{})
+			} else {
+				m.AttestingIndices = m.AttestingIndices[:len(m.AttestingIndices)+1]
+				if m.AttestingIndices[len(m.AttestingIndices)-1] == nil {
+					m.AttestingIndices[len(m.AttestingIndices)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.AttestingIndices[len(m.AttestingIndices)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -5610,7 +6234,7 @@ func (m *IndexedAttestationV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &AttestationDataV2{}
+				m.Data = AttestationDataV2FromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -186,6 +187,47 @@ func (m *Metadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Status = sync.Pool{
+	New: func() interface{} {
+		return &Status{}
+	},
+}
+
+func (m *Status) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Status) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Status.Put(m)
+	}
+}
+func StatusFromVTPool() *Status {
+	return vtprotoPool_Status.Get().(*Status)
+}
+
+var vtprotoPool_Metadata = sync.Pool{
+	New: func() interface{} {
+		return &Metadata{}
+	},
+}
+
+func (m *Metadata) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Metadata) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Metadata.Put(m)
+	}
+}
+func MetadataFromVTPool() *Metadata {
+	return vtprotoPool_Metadata.Get().(*Metadata)
+}
 func (m *Status) SizeVT() (n int) {
 	if m == nil {
 		return 0

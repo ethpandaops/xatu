@@ -13,6 +13,7 @@ import (
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -205,6 +206,26 @@ func (m *Execution) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Execution = sync.Pool{
+	New: func() interface{} {
+		return &Execution{}
+	},
+}
+
+func (m *Execution) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Execution) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Execution.Put(m)
+	}
+}
+func ExecutionFromVTPool() *Execution {
+	return vtprotoPool_Execution.Get().(*Execution)
+}
 func (m *Execution) SizeVT() (n int) {
 	if m == nil {
 		return 0

@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -298,6 +299,104 @@ func (m *ElectraExecutionRequestConsolidation) MarshalToSizedBufferVT(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_ElectraExecutionRequests = sync.Pool{
+	New: func() interface{} {
+		return &ElectraExecutionRequests{}
+	},
+}
+
+func (m *ElectraExecutionRequests) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Deposits {
+			mm.ResetVT()
+		}
+		f0 := m.Deposits[:0]
+		for _, mm := range m.Withdrawals {
+			mm.ResetVT()
+		}
+		f1 := m.Withdrawals[:0]
+		for _, mm := range m.Consolidations {
+			mm.ResetVT()
+		}
+		f2 := m.Consolidations[:0]
+		m.Reset()
+		m.Deposits = f0
+		m.Withdrawals = f1
+		m.Consolidations = f2
+	}
+}
+func (m *ElectraExecutionRequests) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ElectraExecutionRequests.Put(m)
+	}
+}
+func ElectraExecutionRequestsFromVTPool() *ElectraExecutionRequests {
+	return vtprotoPool_ElectraExecutionRequests.Get().(*ElectraExecutionRequests)
+}
+
+var vtprotoPool_ElectraExecutionRequestDeposit = sync.Pool{
+	New: func() interface{} {
+		return &ElectraExecutionRequestDeposit{}
+	},
+}
+
+func (m *ElectraExecutionRequestDeposit) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ElectraExecutionRequestDeposit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ElectraExecutionRequestDeposit.Put(m)
+	}
+}
+func ElectraExecutionRequestDepositFromVTPool() *ElectraExecutionRequestDeposit {
+	return vtprotoPool_ElectraExecutionRequestDeposit.Get().(*ElectraExecutionRequestDeposit)
+}
+
+var vtprotoPool_ElectraExecutionRequestWithdrawal = sync.Pool{
+	New: func() interface{} {
+		return &ElectraExecutionRequestWithdrawal{}
+	},
+}
+
+func (m *ElectraExecutionRequestWithdrawal) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ElectraExecutionRequestWithdrawal) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ElectraExecutionRequestWithdrawal.Put(m)
+	}
+}
+func ElectraExecutionRequestWithdrawalFromVTPool() *ElectraExecutionRequestWithdrawal {
+	return vtprotoPool_ElectraExecutionRequestWithdrawal.Get().(*ElectraExecutionRequestWithdrawal)
+}
+
+var vtprotoPool_ElectraExecutionRequestConsolidation = sync.Pool{
+	New: func() interface{} {
+		return &ElectraExecutionRequestConsolidation{}
+	},
+}
+
+func (m *ElectraExecutionRequestConsolidation) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ElectraExecutionRequestConsolidation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ElectraExecutionRequestConsolidation.Put(m)
+	}
+}
+func ElectraExecutionRequestConsolidationFromVTPool() *ElectraExecutionRequestConsolidation {
+	return vtprotoPool_ElectraExecutionRequestConsolidation.Get().(*ElectraExecutionRequestConsolidation)
+}
 func (m *ElectraExecutionRequests) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -458,7 +557,14 @@ func (m *ElectraExecutionRequests) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Deposits = append(m.Deposits, &ElectraExecutionRequestDeposit{})
+			if len(m.Deposits) == cap(m.Deposits) {
+				m.Deposits = append(m.Deposits, &ElectraExecutionRequestDeposit{})
+			} else {
+				m.Deposits = m.Deposits[:len(m.Deposits)+1]
+				if m.Deposits[len(m.Deposits)-1] == nil {
+					m.Deposits[len(m.Deposits)-1] = &ElectraExecutionRequestDeposit{}
+				}
+			}
 			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -492,7 +598,14 @@ func (m *ElectraExecutionRequests) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Withdrawals = append(m.Withdrawals, &ElectraExecutionRequestWithdrawal{})
+			if len(m.Withdrawals) == cap(m.Withdrawals) {
+				m.Withdrawals = append(m.Withdrawals, &ElectraExecutionRequestWithdrawal{})
+			} else {
+				m.Withdrawals = m.Withdrawals[:len(m.Withdrawals)+1]
+				if m.Withdrawals[len(m.Withdrawals)-1] == nil {
+					m.Withdrawals[len(m.Withdrawals)-1] = &ElectraExecutionRequestWithdrawal{}
+				}
+			}
 			if err := m.Withdrawals[len(m.Withdrawals)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -526,7 +639,14 @@ func (m *ElectraExecutionRequests) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Consolidations = append(m.Consolidations, &ElectraExecutionRequestConsolidation{})
+			if len(m.Consolidations) == cap(m.Consolidations) {
+				m.Consolidations = append(m.Consolidations, &ElectraExecutionRequestConsolidation{})
+			} else {
+				m.Consolidations = m.Consolidations[:len(m.Consolidations)+1]
+				if m.Consolidations[len(m.Consolidations)-1] == nil {
+					m.Consolidations[len(m.Consolidations)-1] = &ElectraExecutionRequestConsolidation{}
+				}
+			}
 			if err := m.Consolidations[len(m.Consolidations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -3060,6 +3061,1330 @@ func (m *UpsertRelayMonitorLocationResponse) MarshalToSizedBufferVT(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_CreateNodeRecordsRequest = sync.Pool{
+	New: func() interface{} {
+		return &CreateNodeRecordsRequest{}
+	},
+}
+
+func (m *CreateNodeRecordsRequest) ResetVT() {
+	if m != nil {
+		f0 := m.NodeRecords[:0]
+		m.Reset()
+		m.NodeRecords = f0
+	}
+}
+func (m *CreateNodeRecordsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateNodeRecordsRequest.Put(m)
+	}
+}
+func CreateNodeRecordsRequestFromVTPool() *CreateNodeRecordsRequest {
+	return vtprotoPool_CreateNodeRecordsRequest.Get().(*CreateNodeRecordsRequest)
+}
+
+var vtprotoPool_CreateNodeRecordsResponse = sync.Pool{
+	New: func() interface{} {
+		return &CreateNodeRecordsResponse{}
+	},
+}
+
+func (m *CreateNodeRecordsResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CreateNodeRecordsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateNodeRecordsResponse.Put(m)
+	}
+}
+func CreateNodeRecordsResponseFromVTPool() *CreateNodeRecordsResponse {
+	return vtprotoPool_CreateNodeRecordsResponse.Get().(*CreateNodeRecordsResponse)
+}
+
+var vtprotoPool_ListStalledExecutionNodeRecordsRequest = sync.Pool{
+	New: func() interface{} {
+		return &ListStalledExecutionNodeRecordsRequest{}
+	},
+}
+
+func (m *ListStalledExecutionNodeRecordsRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ListStalledExecutionNodeRecordsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ListStalledExecutionNodeRecordsRequest.Put(m)
+	}
+}
+func ListStalledExecutionNodeRecordsRequestFromVTPool() *ListStalledExecutionNodeRecordsRequest {
+	return vtprotoPool_ListStalledExecutionNodeRecordsRequest.Get().(*ListStalledExecutionNodeRecordsRequest)
+}
+
+var vtprotoPool_ListStalledExecutionNodeRecordsResponse = sync.Pool{
+	New: func() interface{} {
+		return &ListStalledExecutionNodeRecordsResponse{}
+	},
+}
+
+func (m *ListStalledExecutionNodeRecordsResponse) ResetVT() {
+	if m != nil {
+		f0 := m.NodeRecords[:0]
+		m.Reset()
+		m.NodeRecords = f0
+	}
+}
+func (m *ListStalledExecutionNodeRecordsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ListStalledExecutionNodeRecordsResponse.Put(m)
+	}
+}
+func ListStalledExecutionNodeRecordsResponseFromVTPool() *ListStalledExecutionNodeRecordsResponse {
+	return vtprotoPool_ListStalledExecutionNodeRecordsResponse.Get().(*ListStalledExecutionNodeRecordsResponse)
+}
+
+var vtprotoPool_ExecutionNodeStatus_Capability = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionNodeStatus_Capability{}
+	},
+}
+
+func (m *ExecutionNodeStatus_Capability) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionNodeStatus_Capability) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionNodeStatus_Capability.Put(m)
+	}
+}
+func ExecutionNodeStatus_CapabilityFromVTPool() *ExecutionNodeStatus_Capability {
+	return vtprotoPool_ExecutionNodeStatus_Capability.Get().(*ExecutionNodeStatus_Capability)
+}
+
+var vtprotoPool_ExecutionNodeStatus_ForkID = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionNodeStatus_ForkID{}
+	},
+}
+
+func (m *ExecutionNodeStatus_ForkID) ResetVT() {
+	if m != nil {
+		f0 := m.Hash[:0]
+		m.Reset()
+		m.Hash = f0
+	}
+}
+func (m *ExecutionNodeStatus_ForkID) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionNodeStatus_ForkID.Put(m)
+	}
+}
+func ExecutionNodeStatus_ForkIDFromVTPool() *ExecutionNodeStatus_ForkID {
+	return vtprotoPool_ExecutionNodeStatus_ForkID.Get().(*ExecutionNodeStatus_ForkID)
+}
+
+var vtprotoPool_ExecutionNodeStatus = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionNodeStatus{}
+	},
+}
+
+func (m *ExecutionNodeStatus) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Capabilities {
+			mm.ResetVT()
+		}
+		f0 := m.Capabilities[:0]
+		f1 := m.Head[:0]
+		f2 := m.Genesis[:0]
+		m.ForkId.ReturnToVTPool()
+		m.Reset()
+		m.Capabilities = f0
+		m.Head = f1
+		m.Genesis = f2
+	}
+}
+func (m *ExecutionNodeStatus) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionNodeStatus.Put(m)
+	}
+}
+func ExecutionNodeStatusFromVTPool() *ExecutionNodeStatus {
+	return vtprotoPool_ExecutionNodeStatus.Get().(*ExecutionNodeStatus)
+}
+
+var vtprotoPool_CreateExecutionNodeRecordStatusRequest = sync.Pool{
+	New: func() interface{} {
+		return &CreateExecutionNodeRecordStatusRequest{}
+	},
+}
+
+func (m *CreateExecutionNodeRecordStatusRequest) ResetVT() {
+	if m != nil {
+		m.Status.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CreateExecutionNodeRecordStatusRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateExecutionNodeRecordStatusRequest.Put(m)
+	}
+}
+func CreateExecutionNodeRecordStatusRequestFromVTPool() *CreateExecutionNodeRecordStatusRequest {
+	return vtprotoPool_CreateExecutionNodeRecordStatusRequest.Get().(*CreateExecutionNodeRecordStatusRequest)
+}
+
+var vtprotoPool_CreateExecutionNodeRecordStatusResponse = sync.Pool{
+	New: func() interface{} {
+		return &CreateExecutionNodeRecordStatusResponse{}
+	},
+}
+
+func (m *CreateExecutionNodeRecordStatusResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CreateExecutionNodeRecordStatusResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateExecutionNodeRecordStatusResponse.Put(m)
+	}
+}
+func CreateExecutionNodeRecordStatusResponseFromVTPool() *CreateExecutionNodeRecordStatusResponse {
+	return vtprotoPool_CreateExecutionNodeRecordStatusResponse.Get().(*CreateExecutionNodeRecordStatusResponse)
+}
+
+var vtprotoPool_CoordinatedNodeRecord = sync.Pool{
+	New: func() interface{} {
+		return &CoordinatedNodeRecord{}
+	},
+}
+
+func (m *CoordinatedNodeRecord) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CoordinatedNodeRecord) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CoordinatedNodeRecord.Put(m)
+	}
+}
+func CoordinatedNodeRecordFromVTPool() *CoordinatedNodeRecord {
+	return vtprotoPool_CoordinatedNodeRecord.Get().(*CoordinatedNodeRecord)
+}
+
+var vtprotoPool_CoordinateExecutionNodeRecordsRequest = sync.Pool{
+	New: func() interface{} {
+		return &CoordinateExecutionNodeRecordsRequest{}
+	},
+}
+
+func (m *CoordinateExecutionNodeRecordsRequest) ResetVT() {
+	if m != nil {
+		for _, mm := range m.NodeRecords {
+			mm.ResetVT()
+		}
+		f0 := m.NodeRecords[:0]
+		f1 := m.NetworkIds[:0]
+		f2 := m.ForkIdHashes[:0]
+		f3 := m.Capabilities[:0]
+		m.Reset()
+		m.NodeRecords = f0
+		m.NetworkIds = f1
+		m.ForkIdHashes = f2
+		m.Capabilities = f3
+	}
+}
+func (m *CoordinateExecutionNodeRecordsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CoordinateExecutionNodeRecordsRequest.Put(m)
+	}
+}
+func CoordinateExecutionNodeRecordsRequestFromVTPool() *CoordinateExecutionNodeRecordsRequest {
+	return vtprotoPool_CoordinateExecutionNodeRecordsRequest.Get().(*CoordinateExecutionNodeRecordsRequest)
+}
+
+var vtprotoPool_CoordinateExecutionNodeRecordsResponse = sync.Pool{
+	New: func() interface{} {
+		return &CoordinateExecutionNodeRecordsResponse{}
+	},
+}
+
+func (m *CoordinateExecutionNodeRecordsResponse) ResetVT() {
+	if m != nil {
+		f0 := m.NodeRecords[:0]
+		m.Reset()
+		m.NodeRecords = f0
+	}
+}
+func (m *CoordinateExecutionNodeRecordsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CoordinateExecutionNodeRecordsResponse.Put(m)
+	}
+}
+func CoordinateExecutionNodeRecordsResponseFromVTPool() *CoordinateExecutionNodeRecordsResponse {
+	return vtprotoPool_CoordinateExecutionNodeRecordsResponse.Get().(*CoordinateExecutionNodeRecordsResponse)
+}
+
+var vtprotoPool_ConsensusNodeStatus = sync.Pool{
+	New: func() interface{} {
+		return &ConsensusNodeStatus{}
+	},
+}
+
+func (m *ConsensusNodeStatus) ResetVT() {
+	if m != nil {
+		f0 := m.ForkDigest[:0]
+		f1 := m.NextForkDigest[:0]
+		f2 := m.FinalizedRoot[:0]
+		f3 := m.FinalizedEpoch[:0]
+		f4 := m.HeadRoot[:0]
+		f5 := m.HeadSlot[:0]
+		f6 := m.Cgc[:0]
+		m.Reset()
+		m.ForkDigest = f0
+		m.NextForkDigest = f1
+		m.FinalizedRoot = f2
+		m.FinalizedEpoch = f3
+		m.HeadRoot = f4
+		m.HeadSlot = f5
+		m.Cgc = f6
+	}
+}
+func (m *ConsensusNodeStatus) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ConsensusNodeStatus.Put(m)
+	}
+}
+func ConsensusNodeStatusFromVTPool() *ConsensusNodeStatus {
+	return vtprotoPool_ConsensusNodeStatus.Get().(*ConsensusNodeStatus)
+}
+
+var vtprotoPool_ListStalledConsensusNodeRecordsRequest = sync.Pool{
+	New: func() interface{} {
+		return &ListStalledConsensusNodeRecordsRequest{}
+	},
+}
+
+func (m *ListStalledConsensusNodeRecordsRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ListStalledConsensusNodeRecordsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ListStalledConsensusNodeRecordsRequest.Put(m)
+	}
+}
+func ListStalledConsensusNodeRecordsRequestFromVTPool() *ListStalledConsensusNodeRecordsRequest {
+	return vtprotoPool_ListStalledConsensusNodeRecordsRequest.Get().(*ListStalledConsensusNodeRecordsRequest)
+}
+
+var vtprotoPool_ListStalledConsensusNodeRecordsResponse = sync.Pool{
+	New: func() interface{} {
+		return &ListStalledConsensusNodeRecordsResponse{}
+	},
+}
+
+func (m *ListStalledConsensusNodeRecordsResponse) ResetVT() {
+	if m != nil {
+		f0 := m.NodeRecords[:0]
+		m.Reset()
+		m.NodeRecords = f0
+	}
+}
+func (m *ListStalledConsensusNodeRecordsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ListStalledConsensusNodeRecordsResponse.Put(m)
+	}
+}
+func ListStalledConsensusNodeRecordsResponseFromVTPool() *ListStalledConsensusNodeRecordsResponse {
+	return vtprotoPool_ListStalledConsensusNodeRecordsResponse.Get().(*ListStalledConsensusNodeRecordsResponse)
+}
+
+var vtprotoPool_CreateConsensusNodeRecordStatusRequest = sync.Pool{
+	New: func() interface{} {
+		return &CreateConsensusNodeRecordStatusRequest{}
+	},
+}
+
+func (m *CreateConsensusNodeRecordStatusRequest) ResetVT() {
+	if m != nil {
+		m.Status.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CreateConsensusNodeRecordStatusRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateConsensusNodeRecordStatusRequest.Put(m)
+	}
+}
+func CreateConsensusNodeRecordStatusRequestFromVTPool() *CreateConsensusNodeRecordStatusRequest {
+	return vtprotoPool_CreateConsensusNodeRecordStatusRequest.Get().(*CreateConsensusNodeRecordStatusRequest)
+}
+
+var vtprotoPool_CreateConsensusNodeRecordStatusResponse = sync.Pool{
+	New: func() interface{} {
+		return &CreateConsensusNodeRecordStatusResponse{}
+	},
+}
+
+func (m *CreateConsensusNodeRecordStatusResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CreateConsensusNodeRecordStatusResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateConsensusNodeRecordStatusResponse.Put(m)
+	}
+}
+func CreateConsensusNodeRecordStatusResponseFromVTPool() *CreateConsensusNodeRecordStatusResponse {
+	return vtprotoPool_CreateConsensusNodeRecordStatusResponse.Get().(*CreateConsensusNodeRecordStatusResponse)
+}
+
+var vtprotoPool_CreateConsensusNodeRecordStatusesRequest = sync.Pool{
+	New: func() interface{} {
+		return &CreateConsensusNodeRecordStatusesRequest{}
+	},
+}
+
+func (m *CreateConsensusNodeRecordStatusesRequest) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Statuses {
+			mm.ResetVT()
+		}
+		f0 := m.Statuses[:0]
+		m.Reset()
+		m.Statuses = f0
+	}
+}
+func (m *CreateConsensusNodeRecordStatusesRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateConsensusNodeRecordStatusesRequest.Put(m)
+	}
+}
+func CreateConsensusNodeRecordStatusesRequestFromVTPool() *CreateConsensusNodeRecordStatusesRequest {
+	return vtprotoPool_CreateConsensusNodeRecordStatusesRequest.Get().(*CreateConsensusNodeRecordStatusesRequest)
+}
+
+var vtprotoPool_CreateConsensusNodeRecordStatusesResponse = sync.Pool{
+	New: func() interface{} {
+		return &CreateConsensusNodeRecordStatusesResponse{}
+	},
+}
+
+func (m *CreateConsensusNodeRecordStatusesResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CreateConsensusNodeRecordStatusesResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateConsensusNodeRecordStatusesResponse.Put(m)
+	}
+}
+func CreateConsensusNodeRecordStatusesResponseFromVTPool() *CreateConsensusNodeRecordStatusesResponse {
+	return vtprotoPool_CreateConsensusNodeRecordStatusesResponse.Get().(*CreateConsensusNodeRecordStatusesResponse)
+}
+
+var vtprotoPool_CoordinateConsensusNodeRecordsRequest = sync.Pool{
+	New: func() interface{} {
+		return &CoordinateConsensusNodeRecordsRequest{}
+	},
+}
+
+func (m *CoordinateConsensusNodeRecordsRequest) ResetVT() {
+	if m != nil {
+		for _, mm := range m.NodeRecords {
+			mm.ResetVT()
+		}
+		f0 := m.NodeRecords[:0]
+		f1 := m.NetworkIds[:0]
+		f2 := m.ForkIdHashes[:0]
+		f3 := m.Capabilities[:0]
+		m.Reset()
+		m.NodeRecords = f0
+		m.NetworkIds = f1
+		m.ForkIdHashes = f2
+		m.Capabilities = f3
+	}
+}
+func (m *CoordinateConsensusNodeRecordsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CoordinateConsensusNodeRecordsRequest.Put(m)
+	}
+}
+func CoordinateConsensusNodeRecordsRequestFromVTPool() *CoordinateConsensusNodeRecordsRequest {
+	return vtprotoPool_CoordinateConsensusNodeRecordsRequest.Get().(*CoordinateConsensusNodeRecordsRequest)
+}
+
+var vtprotoPool_CoordinateConsensusNodeRecordsResponse = sync.Pool{
+	New: func() interface{} {
+		return &CoordinateConsensusNodeRecordsResponse{}
+	},
+}
+
+func (m *CoordinateConsensusNodeRecordsResponse) ResetVT() {
+	if m != nil {
+		f0 := m.NodeRecords[:0]
+		m.Reset()
+		m.NodeRecords = f0
+	}
+}
+func (m *CoordinateConsensusNodeRecordsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CoordinateConsensusNodeRecordsResponse.Put(m)
+	}
+}
+func CoordinateConsensusNodeRecordsResponseFromVTPool() *CoordinateConsensusNodeRecordsResponse {
+	return vtprotoPool_CoordinateConsensusNodeRecordsResponse.Get().(*CoordinateConsensusNodeRecordsResponse)
+}
+
+var vtprotoPool_GetDiscoveryNodeRecordRequest = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryNodeRecordRequest{}
+	},
+}
+
+func (m *GetDiscoveryNodeRecordRequest) ResetVT() {
+	if m != nil {
+		f0 := m.NetworkIds[:0]
+		f1 := m.ForkIdHashes[:0]
+		m.Reset()
+		m.NetworkIds = f0
+		m.ForkIdHashes = f1
+	}
+}
+func (m *GetDiscoveryNodeRecordRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryNodeRecordRequest.Put(m)
+	}
+}
+func GetDiscoveryNodeRecordRequestFromVTPool() *GetDiscoveryNodeRecordRequest {
+	return vtprotoPool_GetDiscoveryNodeRecordRequest.Get().(*GetDiscoveryNodeRecordRequest)
+}
+
+var vtprotoPool_GetDiscoveryNodeRecordResponse = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryNodeRecordResponse{}
+	},
+}
+
+func (m *GetDiscoveryNodeRecordResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GetDiscoveryNodeRecordResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryNodeRecordResponse.Put(m)
+	}
+}
+func GetDiscoveryNodeRecordResponseFromVTPool() *GetDiscoveryNodeRecordResponse {
+	return vtprotoPool_GetDiscoveryNodeRecordResponse.Get().(*GetDiscoveryNodeRecordResponse)
+}
+
+var vtprotoPool_GetDiscoveryExecutionNodeRecordRequest = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryExecutionNodeRecordRequest{}
+	},
+}
+
+func (m *GetDiscoveryExecutionNodeRecordRequest) ResetVT() {
+	if m != nil {
+		f0 := m.NetworkIds[:0]
+		f1 := m.ForkIdHashes[:0]
+		m.Reset()
+		m.NetworkIds = f0
+		m.ForkIdHashes = f1
+	}
+}
+func (m *GetDiscoveryExecutionNodeRecordRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryExecutionNodeRecordRequest.Put(m)
+	}
+}
+func GetDiscoveryExecutionNodeRecordRequestFromVTPool() *GetDiscoveryExecutionNodeRecordRequest {
+	return vtprotoPool_GetDiscoveryExecutionNodeRecordRequest.Get().(*GetDiscoveryExecutionNodeRecordRequest)
+}
+
+var vtprotoPool_GetDiscoveryExecutionNodeRecordResponse = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryExecutionNodeRecordResponse{}
+	},
+}
+
+func (m *GetDiscoveryExecutionNodeRecordResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GetDiscoveryExecutionNodeRecordResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryExecutionNodeRecordResponse.Put(m)
+	}
+}
+func GetDiscoveryExecutionNodeRecordResponseFromVTPool() *GetDiscoveryExecutionNodeRecordResponse {
+	return vtprotoPool_GetDiscoveryExecutionNodeRecordResponse.Get().(*GetDiscoveryExecutionNodeRecordResponse)
+}
+
+var vtprotoPool_GetDiscoveryConsensusNodeRecordRequest = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryConsensusNodeRecordRequest{}
+	},
+}
+
+func (m *GetDiscoveryConsensusNodeRecordRequest) ResetVT() {
+	if m != nil {
+		f0 := m.NetworkIds[:0]
+		f1 := m.ForkDigests[:0]
+		m.Reset()
+		m.NetworkIds = f0
+		m.ForkDigests = f1
+	}
+}
+func (m *GetDiscoveryConsensusNodeRecordRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryConsensusNodeRecordRequest.Put(m)
+	}
+}
+func GetDiscoveryConsensusNodeRecordRequestFromVTPool() *GetDiscoveryConsensusNodeRecordRequest {
+	return vtprotoPool_GetDiscoveryConsensusNodeRecordRequest.Get().(*GetDiscoveryConsensusNodeRecordRequest)
+}
+
+var vtprotoPool_GetDiscoveryConsensusNodeRecordResponse = sync.Pool{
+	New: func() interface{} {
+		return &GetDiscoveryConsensusNodeRecordResponse{}
+	},
+}
+
+func (m *GetDiscoveryConsensusNodeRecordResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GetDiscoveryConsensusNodeRecordResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetDiscoveryConsensusNodeRecordResponse.Put(m)
+	}
+}
+func GetDiscoveryConsensusNodeRecordResponseFromVTPool() *GetDiscoveryConsensusNodeRecordResponse {
+	return vtprotoPool_GetDiscoveryConsensusNodeRecordResponse.Get().(*GetDiscoveryConsensusNodeRecordResponse)
+}
+
+var vtprotoPool_BackfillingCheckpointMarker = sync.Pool{
+	New: func() interface{} {
+		return &BackfillingCheckpointMarker{}
+	},
+}
+
+func (m *BackfillingCheckpointMarker) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BackfillingCheckpointMarker) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BackfillingCheckpointMarker.Put(m)
+	}
+}
+func BackfillingCheckpointMarkerFromVTPool() *BackfillingCheckpointMarker {
+	return vtprotoPool_BackfillingCheckpointMarker.Get().(*BackfillingCheckpointMarker)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockVoluntaryExit = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockVoluntaryExit{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockVoluntaryExit) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockVoluntaryExit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockVoluntaryExit.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockVoluntaryExitFromVTPool() *CannonLocationEthV2BeaconBlockVoluntaryExit {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockVoluntaryExit.Get().(*CannonLocationEthV2BeaconBlockVoluntaryExit)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockProposerSlashing = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockProposerSlashing{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockProposerSlashing) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockProposerSlashing) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockProposerSlashing.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockProposerSlashingFromVTPool() *CannonLocationEthV2BeaconBlockProposerSlashing {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockProposerSlashing.Get().(*CannonLocationEthV2BeaconBlockProposerSlashing)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockDeposit = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockDeposit{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockDeposit) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockDeposit) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockDeposit.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockDepositFromVTPool() *CannonLocationEthV2BeaconBlockDeposit {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockDeposit.Get().(*CannonLocationEthV2BeaconBlockDeposit)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockAttesterSlashing = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockAttesterSlashing{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockAttesterSlashing) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockAttesterSlashing) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockAttesterSlashing.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockAttesterSlashingFromVTPool() *CannonLocationEthV2BeaconBlockAttesterSlashing {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockAttesterSlashing.Get().(*CannonLocationEthV2BeaconBlockAttesterSlashing)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockBlsToExecutionChange = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockBlsToExecutionChange{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockBlsToExecutionChange) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockBlsToExecutionChange) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockBlsToExecutionChange.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockBlsToExecutionChangeFromVTPool() *CannonLocationEthV2BeaconBlockBlsToExecutionChange {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockBlsToExecutionChange.Get().(*CannonLocationEthV2BeaconBlockBlsToExecutionChange)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockExecutionTransaction = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockExecutionTransaction{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockExecutionTransaction) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockExecutionTransaction) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockExecutionTransaction.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockExecutionTransactionFromVTPool() *CannonLocationEthV2BeaconBlockExecutionTransaction {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockExecutionTransaction.Get().(*CannonLocationEthV2BeaconBlockExecutionTransaction)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockWithdrawal = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockWithdrawal{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockWithdrawal) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockWithdrawal) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockWithdrawal.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockWithdrawalFromVTPool() *CannonLocationEthV2BeaconBlockWithdrawal {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockWithdrawal.Get().(*CannonLocationEthV2BeaconBlockWithdrawal)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlock = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlock{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlock) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlock) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlock.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockFromVTPool() *CannonLocationEthV2BeaconBlock {
+	return vtprotoPool_CannonLocationEthV2BeaconBlock.Get().(*CannonLocationEthV2BeaconBlock)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconBlobSidecar = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconBlobSidecar{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconBlobSidecar) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconBlobSidecar) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconBlobSidecar.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconBlobSidecarFromVTPool() *CannonLocationEthV1BeaconBlobSidecar {
+	return vtprotoPool_CannonLocationEthV1BeaconBlobSidecar.Get().(*CannonLocationEthV1BeaconBlobSidecar)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconProposerDuty = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconProposerDuty{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconProposerDuty) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconProposerDuty) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconProposerDuty.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconProposerDutyFromVTPool() *CannonLocationEthV1BeaconProposerDuty {
+	return vtprotoPool_CannonLocationEthV1BeaconProposerDuty.Get().(*CannonLocationEthV1BeaconProposerDuty)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockElaboratedAttestation = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockElaboratedAttestation{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockElaboratedAttestation) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockElaboratedAttestation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockElaboratedAttestation.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockElaboratedAttestationFromVTPool() *CannonLocationEthV2BeaconBlockElaboratedAttestation {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockElaboratedAttestation.Get().(*CannonLocationEthV2BeaconBlockElaboratedAttestation)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconValidators = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconValidators{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconValidators) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconValidators) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconValidators.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconValidatorsFromVTPool() *CannonLocationEthV1BeaconValidators {
+	return vtprotoPool_CannonLocationEthV1BeaconValidators.Get().(*CannonLocationEthV1BeaconValidators)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconCommittee = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconCommittee{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconCommittee) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconCommittee) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconCommittee.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconCommitteeFromVTPool() *CannonLocationEthV1BeaconCommittee {
+	return vtprotoPool_CannonLocationEthV1BeaconCommittee.Get().(*CannonLocationEthV1BeaconCommittee)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconSyncCommittee = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconSyncCommittee{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconSyncCommittee) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconSyncCommittee) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconSyncCommittee.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconSyncCommitteeFromVTPool() *CannonLocationEthV1BeaconSyncCommittee {
+	return vtprotoPool_CannonLocationEthV1BeaconSyncCommittee.Get().(*CannonLocationEthV1BeaconSyncCommittee)
+}
+
+var vtprotoPool_CannonLocationEthV2BeaconBlockSyncAggregate = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV2BeaconBlockSyncAggregate{}
+	},
+}
+
+func (m *CannonLocationEthV2BeaconBlockSyncAggregate) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV2BeaconBlockSyncAggregate) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV2BeaconBlockSyncAggregate.Put(m)
+	}
+}
+func CannonLocationEthV2BeaconBlockSyncAggregateFromVTPool() *CannonLocationEthV2BeaconBlockSyncAggregate {
+	return vtprotoPool_CannonLocationEthV2BeaconBlockSyncAggregate.Get().(*CannonLocationEthV2BeaconBlockSyncAggregate)
+}
+
+var vtprotoPool_CannonLocation = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocation{}
+	},
+}
+
+func (m *CannonLocation) ResetVT() {
+	if m != nil {
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockVoluntaryExit); ok {
+			oneof.EthV2BeaconBlockVoluntaryExit.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockProposerSlashing); ok {
+			oneof.EthV2BeaconBlockProposerSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockDeposit); ok {
+			oneof.EthV2BeaconBlockDeposit.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockAttesterSlashing); ok {
+			oneof.EthV2BeaconBlockAttesterSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockBlsToExecutionChange); ok {
+			oneof.EthV2BeaconBlockBlsToExecutionChange.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockExecutionTransaction); ok {
+			oneof.EthV2BeaconBlockExecutionTransaction.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockWithdrawal); ok {
+			oneof.EthV2BeaconBlockWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlock); ok {
+			oneof.EthV2BeaconBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconBlobSidecar); ok {
+			oneof.EthV1BeaconBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconProposerDuty); ok {
+			oneof.EthV1BeaconProposerDuty.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockElaboratedAttestation); ok {
+			oneof.EthV2BeaconBlockElaboratedAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconValidators); ok {
+			oneof.EthV1BeaconValidators.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconCommittee); ok {
+			oneof.EthV1BeaconCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconSyncCommittee); ok {
+			oneof.EthV1BeaconSyncCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockSyncAggregate); ok {
+			oneof.EthV2BeaconBlockSyncAggregate.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *CannonLocation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocation.Put(m)
+	}
+}
+func CannonLocationFromVTPool() *CannonLocation {
+	return vtprotoPool_CannonLocation.Get().(*CannonLocation)
+}
+
+var vtprotoPool_GetCannonLocationRequest = sync.Pool{
+	New: func() interface{} {
+		return &GetCannonLocationRequest{}
+	},
+}
+
+func (m *GetCannonLocationRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GetCannonLocationRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetCannonLocationRequest.Put(m)
+	}
+}
+func GetCannonLocationRequestFromVTPool() *GetCannonLocationRequest {
+	return vtprotoPool_GetCannonLocationRequest.Get().(*GetCannonLocationRequest)
+}
+
+var vtprotoPool_GetCannonLocationResponse = sync.Pool{
+	New: func() interface{} {
+		return &GetCannonLocationResponse{}
+	},
+}
+
+func (m *GetCannonLocationResponse) ResetVT() {
+	if m != nil {
+		m.Location.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *GetCannonLocationResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetCannonLocationResponse.Put(m)
+	}
+}
+func GetCannonLocationResponseFromVTPool() *GetCannonLocationResponse {
+	return vtprotoPool_GetCannonLocationResponse.Get().(*GetCannonLocationResponse)
+}
+
+var vtprotoPool_UpsertCannonLocationRequest = sync.Pool{
+	New: func() interface{} {
+		return &UpsertCannonLocationRequest{}
+	},
+}
+
+func (m *UpsertCannonLocationRequest) ResetVT() {
+	if m != nil {
+		m.Location.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *UpsertCannonLocationRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_UpsertCannonLocationRequest.Put(m)
+	}
+}
+func UpsertCannonLocationRequestFromVTPool() *UpsertCannonLocationRequest {
+	return vtprotoPool_UpsertCannonLocationRequest.Get().(*UpsertCannonLocationRequest)
+}
+
+var vtprotoPool_UpsertCannonLocationResponse = sync.Pool{
+	New: func() interface{} {
+		return &UpsertCannonLocationResponse{}
+	},
+}
+
+func (m *UpsertCannonLocationResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *UpsertCannonLocationResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_UpsertCannonLocationResponse.Put(m)
+	}
+}
+func UpsertCannonLocationResponseFromVTPool() *UpsertCannonLocationResponse {
+	return vtprotoPool_UpsertCannonLocationResponse.Get().(*UpsertCannonLocationResponse)
+}
+
+var vtprotoPool_RelayMonitorSlotMarker = sync.Pool{
+	New: func() interface{} {
+		return &RelayMonitorSlotMarker{}
+	},
+}
+
+func (m *RelayMonitorSlotMarker) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *RelayMonitorSlotMarker) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RelayMonitorSlotMarker.Put(m)
+	}
+}
+func RelayMonitorSlotMarkerFromVTPool() *RelayMonitorSlotMarker {
+	return vtprotoPool_RelayMonitorSlotMarker.Get().(*RelayMonitorSlotMarker)
+}
+
+var vtprotoPool_RelayMonitorLocationBidTrace = sync.Pool{
+	New: func() interface{} {
+		return &RelayMonitorLocationBidTrace{}
+	},
+}
+
+func (m *RelayMonitorLocationBidTrace) ResetVT() {
+	if m != nil {
+		m.SlotMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *RelayMonitorLocationBidTrace) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RelayMonitorLocationBidTrace.Put(m)
+	}
+}
+func RelayMonitorLocationBidTraceFromVTPool() *RelayMonitorLocationBidTrace {
+	return vtprotoPool_RelayMonitorLocationBidTrace.Get().(*RelayMonitorLocationBidTrace)
+}
+
+var vtprotoPool_RelayMonitorLocationPayloadDelivered = sync.Pool{
+	New: func() interface{} {
+		return &RelayMonitorLocationPayloadDelivered{}
+	},
+}
+
+func (m *RelayMonitorLocationPayloadDelivered) ResetVT() {
+	if m != nil {
+		m.SlotMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *RelayMonitorLocationPayloadDelivered) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RelayMonitorLocationPayloadDelivered.Put(m)
+	}
+}
+func RelayMonitorLocationPayloadDeliveredFromVTPool() *RelayMonitorLocationPayloadDelivered {
+	return vtprotoPool_RelayMonitorLocationPayloadDelivered.Get().(*RelayMonitorLocationPayloadDelivered)
+}
+
+var vtprotoPool_RelayMonitorLocation = sync.Pool{
+	New: func() interface{} {
+		return &RelayMonitorLocation{}
+	},
+}
+
+func (m *RelayMonitorLocation) ResetVT() {
+	if m != nil {
+		if oneof, ok := m.Data.(*RelayMonitorLocation_BidTrace); ok {
+			oneof.BidTrace.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*RelayMonitorLocation_PayloadDelivered); ok {
+			oneof.PayloadDelivered.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *RelayMonitorLocation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_RelayMonitorLocation.Put(m)
+	}
+}
+func RelayMonitorLocationFromVTPool() *RelayMonitorLocation {
+	return vtprotoPool_RelayMonitorLocation.Get().(*RelayMonitorLocation)
+}
+
+var vtprotoPool_GetRelayMonitorLocationRequest = sync.Pool{
+	New: func() interface{} {
+		return &GetRelayMonitorLocationRequest{}
+	},
+}
+
+func (m *GetRelayMonitorLocationRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GetRelayMonitorLocationRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetRelayMonitorLocationRequest.Put(m)
+	}
+}
+func GetRelayMonitorLocationRequestFromVTPool() *GetRelayMonitorLocationRequest {
+	return vtprotoPool_GetRelayMonitorLocationRequest.Get().(*GetRelayMonitorLocationRequest)
+}
+
+var vtprotoPool_GetRelayMonitorLocationResponse = sync.Pool{
+	New: func() interface{} {
+		return &GetRelayMonitorLocationResponse{}
+	},
+}
+
+func (m *GetRelayMonitorLocationResponse) ResetVT() {
+	if m != nil {
+		m.Location.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *GetRelayMonitorLocationResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GetRelayMonitorLocationResponse.Put(m)
+	}
+}
+func GetRelayMonitorLocationResponseFromVTPool() *GetRelayMonitorLocationResponse {
+	return vtprotoPool_GetRelayMonitorLocationResponse.Get().(*GetRelayMonitorLocationResponse)
+}
+
+var vtprotoPool_UpsertRelayMonitorLocationRequest = sync.Pool{
+	New: func() interface{} {
+		return &UpsertRelayMonitorLocationRequest{}
+	},
+}
+
+func (m *UpsertRelayMonitorLocationRequest) ResetVT() {
+	if m != nil {
+		m.Location.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *UpsertRelayMonitorLocationRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_UpsertRelayMonitorLocationRequest.Put(m)
+	}
+}
+func UpsertRelayMonitorLocationRequestFromVTPool() *UpsertRelayMonitorLocationRequest {
+	return vtprotoPool_UpsertRelayMonitorLocationRequest.Get().(*UpsertRelayMonitorLocationRequest)
+}
+
+var vtprotoPool_UpsertRelayMonitorLocationResponse = sync.Pool{
+	New: func() interface{} {
+		return &UpsertRelayMonitorLocationResponse{}
+	},
+}
+
+func (m *UpsertRelayMonitorLocationResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *UpsertRelayMonitorLocationResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_UpsertRelayMonitorLocationResponse.Put(m)
+	}
+}
+func UpsertRelayMonitorLocationResponseFromVTPool() *UpsertRelayMonitorLocationResponse {
+	return vtprotoPool_UpsertRelayMonitorLocationResponse.Get().(*UpsertRelayMonitorLocationResponse)
+}
 func (m *CreateNodeRecordsRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4868,7 +6193,14 @@ func (m *ExecutionNodeStatus) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Capabilities = append(m.Capabilities, &ExecutionNodeStatus_Capability{})
+			if len(m.Capabilities) == cap(m.Capabilities) {
+				m.Capabilities = append(m.Capabilities, &ExecutionNodeStatus_Capability{})
+			} else {
+				m.Capabilities = m.Capabilities[:len(m.Capabilities)+1]
+				if m.Capabilities[len(m.Capabilities)-1] == nil {
+					m.Capabilities[len(m.Capabilities)-1] = &ExecutionNodeStatus_Capability{}
+				}
+			}
 			if err := m.Capabilities[len(m.Capabilities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -5041,7 +6373,7 @@ func (m *ExecutionNodeStatus) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ForkId == nil {
-				m.ForkId = &ExecutionNodeStatus_ForkID{}
+				m.ForkId = ExecutionNodeStatus_ForkIDFromVTPool()
 			}
 			if err := m.ForkId.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5128,7 +6460,7 @@ func (m *CreateExecutionNodeRecordStatusRequest) UnmarshalVT(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Status == nil {
-				m.Status = &ExecutionNodeStatus{}
+				m.Status = ExecutionNodeStatusFromVTPool()
 			}
 			if err := m.Status.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -5387,7 +6719,14 @@ func (m *CoordinateExecutionNodeRecordsRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NodeRecords = append(m.NodeRecords, &CoordinatedNodeRecord{})
+			if len(m.NodeRecords) == cap(m.NodeRecords) {
+				m.NodeRecords = append(m.NodeRecords, &CoordinatedNodeRecord{})
+			} else {
+				m.NodeRecords = m.NodeRecords[:len(m.NodeRecords)+1]
+				if m.NodeRecords[len(m.NodeRecords)-1] == nil {
+					m.NodeRecords[len(m.NodeRecords)-1] = &CoordinatedNodeRecord{}
+				}
+			}
 			if err := m.NodeRecords[len(m.NodeRecords)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -5463,7 +6802,7 @@ func (m *CoordinateExecutionNodeRecordsRequest) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.NetworkIds) == 0 {
+				if elementCount != 0 && len(m.NetworkIds) == 0 && cap(m.NetworkIds) < elementCount {
 					m.NetworkIds = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -6427,7 +7766,7 @@ func (m *CreateConsensusNodeRecordStatusRequest) UnmarshalVT(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Status == nil {
-				m.Status = &ConsensusNodeStatus{}
+				m.Status = ConsensusNodeStatusFromVTPool()
 			}
 			if err := m.Status.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6564,7 +7903,14 @@ func (m *CreateConsensusNodeRecordStatusesRequest) UnmarshalVT(dAtA []byte) erro
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Statuses = append(m.Statuses, &ConsensusNodeStatus{})
+			if len(m.Statuses) == cap(m.Statuses) {
+				m.Statuses = append(m.Statuses, &ConsensusNodeStatus{})
+			} else {
+				m.Statuses = m.Statuses[:len(m.Statuses)+1]
+				if m.Statuses[len(m.Statuses)-1] == nil {
+					m.Statuses[len(m.Statuses)-1] = &ConsensusNodeStatus{}
+				}
+			}
 			if err := m.Statuses[len(m.Statuses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6700,7 +8046,14 @@ func (m *CoordinateConsensusNodeRecordsRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NodeRecords = append(m.NodeRecords, &CoordinatedNodeRecord{})
+			if len(m.NodeRecords) == cap(m.NodeRecords) {
+				m.NodeRecords = append(m.NodeRecords, &CoordinatedNodeRecord{})
+			} else {
+				m.NodeRecords = m.NodeRecords[:len(m.NodeRecords)+1]
+				if m.NodeRecords[len(m.NodeRecords)-1] == nil {
+					m.NodeRecords[len(m.NodeRecords)-1] = &CoordinatedNodeRecord{}
+				}
+			}
 			if err := m.NodeRecords[len(m.NodeRecords)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6776,7 +8129,7 @@ func (m *CoordinateConsensusNodeRecordsRequest) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.NetworkIds) == 0 {
+				if elementCount != 0 && len(m.NetworkIds) == 0 && cap(m.NetworkIds) < elementCount {
 					m.NetworkIds = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -7101,7 +8454,7 @@ func (m *GetDiscoveryNodeRecordRequest) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.NetworkIds) == 0 {
+				if elementCount != 0 && len(m.NetworkIds) == 0 && cap(m.NetworkIds) < elementCount {
 					m.NetworkIds = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -7343,7 +8696,7 @@ func (m *GetDiscoveryExecutionNodeRecordRequest) UnmarshalVT(dAtA []byte) error 
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.NetworkIds) == 0 {
+				if elementCount != 0 && len(m.NetworkIds) == 0 && cap(m.NetworkIds) < elementCount {
 					m.NetworkIds = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -7585,7 +8938,7 @@ func (m *GetDiscoveryConsensusNodeRecordRequest) UnmarshalVT(dAtA []byte) error 
 					}
 				}
 				elementCount = count
-				if elementCount != 0 && len(m.NetworkIds) == 0 {
+				if elementCount != 0 && len(m.NetworkIds) == 0 && cap(m.NetworkIds) < elementCount {
 					m.NetworkIds = make([]uint64, 0, elementCount)
 				}
 				for iNdEx < postIndex {
@@ -7894,7 +9247,7 @@ func (m *CannonLocationEthV2BeaconBlockVoluntaryExit) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -7981,7 +9334,7 @@ func (m *CannonLocationEthV2BeaconBlockProposerSlashing) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8068,7 +9421,7 @@ func (m *CannonLocationEthV2BeaconBlockDeposit) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8155,7 +9508,7 @@ func (m *CannonLocationEthV2BeaconBlockAttesterSlashing) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8242,7 +9595,7 @@ func (m *CannonLocationEthV2BeaconBlockBlsToExecutionChange) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8329,7 +9682,7 @@ func (m *CannonLocationEthV2BeaconBlockExecutionTransaction) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8416,7 +9769,7 @@ func (m *CannonLocationEthV2BeaconBlockWithdrawal) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8503,7 +9856,7 @@ func (m *CannonLocationEthV2BeaconBlock) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8590,7 +9943,7 @@ func (m *CannonLocationEthV1BeaconBlobSidecar) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8677,7 +10030,7 @@ func (m *CannonLocationEthV1BeaconProposerDuty) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8764,7 +10117,7 @@ func (m *CannonLocationEthV2BeaconBlockElaboratedAttestation) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8851,7 +10204,7 @@ func (m *CannonLocationEthV1BeaconValidators) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -8938,7 +10291,7 @@ func (m *CannonLocationEthV1BeaconCommittee) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9025,7 +10378,7 @@ func (m *CannonLocationEthV1BeaconSyncCommittee) UnmarshalVT(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9112,7 +10465,7 @@ func (m *CannonLocationEthV2BeaconBlockSyncAggregate) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.BackfillingCheckpointMarker == nil {
-				m.BackfillingCheckpointMarker = &BackfillingCheckpointMarker{}
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
 			}
 			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9254,7 +10607,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockVoluntaryExit{}
+				v := CannonLocationEthV2BeaconBlockVoluntaryExitFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9295,7 +10648,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockProposerSlashing{}
+				v := CannonLocationEthV2BeaconBlockProposerSlashingFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9336,7 +10689,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockDeposit{}
+				v := CannonLocationEthV2BeaconBlockDepositFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9377,7 +10730,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockAttesterSlashing{}
+				v := CannonLocationEthV2BeaconBlockAttesterSlashingFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9418,7 +10771,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockBlsToExecutionChange{}
+				v := CannonLocationEthV2BeaconBlockBlsToExecutionChangeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9459,7 +10812,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockExecutionTransaction{}
+				v := CannonLocationEthV2BeaconBlockExecutionTransactionFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9500,7 +10853,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockWithdrawal{}
+				v := CannonLocationEthV2BeaconBlockWithdrawalFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9541,7 +10894,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlock{}
+				v := CannonLocationEthV2BeaconBlockFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9582,7 +10935,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV1BeaconBlobSidecar{}
+				v := CannonLocationEthV1BeaconBlobSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9623,7 +10976,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV1BeaconProposerDuty{}
+				v := CannonLocationEthV1BeaconProposerDutyFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9664,7 +11017,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockElaboratedAttestation{}
+				v := CannonLocationEthV2BeaconBlockElaboratedAttestationFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9705,7 +11058,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV1BeaconValidators{}
+				v := CannonLocationEthV1BeaconValidatorsFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9746,7 +11099,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV1BeaconCommittee{}
+				v := CannonLocationEthV1BeaconCommitteeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9787,7 +11140,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV1BeaconSyncCommittee{}
+				v := CannonLocationEthV1BeaconSyncCommitteeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -9828,7 +11181,7 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &CannonLocationEthV2BeaconBlockSyncAggregate{}
+				v := CannonLocationEthV2BeaconBlockSyncAggregateFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -10018,7 +11371,7 @@ func (m *GetCannonLocationResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Location == nil {
-				m.Location = &CannonLocation{}
+				m.Location = CannonLocationFromVTPool()
 			}
 			if err := m.Location.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10105,7 +11458,7 @@ func (m *UpsertCannonLocationRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Location == nil {
-				m.Location = &CannonLocation{}
+				m.Location = CannonLocationFromVTPool()
 			}
 			if err := m.Location.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10313,7 +11666,7 @@ func (m *RelayMonitorLocationBidTrace) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SlotMarker == nil {
-				m.SlotMarker = &RelayMonitorSlotMarker{}
+				m.SlotMarker = RelayMonitorSlotMarkerFromVTPool()
 			}
 			if err := m.SlotMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10400,7 +11753,7 @@ func (m *RelayMonitorLocationPayloadDelivered) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SlotMarker == nil {
-				m.SlotMarker = &RelayMonitorSlotMarker{}
+				m.SlotMarker = RelayMonitorSlotMarkerFromVTPool()
 			}
 			if err := m.SlotMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10606,7 +11959,7 @@ func (m *RelayMonitorLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &RelayMonitorLocationBidTrace{}
+				v := RelayMonitorLocationBidTraceFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -10647,7 +12000,7 @@ func (m *RelayMonitorLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &RelayMonitorLocationPayloadDelivered{}
+				v := RelayMonitorLocationPayloadDeliveredFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -10901,7 +12254,7 @@ func (m *GetRelayMonitorLocationResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Location == nil {
-				m.Location = &RelayMonitorLocation{}
+				m.Location = RelayMonitorLocationFromVTPool()
 			}
 			if err := m.Location.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -10988,7 +12341,7 @@ func (m *UpsertRelayMonitorLocationRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Location == nil {
-				m.Location = &RelayMonitorLocation{}
+				m.Location = RelayMonitorLocationFromVTPool()
 			}
 			if err := m.Location.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err

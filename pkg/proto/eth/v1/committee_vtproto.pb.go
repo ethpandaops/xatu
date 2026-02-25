@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -85,6 +86,31 @@ func (m *Committee) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Committee = sync.Pool{
+	New: func() interface{} {
+		return &Committee{}
+	},
+}
+
+func (m *Committee) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Validators {
+			mm.Reset()
+		}
+		f0 := m.Validators[:0]
+		m.Reset()
+		m.Validators = f0
+	}
+}
+func (m *Committee) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Committee.Put(m)
+	}
+}
+func CommitteeFromVTPool() *Committee {
+	return vtprotoPool_Committee.Get().(*Committee)
+}
 func (m *Committee) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -239,7 +265,14 @@ func (m *Committee) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			if len(m.Validators) == cap(m.Validators) {
+				m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			} else {
+				m.Validators = m.Validators[:len(m.Validators)+1]
+				if m.Validators[len(m.Validators)-1] == nil {
+					m.Validators[len(m.Validators)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.Validators[len(m.Validators)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

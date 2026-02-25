@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -115,6 +116,47 @@ func (m *CheckpointV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Checkpoint = sync.Pool{
+	New: func() interface{} {
+		return &Checkpoint{}
+	},
+}
+
+func (m *Checkpoint) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Checkpoint) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Checkpoint.Put(m)
+	}
+}
+func CheckpointFromVTPool() *Checkpoint {
+	return vtprotoPool_Checkpoint.Get().(*Checkpoint)
+}
+
+var vtprotoPool_CheckpointV2 = sync.Pool{
+	New: func() interface{} {
+		return &CheckpointV2{}
+	},
+}
+
+func (m *CheckpointV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CheckpointV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CheckpointV2.Put(m)
+	}
+}
+func CheckpointV2FromVTPool() *CheckpointV2 {
+	return vtprotoPool_CheckpointV2.Get().(*CheckpointV2)
+}
 func (m *Checkpoint) SizeVT() (n int) {
 	if m == nil {
 		return 0

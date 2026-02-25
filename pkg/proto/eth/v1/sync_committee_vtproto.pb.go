@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -260,6 +261,104 @@ func (m *SyncCommittee) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_SyncCommitteeContribution = sync.Pool{
+	New: func() interface{} {
+		return &SyncCommitteeContribution{}
+	},
+}
+
+func (m *SyncCommitteeContribution) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SyncCommitteeContribution) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncCommitteeContribution.Put(m)
+	}
+}
+func SyncCommitteeContributionFromVTPool() *SyncCommitteeContribution {
+	return vtprotoPool_SyncCommitteeContribution.Get().(*SyncCommitteeContribution)
+}
+
+var vtprotoPool_SyncCommitteeContributionV2 = sync.Pool{
+	New: func() interface{} {
+		return &SyncCommitteeContributionV2{}
+	},
+}
+
+func (m *SyncCommitteeContributionV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SyncCommitteeContributionV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncCommitteeContributionV2.Put(m)
+	}
+}
+func SyncCommitteeContributionV2FromVTPool() *SyncCommitteeContributionV2 {
+	return vtprotoPool_SyncCommitteeContributionV2.Get().(*SyncCommitteeContributionV2)
+}
+
+var vtprotoPool_SyncCommitteeValidatorAggregate = sync.Pool{
+	New: func() interface{} {
+		return &SyncCommitteeValidatorAggregate{}
+	},
+}
+
+func (m *SyncCommitteeValidatorAggregate) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Validators {
+			mm.Reset()
+		}
+		f0 := m.Validators[:0]
+		m.Reset()
+		m.Validators = f0
+	}
+}
+func (m *SyncCommitteeValidatorAggregate) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncCommitteeValidatorAggregate.Put(m)
+	}
+}
+func SyncCommitteeValidatorAggregateFromVTPool() *SyncCommitteeValidatorAggregate {
+	return vtprotoPool_SyncCommitteeValidatorAggregate.Get().(*SyncCommitteeValidatorAggregate)
+}
+
+var vtprotoPool_SyncCommittee = sync.Pool{
+	New: func() interface{} {
+		return &SyncCommittee{}
+	},
+}
+
+func (m *SyncCommittee) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Validators {
+			mm.Reset()
+		}
+		f0 := m.Validators[:0]
+		for _, mm := range m.ValidatorAggregates {
+			mm.ResetVT()
+		}
+		f1 := m.ValidatorAggregates[:0]
+		m.Reset()
+		m.Validators = f0
+		m.ValidatorAggregates = f1
+	}
+}
+func (m *SyncCommittee) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncCommittee.Put(m)
+	}
+}
+func SyncCommitteeFromVTPool() *SyncCommittee {
+	return vtprotoPool_SyncCommittee.Get().(*SyncCommittee)
+}
 func (m *SyncCommitteeContribution) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -818,7 +917,14 @@ func (m *SyncCommitteeValidatorAggregate) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			if len(m.Validators) == cap(m.Validators) {
+				m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			} else {
+				m.Validators = m.Validators[:len(m.Validators)+1]
+				if m.Validators[len(m.Validators)-1] == nil {
+					m.Validators[len(m.Validators)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.Validators[len(m.Validators)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -903,7 +1009,14 @@ func (m *SyncCommittee) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			if len(m.Validators) == cap(m.Validators) {
+				m.Validators = append(m.Validators, &wrapperspb1.UInt64Value{})
+			} else {
+				m.Validators = m.Validators[:len(m.Validators)+1]
+				if m.Validators[len(m.Validators)-1] == nil {
+					m.Validators[len(m.Validators)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.Validators[len(m.Validators)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -937,7 +1050,14 @@ func (m *SyncCommittee) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ValidatorAggregates = append(m.ValidatorAggregates, &SyncCommitteeValidatorAggregate{})
+			if len(m.ValidatorAggregates) == cap(m.ValidatorAggregates) {
+				m.ValidatorAggregates = append(m.ValidatorAggregates, &SyncCommitteeValidatorAggregate{})
+			} else {
+				m.ValidatorAggregates = m.ValidatorAggregates[:len(m.ValidatorAggregates)+1]
+				if m.ValidatorAggregates[len(m.ValidatorAggregates)-1] == nil {
+					m.ValidatorAggregates[len(m.ValidatorAggregates)-1] = &SyncCommitteeValidatorAggregate{}
+				}
+			}
 			if err := m.ValidatorAggregates[len(m.ValidatorAggregates)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

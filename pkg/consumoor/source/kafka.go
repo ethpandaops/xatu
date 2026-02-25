@@ -94,7 +94,7 @@ func kafkaTopicMetadata(msg *service.Message) string {
 }
 
 func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, error) {
-	event := &xatu.DecoratedEvent{}
+	event := xatu.DecoratedEventFromVTPool()
 
 	switch encoding {
 	case "protobuf":

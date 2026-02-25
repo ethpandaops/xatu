@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -547,6 +548,210 @@ func (m *ElaboratedAttestation) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_Attestation = sync.Pool{
+	New: func() interface{} {
+		return &Attestation{}
+	},
+}
+
+func (m *Attestation) ResetVT() {
+	if m != nil {
+		m.Data.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *Attestation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Attestation.Put(m)
+	}
+}
+func AttestationFromVTPool() *Attestation {
+	return vtprotoPool_Attestation.Get().(*Attestation)
+}
+
+var vtprotoPool_AttestationV2 = sync.Pool{
+	New: func() interface{} {
+		return &AttestationV2{}
+	},
+}
+
+func (m *AttestationV2) ResetVT() {
+	if m != nil {
+		m.Data.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AttestationV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttestationV2.Put(m)
+	}
+}
+func AttestationV2FromVTPool() *AttestationV2 {
+	return vtprotoPool_AttestationV2.Get().(*AttestationV2)
+}
+
+var vtprotoPool_AttestationData = sync.Pool{
+	New: func() interface{} {
+		return &AttestationData{}
+	},
+}
+
+func (m *AttestationData) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttestationData.Put(m)
+	}
+}
+func AttestationDataFromVTPool() *AttestationData {
+	return vtprotoPool_AttestationData.Get().(*AttestationData)
+}
+
+var vtprotoPool_AttestationDataV2 = sync.Pool{
+	New: func() interface{} {
+		return &AttestationDataV2{}
+	},
+}
+
+func (m *AttestationDataV2) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AttestationDataV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttestationDataV2.Put(m)
+	}
+}
+func AttestationDataV2FromVTPool() *AttestationDataV2 {
+	return vtprotoPool_AttestationDataV2.Get().(*AttestationDataV2)
+}
+
+var vtprotoPool_AggregateAttestationAndProof = sync.Pool{
+	New: func() interface{} {
+		return &AggregateAttestationAndProof{}
+	},
+}
+
+func (m *AggregateAttestationAndProof) ResetVT() {
+	if m != nil {
+		m.Aggregate.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AggregateAttestationAndProof) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AggregateAttestationAndProof.Put(m)
+	}
+}
+func AggregateAttestationAndProofFromVTPool() *AggregateAttestationAndProof {
+	return vtprotoPool_AggregateAttestationAndProof.Get().(*AggregateAttestationAndProof)
+}
+
+var vtprotoPool_SignedAggregateAttestationAndProof = sync.Pool{
+	New: func() interface{} {
+		return &SignedAggregateAttestationAndProof{}
+	},
+}
+
+func (m *SignedAggregateAttestationAndProof) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedAggregateAttestationAndProof) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedAggregateAttestationAndProof.Put(m)
+	}
+}
+func SignedAggregateAttestationAndProofFromVTPool() *SignedAggregateAttestationAndProof {
+	return vtprotoPool_SignedAggregateAttestationAndProof.Get().(*SignedAggregateAttestationAndProof)
+}
+
+var vtprotoPool_AggregateAttestationAndProofV2 = sync.Pool{
+	New: func() interface{} {
+		return &AggregateAttestationAndProofV2{}
+	},
+}
+
+func (m *AggregateAttestationAndProofV2) ResetVT() {
+	if m != nil {
+		m.Aggregate.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *AggregateAttestationAndProofV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AggregateAttestationAndProofV2.Put(m)
+	}
+}
+func AggregateAttestationAndProofV2FromVTPool() *AggregateAttestationAndProofV2 {
+	return vtprotoPool_AggregateAttestationAndProofV2.Get().(*AggregateAttestationAndProofV2)
+}
+
+var vtprotoPool_SignedAggregateAttestationAndProofV2 = sync.Pool{
+	New: func() interface{} {
+		return &SignedAggregateAttestationAndProofV2{}
+	},
+}
+
+func (m *SignedAggregateAttestationAndProofV2) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedAggregateAttestationAndProofV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedAggregateAttestationAndProofV2.Put(m)
+	}
+}
+func SignedAggregateAttestationAndProofV2FromVTPool() *SignedAggregateAttestationAndProofV2 {
+	return vtprotoPool_SignedAggregateAttestationAndProofV2.Get().(*SignedAggregateAttestationAndProofV2)
+}
+
+var vtprotoPool_ElaboratedAttestation = sync.Pool{
+	New: func() interface{} {
+		return &ElaboratedAttestation{}
+	},
+}
+
+func (m *ElaboratedAttestation) ResetVT() {
+	if m != nil {
+		m.Data.ReturnToVTPool()
+		for _, mm := range m.ValidatorIndexes {
+			mm.Reset()
+		}
+		f0 := m.ValidatorIndexes[:0]
+		m.Reset()
+		m.ValidatorIndexes = f0
+	}
+}
+func (m *ElaboratedAttestation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ElaboratedAttestation.Put(m)
+	}
+}
+func ElaboratedAttestationFromVTPool() *ElaboratedAttestation {
+	return vtprotoPool_ElaboratedAttestation.Get().(*ElaboratedAttestation)
+}
 func (m *Attestation) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -867,7 +1072,7 @@ func (m *Attestation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &AttestationData{}
+				m.Data = AttestationDataFromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1018,7 +1223,7 @@ func (m *AttestationV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &AttestationDataV2{}
+				m.Data = AttestationDataV2FromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1175,7 +1380,7 @@ func (m *AttestationData) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &Checkpoint{}
+				m.Source = CheckpointFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1211,7 +1416,7 @@ func (m *AttestationData) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &Checkpoint{}
+				m.Target = CheckpointFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1402,7 +1607,7 @@ func (m *AttestationDataV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &CheckpointV2{}
+				m.Source = CheckpointV2FromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1438,7 +1643,7 @@ func (m *AttestationDataV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &CheckpointV2{}
+				m.Target = CheckpointV2FromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1576,7 +1781,7 @@ func (m *AggregateAttestationAndProof) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Aggregate == nil {
-				m.Aggregate = &Attestation{}
+				m.Aggregate = AttestationFromVTPool()
 			}
 			if err := m.Aggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1663,7 +1868,7 @@ func (m *SignedAggregateAttestationAndProof) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &AggregateAttestationAndProof{}
+				m.Message = AggregateAttestationAndProofFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1818,7 +2023,7 @@ func (m *AggregateAttestationAndProofV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Aggregate == nil {
-				m.Aggregate = &AttestationV2{}
+				m.Aggregate = AttestationV2FromVTPool()
 			}
 			if err := m.Aggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1905,7 +2110,7 @@ func (m *SignedAggregateAttestationAndProofV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Message == nil {
-				m.Message = &AggregateAttestationAndProofV2{}
+				m.Message = AggregateAttestationAndProofV2FromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2024,7 +2229,7 @@ func (m *ElaboratedAttestation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &AttestationDataV2{}
+				m.Data = AttestationDataV2FromVTPool()
 			}
 			if err := m.Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2059,7 +2264,14 @@ func (m *ElaboratedAttestation) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ValidatorIndexes = append(m.ValidatorIndexes, &wrapperspb1.UInt64Value{})
+			if len(m.ValidatorIndexes) == cap(m.ValidatorIndexes) {
+				m.ValidatorIndexes = append(m.ValidatorIndexes, &wrapperspb1.UInt64Value{})
+			} else {
+				m.ValidatorIndexes = m.ValidatorIndexes[:len(m.ValidatorIndexes)+1]
+				if m.ValidatorIndexes[len(m.ValidatorIndexes)-1] == nil {
+					m.ValidatorIndexes[len(m.ValidatorIndexes)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.ValidatorIndexes[len(m.ValidatorIndexes)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

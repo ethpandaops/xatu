@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
+	sync "sync"
 )
 
 const (
@@ -346,6 +347,103 @@ func (m *ForkChoiceNodeV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+var vtprotoPool_ForkChoice = sync.Pool{
+	New: func() interface{} {
+		return &ForkChoice{}
+	},
+}
+
+func (m *ForkChoice) ResetVT() {
+	if m != nil {
+		m.JustifiedCheckpoint.ReturnToVTPool()
+		m.FinalizedCheckpoint.ReturnToVTPool()
+		for _, mm := range m.ForkChoiceNodes {
+			mm.ResetVT()
+		}
+		f0 := m.ForkChoiceNodes[:0]
+		m.Reset()
+		m.ForkChoiceNodes = f0
+	}
+}
+func (m *ForkChoice) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ForkChoice.Put(m)
+	}
+}
+func ForkChoiceFromVTPool() *ForkChoice {
+	return vtprotoPool_ForkChoice.Get().(*ForkChoice)
+}
+
+var vtprotoPool_ForkChoiceV2 = sync.Pool{
+	New: func() interface{} {
+		return &ForkChoiceV2{}
+	},
+}
+
+func (m *ForkChoiceV2) ResetVT() {
+	if m != nil {
+		m.JustifiedCheckpoint.ReturnToVTPool()
+		m.FinalizedCheckpoint.ReturnToVTPool()
+		for _, mm := range m.ForkChoiceNodes {
+			mm.ResetVT()
+		}
+		f0 := m.ForkChoiceNodes[:0]
+		m.Reset()
+		m.ForkChoiceNodes = f0
+	}
+}
+func (m *ForkChoiceV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ForkChoiceV2.Put(m)
+	}
+}
+func ForkChoiceV2FromVTPool() *ForkChoiceV2 {
+	return vtprotoPool_ForkChoiceV2.Get().(*ForkChoiceV2)
+}
+
+var vtprotoPool_ForkChoiceNode = sync.Pool{
+	New: func() interface{} {
+		return &ForkChoiceNode{}
+	},
+}
+
+func (m *ForkChoiceNode) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ForkChoiceNode) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ForkChoiceNode.Put(m)
+	}
+}
+func ForkChoiceNodeFromVTPool() *ForkChoiceNode {
+	return vtprotoPool_ForkChoiceNode.Get().(*ForkChoiceNode)
+}
+
+var vtprotoPool_ForkChoiceNodeV2 = sync.Pool{
+	New: func() interface{} {
+		return &ForkChoiceNodeV2{}
+	},
+}
+
+func (m *ForkChoiceNodeV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ForkChoiceNodeV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ForkChoiceNodeV2.Put(m)
+	}
+}
+func ForkChoiceNodeV2FromVTPool() *ForkChoiceNodeV2 {
+	return vtprotoPool_ForkChoiceNodeV2.Get().(*ForkChoiceNodeV2)
+}
 func (m *ForkChoice) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -541,7 +639,7 @@ func (m *ForkChoice) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.JustifiedCheckpoint == nil {
-				m.JustifiedCheckpoint = &Checkpoint{}
+				m.JustifiedCheckpoint = CheckpointFromVTPool()
 			}
 			if err := m.JustifiedCheckpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -577,7 +675,7 @@ func (m *ForkChoice) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FinalizedCheckpoint == nil {
-				m.FinalizedCheckpoint = &Checkpoint{}
+				m.FinalizedCheckpoint = CheckpointFromVTPool()
 			}
 			if err := m.FinalizedCheckpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -612,7 +710,14 @@ func (m *ForkChoice) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ForkChoiceNodes = append(m.ForkChoiceNodes, &ForkChoiceNode{})
+			if len(m.ForkChoiceNodes) == cap(m.ForkChoiceNodes) {
+				m.ForkChoiceNodes = append(m.ForkChoiceNodes, &ForkChoiceNode{})
+			} else {
+				m.ForkChoiceNodes = m.ForkChoiceNodes[:len(m.ForkChoiceNodes)+1]
+				if m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1] == nil {
+					m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1] = &ForkChoiceNode{}
+				}
+			}
 			if err := m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -698,7 +803,7 @@ func (m *ForkChoiceV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.JustifiedCheckpoint == nil {
-				m.JustifiedCheckpoint = &CheckpointV2{}
+				m.JustifiedCheckpoint = CheckpointV2FromVTPool()
 			}
 			if err := m.JustifiedCheckpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -734,7 +839,7 @@ func (m *ForkChoiceV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.FinalizedCheckpoint == nil {
-				m.FinalizedCheckpoint = &CheckpointV2{}
+				m.FinalizedCheckpoint = CheckpointV2FromVTPool()
 			}
 			if err := m.FinalizedCheckpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -769,7 +874,14 @@ func (m *ForkChoiceV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ForkChoiceNodes = append(m.ForkChoiceNodes, &ForkChoiceNodeV2{})
+			if len(m.ForkChoiceNodes) == cap(m.ForkChoiceNodes) {
+				m.ForkChoiceNodes = append(m.ForkChoiceNodes, &ForkChoiceNodeV2{})
+			} else {
+				m.ForkChoiceNodes = m.ForkChoiceNodes[:len(m.ForkChoiceNodes)+1]
+				if m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1] == nil {
+					m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1] = &ForkChoiceNodeV2{}
+				}
+			}
 			if err := m.ForkChoiceNodes[len(m.ForkChoiceNodes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

@@ -21,6 +21,7 @@ import (
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
 	math "math"
+	sync "sync"
 )
 
 const (
@@ -12628,6 +12629,3702 @@ func (m *DecoratedEvent_ExecutionBlockMetrics) MarshalToSizedBufferVT(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
+
+var vtprotoPool_CreateEventsRequest = sync.Pool{
+	New: func() interface{} {
+		return &CreateEventsRequest{}
+	},
+}
+
+func (m *CreateEventsRequest) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Events {
+			mm.ResetVT()
+		}
+		f0 := m.Events[:0]
+		m.Reset()
+		m.Events = f0
+	}
+}
+func (m *CreateEventsRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateEventsRequest.Put(m)
+	}
+}
+func CreateEventsRequestFromVTPool() *CreateEventsRequest {
+	return vtprotoPool_CreateEventsRequest.Get().(*CreateEventsRequest)
+}
+
+var vtprotoPool_CreateEventsResponse = sync.Pool{
+	New: func() interface{} {
+		return &CreateEventsResponse{}
+	},
+}
+
+func (m *CreateEventsResponse) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *CreateEventsResponse) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CreateEventsResponse.Put(m)
+	}
+}
+func CreateEventsResponseFromVTPool() *CreateEventsResponse {
+	return vtprotoPool_CreateEventsResponse.Get().(*CreateEventsResponse)
+}
+
+var vtprotoPool_Epoch = sync.Pool{
+	New: func() interface{} {
+		return &Epoch{}
+	},
+}
+
+func (m *Epoch) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Epoch) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Epoch.Put(m)
+	}
+}
+func EpochFromVTPool() *Epoch {
+	return vtprotoPool_Epoch.Get().(*Epoch)
+}
+
+var vtprotoPool_EpochV2 = sync.Pool{
+	New: func() interface{} {
+		return &EpochV2{}
+	},
+}
+
+func (m *EpochV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *EpochV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_EpochV2.Put(m)
+	}
+}
+func EpochV2FromVTPool() *EpochV2 {
+	return vtprotoPool_EpochV2.Get().(*EpochV2)
+}
+
+var vtprotoPool_Slot = sync.Pool{
+	New: func() interface{} {
+		return &Slot{}
+	},
+}
+
+func (m *Slot) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Slot) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Slot.Put(m)
+	}
+}
+func SlotFromVTPool() *Slot {
+	return vtprotoPool_Slot.Get().(*Slot)
+}
+
+var vtprotoPool_SlotV2 = sync.Pool{
+	New: func() interface{} {
+		return &SlotV2{}
+	},
+}
+
+func (m *SlotV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *SlotV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SlotV2.Put(m)
+	}
+}
+func SlotV2FromVTPool() *SlotV2 {
+	return vtprotoPool_SlotV2.Get().(*SlotV2)
+}
+
+var vtprotoPool_ForkID = sync.Pool{
+	New: func() interface{} {
+		return &ForkID{}
+	},
+}
+
+func (m *ForkID) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ForkID) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ForkID.Put(m)
+	}
+}
+func ForkIDFromVTPool() *ForkID {
+	return vtprotoPool_ForkID.Get().(*ForkID)
+}
+
+var vtprotoPool_Propagation = sync.Pool{
+	New: func() interface{} {
+		return &Propagation{}
+	},
+}
+
+func (m *Propagation) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Propagation) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Propagation.Put(m)
+	}
+}
+func PropagationFromVTPool() *Propagation {
+	return vtprotoPool_Propagation.Get().(*Propagation)
+}
+
+var vtprotoPool_PropagationV2 = sync.Pool{
+	New: func() interface{} {
+		return &PropagationV2{}
+	},
+}
+
+func (m *PropagationV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *PropagationV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_PropagationV2.Put(m)
+	}
+}
+func PropagationV2FromVTPool() *PropagationV2 {
+	return vtprotoPool_PropagationV2.Get().(*PropagationV2)
+}
+
+var vtprotoPool_AttestingValidator = sync.Pool{
+	New: func() interface{} {
+		return &AttestingValidator{}
+	},
+}
+
+func (m *AttestingValidator) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *AttestingValidator) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttestingValidator.Put(m)
+	}
+}
+func AttestingValidatorFromVTPool() *AttestingValidator {
+	return vtprotoPool_AttestingValidator.Get().(*AttestingValidator)
+}
+
+var vtprotoPool_AttestingValidatorV2 = sync.Pool{
+	New: func() interface{} {
+		return &AttestingValidatorV2{}
+	},
+}
+
+func (m *AttestingValidatorV2) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *AttestingValidatorV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_AttestingValidatorV2.Put(m)
+	}
+}
+func AttestingValidatorV2FromVTPool() *AttestingValidatorV2 {
+	return vtprotoPool_AttestingValidatorV2.Get().(*AttestingValidatorV2)
+}
+
+var vtprotoPool_DebugForkChoiceReorg = sync.Pool{
+	New: func() interface{} {
+		return &DebugForkChoiceReorg{}
+	},
+}
+
+func (m *DebugForkChoiceReorg) ResetVT() {
+	if m != nil {
+		m.Before.ReturnToVTPool()
+		m.After.ReturnToVTPool()
+		m.Event.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *DebugForkChoiceReorg) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DebugForkChoiceReorg.Put(m)
+	}
+}
+func DebugForkChoiceReorgFromVTPool() *DebugForkChoiceReorg {
+	return vtprotoPool_DebugForkChoiceReorg.Get().(*DebugForkChoiceReorg)
+}
+
+var vtprotoPool_DebugForkChoiceReorgV2 = sync.Pool{
+	New: func() interface{} {
+		return &DebugForkChoiceReorgV2{}
+	},
+}
+
+func (m *DebugForkChoiceReorgV2) ResetVT() {
+	if m != nil {
+		m.Before.ReturnToVTPool()
+		m.After.ReturnToVTPool()
+		m.Event.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *DebugForkChoiceReorgV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DebugForkChoiceReorgV2.Put(m)
+	}
+}
+func DebugForkChoiceReorgV2FromVTPool() *DebugForkChoiceReorgV2 {
+	return vtprotoPool_DebugForkChoiceReorgV2.Get().(*DebugForkChoiceReorgV2)
+}
+
+var vtprotoPool_Validators = sync.Pool{
+	New: func() interface{} {
+		return &Validators{}
+	},
+}
+
+func (m *Validators) ResetVT() {
+	if m != nil {
+		for _, mm := range m.Validators {
+			mm.ResetVT()
+		}
+		f0 := m.Validators[:0]
+		m.Reset()
+		m.Validators = f0
+	}
+}
+func (m *Validators) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Validators.Put(m)
+	}
+}
+func ValidatorsFromVTPool() *Validators {
+	return vtprotoPool_Validators.Get().(*Validators)
+}
+
+var vtprotoPool_SyncCommitteeData = sync.Pool{
+	New: func() interface{} {
+		return &SyncCommitteeData{}
+	},
+}
+
+func (m *SyncCommitteeData) ResetVT() {
+	if m != nil {
+		m.SyncCommittee.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SyncCommitteeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncCommitteeData.Put(m)
+	}
+}
+func SyncCommitteeDataFromVTPool() *SyncCommitteeData {
+	return vtprotoPool_SyncCommitteeData.Get().(*SyncCommitteeData)
+}
+
+var vtprotoPool_SyncAggregateData = sync.Pool{
+	New: func() interface{} {
+		return &SyncAggregateData{}
+	},
+}
+
+func (m *SyncAggregateData) ResetVT() {
+	if m != nil {
+		for _, mm := range m.ValidatorsParticipated {
+			mm.Reset()
+		}
+		f0 := m.ValidatorsParticipated[:0]
+		for _, mm := range m.ValidatorsMissed {
+			mm.Reset()
+		}
+		f1 := m.ValidatorsMissed[:0]
+		m.Reset()
+		m.ValidatorsParticipated = f0
+		m.ValidatorsMissed = f1
+	}
+}
+func (m *SyncAggregateData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SyncAggregateData.Put(m)
+	}
+}
+func SyncAggregateDataFromVTPool() *SyncAggregateData {
+	return vtprotoPool_SyncAggregateData.Get().(*SyncAggregateData)
+}
+
+var vtprotoPool_BlockIdentifier = sync.Pool{
+	New: func() interface{} {
+		return &BlockIdentifier{}
+	},
+}
+
+func (m *BlockIdentifier) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *BlockIdentifier) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BlockIdentifier.Put(m)
+	}
+}
+func BlockIdentifierFromVTPool() *BlockIdentifier {
+	return vtprotoPool_BlockIdentifier.Get().(*BlockIdentifier)
+}
+
+var vtprotoPool_ExecutionStateSize = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionStateSize{}
+	},
+}
+
+func (m *ExecutionStateSize) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionStateSize) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionStateSize.Put(m)
+	}
+}
+func ExecutionStateSizeFromVTPool() *ExecutionStateSize {
+	return vtprotoPool_ExecutionStateSize.Get().(*ExecutionStateSize)
+}
+
+var vtprotoPool_ConsensusEngineAPINewPayload = sync.Pool{
+	New: func() interface{} {
+		return &ConsensusEngineAPINewPayload{}
+	},
+}
+
+func (m *ConsensusEngineAPINewPayload) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ConsensusEngineAPINewPayload) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ConsensusEngineAPINewPayload.Put(m)
+	}
+}
+func ConsensusEngineAPINewPayloadFromVTPool() *ConsensusEngineAPINewPayload {
+	return vtprotoPool_ConsensusEngineAPINewPayload.Get().(*ConsensusEngineAPINewPayload)
+}
+
+var vtprotoPool_ConsensusEngineAPIGetBlobs = sync.Pool{
+	New: func() interface{} {
+		return &ConsensusEngineAPIGetBlobs{}
+	},
+}
+
+func (m *ConsensusEngineAPIGetBlobs) ResetVT() {
+	if m != nil {
+		f0 := m.VersionedHashes[:0]
+		m.Reset()
+		m.VersionedHashes = f0
+	}
+}
+func (m *ConsensusEngineAPIGetBlobs) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ConsensusEngineAPIGetBlobs.Put(m)
+	}
+}
+func ConsensusEngineAPIGetBlobsFromVTPool() *ConsensusEngineAPIGetBlobs {
+	return vtprotoPool_ConsensusEngineAPIGetBlobs.Get().(*ConsensusEngineAPIGetBlobs)
+}
+
+var vtprotoPool_ExecutionEngineNewPayload = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionEngineNewPayload{}
+	},
+}
+
+func (m *ExecutionEngineNewPayload) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionEngineNewPayload) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionEngineNewPayload.Put(m)
+	}
+}
+func ExecutionEngineNewPayloadFromVTPool() *ExecutionEngineNewPayload {
+	return vtprotoPool_ExecutionEngineNewPayload.Get().(*ExecutionEngineNewPayload)
+}
+
+var vtprotoPool_ExecutionEngineGetBlobs = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionEngineGetBlobs{}
+	},
+}
+
+func (m *ExecutionEngineGetBlobs) ResetVT() {
+	if m != nil {
+		f0 := m.VersionedHashes[:0]
+		for _, mm := range m.ReturnedBlobIndexes {
+			mm.Reset()
+		}
+		f1 := m.ReturnedBlobIndexes[:0]
+		m.Reset()
+		m.VersionedHashes = f0
+		m.ReturnedBlobIndexes = f1
+	}
+}
+func (m *ExecutionEngineGetBlobs) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionEngineGetBlobs.Put(m)
+	}
+}
+func ExecutionEngineGetBlobsFromVTPool() *ExecutionEngineGetBlobs {
+	return vtprotoPool_ExecutionEngineGetBlobs.Get().(*ExecutionEngineGetBlobs)
+}
+
+var vtprotoPool_ClientMeta_Ethereum_Network = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_Ethereum_Network{}
+	},
+}
+
+func (m *ClientMeta_Ethereum_Network) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ClientMeta_Ethereum_Network) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_Ethereum_Network.Put(m)
+	}
+}
+func ClientMeta_Ethereum_NetworkFromVTPool() *ClientMeta_Ethereum_Network {
+	return vtprotoPool_ClientMeta_Ethereum_Network.Get().(*ClientMeta_Ethereum_Network)
+}
+
+var vtprotoPool_ClientMeta_Ethereum_Execution = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_Ethereum_Execution{}
+	},
+}
+
+func (m *ClientMeta_Ethereum_Execution) ResetVT() {
+	if m != nil {
+		m.ForkId.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_Ethereum_Execution) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_Ethereum_Execution.Put(m)
+	}
+}
+func ClientMeta_Ethereum_ExecutionFromVTPool() *ClientMeta_Ethereum_Execution {
+	return vtprotoPool_ClientMeta_Ethereum_Execution.Get().(*ClientMeta_Ethereum_Execution)
+}
+
+var vtprotoPool_ClientMeta_Ethereum_Consensus = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_Ethereum_Consensus{}
+	},
+}
+
+func (m *ClientMeta_Ethereum_Consensus) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ClientMeta_Ethereum_Consensus) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_Ethereum_Consensus.Put(m)
+	}
+}
+func ClientMeta_Ethereum_ConsensusFromVTPool() *ClientMeta_Ethereum_Consensus {
+	return vtprotoPool_ClientMeta_Ethereum_Consensus.Get().(*ClientMeta_Ethereum_Consensus)
+}
+
+var vtprotoPool_ClientMeta_Ethereum = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_Ethereum{}
+	},
+}
+
+func (m *ClientMeta_Ethereum) ResetVT() {
+	if m != nil {
+		m.Network.ReturnToVTPool()
+		m.Execution.ReturnToVTPool()
+		m.Consensus.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_Ethereum) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_Ethereum.Put(m)
+	}
+}
+func ClientMeta_EthereumFromVTPool() *ClientMeta_Ethereum {
+	return vtprotoPool_ClientMeta_Ethereum.Get().(*ClientMeta_Ethereum)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1AttestationSourceData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1AttestationSourceData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1AttestationSourceData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1AttestationSourceDataFromVTPool() *ClientMeta_AdditionalEthV1AttestationSourceData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceData.Get().(*ClientMeta_AdditionalEthV1AttestationSourceData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1AttestationSourceV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1AttestationSourceV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1AttestationSourceV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1AttestationSourceV2DataFromVTPool() *ClientMeta_AdditionalEthV1AttestationSourceV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1AttestationSourceV2Data.Get().(*ClientMeta_AdditionalEthV1AttestationSourceV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1AttestationTargetData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1AttestationTargetData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1AttestationTargetData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1AttestationTargetDataFromVTPool() *ClientMeta_AdditionalEthV1AttestationTargetData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetData.Get().(*ClientMeta_AdditionalEthV1AttestationTargetData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1AttestationTargetV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1AttestationTargetV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1AttestationTargetV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1AttestationTargetV2DataFromVTPool() *ClientMeta_AdditionalEthV1AttestationTargetV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1AttestationTargetV2Data.Get().(*ClientMeta_AdditionalEthV1AttestationTargetV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsAttestationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsAttestationData) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.AttestingValidator.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsAttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsAttestationDataFromVTPool() *ClientMeta_AdditionalEthV1EventsAttestationData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationData.Get().(*ClientMeta_AdditionalEthV1EventsAttestationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsAttestationV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.AttestingValidator.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsAttestationV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsAttestationV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsAttestationV2Data.Get().(*ClientMeta_AdditionalEthV1EventsAttestationV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsHeadData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsHeadData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsHeadData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsHeadDataFromVTPool() *ClientMeta_AdditionalEthV1EventsHeadData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadData.Get().(*ClientMeta_AdditionalEthV1EventsHeadData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsHeadV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsHeadV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsHeadV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsHeadV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsHeadV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsHeadV2Data.Get().(*ClientMeta_AdditionalEthV1EventsHeadV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsBlockData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsBlockData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsBlockData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsBlockDataFromVTPool() *ClientMeta_AdditionalEthV1EventsBlockData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockData.Get().(*ClientMeta_AdditionalEthV1EventsBlockData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsBlockV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsBlockV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsBlockV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsBlockV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsBlockV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockV2Data.Get().(*ClientMeta_AdditionalEthV1EventsBlockV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockGossipData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsBlockGossipData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockGossipData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsBlockGossipDataFromVTPool() *ClientMeta_AdditionalEthV1EventsBlockGossipData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockGossipData.Get().(*ClientMeta_AdditionalEthV1EventsBlockGossipData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsVoluntaryExitData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsVoluntaryExitDataFromVTPool() *ClientMeta_AdditionalEthV1EventsVoluntaryExitData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitData.Get().(*ClientMeta_AdditionalEthV1EventsVoluntaryExitData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsVoluntaryExitV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data.Get().(*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsFinalizedCheckpointDataFromVTPool() *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData.Get().(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data.Get().(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsChainReorgData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsChainReorgData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsChainReorgData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsChainReorgDataFromVTPool() *ClientMeta_AdditionalEthV1EventsChainReorgData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgData.Get().(*ClientMeta_AdditionalEthV1EventsChainReorgData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsChainReorgV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsChainReorgV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsChainReorgV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsChainReorgV2Data.Get().(*ClientMeta_AdditionalEthV1EventsChainReorgV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsContributionAndProofContributionDataFromVTPool() *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData.Get().(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data.Get().(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsContributionAndProofData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofData) ResetVT() {
+	if m != nil {
+		m.Contribution.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsContributionAndProofDataFromVTPool() *ClientMeta_AdditionalEthV1EventsContributionAndProofData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofData.Get().(*ClientMeta_AdditionalEthV1EventsContributionAndProofData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) ResetVT() {
+	if m != nil {
+		m.Contribution.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsContributionAndProofV2DataFromVTPool() *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data.Get().(*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data)
+}
+
+var vtprotoPool_ClientMeta_ForkChoiceSnapshot = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_ForkChoiceSnapshot{}
+	},
+}
+
+func (m *ClientMeta_ForkChoiceSnapshot) ResetVT() {
+	if m != nil {
+		m.RequestEpoch.ReturnToVTPool()
+		m.RequestSlot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_ForkChoiceSnapshot) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_ForkChoiceSnapshot.Put(m)
+	}
+}
+func ClientMeta_ForkChoiceSnapshotFromVTPool() *ClientMeta_ForkChoiceSnapshot {
+	return vtprotoPool_ClientMeta_ForkChoiceSnapshot.Get().(*ClientMeta_ForkChoiceSnapshot)
+}
+
+var vtprotoPool_ClientMeta_ForkChoiceSnapshotV2 = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_ForkChoiceSnapshotV2{}
+	},
+}
+
+func (m *ClientMeta_ForkChoiceSnapshotV2) ResetVT() {
+	if m != nil {
+		m.RequestEpoch.ReturnToVTPool()
+		m.RequestSlot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_ForkChoiceSnapshotV2) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_ForkChoiceSnapshotV2.Put(m)
+	}
+}
+func ClientMeta_ForkChoiceSnapshotV2FromVTPool() *ClientMeta_ForkChoiceSnapshotV2 {
+	return vtprotoPool_ClientMeta_ForkChoiceSnapshotV2.Get().(*ClientMeta_ForkChoiceSnapshotV2)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1DebugForkChoiceData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceData) ResetVT() {
+	if m != nil {
+		m.Snapshot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1DebugForkChoiceDataFromVTPool() *ClientMeta_AdditionalEthV1DebugForkChoiceData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceData.Get().(*ClientMeta_AdditionalEthV1DebugForkChoiceData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1DebugForkChoiceV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) ResetVT() {
+	if m != nil {
+		m.Snapshot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1DebugForkChoiceV2DataFromVTPool() *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceV2Data.Get().(*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) ResetVT() {
+	if m != nil {
+		m.Before.ReturnToVTPool()
+		m.After.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1DebugForkChoiceReOrgDataFromVTPool() *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData.Get().(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) ResetVT() {
+	if m != nil {
+		m.Before.ReturnToVTPool()
+		m.After.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2DataFromVTPool() *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data.Get().(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconCommitteeData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconCommitteeData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconCommitteeData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconCommitteeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconCommitteeData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconCommitteeDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconCommitteeData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconCommitteeData.Get().(*ClientMeta_AdditionalEthV1BeaconCommitteeData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconSyncCommitteeData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconSyncCommitteeData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconSyncCommitteeData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconSyncCommitteeDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconSyncCommitteeData.Get().(*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalMempoolTransactionData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalMempoolTransactionData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalMempoolTransactionData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalMempoolTransactionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalMempoolTransactionData.Put(m)
+	}
+}
+func ClientMeta_AdditionalMempoolTransactionDataFromVTPool() *ClientMeta_AdditionalMempoolTransactionData {
+	return vtprotoPool_ClientMeta_AdditionalMempoolTransactionData.Get().(*ClientMeta_AdditionalMempoolTransactionData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalMempoolTransactionV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalMempoolTransactionV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalMempoolTransactionV2Data) ResetVT() {
+	if m != nil {
+		f0 := m.BlobHashes[:0]
+		m.Reset()
+		m.BlobHashes = f0
+	}
+}
+func (m *ClientMeta_AdditionalMempoolTransactionV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalMempoolTransactionV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalMempoolTransactionV2DataFromVTPool() *ClientMeta_AdditionalMempoolTransactionV2Data {
+	return vtprotoPool_ClientMeta_AdditionalMempoolTransactionV2Data.Get().(*ClientMeta_AdditionalMempoolTransactionV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockV2Data = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockV2Data.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockV2DataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockV2Data {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockV2Data.Get().(*ClientMeta_AdditionalEthV2BeaconBlockV2Data)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockDepositData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockDepositData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockDepositData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockDepositData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockDepositData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockDepositDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockDepositData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockDepositData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockDepositData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockWithdrawalDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData)
+}
+
+var vtprotoPool_ClientMeta_AttestationDataSnapshot = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AttestationDataSnapshot{}
+	},
+}
+
+func (m *ClientMeta_AttestationDataSnapshot) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AttestationDataSnapshot) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AttestationDataSnapshot.Put(m)
+	}
+}
+func ClientMeta_AttestationDataSnapshotFromVTPool() *ClientMeta_AttestationDataSnapshot {
+	return vtprotoPool_ClientMeta_AttestationDataSnapshot.Get().(*ClientMeta_AttestationDataSnapshot)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1ValidatorAttestationDataData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1ValidatorAttestationDataData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Snapshot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1ValidatorAttestationDataData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1ValidatorAttestationDataDataFromVTPool() *ClientMeta_AdditionalEthV1ValidatorAttestationDataData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1ValidatorAttestationDataData.Get().(*ClientMeta_AdditionalEthV1ValidatorAttestationDataData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsBlobSidecarData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsBlobSidecarData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsBlobSidecarData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsBlobSidecarData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsBlobSidecarData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsBlobSidecarDataFromVTPool() *ClientMeta_AdditionalEthV1EventsBlobSidecarData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsBlobSidecarData.Get().(*ClientMeta_AdditionalEthV1EventsBlobSidecarData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsDataColumnSidecarData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsDataColumnSidecarData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsDataColumnSidecarData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsDataColumnSidecarDataFromVTPool() *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsDataColumnSidecarData.Get().(*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobSidecarData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconBlobSidecarData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobSidecarData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconBlobSidecarDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconBlobSidecarData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobSidecarData.Get().(*ClientMeta_AdditionalEthV1BeaconBlobSidecarData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalBeaconP2PAttestationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalBeaconP2PAttestationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalBeaconP2PAttestationData) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.AttestingValidator.ReturnToVTPool()
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalBeaconP2PAttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalBeaconP2PAttestationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalBeaconP2PAttestationDataFromVTPool() *ClientMeta_AdditionalBeaconP2PAttestationData {
+	return vtprotoPool_ClientMeta_AdditionalBeaconP2PAttestationData.Get().(*ClientMeta_AdditionalBeaconP2PAttestationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1ProposerDutyData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1ProposerDutyData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1ProposerDutyData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1ProposerDutyData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1ProposerDutyData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1ProposerDutyDataFromVTPool() *ClientMeta_AdditionalEthV1ProposerDutyData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1ProposerDutyData.Get().(*ClientMeta_AdditionalEthV1ProposerDutyData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceAddPeerData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceAddPeerData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceAddPeerData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceAddPeerDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceAddPeerData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceAddPeerData.Get().(*ClientMeta_AdditionalLibP2PTraceAddPeerData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRemovePeerData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRemovePeerData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRemovePeerData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRemovePeerDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRemovePeerData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRemovePeerData.Get().(*ClientMeta_AdditionalLibP2PTraceRemovePeerData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRecvRPCData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRecvRPCData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRecvRPCData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRecvRPCDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRecvRPCData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRecvRPCData.Get().(*ClientMeta_AdditionalLibP2PTraceRecvRPCData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceSendRPCData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceSendRPCData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceSendRPCData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceSendRPCDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceSendRPCData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceSendRPCData.Get().(*ClientMeta_AdditionalLibP2PTraceSendRPCData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceDropRPCData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceDropRPCData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceDropRPCData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceDropRPCDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceDropRPCData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceDropRPCData.Get().(*ClientMeta_AdditionalLibP2PTraceDropRPCData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceJoinData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceJoinData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceJoinData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceJoinData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceJoinData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceJoinDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceJoinData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceJoinData.Get().(*ClientMeta_AdditionalLibP2PTraceJoinData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceLeaveData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceLeaveData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceLeaveData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceLeaveDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceLeaveData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceLeaveData.Get().(*ClientMeta_AdditionalLibP2PTraceLeaveData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGraftData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGraftData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGraftData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGraftData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGraftData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGraftDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGraftData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGraftData.Get().(*ClientMeta_AdditionalLibP2PTraceGraftData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTracePruneData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTracePruneData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTracePruneData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTracePruneData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTracePruneData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTracePruneDataFromVTPool() *ClientMeta_AdditionalLibP2PTracePruneData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTracePruneData.Get().(*ClientMeta_AdditionalLibP2PTracePruneData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceDuplicateMessageData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceDuplicateMessageData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceDuplicateMessageData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceDuplicateMessageDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceDuplicateMessageData.Get().(*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceDeliverMessageData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceDeliverMessageData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceDeliverMessageData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceDeliverMessageDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceDeliverMessageData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceDeliverMessageData.Get().(*ClientMeta_AdditionalLibP2PTraceDeliverMessageData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTracePublishMessageData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTracePublishMessageData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTracePublishMessageData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTracePublishMessageDataFromVTPool() *ClientMeta_AdditionalLibP2PTracePublishMessageData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTracePublishMessageData.Get().(*ClientMeta_AdditionalLibP2PTracePublishMessageData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRejectMessageData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRejectMessageData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRejectMessageData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRejectMessageDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRejectMessageData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRejectMessageData.Get().(*ClientMeta_AdditionalLibP2PTraceRejectMessageData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceConnectedData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceConnectedData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceConnectedData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceConnectedDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceConnectedData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceConnectedData.Get().(*ClientMeta_AdditionalLibP2PTraceConnectedData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceDisconnectedData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceDisconnectedData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceDisconnectedData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceDisconnectedDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceDisconnectedData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceDisconnectedData.Get().(*ClientMeta_AdditionalLibP2PTraceDisconnectedData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData.Get().(*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleMetadataData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceHandleMetadataData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleMetadataData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceHandleMetadataDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceHandleMetadataData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleMetadataData.Get().(*ClientMeta_AdditionalLibP2PTraceHandleMetadataData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleStatusData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceHandleStatusData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleStatusData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceHandleStatusDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceHandleStatusData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceHandleStatusData.Get().(*ClientMeta_AdditionalLibP2PTraceHandleStatusData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceIdentifyData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceIdentifyData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceIdentifyData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceIdentifyDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceIdentifyData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceIdentifyData.Get().(*ClientMeta_AdditionalLibP2PTraceIdentifyData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.Get().(*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceRPCMetaMessageDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData.Get().(*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) ResetVT() {
+	if m != nil {
+		m.Source.ReturnToVTPool()
+		m.Target.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.AttestingValidator.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData.Get().(*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1ValidatorsData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1ValidatorsData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1ValidatorsData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1ValidatorsData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1ValidatorsData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1ValidatorsDataFromVTPool() *ClientMeta_AdditionalEthV1ValidatorsData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1ValidatorsData.Get().(*ClientMeta_AdditionalEthV1ValidatorsData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) ResetVT() {
+	if m != nil {
+		m.Relay.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData.Put(m)
+	}
+}
+func ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionDataFromVTPool() *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData {
+	return vtprotoPool_ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData.Get().(*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalMevRelayPayloadDeliveredData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalMevRelayPayloadDeliveredData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) ResetVT() {
+	if m != nil {
+		m.Relay.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalMevRelayPayloadDeliveredData.Put(m)
+	}
+}
+func ClientMeta_AdditionalMevRelayPayloadDeliveredDataFromVTPool() *ClientMeta_AdditionalMevRelayPayloadDeliveredData {
+	return vtprotoPool_ClientMeta_AdditionalMevRelayPayloadDeliveredData.Get().(*ClientMeta_AdditionalMevRelayPayloadDeliveredData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV3ValidatorBlockData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV3ValidatorBlockData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV3ValidatorBlockData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV3ValidatorBlockData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV3ValidatorBlockData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV3ValidatorBlockDataFromVTPool() *ClientMeta_AdditionalEthV3ValidatorBlockData {
+	return vtprotoPool_ClientMeta_AdditionalEthV3ValidatorBlockData.Get().(*ClientMeta_AdditionalEthV3ValidatorBlockData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalMevRelayValidatorRegistrationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalMevRelayValidatorRegistrationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) ResetVT() {
+	if m != nil {
+		m.Relay.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalMevRelayValidatorRegistrationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalMevRelayValidatorRegistrationDataFromVTPool() *ClientMeta_AdditionalMevRelayValidatorRegistrationData {
+	return vtprotoPool_ClientMeta_AdditionalMevRelayValidatorRegistrationData.Get().(*ClientMeta_AdditionalMevRelayValidatorRegistrationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalNodeRecordConsensusData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalNodeRecordConsensusData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalNodeRecordConsensusData) ResetVT() {
+	if m != nil {
+		m.FinalizedEpoch.ReturnToVTPool()
+		m.HeadSlot.ReturnToVTPool()
+		m.HeadEpoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalNodeRecordConsensusData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalNodeRecordConsensusData.Put(m)
+	}
+}
+func ClientMeta_AdditionalNodeRecordConsensusDataFromVTPool() *ClientMeta_AdditionalNodeRecordConsensusData {
+	return vtprotoPool_ClientMeta_AdditionalNodeRecordConsensusData.Get().(*ClientMeta_AdditionalNodeRecordConsensusData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalConsensusEngineAPINewPayloadData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalConsensusEngineAPINewPayloadData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalConsensusEngineAPINewPayloadData.Put(m)
+	}
+}
+func ClientMeta_AdditionalConsensusEngineAPINewPayloadDataFromVTPool() *ClientMeta_AdditionalConsensusEngineAPINewPayloadData {
+	return vtprotoPool_ClientMeta_AdditionalConsensusEngineAPINewPayloadData.Get().(*ClientMeta_AdditionalConsensusEngineAPINewPayloadData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalConsensusEngineAPIGetBlobsData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalConsensusEngineAPIGetBlobsData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalConsensusEngineAPIGetBlobsData.Put(m)
+	}
+}
+func ClientMeta_AdditionalConsensusEngineAPIGetBlobsDataFromVTPool() *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData {
+	return vtprotoPool_ClientMeta_AdditionalConsensusEngineAPIGetBlobsData.Get().(*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconBlobData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconBlobData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconBlobData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconBlobDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconBlobData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconBlobData.Get().(*ClientMeta_AdditionalEthV1BeaconBlobData)
+}
+
+var vtprotoPool_ClientMeta = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta{}
+	},
+}
+
+func (m *ClientMeta) ResetVT() {
+	if m != nil {
+		m.Ethereum.ReturnToVTPool()
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsAttestation); ok {
+			oneof.EthV1EventsAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsHead); ok {
+			oneof.EthV1EventsHead.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsBlock); ok {
+			oneof.EthV1EventsBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsVoluntaryExit); ok {
+			oneof.EthV1EventsVoluntaryExit.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsFinalizedCheckpoint); ok {
+			oneof.EthV1EventsFinalizedCheckpoint.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsChainReorg); ok {
+			oneof.EthV1EventsChainReorg.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsContributionAndProof); ok {
+			oneof.EthV1EventsContributionAndProof.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_MempoolTransaction); ok {
+			oneof.MempoolTransaction.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlock); ok {
+			oneof.EthV2BeaconBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1DebugForkChoice); ok {
+			oneof.EthV1DebugForkChoice.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1DebugForkChoiceReorg); ok {
+			oneof.EthV1DebugForkChoiceReorg.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconCommittee); ok {
+			oneof.EthV1BeaconCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1ValidatorAttestationData); ok {
+			oneof.EthV1ValidatorAttestationData.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsAttestationV2); ok {
+			oneof.EthV1EventsAttestationV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsHeadV2); ok {
+			oneof.EthV1EventsHeadV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsBlockV2); ok {
+			oneof.EthV1EventsBlockV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsVoluntaryExitV2); ok {
+			oneof.EthV1EventsVoluntaryExitV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsFinalizedCheckpointV2); ok {
+			oneof.EthV1EventsFinalizedCheckpointV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsChainReorgV2); ok {
+			oneof.EthV1EventsChainReorgV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsContributionAndProofV2); ok {
+			oneof.EthV1EventsContributionAndProofV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_MempoolTransactionV2); ok {
+			oneof.MempoolTransactionV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockV2); ok {
+			oneof.EthV2BeaconBlockV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1DebugForkChoiceV2); ok {
+			oneof.EthV1DebugForkChoiceV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1DebugForkChoiceReorgV2); ok {
+			oneof.EthV1DebugForkChoiceReorgV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAttesterSlashing); ok {
+			oneof.EthV2BeaconBlockAttesterSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockProposerSlashing); ok {
+			oneof.EthV2BeaconBlockProposerSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockVoluntaryExit); ok {
+			oneof.EthV2BeaconBlockVoluntaryExit.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockDeposit); ok {
+			oneof.EthV2BeaconBlockDeposit.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockBlsToExecutionChange); ok {
+			oneof.EthV2BeaconBlockBlsToExecutionChange.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockExecutionTransaction); ok {
+			oneof.EthV2BeaconBlockExecutionTransaction.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockWithdrawal); ok {
+			oneof.EthV2BeaconBlockWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsBlobSidecar); ok {
+			oneof.EthV1EventsBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconBlobSidecar); ok {
+			oneof.EthV1BeaconBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_BeaconP2PAttestation); ok {
+			oneof.BeaconP2PAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1ProposerDuty); ok {
+			oneof.EthV1ProposerDuty.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockElaboratedAttestation); ok {
+			oneof.EthV2BeaconBlockElaboratedAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceAddPeer); ok {
+			oneof.Libp2PTraceAddPeer.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRemovePeer); ok {
+			oneof.Libp2PTraceRemovePeer.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRecvRpc); ok {
+			oneof.Libp2PTraceRecvRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceSendRpc); ok {
+			oneof.Libp2PTraceSendRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceJoin); ok {
+			oneof.Libp2PTraceJoin.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceConnected); ok {
+			oneof.Libp2PTraceConnected.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceDisconnected); ok {
+			oneof.Libp2PTraceDisconnected.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceHandleMetadata); ok {
+			oneof.Libp2PTraceHandleMetadata.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceHandleStatus); ok {
+			oneof.Libp2PTraceHandleStatus.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubBeaconBlock); ok {
+			oneof.Libp2PTraceGossipsubBeaconBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubBeaconAttestation); ok {
+			oneof.Libp2PTraceGossipsubBeaconAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubBlobSidecar); ok {
+			oneof.Libp2PTraceGossipsubBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1Validators); ok {
+			oneof.EthV1Validators.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_MevRelayBidTraceBuilderBlockSubmission); ok {
+			oneof.MevRelayBidTraceBuilderBlockSubmission.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_MevRelayPayloadDelivered); ok {
+			oneof.MevRelayPayloadDelivered.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV3ValidatorBlock); ok {
+			oneof.EthV3ValidatorBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_MevRelayValidatorRegistration); ok {
+			oneof.MevRelayValidatorRegistration.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsBlockGossip); ok {
+			oneof.EthV1EventsBlockGossip.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceDropRpc); ok {
+			oneof.Libp2PTraceDropRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceLeave); ok {
+			oneof.Libp2PTraceLeave.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGraft); ok {
+			oneof.Libp2PTraceGraft.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTracePrune); ok {
+			oneof.Libp2PTracePrune.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceDuplicateMessage); ok {
+			oneof.Libp2PTraceDuplicateMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceDeliverMessage); ok {
+			oneof.Libp2PTraceDeliverMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTracePublishMessage); ok {
+			oneof.Libp2PTracePublishMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRejectMessage); ok {
+			oneof.Libp2PTraceRejectMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaControlIhave); ok {
+			oneof.Libp2PTraceRpcMetaControlIhave.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaControlIwant); ok {
+			oneof.Libp2PTraceRpcMetaControlIwant.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaControlIdontwant); ok {
+			oneof.Libp2PTraceRpcMetaControlIdontwant.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaControlGraft); ok {
+			oneof.Libp2PTraceRpcMetaControlGraft.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaControlPrune); ok {
+			oneof.Libp2PTraceRpcMetaControlPrune.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaSubscription); ok {
+			oneof.Libp2PTraceRpcMetaSubscription.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcMetaMessage); ok {
+			oneof.Libp2PTraceRpcMetaMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_NodeRecordConsensus); ok {
+			oneof.NodeRecordConsensus.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubAggregateAndProof); ok {
+			oneof.Libp2PTraceGossipsubAggregateAndProof.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsDataColumnSidecar); ok {
+			oneof.EthV1EventsDataColumnSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubDataColumnSidecar); ok {
+			oneof.Libp2PTraceGossipsubDataColumnSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceSyntheticHeartbeat); ok {
+			oneof.Libp2PTraceSyntheticHeartbeat.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceRpcDataColumnCustodyProbe); ok {
+			oneof.Libp2PTraceRpcDataColumnCustodyProbe.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_ConsensusEngineApiNewPayload); ok {
+			oneof.ConsensusEngineApiNewPayload.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_ConsensusEngineApiGetBlobs); ok {
+			oneof.ConsensusEngineApiGetBlobs.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconBlob); ok {
+			oneof.EthV1BeaconBlob.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconSyncCommittee); ok {
+			oneof.EthV1BeaconSyncCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockSyncAggregate); ok {
+			oneof.EthV2BeaconBlockSyncAggregate.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceIdentify); ok {
+			oneof.Libp2PTraceIdentify.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *ClientMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta.Put(m)
+	}
+}
+func ClientMetaFromVTPool() *ClientMeta {
+	return vtprotoPool_ClientMeta.Get().(*ClientMeta)
+}
+
+var vtprotoPool_ServerMeta_Event = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_Event{}
+	},
+}
+
+func (m *ServerMeta_Event) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ServerMeta_Event) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_Event.Put(m)
+	}
+}
+func ServerMeta_EventFromVTPool() *ServerMeta_Event {
+	return vtprotoPool_ServerMeta_Event.Get().(*ServerMeta_Event)
+}
+
+var vtprotoPool_ServerMeta_Geo = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_Geo{}
+	},
+}
+
+func (m *ServerMeta_Geo) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ServerMeta_Geo) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_Geo.Put(m)
+	}
+}
+func ServerMeta_GeoFromVTPool() *ServerMeta_Geo {
+	return vtprotoPool_ServerMeta_Geo.Get().(*ServerMeta_Geo)
+}
+
+var vtprotoPool_ServerMeta_Client = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_Client{}
+	},
+}
+
+func (m *ServerMeta_Client) ResetVT() {
+	if m != nil {
+		m.Geo.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_Client) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_Client.Put(m)
+	}
+}
+func ServerMeta_ClientFromVTPool() *ServerMeta_Client {
+	return vtprotoPool_ServerMeta_Client.Get().(*ServerMeta_Client)
+}
+
+var vtprotoPool_ServerMeta_Peer = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_Peer{}
+	},
+}
+
+func (m *ServerMeta_Peer) ResetVT() {
+	if m != nil {
+		m.Geo.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_Peer) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_Peer.Put(m)
+	}
+}
+func ServerMeta_PeerFromVTPool() *ServerMeta_Peer {
+	return vtprotoPool_ServerMeta_Peer.Get().(*ServerMeta_Peer)
+}
+
+var vtprotoPool_ServerMeta_AdditionalBeaconP2PAttestationData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalBeaconP2PAttestationData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalBeaconP2PAttestationData) ResetVT() {
+	if m != nil {
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalBeaconP2PAttestationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalBeaconP2PAttestationData.Put(m)
+	}
+}
+func ServerMeta_AdditionalBeaconP2PAttestationDataFromVTPool() *ServerMeta_AdditionalBeaconP2PAttestationData {
+	return vtprotoPool_ServerMeta_AdditionalBeaconP2PAttestationData.Get().(*ServerMeta_AdditionalBeaconP2PAttestationData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalLibp2PTraceConnectedData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalLibp2PTraceConnectedData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalLibp2PTraceConnectedData) ResetVT() {
+	if m != nil {
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalLibp2PTraceConnectedData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalLibp2PTraceConnectedData.Put(m)
+	}
+}
+func ServerMeta_AdditionalLibp2PTraceConnectedDataFromVTPool() *ServerMeta_AdditionalLibp2PTraceConnectedData {
+	return vtprotoPool_ServerMeta_AdditionalLibp2PTraceConnectedData.Get().(*ServerMeta_AdditionalLibp2PTraceConnectedData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalLibp2PTraceDisconnectedData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalLibp2PTraceDisconnectedData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalLibp2PTraceDisconnectedData) ResetVT() {
+	if m != nil {
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalLibp2PTraceDisconnectedData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalLibp2PTraceDisconnectedData.Put(m)
+	}
+}
+func ServerMeta_AdditionalLibp2PTraceDisconnectedDataFromVTPool() *ServerMeta_AdditionalLibp2PTraceDisconnectedData {
+	return vtprotoPool_ServerMeta_AdditionalLibp2PTraceDisconnectedData.Get().(*ServerMeta_AdditionalLibp2PTraceDisconnectedData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ResetVT() {
+	if m != nil {
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData.Put(m)
+	}
+}
+func ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatDataFromVTPool() *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData {
+	return vtprotoPool_ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData.Get().(*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalLibp2PTraceIdentifyData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalLibp2PTraceIdentifyData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalLibp2PTraceIdentifyData) ResetVT() {
+	if m != nil {
+		m.Peer.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalLibp2PTraceIdentifyData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalLibp2PTraceIdentifyData.Put(m)
+	}
+}
+func ServerMeta_AdditionalLibp2PTraceIdentifyDataFromVTPool() *ServerMeta_AdditionalLibp2PTraceIdentifyData {
+	return vtprotoPool_ServerMeta_AdditionalLibp2PTraceIdentifyData.Get().(*ServerMeta_AdditionalLibp2PTraceIdentifyData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalNodeRecordConsensusData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalNodeRecordConsensusData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalNodeRecordConsensusData) ResetVT() {
+	if m != nil {
+		m.Geo.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalNodeRecordConsensusData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalNodeRecordConsensusData.Put(m)
+	}
+}
+func ServerMeta_AdditionalNodeRecordConsensusDataFromVTPool() *ServerMeta_AdditionalNodeRecordConsensusData {
+	return vtprotoPool_ServerMeta_AdditionalNodeRecordConsensusData.Get().(*ServerMeta_AdditionalNodeRecordConsensusData)
+}
+
+var vtprotoPool_ServerMeta_AdditionalNodeRecordExecutionData = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta_AdditionalNodeRecordExecutionData{}
+	},
+}
+
+func (m *ServerMeta_AdditionalNodeRecordExecutionData) ResetVT() {
+	if m != nil {
+		m.Geo.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ServerMeta_AdditionalNodeRecordExecutionData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta_AdditionalNodeRecordExecutionData.Put(m)
+	}
+}
+func ServerMeta_AdditionalNodeRecordExecutionDataFromVTPool() *ServerMeta_AdditionalNodeRecordExecutionData {
+	return vtprotoPool_ServerMeta_AdditionalNodeRecordExecutionData.Get().(*ServerMeta_AdditionalNodeRecordExecutionData)
+}
+
+var vtprotoPool_ServerMeta = sync.Pool{
+	New: func() interface{} {
+		return &ServerMeta{}
+	},
+}
+
+func (m *ServerMeta) ResetVT() {
+	if m != nil {
+		m.Event.ReturnToVTPool()
+		m.Client.ReturnToVTPool()
+		if oneof, ok := m.AdditionalData.(*ServerMeta_BEACON_P2P_ATTESTATION); ok {
+			oneof.BEACON_P2P_ATTESTATION.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_LIBP2P_TRACE_CONNECTED); ok {
+			oneof.LIBP2P_TRACE_CONNECTED.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_LIBP2P_TRACE_DISCONNECTED); ok {
+			oneof.LIBP2P_TRACE_DISCONNECTED.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_NODE_RECORD_CONSENSUS); ok {
+			oneof.NODE_RECORD_CONSENSUS.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_NODE_RECORD_EXECUTION); ok {
+			oneof.NODE_RECORD_EXECUTION.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT); ok {
+			oneof.LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ServerMeta_LIBP2P_TRACE_IDENTIFY); ok {
+			oneof.LIBP2P_TRACE_IDENTIFY.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *ServerMeta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ServerMeta.Put(m)
+	}
+}
+func ServerMetaFromVTPool() *ServerMeta {
+	return vtprotoPool_ServerMeta.Get().(*ServerMeta)
+}
+
+var vtprotoPool_Meta = sync.Pool{
+	New: func() interface{} {
+		return &Meta{}
+	},
+}
+
+func (m *Meta) ResetVT() {
+	if m != nil {
+		m.Client.ReturnToVTPool()
+		m.Server.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *Meta) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Meta.Put(m)
+	}
+}
+func MetaFromVTPool() *Meta {
+	return vtprotoPool_Meta.Get().(*Meta)
+}
+
+var vtprotoPool_Event = sync.Pool{
+	New: func() interface{} {
+		return &Event{}
+	},
+}
+
+func (m *Event) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *Event) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_Event.Put(m)
+	}
+}
+func EventFromVTPool() *Event {
+	return vtprotoPool_Event.Get().(*Event)
+}
+
+var vtprotoPool_ExecutionBlockMetrics_StateReads = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionBlockMetrics_StateReads{}
+	},
+}
+
+func (m *ExecutionBlockMetrics_StateReads) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionBlockMetrics_StateReads) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionBlockMetrics_StateReads.Put(m)
+	}
+}
+func ExecutionBlockMetrics_StateReadsFromVTPool() *ExecutionBlockMetrics_StateReads {
+	return vtprotoPool_ExecutionBlockMetrics_StateReads.Get().(*ExecutionBlockMetrics_StateReads)
+}
+
+var vtprotoPool_ExecutionBlockMetrics_StateWrites = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionBlockMetrics_StateWrites{}
+	},
+}
+
+func (m *ExecutionBlockMetrics_StateWrites) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionBlockMetrics_StateWrites) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionBlockMetrics_StateWrites.Put(m)
+	}
+}
+func ExecutionBlockMetrics_StateWritesFromVTPool() *ExecutionBlockMetrics_StateWrites {
+	return vtprotoPool_ExecutionBlockMetrics_StateWrites.Get().(*ExecutionBlockMetrics_StateWrites)
+}
+
+var vtprotoPool_ExecutionBlockMetrics_CacheEntry = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionBlockMetrics_CacheEntry{}
+	},
+}
+
+func (m *ExecutionBlockMetrics_CacheEntry) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionBlockMetrics_CacheEntry) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionBlockMetrics_CacheEntry.Put(m)
+	}
+}
+func ExecutionBlockMetrics_CacheEntryFromVTPool() *ExecutionBlockMetrics_CacheEntry {
+	return vtprotoPool_ExecutionBlockMetrics_CacheEntry.Get().(*ExecutionBlockMetrics_CacheEntry)
+}
+
+var vtprotoPool_ExecutionBlockMetrics_CodeCacheEntry = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionBlockMetrics_CodeCacheEntry{}
+	},
+}
+
+func (m *ExecutionBlockMetrics_CodeCacheEntry) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionBlockMetrics_CodeCacheEntry) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionBlockMetrics_CodeCacheEntry.Put(m)
+	}
+}
+func ExecutionBlockMetrics_CodeCacheEntryFromVTPool() *ExecutionBlockMetrics_CodeCacheEntry {
+	return vtprotoPool_ExecutionBlockMetrics_CodeCacheEntry.Get().(*ExecutionBlockMetrics_CodeCacheEntry)
+}
+
+var vtprotoPool_ExecutionBlockMetrics = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionBlockMetrics{}
+	},
+}
+
+func (m *ExecutionBlockMetrics) ResetVT() {
+	if m != nil {
+		m.StateReads.ReturnToVTPool()
+		m.StateWrites.ReturnToVTPool()
+		m.AccountCache.ReturnToVTPool()
+		m.StorageCache.ReturnToVTPool()
+		m.CodeCache.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ExecutionBlockMetrics) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionBlockMetrics.Put(m)
+	}
+}
+func ExecutionBlockMetricsFromVTPool() *ExecutionBlockMetrics {
+	return vtprotoPool_ExecutionBlockMetrics.Get().(*ExecutionBlockMetrics)
+}
+
+var vtprotoPool_DecoratedEvent = sync.Pool{
+	New: func() interface{} {
+		return &DecoratedEvent{}
+	},
+}
+
+func (m *DecoratedEvent) ResetVT() {
+	if m != nil {
+		m.Event.ReturnToVTPool()
+		m.Meta.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsAttestation); ok {
+			oneof.EthV1EventsAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsBlock); ok {
+			oneof.EthV1EventsBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsChainReorg); ok {
+			oneof.EthV1EventsChainReorg.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsFinalizedCheckpoint); ok {
+			oneof.EthV1EventsFinalizedCheckpoint.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsHead); ok {
+			oneof.EthV1EventsHead.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsVoluntaryExit); ok {
+			oneof.EthV1EventsVoluntaryExit.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsContributionAndProof); ok {
+			oneof.EthV1EventsContributionAndProof.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlock); ok {
+			oneof.EthV2BeaconBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ForkChoice); ok {
+			oneof.EthV1ForkChoice.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ForkChoiceReorg); ok {
+			oneof.EthV1ForkChoiceReorg.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconCommittee); ok {
+			oneof.EthV1BeaconCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ValidatorAttestationData); ok {
+			oneof.EthV1ValidatorAttestationData.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsAttestationV2); ok {
+			oneof.EthV1EventsAttestationV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsBlockV2); ok {
+			oneof.EthV1EventsBlockV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsChainReorgV2); ok {
+			oneof.EthV1EventsChainReorgV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsFinalizedCheckpointV2); ok {
+			oneof.EthV1EventsFinalizedCheckpointV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsHeadV2); ok {
+			oneof.EthV1EventsHeadV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsVoluntaryExitV2); ok {
+			oneof.EthV1EventsVoluntaryExitV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsContributionAndProofV2); ok {
+			oneof.EthV1EventsContributionAndProofV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockV2); ok {
+			oneof.EthV2BeaconBlockV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ForkChoiceV2); ok {
+			oneof.EthV1ForkChoiceV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ForkChoiceReorgV2); ok {
+			oneof.EthV1ForkChoiceReorgV2.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAttesterSlashing); ok {
+			oneof.EthV2BeaconBlockAttesterSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockProposerSlashing); ok {
+			oneof.EthV2BeaconBlockProposerSlashing.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockVoluntaryExit); ok {
+			oneof.EthV2BeaconBlockVoluntaryExit.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockDeposit); ok {
+			oneof.EthV2BeaconBlockDeposit.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockBlsToExecutionChange); ok {
+			oneof.EthV2BeaconBlockBlsToExecutionChange.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockExecutionTransaction); ok {
+			oneof.EthV2BeaconBlockExecutionTransaction.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockWithdrawal); ok {
+			oneof.EthV2BeaconBlockWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsBlobSidecar); ok {
+			oneof.EthV1EventsBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconBlockBlobSidecar); ok {
+			oneof.EthV1BeaconBlockBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_BeaconP2PAttestation); ok {
+			oneof.BeaconP2PAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1ProposerDuty); ok {
+			oneof.EthV1ProposerDuty.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockElaboratedAttestation); ok {
+			oneof.EthV2BeaconBlockElaboratedAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceAddPeer); ok {
+			oneof.Libp2PTraceAddPeer.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRemovePeer); ok {
+			oneof.Libp2PTraceRemovePeer.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRecvRpc); ok {
+			oneof.Libp2PTraceRecvRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceSendRpc); ok {
+			oneof.Libp2PTraceSendRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceJoin); ok {
+			oneof.Libp2PTraceJoin.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceConnected); ok {
+			oneof.Libp2PTraceConnected.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDisconnected); ok {
+			oneof.Libp2PTraceDisconnected.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceHandleMetadata); ok {
+			oneof.Libp2PTraceHandleMetadata.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceHandleStatus); ok {
+			oneof.Libp2PTraceHandleStatus.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubBeaconBlock); ok {
+			oneof.Libp2PTraceGossipsubBeaconBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubBeaconAttestation); ok {
+			oneof.Libp2PTraceGossipsubBeaconAttestation.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubBlobSidecar); ok {
+			oneof.Libp2PTraceGossipsubBlobSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1Validators); ok {
+			oneof.EthV1Validators.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_MevRelayBidTraceBuilderBlockSubmission); ok {
+			oneof.MevRelayBidTraceBuilderBlockSubmission.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_MevRelayPayloadDelivered); ok {
+			oneof.MevRelayPayloadDelivered.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV3ValidatorBlock); ok {
+			oneof.EthV3ValidatorBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_MevRelayValidatorRegistration); ok {
+			oneof.MevRelayValidatorRegistration.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsBlockGossip); ok {
+			oneof.EthV1EventsBlockGossip.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDropRpc); ok {
+			oneof.Libp2PTraceDropRpc.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceLeave); ok {
+			oneof.Libp2PTraceLeave.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGraft); ok {
+			oneof.Libp2PTraceGraft.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTracePrune); ok {
+			oneof.Libp2PTracePrune.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDuplicateMessage); ok {
+			oneof.Libp2PTraceDuplicateMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDeliverMessage); ok {
+			oneof.Libp2PTraceDeliverMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTracePublishMessage); ok {
+			oneof.Libp2PTracePublishMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRejectMessage); ok {
+			oneof.Libp2PTraceRejectMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIhave); ok {
+			oneof.Libp2PTraceRpcMetaControlIhave.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIwant); ok {
+			oneof.Libp2PTraceRpcMetaControlIwant.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant); ok {
+			oneof.Libp2PTraceRpcMetaControlIdontwant.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlGraft); ok {
+			oneof.Libp2PTraceRpcMetaControlGraft.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlPrune); ok {
+			oneof.Libp2PTraceRpcMetaControlPrune.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaSubscription); ok {
+			oneof.Libp2PTraceRpcMetaSubscription.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaMessage); ok {
+			oneof.Libp2PTraceRpcMetaMessage.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_NodeRecordConsensus); ok {
+			oneof.NodeRecordConsensus.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_NodeRecordExecution); ok {
+			oneof.NodeRecordExecution.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubAggregateAndProof); ok {
+			oneof.Libp2PTraceGossipsubAggregateAndProof.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsDataColumnSidecar); ok {
+			oneof.EthV1EventsDataColumnSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar); ok {
+			oneof.Libp2PTraceGossipsubDataColumnSidecar.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceSyntheticHeartbeat); ok {
+			oneof.Libp2PTraceSyntheticHeartbeat.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceIdentify); ok {
+			oneof.Libp2PTraceIdentify.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe); ok {
+			oneof.Libp2PTraceRpcDataColumnCustodyProbe.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionStateSize); ok {
+			oneof.ExecutionStateSize.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ConsensusEngineApiNewPayload); ok {
+			oneof.ConsensusEngineApiNewPayload.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ConsensusEngineApiGetBlobs); ok {
+			oneof.ConsensusEngineApiGetBlobs.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionEngineNewPayload); ok {
+			oneof.ExecutionEngineNewPayload.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionEngineGetBlobs); ok {
+			oneof.ExecutionEngineGetBlobs.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconBlob); ok {
+			oneof.EthV1BeaconBlob.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconSyncCommittee); ok {
+			oneof.EthV1BeaconSyncCommittee.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockSyncAggregate); ok {
+			oneof.EthV2BeaconBlockSyncAggregate.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionBlockMetrics); ok {
+			oneof.ExecutionBlockMetrics.ReturnToVTPool()
+		}
+		m.Reset()
+	}
+}
+func (m *DecoratedEvent) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_DecoratedEvent.Put(m)
+	}
+}
+func DecoratedEventFromVTPool() *DecoratedEvent {
+	return vtprotoPool_DecoratedEvent.Get().(*DecoratedEvent)
+}
 func (m *CreateEventsRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -18068,7 +21765,14 @@ func (m *CreateEventsRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Events = append(m.Events, &DecoratedEvent{})
+			if len(m.Events) == cap(m.Events) {
+				m.Events = append(m.Events, &DecoratedEvent{})
+			} else {
+				m.Events = m.Events[:len(m.Events)+1]
+				if m.Events[len(m.Events)-1] == nil {
+					m.Events[len(m.Events)-1] = &DecoratedEvent{}
+				}
+			}
 			if err := m.Events[len(m.Events)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -19183,7 +22887,7 @@ func (m *DebugForkChoiceReorg) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Before == nil {
-				m.Before = &v1.ForkChoice{}
+				m.Before = v1.ForkChoiceFromVTPool()
 			}
 			if err := m.Before.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19219,7 +22923,7 @@ func (m *DebugForkChoiceReorg) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.After == nil {
-				m.After = &v1.ForkChoice{}
+				m.After = v1.ForkChoiceFromVTPool()
 			}
 			if err := m.After.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19255,7 +22959,7 @@ func (m *DebugForkChoiceReorg) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Event == nil {
-				m.Event = &v1.EventChainReorg{}
+				m.Event = v1.EventChainReorgFromVTPool()
 			}
 			if err := m.Event.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19342,7 +23046,7 @@ func (m *DebugForkChoiceReorgV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Before == nil {
-				m.Before = &v1.ForkChoiceV2{}
+				m.Before = v1.ForkChoiceV2FromVTPool()
 			}
 			if err := m.Before.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19378,7 +23082,7 @@ func (m *DebugForkChoiceReorgV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.After == nil {
-				m.After = &v1.ForkChoiceV2{}
+				m.After = v1.ForkChoiceV2FromVTPool()
 			}
 			if err := m.After.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19414,7 +23118,7 @@ func (m *DebugForkChoiceReorgV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Event == nil {
-				m.Event = &v1.EventChainReorgV2{}
+				m.Event = v1.EventChainReorgV2FromVTPool()
 			}
 			if err := m.Event.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19500,7 +23204,14 @@ func (m *Validators) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Validators = append(m.Validators, &v1.Validator{})
+			if len(m.Validators) == cap(m.Validators) {
+				m.Validators = append(m.Validators, &v1.Validator{})
+			} else {
+				m.Validators = m.Validators[:len(m.Validators)+1]
+				if m.Validators[len(m.Validators)-1] == nil {
+					m.Validators[len(m.Validators)-1] = &v1.Validator{}
+				}
+			}
 			if err := m.Validators[len(m.Validators)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -19586,7 +23297,7 @@ func (m *SyncCommitteeData) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.SyncCommittee == nil {
-				m.SyncCommittee = &v1.SyncCommittee{}
+				m.SyncCommittee = v1.SyncCommitteeFromVTPool()
 			}
 			if err := m.SyncCommittee.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19736,7 +23447,14 @@ func (m *SyncAggregateData) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ValidatorsParticipated = append(m.ValidatorsParticipated, &wrapperspb1.UInt64Value{})
+			if len(m.ValidatorsParticipated) == cap(m.ValidatorsParticipated) {
+				m.ValidatorsParticipated = append(m.ValidatorsParticipated, &wrapperspb1.UInt64Value{})
+			} else {
+				m.ValidatorsParticipated = m.ValidatorsParticipated[:len(m.ValidatorsParticipated)+1]
+				if m.ValidatorsParticipated[len(m.ValidatorsParticipated)-1] == nil {
+					m.ValidatorsParticipated[len(m.ValidatorsParticipated)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.ValidatorsParticipated[len(m.ValidatorsParticipated)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -19770,7 +23488,14 @@ func (m *SyncAggregateData) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ValidatorsMissed = append(m.ValidatorsMissed, &wrapperspb1.UInt64Value{})
+			if len(m.ValidatorsMissed) == cap(m.ValidatorsMissed) {
+				m.ValidatorsMissed = append(m.ValidatorsMissed, &wrapperspb1.UInt64Value{})
+			} else {
+				m.ValidatorsMissed = m.ValidatorsMissed[:len(m.ValidatorsMissed)+1]
+				if m.ValidatorsMissed[len(m.ValidatorsMissed)-1] == nil {
+					m.ValidatorsMissed[len(m.ValidatorsMissed)-1] = &wrapperspb1.UInt64Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt64Value)(m.ValidatorsMissed[len(m.ValidatorsMissed)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -19892,7 +23617,7 @@ func (m *BlockIdentifier) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -19928,7 +23653,7 @@ func (m *BlockIdentifier) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -22372,7 +26097,14 @@ func (m *ExecutionEngineGetBlobs) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ReturnedBlobIndexes = append(m.ReturnedBlobIndexes, &wrapperspb1.UInt32Value{})
+			if len(m.ReturnedBlobIndexes) == cap(m.ReturnedBlobIndexes) {
+				m.ReturnedBlobIndexes = append(m.ReturnedBlobIndexes, &wrapperspb1.UInt32Value{})
+			} else {
+				m.ReturnedBlobIndexes = m.ReturnedBlobIndexes[:len(m.ReturnedBlobIndexes)+1]
+				if m.ReturnedBlobIndexes[len(m.ReturnedBlobIndexes)-1] == nil {
+					m.ReturnedBlobIndexes[len(m.ReturnedBlobIndexes)-1] = &wrapperspb1.UInt32Value{}
+				}
+			}
 			if err := (*wrapperspb.UInt32Value)(m.ReturnedBlobIndexes[len(m.ReturnedBlobIndexes)-1]).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -22560,7 +26292,7 @@ func (m *ClientMeta_Ethereum_Execution) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ForkId == nil {
-				m.ForkId = &ForkID{}
+				m.ForkId = ForkIDFromVTPool()
 			}
 			if err := m.ForkId.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -22922,7 +26654,7 @@ func (m *ClientMeta_Ethereum) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Network == nil {
-				m.Network = &ClientMeta_Ethereum_Network{}
+				m.Network = ClientMeta_Ethereum_NetworkFromVTPool()
 			}
 			if err := m.Network.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -22958,7 +26690,7 @@ func (m *ClientMeta_Ethereum) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Execution == nil {
-				m.Execution = &ClientMeta_Ethereum_Execution{}
+				m.Execution = ClientMeta_Ethereum_ExecutionFromVTPool()
 			}
 			if err := m.Execution.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -22994,7 +26726,7 @@ func (m *ClientMeta_Ethereum) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Consensus == nil {
-				m.Consensus = &ClientMeta_Ethereum_Consensus{}
+				m.Consensus = ClientMeta_Ethereum_ConsensusFromVTPool()
 			}
 			if err := m.Consensus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23081,7 +26813,7 @@ func (m *ClientMeta_AdditionalEthV1AttestationSourceData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23168,7 +26900,7 @@ func (m *ClientMeta_AdditionalEthV1AttestationSourceV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23255,7 +26987,7 @@ func (m *ClientMeta_AdditionalEthV1AttestationTargetData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23342,7 +27074,7 @@ func (m *ClientMeta_AdditionalEthV1AttestationTargetV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23429,7 +27161,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalEthV1AttestationSourceData{}
+				m.Source = ClientMeta_AdditionalEthV1AttestationSourceDataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23465,7 +27197,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalEthV1AttestationTargetData{}
+				m.Target = ClientMeta_AdditionalEthV1AttestationTargetDataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23501,7 +27233,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23537,7 +27269,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23573,7 +27305,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &Propagation{}
+				m.Propagation = PropagationFromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23609,7 +27341,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.AttestingValidator == nil {
-				m.AttestingValidator = &AttestingValidator{}
+				m.AttestingValidator = AttestingValidatorFromVTPool()
 			}
 			if err := m.AttestingValidator.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23696,7 +27428,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalEthV1AttestationSourceV2Data{}
+				m.Source = ClientMeta_AdditionalEthV1AttestationSourceV2DataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23732,7 +27464,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalEthV1AttestationTargetV2Data{}
+				m.Target = ClientMeta_AdditionalEthV1AttestationTargetV2DataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23768,7 +27500,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23804,7 +27536,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23840,7 +27572,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23876,7 +27608,7 @@ func (m *ClientMeta_AdditionalEthV1EventsAttestationV2Data) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.AttestingValidator == nil {
-				m.AttestingValidator = &AttestingValidatorV2{}
+				m.AttestingValidator = AttestingValidatorV2FromVTPool()
 			}
 			if err := m.AttestingValidator.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23963,7 +27695,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -23999,7 +27731,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24035,7 +27767,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &Propagation{}
+				m.Propagation = PropagationFromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24122,7 +27854,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadV2Data) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24158,7 +27890,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadV2Data) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24194,7 +27926,7 @@ func (m *ClientMeta_AdditionalEthV1EventsHeadV2Data) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24281,7 +28013,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24317,7 +28049,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24353,7 +28085,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &Propagation{}
+				m.Propagation = PropagationFromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24440,7 +28172,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockV2Data) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24476,7 +28208,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockV2Data) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24512,7 +28244,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockV2Data) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24599,7 +28331,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24635,7 +28367,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24671,7 +28403,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24758,7 +28490,7 @@ func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24845,7 +28577,7 @@ func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24881,7 +28613,7 @@ func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -24917,7 +28649,7 @@ func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25004,7 +28736,7 @@ func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25091,7 +28823,7 @@ func (m *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) UnmarshalVT(
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25178,7 +28910,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgData) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25214,7 +28946,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgData) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25250,7 +28982,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgData) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &Propagation{}
+				m.Propagation = PropagationFromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25337,7 +29069,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25373,7 +29105,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25409,7 +29141,7 @@ func (m *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25496,7 +29228,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) U
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25532,7 +29264,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) U
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25568,7 +29300,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) U
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &Propagation{}
+				m.Propagation = PropagationFromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25655,7 +29387,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25691,7 +29423,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25727,7 +29459,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25814,7 +29546,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Contribution == nil {
-				m.Contribution = &ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{}
+				m.Contribution = ClientMeta_AdditionalEthV1EventsContributionAndProofContributionDataFromVTPool()
 			}
 			if err := m.Contribution.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25901,7 +29633,7 @@ func (m *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) UnmarshalVT
 				return io.ErrUnexpectedEOF
 			}
 			if m.Contribution == nil {
-				m.Contribution = &ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data{}
+				m.Contribution = ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2DataFromVTPool()
 			}
 			if err := m.Contribution.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -25988,7 +29720,7 @@ func (m *ClientMeta_ForkChoiceSnapshot) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.RequestEpoch == nil {
-				m.RequestEpoch = &Epoch{}
+				m.RequestEpoch = EpochFromVTPool()
 			}
 			if err := m.RequestEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26024,7 +29756,7 @@ func (m *ClientMeta_ForkChoiceSnapshot) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.RequestSlot == nil {
-				m.RequestSlot = &Slot{}
+				m.RequestSlot = SlotFromVTPool()
 			}
 			if err := m.RequestSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26185,7 +29917,7 @@ func (m *ClientMeta_ForkChoiceSnapshotV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.RequestEpoch == nil {
-				m.RequestEpoch = &EpochV2{}
+				m.RequestEpoch = EpochV2FromVTPool()
 			}
 			if err := m.RequestEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26221,7 +29953,7 @@ func (m *ClientMeta_ForkChoiceSnapshotV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.RequestSlot == nil {
-				m.RequestSlot = &SlotV2{}
+				m.RequestSlot = SlotV2FromVTPool()
 			}
 			if err := m.RequestSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26416,7 +30148,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Snapshot == nil {
-				m.Snapshot = &ClientMeta_ForkChoiceSnapshot{}
+				m.Snapshot = ClientMeta_ForkChoiceSnapshotFromVTPool()
 			}
 			if err := m.Snapshot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26503,7 +30235,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Snapshot == nil {
-				m.Snapshot = &ClientMeta_ForkChoiceSnapshotV2{}
+				m.Snapshot = ClientMeta_ForkChoiceSnapshotV2FromVTPool()
 			}
 			if err := m.Snapshot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26590,7 +30322,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.Before == nil {
-				m.Before = &ClientMeta_ForkChoiceSnapshot{}
+				m.Before = ClientMeta_ForkChoiceSnapshotFromVTPool()
 			}
 			if err := m.Before.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26626,7 +30358,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.After == nil {
-				m.After = &ClientMeta_ForkChoiceSnapshot{}
+				m.After = ClientMeta_ForkChoiceSnapshotFromVTPool()
 			}
 			if err := m.After.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26713,7 +30445,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) UnmarshalVT(dAtA 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Before == nil {
-				m.Before = &ClientMeta_ForkChoiceSnapshotV2{}
+				m.Before = ClientMeta_ForkChoiceSnapshotV2FromVTPool()
 			}
 			if err := m.Before.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26749,7 +30481,7 @@ func (m *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) UnmarshalVT(dAtA 
 				return io.ErrUnexpectedEOF
 			}
 			if m.After == nil {
-				m.After = &ClientMeta_ForkChoiceSnapshotV2{}
+				m.After = ClientMeta_ForkChoiceSnapshotV2FromVTPool()
 			}
 			if err := m.After.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26836,7 +30568,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconCommitteeData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26872,7 +30604,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconCommitteeData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -26991,7 +30723,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -27114,7 +30846,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28161,7 +31893,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &Epoch{}
+				m.Epoch = EpochFromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28197,7 +31929,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &Slot{}
+				m.Slot = SlotFromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28386,7 +32118,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28422,7 +32154,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28773,7 +32505,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) UnmarshalVT(
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28860,7 +32592,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) UnmarshalVT(
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -28947,7 +32679,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29034,7 +32766,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockDepositData) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29121,7 +32853,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29208,7 +32940,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29459,7 +33191,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29705,7 +33437,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalEthV1AttestationSourceV2Data{}
+				m.Source = ClientMeta_AdditionalEthV1AttestationSourceV2DataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29741,7 +33473,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalEthV1AttestationTargetV2Data{}
+				m.Target = ClientMeta_AdditionalEthV1AttestationTargetV2DataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29777,7 +33509,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29813,7 +33545,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29849,7 +33581,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Snapshot == nil {
-				m.Snapshot = &ClientMeta_AttestationDataSnapshot{}
+				m.Snapshot = ClientMeta_AttestationDataSnapshotFromVTPool()
 			}
 			if err := m.Snapshot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29936,7 +33668,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlobSidecarData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -29972,7 +33704,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlobSidecarData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30008,7 +33740,7 @@ func (m *ClientMeta_AdditionalEthV1EventsBlobSidecarData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30095,7 +33827,7 @@ func (m *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) UnmarshalVT(dAtA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30131,7 +33863,7 @@ func (m *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) UnmarshalVT(dAtA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30167,7 +33899,7 @@ func (m *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) UnmarshalVT(dAtA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30254,7 +33986,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30290,7 +34022,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) UnmarshalVT(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30481,7 +34213,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalEthV1AttestationSourceV2Data{}
+				m.Source = ClientMeta_AdditionalEthV1AttestationSourceV2DataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30517,7 +34249,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalEthV1AttestationTargetV2Data{}
+				m.Target = ClientMeta_AdditionalEthV1AttestationTargetV2DataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30553,7 +34285,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30589,7 +34321,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30625,7 +34357,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30661,7 +34393,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.AttestingValidator == nil {
-				m.AttestingValidator = &AttestingValidatorV2{}
+				m.AttestingValidator = AttestingValidatorV2FromVTPool()
 			}
 			if err := m.AttestingValidator.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30697,7 +34429,7 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &libp2p.Peer{}
+				m.Peer = libp2p.PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30856,7 +34588,7 @@ func (m *ClientMeta_AdditionalEthV1ProposerDutyData) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -30892,7 +34624,7 @@ func (m *ClientMeta_AdditionalEthV1ProposerDutyData) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31011,7 +34743,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Block == nil {
-				m.Block = &BlockIdentifier{}
+				m.Block = BlockIdentifierFromVTPool()
 			}
 			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31083,7 +34815,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31119,7 +34851,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31155,7 +34887,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalEthV1AttestationSourceV2Data{}
+				m.Source = ClientMeta_AdditionalEthV1AttestationSourceV2DataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31191,7 +34923,7 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalEthV1AttestationTargetV2Data{}
+				m.Target = ClientMeta_AdditionalEthV1AttestationTargetV2DataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31278,7 +35010,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31365,7 +35097,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) UnmarshalVT(dAtA []byte
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31452,7 +35184,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31539,7 +35271,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31626,7 +35358,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) UnmarshalVT(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31713,7 +35445,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31800,7 +35532,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31887,7 +35619,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) UnmarshalV
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -31974,7 +35706,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32061,7 +35793,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32148,7 +35880,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceJoinData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32235,7 +35967,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32322,7 +36054,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGraftData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32409,7 +36141,7 @@ func (m *ClientMeta_AdditionalLibP2PTracePruneData) UnmarshalVT(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32496,7 +36228,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) UnmarshalVT(dAtA 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32583,7 +36315,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32670,7 +36402,7 @@ func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32757,7 +36489,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32844,7 +36576,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -32931,7 +36663,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33018,7 +36750,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33105,7 +36837,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33192,7 +36924,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33279,7 +37011,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33366,7 +37098,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33402,7 +37134,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33438,7 +37170,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33474,7 +37206,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33510,7 +37242,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33597,7 +37329,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) UnmarshalVT(dA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33684,7 +37416,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33771,7 +37503,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33807,7 +37539,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33843,7 +37575,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33879,7 +37611,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33915,7 +37647,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -33951,7 +37683,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34146,7 +37878,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) U
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34233,7 +37965,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) U
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34320,7 +38052,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Source == nil {
-				m.Source = &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData{}
+				m.Source = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceDataFromVTPool()
 			}
 			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34356,7 +38088,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Target == nil {
-				m.Target = &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData{}
+				m.Target = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetDataFromVTPool()
 			}
 			if err := m.Target.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34392,7 +38124,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34428,7 +38160,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34464,7 +38196,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34500,7 +38232,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.AttestingValidator == nil {
-				m.AttestingValidator = &AttestingValidatorV2{}
+				m.AttestingValidator = AttestingValidatorV2FromVTPool()
 			}
 			if err := m.AttestingValidator.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34536,7 +38268,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34572,7 +38304,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34608,7 +38340,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34803,7 +38535,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34839,7 +38571,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34875,7 +38607,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34911,7 +38643,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -34947,7 +38679,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35019,7 +38751,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35214,7 +38946,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35250,7 +38982,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35286,7 +39018,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35322,7 +39054,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35358,7 +39090,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35394,7 +39126,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35589,7 +39321,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35625,7 +39357,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35661,7 +39393,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35697,7 +39429,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35733,7 +39465,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Propagation == nil {
-				m.Propagation = &PropagationV2{}
+				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35769,7 +39501,7 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 				return io.ErrUnexpectedEOF
 			}
 			if m.Metadata == nil {
-				m.Metadata = &libp2p.TraceEventMetadata{}
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
 			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -35964,7 +39696,7 @@ func (m *ClientMeta_AdditionalEthV1ValidatorsData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36051,7 +39783,7 @@ func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Unmars
 				return io.ErrUnexpectedEOF
 			}
 			if m.Relay == nil {
-				m.Relay = &mevrelay.Relay{}
+				m.Relay = mevrelay.RelayFromVTPool()
 			}
 			if err := m.Relay.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36087,7 +39819,7 @@ func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Unmars
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36123,7 +39855,7 @@ func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Unmars
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36159,7 +39891,7 @@ func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Unmars
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36195,7 +39927,7 @@ func (m *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Unmars
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36354,7 +40086,7 @@ func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Relay == nil {
-				m.Relay = &mevrelay.Relay{}
+				m.Relay = mevrelay.RelayFromVTPool()
 			}
 			if err := m.Relay.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36390,7 +40122,7 @@ func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36426,7 +40158,7 @@ func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36462,7 +40194,7 @@ func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36498,7 +40230,7 @@ func (m *ClientMeta_AdditionalMevRelayPayloadDeliveredData) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36657,7 +40389,7 @@ func (m *ClientMeta_AdditionalEthV3ValidatorBlockData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -36693,7 +40425,7 @@ func (m *ClientMeta_AdditionalEthV3ValidatorBlockData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37128,7 +40860,7 @@ func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Relay == nil {
-				m.Relay = &mevrelay.Relay{}
+				m.Relay = mevrelay.RelayFromVTPool()
 			}
 			if err := m.Relay.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37164,7 +40896,7 @@ func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37200,7 +40932,7 @@ func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockSlot == nil {
-				m.WallclockSlot = &SlotV2{}
+				m.WallclockSlot = SlotV2FromVTPool()
 			}
 			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37236,7 +40968,7 @@ func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37272,7 +41004,7 @@ func (m *ClientMeta_AdditionalMevRelayValidatorRegistrationData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.WallclockEpoch == nil {
-				m.WallclockEpoch = &EpochV2{}
+				m.WallclockEpoch = EpochV2FromVTPool()
 			}
 			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37395,7 +41127,7 @@ func (m *ClientMeta_AdditionalNodeRecordConsensusData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.FinalizedEpoch == nil {
-				m.FinalizedEpoch = &EpochV2{}
+				m.FinalizedEpoch = EpochV2FromVTPool()
 			}
 			if err := m.FinalizedEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37431,7 +41163,7 @@ func (m *ClientMeta_AdditionalNodeRecordConsensusData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.HeadSlot == nil {
-				m.HeadSlot = &SlotV2{}
+				m.HeadSlot = SlotV2FromVTPool()
 			}
 			if err := m.HeadSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37467,7 +41199,7 @@ func (m *ClientMeta_AdditionalNodeRecordConsensusData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.HeadEpoch == nil {
-				m.HeadEpoch = &EpochV2{}
+				m.HeadEpoch = EpochV2FromVTPool()
 			}
 			if err := m.HeadEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37554,7 +41286,7 @@ func (m *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) UnmarshalVT(dAtA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37590,7 +41322,7 @@ func (m *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) UnmarshalVT(dAtA
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37677,7 +41409,7 @@ func (m *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37713,7 +41445,7 @@ func (m *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) UnmarshalVT(dAtA [
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37800,7 +41532,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconBlobData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Epoch == nil {
-				m.Epoch = &EpochV2{}
+				m.Epoch = EpochV2FromVTPool()
 			}
 			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -37836,7 +41568,7 @@ func (m *ClientMeta_AdditionalEthV1BeaconBlobData) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			if m.Slot == nil {
-				m.Slot = &SlotV2{}
+				m.Slot = SlotV2FromVTPool()
 			}
 			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -38102,7 +41834,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Ethereum == nil {
-				m.Ethereum = &ClientMeta_Ethereum{}
+				m.Ethereum = ClientMeta_EthereumFromVTPool()
 			}
 			if err := m.Ethereum.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -38269,7 +42001,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsAttestationData{}
+				v := ClientMeta_AdditionalEthV1EventsAttestationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38310,7 +42042,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsHeadData{}
+				v := ClientMeta_AdditionalEthV1EventsHeadDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38351,7 +42083,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsBlockData{}
+				v := ClientMeta_AdditionalEthV1EventsBlockDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38392,7 +42124,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsVoluntaryExitData{}
+				v := ClientMeta_AdditionalEthV1EventsVoluntaryExitDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38433,7 +42165,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{}
+				v := ClientMeta_AdditionalEthV1EventsFinalizedCheckpointDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38474,7 +42206,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsChainReorgData{}
+				v := ClientMeta_AdditionalEthV1EventsChainReorgDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38515,7 +42247,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsContributionAndProofData{}
+				v := ClientMeta_AdditionalEthV1EventsContributionAndProofDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38556,7 +42288,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalMempoolTransactionData{}
+				v := ClientMeta_AdditionalMempoolTransactionDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38597,7 +42329,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38638,7 +42370,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1DebugForkChoiceData{}
+				v := ClientMeta_AdditionalEthV1DebugForkChoiceDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38679,7 +42411,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{}
+				v := ClientMeta_AdditionalEthV1DebugForkChoiceReOrgDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38720,7 +42452,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1BeaconCommitteeData{}
+				v := ClientMeta_AdditionalEthV1BeaconCommitteeDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38761,7 +42493,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1ValidatorAttestationDataData{}
+				v := ClientMeta_AdditionalEthV1ValidatorAttestationDataDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38802,7 +42534,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsAttestationV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsAttestationV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38843,7 +42575,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsHeadV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsHeadV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38884,7 +42616,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsBlockV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsBlockV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38925,7 +42657,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsVoluntaryExitV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -38966,7 +42698,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39007,7 +42739,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsChainReorgV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsChainReorgV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39048,7 +42780,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data{}
+				v := ClientMeta_AdditionalEthV1EventsContributionAndProofV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39089,7 +42821,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalMempoolTransactionV2Data{}
+				v := ClientMeta_AdditionalMempoolTransactionV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39130,7 +42862,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39171,7 +42903,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1DebugForkChoiceV2Data{}
+				v := ClientMeta_AdditionalEthV1DebugForkChoiceV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39212,7 +42944,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data{}
+				v := ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2DataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39253,7 +42985,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39294,7 +43026,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39335,7 +43067,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39376,7 +43108,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockDepositData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockDepositDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39417,7 +43149,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39458,7 +43190,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39499,7 +43231,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockWithdrawalDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39540,7 +43272,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsBlobSidecarData{}
+				v := ClientMeta_AdditionalEthV1EventsBlobSidecarDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39581,7 +43313,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1BeaconBlobSidecarData{}
+				v := ClientMeta_AdditionalEthV1BeaconBlobSidecarDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39622,7 +43354,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalBeaconP2PAttestationData{}
+				v := ClientMeta_AdditionalBeaconP2PAttestationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39663,7 +43395,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1ProposerDutyData{}
+				v := ClientMeta_AdditionalEthV1ProposerDutyDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39704,7 +43436,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39745,7 +43477,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceAddPeerData{}
+				v := ClientMeta_AdditionalLibP2PTraceAddPeerDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39786,7 +43518,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRemovePeerData{}
+				v := ClientMeta_AdditionalLibP2PTraceRemovePeerDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39827,7 +43559,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRecvRPCData{}
+				v := ClientMeta_AdditionalLibP2PTraceRecvRPCDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39868,7 +43600,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceSendRPCData{}
+				v := ClientMeta_AdditionalLibP2PTraceSendRPCDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39909,7 +43641,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceJoinData{}
+				v := ClientMeta_AdditionalLibP2PTraceJoinDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39950,7 +43682,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceConnectedData{}
+				v := ClientMeta_AdditionalLibP2PTraceConnectedDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -39991,7 +43723,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceDisconnectedData{}
+				v := ClientMeta_AdditionalLibP2PTraceDisconnectedDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40032,7 +43764,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceHandleMetadataData{}
+				v := ClientMeta_AdditionalLibP2PTraceHandleMetadataDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40073,7 +43805,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceHandleStatusData{}
+				v := ClientMeta_AdditionalLibP2PTraceHandleStatusDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40114,7 +43846,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData{}
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40155,7 +43887,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{}
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40196,7 +43928,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{}
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40237,7 +43969,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1ValidatorsData{}
+				v := ClientMeta_AdditionalEthV1ValidatorsDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40278,7 +44010,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData{}
+				v := ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40319,7 +44051,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalMevRelayPayloadDeliveredData{}
+				v := ClientMeta_AdditionalMevRelayPayloadDeliveredDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40411,7 +44143,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV3ValidatorBlockData{}
+				v := ClientMeta_AdditionalEthV3ValidatorBlockDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40452,7 +44184,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalMevRelayValidatorRegistrationData{}
+				v := ClientMeta_AdditionalMevRelayValidatorRegistrationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40493,7 +44225,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsBlockGossipData{}
+				v := ClientMeta_AdditionalEthV1EventsBlockGossipDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40534,7 +44266,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceDropRPCData{}
+				v := ClientMeta_AdditionalLibP2PTraceDropRPCDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40575,7 +44307,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceLeaveData{}
+				v := ClientMeta_AdditionalLibP2PTraceLeaveDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40616,7 +44348,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGraftData{}
+				v := ClientMeta_AdditionalLibP2PTraceGraftDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40657,7 +44389,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTracePruneData{}
+				v := ClientMeta_AdditionalLibP2PTracePruneDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40698,7 +44430,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceDuplicateMessageData{}
+				v := ClientMeta_AdditionalLibP2PTraceDuplicateMessageDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40739,7 +44471,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceDeliverMessageData{}
+				v := ClientMeta_AdditionalLibP2PTraceDeliverMessageDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40780,7 +44512,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTracePublishMessageData{}
+				v := ClientMeta_AdditionalLibP2PTracePublishMessageDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40821,7 +44553,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRejectMessageData{}
+				v := ClientMeta_AdditionalLibP2PTraceRejectMessageDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40862,7 +44594,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40903,7 +44635,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40944,7 +44676,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -40985,7 +44717,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41026,7 +44758,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41067,7 +44799,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41108,7 +44840,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData{}
+				v := ClientMeta_AdditionalLibP2PTraceRPCMetaMessageDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41149,7 +44881,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalNodeRecordConsensusData{}
+				v := ClientMeta_AdditionalNodeRecordConsensusDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41190,7 +44922,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData{}
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41231,7 +44963,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1EventsDataColumnSidecarData{}
+				v := ClientMeta_AdditionalEthV1EventsDataColumnSidecarDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41272,7 +45004,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData{}
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41313,7 +45045,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
+				v := ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41354,7 +45086,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{}
+				v := ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41395,7 +45127,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalConsensusEngineAPINewPayloadData{}
+				v := ClientMeta_AdditionalConsensusEngineAPINewPayloadDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41436,7 +45168,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalConsensusEngineAPIGetBlobsData{}
+				v := ClientMeta_AdditionalConsensusEngineAPIGetBlobsDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41477,7 +45209,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1BeaconBlobData{}
+				v := ClientMeta_AdditionalEthV1BeaconBlobDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41518,7 +45250,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV1BeaconSyncCommitteeData{}
+				v := ClientMeta_AdditionalEthV1BeaconSyncCommitteeDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41559,7 +45291,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData{}
+				v := ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -41600,7 +45332,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ClientMeta_AdditionalLibP2PTraceIdentifyData{}
+				v := ClientMeta_AdditionalLibP2PTraceIdentifyDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -42059,7 +45791,7 @@ func (m *ServerMeta_Client) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Geo == nil {
-				m.Geo = &ServerMeta_Geo{}
+				m.Geo = ServerMeta_GeoFromVTPool()
 			}
 			if err := m.Geo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42210,7 +45942,7 @@ func (m *ServerMeta_Peer) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Geo == nil {
-				m.Geo = &ServerMeta_Geo{}
+				m.Geo = ServerMeta_GeoFromVTPool()
 			}
 			if err := m.Geo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42297,7 +46029,7 @@ func (m *ServerMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &ServerMeta_Peer{}
+				m.Peer = ServerMeta_PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42384,7 +46116,7 @@ func (m *ServerMeta_AdditionalLibp2PTraceConnectedData) UnmarshalVT(dAtA []byte)
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &ServerMeta_Peer{}
+				m.Peer = ServerMeta_PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42471,7 +46203,7 @@ func (m *ServerMeta_AdditionalLibp2PTraceDisconnectedData) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &ServerMeta_Peer{}
+				m.Peer = ServerMeta_PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42558,7 +46290,7 @@ func (m *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) UnmarshalVT(dAt
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &ServerMeta_Peer{}
+				m.Peer = ServerMeta_PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42645,7 +46377,7 @@ func (m *ServerMeta_AdditionalLibp2PTraceIdentifyData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Peer == nil {
-				m.Peer = &ServerMeta_Peer{}
+				m.Peer = ServerMeta_PeerFromVTPool()
 			}
 			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42732,7 +46464,7 @@ func (m *ServerMeta_AdditionalNodeRecordConsensusData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Geo == nil {
-				m.Geo = &ServerMeta_Geo{}
+				m.Geo = ServerMeta_GeoFromVTPool()
 			}
 			if err := m.Geo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42819,7 +46551,7 @@ func (m *ServerMeta_AdditionalNodeRecordExecutionData) UnmarshalVT(dAtA []byte) 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Geo == nil {
-				m.Geo = &ServerMeta_Geo{}
+				m.Geo = ServerMeta_GeoFromVTPool()
 			}
 			if err := m.Geo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42906,7 +46638,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Event == nil {
-				m.Event = &ServerMeta_Event{}
+				m.Event = ServerMeta_EventFromVTPool()
 			}
 			if err := m.Event.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42942,7 +46674,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Client == nil {
-				m.Client = &ServerMeta_Client{}
+				m.Client = ServerMeta_ClientFromVTPool()
 			}
 			if err := m.Client.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -42982,7 +46714,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalBeaconP2PAttestationData{}
+				v := ServerMeta_AdditionalBeaconP2PAttestationDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43023,7 +46755,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalLibp2PTraceConnectedData{}
+				v := ServerMeta_AdditionalLibp2PTraceConnectedDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43064,7 +46796,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalLibp2PTraceDisconnectedData{}
+				v := ServerMeta_AdditionalLibp2PTraceDisconnectedDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43105,7 +46837,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalNodeRecordConsensusData{}
+				v := ServerMeta_AdditionalNodeRecordConsensusDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43146,7 +46878,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalNodeRecordExecutionData{}
+				v := ServerMeta_AdditionalNodeRecordExecutionDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43187,7 +46919,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
+				v := ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43228,7 +46960,7 @@ func (m *ServerMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ServerMeta_AdditionalLibp2PTraceIdentifyData{}
+				v := ServerMeta_AdditionalLibp2PTraceIdentifyDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -43316,7 +47048,7 @@ func (m *Meta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Client == nil {
-				m.Client = &ClientMeta{}
+				m.Client = ClientMetaFromVTPool()
 			}
 			if err := m.Client.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -43352,7 +47084,7 @@ func (m *Meta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Server == nil {
-				m.Server = &ServerMeta{}
+				m.Server = ServerMetaFromVTPool()
 			}
 			if err := m.Server.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -44817,7 +48549,7 @@ func (m *ExecutionBlockMetrics) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StateReads == nil {
-				m.StateReads = &ExecutionBlockMetrics_StateReads{}
+				m.StateReads = ExecutionBlockMetrics_StateReadsFromVTPool()
 			}
 			if err := m.StateReads.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -44853,7 +48585,7 @@ func (m *ExecutionBlockMetrics) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StateWrites == nil {
-				m.StateWrites = &ExecutionBlockMetrics_StateWrites{}
+				m.StateWrites = ExecutionBlockMetrics_StateWritesFromVTPool()
 			}
 			if err := m.StateWrites.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -44889,7 +48621,7 @@ func (m *ExecutionBlockMetrics) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.AccountCache == nil {
-				m.AccountCache = &ExecutionBlockMetrics_CacheEntry{}
+				m.AccountCache = ExecutionBlockMetrics_CacheEntryFromVTPool()
 			}
 			if err := m.AccountCache.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -44925,7 +48657,7 @@ func (m *ExecutionBlockMetrics) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.StorageCache == nil {
-				m.StorageCache = &ExecutionBlockMetrics_CacheEntry{}
+				m.StorageCache = ExecutionBlockMetrics_CacheEntryFromVTPool()
 			}
 			if err := m.StorageCache.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -44961,7 +48693,7 @@ func (m *ExecutionBlockMetrics) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CodeCache == nil {
-				m.CodeCache = &ExecutionBlockMetrics_CodeCacheEntry{}
+				m.CodeCache = ExecutionBlockMetrics_CodeCacheEntryFromVTPool()
 			}
 			if err := m.CodeCache.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -45048,7 +48780,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Event == nil {
-				m.Event = &Event{}
+				m.Event = EventFromVTPool()
 			}
 			if err := m.Event.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -45084,7 +48816,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Meta == nil {
-				m.Meta = &Meta{}
+				m.Meta = MetaFromVTPool()
 			}
 			if err := m.Meta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -45124,7 +48856,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.Attestation{}
+				v := v1.AttestationFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45165,7 +48897,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventBlock{}
+				v := v1.EventBlockFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45206,7 +48938,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventChainReorg{}
+				v := v1.EventChainReorgFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45247,7 +48979,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventFinalizedCheckpoint{}
+				v := v1.EventFinalizedCheckpointFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45288,7 +49020,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventHead{}
+				v := v1.EventHeadFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45329,7 +49061,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventVoluntaryExit{}
+				v := v1.EventVoluntaryExitFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45370,7 +49102,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventContributionAndProof{}
+				v := v1.EventContributionAndProofFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45443,7 +49175,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v2.EventBlock{}
+				v := v2.EventBlockFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45484,7 +49216,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.ForkChoice{}
+				v := v1.ForkChoiceFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45525,7 +49257,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &DebugForkChoiceReorg{}
+				v := DebugForkChoiceReorgFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45566,7 +49298,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.Committee{}
+				v := v1.CommitteeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45607,7 +49339,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.AttestationDataV2{}
+				v := v1.AttestationDataV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45648,7 +49380,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.AttestationV2{}
+				v := v1.AttestationV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45689,7 +49421,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventBlockV2{}
+				v := v1.EventBlockV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45730,7 +49462,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventChainReorgV2{}
+				v := v1.EventChainReorgV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45771,7 +49503,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventFinalizedCheckpointV2{}
+				v := v1.EventFinalizedCheckpointV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45812,7 +49544,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventHeadV2{}
+				v := v1.EventHeadV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45853,7 +49585,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventVoluntaryExitV2{}
+				v := v1.EventVoluntaryExitV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45894,7 +49626,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventContributionAndProofV2{}
+				v := v1.EventContributionAndProofV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -45967,7 +49699,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v2.EventBlockV2{}
+				v := v2.EventBlockV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46008,7 +49740,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.ForkChoiceV2{}
+				v := v1.ForkChoiceV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46049,7 +49781,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &DebugForkChoiceReorgV2{}
+				v := DebugForkChoiceReorgV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46090,7 +49822,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.AttesterSlashingV2{}
+				v := v1.AttesterSlashingV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46131,7 +49863,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.ProposerSlashingV2{}
+				v := v1.ProposerSlashingV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46172,7 +49904,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.SignedVoluntaryExitV2{}
+				v := v1.SignedVoluntaryExitV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46213,7 +49945,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.DepositV2{}
+				v := v1.DepositV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46254,7 +49986,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v2.SignedBLSToExecutionChangeV2{}
+				v := v2.SignedBLSToExecutionChangeV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46295,7 +50027,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.Transaction{}
+				v := v1.TransactionFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46336,7 +50068,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.WithdrawalV2{}
+				v := v1.WithdrawalV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46377,7 +50109,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventBlobSidecar{}
+				v := v1.EventBlobSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46418,7 +50150,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.BlobSidecar{}
+				v := v1.BlobSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46459,7 +50191,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.AttestationV2{}
+				v := v1.AttestationV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46500,7 +50232,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.ProposerDuty{}
+				v := v1.ProposerDutyFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46541,7 +50273,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.ElaboratedAttestation{}
+				v := v1.ElaboratedAttestationFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46582,7 +50314,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.AddPeer{}
+				v := libp2p.AddPeerFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46623,7 +50355,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.RemovePeer{}
+				v := libp2p.RemovePeerFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46664,7 +50396,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.RecvRPC{}
+				v := libp2p.RecvRPCFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46705,7 +50437,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.SendRPC{}
+				v := libp2p.SendRPCFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46746,7 +50478,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Join{}
+				v := libp2p.JoinFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46787,7 +50519,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Connected{}
+				v := libp2p.ConnectedFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46828,7 +50560,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Disconnected{}
+				v := libp2p.DisconnectedFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46869,7 +50601,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.HandleMetadata{}
+				v := libp2p.HandleMetadataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46910,7 +50642,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.HandleStatus{}
+				v := libp2p.HandleStatusFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46951,7 +50683,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &gossipsub.BeaconBlock{}
+				v := gossipsub.BeaconBlockFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -46992,7 +50724,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.Attestation{}
+				v := v1.AttestationFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47033,7 +50765,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &gossipsub.BlobSidecar{}
+				v := gossipsub.BlobSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47074,7 +50806,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &Validators{}
+				v := ValidatorsFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47115,7 +50847,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &mevrelay.BidTrace{}
+				v := mevrelay.BidTraceFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47156,7 +50888,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &mevrelay.ProposerPayloadDelivered{}
+				v := mevrelay.ProposerPayloadDeliveredFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47197,7 +50929,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v2.EventBlockV2{}
+				v := v2.EventBlockV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47238,7 +50970,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &mevrelay.ValidatorRegistration{}
+				v := mevrelay.ValidatorRegistrationFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47279,7 +51011,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventBlockGossip{}
+				v := v1.EventBlockGossipFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47320,7 +51052,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.DropRPC{}
+				v := libp2p.DropRPCFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47361,7 +51093,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Leave{}
+				v := libp2p.LeaveFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47402,7 +51134,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Graft{}
+				v := libp2p.GraftFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47443,7 +51175,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Prune{}
+				v := libp2p.PruneFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47484,7 +51216,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.DuplicateMessage{}
+				v := libp2p.DuplicateMessageFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47525,7 +51257,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.DeliverMessage{}
+				v := libp2p.DeliverMessageFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47566,7 +51298,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.PublishMessage{}
+				v := libp2p.PublishMessageFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47607,7 +51339,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.RejectMessage{}
+				v := libp2p.RejectMessageFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47648,7 +51380,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.ControlIHaveMetaItem{}
+				v := libp2p.ControlIHaveMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47689,7 +51421,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.ControlIWantMetaItem{}
+				v := libp2p.ControlIWantMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47730,7 +51462,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.ControlIDontWantMetaItem{}
+				v := libp2p.ControlIDontWantMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47771,7 +51503,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.ControlGraftMetaItem{}
+				v := libp2p.ControlGraftMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47812,7 +51544,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.ControlPruneMetaItem{}
+				v := libp2p.ControlPruneMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47853,7 +51585,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.SubMetaItem{}
+				v := libp2p.SubMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47894,7 +51626,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.MessageMetaItem{}
+				v := libp2p.MessageMetaItemFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47935,7 +51667,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &noderecord.Consensus{}
+				v := noderecord.ConsensusFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -47976,7 +51708,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &noderecord.Execution{}
+				v := noderecord.ExecutionFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48017,7 +51749,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.SignedAggregateAttestationAndProofV2{}
+				v := v1.SignedAggregateAttestationAndProofV2FromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48058,7 +51790,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.EventDataColumnSidecar{}
+				v := v1.EventDataColumnSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48099,7 +51831,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &gossipsub.DataColumnSidecar{}
+				v := gossipsub.DataColumnSidecarFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48140,7 +51872,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.SyntheticHeartbeat{}
+				v := libp2p.SyntheticHeartbeatFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48181,7 +51913,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.Identify{}
+				v := libp2p.IdentifyFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48222,7 +51954,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &libp2p.DataColumnCustodyProbe{}
+				v := libp2p.DataColumnCustodyProbeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48263,7 +51995,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ExecutionStateSize{}
+				v := ExecutionStateSizeFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48304,7 +52036,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ConsensusEngineAPINewPayload{}
+				v := ConsensusEngineAPINewPayloadFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48345,7 +52077,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ConsensusEngineAPIGetBlobs{}
+				v := ConsensusEngineAPIGetBlobsFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48386,7 +52118,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ExecutionEngineNewPayload{}
+				v := ExecutionEngineNewPayloadFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48427,7 +52159,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ExecutionEngineGetBlobs{}
+				v := ExecutionEngineGetBlobsFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48468,7 +52200,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &v1.Blob{}
+				v := v1.BlobFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48509,7 +52241,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &SyncCommitteeData{}
+				v := SyncCommitteeDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48550,7 +52282,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &SyncAggregateData{}
+				v := SyncAggregateDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -48591,7 +52323,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &ExecutionBlockMetrics{}
+				v := ExecutionBlockMetricsFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}

@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -111,6 +113,13 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	if r.metrics != nil {
 		for _, result := range results {
 			r.metrics.MessagesRouted().WithLabelValues(eventName.String(), result.Table).Inc()
+		}
+
+		if ts := event.GetEvent().GetDateTime(); ts != nil {
+			lag := time.Since(ts.AsTime()).Seconds()
+			if lag >= 0 {
+				r.metrics.EventLag().WithLabelValues(eventName.String()).Observe(lag)
+			}
 		}
 	}
 

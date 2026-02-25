@@ -19,6 +19,7 @@ type Metrics struct {
 	writeDuration     *prometheus.HistogramVec
 	batchSize         *prometheus.HistogramVec
 	flattenErrors     *prometheus.CounterVec
+	eventLag          *prometheus.HistogramVec
 	activeTopics      prometheus.Gauge
 	kafkaConsumerLag  *prometheus.GaugeVec
 	outputMaxInFlight prometheus.Gauge
@@ -135,6 +136,14 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "flatten_errors_total",
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
+
+		eventLag: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "event_lag_seconds",
+			Help:      "Lag between the event timestamp and the wall clock time at routing.",
+			Buckets:   []float64{0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600},
+		}, []string{"event_name"}),
 
 		activeTopics: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -262,6 +271,7 @@ func (m *Metrics) WriteErrors() *prometheus.CounterVec      { return m.writeErro
 func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDuration }
 func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
 func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
+func (m *Metrics) EventLag() *prometheus.HistogramVec       { return m.eventLag }
 func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
 func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
 func (m *Metrics) OutputMaxInFlight() prometheus.Gauge      { return m.outputMaxInFlight }

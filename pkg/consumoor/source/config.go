@@ -119,8 +119,8 @@ type KafkaConfig struct {
 	OutputBatchCount int `yaml:"outputBatchCount" default:"10000"`
 	// OutputBatchPeriod is the maximum time Benthos waits to fill a batch
 	// before flushing a partial batch. Ensures low-volume topics still make
-	// progress. Default: 1s. Set to 0 to disable period-based flushing.
-	OutputBatchPeriod time.Duration `yaml:"outputBatchPeriod" default:"1s"`
+	// progress. Default: 5s. Set to 0 to disable period-based flushing.
+	OutputBatchPeriod time.Duration `yaml:"outputBatchPeriod" default:"5s"`
 
 	// MaxInFlight is the maximum number of concurrent WriteBatch calls
 	// Benthos makes for each stream's output. Higher values increase

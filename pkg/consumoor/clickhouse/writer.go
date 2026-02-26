@@ -316,6 +316,8 @@ func (w *ChGoWriter) doWithRetry(
 
 	for attempt := 0; attempt <= w.chgoCfg.MaxRetries; attempt++ {
 		if attempt > 0 {
+			w.metrics.WriteRetries().WithLabelValues(operation).Inc()
+
 			delay := min(
 				w.chgoCfg.RetryBaseDelay*time.Duration(1<<(attempt-1)),
 				w.chgoCfg.RetryMaxDelay,

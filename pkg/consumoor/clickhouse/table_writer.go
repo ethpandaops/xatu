@@ -190,6 +190,11 @@ func (tw *chTableWriter) do(
 			return poolFn(attemptCtx)
 		}
 
-		return tw.limiter.doWithLimiter(attemptCtx, poolFn)
+		err := tw.limiter.doWithLimiter(attemptCtx, poolFn)
+		if IsLimiterRejected(err) {
+			tw.metrics.AdaptiveLimiterRejections().WithLabelValues(tw.table).Inc()
+		}
+
+		return err
 	})
 }

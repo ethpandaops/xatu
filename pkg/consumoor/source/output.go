@@ -38,13 +38,14 @@ type eventGroup struct {
 }
 
 type xatuClickHouseOutput struct {
-	log        logrus.FieldLogger
-	encoding   string
-	router     *router.Engine
-	writer     Writer
-	metrics    *telemetry.Metrics
-	rejectSink rejectSink
-	ownsWriter bool
+	log              logrus.FieldLogger
+	encoding         string
+	router           *router.Engine
+	writer           Writer
+	metrics          *telemetry.Metrics
+	rejectSink       rejectSink
+	ownsWriter       bool
+	outputBatchCount int
 
 	mu      sync.Mutex
 	started bool
@@ -82,6 +83,18 @@ func (o *xatuClickHouseOutput) WriteBatch(
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+
+	// Record which trigger caused this batch flush.
+	// Each Benthos stream is per-topic, so the first message's topic is
+	// representative of the entire batch.
+	topic := kafkaMetadata(msgs[0]).Topic
+
+	trigger := "timeout"
+	if o.outputBatchCount > 0 && len(msgs) >= o.outputBatchCount {
+		trigger = "count"
+	}
+
+	o.metrics.BatchFlushTrigger().WithLabelValues(topic, trigger).Inc()
 
 	var batchErr *service.BatchError
 

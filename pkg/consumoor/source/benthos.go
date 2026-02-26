@@ -62,13 +62,14 @@ func NewBenthosStream(
 		service.NewConfigSpec(),
 		func(_ *service.ParsedConfig, _ *service.Resources) (out service.BatchOutput, policy service.BatchPolicy, maxInFlight int, err error) {
 			return &xatuClickHouseOutput{
-				log:        log.WithField("component", "benthos_clickhouse_output"),
-				encoding:   kafkaConfig.Encoding,
-				router:     routeEngine,
-				writer:     writer,
-				metrics:    metrics,
-				rejectSink: rejectSink,
-				ownsWriter: ownsWriter,
+				log:              log.WithField("component", "benthos_clickhouse_output"),
+				encoding:         kafkaConfig.Encoding,
+				router:           routeEngine,
+				writer:           writer,
+				metrics:          metrics,
+				rejectSink:       rejectSink,
+				ownsWriter:       ownsWriter,
+				outputBatchCount: kafkaConfig.OutputBatchCount,
 			}, batchPolicy, kafkaConfig.MaxInFlight, nil
 		},
 	); registerErr != nil {

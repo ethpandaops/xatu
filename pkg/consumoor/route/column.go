@@ -32,6 +32,26 @@ func NormalizeIPToIPv6(raw string) proto.IPv6 {
 	return proto.ToIPv6(addr)
 }
 
+// NormalizeIPToIPv6Nullable parses an IP string and returns a Nullable IPv6.
+// Returns NULL when the input is empty or unparseable (matching Vector behavior),
+// rather than writing the zero address "::".
+func NormalizeIPToIPv6Nullable(raw string) proto.Nullable[proto.IPv6] {
+	if raw == "" {
+		return proto.Nullable[proto.IPv6]{}
+	}
+
+	addr, err := netip.ParseAddr(raw)
+	if err != nil {
+		return proto.Nullable[proto.IPv6]{}
+	}
+
+	if addr.Is4() {
+		addr = netip.AddrFrom16(addr.As16())
+	}
+
+	return proto.NewNullable[proto.IPv6](proto.ToIPv6(addr))
+}
+
 // NormalizeConsensusVersion strips the implementation prefix from a
 // consensus version string (e.g. "Lighthouse/v4.5.0" -> "v4.5.0").
 func NormalizeConsensusVersion(raw string) string {

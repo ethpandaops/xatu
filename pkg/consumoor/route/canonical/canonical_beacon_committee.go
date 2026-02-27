@@ -66,6 +66,13 @@ func (b *canonicalBeaconCommitteeBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 
 func (b *canonicalBeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
+
+	if slot := committee.GetSlot(); slot != nil {
+		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
+	} else {
+		b.Slot.Append(0)
+	}
+
 	if index := committee.GetIndex(); index != nil {
 		b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
 	} else {
@@ -79,12 +86,21 @@ func (b *canonicalBeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent
 func (b *canonicalBeaconCommitteeBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	additional := event.GetMeta().GetClient().GetEthV1BeaconCommittee()
 	if additional == nil {
-		b.Slot.Append(0)
 		b.SlotStartDateTime.Append(time.Time{})
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
 
 		return
+	}
+
+	if slotData := additional.GetSlot(); slotData != nil {
+		if startDateTime := slotData.GetStartDateTime(); startDateTime != nil {
+			b.SlotStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.SlotStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.SlotStartDateTime.Append(time.Time{})
 	}
 
 	if epochData := additional.GetEpoch(); epochData != nil {
@@ -102,22 +118,5 @@ func (b *canonicalBeaconCommitteeBatch) appendAdditionalData(event *xatu.Decorat
 	} else {
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
-	}
-
-	if slotData := additional.GetSlot(); slotData != nil {
-		if slotNumber := slotData.GetNumber(); slotNumber != nil {
-			b.Slot.Append(uint32(slotNumber.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if startDateTime := slotData.GetStartDateTime(); startDateTime != nil {
-			b.SlotStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.SlotStartDateTime.Append(time.Time{})
-		}
-	} else {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
 	}
 }

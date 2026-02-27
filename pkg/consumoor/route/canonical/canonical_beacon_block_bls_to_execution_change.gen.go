@@ -98,7 +98,7 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) appendMetadata(event *xa
 	b.MetaClientVersion.Append(event.GetMeta().GetClient().GetVersion())
 	b.MetaClientImplementation.Append(event.GetMeta().GetClient().GetImplementation())
 	b.MetaClientOS.Append(event.GetMeta().GetClient().GetOs())
-	b.MetaClientIP.Append(proto.NewNullable[proto.IPv6](route.NormalizeIPToIPv6(event.GetMeta().GetServer().GetClient().GetIP())))
+	b.MetaClientIP.Append(route.NormalizeIPToIPv6Nullable(event.GetMeta().GetServer().GetClient().GetIP()))
 	b.MetaClientGeoCity.Append(event.GetMeta().GetServer().GetClient().GetGeo().GetCity())
 	b.MetaClientGeoCountry.Append(event.GetMeta().GetServer().GetClient().GetGeo().GetCountry())
 	b.MetaClientGeoCountryCode.Append(event.GetMeta().GetServer().GetClient().GetGeo().GetCountryCode())

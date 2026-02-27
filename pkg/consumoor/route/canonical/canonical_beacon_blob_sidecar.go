@@ -76,11 +76,6 @@ func (b *canonicalBeaconBlobSidecarBatch) appendRuntime(_ *xatu.DecoratedEvent) 
 
 func (b *canonicalBeaconBlobSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blob := event.GetEthV1BeaconBlockBlobSidecar()
-	if slot := blob.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
-	} else {
-		b.Slot.Append(0)
-	}
 
 	b.BlockRoot.Append([]byte(blob.GetBlockRoot()))
 	b.BlockParentRoot.Append([]byte(blob.GetBlockParentRoot()))
@@ -104,14 +99,32 @@ func (b *canonicalBeaconBlobSidecarBatch) appendPayload(event *xatu.DecoratedEve
 func (b *canonicalBeaconBlobSidecarBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	additional := event.GetMeta().GetClient().GetEthV1BeaconBlobSidecar()
 	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
-		b.SlotStartDateTime.Append(time.Time{})
 		b.VersionedHash.Append(nil)
 		b.BlobSize.Append(0)
 		b.BlobEmptySize.Append(proto.Nullable[uint32]{})
 
 		return
+	}
+
+	if slot := additional.GetSlot(); slot != nil {
+		if slotNumber := slot.GetNumber(); slotNumber != nil {
+			b.Slot.Append(uint32(slotNumber.GetValue())) //nolint:gosec // G115
+		} else {
+			b.Slot.Append(0)
+		}
+
+		if startDateTime := slot.GetStartDateTime(); startDateTime != nil {
+			b.SlotStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.SlotStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
 	}
 
 	if epoch := additional.GetEpoch(); epoch != nil {
@@ -129,16 +142,6 @@ func (b *canonicalBeaconBlobSidecarBatch) appendAdditionalData(event *xatu.Decor
 	} else {
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
-	}
-
-	if slot := additional.GetSlot(); slot != nil {
-		if startDateTime := slot.GetStartDateTime(); startDateTime != nil {
-			b.SlotStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.SlotStartDateTime.Append(time.Time{})
-		}
-	} else {
-		b.SlotStartDateTime.Append(time.Time{})
 	}
 
 	b.VersionedHash.Append([]byte(additional.GetVersionedHash()))

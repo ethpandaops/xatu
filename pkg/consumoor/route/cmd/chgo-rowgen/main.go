@@ -1005,8 +1005,8 @@ var metaColumnDefs = map[string]metaColumnDef{
 	"meta_client_clock_drift":    {expr: "event.GetMeta().GetClient().GetClockDrift()", goType: goTypeUint64},
 	"meta_client_module_name":    {expr: "event.GetMeta().GetClient().GetModuleName().String()"},
 
-	// Client IP (normalized to IPv6 in a single parse)
-	"meta_client_ip": {expr: "route.NormalizeIPToIPv6(event.GetMeta().GetServer().GetClient().GetIP())", goType: protoIPv6},
+	// Client IP (nullable – NULL when empty/unparseable, matching Vector behavior)
+	"meta_client_ip": {special: "nullable_ip"},
 
 	// Client geo
 	"meta_client_geo_city":                           {expr: "event.GetMeta().GetServer().GetClient().GetGeo().GetCity()"},
@@ -1101,6 +1101,13 @@ func writeAppendMetadata(b *bytes.Buffer, batchName string, cols []column, gens 
 			b.WriteString("\t} else {\n")
 			b.WriteString("\t\tb.MetaLabels.Append(map[string]string{})\n")
 			b.WriteString("\t}\n")
+
+			continue
+		}
+
+		// Special handling for nullable IP (NULL when empty/unparseable).
+		if def.special == "nullable_ip" {
+			fmt.Fprintf(b, "\tb.%s.Append(route.NormalizeIPToIPv6Nullable(event.GetMeta().GetServer().GetClient().GetIP()))\n", col.Field)
 
 			continue
 		}

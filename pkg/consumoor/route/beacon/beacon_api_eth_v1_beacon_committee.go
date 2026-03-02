@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -92,7 +93,7 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) appendPayload(event *xatu.Decorated
 	}
 
 	if committeeIndex := committee.GetIndex(); committeeIndex != nil {
-		b.CommitteeIndex.Append(fmt.Sprint(committeeIndex.GetValue()))
+		b.CommitteeIndex.Append(strconv.FormatUint(committeeIndex.GetValue(), 10))
 	} else {
 		b.CommitteeIndex.Append("")
 	}

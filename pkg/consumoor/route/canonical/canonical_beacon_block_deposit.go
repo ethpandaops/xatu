@@ -2,6 +2,7 @@ package canonical
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -65,7 +66,7 @@ func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEv
 		b.DepositDataSignature.Append(data.GetSignature())
 
 		if amount := data.GetAmount(); amount != nil {
-			parsedAmount, err := route.ParseUInt128(fmt.Sprintf("%d", amount.GetValue()))
+			parsedAmount, err := route.ParseUInt128(strconv.FormatUint(amount.GetValue(), 10))
 			if err != nil {
 				return fmt.Errorf("parsing deposit_data_amount: %w", err)
 			}

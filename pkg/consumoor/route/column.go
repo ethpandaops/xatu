@@ -32,6 +32,26 @@ func NormalizeIPToIPv6(raw string) proto.IPv6 {
 	return proto.ToIPv6(addr)
 }
 
+// NormalizeIPToIPv6Nullable parses an IP string and returns a Nullable IPv6.
+// Returns NULL when the input is empty or unparseable (matching Vector behavior),
+// rather than writing the zero address "::".
+func NormalizeIPToIPv6Nullable(raw string) proto.Nullable[proto.IPv6] {
+	if raw == "" {
+		return proto.Nullable[proto.IPv6]{}
+	}
+
+	addr, err := netip.ParseAddr(raw)
+	if err != nil {
+		return proto.Nullable[proto.IPv6]{}
+	}
+
+	if addr.Is4() {
+		addr = netip.AddrFrom16(addr.As16())
+	}
+
+	return proto.NewNullable[proto.IPv6](proto.ToIPv6(addr))
+}
+
 // NormalizeConsensusVersion strips the implementation prefix from a
 // consensus version string (e.g. "Lighthouse/v4.5.0" -> "v4.5.0").
 func NormalizeConsensusVersion(raw string) string {
@@ -71,12 +91,13 @@ func ConsensusVersionPatch(raw string) string {
 	return patch
 }
 
-// parseConsensusVersion normalizes and splits a consensus version string
-// into major, minor, patch components.
-func parseConsensusVersion(raw string) (major, minor, patch string) {
-	normalized := NormalizeConsensusVersion(raw)
+// ParseConsensusVersion normalizes a raw consensus version string and
+// splits it into its four components in a single pass.
+// This avoids repeated SplitN calls when each component is needed.
+func ParseConsensusVersion(raw string) (normalized, major, minor, patch string) {
+	normalized = NormalizeConsensusVersion(raw)
 	if normalized == "" {
-		return "", "", ""
+		return "", "", "", ""
 	}
 
 	version := strings.TrimPrefix(normalized, "v")
@@ -98,6 +119,14 @@ func parseConsensusVersion(raw string) (major, minor, patch string) {
 			patch = patch[:idx]
 		}
 	}
+
+	return normalized, major, minor, patch
+}
+
+// parseConsensusVersion normalizes and splits a consensus version string
+// into major, minor, patch components.
+func parseConsensusVersion(raw string) (major, minor, patch string) {
+	_, major, minor, patch = ParseConsensusVersion(raw)
 
 	return major, minor, patch
 }

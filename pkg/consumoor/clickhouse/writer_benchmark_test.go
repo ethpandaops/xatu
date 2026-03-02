@@ -3,7 +3,6 @@ package clickhouse
 import (
 	"context"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -78,8 +77,7 @@ func benchHeadEvent() *xatu.DecoratedEvent {
 }
 
 // benchWriter creates a ChGoWriter with a noop pool.Do for benchmarking.
-// The returned cancel function must be called to stop background goroutines.
-func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context.CancelFunc) {
+func benchWriter(tb testing.TB) *ChGoWriter {
 	tb.Helper()
 
 	ns := fmt.Sprintf("xatu_bench_%d", time.Now().UnixNano())
@@ -91,14 +89,7 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 	w := &ChGoWriter{
 		log:     log.WithField("component", "bench"),
 		metrics: metrics,
-		config: &Config{
-			DrainTimeout: 30 * time.Second,
-			Defaults: TableConfig{
-				BatchSize:     batchSize,
-				FlushInterval: 10 * time.Second,
-				BufferSize:    bufferSize,
-			},
-		},
+		config:  &Config{},
 		chgoCfg: ChGoConfig{
 			MaxRetries:     0,
 			RetryBaseDelay: 100 * time.Millisecond,
@@ -106,7 +97,6 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 		},
 		tables:         make(map[string]*chTableWriter, 4),
 		batchFactories: make(map[string]func() route.ColumnarBatch, 4),
-		done:           make(chan struct{}),
 		poolDoFn: func(_ context.Context, _ ch.Query) error {
 			return nil
 		},
@@ -117,130 +107,97 @@ func benchWriter(tb testing.TB, batchSize, bufferSize int) (*ChGoWriter, context
 
 	w.RegisterBatchFactories(routes)
 
-	cancel := func() {
-		w.stopOnce.Do(func() {
-			close(w.done)
-			w.wg.Wait()
-		})
-	}
-
-	return w, cancel
+	return w
 }
 
-// BenchmarkWriteThroughput measures events/sec through the full
-// Write() -> accumulator -> worker -> noop-flush path.
-func BenchmarkWriteThroughput(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
-
-	w, cancel := benchWriter(b, batchSize, bufferSize)
-	defer cancel()
-
+// BenchmarkFlushTableEvents measures throughput of the FlushTableEvents path
+// (FlattenTo + columnar batch build + noop INSERT).
+func BenchmarkFlushTableEvents(b *testing.B) {
+	w := benchWriter(b)
 	event := benchHeadEvent()
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		w.Write(benchTable, event)
+		tableEvents := map[string][]*xatu.DecoratedEvent{
+			benchTable: {event},
+		}
+
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
+			b.Fatalf("FlushTableEvents: %v", err)
+		}
 	}
 
 	b.StopTimer()
-
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer ctxCancel()
-
-	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
-		b.Logf("FlushTables: %v", err)
-	}
-
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "events/sec")
 }
 
-// BenchmarkWriteConcurrent measures channel contention when multiple
-// goroutines write to the same ChGoWriter concurrently.
-func BenchmarkWriteConcurrent(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 100_000
-	)
+// BenchmarkFlushTableEventsBatch measures throughput with larger batches.
+func BenchmarkFlushTableEventsBatch(b *testing.B) {
+	const batchSize = 500
 
-	w, cancel := benchWriter(b, batchSize, bufferSize)
-	defer cancel()
-
+	w := benchWriter(b)
 	event := benchHeadEvent()
+
+	// Pre-build the batch of events.
+	events := make([]*xatu.DecoratedEvent, batchSize)
+	for i := range events {
+		events[i] = event
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		tableEvents := map[string][]*xatu.DecoratedEvent{
+			benchTable: events,
+		}
+
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
+			b.Fatalf("FlushTableEvents: %v", err)
+		}
+	}
+
+	b.StopTimer()
+	b.ReportMetric(float64(b.N*batchSize)/b.Elapsed().Seconds(), "events/sec")
+}
+
+// BenchmarkFlushConcurrent measures throughput when multiple goroutines
+// flush concurrently, exercising the concurrent INSERT path.
+func BenchmarkFlushConcurrent(b *testing.B) {
+	const batchSize = 500
+
+	w := benchWriter(b)
+	event := benchHeadEvent()
+
+	events := make([]*xatu.DecoratedEvent, batchSize)
+	for i := range events {
+		events[i] = event
+	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			w.Write(benchTable, event)
+			tableEvents := map[string][]*xatu.DecoratedEvent{
+				benchTable: events,
+			}
+
+			if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
+				b.Logf("FlushTableEvents: %v", err)
+			}
 		}
 	})
 
 	b.StopTimer()
-
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer ctxCancel()
-
-	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
-		b.Logf("FlushTables: %v", err)
-	}
-
-	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "events/sec")
-}
-
-// BenchmarkAccumulatorBatching measures how fast the table writer's
-// run loop drains the buffer channel and builds batches via flush.
-func BenchmarkAccumulatorBatching(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
-
-	w, cancel := benchWriter(b, batchSize, bufferSize)
-	defer cancel()
-
-	event := benchHeadEvent()
-
-	// Pre-populate the buffer to measure drain/flush speed.
-	// First trigger table writer creation by writing one event.
-	w.Write(benchTable, event)
-
-	// Wait briefly for the table writer goroutine to start.
-	time.Sleep(10 * time.Millisecond)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		w.Write(benchTable, event)
-	}
-
-	b.StopTimer()
-
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer ctxCancel()
-
-	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
-		b.Logf("FlushTables: %v", err)
-	}
-
-	// Count total flushes by reading the metrics.
-	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "events/sec")
+	b.ReportMetric(float64(b.N*batchSize)/b.Elapsed().Seconds(), "events/sec")
 }
 
 // BenchmarkEndToEndWithFlatten measures the full cost of processing one
-// event from proto through FlattenTo and the Write path to batch-ready.
+// event from proto through FlattenTo to batch-ready INSERT.
 func BenchmarkEndToEndWithFlatten(b *testing.B) {
-	const (
-		batchSize  = 10_000
-		bufferSize = 50_000
-	)
-
 	var flushCount atomic.Int64
 
 	ns := fmt.Sprintf("xatu_bench_e2e_%d", time.Now().UnixNano())
@@ -252,14 +209,7 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 	w := &ChGoWriter{
 		log:     log.WithField("component", "bench_e2e"),
 		metrics: metrics,
-		config: &Config{
-			DrainTimeout: 30 * time.Second,
-			Defaults: TableConfig{
-				BatchSize:     batchSize,
-				FlushInterval: 10 * time.Second,
-				BufferSize:    bufferSize,
-			},
-		},
+		config:  &Config{},
 		chgoCfg: ChGoConfig{
 			MaxRetries:     0,
 			RetryBaseDelay: 100 * time.Millisecond,
@@ -267,7 +217,6 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 		},
 		tables:         make(map[string]*chTableWriter, 4),
 		batchFactories: make(map[string]func() route.ColumnarBatch, 4),
-		done:           make(chan struct{}),
 		poolDoFn: func(_ context.Context, _ ch.Query) error {
 			flushCount.Add(1)
 
@@ -280,39 +229,22 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 
 	w.RegisterBatchFactories(routes)
 
-	var wg sync.WaitGroup
-
 	event := benchHeadEvent()
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		for i := 0; i < b.N; i++ {
-			w.Write(benchTable, event)
+	for i := 0; i < b.N; i++ {
+		tableEvents := map[string][]*xatu.DecoratedEvent{
+			benchTable: {event},
 		}
-	}()
 
-	wg.Wait()
-
-	b.StopTimer()
-
-	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer ctxCancel()
-
-	if err := w.FlushTables(ctx, []string{benchTable}); err != nil {
-		b.Logf("FlushTables: %v", err)
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
+			b.Fatalf("FlushTableEvents: %v", err)
+		}
 	}
 
-	// Shut down the table writer goroutines.
-	w.stopOnce.Do(func() {
-		close(w.done)
-		w.wg.Wait()
-	})
+	b.StopTimer()
 
 	elapsed := b.Elapsed().Seconds()
 	b.ReportMetric(float64(b.N)/elapsed, "events/sec")

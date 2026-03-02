@@ -10,7 +10,7 @@ Consumoor is a Kafka-to-ClickHouse pipeline that reads Ethereum network events f
 Kafka topics
     |
     v
-Benthos (kafka_franz input)
+Benthos (kafka_franz input, maxInFlight=64 concurrent WriteBatch calls)
     |
     v
 Decoder (JSON or Protobuf -> DecoratedEvent)
@@ -22,17 +22,20 @@ Router Engine (event name -> target table(s))
 Per-table buffer (bounded channel, one per table)
     |
     v
-Table Writer (organic + coordinated flush)
+FlushTables (concurrent drain + flush from calling goroutines)
     |
     v
-ClickHouse (ch-go columnar inserts)
+Adaptive Concurrency Limiter (per-table AIMD, blocking acquire)
+    |
+    v
+ClickHouse (ch-go columnar inserts, concurrent per table)
 ```
 
 **Key design decisions:**
 
 - **At-least-once delivery.** Kafka offsets are committed periodically (`commitInterval`, default 5s). On crash, messages since the last commit are replayed. ClickHouse must tolerate duplicate inserts (e.g. via `ReplacingMergeTree`).
 - **Per-topic consumer groups.** Each consumoor instance joins a single consumer group. Multiple instances with different consumer groups or topic patterns can run in parallel.
-- **Organic vs coordinated flushes.** Each table writer flushes independently when its batch reaches `batchSize` rows or when `flushInterval` elapses (organic). The Benthos output plugin can also trigger a coordinated `FlushAll` after writing a batch of messages, depending on the `deliveryMode`.
+- **Benthos-driven batching.** Benthos accumulates messages according to `outputBatchCount` and `outputBatchPeriod`, then calls `WriteBatch` which routes events to per-table buffers and triggers a synchronous flush. Up to `maxInFlight` (default 64) WriteBatch calls run concurrently, enabling concurrent INSERTs per table bounded by the adaptive concurrency limiter. There are no independent timer-based flushes -- all writes are coordinated through Benthos.
 - **Backpressure propagation.** Each table's buffer is a bounded channel (`bufferSize`). When a buffer fills (e.g. ClickHouse is slow), `Write()` blocks, which backs up the Benthos output, which backs up Kafka consumption. This prevents unbounded memory growth.
 - **Error classification.** Write errors are classified as permanent (schema mismatch, unknown table, type errors) or transient (network, timeout, overload). Permanent errors drop the batch and optionally send messages to a DLQ topic. Transient errors trigger retry with exponential backoff.
 
@@ -58,8 +61,7 @@ All metrics use the prefix `xatu_consumoor_`.
 | `rows_written_total` | Counter | `table` | Rows successfully written to ClickHouse | Should increase; flat = writes stalled |
 | `write_errors_total` | Counter | `table` | ClickHouse write errors | Any increase; check permanent vs transient |
 | `write_duration_seconds` | Histogram | `table` | Duration of batch inserts | p99 > `queryTimeout` = ClickHouse too slow |
-| `batch_size` | Histogram | `table` | Rows per batch write | Very small batches = inefficient; tune `batchSize` |
-| `buffer_usage` | Gauge | `table` | Current buffered rows per table | Approaching `bufferSize` = backpressure building |
+| `batch_size` | Histogram | `table` | Rows per batch write | Very small batches = inefficient; tune `outputBatchCount` |
 
 ### DLQ Metrics
 
@@ -88,7 +90,6 @@ All metrics use the prefix `xatu_consumoor_`.
 ### ClickHouse Down or Slow
 
 **Symptoms:**
-- `buffer_usage` climbing toward `bufferSize` for affected tables
 - `write_errors_total` increasing
 - `rows_written_total` flat
 - `write_duration_seconds` p99 increasing (if ClickHouse is slow but reachable)
@@ -96,16 +97,14 @@ All metrics use the prefix `xatu_consumoor_`.
 
 **What happens internally:**
 1. Table writer flush fails with a transient error (connection refused, timeout, etc.)
-2. The table writer enters `flushBlocked` state -- it stops draining its buffer channel and preserves the failed batch for retry
-3. Buffer channel fills up, blocking `Write()` calls
-4. Benthos output blocks, causing Kafka fetch to stall
-5. On next `flushInterval` tick, the table writer retries the pending batch (with exponential backoff via `doWithRetry`: default 3 retries, 100ms base delay, 2s max delay)
-6. If retry succeeds, `flushBlocked` clears and normal processing resumes
+2. `FlushTables` returns the error to `processGroup`, which NAKs the Kafka messages (they will be re-delivered by Kafka)
+3. Each flush attempt uses exponential backoff via `doWithRetry` (default 3 retries, 100ms base delay, 2s max delay)
+4. The buffer channel fills up, blocking `Write()` calls, which backs up Benthos output and stalls Kafka consumption
 
 **Recovery:**
 - Fix ClickHouse (restart, add capacity, resolve disk issues)
 - Consumoor auto-recovers once ClickHouse is available -- no restart needed
-- Monitor `buffer_usage` dropping and `rows_written_total` resuming
+- Monitor `rows_written_total` resuming
 - Expect a burst of writes as buffered data flushes
 
 ### Kafka Rebalance Storm
@@ -130,27 +129,24 @@ All metrics use the prefix `xatu_consumoor_`.
 ### OOM / Memory Pressure
 
 **Symptoms:**
-- `buffer_usage` high across multiple tables
 - Pod OOMKilled restarts
 - Memory usage on the node spiking
 
 **Causes:**
 - ClickHouse backpressure fills all table buffers simultaneously. Total potential memory = `bufferSize * number_of_active_tables * avg_event_size`
 - Very large `bufferSize` values combined with many tables
-- Large batch sizes holding many events in memory during flush
+- Large `outputBatchCount` holding many events in memory during flush
 
 **Mitigation:**
 - Reduce `bufferSize` in defaults (e.g. from 200000 to 50000)
+- Reduce `outputBatchCount` to flush smaller batches
 - Increase ClickHouse write capacity (more replicas, faster disks)
-- Tune `batchSize` down to flush more frequently with less memory per flush
 - Increase pod memory limits if the workload genuinely requires it
-- Monitor `buffer_usage` across all tables to estimate actual memory use
 
 ### Flatten Livelock
 
 **Symptoms:**
 - One table's `rows_written_total` stops increasing
-- `buffer_usage` for that table grows (or stays at max if already full)
 - `write_errors_total` for that table climbing
 - `flatten_errors_total` increasing for the affected event/table
 - Other tables continue writing normally
@@ -175,16 +171,15 @@ All metrics use the prefix `xatu_consumoor_`.
 
 **Causes:**
 - ClickHouse write throughput is the bottleneck (check `write_duration_seconds`)
-- Batch sizes too small causing excessive round-trips (check `batch_size` histogram)
+- Batch sizes too small causing excessive round-trips (check `batch_size` histogram; increase `outputBatchCount`)
 - Single instance hitting connection pool limits (check `chgo_pool_empty_acquire_total`)
 - High-cardinality topics spreading events across many tables, each with its own flush cycle
 
 **Tuning:**
-- Increase `batchSize` to write more rows per round-trip (e.g. 200000 -> 500000)
+- Increase `outputBatchCount` to write more rows per round-trip (e.g. 1000 -> 5000)
 - Increase `maxConns` to allow more concurrent ClickHouse writes
 - Increase ClickHouse resources (CPU, memory, disk I/O)
 - Scale horizontally: run multiple consumoor instances with different topic patterns or consumer groups
-- Switch from `deliveryMode: message` to `deliveryMode: batch` if not already (batch mode is significantly faster)
 
 ### DLQ Failures
 
@@ -265,9 +260,9 @@ Common causes of startup failure:
 
 ### Vertical Scaling
 
-- Increase `maxConns` to allow more concurrent ClickHouse writes (default: 8)
-- Increase `batchSize` to write more rows per INSERT (default: 200000)
-- Increase `bufferSize` to absorb more backpressure spikes (default: 200000), at the cost of higher memory usage
+- Increase `maxConns` to allow more concurrent ClickHouse writes (default: 64)
+- Increase `outputBatchCount` to write more rows per INSERT (default: 1000)
+- Increase `bufferSize` to absorb more backpressure spikes (default: 50000), at the cost of higher memory usage
 - Increase pod CPU/memory to handle more concurrent table writers
 
 ## Configuration Tuning
@@ -276,34 +271,33 @@ Common causes of startup failure:
 
 | Parameter | Path | Default | When to adjust |
 |-----------|------|---------|----------------|
-| `batchSize` | `clickhouse.defaults.batchSize` | 200000 | Increase for higher throughput (more rows per INSERT); decrease to reduce memory per flush |
-| `flushInterval` | `clickhouse.defaults.flushInterval` | 1s | Decrease for lower latency; increase if batches are too small |
-| `bufferSize` | `clickhouse.defaults.bufferSize` | 200000 | Increase to absorb ClickHouse hiccups without backpressure; decrease to limit memory |
+| `outputBatchCount` | `kafka.outputBatchCount` | 1000 | Increase for higher throughput (more rows per INSERT); decrease to reduce memory per flush |
+| `outputBatchPeriod` | `kafka.outputBatchPeriod` | 1s | Decrease for lower latency; increase if batches are too small |
+| `maxInFlight` | `kafka.maxInFlight` | 64 | Concurrent WriteBatch calls per stream; increase for more throughput, decrease if ClickHouse is overloaded |
+| `bufferSize` | `clickhouse.defaults.bufferSize` | 50000 | Increase to absorb ClickHouse hiccups without backpressure; decrease to limit memory |
 | `commitInterval` | `kafka.commitInterval` | 5s | Decrease to reduce duplicate replay window on crash; increase to reduce Kafka commit overhead |
-| `maxConns` | `clickhouse.chgo.maxConns` | 8 | Increase when `chgo_pool_empty_acquire_total` is high |
+| `maxConns` | `clickhouse.chgo.maxConns` | 64 | Increase when `chgo_pool_empty_acquire_total` is high |
 | `queryTimeout` | `clickhouse.chgo.queryTimeout` | 30s | Increase if large batches legitimately take longer to insert |
 | `maxRetries` | `clickhouse.chgo.maxRetries` | 3 | Increase if transient ClickHouse errors are frequent but recover quickly |
-| `deliveryMode` | `kafka.deliveryMode` | batch | Use `message` for safer per-message delivery; use `batch` for higher throughput |
 | `sessionTimeoutMs` | `kafka.sessionTimeoutMs` | 30000 | Increase if rebalances are frequent due to slow processing |
+| `adaptiveLimiter.enabled` | `clickhouse.chgo.adaptiveLimiter.enabled` | true | Per-table AIMD concurrency limiting; disable if all tables have uniform latency |
+| `adaptiveLimiter.initialLimit` | `clickhouse.chgo.adaptiveLimiter.initialLimit` | 8 | Starting concurrent INSERTs per table before adaptation |
+| `adaptiveLimiter.maxLimit` | `clickhouse.chgo.adaptiveLimiter.maxLimit` | 50 | Upper bound on concurrent INSERTs per table |
+| `topicOverrides` | `kafka.topicOverrides.<topic>` | (none) | Per-topic overrides for `outputBatchCount`, `outputBatchPeriod`, and `maxInFlight`; matched by exact topic name |
 | `tableSuffix` | `clickhouse.tableSuffix` | (empty) | Set to `_local` to bypass Distributed tables in clustered setups |
 
 ### Per-Table Overrides
 
-High-volume tables (e.g. attestations, committees) may need larger batch and buffer sizes:
+High-volume tables (e.g. attestations, committees) may need larger buffer sizes:
 
 ```yaml
 clickhouse:
   defaults:
-    batchSize: 200000
-    bufferSize: 200000
-    flushInterval: 1s
+    bufferSize: 50000
   tables:
     beacon_api_eth_v1_events_attestation:
-      batchSize: 1000000
       bufferSize: 1000000
-      flushInterval: 5s
     beacon_api_eth_v1_beacon_committee:
-      batchSize: 1000000
       bufferSize: 1000000
 ```
 

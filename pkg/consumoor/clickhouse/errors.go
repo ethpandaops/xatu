@@ -36,8 +36,8 @@ type inputPrepError struct {
 func (e *inputPrepError) Error() string { return e.cause.Error() }
 func (e *inputPrepError) Unwrap() error { return e.cause }
 
-// flattenError wraps FlattenTo failures. Not matched by IsPermanentWriteError,
-// so the source nack path retries via Kafka redelivery.
+// flattenError wraps FlattenTo failures. Classified as permanent because
+// corrupt data cannot fix itself on retry.
 type flattenError struct {
 	cause error
 }
@@ -45,45 +45,104 @@ type flattenError struct {
 func (e *flattenError) Error() string { return fmt.Sprintf("flatten failed: %v", e.cause) }
 func (e *flattenError) Unwrap() error { return e.cause }
 
+// limiterRejectedError indicates the adaptive concurrency limiter rejected
+// the request. This is not retryable (doWithRetry exits immediately) and not
+// permanent — the table writer simply waits for the next flush cycle.
+type limiterRejectedError struct {
+	cause error
+}
+
+func (e *limiterRejectedError) Error() string {
+	return fmt.Sprintf("adaptive limiter rejected: %v", e.cause)
+}
+
+func (e *limiterRejectedError) Unwrap() error { return e.cause }
+
+// IsLimiterRejected reports whether err was caused by adaptive concurrency
+// limiter rejection.
+func IsLimiterRejected(err error) bool {
+	var lre *limiterRejectedError
+
+	return errors.As(err, &lre)
+}
+
 // IsPermanentWriteError returns true for errors that will never succeed on
-// retry: schema mismatches, type errors, conversion failures.
+// retry: data-quality problems (bad values, parse failures) and code bugs
+// (syntax errors, bad arguments). Schema mismatches (unknown table, missing
+// column, column count) are intentionally excluded because they can be
+// transient during rolling deployments when migrations haven't been applied
+// yet — NAK + Kafka redelivery lets them self-resolve.
+//
+// For joined errors (from multi-table concurrent flushes), all constituent
+// errors must be permanent for the result to be permanent. A single transient
+// failure in any table means the group should be NAK'd for retry.
 func IsPermanentWriteError(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	var prepErr *inputPrepError
-	if errors.As(err, &prepErr) {
+	// Direct type checks — avoid errors.As which traverses into joined
+	// error children and would incorrectly match a single permanent child
+	// inside a mixed joined error.
+	switch e := err.(type) {
+	case *inputPrepError:
 		return true
+	case *flattenError:
+		return true
+	case *ch.Exception:
+		return isPermanentCHException(e)
 	}
 
-	if exc, ok := ch.AsException(err); ok {
-		return exc.IsCode(
-			proto.ErrUnknownTable,
-			proto.ErrUnknownDatabase,
-			proto.ErrNoSuchColumnInTable,
-			proto.ErrThereIsNoColumn,
-			proto.ErrUnknownIdentifier,
-			proto.ErrTypeMismatch,
-			proto.ErrCannotConvertType,
-			proto.ErrCannotParseText,
-			proto.ErrCannotParseNumber,
-			proto.ErrCannotParseDate,
-			proto.ErrCannotParseDatetime,
-			proto.ErrCannotInsertNullInOrdinaryColumn,
-			proto.ErrIncorrectData,
-			proto.ErrValueIsOutOfRangeOfDataType,
-			proto.ErrIncorrectNumberOfColumns,
-			proto.ErrNumberOfColumnsDoesntMatch,
-			proto.ErrIllegalColumn,
-			proto.ErrIllegalTypeOfArgument,
-			proto.ErrUnknownSetting,
-			proto.ErrBadArguments,
-			proto.ErrSyntaxError,
-		)
+	// Multi-unwrap (errors.Join, ch.Exception chains): only permanent if
+	// ALL non-nil constituents are individually permanent. A single
+	// transient failure in any table means the group should be NAK'd.
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		errs := joined.Unwrap()
+
+		hasConcrete := false
+
+		for _, e := range errs {
+			if e == nil {
+				continue
+			}
+
+			hasConcrete = true
+
+			if !IsPermanentWriteError(e) {
+				return false
+			}
+		}
+
+		return hasConcrete
+	}
+
+	// Single-unwrap: walk the error chain (e.g. tableWriteError wrapping
+	// an inputPrepError or ch.Exception).
+	if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
+		return IsPermanentWriteError(unwrapper.Unwrap())
 	}
 
 	return false
+}
+
+func isPermanentCHException(exc *ch.Exception) bool {
+	return exc.IsCode(
+		// Data-quality errors: the message payload itself is invalid,
+		// retrying the same data will never succeed.
+		proto.ErrCannotConvertType,
+		proto.ErrCannotParseText,
+		proto.ErrCannotParseNumber,
+		proto.ErrCannotParseDate,
+		proto.ErrCannotParseDatetime,
+		proto.ErrCannotInsertNullInOrdinaryColumn,
+		proto.ErrIncorrectData,
+		proto.ErrValueIsOutOfRangeOfDataType,
+		proto.ErrIllegalTypeOfArgument,
+		// Code/config bugs: no amount of retry will fix these.
+		proto.ErrUnknownSetting,
+		proto.ErrBadArguments,
+		proto.ErrSyntaxError,
+	)
 }
 
 func isRetryableError(err error) bool {
@@ -134,11 +193,14 @@ func isRetryableError(err error) bool {
 
 	errStr := strings.ToLower(err.Error())
 	transientPatterns := []string{
-		"connection reset",
+		"connection reset by peer",
 		"connection refused",
 		"broken pipe",
-		"eof",
-		"timeout",
+		"unexpected eof",
+		"read: eof",
+		"write: eof",
+		"i/o timeout",
+		"operation timed out",
 		"temporary failure",
 		"server is overloaded",
 		"too many connections",

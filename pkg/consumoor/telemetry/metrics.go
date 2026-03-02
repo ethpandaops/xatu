@@ -7,22 +7,31 @@ import (
 
 // Metrics holds all Prometheus metrics for the consumoor service.
 type Metrics struct {
-	messagesConsumed *prometheus.CounterVec
-	messagesRouted   *prometheus.CounterVec
-	messagesDropped  *prometheus.CounterVec
-	messagesRejected *prometheus.CounterVec
-	decodeErrors     *prometheus.CounterVec
-	dlqWrites        *prometheus.CounterVec
-	dlqErrors        *prometheus.CounterVec
-	rowsWritten      *prometheus.CounterVec
-	writeErrors      *prometheus.CounterVec
-	writeDuration    *prometheus.HistogramVec
-	batchSize        *prometheus.HistogramVec
-	bufferUsage      *prometheus.GaugeVec
-	bufferUsageTotal prometheus.Gauge
-	flattenErrors    *prometheus.CounterVec
-	activeTopics     prometheus.Gauge
-	kafkaConsumerLag *prometheus.GaugeVec
+	messagesConsumed  *prometheus.CounterVec
+	messagesRouted    *prometheus.CounterVec
+	messagesDropped   *prometheus.CounterVec
+	messagesRejected  *prometheus.CounterVec
+	decodeErrors      *prometheus.CounterVec
+	dlqWrites         *prometheus.CounterVec
+	dlqErrors         *prometheus.CounterVec
+	rowsWritten       *prometheus.CounterVec
+	writeErrors       *prometheus.CounterVec
+	writeDuration     *prometheus.HistogramVec
+	batchSize         *prometheus.HistogramVec
+	flattenErrors     *prometheus.CounterVec
+	eventLag          *prometheus.HistogramVec
+	batchFlushTrigger *prometheus.CounterVec
+	activeTopics      prometheus.Gauge
+	kafkaConsumerLag  *prometheus.GaugeVec
+	outputMaxInFlight *prometheus.GaugeVec
+	writeRetries      *prometheus.CounterVec
+	groupRetries      *prometheus.CounterVec
+
+	// adaptive limiter metrics (per-table)
+	adaptiveLimiterLimit      *prometheus.GaugeVec
+	adaptiveLimiterInflight   *prometheus.GaugeVec
+	adaptiveLimiterQueued     *prometheus.GaugeVec
+	adaptiveLimiterRejections *prometheus.CounterVec
 
 	// ch-go pool metrics
 	chgoPoolAcquiredResources     prometheus.Gauge
@@ -125,26 +134,27 @@ func NewMetrics(namespace string) *Metrics {
 			Buckets:   []float64{1, 10, 100, 1000, 10000, 50000, 100000, 200000, 500000, 1000000},
 		}, []string{"table"}),
 
-		bufferUsage: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "buffer_usage",
-			Help:      "Current number of rows buffered per table.",
-		}, []string{"table"}),
-
-		bufferUsageTotal: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "buffer_usage_total",
-			Help:      "Sum of all table buffer usages. Single number for aggregate memory pressure alerting.",
-		}),
-
 		flattenErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "flatten_errors_total",
 			Help:      "Total number of flattener errors.",
 		}, []string{"event_name", "table"}),
+
+		eventLag: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "event_lag_seconds",
+			Help:      "Lag between the event timestamp and the wall clock time at routing.",
+			Buckets:   []float64{1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200, 14400},
+		}, []string{"event_name"}),
+
+		batchFlushTrigger: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "batch_flush_trigger_total",
+			Help:      "Total number of batch flushes by trigger type (count or timeout).",
+		}, []string{"topic", "trigger"}),
 
 		activeTopics: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -159,6 +169,55 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "kafka_consumer_lag",
 			Help:      "Kafka consumer group lag per topic and partition.",
 		}, []string{"topic", "partition", "consumer_group"}),
+
+		outputMaxInFlight: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "output_max_in_flight",
+			Help:      "Configured maximum number of concurrent Benthos WriteBatch calls per stream.",
+		}, []string{"topic"}),
+
+		adaptiveLimiterLimit: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_limit",
+			Help:      "Current adaptive concurrency limit per table.",
+		}, []string{"table"}),
+
+		adaptiveLimiterInflight: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_inflight",
+			Help:      "Current number of in-flight permits per table.",
+		}, []string{"table"}),
+
+		adaptiveLimiterQueued: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_queued",
+			Help:      "Current number of queued permit requests per table.",
+		}, []string{"table"}),
+
+		adaptiveLimiterRejections: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "adaptive_limiter_rejections_total",
+			Help:      "Total number of requests rejected by the adaptive concurrency limiter.",
+		}, []string{"table"}),
+
+		writeRetries: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "write_retries_total",
+			Help:      "Total number of ch-go operation retry attempts after transient errors.",
+		}, []string{"operation"}),
+
+		groupRetries: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "group_retries_total",
+			Help:      "Total number of group-level retry attempts for partial table failures.",
+		}, []string{"event_name"}),
 
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -232,22 +291,32 @@ func NewMetrics(namespace string) *Metrics {
 	}
 }
 
-func (m *Metrics) MessagesConsumed() *prometheus.CounterVec { return m.messagesConsumed }
-func (m *Metrics) MessagesRouted() *prometheus.CounterVec   { return m.messagesRouted }
-func (m *Metrics) MessagesDropped() *prometheus.CounterVec  { return m.messagesDropped }
-func (m *Metrics) MessagesRejected() *prometheus.CounterVec { return m.messagesRejected }
-func (m *Metrics) DecodeErrors() *prometheus.CounterVec     { return m.decodeErrors }
-func (m *Metrics) DLQWrites() *prometheus.CounterVec        { return m.dlqWrites }
-func (m *Metrics) DLQErrors() *prometheus.CounterVec        { return m.dlqErrors }
-func (m *Metrics) RowsWritten() *prometheus.CounterVec      { return m.rowsWritten }
-func (m *Metrics) WriteErrors() *prometheus.CounterVec      { return m.writeErrors }
-func (m *Metrics) WriteDuration() *prometheus.HistogramVec  { return m.writeDuration }
-func (m *Metrics) BatchSize() *prometheus.HistogramVec      { return m.batchSize }
-func (m *Metrics) BufferUsage() *prometheus.GaugeVec        { return m.bufferUsage }
-func (m *Metrics) BufferUsageTotal() prometheus.Gauge       { return m.bufferUsageTotal }
-func (m *Metrics) FlattenErrors() *prometheus.CounterVec    { return m.flattenErrors }
-func (m *Metrics) ActiveTopics() prometheus.Gauge           { return m.activeTopics }
-func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec   { return m.kafkaConsumerLag }
+func (m *Metrics) MessagesConsumed() *prometheus.CounterVec  { return m.messagesConsumed }
+func (m *Metrics) MessagesRouted() *prometheus.CounterVec    { return m.messagesRouted }
+func (m *Metrics) MessagesDropped() *prometheus.CounterVec   { return m.messagesDropped }
+func (m *Metrics) MessagesRejected() *prometheus.CounterVec  { return m.messagesRejected }
+func (m *Metrics) DecodeErrors() *prometheus.CounterVec      { return m.decodeErrors }
+func (m *Metrics) DLQWrites() *prometheus.CounterVec         { return m.dlqWrites }
+func (m *Metrics) DLQErrors() *prometheus.CounterVec         { return m.dlqErrors }
+func (m *Metrics) RowsWritten() *prometheus.CounterVec       { return m.rowsWritten }
+func (m *Metrics) WriteErrors() *prometheus.CounterVec       { return m.writeErrors }
+func (m *Metrics) WriteDuration() *prometheus.HistogramVec   { return m.writeDuration }
+func (m *Metrics) BatchSize() *prometheus.HistogramVec       { return m.batchSize }
+func (m *Metrics) FlattenErrors() *prometheus.CounterVec     { return m.flattenErrors }
+func (m *Metrics) EventLag() *prometheus.HistogramVec        { return m.eventLag }
+func (m *Metrics) BatchFlushTrigger() *prometheus.CounterVec { return m.batchFlushTrigger }
+func (m *Metrics) ActiveTopics() prometheus.Gauge            { return m.activeTopics }
+func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec    { return m.kafkaConsumerLag }
+func (m *Metrics) OutputMaxInFlight() *prometheus.GaugeVec   { return m.outputMaxInFlight }
+
+func (m *Metrics) AdaptiveLimiterLimit() *prometheus.GaugeVec    { return m.adaptiveLimiterLimit }
+func (m *Metrics) AdaptiveLimiterInflight() *prometheus.GaugeVec { return m.adaptiveLimiterInflight }
+func (m *Metrics) AdaptiveLimiterQueued() *prometheus.GaugeVec   { return m.adaptiveLimiterQueued }
+func (m *Metrics) AdaptiveLimiterRejections() *prometheus.CounterVec {
+	return m.adaptiveLimiterRejections
+}
+func (m *Metrics) WriteRetries() *prometheus.CounterVec { return m.writeRetries }
+func (m *Metrics) GroupRetries() *prometheus.CounterVec { return m.groupRetries }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

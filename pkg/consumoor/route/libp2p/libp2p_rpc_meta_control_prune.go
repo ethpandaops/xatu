@@ -102,12 +102,12 @@ func (b *libp2pRpcMetaControlPruneBatch) appendPayload(
 	peerID := wrappedStringValue(payload.GetPeerId())
 	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 
-	// Compute graft_peer_id_unique_key (nullable).
+	// Compute graft_peer_id_unique_key (nullable – NULL when no graft peer).
 	graftPeerID := wrappedStringValue(payload.GetGraftPeerId())
 	if graftPeerID != "" {
 		b.GraftPeerIDUniqueKey.Append(proto.NewNullable[int64](computePeerIDUniqueKey(graftPeerID, networkName)))
 	} else {
-		b.GraftPeerIDUniqueKey.Append(proto.NewNullable[int64](route.SeaHashInt64(networkName)))
+		b.GraftPeerIDUniqueKey.Append(proto.Nullable[int64]{})
 	}
 
 	// Parse topic fields.

@@ -26,7 +26,11 @@ func TestSnapshot_libp2p_rpc_data_column_custody_probe(t *testing.T) {
 		},
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_Libp2PTraceRpcDataColumnCustodyProbe{
-				Libp2PTraceRpcDataColumnCustodyProbe: &xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{},
+				Libp2PTraceRpcDataColumnCustodyProbe: &xatu.ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{
+					Metadata: &libp2ppb.TraceEventMetadata{
+						PeerId: wrapperspb.String(testPeerID),
+					},
+				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe{

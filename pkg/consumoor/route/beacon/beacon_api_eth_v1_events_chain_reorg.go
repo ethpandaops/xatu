@@ -64,10 +64,6 @@ func (b *beaconApiEthV1EventsChainReorgBatch) validate(event *xatu.DecoratedEven
 		return fmt.Errorf("nil Depth: %w", route.ErrInvalidEvent)
 	}
 
-	if payload.GetEpoch() == nil {
-		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
-	}
-
 	return nil
 }
 
@@ -99,13 +95,6 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendPayload(event *xatu.Decorate
 	b.NewHeadBlock.Append([]byte(chainReorgV2.GetNewHeadBlock()))
 	b.OldHeadState.Append([]byte(chainReorgV2.GetOldHeadState()))
 	b.NewHeadState.Append([]byte(chainReorgV2.GetNewHeadState()))
-
-	if epoch := chainReorgV2.GetEpoch(); epoch != nil {
-		b.Epoch.Append(uint32(epoch.GetValue())) //nolint:gosec // epoch fits uint32
-	} else {
-		b.Epoch.Append(0)
-	}
-
 	b.ExecutionOptimistic.Append(false)
 }
 
@@ -113,6 +102,7 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendAdditionalData(event *xatu.D
 	if event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
 		b.SlotStartDateTime.Append(time.Time{})
 		b.PropagationSlotStartDiff.Append(0)
+		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
 
 		return
@@ -123,5 +113,6 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendAdditionalData(event *xatu.D
 
 	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
 	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
+	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32
 	b.EpochStartDateTime.Append(time.Unix(additional.EpochStartDateTime, 0))
 }

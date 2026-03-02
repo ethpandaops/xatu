@@ -26,6 +26,31 @@ var supportedSASLMechanisms = map[string]struct{}{
 	SASLMechanismOAUTHBEARER: {},
 }
 
+// TopicOverride holds per-topic batch settings that override KafkaConfig defaults.
+// Nil pointer fields inherit the global default.
+type TopicOverride struct {
+	OutputBatchCount  *int           `yaml:"outputBatchCount"`
+	OutputBatchPeriod *time.Duration `yaml:"outputBatchPeriod"`
+	MaxInFlight       *int           `yaml:"maxInFlight"`
+}
+
+// Validate checks the per-topic override for errors.
+func (o *TopicOverride) Validate(topic string) error {
+	if o.OutputBatchCount != nil && *o.OutputBatchCount < 0 {
+		return fmt.Errorf("kafka.topicOverrides.%s: outputBatchCount must be >= 0", topic)
+	}
+
+	if o.OutputBatchPeriod != nil && *o.OutputBatchPeriod < 0 {
+		return fmt.Errorf("kafka.topicOverrides.%s: outputBatchPeriod must be >= 0", topic)
+	}
+
+	if o.MaxInFlight != nil && *o.MaxInFlight < 1 {
+		return fmt.Errorf("kafka.topicOverrides.%s: maxInFlight must be >= 1", topic)
+	}
+
+	return nil
+}
+
 // KafkaConfig configures the Kafka consumer.
 type KafkaConfig struct {
 	// Brokers is a list of Kafka broker addresses.
@@ -47,10 +72,19 @@ type KafkaConfig struct {
 	// FetchWaitMaxMs is the maximum time to wait for fetch responses.
 	FetchWaitMaxMs int `yaml:"fetchWaitMaxMs" default:"250"`
 	// MaxPartitionFetchBytes is the max bytes per partition per request.
-	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"10485760"`
+	MaxPartitionFetchBytes int32 `yaml:"maxPartitionFetchBytes" default:"3145728"`
+	// FetchMaxBytes is the max total bytes per fetch request across all
+	// partitions from a single broker. With many independent consumers
+	// (one per topic) this is the primary lever for capping in-flight
+	// memory from Kafka fetch buffers. Default: 10 MiB.
+	FetchMaxBytes int32 `yaml:"fetchMaxBytes" default:"10485760"`
 
 	// SessionTimeoutMs is the consumer group session timeout.
 	SessionTimeoutMs int `yaml:"sessionTimeoutMs" default:"30000"`
+	// RebalanceTimeout is the maximum time group members are allowed to
+	// take when a rebalance has begun (finish work, commit offsets, rejoin).
+	// Lower values speed up partition reassignment when scaling. Default: 15s.
+	RebalanceTimeout time.Duration `yaml:"rebalanceTimeout" default:"15s"`
 
 	// OffsetDefault controls where to start consuming when no offset exists.
 	// Valid values: "earliest" or "latest".
@@ -72,6 +106,32 @@ type KafkaConfig struct {
 	// LagPollInterval controls how often consumer lag is polled from Kafka.
 	// Set to 0 to disable lag monitoring. Default: 30s.
 	LagPollInterval time.Duration `yaml:"lagPollInterval" default:"30s"`
+	// ConnectTimeout is the maximum time a TCP dial to a broker will wait
+	// for a connection to complete. A reasonable value (e.g. 10s) prevents
+	// hung dials from generating noisy warnings when some brokers are
+	// temporarily unreachable. Default: 10s. Set to 0 to disable.
+	ConnectTimeout time.Duration `yaml:"connectTimeout" default:"10s"`
+
+	// OutputBatchCount is the number of messages Benthos accumulates before
+	// calling WriteBatch on the output plugin. Higher values increase INSERT
+	// throughput by writing more rows per ClickHouse INSERT. Set to 0 to
+	// disable count-based batching. Default: 10000.
+	OutputBatchCount int `yaml:"outputBatchCount" default:"10000"`
+	// OutputBatchPeriod is the maximum time Benthos waits to fill a batch
+	// before flushing a partial batch. Ensures low-volume topics still make
+	// progress. Default: 5s. Set to 0 to disable period-based flushing.
+	OutputBatchPeriod time.Duration `yaml:"outputBatchPeriod" default:"5s"`
+
+	// MaxInFlight is the maximum number of concurrent WriteBatch calls
+	// Benthos makes for each stream's output. Higher values increase
+	// throughput by allowing concurrent ClickHouse INSERTs and bigger
+	// natural batches. Default: 64.
+	MaxInFlight int `yaml:"maxInFlight" default:"64"`
+
+	// TopicOverrides contains per-topic batch settings keyed by exact topic name.
+	// Overrides are matched against discovered concrete topic names. Unset fields
+	// inherit the global defaults from this KafkaConfig.
+	TopicOverrides map[string]TopicOverride `yaml:"topicOverrides"`
 }
 
 // SASLConfig configures SASL authentication for Kafka.
@@ -112,6 +172,10 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: sessionTimeoutMs must be > 0")
 	}
 
+	if c.RebalanceTimeout < 100*time.Millisecond {
+		return errors.New("kafka: rebalanceTimeout must be >= 100ms")
+	}
+
 	if c.CommitInterval <= 0 {
 		return errors.New("kafka: commitInterval must be positive")
 	}
@@ -126,6 +190,48 @@ func (c *KafkaConfig) Validate() error {
 		)
 	}
 
+	if c.OutputBatchCount < 0 {
+		return errors.New("kafka: outputBatchCount must be >= 0")
+	}
+
+	if c.OutputBatchPeriod < 0 {
+		return errors.New("kafka: outputBatchPeriod must be >= 0")
+	}
+
+	if c.MaxInFlight < 1 {
+		return errors.New("kafka: maxInFlight must be >= 1")
+	}
+
+	if c.FetchMinBytes < 1 {
+		return errors.New("kafka: fetchMinBytes must be >= 1")
+	}
+
+	if c.FetchWaitMaxMs <= 0 {
+		return errors.New("kafka: fetchWaitMaxMs must be > 0")
+	}
+
+	if c.MaxPartitionFetchBytes < 1 {
+		return errors.New("kafka: maxPartitionFetchBytes must be >= 1")
+	}
+
+	if c.FetchMaxBytes < 1 {
+		return errors.New("kafka: fetchMaxBytes must be >= 1")
+	}
+
+	if c.LagPollInterval < 0 {
+		return errors.New("kafka: lagPollInterval must be >= 0")
+	}
+
+	if c.ConnectTimeout < 0 {
+		return errors.New("kafka: connectTimeout must be >= 0")
+	}
+
+	for topic, override := range c.TopicOverrides {
+		if err := override.Validate(topic); err != nil {
+			return err
+		}
+	}
+
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("kafka.%w", err)
 	}
@@ -137,6 +243,31 @@ func (c *KafkaConfig) Validate() error {
 	}
 
 	return nil
+}
+
+// ApplyTopicOverride returns a shallow copy with per-topic overrides merged in.
+// Fields not set in the override keep the global default.
+func (c *KafkaConfig) ApplyTopicOverride(topic string) KafkaConfig {
+	out := *c
+
+	override, ok := c.TopicOverrides[topic]
+	if !ok {
+		return out
+	}
+
+	if override.OutputBatchCount != nil {
+		out.OutputBatchCount = *override.OutputBatchCount
+	}
+
+	if override.OutputBatchPeriod != nil {
+		out.OutputBatchPeriod = *override.OutputBatchPeriod
+	}
+
+	if override.MaxInFlight != nil {
+		out.MaxInFlight = *override.MaxInFlight
+	}
+
+	return out
 }
 
 // heartbeatIntervalMs derives the heartbeat interval from the session timeout.
@@ -158,16 +289,21 @@ func (c *SASLConfig) Validate() error {
 		}
 	}
 
-	if c.User == "" {
-		return errors.New("kafka.sasl: user is required")
-	}
-
 	if c.Password == "" && c.PasswordFile == "" {
 		return errors.New("kafka.sasl: password or passwordFile is required")
 	}
 
 	if c.Password != "" && c.PasswordFile != "" {
 		return errors.New("kafka.sasl: only one of password or passwordFile can be set")
+	}
+
+	// OAUTHBEARER uses a token only; no username is required.
+	if mechanism == SASLMechanismOAUTHBEARER {
+		return nil
+	}
+
+	if c.User == "" {
+		return errors.New("kafka.sasl: user is required")
 	}
 
 	return nil

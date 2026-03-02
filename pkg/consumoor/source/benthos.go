@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	_ "github.com/redpanda-data/benthos/v4/public/components/pure"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -16,6 +17,16 @@ import (
 )
 
 const benthosOutputType = "xatu_clickhouse"
+
+// GroupRetryConfig configures group-level retry behavior for partial table
+// failures in processGroup. When a fanout flush partially fails (some tables
+// succeed, others fail transiently), only the failed tables are retried with
+// exponential backoff to limit write amplification.
+type GroupRetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+}
 
 // NewBenthosStream creates a Benthos stream that consumes from Kafka and writes
 // to ClickHouse via the custom xatu_clickhouse output plugin.
@@ -30,6 +41,7 @@ func NewBenthosStream(
 	routeEngine *router.Engine,
 	writer Writer,
 	ownsWriter bool,
+	groupRetry GroupRetryConfig,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
 		return nil, fmt.Errorf("nil kafka config")
@@ -48,19 +60,33 @@ func NewBenthosStream(
 		}
 	}
 
+	batchPolicy := service.BatchPolicy{}
+	if kafkaConfig.OutputBatchCount > 0 {
+		batchPolicy.Count = kafkaConfig.OutputBatchCount
+	}
+
+	if kafkaConfig.OutputBatchPeriod > 0 {
+		batchPolicy.Period = kafkaConfig.OutputBatchPeriod.String()
+	}
+
 	if registerErr := env.RegisterBatchOutput(
 		benthosOutputType,
 		service.NewConfigSpec(),
 		func(_ *service.ParsedConfig, _ *service.Resources) (out service.BatchOutput, policy service.BatchPolicy, maxInFlight int, err error) {
 			return &xatuClickHouseOutput{
-				log:        log.WithField("component", "benthos_clickhouse_output"),
-				encoding:   kafkaConfig.Encoding,
-				router:     routeEngine,
-				writer:     writer,
-				metrics:    metrics,
-				rejectSink: rejectSink,
-				ownsWriter: ownsWriter,
-			}, service.BatchPolicy{}, 1, nil
+				log:                   log.WithField("component", "benthos_clickhouse_output"),
+				encoding:              kafkaConfig.Encoding,
+				router:                routeEngine,
+				writer:                writer,
+				metrics:               metrics,
+				rejectSink:            rejectSink,
+				ownsWriter:            ownsWriter,
+				outputBatchCount:      kafkaConfig.OutputBatchCount,
+				logSampler:            telemetry.NewLogSampler(30 * time.Second),
+				groupRetryMaxAttempts: groupRetry.MaxAttempts,
+				groupRetryBaseDelay:   groupRetry.BaseDelay,
+				groupRetryMaxDelay:    groupRetry.MaxDelay,
+			}, batchPolicy, kafkaConfig.MaxInFlight, nil
 		},
 	); registerErr != nil {
 		closeRejectSink()
@@ -106,12 +132,20 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"fetch_min_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMinBytes),
 		"fetch_max_wait":            fmt.Sprintf("%dms", kafkaConfig.FetchWaitMaxMs),
 		"fetch_max_partition_bytes": fmt.Sprintf("%dB", kafkaConfig.MaxPartitionFetchBytes),
+		"fetch_max_bytes":           fmt.Sprintf("%dB", kafkaConfig.FetchMaxBytes),
 		"session_timeout":           fmt.Sprintf("%dms", kafkaConfig.SessionTimeoutMs),
 		"heartbeat_interval":        fmt.Sprintf("%dms", kafkaConfig.heartbeatIntervalMs()),
+		"rebalance_timeout":         kafkaConfig.RebalanceTimeout.String(),
 	}
 
 	if kafkaConfig.TopicRefreshInterval > 0 {
 		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
+	}
+
+	if kafkaConfig.ConnectTimeout > 0 {
+		inputKafka["tcp"] = map[string]any{
+			"connect_timeout": kafkaConfig.ConnectTimeout.String(),
+		}
 	}
 
 	if kafkaConfig.TLS.Enabled {
@@ -197,7 +231,7 @@ func benthosSASLObject(cfg *SASLConfig) (map[string]any, error) {
 		return nil, err
 	}
 
-	mechanism := strings.TrimSpace(cfg.Mechanism)
+	mechanism := strings.ToUpper(strings.TrimSpace(cfg.Mechanism))
 	if mechanism == "" {
 		mechanism = SASLMechanismPLAIN
 	}

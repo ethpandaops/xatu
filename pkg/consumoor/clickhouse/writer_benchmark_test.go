@@ -124,7 +124,7 @@ func BenchmarkFlushTableEvents(b *testing.B) {
 			benchTable: {event},
 		}
 
-		if err := w.FlushTableEvents(context.Background(), tableEvents); err != nil {
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
 			b.Fatalf("FlushTableEvents: %v", err)
 		}
 	}
@@ -154,7 +154,7 @@ func BenchmarkFlushTableEventsBatch(b *testing.B) {
 			benchTable: events,
 		}
 
-		if err := w.FlushTableEvents(context.Background(), tableEvents); err != nil {
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
 			b.Fatalf("FlushTableEvents: %v", err)
 		}
 	}
@@ -185,7 +185,7 @@ func BenchmarkFlushConcurrent(b *testing.B) {
 				benchTable: events,
 			}
 
-			if err := w.FlushTableEvents(context.Background(), tableEvents); err != nil {
+			if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
 				b.Logf("FlushTableEvents: %v", err)
 			}
 		}
@@ -239,7 +239,7 @@ func BenchmarkEndToEndWithFlatten(b *testing.B) {
 			benchTable: {event},
 		}
 
-		if err := w.FlushTableEvents(context.Background(), tableEvents); err != nil {
+		if err := w.FlushTableEvents(context.Background(), tableEvents).Err(); err != nil {
 			b.Fatalf("FlushTableEvents: %v", err)
 		}
 	}

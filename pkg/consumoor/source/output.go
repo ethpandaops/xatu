@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
@@ -19,6 +20,7 @@ const (
 	rejectReasonDecode         = "decode_error"
 	rejectReasonRouteRejected  = "route_rejected"
 	rejectReasonWritePermanent = "write_permanent"
+	rejectReasonInvalidEvent   = "invalid_event"
 )
 
 var errBatchWriteFailed = errors.New("clickhouse batch write failed")
@@ -47,6 +49,11 @@ type xatuClickHouseOutput struct {
 	ownsWriter       bool
 	outputBatchCount int
 	logSampler       *telemetry.LogSampler
+
+	// Group-level retry config for partial table failures.
+	groupRetryMaxAttempts int
+	groupRetryBaseDelay   time.Duration
+	groupRetryMaxDelay    time.Duration
 
 	mu      sync.Mutex
 	started bool
@@ -274,12 +281,10 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 // The caller's accumulated batchErr is threaded through so that failures from
 // earlier phases (e.g. decode errors) are preserved.
 //
-// NOTE: for events that fan out to multiple tables, a partial failure (some
-// tables succeed, others fail) will NAK the entire group. On redelivery the
-// successfully written tables will receive duplicate rows. This is inherent
-// to the at-least-once delivery model; ClickHouse deduplication (e.g.
-// ReplacingMergeTree) should be used for tables that require exactly-once
-// semantics.
+// For events that fan out to multiple tables, partial failures (some tables
+// succeed, others fail transiently) are retried with exponential backoff.
+// Only the failed tables are retried to prevent duplicate writes on already-
+// succeeded tables.
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,
@@ -293,7 +298,85 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 	}
 
-	err := o.writer.FlushTableEvents(ctx, tableEvents)
+	var (
+		allInvalidEvents []*xatu.DecoratedEvent
+		lastResult       *clickhouse.FlushResult
+	)
+
+	// Group-level retry loop for partial table failures.
+	for attempt := range o.groupRetryMaxAttempts + 1 {
+		if attempt > 0 && len(tableEvents) > 0 {
+			delay := min(
+				o.groupRetryBaseDelay*time.Duration(1<<(attempt-1)),
+				o.groupRetryMaxDelay,
+			)
+
+			o.log.WithFields(logrus.Fields{
+				"attempt":       attempt,
+				"max_attempts":  o.groupRetryMaxAttempts,
+				"delay":         delay,
+				"failed_tables": len(tableEvents),
+			}).Warn("Retrying failed tables with backoff")
+
+			o.metrics.GroupRetries().WithLabelValues(
+				g.messages[0].event.GetEvent().GetName().String(),
+			).Inc()
+
+			select {
+			case <-ctx.Done():
+				for _, gm := range g.messages {
+					batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, ctx.Err())
+				}
+
+				return batchErr
+			case <-time.After(delay):
+			}
+		}
+
+		result := o.writer.FlushTableEvents(ctx, tableEvents)
+		lastResult = result
+
+		if len(result.InvalidEvents) > 0 {
+			allInvalidEvents = append(allInvalidEvents, result.InvalidEvents...)
+		}
+
+		// All tables succeeded.
+		if len(result.TableErrors) == 0 {
+			break
+		}
+
+		// Check if any failures are permanent — don't retry those.
+		anyTransient := false
+
+		for _, tErr := range result.TableErrors {
+			if !clickhouse.IsPermanentWriteError(tErr) {
+				anyTransient = true
+
+				break
+			}
+		}
+
+		if !anyTransient {
+			break
+		}
+
+		// Remove succeeded tables from the retry set.
+		remaining := make(map[string][]*xatu.DecoratedEvent, len(result.TableErrors))
+
+		for table := range result.TableErrors {
+			if events, ok := tableEvents[table]; ok {
+				remaining[table] = events
+			}
+		}
+
+		tableEvents = remaining
+	}
+
+	// DLQ invalid events individually. Deduplicate by event pointer since
+	// the same event can appear in multiple tables' invalid lists due to fanout.
+	batchErr = o.dlqInvalidEvents(ctx, msgs, batchErr, g, allInvalidEvents)
+
+	err := lastResult.Err()
 	if err == nil {
 		return batchErr
 	}
@@ -331,6 +414,51 @@ func (o *xatuClickHouseOutput) processGroup(
 	return batchErr
 }
 
+// dlqInvalidEvents sends invalid events to the DLQ, deduplicating by event
+// pointer to handle fanout where the same event appears in multiple tables.
+func (o *xatuClickHouseOutput) dlqInvalidEvents(
+	ctx context.Context,
+	msgs service.MessageBatch,
+	batchErr *service.BatchError,
+	g *eventGroup,
+	invalidEvents []*xatu.DecoratedEvent,
+) *service.BatchError {
+	if len(invalidEvents) == 0 {
+		return batchErr
+	}
+
+	seen := make(map[*xatu.DecoratedEvent]struct{}, len(invalidEvents))
+
+	for _, ev := range invalidEvents {
+		if _, dup := seen[ev]; dup {
+			continue
+		}
+
+		seen[ev] = struct{}{}
+
+		for _, gm := range g.messages {
+			if gm.event != ev {
+				continue
+			}
+
+			rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason:    rejectReasonInvalidEvent,
+				Err:       "invalid event: permanently unflattenable",
+				Payload:   append([]byte(nil), gm.raw...),
+				EventName: ev.GetEvent().GetName().String(),
+				Kafka:     gm.kafka,
+			})
+			if rejectErr != nil {
+				batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, rejectErr)
+			}
+
+			break
+		}
+	}
+
+	return batchErr
+}
+
 func (o *xatuClickHouseOutput) rejectMessage(
 	ctx context.Context,
 	record *rejectedRecord,
@@ -348,9 +476,11 @@ func (o *xatuClickHouseOutput) rejectMessage(
 			return nil
 		}
 
-		// For all other reasons (decode errors, permanent write failures)
-		// failing the message forces Kafka to redeliver rather than
-		// silently dropping data when no DLQ is configured.
+		// For all other reasons (decode errors, permanent write failures,
+		// invalid events) failing the message forces Kafka to redeliver
+		// rather than silently dropping data when no DLQ is configured.
+		// Invalid events may become valid after a rolling deploy where a
+		// newer version adds support for new fields or event subtypes.
 		return fmt.Errorf("no DLQ configured for rejected message (%s): %s", record.Reason, record.Err)
 	}
 

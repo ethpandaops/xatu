@@ -31,20 +31,6 @@ type rejectSink interface {
 	Enabled() bool
 }
 
-type noopRejectSink struct{}
-
-func (noopRejectSink) Write(_ context.Context, _ *rejectedRecord) error {
-	return nil
-}
-
-func (noopRejectSink) Close() error {
-	return nil
-}
-
-func (noopRejectSink) Enabled() bool {
-	return false
-}
-
 type kafkaRejectSink struct {
 	topic string
 	cl    *kgo.Client
@@ -102,11 +88,11 @@ func (s *kafkaRejectSink) Write(ctx context.Context, record *rejectedRecord) err
 
 func newRejectSink(cfg *KafkaConfig) (rejectSink, error) {
 	if cfg == nil {
-		return noopRejectSink{}, nil
+		return nil, nil
 	}
 
 	if strings.TrimSpace(cfg.RejectedTopic) == "" {
-		return noopRejectSink{}, nil
+		return nil, nil
 	}
 
 	opts := []kgo.Opt{

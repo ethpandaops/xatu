@@ -15,6 +15,32 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// FlushResult holds the structured outcome of a FlushTableEvents call.
+type FlushResult struct {
+	// InvalidEvents contains events that failed FlattenTo with
+	// route.ErrInvalidEvent. These are permanently unflattenable and
+	// should be sent to the DLQ by the caller.
+	InvalidEvents []*xatu.DecoratedEvent
+
+	// TableErrors maps base table names to their flush errors.
+	// Tables that succeeded are absent from the map.
+	TableErrors map[string]error
+}
+
+// Err returns a joined error of all table failures, or nil if all succeeded.
+func (r *FlushResult) Err() error {
+	if r == nil || len(r.TableErrors) == 0 {
+		return nil
+	}
+
+	errs := make([]error, 0, len(r.TableErrors))
+	for _, e := range r.TableErrors {
+		errs = append(errs, e)
+	}
+
+	return errors.Join(errs...)
+}
+
 // ChGoWriter manages batched inserts using the ch-go client.
 type ChGoWriter struct {
 	log     logrus.FieldLogger
@@ -186,17 +212,21 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 
 // FlushTableEvents writes the given events directly to their respective
 // ClickHouse tables concurrently. The map keys are base table names
-// (without suffix). Returns a joined error containing all table failures.
+// (without suffix). Returns a FlushResult containing per-table errors
+// and any invalid events that should be sent to the DLQ.
 func (w *ChGoWriter) FlushTableEvents(
 	ctx context.Context,
 	tableEvents map[string][]*xatu.DecoratedEvent,
-) error {
+) *FlushResult {
+	result := &FlushResult{}
+
 	if len(tableEvents) == 0 {
-		return nil
+		return result
 	}
 
 	type tableFlush struct {
 		tw     *chTableWriter
+		base   string
 		events []*xatu.DecoratedEvent
 	}
 
@@ -208,14 +238,20 @@ func (w *ChGoWriter) FlushTableEvents(
 		}
 
 		tw := w.getOrCreateTableWriter(base)
-		flushes = append(flushes, tableFlush{tw: tw, events: events})
+		flushes = append(flushes, tableFlush{tw: tw, base: base, events: events})
 	}
 
 	if len(flushes) == 0 {
-		return nil
+		return result
 	}
 
-	errs := make([]error, len(flushes))
+	type flushOutcome struct {
+		base          string
+		invalidEvents []*xatu.DecoratedEvent
+		err           error
+	}
+
+	outcomes := make([]flushOutcome, len(flushes))
 
 	var wg sync.WaitGroup
 
@@ -225,13 +261,28 @@ func (w *ChGoWriter) FlushTableEvents(
 		go func(idx int, f tableFlush) {
 			defer wg.Done()
 
-			errs[idx] = f.tw.flush(ctx, f.events)
+			invalid, err := f.tw.flush(ctx, f.events)
+			outcomes[idx] = flushOutcome{base: f.base, invalidEvents: invalid, err: err}
 		}(i, f)
 	}
 
 	wg.Wait()
 
-	return errors.Join(errs...)
+	for _, o := range outcomes {
+		if len(o.invalidEvents) > 0 {
+			result.InvalidEvents = append(result.InvalidEvents, o.invalidEvents...)
+		}
+
+		if o.err != nil {
+			if result.TableErrors == nil {
+				result.TableErrors = make(map[string]error, len(flushes))
+			}
+
+			result.TableErrors[o.base] = o.err
+		}
+	}
+
+	return result
 }
 
 func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {

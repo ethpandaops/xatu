@@ -72,18 +72,13 @@ clickhouse:
   #     initialLimit: 8      # starting concurrency before adaptation
   #     queueInitialRejectionFactor: 2
   #     queueMaxRejectionFactor: 3
-  defaults:
-    bufferSize: 50000
-  tables:
+  # tables:
     # Canonical tables default to insertSettings.insert_quorum: auto (majority).
     # Set insertSettings.insert_quorum explicitly to override that behavior.
-    beacon_api_eth_v1_beacon_committee:
-      bufferSize: 1000000
-      # insertSettings:
-      #   insert_quorum: 2
-      #   insert_quorum_timeout: 60000
-    beacon_api_eth_v1_events_attestation:
-      bufferSize: 1000000
+    # beacon_api_eth_v1_beacon_committee:
+    #   insertSettings:
+    #     insert_quorum: 2
+    #     insert_quorum_timeout: 60000
     # canonical_beacon_block:
     #   insertSettings:
     #     insert_quorum: 3

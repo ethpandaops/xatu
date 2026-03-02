@@ -150,6 +150,16 @@ type ChGoConfig struct {
 	// Set to 0 to disable pool metrics collection.
 	PoolMetricsInterval time.Duration `yaml:"poolMetricsInterval" default:"15s"`
 
+	// GroupRetryMaxAttempts is the number of retry attempts at the
+	// processGroup level for partial table failures (e.g. fanout where
+	// some tables succeed and others fail transiently). Only failed tables
+	// are retried, preventing duplicate writes to already-succeeded tables.
+	GroupRetryMaxAttempts int `yaml:"groupRetryMaxAttempts" default:"3"`
+	// GroupRetryBaseDelay is the initial delay before the first group retry.
+	GroupRetryBaseDelay time.Duration `yaml:"groupRetryBaseDelay" default:"1s"`
+	// GroupRetryMaxDelay caps exponential backoff for group retries.
+	GroupRetryMaxDelay time.Duration `yaml:"groupRetryMaxDelay" default:"30s"`
+
 	// AdaptiveLimiter configures per-table adaptive concurrency limiting.
 	AdaptiveLimiter AdaptiveLimiterConfig `yaml:"adaptiveLimiter"`
 }
@@ -234,6 +244,18 @@ func (c *ChGoConfig) Validate() error {
 
 	if c.PoolMetricsInterval < 0 {
 		return errors.New("clickhouse.chgo: poolMetricsInterval must be >= 0")
+	}
+
+	if c.GroupRetryMaxAttempts < 0 {
+		return errors.New("clickhouse.chgo: groupRetryMaxAttempts must be >= 0")
+	}
+
+	if c.GroupRetryBaseDelay < 0 {
+		return errors.New("clickhouse.chgo: groupRetryBaseDelay must be >= 0")
+	}
+
+	if c.GroupRetryMaxDelay < 0 {
+		return errors.New("clickhouse.chgo: groupRetryMaxDelay must be >= 0")
 	}
 
 	if err := c.AdaptiveLimiter.Validate(); err != nil {

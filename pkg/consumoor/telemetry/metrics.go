@@ -23,8 +23,9 @@ type Metrics struct {
 	batchFlushTrigger *prometheus.CounterVec
 	activeTopics      prometheus.Gauge
 	kafkaConsumerLag  *prometheus.GaugeVec
-	outputMaxInFlight prometheus.Gauge
+	outputMaxInFlight *prometheus.GaugeVec
 	writeRetries      *prometheus.CounterVec
+	groupRetries      *prometheus.CounterVec
 
 	// adaptive limiter metrics (per-table)
 	adaptiveLimiterLimit      *prometheus.GaugeVec
@@ -145,7 +146,7 @@ func NewMetrics(namespace string) *Metrics {
 			Subsystem: subsystem,
 			Name:      "event_lag_seconds",
 			Help:      "Lag between the event timestamp and the wall clock time at routing.",
-			Buckets:   []float64{0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600},
+			Buckets:   []float64{1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200, 14400},
 		}, []string{"event_name"}),
 
 		batchFlushTrigger: promauto.NewCounterVec(prometheus.CounterOpts{
@@ -169,12 +170,12 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Kafka consumer group lag per topic and partition.",
 		}, []string{"topic", "partition", "consumer_group"}),
 
-		outputMaxInFlight: promauto.NewGauge(prometheus.GaugeOpts{
+		outputMaxInFlight: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "output_max_in_flight",
 			Help:      "Configured maximum number of concurrent Benthos WriteBatch calls per stream.",
-		}),
+		}, []string{"topic"}),
 
 		adaptiveLimiterLimit: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -210,6 +211,13 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "write_retries_total",
 			Help:      "Total number of ch-go operation retry attempts after transient errors.",
 		}, []string{"operation"}),
+
+		groupRetries: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "group_retries_total",
+			Help:      "Total number of group-level retry attempts for partial table failures.",
+		}, []string{"event_name"}),
 
 		chgoPoolAcquiredResources: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -299,7 +307,7 @@ func (m *Metrics) EventLag() *prometheus.HistogramVec        { return m.eventLag
 func (m *Metrics) BatchFlushTrigger() *prometheus.CounterVec { return m.batchFlushTrigger }
 func (m *Metrics) ActiveTopics() prometheus.Gauge            { return m.activeTopics }
 func (m *Metrics) KafkaConsumerLag() *prometheus.GaugeVec    { return m.kafkaConsumerLag }
-func (m *Metrics) OutputMaxInFlight() prometheus.Gauge       { return m.outputMaxInFlight }
+func (m *Metrics) OutputMaxInFlight() *prometheus.GaugeVec   { return m.outputMaxInFlight }
 
 func (m *Metrics) AdaptiveLimiterLimit() *prometheus.GaugeVec    { return m.adaptiveLimiterLimit }
 func (m *Metrics) AdaptiveLimiterInflight() *prometheus.GaugeVec { return m.adaptiveLimiterInflight }
@@ -308,6 +316,7 @@ func (m *Metrics) AdaptiveLimiterRejections() *prometheus.CounterVec {
 	return m.adaptiveLimiterRejections
 }
 func (m *Metrics) WriteRetries() *prometheus.CounterVec { return m.writeRetries }
+func (m *Metrics) GroupRetries() *prometheus.CounterVec { return m.groupRetries }
 
 func (m *Metrics) ChgoPoolAcquiredResources() prometheus.Gauge { return m.chgoPoolAcquiredResources }
 func (m *Metrics) ChgoPoolIdleResources() prometheus.Gauge     { return m.chgoPoolIdleResources }

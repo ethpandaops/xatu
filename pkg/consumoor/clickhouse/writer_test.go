@@ -137,26 +137,46 @@ func TestIsPermanentWriteError(t *testing.T) {
 		cause: &inputPrepError{cause: errors.New("no batch factory")},
 	}))
 
+	// Data-quality errors are permanent.
 	assert.True(t, IsPermanentWriteError(&tableWriteError{
+		table: "beacon_head",
+		cause: &ch.Exception{
+			Code:    proto.ErrCannotParseNumber,
+			Name:    "CANNOT_PARSE_NUMBER",
+			Message: "bad number",
+		},
+	}))
+
+	// Schema mismatches are NOT permanent — they can resolve after migration.
+	assert.False(t, IsPermanentWriteError(&tableWriteError{
 		table: "beacon_head",
 		cause: &ch.Exception{
 			Code:    proto.ErrUnknownIdentifier,
 			Name:    "UNKNOWN_IDENTIFIER",
 			Message: "unknown column",
 		},
-	}))
+	}), "schema errors should not be permanent (transient during deploys)")
+
+	assert.False(t, IsPermanentWriteError(&tableWriteError{
+		table: "beacon_head",
+		cause: &ch.Exception{
+			Code:    proto.ErrUnknownTable,
+			Name:    "UNKNOWN_TABLE",
+			Message: "table not found",
+		},
+	}), "unknown table should not be permanent (transient during deploys)")
 
 	assert.False(t, IsPermanentWriteError(errors.New("dial tcp timeout")))
 }
 
-func TestFlattenErrorIsNotPermanent(t *testing.T) {
+func TestFlattenErrorIsPermanent(t *testing.T) {
 	err := &tableWriteError{
 		table: "beacon_head",
 		cause: &flattenError{cause: errors.New("bad proto field")},
 	}
 
-	assert.False(t, IsPermanentWriteError(err),
-		"flattenError must NOT be classified as permanent")
+	assert.True(t, IsPermanentWriteError(err),
+		"flattenError must be classified as permanent")
 
 	var flatErr *flattenError
 	assert.True(t, errors.As(err, &flatErr),
@@ -179,10 +199,20 @@ func TestIsPermanentWriteErrorJoined(t *testing.T) {
 		cause: errors.New("connection reset"),
 	}
 
-	t.Run("joined with permanent sub-error", func(t *testing.T) {
+	t.Run("mixed permanent and transient is NOT permanent", func(t *testing.T) {
 		joined := errors.Join(permanent, transient)
+		assert.False(t, IsPermanentWriteError(joined),
+			"joined error with any transient sub-error should NOT be permanent (NAK for retry)")
+	})
+
+	t.Run("all permanent sub-errors is permanent", func(t *testing.T) {
+		permanent2 := &tableWriteError{
+			table: "table_c",
+			cause: &inputPrepError{cause: errors.New("another schema issue")},
+		}
+		joined := errors.Join(permanent, permanent2)
 		assert.True(t, IsPermanentWriteError(joined),
-			"joined error containing a permanent sub-error should be permanent")
+			"joined error with only permanent sub-errors should be permanent")
 	})
 
 	t.Run("joined with only transient sub-errors", func(t *testing.T) {
@@ -193,6 +223,12 @@ func TestIsPermanentWriteErrorJoined(t *testing.T) {
 		joined := errors.Join(transient, transient2)
 		assert.False(t, IsPermanentWriteError(joined),
 			"joined error with only transient sub-errors should not be permanent")
+	})
+
+	t.Run("joined with nil sub-errors", func(t *testing.T) {
+		joined := errors.Join(nil, permanent, nil)
+		assert.True(t, IsPermanentWriteError(joined),
+			"nil sub-errors should be ignored; remaining permanent error makes it permanent")
 	})
 }
 
@@ -445,7 +481,7 @@ func TestFlushTableEvents_ConcurrentFlush(t *testing.T) {
 	// Launch multiple concurrent FlushTableEvents calls.
 	const flushers = 10
 
-	errs := make([]error, flushers)
+	results := make([]*FlushResult, flushers)
 
 	var wg sync.WaitGroup
 
@@ -455,7 +491,7 @@ func TestFlushTableEvents_ConcurrentFlush(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 
-			errs[idx] = w.FlushTableEvents(context.Background(), map[string][]*xatu.DecoratedEvent{
+			results[idx] = w.FlushTableEvents(context.Background(), map[string][]*xatu.DecoratedEvent{
 				table: {event},
 			})
 		}(i)
@@ -463,8 +499,8 @@ func TestFlushTableEvents_ConcurrentFlush(t *testing.T) {
 
 	wg.Wait()
 
-	for i, err := range errs {
-		assert.NoError(t, err, "flusher %d returned error", i)
+	for i, result := range results {
+		assert.NoError(t, result.Err(), "flusher %d returned error", i)
 	}
 
 	assert.Equal(t, int32(flushers), flushCount.Load(), "each flush should have triggered a pool.Do call")

@@ -44,9 +44,9 @@ type chTableWriter struct {
 	insertQueryOK bool
 }
 
-func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEvent) error {
+func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if len(events) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	start := time.Now()
@@ -56,7 +56,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 			Error("No columnar batch factory registered")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(events)))
 
-		return &tableWriteError{
+		return nil, &tableWriteError{
 			table: tw.baseTable,
 			cause: &inputPrepError{cause: fmt.Errorf("no columnar batch factory for %s", tw.table)},
 		}
@@ -65,8 +65,9 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 	batch := tw.newBatch()
 
 	var (
-		flattenErrs int
-		lastErr     error
+		flattenErrs   int
+		lastErr       error
+		invalidEvents []*xatu.DecoratedEvent
 	)
 
 	for _, event := range events {
@@ -77,6 +78,8 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 
 		if errors.Is(err, route.ErrInvalidEvent) {
 			tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
+
+			invalidEvents = append(invalidEvents, event)
 
 			if ok, suppressed := tw.logSampler.Allow("invalid_event"); ok {
 				entry := tw.log.WithError(err).
@@ -120,7 +123,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 				entry.Error("Flatten failed (fail-fast)")
 			}
 
-			return &tableWriteError{
+			return invalidEvents, &tableWriteError{
 				table: tw.baseTable,
 				cause: &flattenError{cause: err},
 			}
@@ -135,7 +138,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 	}
 
 	if flattenErrs == len(events) {
-		return &tableWriteError{
+		return invalidEvents, &tableWriteError{
 			table: tw.baseTable,
 			cause: &inputPrepError{
 				cause: fmt.Errorf("all %d events failed FlattenTo for %s", len(events), tw.table),
@@ -145,7 +148,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 
 	rows := batch.Rows()
 	if rows == 0 {
-		return nil
+		return invalidEvents, nil
 	}
 
 	input := batch.Input()
@@ -172,7 +175,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 			Error("Invalid insert settings")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
-		return &tableWriteError{
+		return invalidEvents, &tableWriteError{
 			table: tw.baseTable,
 			cause: fmt.Errorf("building insert query for %s: %w", tw.table, tw.queryInitErr),
 		}
@@ -187,7 +190,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 			Error("Failed to send ch-go batch")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
-		return &tableWriteError{
+		return invalidEvents, &tableWriteError{
 			table: tw.baseTable,
 			cause: fmt.Errorf("sending ch-go batch for %s: %w", tw.table, err),
 		}
@@ -204,7 +207,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 		WithField("duration", duration).
 		Debug("Flushed ch-go batch")
 
-	return nil
+	return invalidEvents, nil
 }
 
 func (tw *chTableWriter) do(

@@ -125,7 +125,7 @@ type KafkaConfig struct {
 	// MaxInFlight is the maximum number of concurrent WriteBatch calls
 	// Benthos makes for each stream's output. Higher values increase
 	// throughput by allowing concurrent ClickHouse INSERTs and bigger
-	// natural batches. Default: 8.
+	// natural batches. Default: 64.
 	MaxInFlight int `yaml:"maxInFlight" default:"64"`
 
 	// TopicOverrides contains per-topic batch settings keyed by exact topic name.
@@ -202,6 +202,30 @@ func (c *KafkaConfig) Validate() error {
 		return errors.New("kafka: maxInFlight must be >= 1")
 	}
 
+	if c.FetchMinBytes < 1 {
+		return errors.New("kafka: fetchMinBytes must be >= 1")
+	}
+
+	if c.FetchWaitMaxMs <= 0 {
+		return errors.New("kafka: fetchWaitMaxMs must be > 0")
+	}
+
+	if c.MaxPartitionFetchBytes < 1 {
+		return errors.New("kafka: maxPartitionFetchBytes must be >= 1")
+	}
+
+	if c.FetchMaxBytes < 1 {
+		return errors.New("kafka: fetchMaxBytes must be >= 1")
+	}
+
+	if c.LagPollInterval < 0 {
+		return errors.New("kafka: lagPollInterval must be >= 0")
+	}
+
+	if c.ConnectTimeout < 0 {
+		return errors.New("kafka: connectTimeout must be >= 0")
+	}
+
 	for topic, override := range c.TopicOverrides {
 		if err := override.Validate(topic); err != nil {
 			return err
@@ -265,16 +289,21 @@ func (c *SASLConfig) Validate() error {
 		}
 	}
 
-	if c.User == "" {
-		return errors.New("kafka.sasl: user is required")
-	}
-
 	if c.Password == "" && c.PasswordFile == "" {
 		return errors.New("kafka.sasl: password or passwordFile is required")
 	}
 
 	if c.Password != "" && c.PasswordFile != "" {
 		return errors.New("kafka.sasl: only one of password or passwordFile can be set")
+	}
+
+	// OAUTHBEARER uses a token only; no username is required.
+	if mechanism == SASLMechanismOAUTHBEARER {
+		return nil
+	}
+
+	if c.User == "" {
+		return errors.New("kafka.sasl: user is required")
 	}
 
 	return nil

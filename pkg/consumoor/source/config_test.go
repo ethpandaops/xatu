@@ -10,16 +10,20 @@ import (
 
 func validKafkaConfig() KafkaConfig {
 	return KafkaConfig{
-		Brokers:          []string{"localhost:9092"},
-		Topics:           []string{"test-topic"},
-		ConsumerGroup:    "test-group",
-		Encoding:         "json",
-		OffsetDefault:    "earliest",
-		SessionTimeoutMs: 30000,
-		RebalanceTimeout: 15 * time.Second,
-		CommitInterval:   5 * time.Second,
-		ShutdownTimeout:  30 * time.Second,
-		MaxInFlight:      64,
+		Brokers:                []string{"localhost:9092"},
+		Topics:                 []string{"test-topic"},
+		ConsumerGroup:          "test-group",
+		Encoding:               "json",
+		OffsetDefault:          "earliest",
+		SessionTimeoutMs:       30000,
+		RebalanceTimeout:       15 * time.Second,
+		CommitInterval:         5 * time.Second,
+		ShutdownTimeout:        30 * time.Second,
+		MaxInFlight:            64,
+		FetchMinBytes:          1,
+		FetchWaitMaxMs:         250,
+		MaxPartitionFetchBytes: 3145728,
+		FetchMaxBytes:          10485760,
 	}
 }
 

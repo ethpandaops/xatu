@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -27,6 +28,7 @@ type LagMonitor struct {
 	kgoClient *kgo.Client
 	done      chan struct{}
 	exited    chan struct{}
+	stopOnce  sync.Once
 }
 
 // NewLagMonitor creates a new LagMonitor. Call Start to begin polling.
@@ -109,11 +111,14 @@ func (m *LagMonitor) Start(ctx context.Context) error {
 }
 
 // Stop signals the lag monitor to exit and waits for it to finish.
+// It is safe to call multiple times; only the first call performs cleanup.
 func (m *LagMonitor) Stop() error {
-	close(m.done)
-	<-m.exited
+	m.stopOnce.Do(func() {
+		close(m.done)
+		<-m.exited
 
-	m.kgoClient.Close()
+		m.kgoClient.Close()
+	})
 
 	return nil
 }

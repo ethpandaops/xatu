@@ -18,6 +18,16 @@ import (
 
 const benthosOutputType = "xatu_clickhouse"
 
+// GroupRetryConfig configures group-level retry behavior for partial table
+// failures in processGroup. When a fanout flush partially fails (some tables
+// succeed, others fail transiently), only the failed tables are retried with
+// exponential backoff to limit write amplification.
+type GroupRetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+}
+
 // NewBenthosStream creates a Benthos stream that consumes from Kafka and writes
 // to ClickHouse via the custom xatu_clickhouse output plugin.
 // When ownsWriter is true the output plugin manages the writer lifecycle
@@ -31,6 +41,7 @@ func NewBenthosStream(
 	routeEngine *router.Engine,
 	writer Writer,
 	ownsWriter bool,
+	groupRetry GroupRetryConfig,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
 		return nil, fmt.Errorf("nil kafka config")
@@ -63,15 +74,18 @@ func NewBenthosStream(
 		service.NewConfigSpec(),
 		func(_ *service.ParsedConfig, _ *service.Resources) (out service.BatchOutput, policy service.BatchPolicy, maxInFlight int, err error) {
 			return &xatuClickHouseOutput{
-				log:              log.WithField("component", "benthos_clickhouse_output"),
-				encoding:         kafkaConfig.Encoding,
-				router:           routeEngine,
-				writer:           writer,
-				metrics:          metrics,
-				rejectSink:       rejectSink,
-				ownsWriter:       ownsWriter,
-				outputBatchCount: kafkaConfig.OutputBatchCount,
-				logSampler:       telemetry.NewLogSampler(30 * time.Second),
+				log:                   log.WithField("component", "benthos_clickhouse_output"),
+				encoding:              kafkaConfig.Encoding,
+				router:                routeEngine,
+				writer:                writer,
+				metrics:               metrics,
+				rejectSink:            rejectSink,
+				ownsWriter:            ownsWriter,
+				outputBatchCount:      kafkaConfig.OutputBatchCount,
+				logSampler:            telemetry.NewLogSampler(30 * time.Second),
+				groupRetryMaxAttempts: groupRetry.MaxAttempts,
+				groupRetryBaseDelay:   groupRetry.BaseDelay,
+				groupRetryMaxDelay:    groupRetry.MaxDelay,
 			}, batchPolicy, kafkaConfig.MaxInFlight, nil
 		},
 	); registerErr != nil {

@@ -99,10 +99,14 @@ func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, e
 	switch encoding {
 	case "protobuf":
 		if err := event.UnmarshalVT(data); err != nil {
+			event.ReturnToVTPool()
+
 			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
 		}
 	default:
 		if err := jsonUnmarshalOpts.Unmarshal(data, event); err != nil {
+			event.ReturnToVTPool()
+
 			return nil, fmt.Errorf("json unmarshal: %w", err)
 		}
 	}

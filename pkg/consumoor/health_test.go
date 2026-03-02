@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -21,8 +22,8 @@ type mockWriter struct {
 
 func (m *mockWriter) Start(_ context.Context) error { return nil }
 func (m *mockWriter) Stop(_ context.Context) error  { return nil }
-func (m *mockWriter) FlushTableEvents(_ context.Context, _ map[string][]*xatu.DecoratedEvent) error {
-	return nil
+func (m *mockWriter) FlushTableEvents(_ context.Context, _ map[string][]*xatu.DecoratedEvent) *clickhouse.FlushResult {
+	return &clickhouse.FlushResult{}
 }
 func (m *mockWriter) Ping(_ context.Context) error { return m.pingErr }
 

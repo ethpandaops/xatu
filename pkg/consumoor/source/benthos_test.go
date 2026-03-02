@@ -23,6 +23,7 @@ import (
 
 	ch "github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/consumoor/router"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
@@ -66,7 +67,7 @@ func (w *testWriter) Stop(context.Context) error {
 	return nil
 }
 
-func (w *testWriter) FlushTableEvents(_ context.Context, tableEvents map[string][]*xatu.DecoratedEvent) error {
+func (w *testWriter) FlushTableEvents(_ context.Context, tableEvents map[string][]*xatu.DecoratedEvent) *clickhouse.FlushResult {
 	w.flushCalls++
 
 	if w.writes == nil {
@@ -86,10 +87,20 @@ func (w *testWriter) FlushTableEvents(_ context.Context, tableEvents map[string]
 
 		w.flushErrs = append(w.flushErrs[:i], w.flushErrs[i+1:]...)
 
-		return err
+		result := &clickhouse.FlushResult{
+			TableErrors: make(map[string]error, 1),
+		}
+		// Attribute the error to the first table in the map for test purposes.
+		for table := range tableEvents {
+			result.TableErrors[table] = err
+
+			break
+		}
+
+		return result
 	}
 
-	return nil
+	return &clickhouse.FlushResult{}
 }
 
 func (w *testWriter) Ping(context.Context) error {

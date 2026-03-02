@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type chTableWriter struct {
@@ -88,6 +89,10 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 					entry = entry.WithField("suppressed", suppressed)
 				}
 
+				if jsonBytes, jsonErr := protojson.Marshal(event); jsonErr == nil {
+					entry = entry.WithField("event_json", string(jsonBytes))
+				}
+
 				entry.Warn("Skipping invalid event")
 			}
 
@@ -106,6 +111,10 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 					WithField("event_name", event.GetEvent().GetName().String())
 				if suppressed > 0 {
 					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				if jsonBytes, jsonErr := protojson.Marshal(event); jsonErr == nil {
+					entry = entry.WithField("event_json", string(jsonBytes))
 				}
 
 				entry.Error("Flatten failed (fail-fast)")

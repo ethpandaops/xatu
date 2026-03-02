@@ -258,6 +258,7 @@ func TestWriteBatchBatchModeRejectsMalformedWithoutRetry(t *testing.T) {
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: rejectSink,
 	}
 
@@ -296,6 +297,7 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: &testRejectSink{},
 	}
 
@@ -311,11 +313,12 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 
 func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
 	output := &xatuClickHouseOutput{
-		log:      logrus.New(),
-		encoding: "json",
-		router:   newRouter(t, nil),
-		writer:   &testWriter{},
-		metrics:  newTestMetrics(),
+		log:        logrus.New(),
+		encoding:   "json",
+		router:     newRouter(t, nil),
+		writer:     &testWriter{},
+		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: &testRejectSink{
 			err: errors.New("dlq unavailable"),
 		},
@@ -418,6 +421,7 @@ func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: &testRejectSink{},
 	}
 
@@ -443,7 +447,7 @@ func TestWriteBatchMultiTablePermanentFailureRejectsAllImpactedMessages(t *testi
 	// permanent error, all messages in the group should be DLQ'd.
 	writer := &testWriter{
 		flushErrs: []error{
-			&ch.Exception{Code: proto.ErrUnknownTable, Name: "DB::Exception", Message: "test permanent error"},
+			&ch.Exception{Code: proto.ErrCannotParseNumber, Name: "DB::Exception", Message: "test permanent error"},
 		},
 	}
 
@@ -463,6 +467,7 @@ func TestWriteBatchMultiTablePermanentFailureRejectsAllImpactedMessages(t *testi
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: rejectSink,
 	}
 
@@ -507,6 +512,7 @@ func TestWriteBatchCtxCancelledReturnsCtxErr(t *testing.T) {
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: &testRejectSink{},
 	}
 
@@ -537,6 +543,7 @@ func TestWriteBatchUnknownFlushFailureFailsGroupMessages(t *testing.T) {
 		}),
 		writer:     writer,
 		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
 		rejectSink: &testRejectSink{},
 	}
 
@@ -865,6 +872,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     writer,
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -888,6 +896,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: rejectSink,
 			}
 
@@ -911,13 +920,14 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				writer: &testWriter{
 					flushErrs: []error{
 						&ch.Exception{
-							Code:    proto.ErrUnknownTable,
+							Code:    proto.ErrCannotParseNumber,
 							Name:    "DB::Exception",
-							Message: "table gone",
+							Message: "bad number",
 						},
 					},
 				},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: rejectSink,
 			}
 
@@ -932,10 +942,10 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			assert.Equal(t, rejectReasonWritePermanent, rejectSink.records[0].Reason)
 		})
 
-		t.Run("unrouted_event_type_silently_commits", func(t *testing.T) {
+		t.Run("unrouted_event_type_returns_batch_error", func(t *testing.T) {
 			// Event type has no registered route. The router returns
-			// StatusDelivered with empty Results, so the message is
-			// silently skipped — safe to commit.
+			// StatusErrored so the message is NAK'd and Kafka does
+			// not advance the offset — preventing silent data loss.
 			writer := &testWriter{}
 			output := &xatuClickHouseOutput{
 				log:        logrus.New(),
@@ -943,6 +953,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     writer,
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -952,8 +963,8 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			}
 
 			err := output.WriteBatch(context.Background(), msgs)
-			require.NoError(t, err,
-				"unrouted event types are intentionally dropped — safe to commit")
+			require.Error(t, err,
+				"unrouted event types must NAK to prevent silent data loss")
 			assert.Equal(t, 0, writer.flushCalls,
 				"no flush should occur for unrouted events")
 		})
@@ -969,6 +980,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: rejectSink,
 			}
 
@@ -993,6 +1005,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: nil, // no DLQ
 			}
 
@@ -1012,6 +1025,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, nil),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -1035,6 +1049,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 					},
 				},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -1058,6 +1073,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 					flushErrs: []error{errors.New("unexpected infrastructure error")},
 				},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -1081,6 +1097,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -1104,6 +1121,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     &testWriter{},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: nil,
 			}
 
@@ -1135,6 +1153,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 					},
 				},
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: nil,
 			}
 
@@ -1150,11 +1169,12 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 
 		t.Run("decode_error_with_broken_dlq_naks", func(t *testing.T) {
 			output := &xatuClickHouseOutput{
-				log:      logrus.New(),
-				encoding: "json",
-				router:   newRouter(t, []route.Route{headRoute}),
-				writer:   &testWriter{},
-				metrics:  newTestMetrics(),
+				log:        logrus.New(),
+				encoding:   "json",
+				router:     newRouter(t, []route.Route{headRoute}),
+				writer:     &testWriter{},
+				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{
 					err: errors.New("kafka produce timeout"),
 				},
@@ -1184,7 +1204,8 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 						},
 					},
 				},
-				metrics: newTestMetrics(),
+				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{
 					err: errors.New("kafka produce timeout"),
 				},
@@ -1217,6 +1238,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute}),
 				writer:     writer,
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: rejectSink,
 			}
 
@@ -1249,6 +1271,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				router:     newRouter(t, []route.Route{headRoute, blockRoute}),
 				writer:     writer,
 				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{},
 			}
 
@@ -1275,11 +1298,12 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			// Valid message → successful flush → ACK.
 			writer := &testWriter{}
 			output := &xatuClickHouseOutput{
-				log:      logrus.New(),
-				encoding: "json",
-				router:   newRouter(t, []route.Route{headRoute}),
-				writer:   writer,
-				metrics:  newTestMetrics(),
+				log:        logrus.New(),
+				encoding:   "json",
+				router:     newRouter(t, []route.Route{headRoute}),
+				writer:     writer,
+				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{
 					err: errors.New("dlq unavailable"),
 				},
@@ -1321,7 +1345,8 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 						&testWriteError{table: "beacon_head", permanent: false},
 					},
 				},
-				metrics: newTestMetrics(),
+				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
 				rejectSink: &testRejectSink{
 					err: errors.New("dlq unavailable"),
 				},

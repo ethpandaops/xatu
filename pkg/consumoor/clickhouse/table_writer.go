@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ClickHouse/ch-go"
@@ -28,7 +29,15 @@ type chTableWriter struct {
 	// nil when adaptive limiting is disabled.
 	limiter *adaptiveConcurrencyLimiter
 
+	// logSampler rate-limits repetitive per-event error logs (e.g. invalid
+	// events or flatten failures) to avoid flooding when a topic starts
+	// producing bad data.
+	logSampler *telemetry.LogSampler
+
 	// Cached per-table strings computed once and reused every flush.
+	// queryInit ensures thread-safe lazy initialization when maxInFlight > 1.
+	queryInit     sync.Once
+	queryInitErr  error
 	operationName string
 	insertQuery   string
 	insertQueryOK bool
@@ -66,8 +75,21 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 		}
 
 		if errors.Is(err, route.ErrInvalidEvent) {
-			tw.log.WithError(err).Warn("Skipping invalid event")
 			tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
+
+			if ok, suppressed := tw.logSampler.Allow("invalid_event"); ok {
+				entry := tw.log.WithError(err).
+					WithField("event_name", event.GetEvent().GetName().String())
+				if meta := event.GetMeta(); meta != nil && meta.GetClient() != nil {
+					entry = entry.WithField("client_name", meta.GetClient().GetName())
+				}
+
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Warn("Skipping invalid event")
+			}
 
 			continue
 		}
@@ -78,9 +100,16 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
 
 		if !tw.config.SkipFlattenErrors {
-			tw.log.WithError(err).
-				WithField("events", len(events)).
-				Error("Flatten failed (fail-fast)")
+			if ok, suppressed := tw.logSampler.Allow("flatten_error"); ok {
+				entry := tw.log.WithError(err).
+					WithField("events", len(events)).
+					WithField("event_name", event.GetEvent().GetName().String())
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Error("Flatten failed (fail-fast)")
+			}
 
 			return &tableWriteError{
 				table: tw.baseTable,
@@ -114,23 +143,30 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 
 	// Cache the INSERT query body and operation name on first use.
 	// Both are invariant between flushes for a given table.
-	if !tw.insertQueryOK {
-		body, err := insertQueryWithSettings(input.Into(tw.table), tw.config.InsertSettings)
-		if err != nil {
-			tw.log.WithError(err).
-				WithField("rows", rows).
-				Error("Invalid insert settings")
-			tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
+	// sync.Once ensures safe concurrent initialization when maxInFlight > 1.
+	tw.queryInit.Do(func() {
+		body, qErr := insertQueryWithSettings(input.Into(tw.table), tw.config.InsertSettings)
+		if qErr != nil {
+			tw.queryInitErr = qErr
 
-			return &tableWriteError{
-				table: tw.baseTable,
-				cause: fmt.Errorf("building insert query for %s: %w", tw.table, err),
-			}
+			return
 		}
 
 		tw.insertQuery = body
 		tw.operationName = "insert_" + tw.table
 		tw.insertQueryOK = true
+	})
+
+	if !tw.insertQueryOK {
+		tw.log.WithError(tw.queryInitErr).
+			WithField("rows", rows).
+			Error("Invalid insert settings")
+		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
+
+		return &tableWriteError{
+			table: tw.baseTable,
+			cause: fmt.Errorf("building insert query for %s: %w", tw.table, tw.queryInitErr),
+		}
 	}
 
 	if err := tw.do(ctx, tw.operationName, &ch.Query{

@@ -9,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const logSampleInterval = 30 * time.Second
+
 // Result holds the routing decision for a single event: the target
 // table name and the route that will handle flattening.
 type Result struct {
@@ -33,7 +35,8 @@ type Engine struct {
 	// produces multiple.
 	routesByEvent map[xatu.Event_Name][]route.Route
 
-	metrics *telemetry.Metrics
+	metrics    *telemetry.Metrics
+	logSampler *telemetry.LogSampler
 }
 
 // New creates a routing engine with the given routes.
@@ -47,6 +50,7 @@ func New(
 		log:           log.WithField("component", "router"),
 		routesByEvent: make(map[xatu.Event_Name][]route.Route, len(routes)),
 		metrics:       metrics,
+		logSampler:    telemetry.NewLogSampler(logSampleInterval),
 	}
 
 	disabled := make(map[xatu.Event_Name]struct{}, len(disabledEvents))
@@ -82,14 +86,26 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 
 	eventName := event.GetEvent().GetName()
 
-	// Look up routes for this event.
+	// Look up routes for this event. Unknown event types are NAK'd
+	// (StatusErrored) so Kafka does not advance the offset. This
+	// prevents silent data loss when new event types appear before
+	// a matching route is deployed.
 	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
 		if r.metrics != nil {
-			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_route_nack").Inc()
 		}
 
-		return Outcome{Status: StatusDelivered}
+		if ok, suppressed := r.logSampler.Allow(eventName.String()); ok {
+			entry := r.log.WithField("event_name", eventName.String())
+			if suppressed > 0 {
+				entry = entry.WithField("suppressed", suppressed)
+			}
+
+			entry.Warn("No route registered for event — messages will be NAK'd until a matching route is deployed")
+		}
+
+		return Outcome{Status: StatusErrored}
 	}
 
 	results := make([]Result, 0, len(routesForEvent))

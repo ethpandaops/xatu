@@ -261,15 +261,16 @@ func (w *ChGoWriter) getOrCreateTableWriter(table string) *chTableWriter {
 	// don't need to include the suffix.
 	cfg := w.config.TableConfigFor(table)
 	tw = &chTableWriter{
-		log:       w.log.WithField("table", writeTable),
-		table:     writeTable,
-		baseTable: table,
-		database:  w.database,
-		config:    cfg,
-		metrics:   w.metrics,
-		writer:    w,
-		newBatch:  w.batchFactories[table],
-		limiter:   newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
+		log:        w.log.WithField("table", writeTable),
+		table:      writeTable,
+		baseTable:  table,
+		database:   w.database,
+		config:     cfg,
+		metrics:    w.metrics,
+		writer:     w,
+		newBatch:   w.batchFactories[table],
+		limiter:    newAdaptiveConcurrencyLimiter(w.chgoCfg.AdaptiveLimiter),
+		logSampler: telemetry.NewLogSampler(30 * time.Second),
 	}
 
 	w.tables[writeTable] = tw

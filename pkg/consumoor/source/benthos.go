@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	_ "github.com/redpanda-data/benthos/v4/public/components/pure"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -70,6 +71,7 @@ func NewBenthosStream(
 				rejectSink:       rejectSink,
 				ownsWriter:       ownsWriter,
 				outputBatchCount: kafkaConfig.OutputBatchCount,
+				logSampler:       telemetry.NewLogSampler(30 * time.Second),
 			}, batchPolicy, kafkaConfig.MaxInFlight, nil
 		},
 	); registerErr != nil {
@@ -215,7 +217,7 @@ func benthosSASLObject(cfg *SASLConfig) (map[string]any, error) {
 		return nil, err
 	}
 
-	mechanism := strings.TrimSpace(cfg.Mechanism)
+	mechanism := strings.ToUpper(strings.TrimSpace(cfg.Mechanism))
 	if mechanism == "" {
 		mechanism = SASLMechanismPLAIN
 	}

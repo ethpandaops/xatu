@@ -46,6 +46,7 @@ type xatuClickHouseOutput struct {
 	rejectSink       rejectSink
 	ownsWriter       bool
 	outputBatchCount int
+	logSampler       *telemetry.LogSampler
 
 	mu      sync.Mutex
 	started bool
@@ -115,9 +116,18 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		raw, err := msg.AsBytes()
 		if err != nil {
 			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
-			o.log.WithError(err).
-				WithField("topic", kafka.Topic).
-				Warn("Failed to read message bytes")
+
+			if ok, suppressed := o.logSampler.Allow("read_bytes:" + kafka.Topic); ok {
+				entry := o.log.WithError(err).
+					WithField("topic", kafka.Topic).
+					WithField("partition", kafka.Partition).
+					WithField("offset", kafka.Offset)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Warn("Failed to read message bytes")
+			}
 
 			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason: rejectReasonDecode,
@@ -133,9 +143,18 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		event, err := decodeDecoratedEvent(o.encoding, raw)
 		if err != nil {
 			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
-			o.log.WithError(err).
-				WithField("topic", kafka.Topic).
-				Warn("Failed to decode message")
+
+			if ok, suppressed := o.logSampler.Allow("decode:" + kafka.Topic); ok {
+				entry := o.log.WithError(err).
+					WithField("topic", kafka.Topic).
+					WithField("partition", kafka.Partition).
+					WithField("offset", kafka.Offset)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Warn("Failed to decode message")
+			}
 
 			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason:  rejectReasonDecode,
@@ -169,7 +188,10 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 		if outcome.Status == router.StatusErrored {
 			batchErr = addBatchFailure(
-				batchErr, msgs, i, errors.New("route errored"),
+				batchErr, msgs, i, fmt.Errorf(
+					"no route registered for event %s — offset will not advance until a route is deployed",
+					event.GetEvent().GetName(),
+				),
 			)
 
 			continue
@@ -251,6 +273,13 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 // flushes only those tables. On failure the entire group is NAK'd or DLQ'd.
 // The caller's accumulated batchErr is threaded through so that failures from
 // earlier phases (e.g. decode errors) are preserved.
+//
+// NOTE: for events that fan out to multiple tables, a partial failure (some
+// tables succeed, others fail) will NAK the entire group. On redelivery the
+// successfully written tables will receive duplicate rows. This is inherent
+// to the at-least-once delivery model; ClickHouse deduplication (e.g.
+// ReplacingMergeTree) should be used for tables that require exactly-once
+// semantics.
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,
@@ -289,7 +318,8 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 
 		o.log.WithError(err).
-			Warn("Dropped permanently invalid rows during group flush")
+			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).
+			Warn("Permanent write error during group flush")
 	} else {
 		for _, gm := range g.messages {
 			batchErr = addBatchFailure(

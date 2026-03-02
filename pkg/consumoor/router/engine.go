@@ -86,12 +86,32 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 
 	eventName := event.GetEvent().GetName()
 
-	// Look up routes for this event. Unknown event types are NAK'd
-	// (StatusErrored) so Kafka does not advance the offset. This
-	// prevents silent data loss when new event types appear before
-	// a matching route is deployed.
+	// Look up routes for this event. Intentionally unsupported events
+	// are dropped (status delivered, no rows). Unknown/unexpected event
+	// types are NAK'd (StatusErrored) so Kafka does not advance offsets,
+	// preventing silent data loss when new event types appear before a
+	// matching route is deployed.
 	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
+		if reason, intentionallyUnsupported := route.UnsupportedReason(eventName); intentionallyUnsupported {
+			if r.metrics != nil {
+				r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+			}
+
+			if ok, suppressed := r.logSampler.Allow("drop:" + eventName.String()); ok {
+				entry := r.log.
+					WithField("event_name", eventName.String()).
+					WithField("reason", reason)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Debug("No route registered for intentionally unsupported event — dropping")
+			}
+
+			return Outcome{Status: StatusDelivered}
+		}
+
 		if r.metrics != nil {
 			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_route_nack").Inc()
 		}

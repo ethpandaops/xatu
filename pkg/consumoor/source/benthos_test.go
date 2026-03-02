@@ -953,10 +953,9 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			assert.Equal(t, rejectReasonWritePermanent, rejectSink.records[0].Reason)
 		})
 
-		t.Run("unrouted_event_type_returns_batch_error", func(t *testing.T) {
-			// Event type has no registered route. The router returns
-			// StatusErrored so the message is NAK'd and Kafka does
-			// not advance the offset — preventing silent data loss.
+		t.Run("intentionally_unsupported_event_type_silently_commits", func(t *testing.T) {
+			// BLOCK is intentionally unsupported and should be dropped
+			// (ACK'd) without any ClickHouse writes.
 			writer := &testWriter{}
 			output := &xatuClickHouseOutput{
 				log:        logrus.New(),
@@ -974,10 +973,35 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			}
 
 			err := output.WriteBatch(context.Background(), msgs)
-			require.Error(t, err,
-				"unrouted event types must NAK to prevent silent data loss")
+			require.NoError(t, err,
+				"intentionally unsupported event types should be dropped and ACK'd")
 			assert.Equal(t, 0, writer.flushCalls,
-				"no flush should occur for unrouted events")
+				"no flush should occur for unsupported events")
+		})
+
+		t.Run("unknown_event_type_returns_batch_error", func(t *testing.T) {
+			// Unknown event enum values are not intentionally unsupported;
+			// they should NAK so offsets do not advance silently.
+			writer := &testWriter{}
+			output := &xatuClickHouseOutput{
+				log:        logrus.New(),
+				encoding:   "json",
+				router:     newRouter(t, []route.Route{headRoute}),
+				writer:     writer,
+				metrics:    newTestMetrics(),
+				logSampler: telemetry.NewLogSampler(time.Minute),
+				rejectSink: &testRejectSink{},
+			}
+
+			msgs := service.MessageBatch{
+				newKafkaMessage(mustEventJSON(t, "e1", xatu.Event_Name(999_999)), "t", 0, 1),
+			}
+
+			err := output.WriteBatch(context.Background(), msgs)
+			require.Error(t, err,
+				"unknown event types must NAK to avoid silent data loss")
+			assert.Equal(t, 0, writer.flushCalls,
+				"no flush should occur for unknown events")
 		})
 
 		t.Run("nil_event_rejected_with_working_dlq_commits", func(t *testing.T) {

@@ -67,6 +67,48 @@ func TestNewRouterSkipsDisabledEvents(t *testing.T) {
 	require.Equal(t, "table_b", disconnectedRoutes[0].TableName())
 }
 
+func TestRouteIntentionallyUnsupportedEventIsDropped(t *testing.T) {
+	routes := []route.Route{
+		filterTestRoute{
+			table:  route.TableName("table_head"),
+			events: []xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2},
+		},
+	}
+
+	router := New(logrus.New(), routes, nil, newTestMetrics())
+
+	outcome := router.Route(&xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:   "e1",
+			Name: xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2,
+		},
+	})
+
+	require.Equal(t, StatusDelivered, outcome.Status)
+	require.Empty(t, outcome.Results)
+}
+
+func TestRouteUnknownEventIsNAKed(t *testing.T) {
+	routes := []route.Route{
+		filterTestRoute{
+			table:  route.TableName("table_head"),
+			events: []xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2},
+		},
+	}
+
+	router := New(logrus.New(), routes, nil, newTestMetrics())
+
+	outcome := router.Route(&xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:   "e1",
+			Name: xatu.Event_Name(999_999),
+		},
+	})
+
+	require.Equal(t, StatusErrored, outcome.Status)
+	require.Empty(t, outcome.Results)
+}
+
 func newTestMetrics() *telemetry.Metrics {
 	ns := fmt.Sprintf("xatu_consumoor_router_test_%d", atomic.AddUint64(&testMetricNSCounter, 1))
 

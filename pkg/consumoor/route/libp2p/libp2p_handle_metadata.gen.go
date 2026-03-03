@@ -18,14 +18,13 @@ type libp2pHandleMetadataBatch struct {
 	PeerIDUniqueKey                           proto.ColInt64
 	Error                                     *proto.ColNullable[string]
 	Protocol                                  proto.ColStr
-	Direction                                 *proto.ColNullable[string]
+	Direction                                 proto.ColStr
 	Attnets                                   proto.ColStr
 	SeqNumber                                 proto.ColUInt64
 	Syncnets                                  proto.ColStr
 	CustodyGroupCount                         *proto.ColNullable[uint8]
 	LatencyMilliseconds                       proto.ColDecimal64
 	MetaClientName                            proto.ColStr
-	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
 	MetaClientOS                              proto.ColStr
@@ -38,7 +37,6 @@ type libp2pHandleMetadataBatch struct {
 	MetaClientGeoLatitude                     *proto.ColNullable[float64]
 	MetaClientGeoAutonomousSystemNumber       *proto.ColNullable[uint32]
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
-	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
 	rows                                      int
 }
@@ -47,7 +45,6 @@ func newlibp2pHandleMetadataBatch() *libp2pHandleMetadataBatch {
 	return &libp2pHandleMetadataBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
 		Error:                               new(proto.ColStr).Nullable(),
-		Direction:                           new(proto.ColStr).Nullable(),
 		CustodyGroupCount:                   new(proto.ColUInt8).Nullable(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
@@ -64,7 +61,6 @@ func (b *libp2pHandleMetadataBatch) Rows() int {
 func (b *libp2pHandleMetadataBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	if event == nil || event.GetMeta() == nil {
 		b.MetaClientName.Append("")
-		b.MetaClientID.Append("")
 		b.MetaClientVersion.Append("")
 		b.MetaClientImplementation.Append("")
 		b.MetaClientOS.Append("")
@@ -77,13 +73,11 @@ func (b *libp2pHandleMetadataBatch) appendMetadata(event *xatu.DecoratedEvent) {
 		b.MetaClientGeoLatitude.Append(proto.Nullable[float64]{})
 		b.MetaClientGeoAutonomousSystemNumber.Append(proto.Nullable[uint32]{})
 		b.MetaClientGeoAutonomousSystemOrganization.Append(proto.Nullable[string]{})
-		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		return
 	}
 
 	b.MetaClientName.Append(event.GetMeta().GetClient().GetName())
-	b.MetaClientID.Append(event.GetMeta().GetClient().GetId())
 	b.MetaClientVersion.Append(event.GetMeta().GetClient().GetVersion())
 	b.MetaClientImplementation.Append(event.GetMeta().GetClient().GetImplementation())
 	b.MetaClientOS.Append(event.GetMeta().GetClient().GetOs())
@@ -96,7 +90,6 @@ func (b *libp2pHandleMetadataBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	b.MetaClientGeoLatitude.Append(proto.NewNullable[float64](event.GetMeta().GetServer().GetClient().GetGeo().GetLatitude()))
 	b.MetaClientGeoAutonomousSystemNumber.Append(proto.NewNullable[uint32](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemNumber()))
 	b.MetaClientGeoAutonomousSystemOrganization.Append(proto.NewNullable[string](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemOrganization()))
-	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 }
 
@@ -107,14 +100,13 @@ func (b *libp2pHandleMetadataBatch) Input() proto.Input {
 		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "error", Data: b.Error},
 		{Name: "protocol", Data: &b.Protocol},
-		{Name: "direction", Data: b.Direction},
+		{Name: "direction", Data: &b.Direction},
 		{Name: "attnets", Data: &b.Attnets},
 		{Name: "seq_number", Data: &b.SeqNumber},
 		{Name: "syncnets", Data: &b.Syncnets},
 		{Name: "custody_group_count", Data: b.CustodyGroupCount},
 		{Name: "latency_milliseconds", Data: &route.TypedColInput{ColInput: &b.LatencyMilliseconds, CHType: "Decimal(10, 3)"}},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
-		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
 		{Name: "meta_client_os", Data: &b.MetaClientOS},
@@ -127,7 +119,6 @@ func (b *libp2pHandleMetadataBatch) Input() proto.Input {
 		{Name: "meta_client_geo_latitude", Data: b.MetaClientGeoLatitude},
 		{Name: "meta_client_geo_autonomous_system_number", Data: b.MetaClientGeoAutonomousSystemNumber},
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
-		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 	}
 }
@@ -145,7 +136,6 @@ func (b *libp2pHandleMetadataBatch) Reset() {
 	b.CustodyGroupCount.Reset()
 	b.LatencyMilliseconds.Reset()
 	b.MetaClientName.Reset()
-	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
 	b.MetaClientOS.Reset()
@@ -158,7 +148,6 @@ func (b *libp2pHandleMetadataBatch) Reset() {
 	b.MetaClientGeoLatitude.Reset()
 	b.MetaClientGeoAutonomousSystemNumber.Reset()
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
-	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.rows = 0
 }
@@ -168,7 +157,7 @@ func (b *libp2pHandleMetadataBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 27)
+		row := make(map[string]any, 25)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
@@ -178,11 +167,7 @@ func (b *libp2pHandleMetadataBatch) Snapshot() []map[string]any {
 			row["error"] = nil
 		}
 		row["protocol"] = b.Protocol.Row(i)
-		if v := b.Direction.Row(i); v.Set {
-			row["direction"] = v.Value
-		} else {
-			row["direction"] = nil
-		}
+		row["direction"] = b.Direction.Row(i)
 		row["attnets"] = b.Attnets.Row(i)
 		row["seq_number"] = b.SeqNumber.Row(i)
 		row["syncnets"] = b.Syncnets.Row(i)
@@ -193,7 +178,6 @@ func (b *libp2pHandleMetadataBatch) Snapshot() []map[string]any {
 		}
 		row["latency_milliseconds"] = route.FormatDecimal(int64(b.LatencyMilliseconds.Row(i)), 3)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
-		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)
 		row["meta_client_os"] = b.MetaClientOS.Row(i)
@@ -226,7 +210,6 @@ func (b *libp2pHandleMetadataBatch) Snapshot() []map[string]any {
 		} else {
 			row["meta_client_geo_autonomous_system_organization"] = nil
 		}
-		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row
 	}

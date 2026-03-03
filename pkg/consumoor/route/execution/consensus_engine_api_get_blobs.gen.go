@@ -35,7 +35,6 @@ type consensusEngineApiGetBlobsBatch struct {
 	MetaExecutionVersionMinor                 proto.ColStr
 	MetaExecutionVersionPatch                 proto.ColStr
 	MetaClientName                            proto.ColStr
-	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
 	MetaClientOS                              proto.ColStr
@@ -48,7 +47,6 @@ type consensusEngineApiGetBlobsBatch struct {
 	MetaClientGeoLatitude                     *proto.ColNullable[float64]
 	MetaClientGeoAutonomousSystemNumber       *proto.ColNullable[uint32]
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
-	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
 	rows                                      int
 }
@@ -85,7 +83,6 @@ func (b *consensusEngineApiGetBlobsBatch) appendMetadata(event *xatu.DecoratedEv
 		b.MetaExecutionVersionMinor.Append("")
 		b.MetaExecutionVersionPatch.Append("")
 		b.MetaClientName.Append("")
-		b.MetaClientID.Append("")
 		b.MetaClientVersion.Append("")
 		b.MetaClientImplementation.Append("")
 		b.MetaClientOS.Append("")
@@ -98,7 +95,6 @@ func (b *consensusEngineApiGetBlobsBatch) appendMetadata(event *xatu.DecoratedEv
 		b.MetaClientGeoLatitude.Append(proto.Nullable[float64]{})
 		b.MetaClientGeoAutonomousSystemNumber.Append(proto.Nullable[uint32]{})
 		b.MetaClientGeoAutonomousSystemOrganization.Append(proto.Nullable[string]{})
-		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		return
 	}
@@ -109,7 +105,6 @@ func (b *consensusEngineApiGetBlobsBatch) appendMetadata(event *xatu.DecoratedEv
 	b.MetaExecutionVersionMinor.Append(event.GetMeta().GetClient().GetEthereum().GetExecution().GetVersionMinor())
 	b.MetaExecutionVersionPatch.Append(event.GetMeta().GetClient().GetEthereum().GetExecution().GetVersionPatch())
 	b.MetaClientName.Append(event.GetMeta().GetClient().GetName())
-	b.MetaClientID.Append(event.GetMeta().GetClient().GetId())
 	b.MetaClientVersion.Append(event.GetMeta().GetClient().GetVersion())
 	b.MetaClientImplementation.Append(event.GetMeta().GetClient().GetImplementation())
 	b.MetaClientOS.Append(event.GetMeta().GetClient().GetOs())
@@ -122,7 +117,6 @@ func (b *consensusEngineApiGetBlobsBatch) appendMetadata(event *xatu.DecoratedEv
 	b.MetaClientGeoLatitude.Append(proto.NewNullable[float64](event.GetMeta().GetServer().GetClient().GetGeo().GetLatitude()))
 	b.MetaClientGeoAutonomousSystemNumber.Append(proto.NewNullable[uint32](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemNumber()))
 	b.MetaClientGeoAutonomousSystemOrganization.Append(proto.NewNullable[string](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemOrganization()))
-	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 }
 
@@ -150,7 +144,6 @@ func (b *consensusEngineApiGetBlobsBatch) Input() proto.Input {
 		{Name: "meta_execution_version_minor", Data: &b.MetaExecutionVersionMinor},
 		{Name: "meta_execution_version_patch", Data: &b.MetaExecutionVersionPatch},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
-		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
 		{Name: "meta_client_os", Data: &b.MetaClientOS},
@@ -163,7 +156,6 @@ func (b *consensusEngineApiGetBlobsBatch) Input() proto.Input {
 		{Name: "meta_client_geo_latitude", Data: b.MetaClientGeoLatitude},
 		{Name: "meta_client_geo_autonomous_system_number", Data: b.MetaClientGeoAutonomousSystemNumber},
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
-		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 	}
 }
@@ -191,7 +183,6 @@ func (b *consensusEngineApiGetBlobsBatch) Reset() {
 	b.MetaExecutionVersionMinor.Reset()
 	b.MetaExecutionVersionPatch.Reset()
 	b.MetaClientName.Reset()
-	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
 	b.MetaClientOS.Reset()
@@ -204,7 +195,6 @@ func (b *consensusEngineApiGetBlobsBatch) Reset() {
 	b.MetaClientGeoLatitude.Reset()
 	b.MetaClientGeoAutonomousSystemNumber.Reset()
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
-	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.rows = 0
 }
@@ -214,7 +204,7 @@ func (b *consensusEngineApiGetBlobsBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 37)
+		row := make(map[string]any, 35)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["requested_date_time"] = b.RequestedDateTime.Row(i).UnixMilli()
@@ -241,7 +231,6 @@ func (b *consensusEngineApiGetBlobsBatch) Snapshot() []map[string]any {
 		row["meta_execution_version_minor"] = b.MetaExecutionVersionMinor.Row(i)
 		row["meta_execution_version_patch"] = b.MetaExecutionVersionPatch.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
-		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)
 		row["meta_client_os"] = b.MetaClientOS.Row(i)
@@ -274,7 +263,6 @@ func (b *consensusEngineApiGetBlobsBatch) Snapshot() []map[string]any {
 		} else {
 			row["meta_client_geo_autonomous_system_organization"] = nil
 		}
-		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row
 	}

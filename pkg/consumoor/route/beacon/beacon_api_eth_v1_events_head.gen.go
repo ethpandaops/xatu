@@ -26,7 +26,6 @@ type beaconApiEthV1EventsHeadBatch struct {
 	PreviousDutyDependentRoot                 route.SafeColFixedStr
 	CurrentDutyDependentRoot                  route.SafeColFixedStr
 	MetaClientName                            proto.ColStr
-	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
 	MetaClientOS                              proto.ColStr
@@ -39,14 +38,12 @@ type beaconApiEthV1EventsHeadBatch struct {
 	MetaClientGeoLatitude                     *proto.ColNullable[float64]
 	MetaClientGeoAutonomousSystemNumber       *proto.ColNullable[uint32]
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
-	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
 	MetaConsensusVersion                      proto.ColStr
 	MetaConsensusVersionMajor                 proto.ColStr
 	MetaConsensusVersionMinor                 proto.ColStr
 	MetaConsensusVersionPatch                 proto.ColStr
 	MetaConsensusImplementation               proto.ColStr
-	MetaLabels                                *proto.ColMap[string, string]
 	rows                                      int
 }
 
@@ -61,7 +58,6 @@ func newbeaconApiEthV1EventsHeadBatch() *beaconApiEthV1EventsHeadBatch {
 		MetaClientGeoLatitude:                     new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber:       new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
-		MetaLabels:                                proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
 	}
 }
 
@@ -72,7 +68,6 @@ func (b *beaconApiEthV1EventsHeadBatch) Rows() int {
 func (b *beaconApiEthV1EventsHeadBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	if event == nil || event.GetMeta() == nil {
 		b.MetaClientName.Append("")
-		b.MetaClientID.Append("")
 		b.MetaClientVersion.Append("")
 		b.MetaClientImplementation.Append("")
 		b.MetaClientOS.Append("")
@@ -85,19 +80,16 @@ func (b *beaconApiEthV1EventsHeadBatch) appendMetadata(event *xatu.DecoratedEven
 		b.MetaClientGeoLatitude.Append(proto.Nullable[float64]{})
 		b.MetaClientGeoAutonomousSystemNumber.Append(proto.Nullable[uint32]{})
 		b.MetaClientGeoAutonomousSystemOrganization.Append(proto.Nullable[string]{})
-		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		b.MetaConsensusVersion.Append("")
 		b.MetaConsensusVersionMajor.Append("")
 		b.MetaConsensusVersionMinor.Append("")
 		b.MetaConsensusVersionPatch.Append("")
 		b.MetaConsensusImplementation.Append("")
-		b.MetaLabels.Append(nil)
 		return
 	}
 
 	b.MetaClientName.Append(event.GetMeta().GetClient().GetName())
-	b.MetaClientID.Append(event.GetMeta().GetClient().GetId())
 	b.MetaClientVersion.Append(event.GetMeta().GetClient().GetVersion())
 	b.MetaClientImplementation.Append(event.GetMeta().GetClient().GetImplementation())
 	b.MetaClientOS.Append(event.GetMeta().GetClient().GetOs())
@@ -110,18 +102,12 @@ func (b *beaconApiEthV1EventsHeadBatch) appendMetadata(event *xatu.DecoratedEven
 	b.MetaClientGeoLatitude.Append(proto.NewNullable[float64](event.GetMeta().GetServer().GetClient().GetGeo().GetLatitude()))
 	b.MetaClientGeoAutonomousSystemNumber.Append(proto.NewNullable[uint32](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemNumber()))
 	b.MetaClientGeoAutonomousSystemOrganization.Append(proto.NewNullable[string](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemOrganization()))
-	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 	b.MetaConsensusVersion.Append(route.NormalizeConsensusVersion(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
 	b.MetaConsensusVersionMajor.Append(route.ConsensusVersionMajor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
 	b.MetaConsensusVersionMinor.Append(route.ConsensusVersionMinor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
 	b.MetaConsensusVersionPatch.Append(route.ConsensusVersionPatch(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
 	b.MetaConsensusImplementation.Append(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetImplementation())
-	if labels := event.GetMeta().GetClient().GetLabels(); labels != nil {
-		b.MetaLabels.Append(labels)
-	} else {
-		b.MetaLabels.Append(map[string]string{})
-	}
 }
 
 func (b *beaconApiEthV1EventsHeadBatch) Input() proto.Input {
@@ -139,7 +125,6 @@ func (b *beaconApiEthV1EventsHeadBatch) Input() proto.Input {
 		{Name: "previous_duty_dependent_root", Data: &b.PreviousDutyDependentRoot},
 		{Name: "current_duty_dependent_root", Data: &b.CurrentDutyDependentRoot},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
-		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
 		{Name: "meta_client_os", Data: &b.MetaClientOS},
@@ -152,14 +137,12 @@ func (b *beaconApiEthV1EventsHeadBatch) Input() proto.Input {
 		{Name: "meta_client_geo_latitude", Data: b.MetaClientGeoLatitude},
 		{Name: "meta_client_geo_autonomous_system_number", Data: b.MetaClientGeoAutonomousSystemNumber},
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
-		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 		{Name: "meta_consensus_version", Data: &b.MetaConsensusVersion},
 		{Name: "meta_consensus_version_major", Data: &b.MetaConsensusVersionMajor},
 		{Name: "meta_consensus_version_minor", Data: &b.MetaConsensusVersionMinor},
 		{Name: "meta_consensus_version_patch", Data: &b.MetaConsensusVersionPatch},
 		{Name: "meta_consensus_implementation", Data: &b.MetaConsensusImplementation},
-		{Name: "meta_labels", Data: b.MetaLabels},
 	}
 }
 
@@ -177,7 +160,6 @@ func (b *beaconApiEthV1EventsHeadBatch) Reset() {
 	b.PreviousDutyDependentRoot.Reset()
 	b.CurrentDutyDependentRoot.Reset()
 	b.MetaClientName.Reset()
-	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
 	b.MetaClientOS.Reset()
@@ -190,14 +172,12 @@ func (b *beaconApiEthV1EventsHeadBatch) Reset() {
 	b.MetaClientGeoLatitude.Reset()
 	b.MetaClientGeoAutonomousSystemNumber.Reset()
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
-	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.MetaConsensusVersion.Reset()
 	b.MetaConsensusVersionMajor.Reset()
 	b.MetaConsensusVersionMinor.Reset()
 	b.MetaConsensusVersionPatch.Reset()
 	b.MetaConsensusImplementation.Reset()
-	b.MetaLabels.Reset()
 	b.rows = 0
 }
 
@@ -206,7 +186,7 @@ func (b *beaconApiEthV1EventsHeadBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 34)
+		row := make(map[string]any, 31)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -220,7 +200,6 @@ func (b *beaconApiEthV1EventsHeadBatch) Snapshot() []map[string]any {
 		row["previous_duty_dependent_root"] = string(b.PreviousDutyDependentRoot.Row(i))
 		row["current_duty_dependent_root"] = string(b.CurrentDutyDependentRoot.Row(i))
 		row["meta_client_name"] = b.MetaClientName.Row(i)
-		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)
 		row["meta_client_os"] = b.MetaClientOS.Row(i)
@@ -253,14 +232,12 @@ func (b *beaconApiEthV1EventsHeadBatch) Snapshot() []map[string]any {
 		} else {
 			row["meta_client_geo_autonomous_system_organization"] = nil
 		}
-		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		row["meta_consensus_version"] = b.MetaConsensusVersion.Row(i)
 		row["meta_consensus_version_major"] = b.MetaConsensusVersionMajor.Row(i)
 		row["meta_consensus_version_minor"] = b.MetaConsensusVersionMinor.Row(i)
 		row["meta_consensus_version_patch"] = b.MetaConsensusVersionPatch.Row(i)
 		row["meta_consensus_implementation"] = b.MetaConsensusImplementation.Row(i)
-		row["meta_labels"] = b.MetaLabels.Row(i)
 		out[i] = row
 	}
 

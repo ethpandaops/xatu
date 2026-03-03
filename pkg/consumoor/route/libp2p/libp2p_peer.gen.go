@@ -14,7 +14,6 @@ type libp2pPeerBatch struct {
 	UniqueKey       proto.ColInt64
 	UpdatedDateTime proto.ColDateTime
 	PeerID          proto.ColStr
-	MetaNetworkID   proto.ColInt32
 	MetaNetworkName proto.ColStr
 	rows            int
 }
@@ -29,12 +28,10 @@ func (b *libp2pPeerBatch) Rows() int {
 
 func (b *libp2pPeerBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	if event == nil || event.GetMeta() == nil {
-		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		return
 	}
 
-	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 }
 
@@ -43,7 +40,6 @@ func (b *libp2pPeerBatch) Input() proto.Input {
 		{Name: "unique_key", Data: &b.UniqueKey},
 		{Name: "updated_date_time", Data: &b.UpdatedDateTime},
 		{Name: "peer_id", Data: &b.PeerID},
-		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 	}
 }
@@ -52,7 +48,6 @@ func (b *libp2pPeerBatch) Reset() {
 	b.UniqueKey.Reset()
 	b.UpdatedDateTime.Reset()
 	b.PeerID.Reset()
-	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.rows = 0
 }
@@ -62,11 +57,10 @@ func (b *libp2pPeerBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 5)
+		row := make(map[string]any, 4)
 		row["unique_key"] = b.UniqueKey.Row(i)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["peer_id"] = b.PeerID.Row(i)
-		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row
 	}

@@ -26,7 +26,6 @@ type libp2pRpcMetaControlIhaveBatch struct {
 	MessageID                                 proto.ColStr
 	PeerIDUniqueKey                           proto.ColInt64
 	MetaClientName                            proto.ColStr
-	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
 	MetaClientOS                              proto.ColStr
@@ -39,7 +38,6 @@ type libp2pRpcMetaControlIhaveBatch struct {
 	MetaClientGeoLatitude                     *proto.ColNullable[float64]
 	MetaClientGeoAutonomousSystemNumber       *proto.ColNullable[uint32]
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
-	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
 	rows                                      int
 }
@@ -62,7 +60,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Rows() int {
 func (b *libp2pRpcMetaControlIhaveBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	if event == nil || event.GetMeta() == nil {
 		b.MetaClientName.Append("")
-		b.MetaClientID.Append("")
 		b.MetaClientVersion.Append("")
 		b.MetaClientImplementation.Append("")
 		b.MetaClientOS.Append("")
@@ -75,13 +72,11 @@ func (b *libp2pRpcMetaControlIhaveBatch) appendMetadata(event *xatu.DecoratedEve
 		b.MetaClientGeoLatitude.Append(proto.Nullable[float64]{})
 		b.MetaClientGeoAutonomousSystemNumber.Append(proto.Nullable[uint32]{})
 		b.MetaClientGeoAutonomousSystemOrganization.Append(proto.Nullable[string]{})
-		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		return
 	}
 
 	b.MetaClientName.Append(event.GetMeta().GetClient().GetName())
-	b.MetaClientID.Append(event.GetMeta().GetClient().GetId())
 	b.MetaClientVersion.Append(event.GetMeta().GetClient().GetVersion())
 	b.MetaClientImplementation.Append(event.GetMeta().GetClient().GetImplementation())
 	b.MetaClientOS.Append(event.GetMeta().GetClient().GetOs())
@@ -94,7 +89,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) appendMetadata(event *xatu.DecoratedEve
 	b.MetaClientGeoLatitude.Append(proto.NewNullable[float64](event.GetMeta().GetServer().GetClient().GetGeo().GetLatitude()))
 	b.MetaClientGeoAutonomousSystemNumber.Append(proto.NewNullable[uint32](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemNumber()))
 	b.MetaClientGeoAutonomousSystemOrganization.Append(proto.NewNullable[string](event.GetMeta().GetServer().GetClient().GetGeo().GetAutonomousSystemOrganization()))
-	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 }
 
@@ -113,7 +107,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Input() proto.Input {
 		{Name: "message_id", Data: &b.MessageID},
 		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
-		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
 		{Name: "meta_client_os", Data: &b.MetaClientOS},
@@ -126,7 +119,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Input() proto.Input {
 		{Name: "meta_client_geo_latitude", Data: b.MetaClientGeoLatitude},
 		{Name: "meta_client_geo_autonomous_system_number", Data: b.MetaClientGeoAutonomousSystemNumber},
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
-		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 	}
 }
@@ -145,7 +137,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Reset() {
 	b.MessageID.Reset()
 	b.PeerIDUniqueKey.Reset()
 	b.MetaClientName.Reset()
-	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
 	b.MetaClientOS.Reset()
@@ -158,7 +149,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Reset() {
 	b.MetaClientGeoLatitude.Reset()
 	b.MetaClientGeoAutonomousSystemNumber.Reset()
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
-	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.rows = 0
 }
@@ -168,7 +158,7 @@ func (b *libp2pRpcMetaControlIhaveBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 28)
+		row := make(map[string]any, 26)
 		row["unique_key"] = b.UniqueKey.Row(i)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
@@ -182,7 +172,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Snapshot() []map[string]any {
 		row["message_id"] = b.MessageID.Row(i)
 		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
-		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)
 		row["meta_client_os"] = b.MetaClientOS.Row(i)
@@ -215,7 +204,6 @@ func (b *libp2pRpcMetaControlIhaveBatch) Snapshot() []map[string]any {
 		} else {
 			row["meta_client_geo_autonomous_system_organization"] = nil
 		}
-		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row
 	}

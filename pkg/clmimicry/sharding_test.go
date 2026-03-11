@@ -40,7 +40,7 @@ func TestConfigurableTotalShards(t *testing.T) {
 	assert.InDelta(t, 0.0039, config.Topics["large_shards"].GetSamplingRate(), 0.001)
 
 	// Test that sharding works with different totalShards
-	_, err = NewUnifiedSharder(config, true)
+	_, err = NewUnifiedSharder(config, nil, true)
 	require.NoError(t, err)
 
 	// Test that the same key produces different shards with different totalShards
@@ -251,7 +251,7 @@ func TestUnifiedSharder(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create sharder
-			sharder, err := NewUnifiedSharder(tt.config, tt.name != "Sharding disabled")
+			sharder, err := NewUnifiedSharder(tt.config, nil, tt.name != "Sharding disabled")
 			require.NoError(t, err)
 
 			// Test sharding decision
@@ -284,7 +284,7 @@ func TestShardDistribution(t *testing.T) {
 	err := config.compilePatterns()
 	require.NoError(t, err)
 
-	sharder, err := NewUnifiedSharder(config, true)
+	sharder, err := NewUnifiedSharder(config, nil, true)
 	require.NoError(t, err)
 
 	// Test shard distribution using chi-squared test
@@ -533,7 +533,7 @@ func TestBatchProcessing(t *testing.T) {
 	err := config.compilePatterns()
 	require.NoError(t, err)
 
-	sharder, err := NewUnifiedSharder(config, true)
+	sharder, err := NewUnifiedSharder(config, nil, true)
 	require.NoError(t, err)
 
 	// Create batch of events
@@ -688,7 +688,7 @@ func TestEventTypeAwareSharding(t *testing.T) {
 		},
 	}
 
-	sharder, err := NewUnifiedSharder(config, true)
+	sharder, err := NewUnifiedSharder(config, nil, true)
 	require.NoError(t, err)
 
 	topic := "/eth2/12345678/beacon_attestation_1/ssz_snappy"
@@ -809,7 +809,7 @@ func TestBackwardCompatibility(t *testing.T) {
 		},
 	}
 
-	sharder, err := NewUnifiedSharder(config, true)
+	sharder, err := NewUnifiedSharder(config, nil, true)
 	require.NoError(t, err)
 
 	// Test that patterns without event constraints match all event types
@@ -844,7 +844,7 @@ func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
 			},
 		}
 
-		sharder, err := NewUnifiedSharder(config, true)
+		sharder, err := NewUnifiedSharder(config, nil, true)
 		require.NoError(t, err)
 
 		// Test with multiple message IDs to verify 100% sampling
@@ -886,7 +886,7 @@ func TestGroupCEventTypeOnlyPatterns(t *testing.T) {
 			},
 		}
 
-		iwantSharder, err := NewUnifiedSharder(iwantConfig, true)
+		iwantSharder, err := NewUnifiedSharder(iwantConfig, nil, true)
 		require.NoError(t, err)
 
 		iwantProcessed := 0

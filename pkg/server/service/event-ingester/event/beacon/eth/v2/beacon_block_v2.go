@@ -95,14 +95,14 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 
 		hash = fuluBlock.FuluBlock.StateRoot
 	case spec.DataVersionGloas.String():
-		gloasBlock, ok := data.EthV2BeaconBlockV2.Message.(*v2.EventBlockV2_GloasBlock)
+		gloasBlock, ok := data.EthV2BeaconBlockV2.GetMessage().(*v2.EventBlockV2_GloasBlock)
 		if !ok {
 			b.log.Error("failed to cast message to GloasBlock")
 
 			return true
 		}
 
-		hash = gloasBlock.GloasBlock.StateRoot
+		hash = gloasBlock.GloasBlock.GetStateRoot()
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

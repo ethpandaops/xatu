@@ -34,6 +34,7 @@ type beaconApiEthV2BeaconBlockBatch struct {
 	ExecutionPayloadBaseFeePerGas                    *proto.ColNullable[proto.UInt128]
 	ExecutionPayloadBlobGasUsed                      *proto.ColNullable[uint64]
 	ExecutionPayloadExcessBlobGas                    *proto.ColNullable[uint64]
+	ExecutionPayloadSlotNumber                       *proto.ColNullable[uint64]
 	ExecutionPayloadGasLimit                         *proto.ColNullable[uint64]
 	ExecutionPayloadGasUsed                          *proto.ColNullable[uint64]
 	ExecutionPayloadStateRoot                        route.SafeColFixedStr
@@ -80,6 +81,7 @@ func newbeaconApiEthV2BeaconBlockBatch() *beaconApiEthV2BeaconBlockBatch {
 		ExecutionPayloadBaseFeePerGas:                    new(proto.ColUInt128).Nullable(),
 		ExecutionPayloadBlobGasUsed:                      new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadExcessBlobGas:                    new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadSlotNumber:                       new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadGasLimit:                         new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadGasUsed:                          new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadStateRoot:                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
@@ -178,6 +180,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) Input() proto.Input {
 		{Name: "execution_payload_base_fee_per_gas", Data: b.ExecutionPayloadBaseFeePerGas},
 		{Name: "execution_payload_blob_gas_used", Data: b.ExecutionPayloadBlobGasUsed},
 		{Name: "execution_payload_excess_blob_gas", Data: b.ExecutionPayloadExcessBlobGas},
+		{Name: "execution_payload_slot_number", Data: b.ExecutionPayloadSlotNumber},
 		{Name: "execution_payload_gas_limit", Data: b.ExecutionPayloadGasLimit},
 		{Name: "execution_payload_gas_used", Data: b.ExecutionPayloadGasUsed},
 		{Name: "execution_payload_state_root", Data: &b.ExecutionPayloadStateRoot},
@@ -232,6 +235,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) Reset() {
 	b.ExecutionPayloadBaseFeePerGas.Reset()
 	b.ExecutionPayloadBlobGasUsed.Reset()
 	b.ExecutionPayloadExcessBlobGas.Reset()
+	b.ExecutionPayloadSlotNumber.Reset()
 	b.ExecutionPayloadGasLimit.Reset()
 	b.ExecutionPayloadGasUsed.Reset()
 	b.ExecutionPayloadStateRoot.Reset()
@@ -310,6 +314,11 @@ func (b *beaconApiEthV2BeaconBlockBatch) Snapshot() []map[string]any {
 			row["execution_payload_excess_blob_gas"] = v.Value
 		} else {
 			row["execution_payload_excess_blob_gas"] = nil
+		}
+		if v := b.ExecutionPayloadSlotNumber.Row(i); v.Set {
+			row["execution_payload_slot_number"] = v.Value
+		} else {
+			row["execution_payload_slot_number"] = nil
 		}
 		if v := b.ExecutionPayloadGasLimit.Row(i); v.Set {
 			row["execution_payload_gas_limit"] = v.Value

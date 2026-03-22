@@ -241,6 +241,32 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
+	if gloasBlock := eventBlock.GetGloasBlock(); gloasBlock != nil {
+		if slot := gloasBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue()))
+		} else {
+			b.Slot.Append(0)
+		}
+
+		if proposerIndex := gloasBlock.GetProposerIndex(); proposerIndex != nil {
+			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
+		} else {
+			b.ProposerIndex.Append(0)
+		}
+
+		b.ParentRoot.Append([]byte(gloasBlock.GetParentRoot()))
+		b.StateRoot.Append([]byte(gloasBlock.GetStateRoot()))
+
+		body := gloasBlock.GetBody()
+		b.appendEth1Data(body.GetEth1Data())
+
+		// Gloas (EIP-7732 ePBS) does not carry an ExecutionPayload in the
+		// beacon block body; it arrives via a separate ExecutionPayloadEnvelope.
+		b.appendNullExecutionPayload()
+
+		return nil
+	}
+
 	// Unknown block version - append zeros.
 	b.Slot.Append(0)
 	b.ProposerIndex.Append(0)

@@ -69,7 +69,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) validate(event *xatu.DecoratedEvent) er
 		payload.GetCapellaBlock() == nil &&
 		payload.GetDenebBlock() == nil &&
 		payload.GetElectraBlock() == nil &&
-		payload.GetFuluBlock() == nil {
+		payload.GetFuluBlock() == nil &&
+		payload.GetGloasBlock() == nil {
 		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
 	}
 
@@ -247,6 +248,32 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		b.appendEth1Data(body.GetEth1Data())
 
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
+	}
+
+	if gloasBlock := eventBlock.GetGloasBlock(); gloasBlock != nil {
+		if slot := gloasBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
+		} else {
+			b.Slot.Append(0)
+		}
+
+		b.ParentRoot.Append([]byte(gloasBlock.GetParentRoot()))
+		b.StateRoot.Append([]byte(gloasBlock.GetStateRoot()))
+
+		if pi := gloasBlock.GetProposerIndex(); pi != nil {
+			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
+		} else {
+			b.ProposerIndex.Append(0)
+		}
+
+		body := gloasBlock.GetBody()
+		b.appendEth1Data(body.GetEth1Data())
+
+		// Gloas (EIP-7732 ePBS) does not carry an ExecutionPayload in the
+		// beacon block body; it arrives via a separate ExecutionPayloadEnvelope.
+		b.appendNoExecutionPayload()
+
+		return nil
 	}
 
 	// Unknown block type: append zero values.

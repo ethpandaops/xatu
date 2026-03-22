@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+message BlockAccessListStorageChange {
+  google.protobuf.UInt32Value block_access_index = 1
+      [ json_name = "block_access_index" ];
+  google.protobuf.StringValue key = 2;
+  google.protobuf.StringValue new_value = 3 [ json_name = "new_value" ];
+}
+
+message BlockAccessListBalanceChange {
+  google.protobuf.UInt32Value block_access_index = 1
+      [ json_name = "block_access_index" ];
+  google.protobuf.StringValue post_balance = 2
+      [ json_name = "post_balance" ];
+}
+
+message BlockAccessListNonceChange {
+  google.protobuf.UInt32Value block_access_index = 1
+      [ json_name = "block_access_index" ];
+  google.protobuf.UInt64Value new_nonce = 2 [ json_name = "new_nonce" ];
+}
+
+message BlockAccessListCodeChange {
+  google.protobuf.UInt32Value block_access_index = 1
+      [ json_name = "block_access_index" ];
+  google.protobuf.StringValue new_code = 2 [ json_name = "new_code" ];
+}
+
+message BlockAccessListEntry {
+  google.protobuf.StringValue address = 1;
+  repeated BlockAccessListStorageChange storage_changes = 2
+      [ json_name = "storage_changes" ];
+  repeated BlockAccessListBalanceChange balance_changes = 3
+      [ json_name = "balance_changes" ];
+  repeated BlockAccessListNonceChange nonce_changes = 4
+      [ json_name = "nonce_changes" ];
+  repeated BlockAccessListCodeChange code_changes = 5
+      [ json_name = "code_changes" ];
+}
+
+message BlockAccessList {
+  repeated BlockAccessListEntry entries = 1;
+}
+
+// BlockAccessListChange is a denormalized representation of a single change
+// within a block access list. Used for ClickHouse storage where each change
+// becomes one row.
+message BlockAccessListChange {
+  google.protobuf.StringValue address = 1;
+  // change_type is one of: "storage", "balance", "nonce", "code"
+  string change_type = 2 [ json_name = "change_type" ];
+  google.protobuf.UInt32Value block_access_index = 3
+      [ json_name = "block_access_index" ];
+  // storage_key is set only for storage changes
+  google.protobuf.StringValue storage_key = 4 [ json_name = "storage_key" ];
+  // new_value contains the new value for any change type
+  google.protobuf.StringValue new_value = 5 [ json_name = "new_value" ];
+}

@@ -98,6 +98,16 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 		}
 
 		hash = fuluBlock.FuluBlock.StateRoot
+	case spec.DataVersionGloas.String():
+		//nolint:staticcheck // Handled by v2
+		gloasBlock, ok := data.EthV2BeaconBlock.Message.(*v2.EventBlock_GloasBlock)
+		if !ok {
+			b.log.Error("failed to cast message to GloasBlock")
+
+			return true
+		}
+
+		hash = gloasBlock.GloasBlock.StateRoot
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

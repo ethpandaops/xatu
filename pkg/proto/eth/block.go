@@ -11,6 +11,7 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/capella"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/electra"
+	"github.com/attestantio/go-eth2-client/spec/gloas"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
@@ -35,6 +36,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromElectra(proposal.Electra.Block, nil)
 	case spec.DataVersionFulu:
 		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
+	case spec.DataVersionGloas:
+		return nil, fmt.Errorf("gloas proposals not yet supported in go-eth2-client")
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -60,6 +63,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromElectra(block.Electra.Message, &block.Electra.Signature)
 	case spec.DataVersionFulu:
 		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
+	case spec.DataVersionGloas:
+		data = NewEventBlockFromGloas(block.Gloas.Message, &block.Gloas.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -445,6 +450,48 @@ func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSign
 					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					BlobKzgCommitments:    kzgCommitments,
 					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
+}
+
+// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7732 ePBS) beacon block.
+// Gloas blocks use SignedExecutionPayloadBid instead of a direct ExecutionPayload,
+// so the execution payload fields are left unpopulated in the proto.
+func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_GLOAS,
+		Message: &v2.EventBlockV2_GloasBlock{
+			GloasBlock: &v2.BeaconBlockGloas{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyGloas{
+					RandaoReveal: block.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 				},
 			},
 		},

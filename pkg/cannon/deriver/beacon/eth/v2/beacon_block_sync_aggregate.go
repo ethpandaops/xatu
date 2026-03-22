@@ -370,6 +370,14 @@ func (b *BeaconBlockSyncAggregateDeriver) getSyncAggregate(
 		sa := block.Fulu.Message.Body.SyncAggregate
 		bits = sa.SyncCommitteeBits[:]
 		signature = sa.SyncCommitteeSignature[:]
+	case spec.DataVersionGloas:
+		if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
+			return nil, nil //nolint:nilnil // nil indicates no sync aggregate available
+		}
+
+		sa := block.Gloas.Message.Body.SyncAggregate
+		bits = sa.SyncCommitteeBits[:]
+		signature = sa.SyncCommitteeSignature[:]
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

@@ -7,8 +7,8 @@ go 1.25.7
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Use pk910's BALs branch for Gloas/EIP-7928 support
-replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20260120171638-6be3bd0765ca
+// Use pk910's BALs branch for Gloas/EIP-7928 support (PR #7)
+replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20260211135810-4d8cc413fd3b
 
 require (
 	github.com/ClickHouse/ch-go v0.71.0

@@ -7,7 +7,11 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/capella"
 	"github.com/attestantio/go-eth2-client/spec/deneb"
 	"github.com/attestantio/go-eth2-client/spec/electra"
+	"github.com/attestantio/go-eth2-client/spec/gloas"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethereum/go-ethereum/core/types/bal"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/holiman/uint256"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -358,4 +362,66 @@ func NewElectraExecutionRequestsFromElectra(data *electra.ExecutionRequests) *El
 	}
 
 	return requests
+}
+
+// NewBlockAccessListFromGloas decodes a raw RLP-encoded block access list
+// (EIP-7928) into the structured proto representation.
+func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList {
+	if len(rawBAL) == 0 {
+		return &BlockAccessList{}
+	}
+
+	var decoded bal.BlockAccessList
+	if err := rlp.DecodeBytes(rawBAL, &decoded); err != nil {
+		return &BlockAccessList{}
+	}
+
+	entries := make([]*BlockAccessListEntry, 0, len(decoded.Accesses))
+
+	for i := range decoded.Accesses {
+		access := &decoded.Accesses[i]
+		entry := &BlockAccessListEntry{
+			Address: &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", access.Address)},
+		}
+
+		// Storage changes: each slot has multiple writes keyed by tx index
+		for _, slotWrite := range access.StorageWrites {
+			for _, write := range slotWrite.Accesses {
+				entry.StorageChanges = append(entry.StorageChanges, &BlockAccessListStorageChange{
+					BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(write.TxIdx)},
+					Key:              &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotWrite.Slot)},
+					NewValue:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", write.ValueAfter)},
+				})
+			}
+		}
+
+		// Balance changes
+		for _, change := range access.BalanceChanges {
+			postBalance := new(uint256.Int).SetBytes(change.Balance[:])
+			entry.BalanceChanges = append(entry.BalanceChanges, &BlockAccessListBalanceChange{
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(change.TxIdx)},
+				PostBalance:      &wrapperspb.StringValue{Value: postBalance.String()},
+			})
+		}
+
+		// Nonce changes
+		for _, change := range access.NonceChanges {
+			entry.NonceChanges = append(entry.NonceChanges, &BlockAccessListNonceChange{
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(change.TxIdx)},
+				NewNonce:         &wrapperspb.UInt64Value{Value: change.Nonce},
+			})
+		}
+
+		// Code changes
+		for _, code := range access.Code {
+			entry.CodeChanges = append(entry.CodeChanges, &BlockAccessListCodeChange{
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(code.TxIndex)},
+				NewCode:          &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", code.Code)},
+			})
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return &BlockAccessList{Entries: entries}
 }

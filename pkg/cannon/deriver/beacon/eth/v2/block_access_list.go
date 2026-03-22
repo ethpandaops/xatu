@@ -13,10 +13,14 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -30,10 +34,9 @@ type BlockAccessListDeriverConfig struct {
 }
 
 // BlockAccessListDeriver extracts block access list data from Gloas beacon blocks.
-// BAL (Block Access List) is introduced in EIP-7732 (ePBS) and only exists from
-// the Gloas fork onwards. The BAL data comes from the ExecutionPayloadEnvelope,
-// not the beacon block body itself; the extraction logic will be filled in once
-// envelope data is available.
+// BAL (Block Access List) is introduced in EIP-7928 and only exists from the
+// Gloas fork onwards. The BAL data is embedded in the ExecutionPayload as the
+// BlockAccessList field.
 type BlockAccessListDeriver struct {
 	log               logrus.FieldLogger
 	cfg               *BlockAccessListDeriverConfig
@@ -190,6 +193,7 @@ func (b *BlockAccessListDeriver) processEpoch(
 ) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockAccessListDeriver.processEpoch",
+		//nolint:gosec // epoch value will never overflow int64
 		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
 	)
 	defer span.End()
@@ -221,6 +225,7 @@ func (b *BlockAccessListDeriver) processSlot(
 ) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockAccessListDeriver.processSlot",
+		//nolint:gosec // slot value will never overflow int64
 		trace.WithAttributes(attribute.Int64("slot", int64(slot))),
 	)
 	defer span.End()
@@ -241,10 +246,142 @@ func (b *BlockAccessListDeriver) processSlot(
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	// TODO: Extract BAL data from ExecutionPayloadEnvelope once envelope
-	// data is available. For now, return empty events since BAL comes from
-	// the ExecutionPayloadEnvelope, not the beacon block body.
-	return []*xatu.DecoratedEvent{}, nil
+	if block.Gloas == nil || block.Gloas.Message == nil ||
+		block.Gloas.Message.Body == nil ||
+		block.Gloas.Message.Body.ExecutionPayload == nil {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
+	blockIdentifier, err := GetBlockIdentifier(
+		block, b.beacon.Metadata().Wallclock(),
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err,
+			"failed to get block identifier for slot %d", slot)
+	}
+
+	// Decode the BAL from the ExecutionPayload
+	bal := xatuethv1.NewBlockAccessListFromGloas(
+		block.Gloas.Message.Body.ExecutionPayload.BlockAccessList,
+	)
+
+	if bal == nil || len(bal.GetEntries()) == 0 {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
+	events := make([]*xatu.DecoratedEvent, 0)
+
+	// Iterate over entries and their changes, creating one event per change
+	for _, entry := range bal.GetEntries() {
+		address := entry.GetAddress()
+
+		for _, sc := range entry.GetStorageChanges() {
+			change := &xatuethv1.BlockAccessListChange{
+				Address:          address,
+				ChangeType:       "storage",
+				BlockAccessIndex: sc.GetBlockAccessIndex(),
+				StorageKey:       sc.GetKey(),
+				NewValue:         sc.GetNewValue(),
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create storage change event")
+			}
+
+			events = append(events, event)
+		}
+
+		for _, bc := range entry.GetBalanceChanges() {
+			change := &xatuethv1.BlockAccessListChange{
+				Address:          address,
+				ChangeType:       "balance",
+				BlockAccessIndex: bc.GetBlockAccessIndex(),
+				NewValue:         bc.GetPostBalance(),
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create balance change event")
+			}
+
+			events = append(events, event)
+		}
+
+		for _, nc := range entry.GetNonceChanges() {
+			var newValue *wrapperspb.StringValue
+			if nc.GetNewNonce() != nil {
+				newValue = &wrapperspb.StringValue{
+					Value: fmt.Sprintf("%d", nc.GetNewNonce().GetValue()),
+				}
+			}
+
+			change := &xatuethv1.BlockAccessListChange{
+				Address:          address,
+				ChangeType:       "nonce",
+				BlockAccessIndex: nc.GetBlockAccessIndex(),
+				NewValue:         newValue,
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create nonce change event")
+			}
+
+			events = append(events, event)
+		}
+
+		for _, cc := range entry.GetCodeChanges() {
+			change := &xatuethv1.BlockAccessListChange{
+				Address:          address,
+				ChangeType:       "code",
+				BlockAccessIndex: cc.GetBlockAccessIndex(),
+				NewValue:         cc.GetNewCode(),
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create code change event")
+			}
+
+			events = append(events, event)
+		}
+	}
+
+	return events, nil
+}
+
+func (b *BlockAccessListDeriver) createEvent(
+	ctx context.Context,
+	change *xatuethv1.BlockAccessListChange,
+	blockIdentifier *xatu.BlockIdentifier,
+) (*xatu.DecoratedEvent, error) {
+	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return nil, errors.New("failed to clone client metadata")
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST,
+			DateTime: timestamppb.New(time.Now()),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_EthV2BeaconBlockAccessList{
+			EthV2BeaconBlockAccessList: change,
+		},
+	}
+
+	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlockAccessList{
+		EthV2BeaconBlockAccessList: &xatu.ClientMeta_AdditionalEthV2BeaconBlockAccessListData{
+			Block: blockIdentifier,
+		},
+	}
+
+	return decoratedEvent, nil
 }
 
 // lookAhead attempts to pre-load any blocks that might be required for

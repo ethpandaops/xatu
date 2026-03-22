@@ -201,9 +201,9 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 			return block.Fulu.Message.Body.BlobKZGCommitments, nil
 		}
 	case spec.DataVersionGloas:
-		// Gloas (ePBS) blocks do not have BlobKZGCommitments in the beacon block body;
-		// blob KZG commitments are in the ExecutionPayloadEnvelope instead.
-		return nil, fmt.Errorf("block version %s does not contain BlobKZGCommitments in the block body", block.Version)
+		if block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil {
+			return block.Gloas.Message.Body.BlobKZGCommitments, nil
+		}
 	}
 
 	return nil, fmt.Errorf("block version %s does not support KZG commitments", block.Version)

@@ -206,9 +206,17 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 		addTxData(fuluTxs)
 	case spec.DataVersionGloas:
-		// Gloas (ePBS) blocks do not have an ExecutionPayload in the beacon block body,
-		// so we cannot compute block size or extract transactions from VersionedProposal.
-		e.log.Warn("Gloas (ePBS) blocks are not supported in VersionedProposal; skipping block size and transaction data")
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Gloas.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute gloas block size")
+		}
+
+		gloasTxs := make([][]byte, len(e.event.Gloas.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Gloas.Body.ExecutionPayload.Transactions {
+			gloasTxs[i] = tx
+		}
+
+		addTxData(gloasTxs)
 
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")

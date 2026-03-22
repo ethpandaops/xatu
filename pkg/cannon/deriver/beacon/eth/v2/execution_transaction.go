@@ -238,12 +238,6 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	// Gloas (EIP-7732 ePBS) blocks do not contain an ExecutionPayload in the
-	// beacon block body, so there are no transactions to extract.
-	if block.Version == spec.DataVersionGloas {
-		return []*xatu.DecoratedEvent{}, nil
-	}
-
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
@@ -449,6 +443,9 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		case spec.DataVersionFulu:
 			executionPayload := block.Fulu.Message.Body.ExecutionPayload
+			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		case spec.DataVersionGloas:
+			executionPayload := block.Gloas.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		default:
 			return nil, fmt.Errorf("unknown block version: %d", block.Version)

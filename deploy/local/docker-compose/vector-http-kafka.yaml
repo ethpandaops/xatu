@@ -52,6 +52,7 @@ transforms:
       eth_v2_beacon_block_v2: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_V2"
       eth_v2_beacon_block_voluntary_exit: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
       eth_v2_beacon_block_withdrawal: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
+      eth_v2_beacon_block_access_list: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST"
       eth_v2_beacon_block: .event.name == "BEACON_API_ETH_V2_BEACON_BLOCK"
       mempool_transaction_v2: .event.name == "MEMPOOL_TRANSACTION_V2"
       mempool_transaction: .event.name == "MEMPOOL_TRANSACTION"
@@ -758,6 +759,22 @@ sinks:
     bootstrap_servers: "${KAFKA_BROKERS}"
     key_field: "event.id"
     topic: beacon-api-eth-v2-beacon-block-withdrawal
+    compression: snappy
+    healthcheck:
+      enabled: true
+    encoding:
+      codec: json
+  beacon_api_eth_v2_beacon_block_access_list_kafka:
+    type: kafka
+    buffer:
+      max_events: 500000
+    batch:
+      timeout_secs: 0.5
+    inputs:
+      - xatu_server_events_router.eth_v2_beacon_block_access_list
+    bootstrap_servers: "${KAFKA_BROKERS}"
+    key_field: "event.id"
+    topic: beacon-api-eth-v2-beacon-block-access-list
     compression: snappy
     healthcheck:
       enabled: true

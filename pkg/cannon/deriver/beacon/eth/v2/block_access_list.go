@@ -179,7 +179,6 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 						Warn("Failed to process")
 				}),
 			}
-
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}

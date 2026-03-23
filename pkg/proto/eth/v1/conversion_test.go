@@ -187,10 +187,7 @@ func TestNewBlockAccessListFromGloas_CodeChange(t *testing.T) {
 
 	cbal := bal.NewConstructionBlockAccessList()
 	cbal.AccountRead(addr)
-	cbal.Accounts[addr].CodeChange = &bal.CodeChange{
-		TxIndex: 7,
-		Code:    []byte{0x60, 0x80, 0x60, 0x40},
-	}
+	cbal.Accounts[addr].CodeChange[7] = []byte{0x60, 0x80, 0x60, 0x40}
 
 	encoded := rlpEncodeBAL(t, &cbal)
 	result := NewBlockAccessListFromGloas(encoded)

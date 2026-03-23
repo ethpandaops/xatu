@@ -21,7 +21,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.0
-	github.com/ethpandaops/beacon v0.67.1-0.20260323001121-5e1c4bf480ea
+	github.com/ethpandaops/beacon v0.67.1-0.20260323003205-7b1d6d7ddd50
 	github.com/ethpandaops/ethcore v0.0.0-20260225041126-afac0c250cdf
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v1.0.0

@@ -20,9 +20,9 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.1
-	github.com/ethpandaops/beacon v0.67.1-0.20260323003205-7b1d6d7ddd50
-	github.com/ethpandaops/ethcore v0.0.0-20260323002709-50f492685a52
+	github.com/ethereum/go-ethereum v1.17.2-0.20260319135215-e5d453c086c7
+	github.com/ethpandaops/beacon v0.67.1-0.20260324015045-f64d291dca36
+	github.com/ethpandaops/ethcore v0.0.0-20260324015639-f83abb88486d
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6

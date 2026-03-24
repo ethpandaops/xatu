@@ -292,6 +292,7 @@ services:
           "beacon-api-eth-v2-beacon-block-proposer-slashing"
           "beacon-api-eth-v2-beacon-block-voluntary-exit"
           "beacon-api-eth-v2-beacon-block-withdrawal"
+          "beacon-api-eth-v2-beacon-block-access-list"
           "beacon-api-eth-v2-beacon-block-elaborated-attestation"
           "beacon-p2p-attestation"
           "mempool-transaction"

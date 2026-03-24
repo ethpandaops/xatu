@@ -24,7 +24,7 @@ type canonicalBeaconBlockAccessListBatch struct {
 	Address                                   route.SafeColFixedStr
 	ChangeType                                proto.ColStr
 	BlockAccessIndex                          proto.ColUInt32
-	StorageKey                                *proto.ColNullable[string]
+	StorageKey                                route.SafeColFixedStr
 	NewValue                                  *proto.ColNullable[string]
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
@@ -56,7 +56,7 @@ func newcanonicalBeaconBlockAccessListBatch() *canonicalBeaconBlockAccessListBat
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		Address:                             func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(42); return c }(),
-		StorageKey:                          new(proto.ColStr).Nullable(),
+		StorageKey:                          func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		NewValue:                            new(proto.ColStr).Nullable(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
@@ -222,11 +222,7 @@ func (b *canonicalBeaconBlockAccessListBatch) Snapshot() []map[string]any {
 		row["address"] = string(b.Address.Row(i))
 		row["change_type"] = b.ChangeType.Row(i)
 		row["block_access_index"] = b.BlockAccessIndex.Row(i)
-		if v := b.StorageKey.Row(i); v.Set {
-			row["storage_key"] = v.Value
-		} else {
-			row["storage_key"] = nil
-		}
+		row["storage_key"] = string(b.StorageKey.Row(i))
 		if v := b.NewValue.Row(i); v.Set {
 			row["new_value"] = v.Value
 		} else {

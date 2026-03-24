@@ -429,6 +429,8 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 		marker = location.GetEthV1BeaconSyncCommittee().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE:
 		marker = location.GetEthV2BeaconBlockSyncAggregate().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
+		marker = location.GetEthV2BeaconBlockAccessList().GetBackfillingCheckpointMarker()
 	default:
 		return nil, errors.Errorf("unknown cannon type %s", location.Type)
 	}
@@ -561,6 +563,12 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE:
 		location.Data = &xatu.CannonLocation_EthV2BeaconBlockSyncAggregate{
 			EthV2BeaconBlockSyncAggregate: &xatu.CannonLocationEthV2BeaconBlockSyncAggregate{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockAccessList{
+			EthV2BeaconBlockAccessList: &xatu.CannonLocationEthV2BeaconBlockAccessList{
 				BackfillingCheckpointMarker: marker,
 			},
 		}

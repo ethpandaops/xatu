@@ -83,9 +83,9 @@ func (b *canonicalBeaconBlockAccessListBatch) appendPayload(event *xatu.Decorate
 	}
 
 	if storageKey := change.GetStorageKey(); storageKey != nil {
-		b.StorageKey.Append(proto.NewNullable[string](storageKey.GetValue()))
+		b.StorageKey.Append([]byte(storageKey.GetValue()))
 	} else {
-		b.StorageKey.Append(proto.Nullable[string]{})
+		b.StorageKey.Append(nil)
 	}
 
 	if newValue := change.GetNewValue(); newValue != nil {
@@ -114,6 +114,11 @@ func (b *canonicalBeaconBlockAccessListBatch) appendAdditionalData(event *xatu.D
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, nil, &b.BlockRoot)
 
-	b.BlockNumber.Append(0)
-	b.BlockHash.Append(nil)
+	if blockNumber := additional.GetBlockNumber(); blockNumber != nil {
+		b.BlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
+	} else {
+		b.BlockNumber.Append(0)
+	}
+
+	b.BlockHash.Append([]byte(additional.GetBlockHash()))
 }

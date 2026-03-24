@@ -1209,6 +1209,7 @@ transforms:
       .execution_payload_base_fee_per_gas = .data.message.body.execution_payload.base_fee_per_gas
       .execution_payload_blob_gas_used = .data.message.body.execution_payload.blob_gas_used
       .execution_payload_excess_blob_gas = .data.message.body.execution_payload.excess_blob_gas
+      .execution_payload_slot_number = .data.message.body.execution_payload.slot_number
       .execution_payload_gas_limit = .data.message.body.execution_payload.gas_limit
       .execution_payload_gas_used = .data.message.body.execution_payload.gas_used
       .execution_payload_state_root = .data.message.body.execution_payload.state_root
@@ -1280,6 +1281,7 @@ transforms:
         .execution_payload_base_fee_per_gas = .data.message.body.execution_payload.base_fee_per_gas
         .execution_payload_blob_gas_used = .data.message.body.execution_payload.blob_gas_used
         .execution_payload_excess_blob_gas = .data.message.body.execution_payload.excess_blob_gas
+        .execution_payload_slot_number = .data.message.body.execution_payload.slot_number
         .execution_payload_gas_limit = .data.message.body.execution_payload.gas_limit
         .execution_payload_gas_used = .data.message.body.execution_payload.gas_used
         .execution_payload_state_root = .data.message.body.execution_payload.state_root
@@ -1583,8 +1585,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .block_root = .meta.client.additional_data.block.root
-      .block_number = 0
-      .block_hash = ""
+      .block_number = .meta.client.additional_data.block_number
+      .block_hash = .meta.client.additional_data.block_hash
       .address = .data.address
       .change_type = .data.change_type
       .block_access_index = .data.block_access_index
@@ -2350,6 +2352,7 @@ transforms:
       .execution_payload_base_fee_per_gas = .data.message.body.execution_payload.base_fee_per_gas
       .execution_payload_blob_gas_used = .data.message.body.execution_payload.blob_gas_used
       .execution_payload_excess_blob_gas = .data.message.body.execution_payload.excess_blob_gas
+      .execution_payload_slot_number = .data.message.body.execution_payload.slot_number
       .execution_payload_gas_limit = .data.message.body.execution_payload.gas_limit
       .execution_payload_gas_used = .data.message.body.execution_payload.gas_used
       .execution_payload_transactions_count = .meta.client.additional_data.transactions_count

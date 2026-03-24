@@ -71,7 +71,7 @@ func TestSnapshot_canonical_beacon_block_access_list_balance(t *testing.T) {
 		"address":            "0xaabbccddee112233445566778899aabbccddeeff",
 		"change_type":        "balance",
 		"block_access_index": uint32(2),
-		"storage_key":        nil,
+		"storage_key":        "",
 		"new_value":          "1000000000000000000",
 	})
 }

@@ -923,6 +923,10 @@ message ClientMeta {
     // Block contains the information about the block that we are deriving the
     // access list from.
     BlockIdentifier block = 1;
+    // Execution block number from the execution payload.
+    google.protobuf.UInt64Value block_number = 2;
+    // Execution block hash from the execution payload (hex encoded).
+    string block_hash = 3;
   }
 
   // AdditionalBlockprintBlockClassificationData was removed — blockprint is deprecated.

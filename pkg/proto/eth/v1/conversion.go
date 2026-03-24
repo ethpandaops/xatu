@@ -11,7 +11,6 @@ import (
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethereum/go-ethereum/core/types/bal"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/holiman/uint256"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -371,36 +370,39 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		return &BlockAccessList{}
 	}
 
-	var decoded bal.BlockAccessList
-	if err := rlp.DecodeBytes(rawBAL, &decoded); err != nil {
+	var accesses bal.BlockAccessList
+	if err := rlp.DecodeBytes(rawBAL, &accesses); err != nil {
 		return &BlockAccessList{}
 	}
 
-	entries := make([]*BlockAccessListEntry, 0, len(decoded.Accesses))
+	entries := make([]*BlockAccessListEntry, 0, len(accesses))
 
-	for i := range decoded.Accesses {
-		access := &decoded.Accesses[i]
+	for i := range accesses {
+		access := &accesses[i]
 		entry := &BlockAccessListEntry{
 			Address: &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", access.Address)},
 		}
 
 		// Storage changes: each slot has multiple writes keyed by tx index
-		for _, slotWrite := range access.StorageWrites {
+		for _, slotWrite := range access.StorageChanges {
+			slotHash := slotWrite.Slot.ToHash()
+
 			for _, write := range slotWrite.Accesses {
+				valueHash := write.ValueAfter.ToHash()
+
 				entry.StorageChanges = append(entry.StorageChanges, &BlockAccessListStorageChange{
 					BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(write.TxIdx)},
-					Key:              &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotWrite.Slot)},
-					NewValue:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", write.ValueAfter)},
+					Key:              &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotHash)},
+					NewValue:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", valueHash)},
 				})
 			}
 		}
 
 		// Balance changes
 		for _, change := range access.BalanceChanges {
-			postBalance := new(uint256.Int).SetBytes(change.Balance[:])
 			entry.BalanceChanges = append(entry.BalanceChanges, &BlockAccessListBalanceChange{
 				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(change.TxIdx)},
-				PostBalance:      &wrapperspb.StringValue{Value: postBalance.String()},
+				PostBalance:      &wrapperspb.StringValue{Value: change.Balance.String()},
 			})
 		}
 

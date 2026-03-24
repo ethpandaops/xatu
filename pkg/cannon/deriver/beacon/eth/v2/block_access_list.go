@@ -259,10 +259,17 @@ func (b *BlockAccessListDeriver) processSlot(
 			"failed to get block identifier for slot %d", slot)
 	}
 
+	execPayload := block.Gloas.Message.Body.ExecutionPayload
+	execBlockNumber := execPayload.BlockNumber
+	execBlockHash := fmt.Sprintf("%#x", execPayload.BlockHash)
+
 	// Decode the BAL from the ExecutionPayload
-	bal := xatuethv1.NewBlockAccessListFromGloas(
-		block.Gloas.Message.Body.ExecutionPayload.BlockAccessList,
-	)
+	rawBAL := execPayload.BlockAccessList
+	b.log.WithField("slot", slot).WithField("raw_bal_len", len(rawBAL)).Debug("Processing BAL data")
+
+	bal := xatuethv1.NewBlockAccessListFromGloas(rawBAL)
+
+	b.log.WithField("slot", slot).WithField("entries", len(bal.GetEntries())).Debug("Decoded BAL entries")
 
 	if bal == nil || len(bal.GetEntries()) == 0 {
 		return []*xatu.DecoratedEvent{}, nil
@@ -283,7 +290,7 @@ func (b *BlockAccessListDeriver) processSlot(
 				NewValue:         sc.GetNewValue(),
 			}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier)
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create storage change event")
 			}
@@ -299,7 +306,7 @@ func (b *BlockAccessListDeriver) processSlot(
 				NewValue:         bc.GetPostBalance(),
 			}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier)
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create balance change event")
 			}
@@ -322,7 +329,7 @@ func (b *BlockAccessListDeriver) processSlot(
 				NewValue:         newValue,
 			}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier)
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create nonce change event")
 			}
@@ -338,7 +345,7 @@ func (b *BlockAccessListDeriver) processSlot(
 				NewValue:         cc.GetNewCode(),
 			}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier)
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create code change event")
 			}
@@ -354,6 +361,8 @@ func (b *BlockAccessListDeriver) createEvent(
 	ctx context.Context,
 	change *xatuethv1.BlockAccessListChange,
 	blockIdentifier *xatu.BlockIdentifier,
+	execBlockNumber uint64,
+	execBlockHash string,
 ) (*xatu.DecoratedEvent, error) {
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -376,7 +385,9 @@ func (b *BlockAccessListDeriver) createEvent(
 
 	decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlockAccessList{
 		EthV2BeaconBlockAccessList: &xatu.ClientMeta_AdditionalEthV2BeaconBlockAccessListData{
-			Block: blockIdentifier,
+			Block:       blockIdentifier,
+			BlockNumber: &wrapperspb.UInt64Value{Value: execBlockNumber},
+			BlockHash:   execBlockHash,
 		},
 	}
 

@@ -1585,8 +1585,8 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .block_root = .meta.client.additional_data.block.root
-      .block_number = .meta.client.additional_data.block_number
-      .block_hash = .meta.client.additional_data.block_hash
+      .block_number = .meta.client.additional_data.blockNumber
+      .block_hash = .meta.client.additional_data.blockHash
       .address = .data.address
       .change_type = .data.change_type
       .block_access_index = .data.block_access_index

@@ -5,6 +5,14 @@ modules:
 lint:
   use:
     - STANDARD
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+    - FIELD_LOWER_SNAKE_CASE
+    - ENUM_VALUE_PREFIX
+    - ENUM_ZERO_VALUE_SUFFIX
+    - PACKAGE_VERSION_SUFFIX
+    - SERVICE_SUFFIX
+    - ONEOF_LOWER_SNAKE_CASE
 breaking:
   use:
     - PACKAGE

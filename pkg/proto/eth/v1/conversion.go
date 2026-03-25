@@ -426,8 +426,8 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		for _, slot := range access.StorageReads {
 			slotHash := slot.ToHash()
 
-			entry.StorageReads = append(entry.StorageReads, &wrapperspb.StringValue{
-				Value: fmt.Sprintf("0x%x", slotHash),
+			entry.StorageReads = append(entry.StorageReads, &BlockAccessListStorageRead{
+				Key: &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotHash)},
 			})
 		}
 

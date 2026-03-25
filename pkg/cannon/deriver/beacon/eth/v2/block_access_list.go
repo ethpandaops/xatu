@@ -357,7 +357,7 @@ func (b *BlockAccessListDeriver) processSlot(
 			change := &xatuethv1.BlockAccessListChange{
 				Address:    address,
 				ChangeType: "storage_read",
-				StorageKey: readKey,
+				StorageKey: readKey.GetKey(),
 			}
 
 			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)

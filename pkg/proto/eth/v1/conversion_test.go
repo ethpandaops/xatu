@@ -115,8 +115,8 @@ func TestNewBlockAccessListFromGloas_RealDevnetData(t *testing.T) {
 	// Verify read slots are sequential (0x00, 0x01, 0x02, 0x03)
 	for i, r := range entry0.GetStorageReads() {
 		expected := fmt.Sprintf("0x00000000000000000000000000000000000000000000000000000000000000%02x", i)
-		if r.GetValue() != expected {
-			t.Errorf("entry 0 read[%d]: expected %s, got %s", i, expected, r.GetValue())
+		if r.GetKey().GetValue() != expected {
+			t.Errorf("entry 0 read[%d]: expected %s, got %s", i, expected, r.GetKey().GetValue())
 		}
 	}
 

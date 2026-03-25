@@ -352,6 +352,21 @@ func (b *BlockAccessListDeriver) processSlot(
 
 			events = append(events, event)
 		}
+
+		for _, readKey := range entry.GetStorageReads() {
+			change := &xatuethv1.BlockAccessListChange{
+				Address:    address,
+				ChangeType: "storage_read",
+				StorageKey: readKey,
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create storage read event")
+			}
+
+			events = append(events, event)
+		}
 	}
 
 	return events, nil

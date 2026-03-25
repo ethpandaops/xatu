@@ -43,6 +43,8 @@ message BlockAccessListEntry {
       [ json_name = "nonce_changes" ];
   repeated BlockAccessListCodeChange code_changes = 5
       [ json_name = "code_changes" ];
+  repeated google.protobuf.StringValue storage_reads = 6
+      [ json_name = "storage_reads" ];
 }
 
 message BlockAccessList {
@@ -54,7 +56,7 @@ message BlockAccessList {
 // becomes one row.
 message BlockAccessListChange {
   google.protobuf.StringValue address = 1;
-  // change_type is one of: "storage", "balance", "nonce", "code"
+  // change_type is one of: "storage", "balance", "nonce", "code", "storage_read"
   string change_type = 2 [ json_name = "change_type" ];
   google.protobuf.UInt32Value block_access_index = 3
       [ json_name = "block_access_index" ];

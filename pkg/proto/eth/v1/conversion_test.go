@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 )
 
@@ -105,6 +106,18 @@ func TestNewBlockAccessListFromGloas_RealDevnetData(t *testing.T) {
 
 	if len(entry0.GetStorageChanges()) != 0 {
 		t.Errorf("entry 0: expected 0 storage changes, got %d", len(entry0.GetStorageChanges()))
+	}
+
+	if len(entry0.GetStorageReads()) != 4 {
+		t.Fatalf("entry 0: expected 4 storage reads, got %d", len(entry0.GetStorageReads()))
+	}
+
+	// Verify read slots are sequential (0x00, 0x01, 0x02, 0x03)
+	for i, r := range entry0.GetStorageReads() {
+		expected := fmt.Sprintf("0x00000000000000000000000000000000000000000000000000000000000000%02x", i)
+		if r.GetValue() != expected {
+			t.Errorf("entry 0 read[%d]: expected %s, got %s", i, expected, r.GetValue())
+		}
 	}
 
 	// Entry 2: History Storage Contract - 1 storage write

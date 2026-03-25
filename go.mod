@@ -20,9 +20,9 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.2-0.20260319135215-e5d453c086c7
-	github.com/ethpandaops/beacon v0.67.1-0.20260324015045-f64d291dca36
-	github.com/ethpandaops/ethcore v0.0.0-20260324015639-f83abb88486d
+	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
+	github.com/ethpandaops/beacon v0.67.1-0.20260325033338-72e601905364
+	github.com/ethpandaops/ethcore v0.0.0-20260325033335-3648959229f1
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -98,7 +98,7 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
-	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect

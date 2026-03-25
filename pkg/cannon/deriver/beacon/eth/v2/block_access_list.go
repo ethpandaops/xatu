@@ -367,6 +367,27 @@ func (b *BlockAccessListDeriver) processSlot(
 
 			events = append(events, event)
 		}
+
+		// Emit a "touched" event for accounts with no state changes and no storage
+		// reads. These are accounts accessed via BALANCE, EXTCODESIZE, calls, etc.
+		// that had no state interactions. Valuable for parallel execution analysis.
+		if len(entry.GetStorageChanges()) == 0 &&
+			len(entry.GetStorageReads()) == 0 &&
+			len(entry.GetBalanceChanges()) == 0 &&
+			len(entry.GetNonceChanges()) == 0 &&
+			len(entry.GetCodeChanges()) == 0 {
+			change := &xatuethv1.BlockAccessListChange{
+				Address:    address,
+				ChangeType: "touched",
+			}
+
+			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create touched account event")
+			}
+
+			events = append(events, event)
+		}
 	}
 
 	return events, nil

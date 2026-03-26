@@ -260,15 +260,11 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		body := gloasBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
 
-		// EIP-7732: Under ePBS the block body has a bid instead of an
-		// inline execution payload. The payload arrives via the envelope.
-		if body.GetSignedExecutionPayloadBid() != nil {
-			b.appendNullExecutionPayload()
+		// Gloas blocks have no inline execution payload — it arrives
+		// via the ExecutionPayloadEnvelope event.
+		b.appendNullExecutionPayload()
 
-			return nil
-		}
-
-		return b.appendExecutionPayloadGloas(body.GetExecutionPayload())
+		return nil
 	}
 
 	// Unknown block version - append zeros.
@@ -505,65 +501,6 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1
 	}
 
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
-
-	return nil
-}
-
-//nolint:gosec // G115
-func (b *canonicalBeaconBlockBatch) appendExecutionPayloadGloas(payload *ethv1.ExecutionPayloadGloas) error {
-	if payload == nil {
-		b.appendNullExecutionPayload()
-
-		return nil
-	}
-
-	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
-	if err != nil {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
-	} else {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
-	}
-
-	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
-	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
-	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
-	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
-
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue())))
-	} else {
-		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
-	}
-
-	if blobGasUsed := payload.GetBlobGasUsed(); blobGasUsed != nil {
-		b.ExecutionPayloadBlobGasUsed.Append(proto.NewNullable[uint64](blobGasUsed.GetValue()))
-	} else {
-		b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
-	}
-
-	if excessBlobGas := payload.GetExcessBlobGas(); excessBlobGas != nil {
-		b.ExecutionPayloadExcessBlobGas.Append(proto.NewNullable[uint64](excessBlobGas.GetValue()))
-	} else {
-		b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
-	}
-
-	if slotNumber := payload.GetSlotNumber(); slotNumber != nil {
-		b.ExecutionPayloadSlotNumber.Append(proto.NewNullable[uint64](slotNumber.GetValue()))
-	} else {
-		b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
-	}
-
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.ExecutionPayloadGasLimit.Append(proto.NewNullable[uint64](gasLimit.GetValue()))
-	} else {
-		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
-	}
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.ExecutionPayloadGasUsed.Append(proto.NewNullable[uint64](gasUsed.GetValue()))
-	} else {
-		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
-	}
 
 	return nil
 }

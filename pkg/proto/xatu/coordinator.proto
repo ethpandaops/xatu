@@ -198,6 +198,10 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 14;
   BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 15;
   BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 16;
+
+  // EIP-7732 ePBS cannon types
+  BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 17;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 18;
 }
 
 message BackfillingCheckpointMarker {
@@ -280,6 +284,15 @@ message CannonLocationEthV2BeaconBlockAccessList {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+// EIP-7732 ePBS cannon location types
+message CannonLocationEthV2BeaconBlockPayloadAttestation {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockExecutionPayloadBid {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -325,6 +338,12 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     CannonLocationEthV2BeaconBlockAccessList eth_v2_beacon_block_access_list = 19
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+
+    // EIP-7732 ePBS
+    CannonLocationEthV2BeaconBlockPayloadAttestation eth_v2_beacon_block_payload_attestation = 20
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    CannonLocationEthV2BeaconBlockExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 21
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
   }
 }
 

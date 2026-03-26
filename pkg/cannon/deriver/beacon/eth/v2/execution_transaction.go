@@ -445,6 +445,8 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 			executionPayload := block.Fulu.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		case spec.DataVersionGloas:
+			// TODO(epbs): Under EIP-7732, ExecutionPayload moves to the envelope.
+			// Source from ExecutionPayloadEnvelope once go-eth2-client adds ePBS support.
 			executionPayload := block.Gloas.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		default:

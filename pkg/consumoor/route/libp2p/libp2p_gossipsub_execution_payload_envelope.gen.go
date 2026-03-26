@@ -10,9 +10,9 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-const libp2pGossipsubDataColumnSidecarTableName route.TableName = "libp2p_gossipsub_data_column_sidecar"
+const libp2pGossipsubExecutionPayloadEnvelopeTableName route.TableName = "libp2p_gossipsub_execution_payload_envelope"
 
-type libp2pGossipsubDataColumnSidecarBatch struct {
+type libp2pGossipsubExecutionPayloadEnvelopeBatch struct {
 	UpdatedDateTime                           proto.ColDateTime
 	Version                                   proto.ColUInt32
 	EventDateTime                             proto.ColDateTime64
@@ -25,12 +25,9 @@ type libp2pGossipsubDataColumnSidecarBatch struct {
 	WallclockEpoch                            proto.ColUInt32
 	WallclockEpochStartDateTime               proto.ColDateTime
 	PropagationSlotStartDiff                  proto.ColUInt32
-	ProposerIndex                             proto.ColUInt32
-	ColumnIndex                               proto.ColUInt64
-	KzgCommitmentsCount                       proto.ColUInt32
-	BeaconBlockRoot                           route.SafeColFixedStr
-	ParentRoot                                route.SafeColFixedStr
-	StateRoot                                 route.SafeColFixedStr
+	BlockRoot                                 route.SafeColFixedStr
+	BuilderIndex                              proto.ColUInt64
+	BlockHash                                 route.SafeColFixedStr
 	PeerIDUniqueKey                           proto.ColInt64
 	MessageID                                 proto.ColStr
 	MessageSize                               proto.ColUInt32
@@ -54,32 +51,27 @@ type libp2pGossipsubDataColumnSidecarBatch struct {
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
 	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
-	SidecarSlot                               *proto.ColNullable[uint32]
-	SidecarBeaconBlockRoot                    *proto.ColNullable[[]byte]
 	rows                                      int
 }
 
-func newlibp2pGossipsubDataColumnSidecarBatch() *libp2pGossipsubDataColumnSidecarBatch {
-	return &libp2pGossipsubDataColumnSidecarBatch{
+func newlibp2pGossipsubExecutionPayloadEnvelopeBatch() *libp2pGossipsubExecutionPayloadEnvelopeBatch {
+	return &libp2pGossipsubExecutionPayloadEnvelopeBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
-		BeaconBlockRoot:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		ParentRoot:                          func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		StateRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber: new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
-		SidecarSlot:            new(proto.ColUInt32).Nullable(),
-		SidecarBeaconBlockRoot: route.NewNullableFixedStr(66),
 	}
 }
 
-func (b *libp2pGossipsubDataColumnSidecarBatch) Rows() int {
+func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Rows() int {
 	return b.rows
 }
 
-func (b *libp2pGossipsubDataColumnSidecarBatch) appendMetadata(event *xatu.DecoratedEvent) {
+func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendMetadata(event *xatu.DecoratedEvent) {
 	if event == nil || event.GetMeta() == nil {
 		b.MetaClientName.Append("")
 		b.MetaClientID.Append("")
@@ -118,7 +110,7 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) appendMetadata(event *xatu.Decor
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 }
 
-func (b *libp2pGossipsubDataColumnSidecarBatch) Input() proto.Input {
+func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Input() proto.Input {
 	return proto.Input{
 		{Name: "updated_date_time", Data: &b.UpdatedDateTime},
 		{Name: "version", Data: &b.Version},
@@ -132,12 +124,9 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Input() proto.Input {
 		{Name: "wallclock_epoch", Data: &b.WallclockEpoch},
 		{Name: "wallclock_epoch_start_date_time", Data: &b.WallclockEpochStartDateTime},
 		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
-		{Name: "proposer_index", Data: &b.ProposerIndex},
-		{Name: "column_index", Data: &b.ColumnIndex},
-		{Name: "kzg_commitments_count", Data: &b.KzgCommitmentsCount},
-		{Name: "beacon_block_root", Data: &b.BeaconBlockRoot},
-		{Name: "parent_root", Data: &b.ParentRoot},
-		{Name: "state_root", Data: &b.StateRoot},
+		{Name: "block_root", Data: &b.BlockRoot},
+		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "message_id", Data: &b.MessageID},
 		{Name: "message_size", Data: &b.MessageSize},
@@ -161,12 +150,10 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Input() proto.Input {
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
 		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
-		{Name: "sidecar_slot", Data: b.SidecarSlot},
-		{Name: "sidecar_beacon_block_root", Data: b.SidecarBeaconBlockRoot},
 	}
 }
 
-func (b *libp2pGossipsubDataColumnSidecarBatch) Reset() {
+func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Reset() {
 	b.UpdatedDateTime.Reset()
 	b.Version.Reset()
 	b.EventDateTime.Reset()
@@ -179,12 +166,9 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Reset() {
 	b.WallclockEpoch.Reset()
 	b.WallclockEpochStartDateTime.Reset()
 	b.PropagationSlotStartDiff.Reset()
-	b.ProposerIndex.Reset()
-	b.ColumnIndex.Reset()
-	b.KzgCommitmentsCount.Reset()
-	b.BeaconBlockRoot.Reset()
-	b.ParentRoot.Reset()
-	b.StateRoot.Reset()
+	b.BlockRoot.Reset()
+	b.BuilderIndex.Reset()
+	b.BlockHash.Reset()
 	b.PeerIDUniqueKey.Reset()
 	b.MessageID.Reset()
 	b.MessageSize.Reset()
@@ -208,17 +192,15 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Reset() {
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
 	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
-	b.SidecarSlot.Reset()
-	b.SidecarBeaconBlockRoot.Reset()
 	b.rows = 0
 }
 
-func (b *libp2pGossipsubDataColumnSidecarBatch) Snapshot() []map[string]any {
+func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Snapshot() []map[string]any {
 	n := b.rows
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 43)
+		row := make(map[string]any, 38)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["version"] = b.Version.Row(i)
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
@@ -231,12 +213,9 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Snapshot() []map[string]any {
 		row["wallclock_epoch"] = b.WallclockEpoch.Row(i)
 		row["wallclock_epoch_start_date_time"] = b.WallclockEpochStartDateTime.Row(i).Unix()
 		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
-		row["proposer_index"] = b.ProposerIndex.Row(i)
-		row["column_index"] = b.ColumnIndex.Row(i)
-		row["kzg_commitments_count"] = b.KzgCommitmentsCount.Row(i)
-		row["beacon_block_root"] = string(b.BeaconBlockRoot.Row(i))
-		row["parent_root"] = string(b.ParentRoot.Row(i))
-		row["state_root"] = string(b.StateRoot.Row(i))
+		row["block_root"] = string(b.BlockRoot.Row(i))
+		row["builder_index"] = b.BuilderIndex.Row(i)
+		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
 		row["message_id"] = b.MessageID.Row(i)
 		row["message_size"] = b.MessageSize.Row(i)
@@ -280,16 +259,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Snapshot() []map[string]any {
 		}
 		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
-		if v := b.SidecarSlot.Row(i); v.Set {
-			row["sidecar_slot"] = v.Value
-		} else {
-			row["sidecar_slot"] = nil
-		}
-		if v := b.SidecarBeaconBlockRoot.Row(i); v.Set {
-			row["sidecar_beacon_block_root"] = string(v.Value)
-		} else {
-			row["sidecar_beacon_block_root"] = nil
-		}
 		out[i] = row
 	}
 

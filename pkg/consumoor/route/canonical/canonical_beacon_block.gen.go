@@ -34,6 +34,11 @@ type canonicalBeaconBlockBatch struct {
 	ExecutionPayloadBlobGasUsed                      *proto.ColNullable[uint64]
 	ExecutionPayloadExcessBlobGas                    *proto.ColNullable[uint64]
 	ExecutionPayloadSlotNumber                       *proto.ColNullable[uint64]
+	ExecutionPayloadBlockAccessListRoot              *proto.ColNullable[[]byte]
+	BuilderIndex                                     *proto.ColNullable[uint64]
+	BidValue                                         *proto.ColNullable[uint64]
+	ExecutionPayment                                 *proto.ColNullable[uint64]
+	PayloadPresent                                   *proto.ColNullable[bool]
 	ExecutionPayloadGasLimit                         *proto.ColNullable[uint64]
 	ExecutionPayloadGasUsed                          *proto.ColNullable[uint64]
 	ExecutionPayloadStateRoot                        *proto.ColNullable[[]byte]
@@ -82,6 +87,11 @@ func newcanonicalBeaconBlockBatch() *canonicalBeaconBlockBatch {
 		ExecutionPayloadBlobGasUsed:                      new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadExcessBlobGas:                    new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadSlotNumber:                       new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadBlockAccessListRoot:              route.NewNullableFixedStr(66),
+		BuilderIndex:                                     new(proto.ColUInt64).Nullable(),
+		BidValue:                                         new(proto.ColUInt64).Nullable(),
+		ExecutionPayment:                                 new(proto.ColUInt64).Nullable(),
+		PayloadPresent:                                   new(proto.ColBool).Nullable(),
 		ExecutionPayloadGasLimit:                         new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadGasUsed:                          new(proto.ColUInt64).Nullable(),
 		ExecutionPayloadStateRoot:                        route.NewNullableFixedStr(66),
@@ -180,6 +190,11 @@ func (b *canonicalBeaconBlockBatch) Input() proto.Input {
 		{Name: "execution_payload_blob_gas_used", Data: b.ExecutionPayloadBlobGasUsed},
 		{Name: "execution_payload_excess_blob_gas", Data: b.ExecutionPayloadExcessBlobGas},
 		{Name: "execution_payload_slot_number", Data: b.ExecutionPayloadSlotNumber},
+		{Name: "execution_payload_block_access_list_root", Data: b.ExecutionPayloadBlockAccessListRoot},
+		{Name: "builder_index", Data: b.BuilderIndex},
+		{Name: "bid_value", Data: b.BidValue},
+		{Name: "execution_payment", Data: b.ExecutionPayment},
+		{Name: "payload_present", Data: b.PayloadPresent},
 		{Name: "execution_payload_gas_limit", Data: b.ExecutionPayloadGasLimit},
 		{Name: "execution_payload_gas_used", Data: b.ExecutionPayloadGasUsed},
 		{Name: "execution_payload_state_root", Data: b.ExecutionPayloadStateRoot},
@@ -234,6 +249,11 @@ func (b *canonicalBeaconBlockBatch) Reset() {
 	b.ExecutionPayloadBlobGasUsed.Reset()
 	b.ExecutionPayloadExcessBlobGas.Reset()
 	b.ExecutionPayloadSlotNumber.Reset()
+	b.ExecutionPayloadBlockAccessListRoot.Reset()
+	b.BuilderIndex.Reset()
+	b.BidValue.Reset()
+	b.ExecutionPayment.Reset()
+	b.PayloadPresent.Reset()
 	b.ExecutionPayloadGasLimit.Reset()
 	b.ExecutionPayloadGasUsed.Reset()
 	b.ExecutionPayloadStateRoot.Reset()
@@ -271,7 +291,7 @@ func (b *canonicalBeaconBlockBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 49)
+		row := make(map[string]any, 55)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()
@@ -328,6 +348,31 @@ func (b *canonicalBeaconBlockBatch) Snapshot() []map[string]any {
 			row["execution_payload_slot_number"] = v.Value
 		} else {
 			row["execution_payload_slot_number"] = nil
+		}
+		if v := b.ExecutionPayloadBlockAccessListRoot.Row(i); v.Set {
+			row["execution_payload_block_access_list_root"] = string(v.Value)
+		} else {
+			row["execution_payload_block_access_list_root"] = nil
+		}
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
+		if v := b.BidValue.Row(i); v.Set {
+			row["bid_value"] = v.Value
+		} else {
+			row["bid_value"] = nil
+		}
+		if v := b.ExecutionPayment.Row(i); v.Set {
+			row["execution_payment"] = v.Value
+		} else {
+			row["execution_payment"] = nil
+		}
+		if v := b.PayloadPresent.Row(i); v.Set {
+			row["payload_present"] = v.Value
+		} else {
+			row["payload_present"] = nil
 		}
 		if v := b.ExecutionPayloadGasLimit.Row(i); v.Set {
 			row["execution_payload_gas_limit"] = v.Value

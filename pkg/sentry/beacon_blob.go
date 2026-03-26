@@ -201,6 +201,8 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 			return block.Fulu.Message.Body.BlobKZGCommitments, nil
 		}
 	case spec.DataVersionGloas:
+		// TODO(epbs): Under EIP-7732, BlobKZGCommitments move to the ExecutionPayloadBid.
+		// Source from bid once go-eth2-client adds ePBS support.
 		if block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil {
 			return block.Gloas.Message.Body.BlobKZGCommitments, nil
 		}

@@ -440,7 +440,7 @@ type BlockAccessListChange struct {
 	unknownFields protoimpl.UnknownFields
 
 	Address *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	// change_type is one of: "storage", "balance", "nonce", "code", "storage_read"
+	// change_type is one of: "storage", "balance", "nonce", "code", "storage_read", "touched"
 	ChangeType       string                  `protobuf:"bytes,2,opt,name=change_type,proto3" json:"change_type,omitempty"`
 	BlockAccessIndex *wrapperspb.UInt32Value `protobuf:"bytes,3,opt,name=block_access_index,proto3" json:"block_access_index,omitempty"`
 	// storage_key is set only for storage changes

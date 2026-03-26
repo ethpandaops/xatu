@@ -562,19 +562,26 @@ message BeaconBlockBodyGloas {
 
   v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
 
-  // EIP-7732: execution_payload, blob_kzg_commitments, and
-  // execution_requests moved to ExecutionPayloadEnvelope.
-  reserved 10, 12, 13;
-  reserved "execution_payload", "blob_kzg_commitments", "execution_requests";
+  // Pre-ePBS: execution payload inline in block body.
+  v1.ExecutionPayloadGloas execution_payload = 10
+      [ json_name = "execution_payload" ];
 
   repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
       [ json_name = "bls_to_execution_changes" ];
 
-  // EIP-7732: Builder's bid replaces inline execution payload.
+  // Pre-ePBS: blob KZG commitments inline in block body.
+  repeated string blob_kzg_commitments = 12
+      [ json_name = "blob_kzg_commitments" ];
+
+  // Pre-ePBS: execution requests inline in block body.
+  v1.ElectraExecutionRequests execution_requests = 13
+      [ json_name = "execution_requests" ];
+
+  // EIP-7732 ePBS: Builder's bid (replaces execution_payload when ePBS is active).
   v1.SignedExecutionPayloadBid signed_execution_payload_bid = 14
       [ json_name = "signed_execution_payload_bid" ];
 
-  // EIP-7732: Aggregated PTC attestations (max 4 per block).
+  // EIP-7732 ePBS: Aggregated PTC attestations (max 4 per block).
   repeated v1.PayloadAttestation payload_attestations = 15
       [ json_name = "payload_attestations" ];
 }

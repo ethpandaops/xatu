@@ -2345,14 +2345,14 @@ message DecoratedEvent {
     xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 216
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
-    // EIP-7732 ePBS: P2P gossip events
-    xatu.eth.v1.SignedExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
+    // EIP-7732 ePBS: P2P gossip events (use gossipsub summary types)
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    xatu.eth.v1.SignedExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    xatu.eth.v1.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
+    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    xatu.eth.v1.SignedProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
+    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
   };
 }

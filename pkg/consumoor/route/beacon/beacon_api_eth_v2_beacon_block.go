@@ -269,6 +269,14 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		body := gloasBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
 
+		// EIP-7732: Under ePBS the block body has a bid instead of an
+		// inline execution payload. The payload arrives via the envelope.
+		if body.GetSignedExecutionPayloadBid() != nil {
+			b.appendNoExecutionPayload()
+
+			return nil
+		}
+
 		return b.appendExecutionPayloadGloas(body.GetExecutionPayload())
 	}
 

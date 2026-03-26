@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Execution Payload Bid types
+// https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/beacon-chain.md#executionpayloadbid
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// ExecutionPayloadBid is the builder's bid included in the beacon block body.
+message ExecutionPayloadBid {
+  string parent_block_hash = 1 [ json_name = "parent_block_hash" ];
+
+  string parent_block_root = 2 [ json_name = "parent_block_root" ];
+
+  string block_hash = 3 [ json_name = "block_hash" ];
+
+  string prev_randao = 4 [ json_name = "prev_randao" ];
+
+  string fee_recipient = 5 [ json_name = "fee_recipient" ];
+
+  google.protobuf.UInt64Value gas_limit = 6 [ json_name = "gas_limit" ];
+
+  google.protobuf.UInt64Value builder_index = 7
+      [ json_name = "builder_index" ];
+
+  google.protobuf.UInt64Value slot = 8 [ json_name = "slot" ];
+
+  google.protobuf.UInt64Value value = 9 [ json_name = "value" ];
+
+  google.protobuf.UInt64Value execution_payment = 10
+      [ json_name = "execution_payment" ];
+
+  repeated string blob_kzg_commitments = 11
+      [ json_name = "blob_kzg_commitments" ];
+}
+
+// SignedExecutionPayloadBid wraps ExecutionPayloadBid with the builder's signature.
+message SignedExecutionPayloadBid {
+  ExecutionPayloadBid message = 1;
+
+  string signature = 2;
+}

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Execution Payload Envelope types
+// https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/beacon-chain.md#executionpayloadenvelope
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+import "pkg/proto/eth/v1/execution_engine.proto";
+import "pkg/proto/eth/v1/execution_requests.proto";
+
+// ExecutionPayloadEnvelope is the container delivered by the builder
+// separately from the beacon block (~2s after block).
+message ExecutionPayloadEnvelope {
+  ExecutionPayloadGloas payload = 1;
+
+  ElectraExecutionRequests execution_requests = 2
+      [ json_name = "execution_requests" ];
+
+  google.protobuf.UInt64Value builder_index = 3
+      [ json_name = "builder_index" ];
+
+  string beacon_block_root = 4 [ json_name = "beacon_block_root" ];
+
+  google.protobuf.UInt64Value slot = 5 [ json_name = "slot" ];
+
+  string state_root = 6 [ json_name = "state_root" ];
+}
+
+// SignedExecutionPayloadEnvelope wraps ExecutionPayloadEnvelope with the
+// builder's signature.
+message SignedExecutionPayloadEnvelope {
+  ExecutionPayloadEnvelope message = 1;
+
+  string signature = 2;
+}

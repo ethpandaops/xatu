@@ -311,6 +311,17 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {
 	b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadStateRoot.Append(nil)
 	b.ExecutionPayloadParentHash.Append(nil)
+
+	b.appendNullEpbsColumns()
+}
+
+// TODO(epbs): Gloas blocks should populate these from SignedExecutionPayloadBid
+// once go-eth2-client lands. For now all blocks get NULL.
+func (b *beaconApiEthV2BeaconBlockBatch) appendNullEpbsColumns() {
+	b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	b.BidValue.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
@@ -355,6 +366,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -401,6 +414,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadCapellaV2(
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -458,6 +473,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadDeneb(
 
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
 
+	b.appendNullEpbsColumns()
+
 	return nil
 }
 
@@ -513,6 +530,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadElectra(
 	}
 
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }

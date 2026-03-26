@@ -2,16 +2,18 @@ package beacon
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// TODO: Add the xatu.Event_* name(s) that route events to the beacon_api_eth_v1_events_execution_payload table.
-var beaconApiEthV1EventsExecutionPayloadEventNames = []xatu.Event_Name{}
+var beaconApiEthV1EventsExecutionPayloadEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD,
+}
 
 func init() {
-	route, err := route.NewStaticRoute(
+	r, err := route.NewStaticRoute(
 		beaconApiEthV1EventsExecutionPayloadTableName,
 		beaconApiEthV1EventsExecutionPayloadEventNames,
 		func() route.ColumnarBatch { return newbeaconApiEthV1EventsExecutionPayloadBatch() },
@@ -22,7 +24,7 @@ func init() {
 		return
 	}
 
-	if err := route.Register(route); err != nil {
+	if err := route.Register(r); err != nil {
 		route.RecordError(err)
 	}
 }
@@ -30,14 +32,63 @@ func init() {
 func (b *beaconApiEthV1EventsExecutionPayloadBatch) FlattenTo(
 	event *xatu.DecoratedEvent,
 ) error {
-	// TODO: Implement this method to flatten the event into columnar batch columns.
-	// The generated .gen.go file contains the available column fields for this table.
-	//
-	// Typical structure:
-	//   b.appendRuntime(event)
-	//   b.appendMetadata(event)
-	//   b.appendPayload(event)
-	//   b.rows++
-	//   return nil
-	return fmt.Errorf("beaconApiEthV1EventsExecutionPayload: FlattenTo not implemented")
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if event.GetEthV1EventsExecutionPayload() == nil {
+		return fmt.Errorf("nil eth_v1_events_execution_payload payload: %w", route.ErrInvalidEvent)
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendRuntime(event *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+
+	if ts := event.GetEvent().GetDateTime(); ts != nil {
+		b.EventDateTime.Append(ts.AsTime())
+	} else {
+		b.EventDateTime.Append(time.Time{})
+	}
+}
+
+func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendPayload(event *xatu.DecoratedEvent) {
+	envelope := event.GetEthV1EventsExecutionPayload()
+
+	msg := envelope.GetMessage()
+
+	b.BlockRoot.Append([]byte(msg.GetBeaconBlockRoot()))
+
+	if builderIndex := msg.GetBuilderIndex(); builderIndex != nil {
+		b.BuilderIndex.Append(builderIndex.GetValue())
+	} else {
+		b.BuilderIndex.Append(0)
+	}
+
+	if payload := msg.GetPayload(); payload != nil {
+		b.BlockHash.Append([]byte(payload.GetBlockHash()))
+		b.StateRoot.Append([]byte(payload.GetStateRoot()))
+	} else {
+		b.BlockHash.Append(nil)
+		b.StateRoot.Append(nil)
+	}
+}
+
+// TODO: Define AdditionalEthV1EventsExecutionPayloadData proto message to extract
+// slot/epoch/propagation from event.GetMeta().GetClient(). For now, zero-fill these fields.
+func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendAdditionalData(
+	_ *xatu.DecoratedEvent,
+) {
+	b.Slot.Append(0)
+	b.SlotStartDateTime.Append(time.Time{})
+	b.PropagationSlotStartDiff.Append(0)
+	b.Epoch.Append(0)
+	b.EpochStartDateTime.Append(time.Time{})
 }

@@ -35,18 +35,6 @@ func TestRegistryCoversAllKnownEvents(t *testing.T) {
 		xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:         "deprecated in favor of V2 event",
 		xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK:                  "deprecated in favor of V2 event",
 		xatu.Event_BEACON_P2P_ATTESTATION:                          "legacy event path not consumed by consumoor",
-
-		// EIP-7732 ePBS: consumoor routes pending (proto types + ClickHouse tables are ready)
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD:           "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION:         "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID:       "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES:        "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:   "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID: "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE:    "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID:         "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE:   "ePBS: consumoor route pending upstream go-eth2-client",
-		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES:          "ePBS: consumoor route pending upstream go-eth2-client",
 	}
 
 	covered := make(map[xatu.Event_Name]struct{}, 128)

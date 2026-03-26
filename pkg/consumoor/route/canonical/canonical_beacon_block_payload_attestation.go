@@ -69,23 +69,28 @@ func (b *canonicalBeaconBlockPayloadAttestationBatch) appendPayload(event *xatu.
 
 	b.AggregationBits.Append(attestation.GetAggregationBits())
 
-	// TODO: AttestingValidatorCount and Position are not available on the PayloadAttestation
+	// TODO(epbs): AttestingValidatorCount and Position are not available on the PayloadAttestation
 	// proto type. These require Additional*Data proto definitions to be populated by cannon.
 	// For now, zero-fill these fields.
 	b.AttestingValidatorCount.Append(0)
 	b.Position.Append(0)
 }
 
-// TODO: Define AdditionalEthV2BeaconBlockPayloadAttestationData proto message to extract
-// block identifier (slot/epoch/block_root/block_version) from event.GetMeta().GetClient().
-// For now, zero-fill these fields.
 func (b *canonicalBeaconBlockPayloadAttestationBatch) appendAdditionalData(
-	_ *xatu.DecoratedEvent,
+	event *xatu.DecoratedEvent,
 ) {
-	b.Slot.Append(0)
-	b.SlotStartDateTime.Append(time.Time{})
-	b.Epoch.Append(0)
-	b.EpochStartDateTime.Append(time.Time{})
-	b.BlockRoot.Append(nil)
-	b.BlockVersion.Append("")
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockPayloadAttestation()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+		b.BlockRoot.Append(nil)
+		b.BlockVersion.Append("")
+
+		return
+	}
+
+	appendBlockIdentifier(additional.GetBlock(),
+		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 }

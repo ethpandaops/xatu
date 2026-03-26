@@ -79,14 +79,39 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendPayload(event *xatu
 	}
 }
 
-// TODO: Define AdditionalEthV1EventsProposerPreferencesData proto message to extract
-// slot/epoch/propagation from event.GetMeta().GetClient(). For now, zero-fill these fields.
 func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendAdditionalData(
-	_ *xatu.DecoratedEvent,
+	event *xatu.DecoratedEvent,
 ) {
-	b.Slot.Append(0)
-	b.SlotStartDateTime.Append(time.Time{})
-	b.PropagationSlotStartDiff.Append(0)
-	b.Epoch.Append(0)
-	b.EpochStartDateTime.Append(time.Time{})
+	if event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.PropagationSlotStartDiff.Append(0)
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+
+		return
+	}
+
+	client := event.GetMeta().GetClient()
+	additionalV2 := client.GetEthV1EventsProposerPreferences()
+	additional := extractBeaconSlotEpochPropagation(additionalV2)
+
+	if additionalV2 != nil {
+		if slot := additionalV2.GetSlot(); slot != nil {
+			if num := slot.GetNumber(); num != nil {
+				b.Slot.Append(uint32(num.GetValue())) //nolint:gosec // slot fits uint32
+			} else {
+				b.Slot.Append(0)
+			}
+		} else {
+			b.Slot.Append(0)
+		}
+	} else {
+		b.Slot.Append(0)
+	}
+
+	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
+	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
+	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32
+	b.EpochStartDateTime.Append(time.Unix(additional.EpochStartDateTime, 0))
 }

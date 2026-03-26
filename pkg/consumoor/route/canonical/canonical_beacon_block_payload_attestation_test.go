@@ -19,9 +19,9 @@ func TestSnapshot_canonical_beacon_block_payload_attestation(t *testing.T) {
 			Id:       "snapshot-1",
 		},
 		Meta: testfixture.BaseMeta(),
-		// TODO: Add event-specific Data field and MetaWithAdditional for richer assertions.
+		// TODO(epbs): Add event-specific Data field and MetaWithAdditional for richer assertions.
 	}, 1, map[string]any{
 		"meta_client_name": "test-client",
-		// TODO: Add payload-specific column assertions.
+		// TODO(epbs): Add payload-specific column assertions.
 	})
 }

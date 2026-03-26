@@ -93,16 +93,21 @@ func (b *canonicalBeaconBlockExecutionPayloadBidBatch) appendPayload(event *xatu
 	b.BlobKzgCommitmentCount.Append(uint32(len(bid.GetBlobKzgCommitments())))
 }
 
-// TODO: Define AdditionalEthV2BeaconBlockExecutionPayloadBidData proto message to extract
-// block identifier (slot/epoch/block_root/block_version) from event.GetMeta().GetClient().
-// For now, zero-fill these fields.
 func (b *canonicalBeaconBlockExecutionPayloadBidBatch) appendAdditionalData(
-	_ *xatu.DecoratedEvent,
+	event *xatu.DecoratedEvent,
 ) {
-	b.Slot.Append(0)
-	b.SlotStartDateTime.Append(time.Time{})
-	b.Epoch.Append(0)
-	b.EpochStartDateTime.Append(time.Time{})
-	b.BlockRoot.Append(nil)
-	b.BlockVersion.Append("")
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionPayloadBid()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+		b.BlockRoot.Append(nil)
+		b.BlockVersion.Append("")
+
+		return
+	}
+
+	appendBlockIdentifier(additional.GetBlock(),
+		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 }

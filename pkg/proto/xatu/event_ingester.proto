@@ -20,6 +20,10 @@ import "pkg/proto/eth/v1/execution_engine.proto";
 import "pkg/proto/eth/v1/validator.proto";
 import "pkg/proto/eth/v1/sync_committee.proto";
 import "pkg/proto/eth/v1/block_access_list.proto";
+import "pkg/proto/eth/v1/payload_attestation.proto";
+import "pkg/proto/eth/v1/execution_payload_bid.proto";
+import "pkg/proto/eth/v1/execution_payload_envelope.proto";
+import "pkg/proto/eth/v1/proposer_preferences.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
@@ -1999,6 +2003,22 @@ message Event {
     EXECUTION_BLOCK_METRICS = 87;
     LIBP2P_TRACE_IDENTIFY = 88;
     BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 89;
+
+    // EIP-7732 ePBS: Sentry SSE events
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 90;
+    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 91;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 92;
+    BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 93;
+
+    // EIP-7732 ePBS: Cannon derived events
+    BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 94;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 95;
+
+    // EIP-7732 ePBS: P2P gossip events
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE = 96;
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 97;
+    LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 98;
+    LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 99;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2308,6 +2328,32 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_BLOCK_METRICS" ];
     xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 210
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+
+    // EIP-7732 ePBS: Sentry SSE events
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 211
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
+    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 212
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 213
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
+    xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 214
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
+
+    // EIP-7732 ePBS: Cannon derived events
+    xatu.eth.v1.PayloadAttestation eth_v2_beacon_block_payload_attestation = 215
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 216
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
+
+    // EIP-7732 ePBS: P2P gossip events
+    xatu.eth.v1.SignedExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
+    xatu.eth.v1.SignedExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
+    xatu.eth.v1.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
+    xatu.eth.v1.SignedProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
   };
 }
 

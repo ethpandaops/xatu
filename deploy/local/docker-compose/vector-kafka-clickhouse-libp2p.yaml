@@ -422,6 +422,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .transient = .data.transient
+      .remote_peer_id = .data.remote_peer
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -522,6 +523,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .transient = .data.transient
+      .remote_peer_id = .data.remote_peer
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -546,6 +548,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .protocol = .data.protocol
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
@@ -572,6 +575,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -613,6 +617,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -655,6 +660,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -697,6 +703,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -739,6 +746,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .updated_date_time = to_unix_timestamp(now())
       del(.event)
       del(.meta)
@@ -819,6 +827,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .message_id = .data.msg_id
       .message_size = .data.msg_size
       .reason = .data.reason
@@ -866,6 +875,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .message_id = .data.msg_id
       .message_size = .data.msg_size
       .updated_date_time = to_unix_timestamp(now())
@@ -912,6 +922,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .message_id = .data.msg_id
       .message_size = .data.msg_size
       .updated_date_time = to_unix_timestamp(now())
@@ -941,6 +952,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
 
       .proposer_index = .data.proposer_index
 
@@ -1033,6 +1045,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
 
       .attesting_validator_index = .meta.client.additional_data.attesting_validator.index
       .attesting_validator_committee_index = .meta.client.additional_data.attesting_validator.committee_index
@@ -1148,6 +1161,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
 
       # Aggregator specific fields
       .aggregator_index = .meta.client.additional_data.aggregator_index
@@ -1298,6 +1312,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
       .message_id = .meta.client.additional_data.message_id
       .message_size = .meta.client.additional_data.message_size
 
@@ -1394,6 +1409,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .meta.client.additional_data.metadata.peer_id
       .message_id = .meta.client.additional_data.message_id
       .message_size = .meta.client.additional_data.message_size
 
@@ -1527,6 +1543,7 @@ transforms:
           log(., level: "error", rate_limit_secs: 60)
         }
         .peer_id_unique_key = seahash(peer_id_key)
+        .peer_id = .meta.client.additional_data.metadata.peer_id
       }
 
       del(.event)
@@ -1555,6 +1572,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       if .data.error != null {
         .error = .data.error
@@ -1614,6 +1632,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
       .unique_key = seahash(.event.id)
 
       if .data.error != null {
@@ -1676,6 +1695,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       topicParts, err = split(.data.topic, "/")
       if err != null {
@@ -1751,6 +1771,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       key, err = to_string(rootEventKey) + "_rpc_meta_control_iwant_" + to_string(.data.control_index) + "_" + to_string(.data.message_index)
       if err != null {
@@ -1809,6 +1830,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       key, err = to_string(rootEventKey) + "_rpc_meta_control_idontwant_" + to_string(.data.control_index) + "_" + to_string(.data.message_index)
       if err != null {
@@ -1867,6 +1889,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       topicParts, err = split(.data.topic, "/")
       if err != null {
@@ -1940,6 +1963,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       topicParts, err = split(.data.topic, "/")
       if err != null {
@@ -1965,6 +1989,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .graft_peer_id_unique_key = seahash(graft_peer_id_key)
+      .graft_peer_id = .data.graft_peer_id
 
       key, err = to_string(rootEventKey) + "_rpc_meta_control_prune_" + to_string(.data.control_index) + "_" + to_string(.data.peer_index)
       if err != null {
@@ -2022,6 +2047,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       topicParts, err = split(.data.topic_id, "/")
       if err != null {
@@ -2096,6 +2122,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.peer_id
 
       topicParts, err = split(.data.topic_id, "/")
       if err != null {
@@ -2155,6 +2182,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.meta.peer_id
 
       .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
@@ -2184,6 +2212,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.meta.peer_id
 
       .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
@@ -2213,6 +2242,7 @@ transforms:
         log(., level: "error", rate_limit_secs: 60)
       }
       .peer_id_unique_key = seahash(peer_id_key)
+      .peer_id = .data.meta.peer_id
 
       .unique_key = seahash(.event.id)
       .updated_date_time = to_unix_timestamp(now())
@@ -2238,6 +2268,7 @@ transforms:
         log("failed to generate peer id unique key: " + string!(err), level: "error", rate_limit_secs: 60)
       }
       .remote_peer_id_unique_key = seahash(peer_id_key)
+      .remote_peer_id = .data.remote_peer
       .remote_maddrs = .data.remote_maddrs
       .latency_ms = to_int!(.data.latency_ms)
       .direction = if .data.direction == 1 {

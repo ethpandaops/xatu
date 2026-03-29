@@ -269,7 +269,11 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		body := gloasBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
 
-		return b.appendExecutionPayloadGloas(body.GetExecutionPayload())
+		// Gloas blocks have no inline execution payload — it arrives
+		// via the ExecutionPayloadEnvelope event.
+		b.appendNoExecutionPayload()
+
+		return nil
 	}
 
 	// Unknown block type: append zero values.
@@ -307,6 +311,17 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {
 	b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadStateRoot.Append(nil)
 	b.ExecutionPayloadParentHash.Append(nil)
+
+	b.appendNullEpbsColumns()
+}
+
+// TODO(epbs): Gloas blocks should populate these from SignedExecutionPayloadBid
+// once go-eth2-client lands. For now all blocks get NULL.
+func (b *beaconApiEthV2BeaconBlockBatch) appendNullEpbsColumns() {
+	b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	b.BidValue.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
@@ -351,6 +366,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -397,6 +414,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadCapellaV2(
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -454,6 +473,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadDeneb(
 
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
 
+	b.appendNullEpbsColumns()
+
 	return nil
 }
 
@@ -510,65 +531,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadElectra(
 
 	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
 
-	return nil
-}
-
-func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadGloas(
-	payload *ethv1.ExecutionPayloadGloas,
-) error {
-	if payload == nil {
-		b.appendNoExecutionPayload()
-
-		return nil
-	}
-
-	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
-	if err != nil {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
-	} else {
-		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
-	}
-
-	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
-	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
-	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
-	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
-
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
-	} else {
-		b.ExecutionPayloadBlockNumber.Append(0)
-	}
-
-	if blobGasUsed := payload.GetBlobGasUsed(); blobGasUsed != nil {
-		b.ExecutionPayloadBlobGasUsed.Append(proto.NewNullable[uint64](blobGasUsed.GetValue()))
-	} else {
-		b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
-	}
-
-	if excessBlobGas := payload.GetExcessBlobGas(); excessBlobGas != nil {
-		b.ExecutionPayloadExcessBlobGas.Append(proto.NewNullable[uint64](excessBlobGas.GetValue()))
-	} else {
-		b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
-	}
-
-	if slotNumber := payload.GetSlotNumber(); slotNumber != nil {
-		b.ExecutionPayloadSlotNumber.Append(proto.NewNullable[uint64](slotNumber.GetValue()))
-	} else {
-		b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
-	}
-
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.ExecutionPayloadGasLimit.Append(proto.NewNullable[uint64](gasLimit.GetValue()))
-	} else {
-		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
-	}
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.ExecutionPayloadGasUsed.Append(proto.NewNullable[uint64](gasUsed.GetValue()))
-	} else {
-		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
-	}
+	b.appendNullEpbsColumns()
 
 	return nil
 }

@@ -35,6 +35,10 @@ type beaconApiEthV2BeaconBlockBatch struct {
 	ExecutionPayloadBlobGasUsed                      *proto.ColNullable[uint64]
 	ExecutionPayloadExcessBlobGas                    *proto.ColNullable[uint64]
 	ExecutionPayloadSlotNumber                       *proto.ColNullable[uint64]
+	BuilderIndex                                     *proto.ColNullable[uint64]
+	BidValue                                         *proto.ColNullable[uint64]
+	ExecutionPayment                                 *proto.ColNullable[uint64]
+	PayloadPresent                                   *proto.ColNullable[bool]
 	ExecutionPayloadGasLimit                         *proto.ColNullable[uint64]
 	ExecutionPayloadGasUsed                          *proto.ColNullable[uint64]
 	ExecutionPayloadStateRoot                        route.SafeColFixedStr
@@ -69,32 +73,36 @@ type beaconApiEthV2BeaconBlockBatch struct {
 
 func newbeaconApiEthV2BeaconBlockBatch() *beaconApiEthV2BeaconBlockBatch {
 	return &beaconApiEthV2BeaconBlockBatch{
-		EventDateTime:                                    func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
-		BlockRoot:                                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		BlockTotalBytes:                                  new(proto.ColUInt32).Nullable(),
-		BlockTotalBytesCompressed:                        new(proto.ColUInt32).Nullable(),
-		ParentRoot:                                       func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		StateRoot:                                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		Eth1DataBlockHash:                                func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		Eth1DataDepositRoot:                              func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		ExecutionPayloadBlockHash:                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		ExecutionPayloadBaseFeePerGas:                    new(proto.ColUInt128).Nullable(),
-		ExecutionPayloadBlobGasUsed:                      new(proto.ColUInt64).Nullable(),
-		ExecutionPayloadExcessBlobGas:                    new(proto.ColUInt64).Nullable(),
-		ExecutionPayloadSlotNumber:                       new(proto.ColUInt64).Nullable(),
-		ExecutionPayloadGasLimit:                         new(proto.ColUInt64).Nullable(),
-		ExecutionPayloadGasUsed:                          new(proto.ColUInt64).Nullable(),
-		ExecutionPayloadStateRoot:                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		ExecutionPayloadParentHash:                       func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		ExecutionPayloadTransactionsCount:                new(proto.ColUInt32).Nullable(),
-		ExecutionPayloadTransactionsTotalBytes:           new(proto.ColUInt32).Nullable(),
+		EventDateTime:                          func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		BlockRoot:                              func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BlockTotalBytes:                        new(proto.ColUInt32).Nullable(),
+		BlockTotalBytesCompressed:              new(proto.ColUInt32).Nullable(),
+		ParentRoot:                             func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		StateRoot:                              func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		Eth1DataBlockHash:                      func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		Eth1DataDepositRoot:                    func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		ExecutionPayloadBlockHash:              func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		ExecutionPayloadBaseFeePerGas:          new(proto.ColUInt128).Nullable(),
+		ExecutionPayloadBlobGasUsed:            new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadExcessBlobGas:          new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadSlotNumber:             new(proto.ColUInt64).Nullable(),
+		BuilderIndex:                           new(proto.ColUInt64).Nullable(),
+		BidValue:                               new(proto.ColUInt64).Nullable(),
+		ExecutionPayment:                       new(proto.ColUInt64).Nullable(),
+		PayloadPresent:                         new(proto.ColBool).Nullable(),
+		ExecutionPayloadGasLimit:               new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadGasUsed:                new(proto.ColUInt64).Nullable(),
+		ExecutionPayloadStateRoot:              func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		ExecutionPayloadParentHash:             func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		ExecutionPayloadTransactionsCount:      new(proto.ColUInt32).Nullable(),
+		ExecutionPayloadTransactionsTotalBytes: new(proto.ColUInt32).Nullable(),
 		ExecutionPayloadTransactionsTotalBytesCompressed: new(proto.ColUInt32).Nullable(),
-		MetaClientIP:                                     new(proto.ColIPv6).Nullable(),
-		MetaClientGeoLongitude:                           new(proto.ColFloat64).Nullable(),
-		MetaClientGeoLatitude:                            new(proto.ColFloat64).Nullable(),
-		MetaClientGeoAutonomousSystemNumber:              new(proto.ColUInt32).Nullable(),
-		MetaClientGeoAutonomousSystemOrganization:        new(proto.ColStr).Nullable(),
-		MetaLabels:                                       proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
+		MetaClientIP:                              new(proto.ColIPv6).Nullable(),
+		MetaClientGeoLongitude:                    new(proto.ColFloat64).Nullable(),
+		MetaClientGeoLatitude:                     new(proto.ColFloat64).Nullable(),
+		MetaClientGeoAutonomousSystemNumber:       new(proto.ColUInt32).Nullable(),
+		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
+		MetaLabels:                                proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
 	}
 }
 
@@ -181,6 +189,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) Input() proto.Input {
 		{Name: "execution_payload_blob_gas_used", Data: b.ExecutionPayloadBlobGasUsed},
 		{Name: "execution_payload_excess_blob_gas", Data: b.ExecutionPayloadExcessBlobGas},
 		{Name: "execution_payload_slot_number", Data: b.ExecutionPayloadSlotNumber},
+		{Name: "builder_index", Data: b.BuilderIndex},
+		{Name: "bid_value", Data: b.BidValue},
+		{Name: "execution_payment", Data: b.ExecutionPayment},
+		{Name: "payload_present", Data: b.PayloadPresent},
 		{Name: "execution_payload_gas_limit", Data: b.ExecutionPayloadGasLimit},
 		{Name: "execution_payload_gas_used", Data: b.ExecutionPayloadGasUsed},
 		{Name: "execution_payload_state_root", Data: &b.ExecutionPayloadStateRoot},
@@ -236,6 +248,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) Reset() {
 	b.ExecutionPayloadBlobGasUsed.Reset()
 	b.ExecutionPayloadExcessBlobGas.Reset()
 	b.ExecutionPayloadSlotNumber.Reset()
+	b.BuilderIndex.Reset()
+	b.BidValue.Reset()
+	b.ExecutionPayment.Reset()
+	b.PayloadPresent.Reset()
 	b.ExecutionPayloadGasLimit.Reset()
 	b.ExecutionPayloadGasUsed.Reset()
 	b.ExecutionPayloadStateRoot.Reset()
@@ -273,7 +289,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 50)
+		row := make(map[string]any, 55)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -319,6 +335,26 @@ func (b *beaconApiEthV2BeaconBlockBatch) Snapshot() []map[string]any {
 			row["execution_payload_slot_number"] = v.Value
 		} else {
 			row["execution_payload_slot_number"] = nil
+		}
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
+		if v := b.BidValue.Row(i); v.Set {
+			row["bid_value"] = v.Value
+		} else {
+			row["bid_value"] = nil
+		}
+		if v := b.ExecutionPayment.Row(i); v.Set {
+			row["execution_payment"] = v.Value
+		} else {
+			row["execution_payment"] = nil
+		}
+		if v := b.PayloadPresent.Row(i); v.Set {
+			row["payload_present"] = v.Value
+		} else {
+			row["payload_present"] = nil
 		}
 		if v := b.ExecutionPayloadGasLimit.Row(i); v.Set {
 			row["execution_payload_gas_limit"] = v.Value

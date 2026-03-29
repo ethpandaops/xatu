@@ -19,11 +19,11 @@ type canonicalBeaconBlockAccessListBatch struct {
 	Epoch                                     proto.ColUInt32
 	EpochStartDateTime                        proto.ColDateTime
 	BlockRoot                                 route.SafeColFixedStr
-	BlockNumber                               proto.ColUInt32
+	BlockNumber                               proto.ColUInt64
 	BlockHash                                 route.SafeColFixedStr
 	Address                                   route.SafeColFixedStr
 	ChangeType                                proto.ColStr
-	BlockAccessIndex                          proto.ColUInt32
+	BlockAccessIndex                          proto.ColUInt16
 	StorageKey                                route.SafeColFixedStr
 	NewValue                                  *proto.ColNullable[string]
 	MetaClientName                            proto.ColStr
@@ -43,9 +43,6 @@ type canonicalBeaconBlockAccessListBatch struct {
 	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
 	MetaConsensusVersion                      proto.ColStr
-	MetaConsensusVersionMajor                 proto.ColStr
-	MetaConsensusVersionMinor                 proto.ColStr
-	MetaConsensusVersionPatch                 proto.ColStr
 	MetaConsensusImplementation               proto.ColStr
 	MetaLabels                                *proto.ColMap[string, string]
 	rows                                      int
@@ -90,9 +87,6 @@ func (b *canonicalBeaconBlockAccessListBatch) appendMetadata(event *xatu.Decorat
 		b.MetaNetworkID.Append(0)
 		b.MetaNetworkName.Append("")
 		b.MetaConsensusVersion.Append("")
-		b.MetaConsensusVersionMajor.Append("")
-		b.MetaConsensusVersionMinor.Append("")
-		b.MetaConsensusVersionPatch.Append("")
 		b.MetaConsensusImplementation.Append("")
 		b.MetaLabels.Append(nil)
 		return
@@ -115,9 +109,6 @@ func (b *canonicalBeaconBlockAccessListBatch) appendMetadata(event *xatu.Decorat
 	b.MetaNetworkID.Append(int32(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetId()))
 	b.MetaNetworkName.Append(event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
 	b.MetaConsensusVersion.Append(route.NormalizeConsensusVersion(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
-	b.MetaConsensusVersionMajor.Append(route.ConsensusVersionMajor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
-	b.MetaConsensusVersionMinor.Append(route.ConsensusVersionMinor(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
-	b.MetaConsensusVersionPatch.Append(route.ConsensusVersionPatch(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetVersion()))
 	b.MetaConsensusImplementation.Append(event.GetMeta().GetClient().GetEthereum().GetConsensus().GetImplementation())
 	if labels := event.GetMeta().GetClient().GetLabels(); labels != nil {
 		b.MetaLabels.Append(labels)
@@ -139,7 +130,7 @@ func (b *canonicalBeaconBlockAccessListBatch) Input() proto.Input {
 		{Name: "address", Data: &b.Address},
 		{Name: "change_type", Data: &b.ChangeType},
 		{Name: "block_access_index", Data: &b.BlockAccessIndex},
-		{Name: "storage_key", Data: b.StorageKey},
+		{Name: "storage_key", Data: &b.StorageKey},
 		{Name: "new_value", Data: b.NewValue},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_id", Data: &b.MetaClientID},
@@ -158,9 +149,6 @@ func (b *canonicalBeaconBlockAccessListBatch) Input() proto.Input {
 		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 		{Name: "meta_consensus_version", Data: &b.MetaConsensusVersion},
-		{Name: "meta_consensus_version_major", Data: &b.MetaConsensusVersionMajor},
-		{Name: "meta_consensus_version_minor", Data: &b.MetaConsensusVersionMinor},
-		{Name: "meta_consensus_version_patch", Data: &b.MetaConsensusVersionPatch},
 		{Name: "meta_consensus_implementation", Data: &b.MetaConsensusImplementation},
 		{Name: "meta_labels", Data: b.MetaLabels},
 	}
@@ -197,9 +185,6 @@ func (b *canonicalBeaconBlockAccessListBatch) Reset() {
 	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
 	b.MetaConsensusVersion.Reset()
-	b.MetaConsensusVersionMajor.Reset()
-	b.MetaConsensusVersionMinor.Reset()
-	b.MetaConsensusVersionPatch.Reset()
 	b.MetaConsensusImplementation.Reset()
 	b.MetaLabels.Reset()
 	b.rows = 0
@@ -210,7 +195,7 @@ func (b *canonicalBeaconBlockAccessListBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 36)
+		row := make(map[string]any, 32)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()
@@ -265,9 +250,6 @@ func (b *canonicalBeaconBlockAccessListBatch) Snapshot() []map[string]any {
 		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		row["meta_consensus_version"] = b.MetaConsensusVersion.Row(i)
-		row["meta_consensus_version_major"] = b.MetaConsensusVersionMajor.Row(i)
-		row["meta_consensus_version_minor"] = b.MetaConsensusVersionMinor.Row(i)
-		row["meta_consensus_version_patch"] = b.MetaConsensusVersionPatch.Row(i)
 		row["meta_consensus_implementation"] = b.MetaConsensusImplementation.Row(i)
 		row["meta_labels"] = b.MetaLabels.Row(i)
 		out[i] = row

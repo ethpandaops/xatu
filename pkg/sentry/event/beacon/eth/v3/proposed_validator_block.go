@@ -206,6 +206,8 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 		addTxData(fuluTxs)
 	case spec.DataVersionGloas:
+		// TODO(epbs): Under EIP-7732, ExecutionPayload and Transactions move to the
+		// envelope. Source from ExecutionPayloadEnvelope once go-eth2-client adds ePBS support.
 		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Gloas.Body)
 		if err != nil {
 			e.log.WithError(err).Warn("Failed to compute gloas block size")

@@ -463,6 +463,10 @@ func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSign
 }
 
 // NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7928) beacon block.
+// TODO(epbs): Under EIP-7732, the block body has a SignedExecutionPayloadBid instead of an
+// inline ExecutionPayload. The bid fields (builder_index, value, execution_payment) and
+// payload_attestations need to be populated here once go-eth2-client adds ePBS support.
+// The execution payload itself arrives via a separate ExecutionPayloadEnvelope event.
 func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
 	kzgCommitments := make([]string, 0, len(block.Body.BlobKZGCommitments))
 

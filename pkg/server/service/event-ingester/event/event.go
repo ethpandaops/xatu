@@ -112,6 +112,22 @@ var (
 	TypeLibP2PTraceSyntheticHeartbeat           Type = Type(libp2p.TraceSyntheticHeartbeatType)
 	TypeLibP2PTraceIdentify                     Type = Type(libp2p.TraceIdentifyType)
 	TypeLibP2PRPCDataColumnCustodyProbe         Type = Type(libp2p.TypeLibp2pRPCDataColumnCustodyProbe)
+
+	// EIP-7732 ePBS: Sentry SSE events
+	TypeBeaconETHV1EventsExecutionPayload    Type = v1.EventsExecutionPayloadType
+	TypeBeaconETHV1EventsPayloadAttestation  Type = v1.EventsPayloadAttestationType
+	TypeBeaconETHV1EventsExecutionPayloadBid Type = v1.EventsExecutionPayloadBidType
+	TypeBeaconETHV1EventsProposerPreferences Type = v1.EventsProposerPreferencesType
+
+	// EIP-7732 ePBS: Cannon derived events
+	TypeBeaconEthV2BeaconBlockPayloadAttestation  Type = v2.BeaconBlockPayloadAttestationType
+	TypeBeaconEthV2BeaconBlockExecutionPayloadBid Type = v2.BeaconBlockExecutionPayloadBidType
+
+	// EIP-7732 ePBS: P2P gossip events
+	TypeLibP2PTraceGossipSubExecutionPayloadEnvelope  Type = Type(libp2p.TraceGossipSubExecutionPayloadEnvelopeType)
+	TypeLibP2PTraceGossipSubExecutionPayloadBid       Type = Type(libp2p.TraceGossipSubExecutionPayloadBidType)
+	TypeLibP2PTraceGossipSubPayloadAttestationMessage Type = Type(libp2p.TraceGossipSubPayloadAttestationMessageType)
+	TypeLibP2PTraceGossipSubProposerPreferences       Type = Type(libp2p.TraceGossipSubProposerPreferencesType)
 )
 
 type Event interface {
@@ -399,6 +415,42 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PRPCDataColumnCustodyProbe, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewDataColumnCustodyProbe(router.log, event), nil
+	})
+
+	// EIP-7732 ePBS: Sentry SSE events
+	router.RegisterHandler(TypeBeaconETHV1EventsExecutionPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsExecutionPayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsPayloadAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsPayloadAttestation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsExecutionPayloadBid, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsExecutionPayloadBid(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsProposerPreferences, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsProposerPreferences(router.log, event), nil
+	})
+
+	// EIP-7732 ePBS: Cannon derived events
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockPayloadAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockPayloadAttestation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionPayloadBid, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockExecutionPayloadBid(router.log, event), nil
+	})
+
+	// EIP-7732 ePBS: P2P gossip events
+	router.RegisterHandler(TypeLibP2PTraceGossipSubExecutionPayloadEnvelope, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubExecutionPayloadEnvelope(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubExecutionPayloadBid, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubExecutionPayloadBid(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubPayloadAttestationMessage, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubPayloadAttestationMessage(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubProposerPreferences, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubProposerPreferences(router.log, event), nil
 	})
 
 	return router

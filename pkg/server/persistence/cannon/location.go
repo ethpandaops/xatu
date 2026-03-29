@@ -214,6 +214,28 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION"
+
+		data := msg.GetEthV2BeaconBlockPayloadAttestation()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID:
+		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID"
+
+		data := msg.GetEthV2BeaconBlockExecutionPayloadBid()
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -437,6 +459,32 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockAccessList{
 			EthV2BeaconBlockAccessList: data,
+		}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION
+
+		data := &xatu.CannonLocationEthV2BeaconBlockPayloadAttestation{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockPayloadAttestation{
+			EthV2BeaconBlockPayloadAttestation: data,
+		}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionPayloadBid{}
+
+		err := protojson.Unmarshal([]byte(l.Value), data)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrFailedToUnmarshal, err)
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionPayloadBid{
+			EthV2BeaconBlockExecutionPayloadBid: data,
 		}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)

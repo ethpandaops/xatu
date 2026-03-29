@@ -933,6 +933,108 @@ message ClientMeta {
     string block_hash = 3;
   }
 
+  // EIP-7732 ePBS Additional Data messages
+
+  // AdditionalEthV1EventsExecutionPayloadData contains additional data about
+  // execution payload envelope arrivals from the beacon API SSE.
+  message AdditionalEthV1EventsExecutionPayloadData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalEthV1EventsPayloadAttestationData contains additional data about
+  // individual PTC payload attestation messages from the beacon API SSE.
+  message AdditionalEthV1EventsPayloadAttestationData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalEthV1EventsExecutionPayloadBidData contains additional data about
+  // builder bids from the beacon API SSE.
+  message AdditionalEthV1EventsExecutionPayloadBidData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalEthV1EventsProposerPreferencesData contains additional data about
+  // proposer preferences from the beacon API SSE.
+  message AdditionalEthV1EventsProposerPreferencesData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalEthV2BeaconBlockPayloadAttestationData contains additional data
+  // about aggregated PTC payload attestations derived from cannon blocks.
+  message AdditionalEthV2BeaconBlockPayloadAttestationData {
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionPayloadBidData contains additional data
+  // about the winning execution payload bid derived from cannon blocks.
+  message AdditionalEthV2BeaconBlockExecutionPayloadBidData {
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData contains additional
+  // data about execution payload envelope gossip from libp2p.
+  message AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+    PropagationV2 propagation = 5;
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+    google.protobuf.StringValue topic = 7;
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
+  // AdditionalLibP2PTraceGossipSubExecutionPayloadBidData contains additional
+  // data about builder bid gossip from libp2p.
+  message AdditionalLibP2PTraceGossipSubExecutionPayloadBidData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+    PropagationV2 propagation = 5;
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+    google.protobuf.StringValue topic = 7;
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
+  // AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData contains additional
+  // data about PTC attestation gossip from libp2p.
+  message AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+    PropagationV2 propagation = 5;
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+    google.protobuf.StringValue topic = 7;
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
+  // AdditionalLibP2PTraceGossipSubProposerPreferencesData contains additional
+  // data about proposer preferences gossip from libp2p.
+  message AdditionalLibP2PTraceGossipSubProposerPreferencesData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+    PropagationV2 propagation = 5;
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+    google.protobuf.StringValue topic = 7;
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
   // AdditionalBlockprintBlockClassificationData was removed — blockprint is deprecated.
 
   message AttestationDataSnapshot {
@@ -1783,6 +1885,22 @@ message ClientMeta {
     // AdditionalEthV2BeaconBlockAccessListData contains additional data on
     // block access list entries derived from beacon blocks.
     AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 95 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+
+    // EIP-7732 ePBS: Sentry SSE additional data
+    AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 96 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
+    AdditionalEthV1EventsPayloadAttestationData eth_v1_events_payload_attestation = 97 [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV1EventsExecutionPayloadBidData eth_v1_events_execution_payload_bid = 98 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
+    AdditionalEthV1EventsProposerPreferencesData eth_v1_events_proposer_preferences = 99 [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
+
+    // EIP-7732 ePBS: Cannon additional data
+    AdditionalEthV2BeaconBlockPayloadAttestationData eth_v2_beacon_block_payload_attestation = 100 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV2BeaconBlockExecutionPayloadBidData eth_v2_beacon_block_execution_payload_bid = 101 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
+
+    // EIP-7732 ePBS: LibP2P gossip additional data
+    AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData libp2p_trace_gossipsub_execution_payload_envelope = 102 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
+    AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 103 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
+    AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 104 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
+    AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 105 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2345,14 +2463,14 @@ message DecoratedEvent {
     xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 216
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
-    // EIP-7732 ePBS: P2P gossip events
-    xatu.eth.v1.SignedExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
+    // EIP-7732 ePBS: P2P gossip events (use gossipsub summary types)
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    xatu.eth.v1.SignedExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    xatu.eth.v1.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
+    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    xatu.eth.v1.SignedProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
+    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
   };
 }

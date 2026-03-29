@@ -245,6 +245,8 @@ func (b *BlockAccessListDeriver) processSlot(
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
+	// TODO(epbs): Under EIP-7732, ExecutionPayload and BAL data move to the
+	// ExecutionPayloadEnvelope. Source from envelope once go-eth2-client adds ePBS support.
 	if block.Gloas == nil || block.Gloas.Message == nil ||
 		block.Gloas.Message.Body == nil ||
 		block.Gloas.Message.Body.ExecutionPayload == nil {

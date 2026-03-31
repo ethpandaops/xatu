@@ -1,1 +1,0 @@
-DROP DATABASE dbt ON CLUSTER '{cluster}' SYNC

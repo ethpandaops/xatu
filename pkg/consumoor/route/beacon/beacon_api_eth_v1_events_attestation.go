@@ -80,6 +80,8 @@ func (b *beaconApiEthV1EventsAttestationBatch) validate(event *xatu.DecoratedEve
 }
 
 func (b *beaconApiEthV1EventsAttestationBatch) appendRuntime(event *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+
 	if ts := event.GetEvent().GetDateTime(); ts != nil {
 		b.EventDateTime.Append(ts.AsTime())
 	} else {

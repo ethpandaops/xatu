@@ -28,6 +28,6 @@ func TestSnapshot_canonical_beacon_block_bls_to_execution_change(t *testing.T) {
 			EthV2BeaconBlockBlsToExecutionChange: &ethv2.SignedBLSToExecutionChangeV2{},
 		},
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

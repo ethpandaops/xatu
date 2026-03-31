@@ -74,7 +74,6 @@ func (b *canonicalBeaconValidatorsWithdrawalCredentialsBatch) FlattenTo(event *x
 		}
 
 		b.UpdatedDateTime.Append(now)
-		b.Version.Append(uint32(4294967295 - epochStartTime.Unix())) //nolint:gosec // inverse timestamp for ReplacingMergeTree dedup
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 

@@ -32,6 +32,6 @@ func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

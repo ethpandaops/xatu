@@ -273,9 +273,9 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {
-	b.ExecutionPayloadBlockHash.Append(nil)
-	b.ExecutionPayloadBlockNumber.Append(0)
-	b.ExecutionPayloadFeeRecipient.Append("")
+	b.ExecutionPayloadBlockHash.Append(proto.Nullable[[]byte]{})
+	b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
+	b.ExecutionPayloadFeeRecipient.Append(proto.Nullable[string]{})
 	b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
@@ -301,15 +301,15 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadV2(
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
-	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
-	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
+	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
+	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
 	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
+		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue()))) //nolint:gosec // block number fits uint32
 	} else {
-		b.ExecutionPayloadBlockNumber.Append(0)
+		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
 	}
 
 	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
@@ -346,15 +346,15 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadCapellaV2(
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
-	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
-	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
+	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
+	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
 	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
+		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue()))) //nolint:gosec // block number fits uint32
 	} else {
-		b.ExecutionPayloadBlockNumber.Append(0)
+		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
 	}
 
 	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
@@ -391,15 +391,15 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadDeneb(
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
-	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
-	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
+	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
+	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
 	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
+		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue()))) //nolint:gosec // block number fits uint32
 	} else {
-		b.ExecutionPayloadBlockNumber.Append(0)
+		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
 	}
 
 	if blobGasUsed := payload.GetBlobGasUsed(); blobGasUsed != nil {
@@ -445,15 +445,15 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendExecutionPayloadElectra(
 		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
 	}
 
-	b.ExecutionPayloadBlockHash.Append([]byte(payload.GetBlockHash()))
-	b.ExecutionPayloadFeeRecipient.Append(payload.GetFeeRecipient())
+	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
+	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
 	b.ExecutionPayloadStateRoot.Append([]byte(payload.GetStateRoot()))
 	b.ExecutionPayloadParentHash.Append([]byte(payload.GetParentHash()))
 
 	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.ExecutionPayloadBlockNumber.Append(uint32(blockNumber.GetValue())) //nolint:gosec // block number fits uint32
+		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue()))) //nolint:gosec // block number fits uint32
 	} else {
-		b.ExecutionPayloadBlockNumber.Append(0)
+		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
 	}
 
 	if blobGasUsed := payload.GetBlobGasUsed(); blobGasUsed != nil {

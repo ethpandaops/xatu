@@ -73,12 +73,7 @@ func (b *libp2pHandleStatusBatch) appendPayload(
 
 	b.Protocol.Append(wrappedStringValue(payload.GetProtocolId()))
 
-	// Direction (nullable string).
-	if dir := wrappedStringValue(payload.GetDirection()); dir != "" {
-		b.Direction.Append(proto.NewNullable[string](dir))
-	} else {
-		b.Direction.Append(proto.Nullable[string]{})
-	}
+	b.Direction.Append(wrappedStringValue(payload.GetDirection()))
 
 	// Latency: proto stores seconds as float64; convert to Decimal(10,3) ms.
 	// Truncate (not round) to match Vector's VRL behaviour.

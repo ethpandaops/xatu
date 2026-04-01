@@ -138,6 +138,10 @@ func benthosConfigYAML(logLevel string, kafkaConfig *KafkaConfig) ([]byte, error
 		"rebalance_timeout":         kafkaConfig.RebalanceTimeout.String(),
 	}
 
+	if kafkaConfig.ClientID != "" {
+		inputKafka["client_id"] = kafkaConfig.ClientID
+	}
+
 	if kafkaConfig.TopicRefreshInterval > 0 {
 		inputKafka["metadata_max_age"] = kafkaConfig.TopicRefreshInterval.String()
 	}

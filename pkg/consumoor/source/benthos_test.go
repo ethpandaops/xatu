@@ -219,6 +219,42 @@ func TestBenthosConfigYAML_NoTCPBlockWhenConnectTimeoutZero(t *testing.T) {
 
 	_, hasTCP := kafka["tcp"]
 	assert.False(t, hasTCP, "tcp block should be absent when ConnectTimeout is 0")
+
+	_, hasClientID := kafka["client_id"]
+	assert.False(t, hasClientID, "client_id should be absent when ClientID is empty")
+}
+
+func TestBenthosConfigYAML_ClientID(t *testing.T) {
+	cfg := &KafkaConfig{
+		Brokers:                []string{"kafka-1:9092"},
+		Topics:                 []string{"^test-.+"},
+		ConsumerGroup:          "xatu-consumoor",
+		ClientID:               "xatu-consumoor",
+		Encoding:               "json",
+		FetchMinBytes:          1,
+		FetchWaitMaxMs:         250,
+		MaxPartitionFetchBytes: 1048576,
+		FetchMaxBytes:          10485760,
+		SessionTimeoutMs:       30000,
+		RebalanceTimeout:       15 * time.Second,
+		OffsetDefault:          "earliest",
+		CommitInterval:         5 * time.Second,
+		ConnectTimeout:         10 * time.Second,
+	}
+
+	raw, err := benthosConfigYAML("info", cfg)
+	require.NoError(t, err)
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal(raw, &parsed))
+
+	input, ok := parsed["input"].(map[string]any)
+	require.True(t, ok)
+
+	kafka, ok := input["kafka_franz"].(map[string]any)
+	require.True(t, ok)
+
+	assert.Equal(t, "xatu-consumoor", kafka["client_id"])
 }
 
 func TestBenthosSASLObjectUsesPasswordFile(t *testing.T) {

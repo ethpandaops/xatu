@@ -59,6 +59,11 @@ type KafkaConfig struct {
 	Topics []string `yaml:"topics"`
 	// ConsumerGroup is the Kafka consumer group ID.
 	ConsumerGroup string `yaml:"consumerGroup"`
+	// ClientID is the Kafka client ID sent to brokers. When set, all per-topic
+	// streams share this value, which allows broker-side quota enforcement
+	// (quota.consumer.default) to apply as a single budget across all streams.
+	// If empty, franz-go generates a unique ID per stream.
+	ClientID string `yaml:"clientId"`
 	// Encoding is the message encoding format ("json" or "protobuf").
 	Encoding string `yaml:"encoding" default:"json"`
 

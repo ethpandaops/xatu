@@ -126,7 +126,8 @@ CREATE TABLE IF NOT EXISTS default.beacon_api_eth_v1_events_attestation_local ON
 )
 ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY (meta_network_name, toYYYYMM(slot_start_date_time))
-ORDER BY (meta_network_name, slot_start_date_time, meta_client_name)
+ORDER BY (meta_network_name, slot_start_date_time, meta_client_name, attesting_validator_index, attesting_validator_committee_index, aggregation_bits, beacon_block_root)
+SETTINGS allow_nullable_key = 1
 COMMENT 'Contains beacon API attestation events from each sentry client attached to a beacon node';
 
 CREATE TABLE IF NOT EXISTS default.beacon_api_eth_v1_events_blob_sidecar_local ON CLUSTER '{cluster}'

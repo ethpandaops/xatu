@@ -89,13 +89,7 @@ func (b *nodeRecordConsensusBatch) appendPayload(
 	consensus := event.GetNodeRecordConsensus()
 	b.Enr.Append(nodeStringValue(consensus.GetEnr()))
 
-	// NodeID is Nullable[string].
-	nodeID := nodeStringValue(consensus.GetNodeId())
-	if nodeID != "" {
-		b.NodeID.Append(chProto.NewNullable[string](nodeID))
-	} else {
-		b.NodeID.Append(chProto.Nullable[string]{})
-	}
+	b.NodeID.Append(nodeStringValue(consensus.GetNodeId()))
 
 	// PeerIDUniqueKey: hash of peerID + network.
 	peerID := nodeStringValue(consensus.GetPeerId())

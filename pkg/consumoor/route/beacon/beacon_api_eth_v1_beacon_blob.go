@@ -70,6 +70,8 @@ func (b *beaconApiEthV1BeaconBlobBatch) validate(event *xatu.DecoratedEvent) err
 }
 
 func (b *beaconApiEthV1BeaconBlobBatch) appendRuntime(event *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+
 	if ts := event.GetEvent().GetDateTime(); ts != nil {
 		b.EventDateTime.Append(ts.AsTime())
 	} else {

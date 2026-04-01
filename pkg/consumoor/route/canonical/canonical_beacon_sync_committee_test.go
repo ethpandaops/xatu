@@ -37,6 +37,6 @@ func TestSnapshot_canonical_beacon_sync_committee(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

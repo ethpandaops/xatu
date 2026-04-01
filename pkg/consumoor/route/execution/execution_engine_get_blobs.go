@@ -90,7 +90,7 @@ func (b *executionEngineGetBlobsBatch) appendPayload(event *xatu.DecoratedEvent)
 	}
 
 	if durationMs := payload.GetDurationMs(); durationMs != nil {
-		b.DurationMs.Append(uint64(durationMs.GetValue()))
+		b.DurationMs.Append(durationMs.GetValue())
 	} else {
 		b.DurationMs.Append(0)
 	}

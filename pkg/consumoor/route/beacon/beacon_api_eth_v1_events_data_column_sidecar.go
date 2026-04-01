@@ -107,6 +107,7 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendPayload(event *xatu.D
 
 	commitments := sidecar.GetKzgCommitments() //nolint:staticcheck // deprecated but still populated
 	byteSlices := make([][]byte, len(commitments))
+
 	for i, c := range commitments {
 		byteSlices[i] = []byte(c)
 	}

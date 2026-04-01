@@ -486,6 +486,7 @@ func (c *Consumoor) startTopicStream(
 	topic string,
 ) {
 	c.mu.Lock()
+
 	if _, exists := c.activeTopics[topic]; exists {
 		c.mu.Unlock()
 

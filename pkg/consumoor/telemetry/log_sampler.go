@@ -33,7 +33,7 @@ func NewLogSampler(interval time.Duration) *LogSampler {
 
 // Allow returns whether a log should be emitted for the given key, and
 // the number of occurrences suppressed since the last emission.
-func (s *LogSampler) Allow(key string) (bool, int64) {
+func (s *LogSampler) Allow(key string) (allowed bool, suppressed int64) {
 	now := time.Now()
 
 	s.mu.Lock()
@@ -52,7 +52,7 @@ func (s *LogSampler) Allow(key string) (bool, int64) {
 		return false, 0
 	}
 
-	suppressed := entry.suppressed
+	suppressed = entry.suppressed
 	entry.suppressed = 0
 	entry.lastEmit = now
 

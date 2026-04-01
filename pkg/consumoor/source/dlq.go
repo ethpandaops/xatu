@@ -88,11 +88,11 @@ func (s *kafkaRejectSink) Write(ctx context.Context, record *rejectedRecord) err
 
 func newRejectSink(cfg *KafkaConfig) (rejectSink, error) {
 	if cfg == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil sink is the intentional no-op case
 	}
 
 	if strings.TrimSpace(cfg.RejectedTopic) == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil sink is the intentional no-op case
 	}
 
 	opts := []kgo.Opt{

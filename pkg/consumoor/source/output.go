@@ -106,7 +106,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 	var batchErr *service.BatchError
 
-	var pooledEvents []*xatu.DecoratedEvent
+	pooledEvents := make([]*xatu.DecoratedEvent, 0, len(msgs))
+
 	defer func() {
 		for _, ev := range pooledEvents {
 			ev.ReturnToVTPool()

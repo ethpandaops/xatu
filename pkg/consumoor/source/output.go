@@ -113,9 +113,13 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		}
 	}()
 
-	groups := make(map[xatu.Event_Name]*eventGroup, 16)
+	// Decode, route, and group by target table in a single pass. Each
+	// table group is processed independently so a write failure for table
+	// A cannot NAK messages destined only for table B. Messages that fan
+	// out to multiple tables appear in multiple groups — each is flushed
+	// and error-attributed independently.
+	tableGroups := make(map[string]*eventGroup, 16)
 
-	// Phase 1: decode, route, and group by event type.
 	for i, msg := range msgs {
 		kafka := kafkaMetadata(msg)
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
@@ -204,40 +208,25 @@ func (o *xatuClickHouseOutput) WriteBatch(
 			continue
 		}
 
-		if len(outcome.Results) == 0 {
-			continue
-		}
-
-		tables := make([]string, len(outcome.Results))
-		for j, result := range outcome.Results {
-			tables[j] = result.Table
-		}
-
-		eventName := event.GetEvent().GetName()
-
-		g, ok := groups[eventName]
-		if !ok {
-			g = &eventGroup{
-				messages: make([]groupMessage, 0, 8),
+		for _, result := range outcome.Results {
+			tg, ok := tableGroups[result.Table]
+			if !ok {
+				tg = &eventGroup{messages: make([]groupMessage, 0, 8)}
+				tableGroups[result.Table] = tg
 			}
-			groups[eventName] = g
-		}
 
-		g.messages = append(g.messages, groupMessage{
-			batchIndex: i,
-			raw:        raw,
-			event:      event,
-			kafka:      kafka,
-			tables:     tables,
-		})
+			tg.messages = append(tg.messages, groupMessage{
+				batchIndex: i,
+				raw:        raw,
+				event:      event,
+				kafka:      kafka,
+				tables:     []string{result.Table},
+			})
+		}
 	}
 
-	// Phase 2: process each event group independently.
-	// Pass batchErr through so Phase 1 failures (decode errors) are preserved
-	// when a group also fails — otherwise processGroup would create a new
-	// BatchError that silently drops the earlier failures.
-	for _, g := range groups {
-		batchErr = o.processGroup(ctx, msgs, batchErr, g)
+	for _, tg := range tableGroups {
+		batchErr = o.processGroup(ctx, msgs, batchErr, tg)
 	}
 
 	if batchErr != nil {
@@ -276,15 +265,15 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 	return rejectErr
 }
 
-// processGroup writes all messages in the group to their target tables, then
-// flushes only those tables. On failure the entire group is NAK'd or DLQ'd.
-// The caller's accumulated batchErr is threaded through so that failures from
-// earlier phases (e.g. decode errors) are preserved.
+// processGroup writes all messages in the group to their target table and
+// handles error attribution. Each group targets exactly one table (callers
+// split fanout events into per-table groups), so failure in one table
+// cannot affect messages destined for a different table.
 //
-// For events that fan out to multiple tables, partial failures (some tables
-// succeed, others fail transiently) are retried with exponential backoff.
-// Only the failed tables are retried to prevent duplicate writes on already-
-// succeeded tables.
+// The caller's accumulated batchErr is threaded through so that failures
+// from earlier phases (e.g. decode errors) are preserved.
+//
+// Transient failures are retried with exponential backoff.
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,

@@ -214,6 +214,13 @@ func (w *ChGoWriter) Stop(_ context.Context) error {
 // ClickHouse tables concurrently. The map keys are base table names
 // (without suffix). Returns a FlushResult containing per-table errors
 // and any invalid events that should be sent to the DLQ.
+//
+// Concurrency model: each table flush runs in its own goroutine. The
+// effective global concurrency cap is the ch-go pool's MaxConns, since
+// each flush must acquire a pool connection. The per-table adaptive
+// limiter further constrains concurrency per table. Goroutines blocked
+// on pool.Do hold their batch data in memory; the aggregate footprint
+// is bounded by (streams × maxInFlight × avg_batch_size).
 func (w *ChGoWriter) FlushTableEvents(
 	ctx context.Context,
 	tableEvents map[string][]*xatu.DecoratedEvent,

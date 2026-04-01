@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"os/signal"
@@ -106,17 +107,22 @@ func New(
 		return nil, fmt.Errorf("discovering kafka topics: %w", err)
 	}
 
-	if len(topics) == 0 {
-		return nil, fmt.Errorf(
-			"no kafka topics matched patterns %v",
-			config.Kafka.Topics,
-		)
-	}
-
 	cLog := log.WithField("component", "consumoor")
-	cLog.WithField("topics", topics).
-		WithField("count", len(topics)).
-		Info("Discovered Kafka topics for per-topic streams")
+
+	if len(topics) == 0 {
+		if config.Kafka.TopicRefreshInterval > 0 {
+			cLog.Warn("No topics matched at startup — topic watcher will discover them dynamically")
+		} else {
+			return nil, fmt.Errorf(
+				"no kafka topics matched patterns %v",
+				config.Kafka.Topics,
+			)
+		}
+	} else {
+		cLog.WithField("topics", topics).
+			WithField("count", len(topics)).
+			Info("Discovered Kafka topics for per-topic streams")
+	}
 
 	streams := make([]topicStream, 0, len(topics))
 	consumerGroups := make([]string, 0, len(topics))
@@ -193,8 +199,10 @@ func New(
 		activeTopics: activeTopics,
 	}
 
-	// Optionally create the Kafka consumer lag monitor.
-	if config.Kafka.LagPollInterval > 0 {
+	// Optionally create the Kafka consumer lag monitor. Skipped when no
+	// topics were discovered at startup (dynamic discovery will add them
+	// later, but lag monitoring requires a restart to include them).
+	if config.Kafka.LagPollInterval > 0 && len(consumerGroups) > 0 {
 		lagMon, lagErr := source.NewLagMonitor(
 			log,
 			&config.Kafka,
@@ -224,6 +232,15 @@ func (c *Consumoor) Start(ctx context.Context) error {
 	c.log.WithField("streams", len(c.streams)).
 		Info("Consumoor started (per-topic benthos streams)")
 
+	// errgroup provides fail-fast: if any goroutine (stream, metrics
+	// server, lag monitor, topic watcher) returns an error, gCtx is
+	// cancelled and all other goroutines shut down. This is intentional
+	// — a persistent stream failure typically indicates a systemic
+	// problem that affects all streams. The orchestrator (k8s, systemd)
+	// can then restart the entire process.
+	//
+	// Implication for dynamic topic discovery: a newly discovered topic
+	// whose stream fails will bring down all existing healthy streams.
 	g, gCtx := errgroup.WithContext(nctx)
 
 	g.Go(func() error {
@@ -395,8 +412,13 @@ func (c *Consumoor) watchTopics(ctx context.Context, g *errgroup.Group) {
 	c.log.WithField("interval", interval).
 		Info("Starting topic discovery watcher")
 
-	// Perform an initial discovery so the metric is populated immediately.
-	knownTopics := c.discoverAndDiff(ctx, g, nil)
+	// Seed from activeTopics so topics appearing between New() and the
+	// first poll are detected as new and get streams started.
+	c.mu.Lock()
+	initialKnown := maps.Clone(c.activeTopics)
+	c.mu.Unlock()
+
+	knownTopics := c.discoverAndDiff(ctx, g, initialKnown)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -434,14 +456,6 @@ func (c *Consumoor) discoverAndDiff(
 	}
 
 	c.metrics.ActiveTopics().Set(float64(len(current)))
-
-	if previous == nil {
-		c.log.WithField("topics", topics).
-			WithField("count", len(topics)).
-			Info("Initial topic discovery complete")
-
-		return current
-	}
 
 	// Find newly appeared topics and start streams for them.
 	for _, t := range topics {

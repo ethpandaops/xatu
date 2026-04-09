@@ -10,17 +10,32 @@ transforms:
       - docker
     source: |
       # Capture fields before deleting originals
-      project = to_string(get!(., ["label", "com.docker.compose.project"])) ?? "unknown"
-      service = to_string(get!(., ["label", "com.docker.compose.service"])) ?? "unknown"
       container = to_string(.container_name) ?? "unknown"
       stream = to_string(.stream) ?? "stdout"
       msg = to_string(.message) ?? ""
       ts = .timestamp
 
+      # Detect source: docker-compose vs kurtosis vs unknown
+      compose_project = to_string(get!(., ["label", "com.docker.compose.project"])) ?? ""
+      compose_service = to_string(get!(., ["label", "com.docker.compose.service"])) ?? ""
+      kurtosis_id = to_string(get!(., ["label", "com.kurtosistech.id"])) ?? ""
+      kurtosis_enclave = to_string(get!(., ["label", "com.kurtosistech.enclave-id"])) ?? ""
+
+      ns_val = "docker"
+      pod_val = container
+
+      if compose_project != "" {
+        ns_val = compose_project
+        pod_val = compose_service
+      } else if kurtosis_id != "" {
+        ns_val = "kurtosis-" + slice!(kurtosis_enclave, start: 0, end: 8)
+        pod_val = kurtosis_id
+      }
+
       # Build the output schema
       .IngressUser = "local"
-      .Namespace = project
-      .Pod = service
+      .Namespace = ns_val
+      .Pod = pod_val
       .Container = container
       .Node = "localhost"
       .Stream = stream

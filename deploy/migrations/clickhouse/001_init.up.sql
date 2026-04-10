@@ -332,7 +332,6 @@ CREATE TABLE IF NOT EXISTS default.beacon_api_eth_v1_events_data_column_sidecar_
     `block_root` FixedString(66) COMMENT 'The beacon block root hash in the beacon API event stream payload' CODEC(ZSTD(1)),
     `column_index` UInt64 COMMENT 'The index of column in the beacon API event stream payload' CODEC(ZSTD(1)),
     `kzg_commitments_count` UInt32 COMMENT 'Number of KZG commitments associated with the record' CODEC(ZSTD(1)),
-    `kzg_commitments` Array(FixedString(98)) COMMENT 'The KZG commitments in the beacon API event stream payload' CODEC(ZSTD(1)),
     `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
     `meta_client_version` LowCardinality(String) COMMENT 'Version of the client that generated the event',
     `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client that generated the event',

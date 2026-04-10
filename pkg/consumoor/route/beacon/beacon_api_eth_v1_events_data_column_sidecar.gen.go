@@ -23,7 +23,6 @@ type beaconApiEthV1EventsDataColumnSidecarBatch struct {
 	BlockRoot                                 route.SafeColFixedStr
 	ColumnIndex                               proto.ColUInt64
 	KzgCommitmentsCount                       proto.ColUInt32
-	KzgCommitments                            *proto.ColArr[[]byte]
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -48,13 +47,8 @@ type beaconApiEthV1EventsDataColumnSidecarBatch struct {
 
 func newbeaconApiEthV1EventsDataColumnSidecarBatch() *beaconApiEthV1EventsDataColumnSidecarBatch {
 	return &beaconApiEthV1EventsDataColumnSidecarBatch{
-		EventDateTime: func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
-		BlockRoot:     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		KzgCommitments: func() *proto.ColArr[[]byte] {
-			var fs route.SafeColFixedStr
-			fs.SetSize(98)
-			return proto.NewArray[[]byte](&fs)
-		}(),
+		EventDateTime:                             func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		BlockRoot:                                 func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		MetaClientIP:                              new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:                    new(proto.ColFloat64).Nullable(),
 		MetaClientGeoLatitude:                     new(proto.ColFloat64).Nullable(),
@@ -125,7 +119,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Input() proto.Input {
 		{Name: "block_root", Data: &b.BlockRoot},
 		{Name: "column_index", Data: &b.ColumnIndex},
 		{Name: "kzg_commitments_count", Data: &b.KzgCommitmentsCount},
-		{Name: "kzg_commitments", Data: b.KzgCommitments},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -159,7 +152,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Reset() {
 	b.BlockRoot.Reset()
 	b.ColumnIndex.Reset()
 	b.KzgCommitmentsCount.Reset()
-	b.KzgCommitments.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
@@ -187,7 +179,7 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Snapshot() []map[string]any
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 30)
+		row := make(map[string]any, 29)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -198,7 +190,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Snapshot() []map[string]any
 		row["block_root"] = string(b.BlockRoot.Row(i))
 		row["column_index"] = b.ColumnIndex.Row(i)
 		row["kzg_commitments_count"] = b.KzgCommitmentsCount.Row(i)
-		row["kzg_commitments"] = route.ByteSlicesToStrings(b.KzgCommitments.Row(i))
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

@@ -1,18 +1,61 @@
 package kafka
 
 import (
+	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"hash"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/xdg-go/scram"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
+
+// xdgSCRAMClient implements sarama.SCRAMClient using the xdg-go/scram library.
+// Sarama requires a SCRAMClientGeneratorFunc to perform the SCRAM handshake;
+// without it the mechanism name is set but authentication always fails.
+type xdgSCRAMClient struct {
+	*scram.Client
+	*scram.ClientConversation
+	scram.HashGeneratorFcn
+}
+
+func (x *xdgSCRAMClient) Begin(userName, password, authzID string) error {
+	client, err := x.HashGeneratorFcn.NewClient(userName, password, authzID)
+	if err != nil {
+		return err
+	}
+
+	x.Client = client
+	x.ClientConversation = client.NewConversation()
+
+	return nil
+}
+
+func (x *xdgSCRAMClient) Step(challenge string) (string, error) {
+	return x.ClientConversation.Step(challenge)
+}
+
+func (x *xdgSCRAMClient) Done() bool {
+	return x.ClientConversation.Done()
+}
+
+// scramSHA256Generator returns a new SCRAM-SHA-256 client.
+func scramSHA256Generator() sarama.SCRAMClient {
+	return &xdgSCRAMClient{HashGeneratorFcn: scram.HashGeneratorFcn(func() hash.Hash { return sha256.New() })}
+}
+
+// scramSHA512Generator returns a new SCRAM-SHA-512 client.
+func scramSHA512Generator() sarama.SCRAMClient {
+	return &xdgSCRAMClient{HashGeneratorFcn: scram.HashGeneratorFcn(func() hash.Hash { return sha512.New() })}
+}
 
 // CompressionStrategy defines the compression codec for Kafka messages.
 type CompressionStrategy string
@@ -250,8 +293,10 @@ func InitSaramaConfig(config *ProducerConfig, maxExportBatchSize int) (*sarama.C
 			c.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		case SASLTypeSCRAMSHA256:
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+			c.Net.SASL.SCRAMClientGeneratorFunc = scramSHA256Generator
 		case SASLTypeSCRAMSHA512:
 			c.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+			c.Net.SASL.SCRAMClientGeneratorFunc = scramSHA512Generator
 		case SASLTypeGSSAPI:
 			c.Net.SASL.Mechanism = sarama.SASLTypeGSSAPI
 		default:

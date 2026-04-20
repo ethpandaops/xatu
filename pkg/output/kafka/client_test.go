@@ -321,15 +321,16 @@ func TestInitSaramaConfig(t *testing.T) {
 
 	t.Run("SASL mechanisms", func(t *testing.T) {
 		tests := []struct {
-			mechanism SASLMechanism
-			want      sarama.SASLMechanism
+			mechanism       SASLMechanism
+			want            sarama.SASLMechanism
+			wantSCRAMClient bool
 		}{
-			{SASLTypeOAuth, sarama.SASLTypeOAuth},
-			{SASLTypeSCRAMSHA256, sarama.SASLTypeSCRAMSHA256},
-			{SASLTypeSCRAMSHA512, sarama.SASLTypeSCRAMSHA512},
-			{SASLTypeGSSAPI, sarama.SASLTypeGSSAPI},
-			{SASLTypePlaintext, sarama.SASLTypePlaintext},
-			{"UNKNOWN", sarama.SASLTypePlaintext},
+			{SASLTypeOAuth, sarama.SASLTypeOAuth, false},
+			{SASLTypeSCRAMSHA256, sarama.SASLTypeSCRAMSHA256, true},
+			{SASLTypeSCRAMSHA512, sarama.SASLTypeSCRAMSHA512, true},
+			{SASLTypeGSSAPI, sarama.SASLTypeGSSAPI, false},
+			{SASLTypePlaintext, sarama.SASLTypePlaintext, false},
+			{"UNKNOWN", sarama.SASLTypePlaintext, false},
 		}
 
 		for _, tt := range tests {
@@ -349,6 +350,17 @@ func TestInitSaramaConfig(t *testing.T) {
 				assert.Equal(t, tt.want, sc.Net.SASL.Mechanism)
 				assert.Equal(t, "user", sc.Net.SASL.User)
 				assert.Equal(t, "pass", sc.Net.SASL.Password)
+
+				if tt.wantSCRAMClient {
+					assert.NotNil(t, sc.Net.SASL.SCRAMClientGeneratorFunc,
+						"SCRAMClientGeneratorFunc must be set for SCRAM mechanisms")
+
+					// Verify the generated client implements sarama.SCRAMClient.
+					client := sc.Net.SASL.SCRAMClientGeneratorFunc()
+					assert.NotNil(t, client)
+				} else {
+					assert.Nil(t, sc.Net.SASL.SCRAMClientGeneratorFunc)
+				}
 			})
 		}
 	})

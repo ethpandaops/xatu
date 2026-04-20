@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,13 +76,52 @@ const clickhouseConfig = `<clickhouse replace="true">
 `
 
 func main() {
-	if err := run(); err != nil {
+	opts, err := parseOptions(os.Args[1:])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "generate: %v\n", err)
+		os.Exit(2)
+	}
+
+	if err := run(opts); err != nil {
 		fmt.Fprintf(os.Stderr, "generate: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+type options struct {
+	migrationMin int
+}
+
+func parseOptions(args []string) (*options, error) {
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
+	}
+
+	fs := flag.NewFlagSet("generate", flag.ContinueOnError)
+
+	var opts options
+
+	fs.IntVar(
+		&opts.migrationMin,
+		"migration-min",
+		0,
+		"minimum numeric migration prefix to apply (e.g. 105 to skip 001-104)",
+	)
+
+	fs.SetOutput(io.Discard)
+
+	if err := fs.Parse(args); err != nil {
+		return nil, err
+	}
+
+	if opts.migrationMin < 0 {
+		return nil, fmt.Errorf("migration-min must be >= 0")
+	}
+
+	return &opts, nil
+}
+
+func run(opts *options) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
@@ -107,7 +148,7 @@ func run() error {
 	// Apply migrations.
 	fmt.Println("Applying migrations...")
 
-	if migrateErr := applyMigrations(ctx, httpPort, root); migrateErr != nil {
+	if migrateErr := applyMigrations(ctx, httpPort, root, opts.migrationMin); migrateErr != nil {
 		return fmt.Errorf("apply migrations: %w", migrateErr)
 	}
 
@@ -263,7 +304,11 @@ func startClickHouse(ctx context.Context) (
 
 // applyMigrations reads all *.up.sql files from the migrations directory,
 // splits each on semicolons, and POSTs each statement to ClickHouse HTTP.
-func applyMigrations(ctx context.Context, httpPort, root string) error {
+func applyMigrations(
+	ctx context.Context,
+	httpPort, root string,
+	migrationMin int,
+) error {
 	migrationsDir := filepath.Join(root, "deploy", "migrations", "clickhouse")
 
 	entries, err := os.ReadDir(migrationsDir)
@@ -284,26 +329,95 @@ func applyMigrations(ctx context.Context, httpPort, root string) error {
 
 	chURL := fmt.Sprintf("http://localhost:%s/", httpPort)
 
+	appliedFiles := 0
+	skippedFiles := 0
+	totalStatements := 0
+
 	for _, name := range files {
+		version, parseErr := migrationVersion(name)
+		if parseErr != nil {
+			return parseErr
+		}
+
+		if version < migrationMin {
+			skippedFiles++
+			fmt.Printf("  - skip %s (version %d < migration-min %d)\n", name, version, migrationMin)
+
+			continue
+		}
+
 		data, readErr := os.ReadFile(filepath.Join(migrationsDir, name))
 		if readErr != nil {
 			return fmt.Errorf("read %s: %w", name, readErr)
 		}
 
-		stmts := strings.Split(string(data), ";")
+		sqlText := normalizeEscapedSQL(string(data))
+		stmts := splitSQLStatements(sqlText)
+		executableCount := 0
+
 		for _, stmt := range stmts {
-			stmt = strings.TrimSpace(stmt)
-			if stmt == "" {
+			if hasExecutableSQL(stmt) {
+				executableCount++
+			}
+		}
+
+		fmt.Printf("  - apply %s (%d statements)\n", name, executableCount)
+
+		for _, stmt := range stmts {
+			if !hasExecutableSQL(stmt) {
 				continue
 			}
 
 			if execErr := execClickHouseHTTP(ctx, chURL, stmt); execErr != nil {
 				return fmt.Errorf("exec %s: %w", name, execErr)
 			}
+
+			totalStatements++
 		}
+
+		appliedFiles++
 	}
 
+	fmt.Printf(
+		"Migrations complete: applied %d file(s), skipped %d file(s), executed %d statement(s)\n",
+		appliedFiles,
+		skippedFiles,
+		totalStatements,
+	)
+
 	return nil
+}
+
+func migrationVersion(filename string) (int, error) {
+	dot := strings.IndexByte(filename, '_')
+	if dot <= 0 {
+		return 0, fmt.Errorf("invalid migration filename %q: missing numeric prefix", filename)
+	}
+
+	v, err := strconv.Atoi(filename[:dot])
+	if err != nil {
+		return 0, fmt.Errorf("invalid migration filename %q: %w", filename, err)
+	}
+
+	return v, nil
+}
+
+// normalizeEscapedSQL decodes SQL dumps that were written with escaped
+// newlines/quotes (e.g. "\\n", "\\r\\n", "\\'"), producing executable SQL.
+func normalizeEscapedSQL(sql string) string {
+	if strings.Contains(sql, `\r\n`) {
+		sql = strings.ReplaceAll(sql, `\r\n`, "\n")
+	}
+
+	if strings.Contains(sql, `\n`) {
+		sql = strings.ReplaceAll(sql, `\n`, "\n")
+	}
+
+	if strings.Contains(sql, `\'`) {
+		sql = strings.ReplaceAll(sql, `\'`, "'")
+	}
+
+	return sql
 }
 
 // discoverTables queries ClickHouse for all *_local tables in the default
@@ -405,4 +519,238 @@ func toLowerCamel(s string) string {
 	}
 
 	return strings.Join(parts, "")
+}
+
+// splitSQLStatements splits SQL text into statements on semicolons while
+// respecting quoted strings and comments.
+func splitSQLStatements(sql string) []string {
+	stmts := make([]string, 0, 64)
+	var buf strings.Builder
+
+	const (
+		stateNormal = iota
+		stateSingleQuote
+		stateDoubleQuote
+		stateBacktick
+		stateLineComment
+		stateBlockComment
+	)
+
+	state := stateNormal
+
+	for i := 0; i < len(sql); i++ {
+		ch := sql[i]
+
+		switch state {
+		case stateNormal:
+			switch {
+			case ch == '\'':
+				state = stateSingleQuote
+				buf.WriteByte(ch)
+			case ch == '"':
+				state = stateDoubleQuote
+				buf.WriteByte(ch)
+			case ch == '`':
+				state = stateBacktick
+				buf.WriteByte(ch)
+			case isLineCommentStart(sql, i):
+				state = stateLineComment
+				buf.WriteByte(ch)
+				if ch == '-' {
+					i++
+					buf.WriteByte(sql[i])
+				}
+			case ch == '/' && i+1 < len(sql) && sql[i+1] == '*':
+				state = stateBlockComment
+				buf.WriteByte(ch)
+				i++
+				buf.WriteByte(sql[i])
+			case ch == ';':
+				stmt := strings.TrimSpace(buf.String())
+				if stmt != "" {
+					stmts = append(stmts, stmt)
+				}
+				buf.Reset()
+			default:
+				buf.WriteByte(ch)
+			}
+		case stateSingleQuote:
+			buf.WriteByte(ch)
+			if ch == '\\' && i+1 < len(sql) {
+				i++
+				buf.WriteByte(sql[i])
+				continue
+			}
+
+			if ch == '\'' {
+				// SQL escaped quote: ''.
+				if i+1 < len(sql) && sql[i+1] == '\'' {
+					i++
+					buf.WriteByte(sql[i])
+					continue
+				}
+
+				state = stateNormal
+			}
+		case stateDoubleQuote:
+			buf.WriteByte(ch)
+			if ch == '\\' && i+1 < len(sql) {
+				i++
+				buf.WriteByte(sql[i])
+				continue
+			}
+
+			if ch == '"' {
+				if i+1 < len(sql) && sql[i+1] == '"' {
+					i++
+					buf.WriteByte(sql[i])
+					continue
+				}
+
+				state = stateNormal
+			}
+		case stateBacktick:
+			buf.WriteByte(ch)
+			if ch == '`' {
+				state = stateNormal
+			}
+		case stateLineComment:
+			buf.WriteByte(ch)
+			if ch == '\n' {
+				state = stateNormal
+			}
+		case stateBlockComment:
+			buf.WriteByte(ch)
+			if ch == '*' && i+1 < len(sql) && sql[i+1] == '/' {
+				i++
+				buf.WriteByte(sql[i])
+				state = stateNormal
+			}
+		}
+	}
+
+	tail := strings.TrimSpace(buf.String())
+	if tail != "" {
+		stmts = append(stmts, tail)
+	}
+
+	return stmts
+}
+
+func hasExecutableSQL(stmt string) bool {
+	return strings.TrimSpace(stripSQLComments(stmt)) != ""
+}
+
+func stripSQLComments(sql string) string {
+	var buf strings.Builder
+
+	const (
+		stateNormal = iota
+		stateSingleQuote
+		stateDoubleQuote
+		stateBacktick
+		stateLineComment
+		stateBlockComment
+	)
+
+	state := stateNormal
+
+	for i := 0; i < len(sql); i++ {
+		ch := sql[i]
+
+		switch state {
+		case stateNormal:
+			switch {
+			case ch == '\'':
+				state = stateSingleQuote
+				buf.WriteByte(ch)
+			case ch == '"':
+				state = stateDoubleQuote
+				buf.WriteByte(ch)
+			case ch == '`':
+				state = stateBacktick
+				buf.WriteByte(ch)
+			case isLineCommentStart(sql, i):
+				state = stateLineComment
+				if ch == '-' {
+					i++
+				}
+			case ch == '/' && i+1 < len(sql) && sql[i+1] == '*':
+				state = stateBlockComment
+				i++
+			default:
+				buf.WriteByte(ch)
+			}
+		case stateSingleQuote:
+			buf.WriteByte(ch)
+			if ch == '\\' && i+1 < len(sql) {
+				i++
+				buf.WriteByte(sql[i])
+				continue
+			}
+
+			if ch == '\'' {
+				if i+1 < len(sql) && sql[i+1] == '\'' {
+					i++
+					buf.WriteByte(sql[i])
+					continue
+				}
+
+				state = stateNormal
+			}
+		case stateDoubleQuote:
+			buf.WriteByte(ch)
+			if ch == '\\' && i+1 < len(sql) {
+				i++
+				buf.WriteByte(sql[i])
+				continue
+			}
+
+			if ch == '"' {
+				if i+1 < len(sql) && sql[i+1] == '"' {
+					i++
+					buf.WriteByte(sql[i])
+					continue
+				}
+
+				state = stateNormal
+			}
+		case stateBacktick:
+			buf.WriteByte(ch)
+			if ch == '`' {
+				state = stateNormal
+			}
+		case stateLineComment:
+			if ch == '\n' {
+				buf.WriteByte(ch)
+				state = stateNormal
+			}
+		case stateBlockComment:
+			if ch == '*' && i+1 < len(sql) && sql[i+1] == '/' {
+				i++
+				state = stateNormal
+			}
+		}
+	}
+
+	return buf.String()
+}
+
+func isLineCommentStart(sql string, i int) bool {
+	if sql[i] == '#' {
+		return true
+	}
+
+	if sql[i] != '-' || i+1 >= len(sql) || sql[i+1] != '-' {
+		return false
+	}
+
+	// Treat "--" as a comment start only when followed by whitespace/line end.
+	if i+2 >= len(sql) {
+		return true
+	}
+
+	next := sql[i+2]
+
+	return next == ' ' || next == '\t' || next == '\n' || next == '\r'
 }

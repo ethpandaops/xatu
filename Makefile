@@ -1,7 +1,7 @@
 .PHONY: consumoor
 consumoor:
 	@echo "Generating consumoor route code (requires Docker)..."
-	go run ./pkg/consumoor/route/cmd/generate
+	go run ./pkg/consumoor/route/cmd/generate -migration-min $(if $(MIGRATION_MIN),$(MIGRATION_MIN),0)
 
 proto:
 	@echo "Buf generate:" ; \

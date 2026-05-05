@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

@@ -3,7 +3,7 @@ package source
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 

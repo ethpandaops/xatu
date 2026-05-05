@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	xtls "github.com/ethpandaops/xatu/pkg/consumoor/tls"
+	xtls "github.com/ethpandaops/xatu/pkg/clickhouse/tls"
 )
 
 // Supported SASL mechanism values.

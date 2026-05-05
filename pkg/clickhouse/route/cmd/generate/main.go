@@ -124,7 +124,7 @@ func run() error {
 	rowgenBin := filepath.Join(tmpDir, "chgo-rowgen")
 
 	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", rowgenBin,
-		"./pkg/consumoor/route/cmd/chgo-rowgen")
+		"./pkg/clickhouse/route/cmd/chgo-rowgen")
 	buildCmd.Dir = root
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
@@ -148,7 +148,7 @@ func run() error {
 	// Generate all tables.
 	dsn := fmt.Sprintf("clickhouse://localhost:%s/default", nativePort)
 	tablesDir := filepath.Join(root,
-		"pkg", "consumoor", "route")
+		"pkg", "clickhouse", "route")
 
 	generated := 0
 	scaffolded := 0

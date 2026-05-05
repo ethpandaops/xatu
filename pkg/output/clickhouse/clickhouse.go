@@ -34,14 +34,28 @@ import (
 // SinkType identifies this sink in output.Config.
 const SinkType = "clickhouse"
 
+var _ outputSink = (*Sink)(nil)
+
+// outputSink mirrors output.Sink's contract so we can assert compile-time
+// compliance without importing pkg/output (which would cause a cycle).
+type outputSink interface {
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
+	Type() string
+	Name() string
+	HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error
+	HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error
+}
+
 // Sink writes DecoratedEvents straight to ClickHouse, bypassing the
 // xatu server / Kafka path.
 type Sink struct {
-	name   string
-	log    logrus.FieldLogger
-	writer *chwriter.Writer
-	router *chrouter.Engine
-	filter xatu.EventFilter
+	name             string
+	log              logrus.FieldLogger
+	writer           *chwriter.Writer
+	router           *chrouter.Engine
+	filter           xatu.EventFilter
+	restrictPrefixes []string
 }
 
 // New constructs a clickhouse sink. shippingMethod is accepted for
@@ -106,11 +120,12 @@ func New(
 	}
 
 	return &Sink{
-		name:   name,
-		log:    sLog,
-		writer: writer,
-		router: router,
-		filter: filter,
+		name:             name,
+		log:              sLog,
+		writer:           writer,
+		router:           router,
+		filter:           filter,
+		restrictPrefixes: append([]string(nil), config.RestrictToTablePrefixes...),
 	}, nil
 }
 
@@ -172,6 +187,14 @@ func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 				tableEvents[r.Table] = append(tableEvents[r.Table], event)
 			}
 		case chrouter.StatusErrored:
+			if len(s.restrictPrefixes) > 0 {
+				return fmt.Errorf(
+					"no route registered for event %s (route catalog restricted to prefixes %v) — refusing to advance",
+					event.GetEvent().GetName(),
+					s.restrictPrefixes,
+				)
+			}
+
 			return fmt.Errorf(
 				"no route registered for event %s — refusing to advance",
 				event.GetEvent().GetName(),

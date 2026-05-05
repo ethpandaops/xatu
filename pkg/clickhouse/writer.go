@@ -175,10 +175,31 @@ func (w *Writer) Start(ctx context.Context) error {
 	}
 
 	if err := w.ValidateTables(ctx, routeTableNames); err != nil {
+		w.cleanupStartFailure()
+
 		return fmt.Errorf("validating clickhouse tables: %w", err)
 	}
 
 	return nil
+}
+
+// cleanupStartFailure tears down resources that Start opened (pool +
+// pool-metrics goroutine) when a later step in Start fails. Without this,
+// the goroutine and pool would leak and a retried Start would early-return
+// success because w.pool is non-nil.
+func (w *Writer) cleanupStartFailure() {
+	if w.poolMetricsDone != nil {
+		close(w.poolMetricsDone)
+		w.poolMetricsWG.Wait()
+
+		w.poolMetricsDone = nil
+	}
+
+	if pool := w.getPool(); pool != nil {
+		pool.Close()
+	}
+
+	w.setPool(nil)
 }
 
 // Ping checks connectivity to the ClickHouse pool.

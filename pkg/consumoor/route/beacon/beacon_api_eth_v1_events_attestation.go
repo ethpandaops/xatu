@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -80,6 +81,8 @@ func (b *beaconApiEthV1EventsAttestationBatch) validate(event *xatu.DecoratedEve
 }
 
 func (b *beaconApiEthV1EventsAttestationBatch) appendRuntime(event *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+
 	if ts := event.GetEvent().GetDateTime(); ts != nil {
 		b.EventDateTime.Append(ts.AsTime())
 	} else {
@@ -111,7 +114,7 @@ func (b *beaconApiEthV1EventsAttestationBatch) appendPayload(event *xatu.Decorat
 	}
 
 	if committeeIndex := data.GetIndex(); committeeIndex != nil {
-		b.CommitteeIndex.Append(fmt.Sprint(committeeIndex.GetValue()))
+		b.CommitteeIndex.Append(strconv.FormatUint(committeeIndex.GetValue(), 10))
 	} else {
 		b.CommitteeIndex.Append("")
 	}
@@ -185,7 +188,7 @@ func (b *beaconApiEthV1EventsAttestationBatch) appendAdditionalData(event *xatu.
 		}
 
 		if ci := av.GetCommitteeIndex(); ci != nil {
-			b.AttestingValidatorCommitteeIndex.Append(fmt.Sprint(ci.GetValue()))
+			b.AttestingValidatorCommitteeIndex.Append(strconv.FormatUint(ci.GetValue(), 10))
 		} else {
 			b.AttestingValidatorCommitteeIndex.Append("")
 		}

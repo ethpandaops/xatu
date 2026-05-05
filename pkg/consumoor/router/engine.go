@@ -1,11 +1,15 @@
 package router
 
 import (
+	"time"
+
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )
+
+const logSampleInterval = 30 * time.Second
 
 // Result holds the routing decision for a single event: the target
 // table name and the route that will handle flattening.
@@ -31,7 +35,8 @@ type Engine struct {
 	// produces multiple.
 	routesByEvent map[xatu.Event_Name][]route.Route
 
-	metrics *telemetry.Metrics
+	metrics    *telemetry.Metrics
+	logSampler *telemetry.LogSampler
 }
 
 // New creates a routing engine with the given routes.
@@ -45,6 +50,7 @@ func New(
 		log:           log.WithField("component", "router"),
 		routesByEvent: make(map[xatu.Event_Name][]route.Route, len(routes)),
 		metrics:       metrics,
+		logSampler:    telemetry.NewLogSampler(logSampleInterval),
 	}
 
 	disabled := make(map[xatu.Event_Name]struct{}, len(disabledEvents))
@@ -80,14 +86,46 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 
 	eventName := event.GetEvent().GetName()
 
-	// Look up routes for this event.
+	// Look up routes for this event. Intentionally unsupported events
+	// are dropped (status delivered, no rows). Unknown/unexpected event
+	// types are NAK'd (StatusErrored) so Kafka does not advance offsets,
+	// preventing silent data loss when new event types appear before a
+	// matching route is deployed.
 	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
-		if r.metrics != nil {
-			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+		if reason, intentionallyUnsupported := route.UnsupportedReason(eventName); intentionallyUnsupported {
+			if r.metrics != nil {
+				r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()
+			}
+
+			if ok, suppressed := r.logSampler.Allow("drop:" + eventName.String()); ok {
+				entry := r.log.
+					WithField("event_name", eventName.String()).
+					WithField("reason", reason)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Debug("No route registered for intentionally unsupported event — dropping")
+			}
+
+			return Outcome{Status: StatusDelivered}
 		}
 
-		return Outcome{Status: StatusDelivered}
+		if r.metrics != nil {
+			r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_route_nack").Inc()
+		}
+
+		if ok, suppressed := r.logSampler.Allow(eventName.String()); ok {
+			entry := r.log.WithField("event_name", eventName.String())
+			if suppressed > 0 {
+				entry = entry.WithField("suppressed", suppressed)
+			}
+
+			entry.Warn("No route registered for event — messages will be NAK'd until a matching route is deployed")
+		}
+
+		return Outcome{Status: StatusErrored}
 	}
 
 	results := make([]Result, 0, len(routesForEvent))
@@ -111,6 +149,13 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	if r.metrics != nil {
 		for _, result := range results {
 			r.metrics.MessagesRouted().WithLabelValues(eventName.String(), result.Table).Inc()
+		}
+
+		if ts := event.GetEvent().GetDateTime(); ts != nil {
+			lag := time.Since(ts.AsTime()).Seconds()
+			if lag >= 0 {
+				r.metrics.EventLag().WithLabelValues(eventName.String()).Observe(lag)
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 
 	"github.com/creasty/defaults"
@@ -36,12 +37,13 @@ func createConsumoorOverride(config ConsumoorOverrideConfig) ConsumoorOverride {
 		Setter: func(cmd *cobra.Command, overrides *consumoor.Override) error {
 			val := ""
 
-			if cmd.Flags().Changed(config.FlagName) {
-				val = cmd.Flags().Lookup(config.FlagName).Value.String()
-			}
-
+			// Precedence: flag > env > config file.
 			if os.Getenv(config.EnvName) != "" {
 				val = os.Getenv(config.EnvName)
+			}
+
+			if cmd.Flags().Changed(config.FlagName) {
+				val = cmd.Flags().Lookup(config.FlagName).Value.String()
 			}
 
 			if val == "" {
@@ -134,7 +136,10 @@ func loadConsumoorConfigFromFile(file string) (*consumoor.Config, error) {
 
 	type plain consumoor.Config
 
-	if err := yaml.Unmarshal(yamlFile, (*plain)(config)); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(yamlFile))
+	dec.KnownFields(true)
+
+	if err := dec.Decode((*plain)(config)); err != nil {
 		return nil, err
 	}
 

@@ -210,7 +210,7 @@ func (b *libp2pRpcDataColumnCustodyProbeBatch) appendPayload(
 		b.Error.Append(proto.Nullable[string]{})
 	}
 
-	// Compute peer_id_unique_key, preferring client metadata over payload.
+	// Compute peer_id_unique_key from metadata only (matching Vector behavior).
 	peerID := ""
 
 	if event.GetMeta() != nil && event.GetMeta().GetClient() != nil {
@@ -221,10 +221,10 @@ func (b *libp2pRpcDataColumnCustodyProbeBatch) appendPayload(
 		}
 	}
 
-	if peerID == "" {
-		peerID = wrappedStringValue(payload.GetPeerId())
+	if peerID != "" {
+		networkName := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName()
+		b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
+	} else {
+		b.PeerIDUniqueKey.Append(0)
 	}
-
-	networkName := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName()
-	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 }

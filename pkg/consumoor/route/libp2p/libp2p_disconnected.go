@@ -101,15 +101,15 @@ func (b *libp2pDisconnectedBatch) appendPayload(
 		b.RemoteTransportProtocol.Append(addr.Transport)
 
 		if addr.Port > 0 {
-			b.RemotePort.Append(uint16(addr.Port)) //nolint:gosec // port fits uint16
+			b.RemotePort.Append(chProto.NewNullable[uint16](uint16(addr.Port))) //nolint:gosec // port fits uint16
 		} else {
-			b.RemotePort.Append(0)
+			b.RemotePort.Append(chProto.Nullable[uint16]{})
 		}
 	} else {
 		b.RemoteProtocol.Append("")
 		b.RemoteIP.Append(chProto.Nullable[chProto.IPv6]{})
 		b.RemoteTransportProtocol.Append("")
-		b.RemotePort.Append(0)
+		b.RemotePort.Append(chProto.Nullable[uint16]{})
 	}
 
 	// Parse agent version fields.

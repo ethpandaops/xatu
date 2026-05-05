@@ -20,22 +20,8 @@ import (
 )
 
 func TestRegistryCoversAllKnownEvents(t *testing.T) {
-	// Explicitly document events consumoor intentionally does not flatten yet.
-	unsupported := map[xatu.Event_Name]string{
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:             "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2:          "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:       "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2:    "debug stream not modeled as table output",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION:            "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK:                  "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG:            "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF: "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT:   "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD:                   "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:         "deprecated in favor of V2 event",
-		xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK:                  "deprecated in favor of V2 event",
-		xatu.Event_BEACON_P2P_ATTESTATION:                          "legacy event path not consumed by consumoor",
-	}
+	// Explicitly documented events consumoor intentionally does not flatten.
+	unsupported := route.UnsupportedEvents()
 
 	covered := make(map[xatu.Event_Name]struct{}, 128)
 

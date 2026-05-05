@@ -1,6 +1,7 @@
 package consumoor
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -30,6 +31,10 @@ type Config struct {
 
 // Validate checks the configuration for errors.
 func (c *Config) Validate() error {
+	if c.MetricsAddr == "" {
+		return errors.New("metricsAddr is required")
+	}
+
 	if err := c.Kafka.Validate(); err != nil {
 		return err
 	}

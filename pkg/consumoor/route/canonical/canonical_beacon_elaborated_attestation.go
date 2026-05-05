@@ -1,7 +1,7 @@
 package canonical
 
 import (
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -61,7 +61,7 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 			b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
 
 			if index := data.GetIndex(); index != nil {
-				b.CommitteeIndex.Append(fmt.Sprintf("%d", index.GetValue()))
+				b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
 			} else {
 				b.CommitteeIndex.Append("")
 			}
@@ -109,7 +109,18 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 		b.TargetRoot.Append(nil)
 	}
 
-	// Additional data fields (including Slot which overrides the payload slot).
+	// Slot from payload (matching Vector: .slot = .data.data.slot).
+	if attestation != nil && attestation.GetData() != nil {
+		if slot := attestation.GetData().GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue()))
+		} else {
+			b.Slot.Append(0)
+		}
+	} else {
+		b.Slot.Append(0)
+	}
+
+	// Additional data fields.
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockElaboratedAttestation()
 	if additional == nil {
 		b.BlockSlot.Append(0)
@@ -118,7 +129,6 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 		b.BlockEpochStartDateTime.Append(time.Time{})
 		b.BlockRoot.Append(nil)
 		b.PositionInBlock.Append(0)
-		b.Slot.Append(0)
 		b.SlotStartDateTime.Append(time.Time{})
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
@@ -137,6 +147,16 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 		b.PositionInBlock.Append(0)
 	}
 
+	if slotData := additional.GetSlot(); slotData != nil {
+		if startDateTime := slotData.GetStartDateTime(); startDateTime != nil {
+			b.SlotStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.SlotStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.SlotStartDateTime.Append(time.Time{})
+	}
+
 	if epochData := additional.GetEpoch(); epochData != nil {
 		if epochNumber := epochData.GetNumber(); epochNumber != nil {
 			b.Epoch.Append(uint32(epochNumber.GetValue()))
@@ -152,23 +172,6 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 	} else {
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
-	}
-
-	if slotData := additional.GetSlot(); slotData != nil {
-		if slotNumber := slotData.GetNumber(); slotNumber != nil {
-			b.Slot.Append(uint32(slotNumber.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if startDateTime := slotData.GetStartDateTime(); startDateTime != nil {
-			b.SlotStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.SlotStartDateTime.Append(time.Time{})
-		}
-	} else {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
 	}
 
 	if source := additional.GetSource(); source != nil {

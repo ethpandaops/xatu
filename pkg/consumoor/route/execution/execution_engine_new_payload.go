@@ -102,7 +102,7 @@ func (b *executionEngineNewPayloadBatch) appendPayload(event *xatu.DecoratedEven
 	}
 
 	if durationMs := payload.GetDurationMs(); durationMs != nil {
-		b.DurationMs.Append(uint32(durationMs.GetValue())) //nolint:gosec // duration fits uint32
+		b.DurationMs.Append(durationMs.GetValue())
 	} else {
 		b.DurationMs.Append(0)
 	}

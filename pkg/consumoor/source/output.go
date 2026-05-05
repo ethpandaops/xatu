@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
@@ -19,6 +20,7 @@ const (
 	rejectReasonDecode         = "decode_error"
 	rejectReasonRouteRejected  = "route_rejected"
 	rejectReasonWritePermanent = "write_permanent"
+	rejectReasonInvalidEvent   = "invalid_event"
 )
 
 var errBatchWriteFailed = errors.New("clickhouse batch write failed")
@@ -38,13 +40,20 @@ type eventGroup struct {
 }
 
 type xatuClickHouseOutput struct {
-	log        logrus.FieldLogger
-	encoding   string
-	router     *router.Engine
-	writer     Writer
-	metrics    *telemetry.Metrics
-	rejectSink rejectSink
-	ownsWriter bool
+	log              logrus.FieldLogger
+	encoding         string
+	router           *router.Engine
+	writer           Writer
+	metrics          *telemetry.Metrics
+	rejectSink       rejectSink
+	ownsWriter       bool
+	outputBatchCount int
+	logSampler       *telemetry.LogSampler
+
+	// Group-level retry config for partial table failures.
+	groupRetryMaxAttempts int
+	groupRetryBaseDelay   time.Duration
+	groupRetryMaxDelay    time.Duration
 
 	mu      sync.Mutex
 	started bool
@@ -83,11 +92,35 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		return ctx.Err()
 	}
 
+	// Record which trigger caused this batch flush.
+	// Each Benthos stream is per-topic, so the first message's topic is
+	// representative of the entire batch.
+	topic := kafkaMetadata(msgs[0]).Topic
+
+	trigger := "timeout"
+	if o.outputBatchCount > 0 && len(msgs) >= o.outputBatchCount {
+		trigger = "count"
+	}
+
+	o.metrics.BatchFlushTrigger().WithLabelValues(topic, trigger).Inc()
+
 	var batchErr *service.BatchError
 
-	groups := make(map[xatu.Event_Name]*eventGroup, 16)
+	pooledEvents := make([]*xatu.DecoratedEvent, 0, len(msgs))
 
-	// Phase 1: decode, route, and group by event type.
+	defer func() {
+		for _, ev := range pooledEvents {
+			ev.ReturnToVTPool()
+		}
+	}()
+
+	// Decode, route, and group by target table in a single pass. Each
+	// table group is processed independently so a write failure for table
+	// A cannot NAK messages destined only for table B. Messages that fan
+	// out to multiple tables appear in multiple groups — each is flushed
+	// and error-attributed independently.
+	tableGroups := make(map[string]*eventGroup, 16)
+
 	for i, msg := range msgs {
 		kafka := kafkaMetadata(msg)
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
@@ -95,9 +128,18 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		raw, err := msg.AsBytes()
 		if err != nil {
 			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
-			o.log.WithError(err).
-				WithField("topic", kafka.Topic).
-				Warn("Failed to read message bytes")
+
+			if ok, suppressed := o.logSampler.Allow("read_bytes:" + kafka.Topic); ok {
+				entry := o.log.WithError(err).
+					WithField("topic", kafka.Topic).
+					WithField("partition", kafka.Partition).
+					WithField("offset", kafka.Offset)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Warn("Failed to read message bytes")
+			}
 
 			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason: rejectReasonDecode,
@@ -113,9 +155,18 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		event, err := decodeDecoratedEvent(o.encoding, raw)
 		if err != nil {
 			o.metrics.DecodeErrors().WithLabelValues(kafka.Topic).Inc()
-			o.log.WithError(err).
-				WithField("topic", kafka.Topic).
-				Warn("Failed to decode message")
+
+			if ok, suppressed := o.logSampler.Allow("decode:" + kafka.Topic); ok {
+				entry := o.log.WithError(err).
+					WithField("topic", kafka.Topic).
+					WithField("partition", kafka.Partition).
+					WithField("offset", kafka.Offset)
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Warn("Failed to decode message")
+			}
 
 			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason:  rejectReasonDecode,
@@ -128,6 +179,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			continue
 		}
+
+		pooledEvents = append(pooledEvents, event)
 
 		outcome := o.router.Route(event)
 
@@ -147,45 +200,34 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 		if outcome.Status == router.StatusErrored {
 			batchErr = addBatchFailure(
-				batchErr, msgs, i, errors.New("route errored"),
+				batchErr, msgs, i, fmt.Errorf(
+					"no route registered for event %s — offset will not advance until a route is deployed",
+					event.GetEvent().GetName(),
+				),
 			)
 
 			continue
 		}
 
-		if len(outcome.Results) == 0 {
-			continue
-		}
-
-		tables := make([]string, len(outcome.Results))
-		for j, result := range outcome.Results {
-			tables[j] = result.Table
-		}
-
-		eventName := event.GetEvent().GetName()
-
-		g, ok := groups[eventName]
-		if !ok {
-			g = &eventGroup{
-				messages: make([]groupMessage, 0, 8),
+		for _, result := range outcome.Results {
+			tg, ok := tableGroups[result.Table]
+			if !ok {
+				tg = &eventGroup{messages: make([]groupMessage, 0, 8)}
+				tableGroups[result.Table] = tg
 			}
-			groups[eventName] = g
-		}
 
-		g.messages = append(g.messages, groupMessage{
-			batchIndex: i,
-			raw:        append([]byte(nil), raw...),
-			event:      event,
-			kafka:      kafka,
-			tables:     tables,
-		})
+			tg.messages = append(tg.messages, groupMessage{
+				batchIndex: i,
+				raw:        raw,
+				event:      event,
+				kafka:      kafka,
+				tables:     []string{result.Table},
+			})
+		}
 	}
 
-	// Phase 2: process each event group independently.
-	for _, g := range groups {
-		if err := o.processGroup(ctx, msgs, g); err != nil {
-			batchErr = err
-		}
+	for _, tg := range tableGroups {
+		batchErr = o.processGroup(ctx, msgs, batchErr, tg)
 	}
 
 	if batchErr != nil {
@@ -224,45 +266,120 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 	return rejectErr
 }
 
-// processGroup writes all messages in the group to their target tables, then
-// flushes only those tables. On failure the entire group is NAK'd or DLQ'd.
+// processGroup writes all messages in the group to their target table and
+// handles error attribution. Each group targets exactly one table (callers
+// split fanout events into per-table groups), so failure in one table
+// cannot affect messages destined for a different table.
+//
+// The caller's accumulated batchErr is threaded through so that failures
+// from earlier phases (e.g. decode errors) are preserved.
+//
+// Transient failures are retried with exponential backoff.
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,
+	batchErr *service.BatchError,
 	g *eventGroup,
 ) *service.BatchError {
-	// Collect the unique set of tables for this group.
-	tableSet := make(map[string]struct{}, 4)
-
+	tableEvents := make(map[string][]*xatu.DecoratedEvent, 4)
 	for _, gm := range g.messages {
 		for _, table := range gm.tables {
-			tableSet[table] = struct{}{}
-		}
-
-		for _, table := range gm.tables {
-			o.writer.Write(table, gm.event)
+			tableEvents[table] = append(tableEvents[table], gm.event)
 		}
 	}
 
-	tables := make([]string, 0, len(tableSet))
-	for t := range tableSet {
-		tables = append(tables, t)
+	var (
+		allInvalidEvents []*xatu.DecoratedEvent
+		lastResult       *clickhouse.FlushResult
+	)
+
+	// Group-level retry loop for partial table failures.
+	for attempt := range o.groupRetryMaxAttempts + 1 {
+		if attempt > 0 && len(tableEvents) > 0 {
+			delay := min(
+				o.groupRetryBaseDelay*time.Duration(1<<(attempt-1)),
+				o.groupRetryMaxDelay,
+			)
+
+			o.log.WithFields(logrus.Fields{
+				"attempt":       attempt,
+				"max_attempts":  o.groupRetryMaxAttempts,
+				"delay":         delay,
+				"failed_tables": len(tableEvents),
+			}).Warn("Retrying failed tables with backoff")
+
+			o.metrics.GroupRetries().WithLabelValues(
+				g.messages[0].event.GetEvent().GetName().String(),
+			).Inc()
+
+			select {
+			case <-ctx.Done():
+				for _, gm := range g.messages {
+					batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, ctx.Err())
+				}
+
+				return batchErr
+			case <-time.After(delay):
+			}
+		}
+
+		result := o.writer.FlushTableEvents(ctx, tableEvents)
+		lastResult = result
+
+		if len(result.InvalidEvents) > 0 {
+			allInvalidEvents = append(allInvalidEvents, result.InvalidEvents...)
+		}
+
+		// All tables succeeded.
+		if len(result.TableErrors) == 0 {
+			break
+		}
+
+		// Check if any failures are permanent — don't retry those.
+		anyTransient := false
+
+		for _, tErr := range result.TableErrors {
+			if !clickhouse.IsPermanentWriteError(tErr) {
+				anyTransient = true
+
+				break
+			}
+		}
+
+		if !anyTransient {
+			break
+		}
+
+		// Remove succeeded tables from the retry set.
+		remaining := make(map[string][]*xatu.DecoratedEvent, len(result.TableErrors))
+
+		for table := range result.TableErrors {
+			if events, ok := tableEvents[table]; ok {
+				remaining[table] = events
+			}
+		}
+
+		tableEvents = remaining
 	}
 
-	err := o.writer.FlushTables(ctx, tables)
+	// DLQ invalid events individually. Deduplicate by event pointer since
+	// the same event can appear in multiple tables' invalid lists due to fanout.
+	batchErr = o.dlqInvalidEvents(ctx, msgs, batchErr, g, allInvalidEvents)
+
+	err := lastResult.Err()
 	if err == nil {
-		return nil
+		return batchErr
 	}
 
 	// Flush failed — attribute to all messages in the group.
-	var batchErr *service.BatchError
-
 	if clickhouse.IsPermanentWriteError(err) {
 		for _, gm := range g.messages {
+			// Copy raw bytes only when needed for DLQ; the success path
+			// avoids the copy entirely by referencing the Benthos-owned slice.
 			rejectErr := o.rejectMessage(ctx, &rejectedRecord{
 				Reason:    rejectReasonWritePermanent,
 				Err:       err.Error(),
-				Payload:   gm.raw,
+				Payload:   append([]byte(nil), gm.raw...),
 				EventName: gm.event.GetEvent().GetName().String(),
 				Kafka:     gm.kafka,
 			})
@@ -274,12 +391,58 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 
 		o.log.WithError(err).
-			Warn("Dropped permanently invalid rows during group flush")
+			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).
+			Warn("Permanent write error during group flush")
 	} else {
 		for _, gm := range g.messages {
 			batchErr = addBatchFailure(
 				batchErr, msgs, gm.batchIndex, err,
 			)
+		}
+	}
+
+	return batchErr
+}
+
+// dlqInvalidEvents sends invalid events to the DLQ, deduplicating by event
+// pointer to handle fanout where the same event appears in multiple tables.
+func (o *xatuClickHouseOutput) dlqInvalidEvents(
+	ctx context.Context,
+	msgs service.MessageBatch,
+	batchErr *service.BatchError,
+	g *eventGroup,
+	invalidEvents []*xatu.DecoratedEvent,
+) *service.BatchError {
+	if len(invalidEvents) == 0 {
+		return batchErr
+	}
+
+	seen := make(map[*xatu.DecoratedEvent]struct{}, len(invalidEvents))
+
+	for _, ev := range invalidEvents {
+		if _, dup := seen[ev]; dup {
+			continue
+		}
+
+		seen[ev] = struct{}{}
+
+		for _, gm := range g.messages {
+			if gm.event != ev {
+				continue
+			}
+
+			rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+				Reason:    rejectReasonInvalidEvent,
+				Err:       "invalid event: permanently unflattenable",
+				Payload:   append([]byte(nil), gm.raw...),
+				EventName: ev.GetEvent().GetName().String(),
+				Kafka:     gm.kafka,
+			})
+			if rejectErr != nil {
+				batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, rejectErr)
+			}
+
+			break
 		}
 	}
 
@@ -303,9 +466,11 @@ func (o *xatuClickHouseOutput) rejectMessage(
 			return nil
 		}
 
-		// For all other reasons (decode errors, permanent write failures)
-		// failing the message forces Kafka to redeliver rather than
-		// silently dropping data when no DLQ is configured.
+		// For all other reasons (decode errors, permanent write failures,
+		// invalid events) failing the message forces Kafka to redeliver
+		// rather than silently dropping data when no DLQ is configured.
+		// Invalid events may become valid after a rolling deploy where a
+		// newer version adds support for new fields or event subtypes.
 		return fmt.Errorf("no DLQ configured for rejected message (%s): %s", record.Reason, record.Err)
 	}
 

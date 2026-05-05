@@ -8,10 +8,11 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 const unknownKafkaTopic = "unknown"
+
+var jsonUnmarshalOpts = protojson.UnmarshalOptions{DiscardUnknown: true}
 
 type kafkaMessageMetadata struct {
 	Topic     string
@@ -93,16 +94,19 @@ func kafkaTopicMetadata(msg *service.Message) string {
 }
 
 func decodeDecoratedEvent(encoding string, data []byte) (*xatu.DecoratedEvent, error) {
-	event := &xatu.DecoratedEvent{}
+	event := xatu.DecoratedEventFromVTPool()
 
 	switch encoding {
 	case "protobuf":
-		if err := proto.Unmarshal(data, event); err != nil {
+		if err := event.UnmarshalVT(data); err != nil {
+			event.ReturnToVTPool()
+
 			return nil, fmt.Errorf("protobuf unmarshal: %w", err)
 		}
 	default:
-		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
-		if err := opts.Unmarshal(data, event); err != nil {
+		if err := jsonUnmarshalOpts.Unmarshal(data, event); err != nil {
+			event.ReturnToVTPool()
+
 			return nil, fmt.Errorf("json unmarshal: %w", err)
 		}
 	}

@@ -28,6 +28,6 @@ func TestSnapshot_canonical_beacon_block_deposit(t *testing.T) {
 			EthV2BeaconBlockDeposit: &ethv1.DepositV2{},
 		},
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

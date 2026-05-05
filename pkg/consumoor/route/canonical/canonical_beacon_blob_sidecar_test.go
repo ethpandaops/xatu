@@ -19,6 +19,7 @@ func TestSnapshot_canonical_beacon_blob_sidecar(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_EthV1BeaconBlobSidecar{
 				EthV1BeaconBlobSidecar: &xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData{
+					Slot:  testfixture.SlotEpochAdditional(),
 					Epoch: testfixture.EpochAdditional(),
 				},
 			},

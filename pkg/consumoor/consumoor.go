@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"os/signal"
 	"regexp"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -38,14 +40,19 @@ type topicStream struct {
 // Benthos stream and consumer group while sharing a single ClickHouse
 // writer for efficient connection reuse.
 type Consumoor struct {
-	log    logrus.FieldLogger
-	config *Config
+	log       logrus.FieldLogger
+	parentLog logrus.FieldLogger
+	config    *Config
 
 	metrics    *telemetry.Metrics
 	router     *router.Engine
 	writer     source.Writer
 	streams    []topicStream
 	lagMonitor *source.LagMonitor
+
+	// activeTopics tracks topics that have a running stream to avoid
+	// creating duplicate streams when watchTopics re-discovers them.
+	activeTopics map[string]struct{}
 
 	mu            sync.Mutex
 	metricsServer *http.Server
@@ -100,24 +107,40 @@ func New(
 		return nil, fmt.Errorf("discovering kafka topics: %w", err)
 	}
 
+	cLog := log.WithField("component", "consumoor")
+
 	if len(topics) == 0 {
-		return nil, fmt.Errorf(
-			"no kafka topics matched patterns %v",
-			config.Kafka.Topics,
-		)
+		if config.Kafka.TopicRefreshInterval > 0 {
+			cLog.Warn("No topics matched at startup — topic watcher will discover them dynamically")
+		} else {
+			return nil, fmt.Errorf(
+				"no kafka topics matched patterns %v",
+				config.Kafka.Topics,
+			)
+		}
+	} else {
+		cLog.WithField("topics", topics).
+			WithField("count", len(topics)).
+			Info("Discovered Kafka topics for per-topic streams")
 	}
 
-	cLog := log.WithField("component", "consumoor")
-	cLog.WithField("topics", topics).
-		WithField("count", len(topics)).
-		Info("Discovered Kafka topics for per-topic streams")
-
 	streams := make([]topicStream, 0, len(topics))
+	consumerGroups := make([]string, 0, len(topics))
 
 	for _, topic := range topics {
-		topicKafkaCfg := config.Kafka
+		topicKafkaCfg := config.Kafka.ApplyTopicOverride(topic)
 		topicKafkaCfg.Topics = []string{"^" + regexp.QuoteMeta(topic) + "$"}
 		topicKafkaCfg.ConsumerGroup = config.Kafka.ConsumerGroup + "-" + topic
+
+		consumerGroups = append(consumerGroups, topicKafkaCfg.ConsumerGroup)
+
+		if _, hasOverride := config.Kafka.TopicOverrides[topic]; hasOverride {
+			cLog.WithField("topic", topic).
+				WithField("outputBatchCount", topicKafkaCfg.OutputBatchCount).
+				WithField("outputBatchPeriod", topicKafkaCfg.OutputBatchPeriod).
+				WithField("maxInFlight", topicKafkaCfg.MaxInFlight).
+				Info("Applied per-topic batch overrides")
+		}
 
 		stream, sErr := source.NewBenthosStream(
 			log.WithField("topic", topic),
@@ -127,6 +150,11 @@ func New(
 			rtr,
 			writer,
 			false, // writer lifecycle owned by Consumoor, not the output plugin
+			source.GroupRetryConfig{
+				MaxAttempts: config.ClickHouse.ChGo.GroupRetryMaxAttempts,
+				BaseDelay:   config.ClickHouse.ChGo.GroupRetryBaseDelay,
+				MaxDelay:    config.ClickHouse.ChGo.GroupRetryMaxDelay,
+			},
 		)
 		if sErr != nil {
 			return nil, fmt.Errorf(
@@ -138,20 +166,49 @@ func New(
 			topic:  topic,
 			stream: stream,
 		})
+
+		metrics.OutputMaxInFlight().WithLabelValues(topic).Set(float64(topicKafkaCfg.MaxInFlight))
+	}
+
+	activeTopics := make(map[string]struct{}, len(topics))
+	for _, t := range topics {
+		activeTopics[t] = struct{}{}
+	}
+
+	if strings.TrimSpace(config.Kafka.RejectedTopic) == "" {
+		cLog.Warn("No rejectedTopic configured — decode errors and permanent write failures will block Kafka offset advancement (messages will be redelivered indefinitely). Configure kafka.rejectedTopic to enable dead letter queue")
+	}
+
+	if len(config.Kafka.TopicOverrides) > 0 {
+		for overrideTopic := range config.Kafka.TopicOverrides {
+			if _, found := activeTopics[overrideTopic]; !found {
+				cLog.WithField("topic", overrideTopic).
+					Warn("Topic override configured but no matching topic was discovered — check for typos")
+			}
+		}
 	}
 
 	c := &Consumoor{
-		log:     cLog,
-		config:  config,
-		metrics: metrics,
-		router:  rtr,
-		writer:  writer,
-		streams: streams,
+		log:          cLog,
+		parentLog:    log,
+		config:       config,
+		metrics:      metrics,
+		router:       rtr,
+		writer:       writer,
+		streams:      streams,
+		activeTopics: activeTopics,
 	}
 
-	// Optionally create the Kafka consumer lag monitor.
-	if config.Kafka.LagPollInterval > 0 {
-		lagMon, lagErr := source.NewLagMonitor(log, &config.Kafka, metrics)
+	// Optionally create the Kafka consumer lag monitor. Skipped when no
+	// topics were discovered at startup (dynamic discovery will add them
+	// later, but lag monitoring requires a restart to include them).
+	if config.Kafka.LagPollInterval > 0 && len(consumerGroups) > 0 {
+		lagMon, lagErr := source.NewLagMonitor(
+			log,
+			&config.Kafka,
+			consumerGroups,
+			metrics,
+		)
 		if lagErr != nil {
 			return nil, fmt.Errorf("creating lag monitor: %w", lagErr)
 		}
@@ -168,13 +225,22 @@ func (c *Consumoor) Start(ctx context.Context) error {
 	nctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := c.writer.Start(ctx); err != nil {
+	if err := c.writer.Start(nctx); err != nil {
 		return fmt.Errorf("starting clickhouse writer: %w", err)
 	}
 
 	c.log.WithField("streams", len(c.streams)).
 		Info("Consumoor started (per-topic benthos streams)")
 
+	// errgroup provides fail-fast: if any goroutine (stream, metrics
+	// server, lag monitor, topic watcher) returns an error, gCtx is
+	// cancelled and all other goroutines shut down. This is intentional
+	// — a persistent stream failure typically indicates a systemic
+	// problem that affects all streams. The orchestrator (k8s, systemd)
+	// can then restart the entire process.
+	//
+	// Implication for dynamic topic discovery: a newly discovered topic
+	// whose stream fails will bring down all existing healthy streams.
 	g, gCtx := errgroup.WithContext(nctx)
 
 	g.Go(func() error {
@@ -217,7 +283,7 @@ func (c *Consumoor) Start(ctx context.Context) error {
 
 	if c.config.Kafka.TopicRefreshInterval > 0 {
 		g.Go(func() error {
-			c.watchTopics(gCtx)
+			c.watchTopics(gCtx, g)
 
 			return nil
 		})
@@ -228,7 +294,7 @@ func (c *Consumoor) Start(ctx context.Context) error {
 	// All streams and HTTP servers have exited. Now stop the writer.
 	c.stopWriter(ctx)
 
-	if streamErr != nil && streamErr != context.Canceled {
+	if streamErr != nil && !errors.Is(streamErr, context.Canceled) {
 		return streamErr
 	}
 
@@ -237,20 +303,23 @@ func (c *Consumoor) Start(ctx context.Context) error {
 
 // stopHTTPServers shuts down the metrics and pprof servers. Called from
 // within the errgroup on context cancellation so that g.Wait() can return.
-func (c *Consumoor) stopHTTPServers(ctx context.Context) {
+func (c *Consumoor) stopHTTPServers(_ context.Context) {
 	c.mu.Lock()
 	metricsServer := c.metricsServer
 	pprofServer := c.pprofServer
 	c.mu.Unlock()
 
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	if metricsServer != nil {
-		if err := metricsServer.Shutdown(ctx); err != nil {
+		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
 			c.log.WithError(err).Error("Error stopping metrics server")
 		}
 	}
 
 	if pprofServer != nil {
-		if err := pprofServer.Shutdown(ctx); err != nil {
+		if err := pprofServer.Shutdown(shutdownCtx); err != nil {
 			c.log.WithError(err).Error("Error stopping pprof server")
 		}
 	}
@@ -335,17 +404,21 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 }
 
 // watchTopics periodically queries Kafka metadata to discover topics matching
-// the configured regex patterns. It logs newly appeared and disappeared topics
-// and updates the active_topics gauge. The actual consumption of new topics is
-// handled by Benthos via metadata_max_age; this goroutine provides visibility.
-func (c *Consumoor) watchTopics(ctx context.Context) {
+// the configured regex patterns. Newly discovered topics automatically get
+// their own Benthos stream without requiring a restart.
+func (c *Consumoor) watchTopics(ctx context.Context, g *errgroup.Group) {
 	interval := c.config.Kafka.TopicRefreshInterval
 
 	c.log.WithField("interval", interval).
 		Info("Starting topic discovery watcher")
 
-	// Perform an initial discovery so the metric is populated immediately.
-	knownTopics := c.discoverAndDiff(ctx, nil)
+	// Seed from activeTopics so topics appearing between New() and the
+	// first poll are detected as new and get streams started.
+	c.mu.Lock()
+	initialKnown := maps.Clone(c.activeTopics)
+	c.mu.Unlock()
+
+	knownTopics := c.discoverAndDiff(ctx, g, initialKnown)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -357,16 +430,17 @@ func (c *Consumoor) watchTopics(ctx context.Context) {
 
 			return
 		case <-ticker.C:
-			knownTopics = c.discoverAndDiff(ctx, knownTopics)
+			knownTopics = c.discoverAndDiff(ctx, g, knownTopics)
 		}
 	}
 }
 
 // discoverAndDiff calls DiscoverTopics, compares the result to the previously
-// known set, logs any changes, and updates the active_topics gauge. It returns
-// the current set of discovered topics for the next comparison cycle.
+// known set, logs any changes, updates the active_topics gauge, and starts
+// streams for newly discovered topics.
 func (c *Consumoor) discoverAndDiff(
 	ctx context.Context,
+	g *errgroup.Group,
 	previous map[string]struct{},
 ) map[string]struct{} {
 	topics, err := source.DiscoverTopics(ctx, &c.config.Kafka)
@@ -383,19 +457,12 @@ func (c *Consumoor) discoverAndDiff(
 
 	c.metrics.ActiveTopics().Set(float64(len(current)))
 
-	if previous == nil {
-		c.log.WithField("topics", topics).
-			WithField("count", len(topics)).
-			Info("Initial topic discovery complete")
-
-		return current
-	}
-
-	// Find newly appeared topics.
+	// Find newly appeared topics and start streams for them.
 	for _, t := range topics {
 		if _, ok := previous[t]; !ok {
 			c.log.WithField("topic", t).
 				Info("Discovered new topic matching pattern")
+			c.startTopicStream(ctx, g, t)
 		}
 	}
 
@@ -408,6 +475,86 @@ func (c *Consumoor) discoverAndDiff(
 	}
 
 	return current
+}
+
+// startTopicStream creates a Benthos stream for a dynamically discovered
+// topic and launches it in the errgroup. If the topic already has an active
+// stream, this is a no-op.
+func (c *Consumoor) startTopicStream(
+	ctx context.Context,
+	g *errgroup.Group,
+	topic string,
+) {
+	c.mu.Lock()
+
+	if _, exists := c.activeTopics[topic]; exists {
+		c.mu.Unlock()
+
+		return
+	}
+
+	c.activeTopics[topic] = struct{}{}
+	c.mu.Unlock()
+
+	topicKafkaCfg := c.config.Kafka.ApplyTopicOverride(topic)
+	topicKafkaCfg.Topics = []string{"^" + regexp.QuoteMeta(topic) + "$"}
+	topicKafkaCfg.ConsumerGroup = c.config.Kafka.ConsumerGroup + "-" + topic
+
+	if _, hasOverride := c.config.Kafka.TopicOverrides[topic]; hasOverride {
+		c.log.WithField("topic", topic).
+			WithField("outputBatchCount", topicKafkaCfg.OutputBatchCount).
+			WithField("outputBatchPeriod", topicKafkaCfg.OutputBatchPeriod).
+			WithField("maxInFlight", topicKafkaCfg.MaxInFlight).
+			Info("Applied per-topic batch overrides for dynamically discovered topic")
+	}
+
+	stream, err := source.NewBenthosStream(
+		c.parentLog.WithField("topic", topic),
+		c.config.LoggingLevel,
+		&topicKafkaCfg,
+		c.metrics,
+		c.router,
+		c.writer,
+		false, // writer lifecycle owned by Consumoor
+		source.GroupRetryConfig{
+			MaxAttempts: c.config.ClickHouse.ChGo.GroupRetryMaxAttempts,
+			BaseDelay:   c.config.ClickHouse.ChGo.GroupRetryBaseDelay,
+			MaxDelay:    c.config.ClickHouse.ChGo.GroupRetryMaxDelay,
+		},
+	)
+	if err != nil {
+		c.log.WithError(err).
+			WithField("topic", topic).
+			Error("Failed to create stream for dynamically discovered topic")
+
+		c.mu.Lock()
+		delete(c.activeTopics, topic)
+		c.mu.Unlock()
+
+		return
+	}
+
+	c.mu.Lock()
+	c.streams = append(c.streams, topicStream{topic: topic, stream: stream})
+	c.mu.Unlock()
+
+	c.metrics.OutputMaxInFlight().WithLabelValues(topic).Set(float64(topicKafkaCfg.MaxInFlight))
+
+	c.log.WithField("topic", topic).
+		Info("Starting stream for dynamically discovered topic")
+
+	if c.lagMonitor != nil {
+		c.log.WithField("topic", topic).
+			Warn("Dynamically discovered topic will not have consumer lag monitoring — restart to include it")
+	}
+
+	g.Go(func() error {
+		if err := stream.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			return fmt.Errorf("running stream for topic %q: %w", topic, err)
+		}
+
+		return nil
+	})
 }
 
 func (c *Consumoor) startPProf(_ context.Context) error {

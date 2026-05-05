@@ -1,18 +1,6 @@
 groups:
   - name: consumoor
     rules:
-      - alert: ConsumoorBufferNearCapacity
-        expr: xatu_consumoor_buffer_usage > 160000
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Consumoor buffer near capacity for table {{ $labels.table }}"
-          description: >-
-            Buffer usage for table {{ $labels.table }} is {{ $value }} rows,
-            exceeding 80% of the default 200k capacity. The pipeline may start
-            dropping or blocking messages if the buffer fills up.
-
       - alert: ConsumoorWriteErrorsHigh
         expr: rate(xatu_consumoor_write_errors_total[5m]) > 0
         for: 5m

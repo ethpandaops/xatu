@@ -12,7 +12,7 @@ func TestConfig_ShouldFailOnMissingTables(t *testing.T) {
 		field    *bool
 		expected bool
 	}{
-		{name: "nil_defaults_to_true", field: nil, expected: true},
+		{name: "nil_means_off", field: nil, expected: false},
 		{name: "explicit_true", field: boolPtr(true), expected: true},
 		{name: "explicit_false_survives_default", field: boolPtr(false), expected: false},
 	}
@@ -31,7 +31,7 @@ func TestAdaptiveLimiterConfig_IsEnabled(t *testing.T) {
 		field    *bool
 		expected bool
 	}{
-		{name: "nil_defaults_to_true", field: nil, expected: true},
+		{name: "nil_means_off", field: nil, expected: false},
 		{name: "explicit_true", field: boolPtr(true), expected: true},
 		{name: "explicit_false_survives_default", field: boolPtr(false), expected: false},
 	}

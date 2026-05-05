@@ -50,6 +50,10 @@ func newTestWriter(maxRetries int, baseDelay, maxDelay time.Duration) *Writer {
 			RetryBaseDelay: baseDelay,
 			RetryMaxDelay:  maxDelay,
 			// QueryTimeout=0 disables per-attempt timeout wrapping.
+			// Disable the adaptive limiter for unit tests; it has no
+			// configured limits and would otherwise be constructed by
+			// IsEnabled()'s nil-defaults-to-true semantics.
+			AdaptiveLimiter: AdaptiveLimiterConfig{Enabled: boolPtr(false)},
 		},
 		tables:         make(map[string]*chTableWriter, 16),
 		batchFactories: make(map[string]func() route.ColumnarBatch, 8),

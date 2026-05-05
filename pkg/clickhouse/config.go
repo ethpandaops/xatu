@@ -83,14 +83,13 @@ type AdaptiveLimiterConfig struct {
 	QueueMaxRejectionFactor float64 `yaml:"queueMaxRejectionFactor" default:"3"`
 }
 
-// IsEnabled resolves the Enabled pointer to a concrete bool. nil (unset)
-// is treated as the documented default of true.
+// IsEnabled resolves the Enabled pointer.
+//
+// Returns false when nil (unset) — see Config.ShouldFailOnMissingTables
+// for the rationale; same applies here. YAML callers pick up the
+// documented `default:"true"` via creasty/defaults during load.
 func (c *AdaptiveLimiterConfig) IsEnabled() bool {
-	if c.Enabled == nil {
-		return true
-	}
-
-	return *c.Enabled
+	return c.Enabled != nil && *c.Enabled
 }
 
 // Validate checks the adaptive limiter configuration for errors.
@@ -181,14 +180,17 @@ type ChGoConfig struct {
 	AdaptiveLimiter AdaptiveLimiterConfig `yaml:"adaptiveLimiter"`
 }
 
-// ShouldFailOnMissingTables resolves the FailOnMissingTables pointer to a
-// concrete bool. nil (unset) is treated as the documented default of true.
+// ShouldFailOnMissingTables resolves the FailOnMissingTables pointer.
+//
+// Returns false when the field is nil (unset). The documented default is
+// `true`, but that default is applied by creasty/defaults during YAML
+// load via defaults.Set — production code paths run that pass and arrive
+// here with FailOnMissingTables explicitly set. A nil pointer therefore
+// means "code constructed Config without going through defaults.Set",
+// for which the safe behaviour is "off" (don't fail startup on a missing
+// table that the caller never opted in to caring about).
 func (c *Config) ShouldFailOnMissingTables() bool {
-	if c.FailOnMissingTables == nil {
-		return true
-	}
-
-	return *c.FailOnMissingTables
+	return c.FailOnMissingTables != nil && *c.FailOnMissingTables
 }
 
 // Validate checks the ClickHouse configuration for errors.

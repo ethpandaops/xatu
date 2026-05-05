@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
@@ -223,7 +224,14 @@ func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.
 		return
 	}
 
-	for _, tx := range txs.PooledTransactionsResponse {
+	transactions, err := (*eth.PooledTransactionsPacket)(txs).List.Items()
+	if err != nil {
+		p.log.WithError(err).Warn("Failed to decode pooled transactions")
+
+		return
+	}
+
+	for _, tx := range transactions {
 		_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 		// transaction was just set in shared cache, so we need to handle it
 		if !retrieved {

@@ -10,9 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// boolPtr returns a pointer to b — used to populate *bool config fields
+// in test fixtures.
+func boolPtr(b bool) *bool { return &b }
+
 func TestNewAdaptiveConcurrencyLimiter_DisabledReturnsNil(t *testing.T) {
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
-		Enabled: false,
+		Enabled: boolPtr(false),
 	})
 
 	assert.Nil(t, limiter)
@@ -20,7 +24,7 @@ func TestNewAdaptiveConcurrencyLimiter_DisabledReturnsNil(t *testing.T) {
 
 func TestNewAdaptiveConcurrencyLimiter_EnabledReturnsLimiter(t *testing.T) {
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
-		Enabled:                     true,
+		Enabled:                     boolPtr(true),
 		MinLimit:                    1,
 		MaxLimit:                    50,
 		InitialLimit:                8,
@@ -36,7 +40,7 @@ func TestNewAdaptiveConcurrencyLimiter_EnabledReturnsLimiter(t *testing.T) {
 
 func TestAdaptiveConcurrencyLimiter_AcquireAndRecord(t *testing.T) {
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
-		Enabled:      true,
+		Enabled:      boolPtr(true),
 		MinLimit:     1,
 		MaxLimit:     50,
 		InitialLimit: 8,
@@ -56,7 +60,7 @@ func TestAdaptiveConcurrencyLimiter_AcquireAndRecord(t *testing.T) {
 
 func TestAdaptiveConcurrencyLimiter_AcquireAndDropOnError(t *testing.T) {
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
-		Enabled:      true,
+		Enabled:      boolPtr(true),
 		MinLimit:     1,
 		MaxLimit:     50,
 		InitialLimit: 8,
@@ -78,7 +82,7 @@ func TestAdaptiveConcurrencyLimiter_AcquireAndDropOnError(t *testing.T) {
 func TestAdaptiveConcurrencyLimiter_BlocksWhenFullAndCancels(t *testing.T) {
 	// Create a limiter with limit=1 so we can saturate it.
 	limiter := newAdaptiveConcurrencyLimiter(AdaptiveLimiterConfig{
-		Enabled:      true,
+		Enabled:      boolPtr(true),
 		MinLimit:     1,
 		MaxLimit:     1,
 		InitialLimit: 1,

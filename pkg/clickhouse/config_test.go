@@ -23,7 +23,7 @@ func validChGoConfig() ChGoConfig {
 		HealthCheckPeriod:   30 * time.Second,
 		PoolMetricsInterval: 15 * time.Second,
 		AdaptiveLimiter: AdaptiveLimiterConfig{
-			Enabled:                     true,
+			Enabled:                     boolPtr(true),
 			MinLimit:                    1,
 			MaxLimit:                    50,
 			InitialLimit:                8,
@@ -117,12 +117,12 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 	}{
 		{
 			name: "disabled passes",
-			cfg:  AdaptiveLimiterConfig{Enabled: false},
+			cfg:  AdaptiveLimiterConfig{Enabled: boolPtr(false)},
 		},
 		{
 			name: "valid enabled",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:                     true,
+				Enabled:                     boolPtr(true),
 				MinLimit:                    1,
 				MaxLimit:                    50,
 				InitialLimit:                8,
@@ -133,7 +133,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "zero minLimit",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:      true,
+				Enabled:      boolPtr(true),
 				MinLimit:     0,
 				MaxLimit:     50,
 				InitialLimit: 8,
@@ -143,7 +143,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "zero maxLimit",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:      true,
+				Enabled:      boolPtr(true),
 				MinLimit:     1,
 				MaxLimit:     0,
 				InitialLimit: 1,
@@ -153,7 +153,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "minLimit exceeds maxLimit",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:      true,
+				Enabled:      boolPtr(true),
 				MinLimit:     10,
 				MaxLimit:     5,
 				InitialLimit: 5,
@@ -163,7 +163,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "initialLimit below minLimit",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:      true,
+				Enabled:      boolPtr(true),
 				MinLimit:     5,
 				MaxLimit:     50,
 				InitialLimit: 2,
@@ -173,7 +173,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "initialLimit above maxLimit",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:      true,
+				Enabled:      boolPtr(true),
 				MinLimit:     1,
 				MaxLimit:     10,
 				InitialLimit: 20,
@@ -183,7 +183,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "zero queueInitialRejectionFactor",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:                     true,
+				Enabled:                     boolPtr(true),
 				MinLimit:                    1,
 				MaxLimit:                    50,
 				InitialLimit:                8,
@@ -195,7 +195,7 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		{
 			name: "zero queueMaxRejectionFactor",
 			cfg: AdaptiveLimiterConfig{
-				Enabled:                     true,
+				Enabled:                     boolPtr(true),
 				MinLimit:                    1,
 				MaxLimit:                    50,
 				InitialLimit:                8,

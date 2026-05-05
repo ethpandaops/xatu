@@ -29,7 +29,11 @@ type Config struct {
 	// a fatal startup error. When true (default), startup is aborted if any
 	// registered route table does not exist in the target database. Set to
 	// false to downgrade to warnings and allow startup to proceed.
-	FailOnMissingTables bool `yaml:"failOnMissingTables" default:"true"`
+	//
+	// Pointer type so that an explicit YAML "false" survives the
+	// defaults.Set pass — a plain bool would be indistinguishable from
+	// "unset" and silently overridden back to the default.
+	FailOnMissingTables *bool `yaml:"failOnMissingTables" default:"true"`
 
 	// Defaults are the default table settings.
 	Defaults TableConfig `yaml:"defaults"`
@@ -61,7 +65,10 @@ type TableConfig struct {
 // based on observed ClickHouse latency using an AIMD algorithm.
 type AdaptiveLimiterConfig struct {
 	// Enabled turns on adaptive concurrency limiting.
-	Enabled bool `yaml:"enabled" default:"true"`
+	//
+	// Pointer type so that an explicit YAML "false" survives the
+	// defaults.Set pass — see FailOnMissingTables for the same rationale.
+	Enabled *bool `yaml:"enabled" default:"true"`
 	// MinLimit is the minimum concurrent INSERTs the limiter allows.
 	MinLimit uint `yaml:"minLimit" default:"1"`
 	// MaxLimit caps the maximum concurrent INSERTs the limiter allows.
@@ -76,9 +83,19 @@ type AdaptiveLimiterConfig struct {
 	QueueMaxRejectionFactor float64 `yaml:"queueMaxRejectionFactor" default:"3"`
 }
 
+// IsEnabled resolves the Enabled pointer to a concrete bool. nil (unset)
+// is treated as the documented default of true.
+func (c *AdaptiveLimiterConfig) IsEnabled() bool {
+	if c.Enabled == nil {
+		return true
+	}
+
+	return *c.Enabled
+}
+
 // Validate checks the adaptive limiter configuration for errors.
 func (c *AdaptiveLimiterConfig) Validate() error {
-	if !c.Enabled {
+	if !c.IsEnabled() {
 		return nil
 	}
 
@@ -162,6 +179,16 @@ type ChGoConfig struct {
 
 	// AdaptiveLimiter configures per-table adaptive concurrency limiting.
 	AdaptiveLimiter AdaptiveLimiterConfig `yaml:"adaptiveLimiter"`
+}
+
+// ShouldFailOnMissingTables resolves the FailOnMissingTables pointer to a
+// concrete bool. nil (unset) is treated as the documented default of true.
+func (c *Config) ShouldFailOnMissingTables() bool {
+	if c.FailOnMissingTables == nil {
+		return true
+	}
+
+	return *c.FailOnMissingTables
 }
 
 // Validate checks the ClickHouse configuration for errors.

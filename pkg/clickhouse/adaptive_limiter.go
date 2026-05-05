@@ -17,7 +17,7 @@ type adaptiveConcurrencyLimiter struct {
 func newAdaptiveConcurrencyLimiter(
 	cfg AdaptiveLimiterConfig,
 ) *adaptiveConcurrencyLimiter {
-	if !cfg.Enabled {
+	if !cfg.IsEnabled() {
 		return nil
 	}
 

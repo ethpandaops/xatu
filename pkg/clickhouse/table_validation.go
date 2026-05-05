@@ -42,7 +42,7 @@ func (w *Writer) ValidateTables(ctx context.Context, routeTableNames []string) e
 			"INSERTs to this table will be permanently dropped")
 	}
 
-	if !w.config.FailOnMissingTables {
+	if !w.config.ShouldFailOnMissingTables() {
 		w.log.WithField("missing_count", len(missing)).
 			WithField("total_checked", len(expected)).
 			Warn("Some registered route tables are missing — data for these " +

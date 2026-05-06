@@ -32,7 +32,7 @@ import (
 //	CONSUMOOR_STAGING_TEST=true \
 //	CLICKHOUSE_URL=http://localhost:8123 \
 //	STAGING_CLICKHOUSE_URL=http://localhost:8124 \
-//	go test ./pkg/consumoor/route/ \
+//	go test ./pkg/clickhouse/route/ \
 //	  -run TestStagingCorrectness -v -timeout 300s
 func TestStagingCorrectness(t *testing.T) {
 	if os.Getenv("CONSUMOOR_STAGING_TEST") != "true" {
@@ -179,7 +179,7 @@ func TestStagingCorrectness(t *testing.T) {
 //
 //	CONSUMOOR_STAGING_TEST=true \
 //	CLICKHOUSE_URL=http://localhost:8123 \
-//	go test ./pkg/consumoor/route/ \
+//	go test ./pkg/clickhouse/route/ \
 //	  -run TestStagingTopicCoverage -v -timeout 120s
 func TestStagingTopicCoverage(t *testing.T) {
 	if os.Getenv("CONSUMOOR_STAGING_TEST") != "true" {

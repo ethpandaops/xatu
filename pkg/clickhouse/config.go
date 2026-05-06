@@ -279,12 +279,16 @@ func (c *ChGoConfig) Validate() error {
 		return errors.New("clickhouse.chgo: groupRetryMaxAttempts must be >= 0")
 	}
 
-	if c.GroupRetryBaseDelay < 0 {
-		return errors.New("clickhouse.chgo: groupRetryBaseDelay must be >= 0")
-	}
+	// Delays are only meaningful when group retries are enabled. Validate
+	// strictly in that case to prevent a tight spin-loop from a 0 delay.
+	if c.GroupRetryMaxAttempts > 0 {
+		if c.GroupRetryBaseDelay <= 0 {
+			return errors.New("clickhouse.chgo: groupRetryBaseDelay must be > 0 when groupRetryMaxAttempts > 0")
+		}
 
-	if c.GroupRetryMaxDelay < 0 {
-		return errors.New("clickhouse.chgo: groupRetryMaxDelay must be >= 0")
+		if c.GroupRetryMaxDelay <= 0 {
+			return errors.New("clickhouse.chgo: groupRetryMaxDelay must be > 0 when groupRetryMaxAttempts > 0")
+		}
 	}
 
 	if err := c.AdaptiveLimiter.Validate(); err != nil {

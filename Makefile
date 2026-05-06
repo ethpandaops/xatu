@@ -1,7 +1,7 @@
-.PHONY: consumoor
-consumoor:
-	@echo "Generating consumoor route code (requires Docker)..."
-	go run ./pkg/consumoor/route/cmd/generate
+.PHONY: clickhouse-routes
+clickhouse-routes:
+	@echo "Generating ClickHouse route code (requires Docker)..."
+	go run ./pkg/clickhouse/route/cmd/generate
 
 proto:
 	@echo "Buf generate:" ; \

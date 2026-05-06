@@ -47,12 +47,25 @@ type outputSink interface {
 	HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error
 }
 
+// chWriter is the subset of chwriter.Writer the sink uses at runtime
+// (RegisterBatchFactories is called once at construction on the concrete
+// type, so it lives outside this interface). Defined as an interface so
+// tests can substitute a stub without spinning up a real CH connection.
+type chWriter interface {
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
+	FlushTableEvents(
+		ctx context.Context,
+		tableEvents map[string][]*xatu.DecoratedEvent,
+	) *chwriter.FlushResult
+}
+
 // Sink writes DecoratedEvents straight to ClickHouse, bypassing the
 // xatu server / Kafka path.
 type Sink struct {
 	name             string
 	log              logrus.FieldLogger
-	writer           *chwriter.Writer
+	writer           chWriter
 	router           *chrouter.Engine
 	filter           xatu.EventFilter
 	restrictPrefixes []string

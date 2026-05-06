@@ -18,8 +18,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   cannon-smoke-test:
+    name: cannon-smoke-test (${{ matrix.output_type }})
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # xatu      → cannon ships via gRPC to xatu-server → kafka → vector → CH
+        # clickhouse → cannon writes to CH directly via the new direct sink
+        output_type: [xatu, clickhouse]
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -156,6 +163,7 @@ jobs:
     - name: Create Xatu Cannon config
       run: |
         NETWORK_NAME="${{ steps.beacon.outputs.network_name }}"
+        OUTPUT_TYPE="${{ matrix.output_type }}"
 
         cat <<EOF > /tmp/cannon_config.yaml
         logging: debug
@@ -197,6 +205,25 @@ jobs:
           overrideNetworkName: "$NETWORK_NAME"
         coordinator:
           address: xatu-server:8080
+        EOF
+
+        if [ "$OUTPUT_TYPE" = "clickhouse" ]; then
+          cat <<EOF >> /tmp/cannon_config.yaml
+
+        outputs:
+          - name: ch-direct
+            type: clickhouse
+            config:
+              dsn: clickhouse://default:@xatu-clickhouse-01:9000/default
+              metricsSubsystem: cannon
+              restrictToTablePrefixes:
+                - canonical_
+              chgo:
+                adaptiveLimiter:
+                  enabled: false
+        EOF
+        else
+          cat <<EOF >> /tmp/cannon_config.yaml
 
         outputs:
           - name: xatu
@@ -209,6 +236,7 @@ jobs:
               exportTimeout: 30s
               maxExportBatchSize: 512
         EOF
+        fi
     - name: Show config
       run: |
         cat /tmp/cannon_config.yaml

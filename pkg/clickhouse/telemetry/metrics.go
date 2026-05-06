@@ -65,13 +65,16 @@ type Metrics struct {
 // — promauto registers metrics globally, so a second call would otherwise
 // panic on duplicate registration. This lets multiple writer instances share
 // one set of metric vectors keyed by their subsystem.
+//
+// An empty subsystem falls back to "clickhouse" — callers should set this
+// explicitly so dashboards and alerts can distinguish per-binary metrics.
 func NewMetrics(namespace, subsystem string) *Metrics {
 	if namespace == "" {
 		namespace = "xatu"
 	}
 
 	if subsystem == "" {
-		subsystem = "consumoor"
+		subsystem = "clickhouse"
 	}
 
 	key := namespace + "/" + subsystem

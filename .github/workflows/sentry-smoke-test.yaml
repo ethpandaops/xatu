@@ -117,10 +117,15 @@ jobs:
         # xatu-server forwards sentry-logs events to xatu-vector-http-kafka:9005.
         # Compose returns once the container is "Started", but Vector binds the
         # HTTP source ~1s later, racing with the inject step below.
-        # Probe via the host-mapped port (vector image is busybox, no /dev/tcp).
+        # Probe the actual HTTP source. The Docker port can accept TCP before
+        # Vector has finished binding the source, which drops the one-shot
+        # sentry-logs test batch.
         echo "Waiting for xatu-vector-http-kafka to accept HTTP on host :9055..."
         for i in $(seq 1 30); do
-          if bash -c 'echo > /dev/tcp/localhost/9055' 2>/dev/null; then
+          if printf '{"event":{"name":"XATU_SMOKE_READY_PROBE"}}\n' | curl --fail --silent --show-error --max-time 2 \
+            -H 'Content-Type: application/x-ndjson' \
+            --data-binary @- \
+            http://127.0.0.1:9055 >/dev/null; then
             echo "xatu-vector-http-kafka is listening."
             break
           fi

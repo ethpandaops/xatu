@@ -215,9 +215,6 @@ jobs:
             type: clickhouse
             config:
               dsn: clickhouse://default:@xatu-clickhouse-01:9000/default
-              metricsSubsystem: cannon
-              restrictToTablePrefixes:
-                - canonical_
               chgo:
                 adaptiveLimiter:
                   enabled: false

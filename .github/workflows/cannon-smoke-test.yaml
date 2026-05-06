@@ -257,72 +257,78 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
-    # Direct-CH path only: re-assert every row visible cross-replica with
-    # select_sequential_consistency=1. The previous step already confirmed
-    # rows landed on xatu-clickhouse-01 (the node cannon dialed). This step
-    # confirms they survived the full durability chain — Distributed forward
-    # queue → shard insert → quorum replication — by reading from
-    # xatu-clickhouse-02. If a row was acked back to cannon (advancing the
-    # postgres checkpoint) but is invisible from a different replica, the
-    # at-least-once contract is broken and we want CI to fail loudly.
-    - name: Verify cross-replica durability (xatu-clickhouse-02)
+    # Direct-CH path only: assert the Distributed forward queue on
+    # xatu-clickhouse-01 is fully drained.
+    #
+    # Cannon writes to a Distributed table. The Distributed engine
+    # *acks the INSERT* once rows are appended to the local
+    # `data/<table>/<distributed_dir>/` on disk; the actual forward to
+    # the target shard's _local table happens async. So a row can be
+    # "acked back to cannon" — and the postgres checkpoint advanced —
+    # while it is still waiting in the local forward queue. If the node
+    # crashes before that flush, the row is lost without any signal
+    # surfacing to cannon.
+    #
+    # This step waits briefly for the queue to drain, then asserts it
+    # is empty (and error_count == 0). The local docker-compose is
+    # cluster_2S_1R (2 shards, 1 replica each) — there are no actual
+    # replicas, which makes a cross-replica + select_sequential_consistency
+    # assertion meaningless here. The forward-queue assertion is the
+    # CI-topology-appropriate equivalent and tests the same durability
+    # invariant directly.
+    - name: Verify Distributed forward queue is drained
       if: matrix.output_type == 'clickhouse'
-      timeout-minutes: 5
-      env:
-        TARGET_EPOCH: ${{ steps.beacon.outputs.target_epoch }}
-        NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
+      timeout-minutes: 3
       run: |
         set -e
 
-        EVENT_COUNT=$(yq '.event_types | length' .github/cannon/seeding.yaml)
-        FAILED_TABLES=()
+        # Allow async forwards to flush. Default monitor sleep is 100ms.
+        sleep 10
 
-        for ((i=0; i<EVENT_COUNT; i++)); do
-            TABLE=$(yq ".event_types[$i].table" .github/cannon/seeding.yaml)
-            QUERY="SELECT COUNT(*) FROM $TABLE FINAL WHERE meta_network_name = '$NETWORK_NAME' AND epoch >= $TARGET_EPOCH"
+        QUEUE_FILES=$(clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT coalesce(sum(data_files), 0) FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%'" \
+            </dev/null)
 
-            echo ""
-            echo "Cross-replica check: $TABLE on xatu-clickhouse-02 (sequential_consistency=1)"
+        QUEUE_ERRORS=$(clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT coalesce(sum(error_count), 0) FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%'" \
+            </dev/null)
 
-            FOUND=0
-            for try in $(seq 1 15); do
-                RESULT=$(clickhouse-client \
-                    -h localhost --port 9001 \
-                    -u default --password "" \
-                    -d default \
-                    --select_sequential_consistency=1 \
-                    -q "$QUERY" </dev/null 2>&1) || RESULT=""
+        echo "Distributed forward queue (xatu-clickhouse-01):"
+        echo "  pending data_files: $QUEUE_FILES"
+        echo "  error_count:        $QUEUE_ERRORS"
 
-                if [[ "$RESULT" =~ ^[0-9]+$ ]] && [ "$RESULT" -gt 0 ]; then
-                    echo "  ✓ $TABLE: $RESULT rows visible cross-replica (try $try)"
-                    FOUND=1
-                    break
-                fi
+        # Per-table breakdown for diagnostics on failure.
+        clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT table, data_files, data_compressed_bytes, error_count, last_exception FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%' FORMAT PrettyCompact" \
+            </dev/null
 
-                sleep 2
-            done
+        FAILED=0
 
-            if [ "$FOUND" -eq 0 ]; then
-                echo "  ✗ $TABLE: not visible on xatu-clickhouse-02 with sequential consistency"
-                FAILED_TABLES+=("$TABLE")
-            fi
-        done
+        if [[ ! "$QUEUE_FILES" =~ ^[0-9]+$ ]] || [ "$QUEUE_FILES" -ne 0 ]; then
+            echo "✗ Forward queue is NOT drained — $QUEUE_FILES file(s) still pending"
+            echo "  Cannon's checkpoint advanced for rows still in the queue."
+            FAILED=1
+        fi
 
-        echo ""
-        if [ ${#FAILED_TABLES[@]} -gt 0 ]; then
-            echo "✗ Cross-replica durability failed for ${#FAILED_TABLES[@]} table(s):"
-            for t in "${FAILED_TABLES[@]}"; do
-                echo "  - $t"
-            done
-            echo ""
-            echo "Cannon's checkpoint advanced for rows that aren't durable on a"
-            echo "non-write replica. Suspect insert_quorum, replication, or the"
-            echo "Distributed forward queue. This is the at-least-once contract"
-            echo "violation the cross-replica check is here to surface."
+        if [[ ! "$QUEUE_ERRORS" =~ ^[0-9]+$ ]] || [ "$QUEUE_ERRORS" -ne 0 ]; then
+            echo "✗ Forward queue has $QUEUE_ERRORS forward error(s)"
+            FAILED=1
+        fi
+
+        if [ "$FAILED" -ne 0 ]; then
             exit 1
         fi
 
-        echo "✓ All ${EVENT_COUNT} tables verified durable cross-replica with sequential consistency"
+        echo "✓ All canonical_* Distributed forwards drained — every acked row is durably in a target shard"
     - name: Dump diagnostic info on failure
       if: failure() || cancelled()
       run: |

@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	RetryInterval time.Duration `yaml:"retryInterval" default:"60s"`
-	NodeRecords   []string      `yaml:"nodeRecords"`
+	RetryInterval      time.Duration `yaml:"retryInterval" default:"60s"`
+	MaxConcurrentPeers int           `yaml:"maxConcurrentPeers" default:"0"`
+	NodeRecords        []string      `yaml:"nodeRecords"`
 }
 
 func (c *Config) Validate() error {

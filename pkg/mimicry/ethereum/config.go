@@ -16,6 +16,15 @@ type Config struct {
 	// TransactionBatchSize is the number of non-blob transactions to request at a time
 	// via GetPooledTransactions.
 	TransactionBatchSize int `yaml:"transactionBatchSize" default:"10"`
+
+	// BootstrapRPCURL is an optional execution JSON-RPC endpoint used to build
+	// our own status message and serve lightweight block/header/body/receipt requests.
+	BootstrapRPCURL string `yaml:"bootstrapRPCURL" default:""` //nolint:tagliatelle // Preserve the documented acronym-heavy config key.
+
+	// PrivateKey is an optional secp256k1 private key used as the local devp2p
+	// node identity for mimicry execution peer connections. If omitted, mimicry
+	// generates one process-local identity and reuses it for all connections.
+	PrivateKey string `yaml:"privateKey" default:""`
 }
 
 func (c *Config) Validate() error {

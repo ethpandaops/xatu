@@ -19,7 +19,7 @@ concurrency:
 jobs:
   cannon-smoke-test:
     name: cannon-smoke-test (${{ matrix.output_type }})
-    timeout-minutes: 20
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

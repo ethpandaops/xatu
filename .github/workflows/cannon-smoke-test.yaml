@@ -257,6 +257,71 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    # Direct-CH path only: re-assert every row visible cross-replica with
+    # select_sequential_consistency=1. The previous step already confirmed
+    # rows landed on xatu-clickhouse-01 (the node cannon dialed). This step
+    # confirms they survived the full durability chain — Distributed forward
+    # queue → shard insert → quorum replication — by reading from
+    # xatu-clickhouse-02. If a row was acked back to cannon (advancing the
+    # postgres checkpoint) but is invisible from a different replica, the
+    # at-least-once contract is broken and we want CI to fail loudly.
+    - name: Verify cross-replica durability (xatu-clickhouse-02)
+      if: matrix.output_type == 'clickhouse'
+      timeout-minutes: 5
+      env:
+        TARGET_EPOCH: ${{ steps.beacon.outputs.target_epoch }}
+        NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
+      run: |
+        set -e
+
+        EVENT_COUNT=$(yq '.event_types | length' .github/cannon/seeding.yaml)
+        FAILED_TABLES=()
+
+        for ((i=0; i<EVENT_COUNT; i++)); do
+            TABLE=$(yq ".event_types[$i].table" .github/cannon/seeding.yaml)
+            QUERY="SELECT COUNT(*) FROM $TABLE FINAL WHERE meta_network_name = '$NETWORK_NAME' AND epoch >= $TARGET_EPOCH"
+
+            echo ""
+            echo "Cross-replica check: $TABLE on xatu-clickhouse-02 (sequential_consistency=1)"
+
+            FOUND=0
+            for try in $(seq 1 30); do
+                RESULT=$(clickhouse-client \
+                    -h localhost --port 9001 \
+                    -d default \
+                    --select_sequential_consistency 1 \
+                    -q "$QUERY" 2>&1) || RESULT=""
+
+                if [[ "$RESULT" =~ ^[0-9]+$ ]] && [ "$RESULT" -gt 0 ]; then
+                    echo "  ✓ $TABLE: $RESULT rows visible cross-replica (try $try)"
+                    FOUND=1
+                    break
+                fi
+
+                sleep 2
+            done
+
+            if [ "$FOUND" -eq 0 ]; then
+                echo "  ✗ $TABLE: not visible on xatu-clickhouse-02 with sequential consistency"
+                FAILED_TABLES+=("$TABLE")
+            fi
+        done
+
+        echo ""
+        if [ ${#FAILED_TABLES[@]} -gt 0 ]; then
+            echo "✗ Cross-replica durability failed for ${#FAILED_TABLES[@]} table(s):"
+            for t in "${FAILED_TABLES[@]}"; do
+                echo "  - $t"
+            done
+            echo ""
+            echo "Cannon's checkpoint advanced for rows that aren't durable on a"
+            echo "non-write replica. Suspect insert_quorum, replication, or the"
+            echo "Distributed forward queue. This is the at-least-once contract"
+            echo "violation the cross-replica check is here to surface."
+            exit 1
+        fi
+
+        echo "✓ All ${EVENT_COUNT} tables verified durable cross-replica with sequential consistency"
     - name: Dump diagnostic info on failure
       if: failure() || cancelled()
       run: |

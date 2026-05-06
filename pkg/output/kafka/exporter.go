@@ -86,11 +86,12 @@ func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEv
 		}
 
 		msgByteSize := m.ByteSize(2)
-		if msgByteSize > e.config.FlushBytes {
+		if msgByteSize > e.config.MaxMessageBytes {
 			e.log.
 				WithField("event_id", routingKey).
 				WithField("msg_size", msgByteSize).
-				Debug("Message too large, consider increasing `max_message_bytes`")
+				WithField("max_message_bytes", e.config.MaxMessageBytes).
+				Warn("Message exceeds max_message_bytes, dropping")
 
 			continue
 		}

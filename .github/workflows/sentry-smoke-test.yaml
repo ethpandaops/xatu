@@ -130,7 +130,7 @@ jobs:
             break
           fi
           if [ "$i" -eq 30 ]; then
-            echo "::error::xatu-vector-http-kafka failed to bind :9005"
+            echo "::error::xatu-vector-http-kafka failed to accept HTTP on host :9055"
             docker logs xatu-vector-http-kafka 2>&1 | tail -50
             exit 1
           fi

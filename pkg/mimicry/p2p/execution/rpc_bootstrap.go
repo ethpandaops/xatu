@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"sync"
 	"time"
@@ -46,7 +47,26 @@ type rpcBootstrapStatus struct {
 	headNumber              uint64
 	headHash                common.Hash
 	forkID                  forkid.ID
+	forkFilter              forkid.Filter
 	expiresAt               time.Time
+}
+
+type rpcBootstrapChain struct {
+	config  *params.ChainConfig
+	genesis *types.Block
+	head    *types.Header
+}
+
+func (c *rpcBootstrapChain) Config() *params.ChainConfig {
+	return c.config
+}
+
+func (c *rpcBootstrapChain) Genesis() *types.Block {
+	return c.genesis
+}
+
+func (c *rpcBootstrapChain) CurrentHeader() *types.Header {
+	return c.head
 }
 
 var sharedRPCBootstraps = struct {
@@ -95,13 +115,24 @@ func newRPCBootstrap(ctx context.Context, log logrus.FieldLogger, url string) (*
 	return bootstrap, nil
 }
 
+func ValidateBootstrapRPC(ctx context.Context, log logrus.FieldLogger, url string) error {
+	bootstrap, err := newRPCBootstrap(ctx, log, url)
+	if err != nil {
+		return err
+	}
+
+	_, err = bootstrap.currentStatus(ctx)
+
+	return err
+}
+
 func (b *rpcBootstrap) status(ctx context.Context, protocolVersion uint, peerStatus mimicry.Status) (mimicry.Status, error) {
 	snapshot, err := b.currentStatus(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := validatePeerStatus(peerStatus, snapshot.networkID, snapshot.genesis, snapshot.forkID); err != nil {
+	if err := validatePeerStatus(peerStatus, snapshot); err != nil {
 		return nil, err
 	}
 
@@ -161,6 +192,11 @@ func (b *rpcBootstrap) currentStatus(ctx context.Context) (*rpcBootstrapStatus, 
 	}
 
 	forkID := forkid.NewID(chainConfig, genesis, head.Number.Uint64(), head.Time)
+	forkFilter := forkid.NewFilter(&rpcBootstrapChain{
+		config:  chainConfig,
+		genesis: genesis,
+		head:    head,
+	})
 
 	b.statusCache = &rpcBootstrapStatus{
 		networkID:               networkID.Uint64(),
@@ -169,36 +205,55 @@ func (b *rpcBootstrap) currentStatus(ctx context.Context) (*rpcBootstrapStatus, 
 		headNumber:              head.Number.Uint64(),
 		headHash:                head.Hash(),
 		forkID:                  forkID,
+		forkFilter:              forkFilter,
 		expiresAt:               time.Now().Add(statusCacheTTL),
 	}
 
 	return b.statusCache, nil
 }
 
-func validatePeerStatus(peerStatus mimicry.Status, networkID uint64, genesis common.Hash, forkID forkid.ID) error {
+func validatePeerStatus(peerStatus mimicry.Status, snapshot *rpcBootstrapStatus) error {
 	if peerStatus == nil {
 		return nil
 	}
 
-	if peerStatus.GetNetworkID() != networkID {
-		return fmt.Errorf("peer network id %d does not match bootstrap RPC network id %d", peerStatus.GetNetworkID(), networkID)
+	if peerStatus.GetNetworkID() != snapshot.networkID {
+		return fmt.Errorf("peer network id %d does not match bootstrap RPC network id %d", peerStatus.GetNetworkID(), snapshot.networkID)
 	}
 
-	if !bytes.Equal(peerStatus.GetGenesis(), genesis[:]) {
-		return fmt.Errorf("peer genesis %x does not match bootstrap genesis %x", peerStatus.GetGenesis(), genesis[:])
+	if !bytes.Equal(peerStatus.GetGenesis(), snapshot.genesis[:]) {
+		return fmt.Errorf("peer genesis %x does not match bootstrap genesis %x", peerStatus.GetGenesis(), snapshot.genesis[:])
 	}
 
-	if !bytes.Equal(peerStatus.GetForkIDHash(), forkID.Hash[:]) || peerStatus.GetForkIDNext() != forkID.Next {
+	peerForkID, err := forkIDFromPeerStatus(peerStatus)
+	if err != nil {
+		return err
+	}
+
+	if err := snapshot.forkFilter(peerForkID); err != nil {
 		return fmt.Errorf(
-			"peer fork id 0x%x/%d does not match bootstrap fork id 0x%x/%d",
-			peerStatus.GetForkIDHash(),
-			peerStatus.GetForkIDNext(),
-			forkID.Hash[:],
-			forkID.Next,
+			"peer fork id 0x%x/%d is incompatible with bootstrap fork id 0x%x/%d: %w",
+			peerForkID.Hash[:],
+			peerForkID.Next,
+			snapshot.forkID.Hash[:],
+			snapshot.forkID.Next,
+			err,
 		)
 	}
 
 	return nil
+}
+
+func forkIDFromPeerStatus(peerStatus mimicry.Status) (forkid.ID, error) {
+	hash := peerStatus.GetForkIDHash()
+	if len(hash) != 4 {
+		return forkid.ID{}, fmt.Errorf("peer fork id hash must be 4 bytes, got %d", len(hash))
+	}
+
+	var forkHash [4]byte
+	copy(forkHash[:], hash)
+
+	return forkid.ID{Hash: forkHash, Next: peerStatus.GetForkIDNext()}, nil
 }
 
 func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeadersRequest) ([]*types.Header, error) {
@@ -230,6 +285,10 @@ func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeaders
 	headers := make([]*types.Header, 0, amount)
 	headers = append(headers, header)
 
+	if request.Skip == math.MaxUint64 {
+		return headers, nil
+	}
+
 	step := request.Skip + 1
 
 	for uint64(len(headers)) < amount {
@@ -244,6 +303,10 @@ func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeaders
 
 			next = current - step
 		} else {
+			if current > math.MaxUint64-step {
+				break
+			}
+
 			next = current + step
 		}
 
@@ -253,7 +316,7 @@ func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeaders
 				break
 			}
 
-			return headers, herr
+			return nil, herr
 		}
 
 		if nextHeader == nil {
@@ -286,7 +349,7 @@ func (b *rpcBootstrap) bodies(ctx context.Context, hashes []common.Hash) ([]eth.
 				continue
 			}
 
-			return bodies, err
+			return nil, err
 		}
 
 		if block == nil {
@@ -325,7 +388,7 @@ func (b *rpcBootstrap) receipts(ctx context.Context, request mimicry.ReceiptRequ
 				continue
 			}
 
-			return receipts, err
+			return nil, err
 		}
 
 		if blockReceipts == nil {

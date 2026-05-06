@@ -46,7 +46,7 @@ Mimicry requires a single `yaml` config file. An example file can be found [here
 | labels | object |  | A key value map of labels to append to every mimicry event                                                                         |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                     |
 | captureDelay | string | `3m` | Delay before starting to capture transactions                                                                                      |
-| ethereum.bootstrapRPCURL | string |  | Optional execution JSON-RPC endpoint used to build local `eth` Status and answer block data requests                               |
+| ethereum.bootstrapRpcUrl | string |  | Optional mainnet, Sepolia, or Holesky execution JSON-RPC endpoint used to build local `eth` Status and answer block data requests  |
 | ethereum.privateKey | string |  | Optional hex devp2p node private key. If omitted, mimicry reuses one generated process-local identity for all execution peers       |
 | ethereum.blobTransactionBatchSize | int | `1` | Number of blob transactions to request at a time via `GetPooledTransactions`                                                       |
 | ethereum.transactionBatchSize | int | `10` | Number of non-blob transactions to request at a time via `GetPooledTransactions`                                                   |
@@ -78,7 +78,7 @@ Coordinator configuration to statically specify peers to connect to.
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | coordinator.config.retryInterval | string |  | Interval between trying to connect to a peer |
-| coordinator.config.maxConcurrentPeers | int | `0` | Maximum number of active peer connections. `0` means unlimited |
+| coordinator.config.maxConcurrentPeers | int | `0` | Maximum number of in-flight and active peer connections. `0` means unlimited |
 | coordinator.config.nodeRecords | array<string> |  | List of ENR/ENode peers to connect to |
 
 ### Output `xatu` configuration

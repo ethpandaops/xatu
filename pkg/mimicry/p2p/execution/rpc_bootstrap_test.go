@@ -1,55 +1,88 @@
 package execution
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/forkid"
+	"github.com/ethereum/go-ethereum/core/types"
 	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 	"github.com/stretchr/testify/require"
 )
 
 func TestValidatePeerStatus(t *testing.T) {
-	genesis := common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	expectedForkID := forkid.ID{Hash: [4]byte{0x07, 0xc9, 0x46, 0x2e}, Next: 0}
+	snapshot := snapshotForTest(t, 1, 23_000_000, 1_750_000_000)
 
-	require.NoError(t, validatePeerStatus(nil, 1, genesis, expectedForkID))
+	require.NoError(t, validatePeerStatus(nil, snapshot))
 
 	require.NoError(t, validatePeerStatus(
-		statusForTest(1, genesis, expectedForkID),
-		1,
-		genesis,
-		expectedForkID,
+		statusForTest(1, snapshot.genesis, snapshot.forkID),
+		snapshot,
 	))
 
 	require.ErrorContains(t, validatePeerStatus(
-		statusForTest(56, genesis, expectedForkID),
-		1,
-		genesis,
-		expectedForkID,
+		statusForTest(56, snapshot.genesis, snapshot.forkID),
+		snapshot,
 	), "network id")
 
 	require.ErrorContains(t, validatePeerStatus(
-		statusForTest(1, common.HexToHash("0x01"), expectedForkID),
-		1,
-		genesis,
-		expectedForkID,
+		statusForTest(1, common.HexToHash("0x01"), snapshot.forkID),
+		snapshot,
 	), "genesis")
 
 	require.ErrorContains(t, validatePeerStatus(
-		statusForTest(1, genesis, forkid.ID{Hash: [4]byte{0xc3, 0x76, 0xcf, 0x8b}, Next: 0}),
-		1,
-		genesis,
-		expectedForkID,
+		statusForTest(1, snapshot.genesis, forkid.ID{Hash: [4]byte{0xff, 0xff, 0xff, 0xff}, Next: 0}),
+		snapshot,
 	), "fork id")
 
+	invalidNext := snapshot.forkID
+	invalidNext.Next = 1
+
 	require.ErrorContains(t, validatePeerStatus(
-		statusForTest(1, genesis, forkid.ID{Hash: expectedForkID.Hash, Next: 1}),
-		1,
-		genesis,
-		expectedForkID,
+		statusForTest(1, snapshot.genesis, invalidNext),
+		snapshot,
 	), "fork id")
+}
+
+func TestValidatePeerStatusAcceptsCompatibleForkID(t *testing.T) {
+	snapshot := snapshotForTest(t, 1, 23_000_000, 1_750_000_000)
+	chainConfig, genesis, _, err := bootstrapNetwork(1)
+	require.NoError(t, err)
+
+	syncingForkID := forkid.NewID(chainConfig, genesis, 0, genesis.Time())
+
+	require.NoError(t, validatePeerStatus(
+		statusForTest(1, snapshot.genesis, syncingForkID),
+		snapshot,
+	))
+}
+
+func snapshotForTest(t *testing.T, networkID, headNumber, headTime uint64) *rpcBootstrapStatus {
+	t.Helper()
+
+	chainConfig, genesis, terminalTotalDifficulty, err := bootstrapNetwork(networkID)
+	require.NoError(t, err)
+
+	head := &types.Header{
+		Number: new(big.Int).SetUint64(headNumber),
+		Time:   headTime,
+	}
+	forkID := forkid.NewID(chainConfig, genesis, headNumber, headTime)
+
+	return &rpcBootstrapStatus{
+		networkID:               networkID,
+		genesis:                 genesis.Hash(),
+		terminalTotalDifficulty: terminalTotalDifficulty,
+		headNumber:              headNumber,
+		forkID:                  forkID,
+		forkFilter: forkid.NewFilter(&rpcBootstrapChain{
+			config:  chainConfig,
+			genesis: genesis,
+			head:    head,
+		}),
+	}
 }
 
 func statusForTest(networkID uint64, genesis common.Hash, forkID forkid.ID) mimicry.Status {

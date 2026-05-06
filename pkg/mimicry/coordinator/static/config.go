@@ -16,5 +16,9 @@ func (c *Config) Validate() error {
 		return errors.New("nodeRecords is required")
 	}
 
+	if c.MaxConcurrentPeers < 0 {
+		return errors.New("maxConcurrentPeers cannot be negative")
+	}
+
 	return nil
 }

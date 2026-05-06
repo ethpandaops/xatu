@@ -1,6 +1,10 @@
 package ethereum
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +23,7 @@ type Config struct {
 
 	// BootstrapRPCURL is an optional execution JSON-RPC endpoint used to build
 	// our own status message and serve lightweight block/header/body/receipt requests.
-	BootstrapRPCURL string `yaml:"bootstrapRPCURL" default:""` //nolint:tagliatelle // Preserve the documented acronym-heavy config key.
+	BootstrapRPCURL string `yaml:"bootstrapRpcUrl" default:""`
 
 	// PrivateKey is an optional secp256k1 private key used as the local devp2p
 	// node identity for mimicry execution peer connections. If omitted, mimicry
@@ -28,6 +32,12 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if c.PrivateKey != "" {
+		if _, err := crypto.HexToECDSA(strings.TrimPrefix(c.PrivateKey, "0x")); err != nil {
+			return fmt.Errorf("invalid privateKey: %w", err)
+		}
+	}
+
 	return nil
 }
 

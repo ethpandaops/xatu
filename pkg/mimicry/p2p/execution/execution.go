@@ -81,18 +81,22 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 	if ethereumConfig != nil && ethereumConfig.BootstrapRPCURL != "" {
 		bootstrap, berr := newRPCBootstrap(ctx, log, ethereumConfig.BootstrapRPCURL)
 		if berr != nil {
-			log.WithError(berr).Warn("failed to initialize execution bootstrap RPC")
-		} else {
-			opts = append(opts,
-				mimicry.WithStatusProvider(bootstrap.status),
-				mimicry.WithHeaderProvider(bootstrap.headers),
-				mimicry.WithBodyProvider(bootstrap.bodies),
-				mimicry.WithReceiptProvider(bootstrap.receipts),
-			)
+			return nil, fmt.Errorf("initialize execution bootstrap RPC: %w", berr)
 		}
+
+		if _, berr = bootstrap.currentStatus(ctx); berr != nil {
+			return nil, fmt.Errorf("validate execution bootstrap RPC: %w", berr)
+		}
+
+		opts = append(opts,
+			mimicry.WithStatusProvider(bootstrap.status),
+			mimicry.WithHeaderProvider(bootstrap.headers),
+			mimicry.WithBodyProvider(bootstrap.bodies),
+			mimicry.WithReceiptProvider(bootstrap.receipts),
+		)
 	}
 
-	client, err := mimicry.New(ctx, log, nodeRecord, "xatu/v0.0.0/linux-x86_64/go", opts...)
+	client, err := mimicry.New(ctx, log, nodeRecord, mimicryClientName(), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +392,7 @@ func (p *Peer) markDisconnectedMetric(reason string) {
 	implementation := p.implmentation
 	executionMetrics.AddDisconnect(implementation, reason)
 
-	if !p.connectedMetricSet || len(p.connectedMetricLabels) != 3 {
+	if !p.connectedMetricSet {
 		return
 	}
 
@@ -400,6 +404,10 @@ func (p *Peer) markDisconnectedMetric(reason string) {
 	)
 	p.connectedMetricLabels = nil
 	p.connectedMetricSet = false
+}
+
+func mimicryClientName() string {
+	return fmt.Sprintf("%s/%s/%s-%s/go", xatu.ImplementationLower(), xatu.Short(), xatu.GOOS, xatu.GOARCH)
 }
 
 // typically when first connecting to a peer, a dump of their transaction pool is sent.

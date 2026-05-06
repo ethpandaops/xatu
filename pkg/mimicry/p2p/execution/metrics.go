@@ -1,6 +1,11 @@
 package execution
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 type Metrics struct {
 	connectedPeers         *prometheus.GaugeVec
@@ -23,7 +28,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Name:      "connected_peer_start_time_seconds",
 			Help:      "Unix timestamp when an execution P2P peer connection reached eth status",
-		}, []string{"implementation", "network_id", "node_record"}),
+		}, []string{"implementation", "network_id", "node_record_hash"}),
 		disconnects: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "disconnects_total",
@@ -50,7 +55,7 @@ func (m *Metrics) SetConnectedPeerStartTime(implementation, networkID, nodeRecor
 	m.connectedPeerStartTime.WithLabelValues(
 		normalizeMetricLabel(implementation),
 		normalizeMetricLabel(networkID),
-		normalizeMetricLabel(nodeRecord),
+		hashMetricLabel(nodeRecord),
 	).Set(timestamp)
 }
 
@@ -58,7 +63,7 @@ func (m *Metrics) DeleteConnectedPeerStartTime(implementation, networkID, nodeRe
 	m.connectedPeerStartTime.DeleteLabelValues(
 		normalizeMetricLabel(implementation),
 		normalizeMetricLabel(networkID),
-		normalizeMetricLabel(nodeRecord),
+		hashMetricLabel(nodeRecord),
 	)
 }
 
@@ -72,4 +77,14 @@ func normalizeMetricLabel(value string) string {
 	}
 
 	return value
+}
+
+func hashMetricLabel(value string) string {
+	if value == "" {
+		return metricUnknown
+	}
+
+	sum := sha256.Sum256([]byte(value))
+
+	return hex.EncodeToString(sum[:8])
 }

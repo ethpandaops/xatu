@@ -125,6 +125,31 @@ jobs:
           sleep 2
         done
 
+        # Cannon's Writer.Start runs ValidateTables/ValidateColumns against
+        # the target CH and fails fatal if the schema isn't applied. So
+        # block until xatu-clickhouse-migrator has exited successfully.
+        echo "Waiting for xatu-clickhouse-migrator to apply the schema..."
+        for i in $(seq 1 60); do
+          status=$(docker inspect --format='{{.State.Status}}' xatu-clickhouse-migrator 2>/dev/null || echo "missing")
+          exit_code=$(docker inspect --format='{{.State.ExitCode}}' xatu-clickhouse-migrator 2>/dev/null || echo "")
+          if [ "$status" = "exited" ] && [ "$exit_code" = "0" ]; then
+            echo "xatu-clickhouse-migrator completed successfully."
+            break
+          fi
+          if [ "$status" = "exited" ] && [ "$exit_code" != "0" ]; then
+            echo "::error::xatu-clickhouse-migrator failed (exit_code=$exit_code)"
+            docker logs xatu-clickhouse-migrator 2>&1 | tail -100
+            exit 1
+          fi
+          if [ "$i" -eq 60 ]; then
+            echo "::error::xatu-clickhouse-migrator did not finish within 120s (status=$status)"
+            docker logs xatu-clickhouse-migrator 2>&1 | tail -100
+            exit 1
+          fi
+          echo "  migrator status=$status (attempt $i/60)..."
+          sleep 2
+        done
+
         echo ""
         echo "=== Container status ==="
         docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

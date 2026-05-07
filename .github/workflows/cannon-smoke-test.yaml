@@ -18,15 +18,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   cannon-smoke-test:
-    name: cannon-smoke-test (${{ matrix.output_type }})
     timeout-minutes: 25
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # xatu      → cannon ships via gRPC to xatu-server → kafka → vector → CH
-        # clickhouse → cannon writes to CH directly via the new direct sink
-        output_type: [xatu, clickhouse]
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -100,7 +93,18 @@ jobs:
       timeout-minutes: 10
       shell: bash
       run: |
-        docker compose up --detach --quiet-pull
+        # Direct-CH path only — cannon talks to ClickHouse via ch-go and uses
+        # xatu-server only as the coordinator gRPC endpoint. Kafka, vector,
+        # consumoor, sentry-logs, tempo, prometheus, grafana, nginx are all
+        # off the path; bringing them up just adds startup contention and
+        # CI flakes (the "xatu-clickhouse-02 exit 138" / vector readiness
+        # races we kept rerunning to dodge). Listing leaf services pulls
+        # their depends_on chains: postgres + zookeepers + clickhouse-01/02
+        # come up automatically.
+        docker compose up --detach --quiet-pull \
+          xatu-postgres-migrator \
+          xatu-server \
+          xatu-clickhouse-migrator
     - name: Wait for Xatu stack to be ready
       run: |
         echo "Waiting for xatu-server gRPC to be ready on port 8080..."
@@ -163,7 +167,6 @@ jobs:
     - name: Create Xatu Cannon config
       run: |
         NETWORK_NAME="${{ steps.beacon.outputs.network_name }}"
-        OUTPUT_TYPE="${{ matrix.output_type }}"
 
         cat <<EOF > /tmp/cannon_config.yaml
         logging: debug
@@ -205,10 +208,6 @@ jobs:
           overrideNetworkName: "$NETWORK_NAME"
         coordinator:
           address: xatu-server:8080
-        EOF
-
-        if [ "$OUTPUT_TYPE" = "clickhouse" ]; then
-          cat <<EOF >> /tmp/cannon_config.yaml
 
         outputs:
           - name: ch-direct
@@ -219,21 +218,6 @@ jobs:
                 adaptiveLimiter:
                   enabled: false
         EOF
-        else
-          cat <<EOF >> /tmp/cannon_config.yaml
-
-        outputs:
-          - name: xatu
-            type: xatu
-            config:
-              address: xatu-server:8080
-              tls: false
-              maxQueueSize: 51200
-              batchTimeout: 1s
-              exportTimeout: 30s
-              maxExportBatchSize: 512
-        EOF
-        fi
     - name: Show config
       run: |
         cat /tmp/cannon_config.yaml
@@ -274,7 +258,6 @@ jobs:
     # CI-topology-appropriate equivalent and tests the same durability
     # invariant directly.
     - name: Verify Distributed forward queue is drained
-      if: matrix.output_type == 'clickhouse'
       timeout-minutes: 3
       run: |
         set -e

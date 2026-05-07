@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
@@ -26,6 +27,15 @@ type AvailableConsensusNodeRecord struct {
 }
 
 var availableConsensusNodeRecordStruct = sqlbuilder.NewStruct(new(AvailableConsensusNodeRecord)).For(sqlbuilder.PostgreSQL)
+
+var executionClientImplementations = []string{
+	"besu",
+	"erigon",
+	"ethrex",
+	"geth",
+	"nethermind",
+	"reth",
+}
 
 func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*node.Activity) error {
 	// Return early if there are no activities to upsert
@@ -57,6 +67,82 @@ func (c *Client) UpsertNodeRecordActivities(ctx context.Context, activities []*n
 }
 
 func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkIDHashes [][]byte, capabilities []string, limit int) ([]*string, error) {
+	if limit <= 0 {
+		return []*string{}, nil
+	}
+
+	candidatesByImplementation := make(map[string][]*string, len(executionClientImplementations))
+	for _, implementation := range executionClientImplementations {
+		records, err := c.listAvailableExecutionNodeRecords(ctx, clientID, ignoredNodeRecords, networkIds, forkIDHashes, capabilities, implementation, limit)
+		if err != nil {
+			return nil, err
+		}
+
+		candidatesByImplementation[implementation] = records
+	}
+
+	nodeRecords := make([]*string, 0, limit)
+	seen := make(map[string]struct{}, limit)
+
+	addRecord := func(record *string) bool {
+		if record == nil {
+			return len(nodeRecords) < limit
+		}
+
+		if _, ok := seen[*record]; ok {
+			return len(nodeRecords) < limit
+		}
+
+		seen[*record] = struct{}{}
+		nodeRecords = append(nodeRecords, record)
+
+		return len(nodeRecords) < limit
+	}
+
+	for i := 0; len(nodeRecords) < limit; i++ {
+		added := false
+
+		for _, implementation := range executionClientImplementations {
+			candidates := candidatesByImplementation[implementation]
+			if i >= len(candidates) {
+				continue
+			}
+
+			added = true
+			if !addRecord(candidates[i]) {
+				break
+			}
+		}
+
+		if !added {
+			break
+		}
+	}
+
+	if len(nodeRecords) < limit {
+		fillIgnoredNodeRecords := append([]string{}, ignoredNodeRecords...)
+		for _, record := range nodeRecords {
+			if record != nil {
+				fillIgnoredNodeRecords = append(fillIgnoredNodeRecords, *record)
+			}
+		}
+
+		records, err := c.listAvailableExecutionNodeRecords(ctx, clientID, fillIgnoredNodeRecords, networkIds, forkIDHashes, capabilities, "", limit-len(nodeRecords))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, record := range records {
+			if !addRecord(record) {
+				break
+			}
+		}
+	}
+
+	return nodeRecords, nil
+}
+
+func (c *Client) listAvailableExecutionNodeRecords(ctx context.Context, clientID string, ignoredNodeRecords []string, networkIds []uint64, forkIDHashes [][]byte, capabilities []string, implementation string, limit int) ([]*string, error) {
 	inr := make([]any, 0, len(ignoredNodeRecords))
 	for _, enr := range ignoredNodeRecords {
 		inr = append(inr, enr)
@@ -127,6 +213,14 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 		for _, cap := range caps {
 			where = append(where, sb.Like("nre.capabilities", "%"+fmt.Sprint(cap)+"%"))
 		}
+	}
+
+	if implementation != "" {
+		normalizedImplementation := strings.ToLower(implementation)
+		where = append(where, sb.Or(
+			sb.Equal("LOWER(nre.name)", normalizedImplementation),
+			sb.Like("LOWER(nre.name)", normalizedImplementation+"/%"),
+		))
 	}
 
 	sb.Where(where...)

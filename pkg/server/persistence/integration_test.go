@@ -588,6 +588,82 @@ func TestPersistenceIntegration(t *testing.T) {
 			assert.GreaterOrEqual(t, len(available), 1)
 		})
 
+		t.Run("ListAvailableExecutionNodeRecordsBalancesImplementations", func(t *testing.T) {
+			networkID := uint64(424242)
+			forkIDHash := []byte{0xaa, 0xbb, 0xcc, 0xdd}
+			baseTime := time.Now().Add(-2 * time.Hour)
+
+			testData := []struct {
+				enr        string
+				name       string
+				createTime time.Time
+			}{
+				{
+					enr:        "enr:-IS4QBalancedGeth1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					name:       "Geth/v1.0.0",
+					createTime: baseTime,
+				},
+				{
+					enr:        "enr:-IS4QBalancedGeth2-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					name:       "Geth/v1.0.1",
+					createTime: baseTime.Add(time.Minute),
+				},
+				{
+					enr:        "enr:-IS4QBalancedGeth3-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					name:       "Geth/v1.0.2",
+					createTime: baseTime.Add(2 * time.Minute),
+				},
+				{
+					enr:        "enr:-IS4QBalancedBesu1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					name:       "Besu/v1.0.0",
+					createTime: baseTime.Add(time.Hour),
+				},
+				{
+					enr:        "enr:-IS4QBalancedReth1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+					name:       "Reth/v1.0.0",
+					createTime: baseTime.Add(time.Hour + time.Minute),
+				},
+			}
+
+			for _, td := range testData {
+				nodeRecord := createTestNodeRecord(td.enr)
+				nodeRecord.ETH2 = nil
+				err := tc.Client.InsertNodeRecords(ctx, []*node.Record{nodeRecord})
+				require.NoError(t, err)
+
+				execRecord := createTestExecutionRecord(td.enr)
+				execRecord.Name = td.name
+				execRecord.NetworkID = fmt.Sprint(networkID)
+				execRecord.ForkIDHash = forkIDHash
+				err = tc.Client.InsertNodeRecordExecution(ctx, execRecord)
+				require.NoError(t, err)
+
+				_, err = tc.DB.ExecContext(ctx, "UPDATE node_record_execution SET create_time = $1 WHERE enr = $2", td.createTime, td.enr)
+				require.NoError(t, err)
+			}
+
+			available, err := tc.Client.ListAvailableExecutionNodeRecords(ctx, "requesting-client", nil, []uint64{networkID}, [][]byte{forkIDHash}, nil, 3)
+			require.NoError(t, err)
+			require.Len(t, available, 3)
+
+			availableByENR := map[string]bool{}
+			for _, enr := range available {
+				availableByENR[*enr] = true
+			}
+
+			assert.True(t, availableByENR["enr:-IS4QBalancedBesu1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"])
+			assert.True(t, availableByENR["enr:-IS4QBalancedReth1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"])
+
+			gethRecords := 0
+			for _, td := range testData {
+				if strings.HasPrefix(td.name, "Geth/") && availableByENR[td.enr] {
+					gethRecords++
+				}
+			}
+
+			assert.Equal(t, 1, gethRecords)
+		})
+
 		t.Run("ListAvailableConsensusNodeRecords", func(t *testing.T) {
 			// Create consensus node records with different characteristics
 			testData := []struct {

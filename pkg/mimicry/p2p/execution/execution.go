@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
+	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
@@ -79,20 +80,20 @@ func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handler
 	}
 
 	if ethereumConfig != nil && ethereumConfig.BootstrapRPCURL != "" {
-		bootstrap, berr := newRPCBootstrap(ctx, log, ethereumConfig.BootstrapRPCURL)
+		bootstrap, berr := rpcbootstrap.New(ctx, log, ethereumConfig.BootstrapRPCURL)
 		if berr != nil {
 			return nil, fmt.Errorf("initialize execution bootstrap RPC: %w", berr)
 		}
 
-		if _, berr = bootstrap.currentStatus(ctx); berr != nil {
+		if _, berr = bootstrap.CurrentStatus(ctx); berr != nil {
 			return nil, fmt.Errorf("validate execution bootstrap RPC: %w", berr)
 		}
 
 		opts = append(opts,
-			mimicry.WithStatusProvider(bootstrap.status),
-			mimicry.WithHeaderProvider(bootstrap.headers),
-			mimicry.WithBodyProvider(bootstrap.bodies),
-			mimicry.WithReceiptProvider(bootstrap.receipts),
+			mimicry.WithStatusProvider(bootstrap.Status),
+			mimicry.WithHeaderProvider(bootstrap.Headers),
+			mimicry.WithBodyProvider(bootstrap.Bodies),
+			mimicry.WithReceiptProvider(bootstrap.Receipts),
 		)
 	}
 

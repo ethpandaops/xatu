@@ -53,6 +53,10 @@ p2p:
     #   retryAttempts: 5    # max retry attempts for dialing a peer
     #   retryDelay: 5s      # delay between retry attempts
     #   dialTimeout: 15s    # timeout for dialing a peer
+    #   bootstrapRpcUrl: "" # optional EL JSON-RPC. When set, discovery serves
+    #                       # Status/headers/bodies/receipts from this endpoint
+    #                       # to keep negotiated peers connected. e.g.
+    #                       # http://localhost:8545
     # consensus layer discovery settings (optional, defaults shown)
     # consensus:
     #   retryAttempts: 1        # max retry attempts for dialing a peer
@@ -123,6 +127,7 @@ p2p:
   #     retryAttempts: 5
   #     retryDelay: 5s
   #     dialTimeout: 15s
+  #     bootstrapRpcUrl: "" # optional EL JSON-RPC for Status/headers/bodies/receipts
   #   consensus:  # optional
   #     retryAttempts: 1
   #     retryDelay: 2s

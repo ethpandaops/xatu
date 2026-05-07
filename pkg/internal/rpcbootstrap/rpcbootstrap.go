@@ -1,4 +1,9 @@
-package execution
+// Package rpcbootstrap provides an execution-layer JSON-RPC backed source for
+// devp2p Status, headers, bodies, and receipts. It is shared between the
+// mimicry and discovery modules so both can act as well-behaved peers during
+// the eth handshake using a real EL node as the source of truth for chain head
+// and historical data.
+package rpcbootstrap
 
 import (
 	"bytes"
@@ -31,16 +36,18 @@ const (
 	statusCacheTTL       = 10 * time.Second
 )
 
-type rpcBootstrap struct {
+// Bootstrap serves devp2p Status / headers / bodies / receipts to an eth peer
+// using a backing EL JSON-RPC endpoint as the source of truth.
+type Bootstrap struct {
 	log logrus.FieldLogger
 
 	client *ethclient.Client
 
 	mu          sync.Mutex
-	statusCache *rpcBootstrapStatus
+	statusCache *statusSnapshot
 }
 
-type rpcBootstrapStatus struct {
+type statusSnapshot struct {
 	networkID               uint64
 	genesis                 common.Hash
 	terminalTotalDifficulty *big.Int
@@ -51,41 +58,43 @@ type rpcBootstrapStatus struct {
 	expiresAt               time.Time
 }
 
-type rpcBootstrapChain struct {
+type bootstrapChain struct {
 	config  *params.ChainConfig
 	genesis *types.Block
 	head    *types.Header
 }
 
-func (c *rpcBootstrapChain) Config() *params.ChainConfig {
+func (c *bootstrapChain) Config() *params.ChainConfig {
 	return c.config
 }
 
-func (c *rpcBootstrapChain) Genesis() *types.Block {
+func (c *bootstrapChain) Genesis() *types.Block {
 	return c.genesis
 }
 
-func (c *rpcBootstrapChain) CurrentHeader() *types.Header {
+func (c *bootstrapChain) CurrentHeader() *types.Header {
 	return c.head
 }
 
-var sharedRPCBootstraps = struct {
+var sharedBootstraps = struct {
 	sync.Mutex
-	byURL map[string]*rpcBootstrap
+	byURL map[string]*Bootstrap
 }{
-	byURL: map[string]*rpcBootstrap{},
+	byURL: map[string]*Bootstrap{},
 }
 
-func newRPCBootstrap(ctx context.Context, log logrus.FieldLogger, url string) (*rpcBootstrap, error) {
-	sharedRPCBootstraps.Lock()
+// New returns a Bootstrap for the given EL JSON-RPC URL. Multiple callers with
+// the same URL share a single underlying client and Status cache.
+func New(ctx context.Context, log logrus.FieldLogger, url string) (*Bootstrap, error) {
+	sharedBootstraps.Lock()
 
-	if bootstrap, ok := sharedRPCBootstraps.byURL[url]; ok {
-		sharedRPCBootstraps.Unlock()
+	if bootstrap, ok := sharedBootstraps.byURL[url]; ok {
+		sharedBootstraps.Unlock()
 
 		return bootstrap, nil
 	}
 
-	sharedRPCBootstraps.Unlock()
+	sharedBootstraps.Unlock()
 
 	rpcCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -95,39 +104,43 @@ func newRPCBootstrap(ctx context.Context, log logrus.FieldLogger, url string) (*
 		return nil, err
 	}
 
-	bootstrap := &rpcBootstrap{
+	bootstrap := &Bootstrap{
 		log:    log.WithField("bootstrap_rpc_url", url),
 		client: client,
 	}
 
-	sharedRPCBootstraps.Lock()
+	sharedBootstraps.Lock()
 
-	if existing, ok := sharedRPCBootstraps.byURL[url]; ok {
-		sharedRPCBootstraps.Unlock()
+	if existing, ok := sharedBootstraps.byURL[url]; ok {
+		sharedBootstraps.Unlock()
 		client.Close()
 
 		return existing, nil
 	}
 
-	sharedRPCBootstraps.byURL[url] = bootstrap
-	sharedRPCBootstraps.Unlock()
+	sharedBootstraps.byURL[url] = bootstrap
+	sharedBootstraps.Unlock()
 
 	return bootstrap, nil
 }
 
-func ValidateBootstrapRPC(ctx context.Context, log logrus.FieldLogger, url string) error {
-	bootstrap, err := newRPCBootstrap(ctx, log, url)
+// Validate dials the URL and confirms a Status snapshot can be built.
+func Validate(ctx context.Context, log logrus.FieldLogger, url string) error {
+	bootstrap, err := New(ctx, log, url)
 	if err != nil {
 		return err
 	}
 
-	_, err = bootstrap.currentStatus(ctx)
+	_, err = bootstrap.CurrentStatus(ctx)
 
 	return err
 }
 
-func (b *rpcBootstrap) status(ctx context.Context, protocolVersion uint, peerStatus mimicry.Status) (mimicry.Status, error) {
-	snapshot, err := b.currentStatus(ctx)
+// Status returns a Status message for the given protocolVersion sourced from
+// the current chain head. It also validates the peer's claimed Status against
+// our snapshot for early rejection of incompatible peers.
+func (b *Bootstrap) Status(ctx context.Context, protocolVersion uint, peerStatus mimicry.Status) (mimicry.Status, error) {
+	snapshot, err := b.CurrentStatus(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +178,9 @@ func (b *rpcBootstrap) status(ctx context.Context, protocolVersion uint, peerSta
 	}
 }
 
-func (b *rpcBootstrap) currentStatus(ctx context.Context) (*rpcBootstrapStatus, error) {
+// CurrentStatus returns the cached chain-head snapshot, refreshing it when
+// stale.
+func (b *Bootstrap) CurrentStatus(ctx context.Context) (*statusSnapshot, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -192,13 +207,13 @@ func (b *rpcBootstrap) currentStatus(ctx context.Context) (*rpcBootstrapStatus, 
 	}
 
 	forkID := forkid.NewID(chainConfig, genesis, head.Number.Uint64(), head.Time)
-	forkFilter := forkid.NewFilter(&rpcBootstrapChain{
+	forkFilter := forkid.NewFilter(&bootstrapChain{
 		config:  chainConfig,
 		genesis: genesis,
 		head:    head,
 	})
 
-	b.statusCache = &rpcBootstrapStatus{
+	b.statusCache = &statusSnapshot{
 		networkID:               networkID.Uint64(),
 		genesis:                 genesis.Hash(),
 		terminalTotalDifficulty: new(big.Int).Set(terminalTotalDifficulty),
@@ -212,51 +227,8 @@ func (b *rpcBootstrap) currentStatus(ctx context.Context) (*rpcBootstrapStatus, 
 	return b.statusCache, nil
 }
 
-func validatePeerStatus(peerStatus mimicry.Status, snapshot *rpcBootstrapStatus) error {
-	if peerStatus == nil {
-		return nil
-	}
-
-	if peerStatus.GetNetworkID() != snapshot.networkID {
-		return fmt.Errorf("peer network id %d does not match bootstrap RPC network id %d", peerStatus.GetNetworkID(), snapshot.networkID)
-	}
-
-	if !bytes.Equal(peerStatus.GetGenesis(), snapshot.genesis[:]) {
-		return fmt.Errorf("peer genesis %x does not match bootstrap genesis %x", peerStatus.GetGenesis(), snapshot.genesis[:])
-	}
-
-	peerForkID, err := forkIDFromPeerStatus(peerStatus)
-	if err != nil {
-		return err
-	}
-
-	if err := snapshot.forkFilter(peerForkID); err != nil {
-		return fmt.Errorf(
-			"peer fork id 0x%x/%d is incompatible with bootstrap fork id 0x%x/%d: %w",
-			peerForkID.Hash[:],
-			peerForkID.Next,
-			snapshot.forkID.Hash[:],
-			snapshot.forkID.Next,
-			err,
-		)
-	}
-
-	return nil
-}
-
-func forkIDFromPeerStatus(peerStatus mimicry.Status) (forkid.ID, error) {
-	hash := peerStatus.GetForkIDHash()
-	if len(hash) != 4 {
-		return forkid.ID{}, fmt.Errorf("peer fork id hash must be 4 bytes, got %d", len(hash))
-	}
-
-	var forkHash [4]byte
-	copy(forkHash[:], hash)
-
-	return forkid.ID{Hash: forkHash, Next: peerStatus.GetForkIDNext()}, nil
-}
-
-func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeadersRequest) ([]*types.Header, error) {
+// Headers serves a GetBlockHeaders response sourced from the backing RPC.
+func (b *Bootstrap) Headers(ctx context.Context, request *eth.GetBlockHeadersRequest) ([]*types.Header, error) {
 	if request == nil || request.Amount == 0 {
 		return nil, nil
 	}
@@ -329,7 +301,8 @@ func (b *rpcBootstrap) headers(ctx context.Context, request *eth.GetBlockHeaders
 	return headers, nil
 }
 
-func (b *rpcBootstrap) bodies(ctx context.Context, hashes []common.Hash) ([]eth.BlockBody, error) {
+// Bodies serves a GetBlockBodies response sourced from the backing RPC.
+func (b *Bootstrap) Bodies(ctx context.Context, hashes []common.Hash) ([]eth.BlockBody, error) {
 	if len(hashes) == 0 {
 		return nil, nil
 	}
@@ -367,7 +340,8 @@ func (b *rpcBootstrap) bodies(ctx context.Context, hashes []common.Hash) ([]eth.
 	return bodies, nil
 }
 
-func (b *rpcBootstrap) receipts(ctx context.Context, request mimicry.ReceiptRequest) ([]*eth.ReceiptList, error) {
+// Receipts serves a GetReceipts response sourced from the backing RPC.
+func (b *Bootstrap) Receipts(ctx context.Context, request mimicry.ReceiptRequest) ([]*eth.ReceiptList, error) {
 	hashes := request.Hashes
 	if len(hashes) == 0 {
 		return nil, nil
@@ -409,6 +383,58 @@ func (b *rpcBootstrap) receipts(ctx context.Context, request mimicry.ReceiptRequ
 	return receipts, nil
 }
 
+func (b *Bootstrap) originHeader(ctx context.Context, origin eth.HashOrNumber) (*types.Header, error) {
+	if origin.Hash != (common.Hash{}) {
+		return b.client.HeaderByHash(ctx, origin.Hash)
+	}
+
+	return b.client.HeaderByNumber(ctx, new(big.Int).SetUint64(origin.Number))
+}
+
+func validatePeerStatus(peerStatus mimicry.Status, snapshot *statusSnapshot) error {
+	if peerStatus == nil {
+		return nil
+	}
+
+	if peerStatus.GetNetworkID() != snapshot.networkID {
+		return fmt.Errorf("peer network id %d does not match bootstrap RPC network id %d", peerStatus.GetNetworkID(), snapshot.networkID)
+	}
+
+	if !bytes.Equal(peerStatus.GetGenesis(), snapshot.genesis[:]) {
+		return fmt.Errorf("peer genesis %x does not match bootstrap genesis %x", peerStatus.GetGenesis(), snapshot.genesis[:])
+	}
+
+	peerForkID, err := forkIDFromPeerStatus(peerStatus)
+	if err != nil {
+		return err
+	}
+
+	if err := snapshot.forkFilter(peerForkID); err != nil {
+		return fmt.Errorf(
+			"peer fork id 0x%x/%d is incompatible with bootstrap fork id 0x%x/%d: %w",
+			peerForkID.Hash[:],
+			peerForkID.Next,
+			snapshot.forkID.Hash[:],
+			snapshot.forkID.Next,
+			err,
+		)
+	}
+
+	return nil
+}
+
+func forkIDFromPeerStatus(peerStatus mimicry.Status) (forkid.ID, error) {
+	hash := peerStatus.GetForkIDHash()
+	if len(hash) != 4 {
+		return forkid.ID{}, fmt.Errorf("peer fork id hash must be 4 bytes, got %d", len(hash))
+	}
+
+	var forkHash [4]byte
+	copy(forkHash[:], hash)
+
+	return forkid.ID{Hash: forkHash, Next: peerStatus.GetForkIDNext()}, nil
+}
+
 func encodeBlockBody(block *types.Block) (eth.BlockBody, error) {
 	transactions, err := rlp.EncodeToRawList([]*types.Transaction(block.Transactions()))
 	if err != nil {
@@ -437,14 +463,6 @@ func encodeBlockBody(block *types.Block) (eth.BlockBody, error) {
 	return body, nil
 }
 
-func (b *rpcBootstrap) originHeader(ctx context.Context, origin eth.HashOrNumber) (*types.Header, error) {
-	if origin.Hash != (common.Hash{}) {
-		return b.client.HeaderByHash(ctx, origin.Hash)
-	}
-
-	return b.client.HeaderByNumber(ctx, new(big.Int).SetUint64(origin.Number))
-}
-
 func bootstrapNetwork(networkID uint64) (*params.ChainConfig, *types.Block, *big.Int, error) {
 	switch networkID {
 	case 1:
@@ -453,6 +471,8 @@ func bootstrapNetwork(networkID uint64) (*params.ChainConfig, *types.Block, *big
 		return params.SepoliaChainConfig, core.DefaultSepoliaGenesisBlock().ToBlock(), copyBigInt(params.SepoliaChainConfig.TerminalTotalDifficulty), nil
 	case 17000:
 		return params.HoleskyChainConfig, core.DefaultHoleskyGenesisBlock().ToBlock(), copyBigInt(params.HoleskyChainConfig.TerminalTotalDifficulty), nil
+	case 560048:
+		return params.HoodiChainConfig, core.DefaultHoodiGenesisBlock().ToBlock(), copyBigInt(params.HoodiChainConfig.TerminalTotalDifficulty), nil
 	default:
 		return nil, nil, nil, fmt.Errorf("unsupported bootstrap RPC network id: %d", networkID)
 	}

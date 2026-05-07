@@ -28,7 +28,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "set -x; clickhouse client --host xatu-clickhouse-01 --port 9000 --query 'SELECT 1' || exit 1; wget --quiet --output-document=/dev/null --header 'Host: localhost' --post-data 'query=SELECT 1' http://xatu-clickhouse-01:8123 || exit 1",
+          "set -x; clickhouse client --host xatu-clickhouse-01 --port 9000 --query 'SELECT 1' || exit 1; wget --quiet --output-document=/dev/null http://xatu-clickhouse-01:8123/ping || exit 1",
         ]
       interval: 5s
       timeout: 10s
@@ -68,7 +68,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "set -x; clickhouse client --host xatu-clickhouse-02 --port 9000 --query 'SELECT 1' || exit 1; wget --quiet --output-document=/dev/null --header 'Host: localhost' --post-data 'query=SELECT 1' http://xatu-clickhouse-02:8123 || exit 1",
+          "set -x; clickhouse client --host xatu-clickhouse-02 --port 9000 --query 'SELECT 1' || exit 1; wget --quiet --output-document=/dev/null http://xatu-clickhouse-02:8123/ping || exit 1",
         ]
       interval: 5s
       timeout: 10s

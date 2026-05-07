@@ -3,10 +3,12 @@ package p2p
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
+	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -22,8 +24,28 @@ type ExecutionPeer struct {
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
 }
 
-func NewExecutionPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*ExecutionPeer, error) {
-	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
+func NewExecutionPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord, bootstrapRPCURL string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*ExecutionPeer, error) {
+	opts := []mimicry.Option{}
+
+	if bootstrapRPCURL != "" {
+		bootstrap, berr := rpcbootstrap.New(ctx, log, bootstrapRPCURL)
+		if berr != nil {
+			return nil, fmt.Errorf("initialize execution bootstrap RPC: %w", berr)
+		}
+
+		if _, berr = bootstrap.CurrentStatus(ctx); berr != nil {
+			return nil, fmt.Errorf("validate execution bootstrap RPC: %w", berr)
+		}
+
+		opts = append(opts,
+			mimicry.WithStatusProvider(bootstrap.Status),
+			mimicry.WithHeaderProvider(bootstrap.Headers),
+			mimicry.WithBodyProvider(bootstrap.Bodies),
+			mimicry.WithReceiptProvider(bootstrap.Receipts),
+		)
+	}
+
+	client, err := mimicry.New(ctx, log, nodeRecord, "xatu", opts...)
 	if err != nil {
 		return nil, err
 	}

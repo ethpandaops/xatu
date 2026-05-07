@@ -1,4 +1,4 @@
-package execution
+package rpcbootstrap
 
 import (
 	"math/big"
@@ -59,7 +59,7 @@ func TestValidatePeerStatusAcceptsCompatibleForkID(t *testing.T) {
 	))
 }
 
-func snapshotForTest(t *testing.T, networkID, headNumber, headTime uint64) *rpcBootstrapStatus {
+func snapshotForTest(t *testing.T, networkID, headNumber, headTime uint64) *statusSnapshot {
 	t.Helper()
 
 	chainConfig, genesis, terminalTotalDifficulty, err := bootstrapNetwork(networkID)
@@ -71,13 +71,13 @@ func snapshotForTest(t *testing.T, networkID, headNumber, headTime uint64) *rpcB
 	}
 	forkID := forkid.NewID(chainConfig, genesis, headNumber, headTime)
 
-	return &rpcBootstrapStatus{
+	return &statusSnapshot{
 		networkID:               networkID,
 		genesis:                 genesis.Hash(),
 		terminalTotalDifficulty: terminalTotalDifficulty,
 		headNumber:              headNumber,
 		forkID:                  forkID,
-		forkFilter: forkid.NewFilter(&rpcBootstrapChain{
+		forkFilter: forkid.NewFilter(&bootstrapChain{
 			config:  chainConfig,
 			genesis: genesis,
 			head:    head,

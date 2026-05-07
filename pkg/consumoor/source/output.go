@@ -9,9 +9,9 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
-	"github.com/ethpandaops/xatu/pkg/consumoor/router"
-	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 )

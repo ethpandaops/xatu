@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   cannon-smoke-test:
-    timeout-minutes: 20
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -93,7 +93,18 @@ jobs:
       timeout-minutes: 10
       shell: bash
       run: |
-        docker compose up --detach --quiet-pull
+        # Direct-CH path only — cannon talks to ClickHouse via ch-go and uses
+        # xatu-server only as the coordinator gRPC endpoint. Kafka, vector,
+        # consumoor, sentry-logs, tempo, prometheus, grafana, nginx are all
+        # off the path; bringing them up just adds startup contention and
+        # CI flakes (the "xatu-clickhouse-02 exit 138" / vector readiness
+        # races we kept rerunning to dodge). Listing leaf services pulls
+        # their depends_on chains: postgres + zookeepers + clickhouse-01/02
+        # come up automatically.
+        docker compose up --detach --quiet-pull \
+          xatu-postgres-migrator \
+          xatu-server \
+          xatu-clickhouse-migrator
     - name: Wait for Xatu stack to be ready
       run: |
         echo "Waiting for xatu-server gRPC to be ready on port 8080..."
@@ -111,6 +122,31 @@ jobs:
             exit 1
           fi
           echo "  attempt $i/30..."
+          sleep 2
+        done
+
+        # Cannon's Writer.Start runs ValidateTables/ValidateColumns against
+        # the target CH and fails fatal if the schema isn't applied. So
+        # block until xatu-clickhouse-migrator has exited successfully.
+        echo "Waiting for xatu-clickhouse-migrator to apply the schema..."
+        for i in $(seq 1 60); do
+          status=$(docker inspect --format='{{.State.Status}}' xatu-clickhouse-migrator 2>/dev/null || echo "missing")
+          exit_code=$(docker inspect --format='{{.State.ExitCode}}' xatu-clickhouse-migrator 2>/dev/null || echo "")
+          if [ "$status" = "exited" ] && [ "$exit_code" = "0" ]; then
+            echo "xatu-clickhouse-migrator completed successfully."
+            break
+          fi
+          if [ "$status" = "exited" ] && [ "$exit_code" != "0" ]; then
+            echo "::error::xatu-clickhouse-migrator failed (exit_code=$exit_code)"
+            docker logs xatu-clickhouse-migrator 2>&1 | tail -100
+            exit 1
+          fi
+          if [ "$i" -eq 60 ]; then
+            echo "::error::xatu-clickhouse-migrator did not finish within 120s (status=$status)"
+            docker logs xatu-clickhouse-migrator 2>&1 | tail -100
+            exit 1
+          fi
+          echo "  migrator status=$status (attempt $i/60)..."
           sleep 2
         done
 
@@ -199,15 +235,13 @@ jobs:
           address: xatu-server:8080
 
         outputs:
-          - name: xatu
-            type: xatu
+          - name: ch-direct
+            type: clickhouse
             config:
-              address: xatu-server:8080
-              tls: false
-              maxQueueSize: 51200
-              batchTimeout: 1s
-              exportTimeout: 30s
-              maxExportBatchSize: 512
+              dsn: clickhouse://default:@xatu-clickhouse-01:9000/default
+              chgo:
+                adaptiveLimiter:
+                  enabled: false
         EOF
     - name: Show config
       run: |
@@ -229,6 +263,77 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    # Direct-CH path only: assert the Distributed forward queue on
+    # xatu-clickhouse-01 is fully drained.
+    #
+    # Cannon writes to a Distributed table. The Distributed engine
+    # *acks the INSERT* once rows are appended to the local
+    # `data/<table>/<distributed_dir>/` on disk; the actual forward to
+    # the target shard's _local table happens async. So a row can be
+    # "acked back to cannon" — and the postgres checkpoint advanced —
+    # while it is still waiting in the local forward queue. If the node
+    # crashes before that flush, the row is lost without any signal
+    # surfacing to cannon.
+    #
+    # This step waits briefly for the queue to drain, then asserts it
+    # is empty (and error_count == 0). The local docker-compose is
+    # cluster_2S_1R (2 shards, 1 replica each) — there are no actual
+    # replicas, which makes a cross-replica + select_sequential_consistency
+    # assertion meaningless here. The forward-queue assertion is the
+    # CI-topology-appropriate equivalent and tests the same durability
+    # invariant directly.
+    - name: Verify Distributed forward queue is drained
+      timeout-minutes: 3
+      run: |
+        set -e
+
+        # Allow async forwards to flush. Default monitor sleep is 100ms.
+        sleep 10
+
+        QUEUE_FILES=$(clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT coalesce(sum(data_files), 0) FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%'" \
+            </dev/null)
+
+        QUEUE_ERRORS=$(clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT coalesce(sum(error_count), 0) FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%'" \
+            </dev/null)
+
+        echo "Distributed forward queue (xatu-clickhouse-01):"
+        echo "  pending data_files: $QUEUE_FILES"
+        echo "  error_count:        $QUEUE_ERRORS"
+
+        # Per-table breakdown for diagnostics on failure.
+        clickhouse-client \
+            -h localhost --port 9000 \
+            -u default --password "" \
+            -d default \
+            -q "SELECT table, data_files, data_compressed_bytes, error_count, last_exception FROM system.distribution_queue WHERE database = 'default' AND table LIKE 'canonical_%' FORMAT PrettyCompact" \
+            </dev/null
+
+        FAILED=0
+
+        if [[ ! "$QUEUE_FILES" =~ ^[0-9]+$ ]] || [ "$QUEUE_FILES" -ne 0 ]; then
+            echo "✗ Forward queue is NOT drained — $QUEUE_FILES file(s) still pending"
+            echo "  Cannon's checkpoint advanced for rows still in the queue."
+            FAILED=1
+        fi
+
+        if [[ ! "$QUEUE_ERRORS" =~ ^[0-9]+$ ]] || [ "$QUEUE_ERRORS" -ne 0 ]; then
+            echo "✗ Forward queue has $QUEUE_ERRORS forward error(s)"
+            FAILED=1
+        fi
+
+        if [ "$FAILED" -ne 0 ]; then
+            exit 1
+        fi
+
+        echo "✓ All canonical_* Distributed forwards drained — every acked row is durably in a target shard"
     - name: Dump diagnostic info on failure
       if: failure() || cancelled()
       run: |

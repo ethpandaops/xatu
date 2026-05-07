@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/kafka"
 	"github.com/ethpandaops/xatu/pkg/output/stdout"
@@ -95,6 +96,20 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.Fiel
 		}
 
 		return kafka.New(name, conf, log, &filterConfig, shippingMethod)
+	case SinkTypeClickhouse:
+		conf := &chSink.Config{}
+
+		if config != nil {
+			if err := config.Unmarshal(conf); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := defaults.Set(conf); err != nil {
+			return nil, err
+		}
+
+		return chSink.New(name, conf, log, &filterConfig, shippingMethod)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

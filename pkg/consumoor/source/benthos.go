@@ -10,8 +10,8 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 	_ "github.com/redpanda-data/connect/v4/public/components/kafka"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/router"
-	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )

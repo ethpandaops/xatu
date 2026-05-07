@@ -23,10 +23,10 @@ import (
 
 	ch "github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
-	"github.com/ethpandaops/xatu/pkg/consumoor/route"
-	"github.com/ethpandaops/xatu/pkg/consumoor/router"
-	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -412,7 +412,7 @@ func newRouter(t *testing.T, routes []route.Route) *router.Engine {
 func newTestMetrics() *telemetry.Metrics {
 	ns := atomic.AddUint64(&testMetricNSCounter, 1)
 
-	return telemetry.NewMetrics(fmt.Sprintf("xatu_consumoor_test_%d", ns))
+	return telemetry.NewMetrics(fmt.Sprintf("xatu_consumoor_test_%d", ns), "consumoor")
 }
 
 func mustEventJSON(t *testing.T, id string, name xatu.Event_Name) []byte {

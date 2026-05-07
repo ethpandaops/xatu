@@ -18,11 +18,11 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
-	"github.com/ethpandaops/xatu/pkg/consumoor/route/all"
-	"github.com/ethpandaops/xatu/pkg/consumoor/router"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
-	"github.com/ethpandaops/xatu/pkg/consumoor/telemetry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/sirupsen/logrus"
@@ -72,10 +72,10 @@ func New(
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	metrics := telemetry.NewMetrics("xatu")
+	metrics := telemetry.NewMetrics("xatu", "consumoor")
 
 	// Create the ClickHouse writer.
-	writer, err := clickhouse.NewChGoWriter(
+	writer, err := clickhouse.NewWriter(
 		log,
 		&config.ClickHouse,
 		metrics,

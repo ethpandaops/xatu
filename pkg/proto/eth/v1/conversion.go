@@ -4,13 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/attestantio/go-eth2-client/spec/capella"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
-	"github.com/attestantio/go-eth2-client/spec/electra"
-	"github.com/attestantio/go-eth2-client/spec/gloas"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethereum/go-ethereum/core/types/bal"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -435,4 +435,71 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 	}
 
 	return &BlockAccessList{Entries: entries}
+}
+
+// NewSignedExecutionPayloadBidFromGloas converts the SDK's Gloas (EIP-7732)
+// signed bid into our proto representation. Returns nil if the input is nil so
+// callers on pre-Gloas paths leave the proto field unset.
+func NewSignedExecutionPayloadBidFromGloas(bid *gloas.SignedExecutionPayloadBid) *SignedExecutionPayloadBid {
+	if bid == nil || bid.Message == nil {
+		return nil
+	}
+
+	msg := bid.Message
+
+	commitments := make([]string, 0, len(msg.BlobKZGCommitments))
+	for _, c := range msg.BlobKZGCommitments {
+		commitments = append(commitments, KzgCommitmentToString(c))
+	}
+
+	return &SignedExecutionPayloadBid{
+		Message: &ExecutionPayloadBid{
+			ParentBlockHash:    msg.ParentBlockHash.String(),
+			ParentBlockRoot:    msg.ParentBlockRoot.String(),
+			BlockHash:          msg.BlockHash.String(),
+			PrevRandao:         msg.PrevRandao.String(),
+			FeeRecipient:       msg.FeeRecipient.String(),
+			GasLimit:           &wrapperspb.UInt64Value{Value: msg.GasLimit},
+			BuilderIndex:       &wrapperspb.UInt64Value{Value: uint64(msg.BuilderIndex)},
+			Slot:               &wrapperspb.UInt64Value{Value: uint64(msg.Slot)},
+			Value:              &wrapperspb.UInt64Value{Value: uint64(msg.Value)},
+			ExecutionPayment:   &wrapperspb.UInt64Value{Value: uint64(msg.ExecutionPayment)},
+			BlobKzgCommitments: commitments,
+		},
+		Signature: bid.Signature.String(),
+	}
+}
+
+// NewPayloadAttestationsFromGloas converts the SDK's Gloas (EIP-7732) payload
+// attestations into our proto representation. Up to MAX_PAYLOAD_ATTESTATIONS=4
+// entries per block.
+func NewPayloadAttestationsFromGloas(data []*gloas.PayloadAttestation) []*PayloadAttestation {
+	attestations := make([]*PayloadAttestation, 0, len(data))
+
+	for _, a := range data {
+		if a == nil {
+			continue
+		}
+
+		attestations = append(attestations, &PayloadAttestation{
+			AggregationBits: fmt.Sprintf("0x%x", a.AggregationBits),
+			Data:            newPayloadAttestationDataFromGloas(a.Data),
+			Signature:       a.Signature.String(),
+		})
+	}
+
+	return attestations
+}
+
+func newPayloadAttestationDataFromGloas(data *gloas.PayloadAttestationData) *PayloadAttestationData {
+	if data == nil {
+		return nil
+	}
+
+	return &PayloadAttestationData{
+		BeaconBlockRoot:   data.BeaconBlockRoot.String(),
+		Slot:              &wrapperspb.UInt64Value{Value: uint64(data.Slot)},
+		PayloadPresent:    data.PayloadPresent,
+		BlobDataAvailable: data.BlobDataAvailable,
+	}
 }

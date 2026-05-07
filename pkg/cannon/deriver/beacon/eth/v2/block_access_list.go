@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v5"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -245,11 +245,10 @@ func (b *BlockAccessListDeriver) processSlot(
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	// TODO(epbs): Under EIP-7732, ExecutionPayload and BAL data move to the
-	// ExecutionPayloadEnvelope. Source from envelope once go-eth2-client adds ePBS support.
-	if block.Gloas == nil || block.Gloas.Message == nil ||
-		block.Gloas.Message.Body == nil ||
-		block.Gloas.Message.Body.ExecutionPayload == nil {
+	// EIP-7732: Gloas block bodies no longer carry ExecutionPayload inline.
+	// The payload (and its BlockAccessList) arrives in a separate
+	// ExecutionPayloadEnvelope, fetched here by block ID.
+	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
@@ -261,11 +260,22 @@ func (b *BlockAccessListDeriver) processSlot(
 			"failed to get block identifier for slot %d", slot)
 	}
 
-	execPayload := block.Gloas.Message.Body.ExecutionPayload
+	envelope, err := b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(slot))
+	if err != nil {
+		return nil, errors.Wrapf(err,
+			"failed to get execution payload envelope for slot %d", slot)
+	}
+
+	// envelope==nil ⇒ builder withheld payload (payload_status = EMPTY); no BAL to emit.
+	if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
+	execPayload := envelope.Message.Payload
 	execBlockNumber := execPayload.BlockNumber
 	execBlockHash := fmt.Sprintf("%#x", execPayload.BlockHash)
 
-	// Decode the BAL from the ExecutionPayload
+	// Decode the BAL from the ExecutionPayload (now sourced via envelope)
 	rawBAL := execPayload.BlockAccessList
 	b.log.WithField("slot", slot).WithField("raw_bal_len", len(rawBAL)).Debug("Processing BAL data")
 

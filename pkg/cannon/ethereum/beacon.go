@@ -6,13 +6,14 @@ import (
 	"sync"
 	"time"
 
-	client "github.com/attestantio/go-eth2-client"
-	"github.com/attestantio/go-eth2-client/api"
-	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
-	ehttp "github.com/attestantio/go-eth2-client/http"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	client "github.com/ethpandaops/go-eth2-client"
+	"github.com/ethpandaops/go-eth2-client/api"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	ehttp "github.com/ethpandaops/go-eth2-client/http"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -45,6 +46,14 @@ type BeaconNode struct {
 	validatorsCache       *ttlcache.Cache[string, map[phase0.ValidatorIndex]*apiv1.Validator]
 	validatorsPreloadChan chan string
 	validatorsPreloadSem  chan struct{}
+
+	// envelopeCache holds Gloas (EIP-7732) ExecutionPayloadEnvelopes keyed by
+	// block root. The envelope is fetched separately from the block — many
+	// derivers consume it per slot, so we cache to avoid duplicate fetches.
+	// A nil value means "envelope known to be absent" (builder withheld payload —
+	// payload_status = EMPTY); we cache the negative answer too.
+	envelopeSfGroup *singleflight.Group
+	envelopeCache   *ttlcache.Cache[string, *gloas.SignedExecutionPayloadEnvelope]
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
@@ -56,7 +65,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		DisablePrometheusMetrics()
 
 	opts.GoEth2ClientParams = []ehttp.Parameter{
-		// Default JSON until https://github.com/attestantio/go-eth2-client/pull/198 is merged.
+		// Default JSON until https://github.com/ethpandaops/go-eth2-client/pull/198 is merged.
 		ehttp.WithEnforceJSON(true),
 	}
 
@@ -107,7 +116,12 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		),
 		validatorsPreloadChan: make(chan string, 2),
 		validatorsPreloadSem:  validatorsSem,
-		metrics:               NewMetrics(namespace, name),
+		envelopeSfGroup:       &singleflight.Group{},
+		envelopeCache: ttlcache.New(
+			ttlcache.WithTTL[string, *gloas.SignedExecutionPayloadEnvelope](config.BlockCacheTTL.Duration),
+			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](256),
+		),
+		metrics: NewMetrics(namespace, name),
 	}, nil
 }
 
@@ -412,6 +426,75 @@ func (b *BeaconNode) getValidatorsClient(ctx context.Context) (client.Validators
 	}
 
 	return nil, errors.New("validator states client not found")
+}
+
+// GetExecutionPayloadEnvelope returns the Gloas (EIP-7732) ExecutionPayloadEnvelope
+// for a given block ID (root, slot, "head", etc.). Multiple derivers consume the
+// envelope per slot; the cache + singleflight pattern prevents duplicate fetches.
+//
+// A nil-but-no-error result means the envelope is known to be absent — typically
+// the builder withheld the payload (payload_status = EMPTY). Callers should treat
+// this as a no-op for envelope-sourced data and emit nothing for the slot.
+func (b *BeaconNode) GetExecutionPayloadEnvelope(
+	ctx context.Context,
+	blockID string,
+) (*gloas.SignedExecutionPayloadEnvelope, error) {
+	ctx, span := observability.Tracer().Start(ctx, "ethereum.beacon.GetExecutionPayloadEnvelope",
+		trace.WithAttributes(attribute.String("block_id", blockID)))
+	defer span.End()
+
+	if item := b.envelopeCache.Get(blockID); item != nil {
+		span.SetAttributes(attribute.Bool("cached", true))
+
+		return item.Value(), nil
+	}
+
+	span.SetAttributes(attribute.Bool("cached", false))
+
+	x, err, shared := b.envelopeSfGroup.Do(blockID, func() (any, error) {
+		provider, err := b.getExecutionPayloadProvider()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := provider.SignedExecutionPayloadEnvelope(ctx, &api.SignedExecutionPayloadEnvelopeOpts{
+			Block: blockID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		var envelope *gloas.SignedExecutionPayloadEnvelope
+		if resp != nil {
+			envelope = resp.Data
+		}
+
+		b.envelopeCache.Set(blockID, envelope, time.Hour)
+
+		return envelope, nil
+	})
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
+		return nil, err
+	}
+
+	span.AddEvent("Envelope fetch complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
+
+	envelope, ok := x.(*gloas.SignedExecutionPayloadEnvelope)
+	if !ok {
+		return nil, fmt.Errorf("envelope singleflight returned unexpected type %T", x)
+	}
+
+	return envelope, nil
+}
+
+func (b *BeaconNode) getExecutionPayloadProvider() (client.ExecutionPayloadProvider, error) {
+	if provider, isProvider := b.beacon.Service().(client.ExecutionPayloadProvider); isProvider {
+		return provider, nil
+	}
+
+	return nil, errors.New("execution payload provider not available")
 }
 
 func (b *BeaconNode) DeleteValidatorsFromCache(stateID string) {

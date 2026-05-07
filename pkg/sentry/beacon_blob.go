@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/attestantio/go-eth2-client/api"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
@@ -201,10 +201,14 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 			return block.Fulu.Message.Body.BlobKZGCommitments, nil
 		}
 	case spec.DataVersionGloas:
-		// TODO(epbs): Under EIP-7732, BlobKZGCommitments move to the ExecutionPayloadBid.
-		// Source from bid once go-eth2-client adds ePBS support.
-		if block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil {
-			return block.Gloas.Message.Body.BlobKZGCommitments, nil
+		// EIP-7732: BlobKZGCommitments live inside the SignedExecutionPayloadBid
+		// (the bid the proposer chose); the block body no longer carries them
+		// inline. If the bid is absent (shouldn't happen for a valid Gloas block),
+		// there are no commitments to return.
+		if block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil &&
+			block.Gloas.Message.Body.SignedExecutionPayloadBid != nil &&
+			block.Gloas.Message.Body.SignedExecutionPayloadBid.Message != nil {
+			return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message.BlobKZGCommitments, nil
 		}
 	}
 

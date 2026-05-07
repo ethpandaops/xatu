@@ -541,6 +541,17 @@ message BeaconBlockBodyFulu {
 }
 
 message BeaconBlockBodyGloas {
+  // Field numbers 10, 12, 13 are reserved: they previously held
+  // execution_payload, blob_kzg_commitments and execution_requests,
+  // copied from BeaconBlockBodyFulu while only the BALs (EIP-7928) side of
+  // Glamsterdam was wired up. EIP-7732 (ePBS) moves those fields out of the
+  // block body — execution payload + execution_requests now live in the
+  // ExecutionPayloadEnvelope, blob_kzg_commitments live inside the
+  // SignedExecutionPayloadBid (field 14). Since BeaconBlockBodyGloas only
+  // ever holds Gloas-shape data, those legacy fields are dropped here.
+  reserved 10, 12, 13;
+  reserved "execution_payload", "blob_kzg_commitments", "execution_requests";
+
   string randao_reveal = 1 [ json_name = "randao_reveal" ];
 
   v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
@@ -562,22 +573,11 @@ message BeaconBlockBodyGloas {
 
   v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
 
-  // Pre-ePBS: execution payload inline in block body.
-  v1.ExecutionPayloadGloas execution_payload = 10
-      [ json_name = "execution_payload" ];
-
   repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
       [ json_name = "bls_to_execution_changes" ];
 
-  // Pre-ePBS: blob KZG commitments inline in block body.
-  repeated string blob_kzg_commitments = 12
-      [ json_name = "blob_kzg_commitments" ];
-
-  // Pre-ePBS: execution requests inline in block body.
-  v1.ElectraExecutionRequests execution_requests = 13
-      [ json_name = "execution_requests" ];
-
-  // EIP-7732 ePBS: Builder's bid (replaces execution_payload when ePBS is active).
+  // EIP-7732 ePBS: Builder's bid. Carries the proposer's chosen builder bid
+  // and the slot's blob KZG commitments.
   v1.SignedExecutionPayloadBid signed_execution_payload_bid = 14
       [ json_name = "signed_execution_payload_bid" ];
 

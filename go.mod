@@ -7,23 +7,28 @@ go 1.25.7
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Use pk910's BALs branch for Gloas/EIP-7928 support (PR #7)
-replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20260211135810-4d8cc413fd3b
+// Glamsterdam (Gloas) fork support: EIP-7928 (BALs) + EIP-7732 (ePBS).
+// ethpandaops/go-eth2-client renamed its module path post-fork (commit fd02b44a),
+// so a `replace` directive can't funnel `attestantio/go-eth2-client` onto it
+// (Go rejects the module-path mismatch). The two modules coexist in the dep
+// graph: our code uses `ethpandaops/go-eth2-client`, Prysm's transitive
+// `attestantio/go-eth2-client` stays as `// indirect` and never crosses our
+// API boundary.
 
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
 	github.com/OffchainLabs/prysm/v7 v7.0.0
-	github.com/attestantio/go-eth2-client v0.27.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
-	github.com/ethpandaops/beacon v0.67.1-0.20260325033338-72e601905364
-	github.com/ethpandaops/ethcore v0.0.0-20260325033335-3648959229f1
+	github.com/ethpandaops/beacon v0.67.1-0.20260507021101-bdc1647be069
+	github.com/ethpandaops/ethcore v0.0.0-20260507022150-a091f5d4b75f
 	github.com/ethpandaops/ethwallclock v0.4.0
+	github.com/ethpandaops/go-eth2-client v0.1.2-0.20260501105559-03ed5eacf583
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4
@@ -88,6 +93,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
+	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
@@ -239,7 +245,8 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v0.0.6 // indirect
+	github.com/pk910/dynamic-ssz v1.3.1 // indirect
+	github.com/pk910/hashtree-bindings v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/common v0.67.1 // indirect
@@ -306,7 +313,6 @@ require (
 	golang.org/x/tools v0.40.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
-	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

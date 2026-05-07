@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/iterator"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"

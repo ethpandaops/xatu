@@ -540,6 +540,11 @@ message BeaconBlockBodyFulu {
   v1.ElectraExecutionRequests execution_requests = 13 [ json_name = "execution_requests" ];
 }
 
+// BeaconBlockBodyGloas mirrors the EIP-7732 (ePBS) + EIP-7928 (BALs) shape of
+// the consensus-spec BeaconBlockBody. The execution payload, blob KZG
+// commitments and execution requests no longer live on the body — payload and
+// execution_requests arrive in a separate ExecutionPayloadEnvelope, and the
+// blob commitments live inside the SignedExecutionPayloadBid.
 message BeaconBlockBodyGloas {
   string randao_reveal = 1 [ json_name = "randao_reveal" ];
 
@@ -562,27 +567,16 @@ message BeaconBlockBodyGloas {
 
   v1.SyncAggregate sync_aggregate = 9 [ json_name = "sync_aggregate" ];
 
-  // Pre-ePBS: execution payload inline in block body.
-  v1.ExecutionPayloadGloas execution_payload = 10
-      [ json_name = "execution_payload" ];
-
-  repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
+  repeated SignedBLSToExecutionChange bls_to_execution_changes = 10
       [ json_name = "bls_to_execution_changes" ];
 
-  // Pre-ePBS: blob KZG commitments inline in block body.
-  repeated string blob_kzg_commitments = 12
-      [ json_name = "blob_kzg_commitments" ];
-
-  // Pre-ePBS: execution requests inline in block body.
-  v1.ElectraExecutionRequests execution_requests = 13
-      [ json_name = "execution_requests" ];
-
-  // EIP-7732 ePBS: Builder's bid (replaces execution_payload when ePBS is active).
-  v1.SignedExecutionPayloadBid signed_execution_payload_bid = 14
+  // EIP-7732 ePBS: Builder's bid. Carries the proposer's chosen builder bid
+  // and the slot's blob KZG commitments.
+  v1.SignedExecutionPayloadBid signed_execution_payload_bid = 11
       [ json_name = "signed_execution_payload_bid" ];
 
   // EIP-7732 ePBS: Aggregated PTC attestations (max 4 per block).
-  repeated v1.PayloadAttestation payload_attestations = 15
+  repeated v1.PayloadAttestation payload_attestations = 12
       [ json_name = "payload_attestations" ];
 }
 

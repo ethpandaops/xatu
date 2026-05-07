@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/attestantio/go-eth2-client/api"
-	"github.com/attestantio/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -206,19 +206,15 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 		addTxData(fuluTxs)
 	case spec.DataVersionGloas:
-		// TODO(epbs): Under EIP-7732, ExecutionPayload and Transactions move to the
-		// envelope. Source from ExecutionPayloadEnvelope once go-eth2-client adds ePBS support.
+		// EIP-7732: the proposed Gloas block body has no inline ExecutionPayload —
+		// transactions arrive separately via the ExecutionPayloadEnvelope after the
+		// builder reveals it. At validator-proposal time the envelope isn't published
+		// yet, so block size is the body-only size and tx-related counts stay zero
+		// (cannon's envelope-sourced derivers fill in tx data downstream).
 		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Gloas.Body)
 		if err != nil {
 			e.log.WithError(err).Warn("Failed to compute gloas block size")
 		}
-
-		gloasTxs := make([][]byte, len(e.event.Gloas.Body.ExecutionPayload.Transactions))
-		for i, tx := range e.event.Gloas.Body.ExecutionPayload.Transactions {
-			gloasTxs[i] = tx
-		}
-
-		addTxData(gloasTxs)
 
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")

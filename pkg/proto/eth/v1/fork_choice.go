@@ -3,8 +3,8 @@ package v1
 import (
 	"encoding/json"
 
-	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
+	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )

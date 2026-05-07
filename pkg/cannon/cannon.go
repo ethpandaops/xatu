@@ -14,10 +14,10 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/ethwallclock"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"

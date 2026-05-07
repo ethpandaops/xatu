@@ -19,8 +19,8 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
-	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/beevik/ntp"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"

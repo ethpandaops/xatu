@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/attestantio/go-eth2-client/api"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/altair"
-	"github.com/attestantio/go-eth2-client/spec/bellatrix"
-	"github.com/attestantio/go-eth2-client/spec/capella"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
-	"github.com/attestantio/go-eth2-client/spec/electra"
-	"github.com/attestantio/go-eth2-client/spec/gloas"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/altair"
+	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -462,18 +462,14 @@ func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSign
 	return event
 }
 
-// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7928) beacon block.
-// TODO(epbs): Under EIP-7732, the block body has a SignedExecutionPayloadBid instead of an
-// inline ExecutionPayload. The bid fields (builder_index, value, execution_payment) and
-// payload_attestations need to be populated here once go-eth2-client adds ePBS support.
-// The execution payload itself arrives via a separate ExecutionPayloadEnvelope event.
+// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7732 + EIP-7928) beacon block.
+//
+// Under EIP-7732 the block body no longer carries an inline ExecutionPayload,
+// BlobKZGCommitments or ExecutionRequests:
+//   - ExecutionPayload  → arrives separately in an ExecutionPayloadEnvelope (sourced in cannon).
+//   - BlobKZGCommitments → carried inside SignedExecutionPayloadBid.
+//   - ExecutionRequests → moves into ExecutionPayloadEnvelope.ExecutionRequests.
 func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
-	kzgCommitments := make([]string, 0, len(block.Body.BlobKZGCommitments))
-
-	for _, commitment := range block.Body.BlobKZGCommitments {
-		kzgCommitments = append(kzgCommitments, commitment.String())
-	}
-
 	event := &v2.EventBlockV2{
 		Version: v2.BlockVersion_GLOAS,
 		Message: &v2.EventBlockV2_GloasBlock{
@@ -499,30 +495,9 @@ func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSigna
 						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
 						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
 					},
-					ExecutionPayload: &v1.ExecutionPayloadGloas{
-						ParentHash:      block.Body.ExecutionPayload.ParentHash.String(),
-						FeeRecipient:    block.Body.ExecutionPayload.FeeRecipient.String(),
-						StateRoot:       fmt.Sprintf("0x%x", block.Body.ExecutionPayload.StateRoot[:]),
-						ReceiptsRoot:    fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ReceiptsRoot[:]),
-						LogsBloom:       fmt.Sprintf("0x%x", block.Body.ExecutionPayload.LogsBloom[:]),
-						PrevRandao:      fmt.Sprintf("0x%x", block.Body.ExecutionPayload.PrevRandao[:]),
-						BlockNumber:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.BlockNumber},
-						GasLimit:        &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasLimit},
-						GasUsed:         &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
-						Timestamp:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
-						ExtraData:       fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas:   block.Body.ExecutionPayload.BaseFeePerGas.String(),
-						BlockHash:       block.Body.ExecutionPayload.BlockHash.String(),
-						Transactions:    getTransactions(block.Body.ExecutionPayload.Transactions),
-						Withdrawals:     v1.NewWithdrawalsFromCapella(block.Body.ExecutionPayload.Withdrawals),
-						BlobGasUsed:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.BlobGasUsed},
-						ExcessBlobGas:   &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.ExcessBlobGas},
-						BlockAccessList: v1.NewBlockAccessListFromGloas(block.Body.ExecutionPayload.BlockAccessList),
-						SlotNumber:      &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.SlotNumber},
-					},
-					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
-					BlobKzgCommitments:    kzgCommitments,
-					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
+					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
+					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
+					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
 				},
 			},
 		},

@@ -37,14 +37,27 @@ jobs:
             exit 0
           fi
 
-          # Only GO-2026-4479 (pion/dtls/v2) is expected — it has no fix available.
-          # Check that this is the ONLY vulnerability reported.
-          if echo "$OUTPUT" | grep -q "Your code is affected by 1 vulnerability" && \
-             echo "$OUTPUT" | grep -q "GO-2026-4479"; then
+          # Known unfixable vulnerabilities — all have no upstream fix available:
+          #   - GO-2026-4479: pion/dtls/v2 (transitive via libp2p in pkg/mimicry)
+          #   - GO-2026-4883: docker/docker off-by-one in plugin privilege validation
+          #     (transitive via testcontainers-go, only used by the code-gen tool
+          #     pkg/consumoor/route/cmd/generate — not in any runtime binary)
+          #   - GO-2026-4887: docker/docker AuthZ plugin bypass on oversized bodies
+          #     (same source as GO-2026-4883 — code-gen tool only)
+          # Verify that ONLY these expected vulnerabilities are reported.
+          UNEXPECTED=$(echo "$OUTPUT" \
+            | grep -oE "GO-[0-9]+-[0-9]+" \
+            | sort -u \
+            | grep -vE "^(GO-2026-4479|GO-2026-4883|GO-2026-4887)$" || true)
+          if [ -z "$UNEXPECTED" ]; then
             echo ""
-            echo "Only known unfixable vulnerability GO-2026-4479 (pion/dtls/v2) found — no fix available"
+            echo "Only known unfixable vulnerabilities found — no upstream fix available"
             exit 0
           fi
+
+          echo ""
+          echo "Unexpected vulnerabilities detected:"
+          echo "$UNEXPECTED"
 
           echo ""
           echo "New vulnerabilities found! Please fix them before merging."

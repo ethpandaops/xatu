@@ -7,23 +7,21 @@ go 1.25.7
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Use pk910's BALs branch for Gloas/EIP-7928 support (PR #7)
-replace github.com/attestantio/go-eth2-client => github.com/pk910/go-eth2-client v0.0.0-20260211135810-4d8cc413fd3b
-
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
+	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506
 	github.com/OffchainLabs/prysm/v7 v7.0.0
-	github.com/attestantio/go-eth2-client v0.27.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
-	github.com/ethpandaops/beacon v0.67.1-0.20260325033338-72e601905364
-	github.com/ethpandaops/ethcore v0.0.0-20260325033335-3648959229f1
+	github.com/ethpandaops/beacon v0.67.1-0.20260507021101-bdc1647be069
+	github.com/ethpandaops/ethcore v0.0.0-20260507022150-a091f5d4b75f
 	github.com/ethpandaops/ethwallclock v0.4.0
+	github.com/ethpandaops/go-eth2-client v0.1.2-0.20260501105559-03ed5eacf583
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4
@@ -56,16 +54,16 @@ require (
 	github.com/twmb/franz-go v1.20.6
 	github.com/twmb/franz-go/pkg/kadm v1.17.1
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0
-	go.opentelemetry.io/otel v1.40.0
+	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.40.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.40.0
-	go.opentelemetry.io/otel/sdk v1.40.0
-	go.opentelemetry.io/otel/trace v1.40.0
+	go.opentelemetry.io/otel/sdk v1.43.0
+	go.opentelemetry.io/otel/trace v1.43.0
 	go.uber.org/mock v0.5.2
-	golang.org/x/crypto v0.47.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/crypto v0.48.0
+	golang.org/x/sync v0.20.0
 	golang.org/x/time v0.13.0
-	google.golang.org/grpc v1.78.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -79,7 +77,6 @@ require (
 	github.com/Jeffail/grok v1.1.0 // indirect
 	github.com/Jeffail/shutdown v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506 // indirect
 	github.com/OffchainLabs/prysm/v6 v6.1.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
@@ -88,6 +85,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
+	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
@@ -239,7 +237,8 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v0.0.6 // indirect
+	github.com/pk910/dynamic-ssz v1.3.1 // indirect
+	github.com/pk910/hashtree-bindings v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/common v0.67.1 // indirect
@@ -288,7 +287,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
-	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
@@ -297,16 +296,15 @@ require (
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/exp v0.0.0-20251002181428-27f1f14c8bb9 // indirect
-	golang.org/x/mod v0.31.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/oauth2 v0.34.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251203150158-8fff8a5912fc // indirect
-	golang.org/x/text v0.33.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
-	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260109210033-bd525da824e2 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

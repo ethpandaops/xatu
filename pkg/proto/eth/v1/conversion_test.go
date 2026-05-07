@@ -4,6 +4,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+
+	bitfield "github.com/OffchainLabs/go-bitfield"
+	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 )
 
 func TestTrimmedString(t *testing.T) {
@@ -139,5 +145,191 @@ func TestNewBlockAccessListFromGloas_RealDevnetData(t *testing.T) {
 
 	if len(entry3.GetStorageChanges()) != 2 {
 		t.Fatalf("entry 3: expected 2 storage changes, got %d", len(entry3.GetStorageChanges()))
+	}
+}
+
+func TestNewSignedExecutionPayloadBidFromGloas_Nil(t *testing.T) {
+	if got := NewSignedExecutionPayloadBidFromGloas(nil); got != nil {
+		t.Errorf("expected nil for nil input, got %v", got)
+	}
+
+	if got := NewSignedExecutionPayloadBidFromGloas(&gloas.SignedExecutionPayloadBid{}); got != nil {
+		t.Errorf("expected nil for bid with nil Message, got %v", got)
+	}
+}
+
+func TestNewSignedExecutionPayloadBidFromGloas_Populated(t *testing.T) {
+	parentHash := phase0.Hash32{0x11, 0x22}
+	parentRoot := phase0.Root{0x33, 0x44}
+	blockHash := phase0.Hash32{0x55, 0x66}
+	prevRandao := phase0.Root{0x77, 0x88}
+	feeRecipient := bellatrix.ExecutionAddress{0x99, 0xaa}
+	commitment := deneb.KZGCommitment{0xbb, 0xcc}
+
+	bid := &gloas.SignedExecutionPayloadBid{
+		Message: &gloas.ExecutionPayloadBid{
+			ParentBlockHash:    parentHash,
+			ParentBlockRoot:    parentRoot,
+			BlockHash:          blockHash,
+			PrevRandao:         prevRandao,
+			FeeRecipient:       feeRecipient,
+			GasLimit:           30_000_000,
+			BuilderIndex:       gloas.BuilderIndex(7),
+			Slot:               phase0.Slot(99),
+			Value:              phase0.Gwei(123_456),
+			ExecutionPayment:   phase0.Gwei(7_890),
+			BlobKZGCommitments: []deneb.KZGCommitment{commitment},
+		},
+		Signature: phase0.BLSSignature{0xde, 0xad, 0xbe, 0xef},
+	}
+
+	got := NewSignedExecutionPayloadBidFromGloas(bid)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	msg := got.GetMessage()
+	if msg == nil {
+		t.Fatal("expected non-nil message")
+	}
+
+	if msg.GetParentBlockHash() != parentHash.String() {
+		t.Errorf("parent_block_hash mismatch: got %q want %q", msg.GetParentBlockHash(), parentHash.String())
+	}
+
+	if msg.GetParentBlockRoot() != parentRoot.String() {
+		t.Errorf("parent_block_root mismatch: got %q want %q", msg.GetParentBlockRoot(), parentRoot.String())
+	}
+
+	if msg.GetBlockHash() != blockHash.String() {
+		t.Errorf("block_hash mismatch: got %q want %q", msg.GetBlockHash(), blockHash.String())
+	}
+
+	if msg.GetFeeRecipient() != feeRecipient.String() {
+		t.Errorf("fee_recipient mismatch: got %q want %q", msg.GetFeeRecipient(), feeRecipient.String())
+	}
+
+	if v := msg.GetGasLimit().GetValue(); v != 30_000_000 {
+		t.Errorf("gas_limit: got %d want 30000000", v)
+	}
+
+	if v := msg.GetBuilderIndex().GetValue(); v != 7 {
+		t.Errorf("builder_index: got %d want 7", v)
+	}
+
+	if v := msg.GetSlot().GetValue(); v != 99 {
+		t.Errorf("slot: got %d want 99", v)
+	}
+
+	if v := msg.GetValue().GetValue(); v != 123_456 {
+		t.Errorf("value: got %d want 123456", v)
+	}
+
+	if v := msg.GetExecutionPayment().GetValue(); v != 7_890 {
+		t.Errorf("execution_payment: got %d want 7890", v)
+	}
+
+	if commitments := msg.GetBlobKzgCommitments(); len(commitments) != 1 {
+		t.Errorf("blob_kzg_commitments len: got %d want 1", len(commitments))
+	} else if commitments[0] != KzgCommitmentToString(commitment) {
+		t.Errorf("blob_kzg_commitments[0]: got %q want %q", commitments[0], KzgCommitmentToString(commitment))
+	}
+
+	if got.GetSignature() != bid.Signature.String() {
+		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), bid.Signature.String())
+	}
+}
+
+func TestNewPayloadAttestationsFromGloas_Empty(t *testing.T) {
+	if got := NewPayloadAttestationsFromGloas(nil); len(got) != 0 {
+		t.Errorf("expected empty slice for nil input, got len %d", len(got))
+	}
+
+	if got := NewPayloadAttestationsFromGloas([]*gloas.PayloadAttestation{}); len(got) != 0 {
+		t.Errorf("expected empty slice for empty input, got len %d", len(got))
+	}
+
+	// Nil entries in the slice are skipped, not panicked on.
+	if got := NewPayloadAttestationsFromGloas([]*gloas.PayloadAttestation{nil}); len(got) != 0 {
+		t.Errorf("expected nil entries to be skipped, got len %d", len(got))
+	}
+}
+
+func TestNewPayloadAttestationsFromGloas_Populated(t *testing.T) {
+	bits := bitfield.NewBitvector512()
+	bits.SetBitAt(3, true)
+	bits.SetBitAt(11, true)
+
+	beaconRoot := phase0.Root{0xa0, 0xb1}
+
+	atts := []*gloas.PayloadAttestation{
+		{
+			AggregationBits: bits,
+			Data: &gloas.PayloadAttestationData{
+				BeaconBlockRoot:   beaconRoot,
+				Slot:              phase0.Slot(50),
+				PayloadPresent:    true,
+				BlobDataAvailable: false,
+			},
+			Signature: phase0.BLSSignature{0x01, 0x02},
+		},
+	}
+
+	got := NewPayloadAttestationsFromGloas(atts)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 attestation, got %d", len(got))
+	}
+
+	a := got[0]
+
+	wantBits := fmt.Sprintf("0x%x", bits)
+	if a.GetAggregationBits() != wantBits {
+		t.Errorf("aggregation_bits: got %q want %q", a.GetAggregationBits(), wantBits)
+	}
+
+	data := a.GetData()
+	if data == nil {
+		t.Fatal("expected non-nil data")
+	}
+
+	if data.GetBeaconBlockRoot() != beaconRoot.String() {
+		t.Errorf("beacon_block_root: got %q want %q", data.GetBeaconBlockRoot(), beaconRoot.String())
+	}
+
+	if data.GetSlot().GetValue() != 50 {
+		t.Errorf("slot: got %d want 50", data.GetSlot().GetValue())
+	}
+
+	if !data.GetPayloadPresent() {
+		t.Error("expected payload_present=true")
+	}
+
+	if data.GetBlobDataAvailable() {
+		t.Error("expected blob_data_available=false")
+	}
+
+	if a.GetSignature() != atts[0].Signature.String() {
+		t.Errorf("signature mismatch: got %q want %q", a.GetSignature(), atts[0].Signature.String())
+	}
+}
+
+// TestNewPayloadAttestationsFromGloas_NilData ensures the conversion is robust
+// against malformed inputs where Data is missing.
+func TestNewPayloadAttestationsFromGloas_NilData(t *testing.T) {
+	atts := []*gloas.PayloadAttestation{
+		{
+			AggregationBits: bitfield.NewBitvector512(),
+			Data:            nil,
+			Signature:       phase0.BLSSignature{},
+		},
+	}
+
+	got := NewPayloadAttestationsFromGloas(atts)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 attestation, got %d", len(got))
+	}
+
+	if got[0].GetData() != nil {
+		t.Errorf("expected nil data for input with nil Data, got %v", got[0].GetData())
 	}
 }

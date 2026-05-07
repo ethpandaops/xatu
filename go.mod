@@ -7,17 +7,10 @@ go 1.25.7
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Glamsterdam (Gloas) fork support: EIP-7928 (BALs) + EIP-7732 (ePBS).
-// ethpandaops/go-eth2-client renamed its module path post-fork (commit fd02b44a),
-// so a `replace` directive can't funnel `attestantio/go-eth2-client` onto it
-// (Go rejects the module-path mismatch). The two modules coexist in the dep
-// graph: our code uses `ethpandaops/go-eth2-client`, Prysm's transitive
-// `attestantio/go-eth2-client` stays as `// indirect` and never crosses our
-// API boundary.
-
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
+	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506
 	github.com/OffchainLabs/prysm/v7 v7.0.0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
@@ -84,7 +77,6 @@ require (
 	github.com/Jeffail/grok v1.1.0 // indirect
 	github.com/Jeffail/shutdown v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506 // indirect
 	github.com/OffchainLabs/prysm/v6 v6.1.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect

@@ -65,7 +65,6 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		DisablePrometheusMetrics()
 
 	opts.GoEth2ClientParams = []ehttp.Parameter{
-		// Default JSON until https://github.com/ethpandaops/go-eth2-client/pull/198 is merged.
 		ehttp.WithEnforceJSON(true),
 	}
 
@@ -376,7 +375,7 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 
 		span.AddEvent("Semaphore acquired. Fetching validators from beacon api...")
 
-		client, err := b.getValidatorsClient(ctx)
+		client, err := b.getValidatorsClient()
 		if err != nil {
 			return nil, err
 		}
@@ -420,7 +419,7 @@ func (b *BeaconNode) LazyLoadValidators(stateID string) {
 	b.validatorsPreloadChan <- stateID
 }
 
-func (b *BeaconNode) getValidatorsClient(ctx context.Context) (client.ValidatorsProvider, error) {
+func (b *BeaconNode) getValidatorsClient() (client.ValidatorsProvider, error) {
 	if provider, isProvider := b.beacon.Service().(client.ValidatorsProvider); isProvider {
 		return provider, nil
 	}

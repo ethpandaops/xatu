@@ -6,10 +6,14 @@ import (
 	"testing"
 
 	bitfield "github.com/OffchainLabs/go-bitfield"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/capella"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/holiman/uint256"
 )
 
 func TestTrimmedString(t *testing.T) {
@@ -166,19 +170,22 @@ func TestNewSignedExecutionPayloadBidFromGloas_Populated(t *testing.T) {
 	feeRecipient := bellatrix.ExecutionAddress{0x99, 0xaa}
 	commitment := deneb.KZGCommitment{0xbb, 0xcc}
 
+	executionRequestsRoot := phase0.Root{0xbe, 0xef}
+
 	bid := &gloas.SignedExecutionPayloadBid{
 		Message: &gloas.ExecutionPayloadBid{
-			ParentBlockHash:    parentHash,
-			ParentBlockRoot:    parentRoot,
-			BlockHash:          blockHash,
-			PrevRandao:         prevRandao,
-			FeeRecipient:       feeRecipient,
-			GasLimit:           30_000_000,
-			BuilderIndex:       gloas.BuilderIndex(7),
-			Slot:               phase0.Slot(99),
-			Value:              phase0.Gwei(123_456),
-			ExecutionPayment:   phase0.Gwei(7_890),
-			BlobKZGCommitments: []deneb.KZGCommitment{commitment},
+			ParentBlockHash:       parentHash,
+			ParentBlockRoot:       parentRoot,
+			BlockHash:             blockHash,
+			PrevRandao:            prevRandao,
+			FeeRecipient:          feeRecipient,
+			GasLimit:              30_000_000,
+			BuilderIndex:          gloas.BuilderIndex(7),
+			Slot:                  phase0.Slot(99),
+			Value:                 phase0.Gwei(123_456),
+			ExecutionPayment:      phase0.Gwei(7_890),
+			BlobKZGCommitments:    []deneb.KZGCommitment{commitment},
+			ExecutionRequestsRoot: executionRequestsRoot,
 		},
 		Signature: phase0.BLSSignature{0xde, 0xad, 0xbe, 0xef},
 	}
@@ -237,6 +244,10 @@ func TestNewSignedExecutionPayloadBidFromGloas_Populated(t *testing.T) {
 
 	if got.GetSignature() != bid.Signature.String() {
 		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), bid.Signature.String())
+	}
+
+	if got := msg.GetExecutionRequestsRoot(); got != executionRequestsRoot.String() {
+		t.Errorf("execution_requests_root mismatch: got %q want %q", got, executionRequestsRoot.String())
 	}
 }
 
@@ -333,3 +344,286 @@ func TestNewPayloadAttestationsFromGloas_NilData(t *testing.T) {
 		t.Errorf("expected nil data for input with nil Data, got %v", got[0].GetData())
 	}
 }
+
+func TestNewSignedExecutionPayloadEnvelopeFromGloas_Nil(t *testing.T) {
+	if got := NewSignedExecutionPayloadEnvelopeFromGloas(nil); got != nil {
+		t.Errorf("expected nil for nil input, got %v", got)
+	}
+
+	if got := NewSignedExecutionPayloadEnvelopeFromGloas(&gloas.SignedExecutionPayloadEnvelope{}); got != nil {
+		t.Errorf("expected nil for envelope with nil Message, got %v", got)
+	}
+}
+
+func TestNewSignedExecutionPayloadEnvelopeFromGloas_Populated(t *testing.T) {
+	beaconBlockRoot := phase0.Root{0x01, 0x02}
+	parentBeaconBlockRoot := phase0.Root{0x03, 0x04}
+	parentHash := phase0.Hash32{0x05, 0x06}
+	feeRecipient := bellatrix.ExecutionAddress{0x07, 0x08}
+	stateRoot := phase0.Root{0x09, 0x0a}
+	receiptsRoot := phase0.Root{0x0b, 0x0c}
+	blockHash := phase0.Hash32{0x0d, 0x0e}
+
+	envelope := &gloas.SignedExecutionPayloadEnvelope{
+		Message: &gloas.ExecutionPayloadEnvelope{
+			BuilderIndex:          gloas.BuilderIndex(42),
+			BeaconBlockRoot:       beaconBlockRoot,
+			ParentBeaconBlockRoot: parentBeaconBlockRoot,
+			Payload: &gloas.ExecutionPayload{
+				ParentHash:    parentHash,
+				FeeRecipient:  feeRecipient,
+				StateRoot:     stateRoot,
+				ReceiptsRoot:  receiptsRoot,
+				PrevRandao:    [32]byte{0x0f, 0x10},
+				BlockNumber:   1234,
+				GasLimit:      30_000_000,
+				GasUsed:       21_000,
+				Timestamp:     1_700_000_000,
+				BlockHash:     blockHash,
+				BaseFeePerGas: uint256.NewInt(7),
+				BlobGasUsed:   131_072,
+				ExcessBlobGas: 0,
+				SlotNumber:    99,
+			},
+		},
+		Signature: phase0.BLSSignature{0xde, 0xad},
+	}
+
+	got := NewSignedExecutionPayloadEnvelopeFromGloas(envelope)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	msg := got.GetMessage()
+	if msg == nil {
+		t.Fatal("expected non-nil envelope message")
+	}
+
+	if v := msg.GetBuilderIndex().GetValue(); v != 42 {
+		t.Errorf("builder_index: got %d want 42", v)
+	}
+
+	if msg.GetBeaconBlockRoot() != beaconBlockRoot.String() {
+		t.Errorf("beacon_block_root mismatch: got %q want %q", msg.GetBeaconBlockRoot(), beaconBlockRoot.String())
+	}
+
+	if msg.GetParentBeaconBlockRoot() != parentBeaconBlockRoot.String() {
+		t.Errorf("parent_beacon_block_root mismatch: got %q want %q", msg.GetParentBeaconBlockRoot(), parentBeaconBlockRoot.String())
+	}
+
+	payload := msg.GetPayload()
+	if payload == nil {
+		t.Fatal("expected non-nil payload")
+	}
+
+	if payload.GetBlockHash() != blockHash.String() {
+		t.Errorf("payload block_hash mismatch: got %q want %q", payload.GetBlockHash(), blockHash.String())
+	}
+
+	if payload.GetStateRoot() != stateRoot.String() {
+		t.Errorf("payload state_root mismatch: got %q want %q", payload.GetStateRoot(), stateRoot.String())
+	}
+
+	if v := payload.GetBlockNumber().GetValue(); v != 1234 {
+		t.Errorf("payload block_number: got %d want 1234", v)
+	}
+
+	if v := payload.GetSlotNumber().GetValue(); v != 99 {
+		t.Errorf("payload slot_number: got %d want 99", v)
+	}
+
+	if got.GetSignature() != envelope.Signature.String() {
+		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), envelope.Signature.String())
+	}
+}
+
+// TestNewSignedExecutionPayloadEnvelopeFromGloas_OmitsBulkFields verifies that
+// transactions, withdrawals, and BAL bytes are NOT populated by the SSE
+// converter — those go via cannon backfill or libp2p paths to keep SSE events
+// compact.
+func TestNewSignedExecutionPayloadEnvelopeFromGloas_OmitsBulkFields(t *testing.T) {
+	envelope := &gloas.SignedExecutionPayloadEnvelope{
+		Message: &gloas.ExecutionPayloadEnvelope{
+			BuilderIndex: gloas.BuilderIndex(1),
+			Payload: &gloas.ExecutionPayload{
+				BaseFeePerGas: uint256.NewInt(1),
+				Transactions: []bellatrix.Transaction{
+					[]byte{0x01, 0x02, 0x03},
+				},
+				Withdrawals: []*capella.Withdrawal{
+					{Index: 1},
+				},
+				BlockAccessList: gloas.BlockAccessList{0xde, 0xad, 0xbe, 0xef},
+			},
+		},
+	}
+
+	got := NewSignedExecutionPayloadEnvelopeFromGloas(envelope)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	payload := got.GetMessage().GetPayload()
+	if payload == nil {
+		t.Fatal("expected non-nil payload")
+	}
+
+	if len(payload.GetTransactions()) != 0 {
+		t.Errorf("transactions should be omitted from SSE envelope; got %d", len(payload.GetTransactions()))
+	}
+
+	if len(payload.GetWithdrawals()) != 0 {
+		t.Errorf("withdrawals should be omitted from SSE envelope; got %d", len(payload.GetWithdrawals()))
+	}
+
+	if payload.GetBlockAccessList() != nil {
+		t.Errorf("block_access_list should be omitted from SSE envelope; got %v", payload.GetBlockAccessList())
+	}
+}
+
+func TestNewPayloadAttestationMessageFromGloas_Nil(t *testing.T) {
+	if got := NewPayloadAttestationMessageFromGloas(nil); got != nil {
+		t.Errorf("expected nil for nil input, got %v", got)
+	}
+}
+
+func TestNewPayloadAttestationMessageFromGloas_Populated(t *testing.T) {
+	beaconBlockRoot := phase0.Root{0x11, 0x22}
+
+	msg := &gloas.PayloadAttestationMessage{
+		ValidatorIndex: phase0.ValidatorIndex(7),
+		Data: &gloas.PayloadAttestationData{
+			BeaconBlockRoot:   beaconBlockRoot,
+			Slot:              phase0.Slot(99),
+			PayloadPresent:    true,
+			BlobDataAvailable: false,
+		},
+		Signature: phase0.BLSSignature{0xab, 0xcd},
+	}
+
+	got := NewPayloadAttestationMessageFromGloas(msg)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	if v := got.GetValidatorIndex().GetValue(); v != 7 {
+		t.Errorf("validator_index: got %d want 7", v)
+	}
+
+	data := got.GetData()
+	if data == nil {
+		t.Fatal("expected non-nil data")
+	}
+
+	if data.GetBeaconBlockRoot() != beaconBlockRoot.String() {
+		t.Errorf("beacon_block_root mismatch: got %q want %q", data.GetBeaconBlockRoot(), beaconBlockRoot.String())
+	}
+
+	if v := data.GetSlot().GetValue(); v != 99 {
+		t.Errorf("slot: got %d want 99", v)
+	}
+
+	if !data.GetPayloadPresent() {
+		t.Error("payload_present should be true")
+	}
+
+	if data.GetBlobDataAvailable() {
+		t.Error("blob_data_available should be false")
+	}
+
+	if got.GetSignature() != msg.Signature.String() {
+		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), msg.Signature.String())
+	}
+}
+
+func TestNewSignedProposerPreferencesFromGloas_Nil(t *testing.T) {
+	if got := NewSignedProposerPreferencesFromGloas(nil); got != nil {
+		t.Errorf("expected nil for nil input, got %v", got)
+	}
+
+	if got := NewSignedProposerPreferencesFromGloas(&gloas.SignedProposerPreferences{}); got != nil {
+		t.Errorf("expected nil for prefs with nil Message, got %v", got)
+	}
+}
+
+func TestNewSignedProposerPreferencesFromGloas_Populated(t *testing.T) {
+	dependentRoot := phase0.Root{0x77, 0x88}
+	feeRecipient := bellatrix.ExecutionAddress{0x99, 0xaa}
+
+	prefs := &gloas.SignedProposerPreferences{
+		Message: &gloas.ProposerPreferences{
+			DependentRoot:  dependentRoot,
+			ProposalSlot:   phase0.Slot(1234),
+			ValidatorIndex: phase0.ValidatorIndex(56),
+			FeeRecipient:   feeRecipient,
+			GasLimit:       30_000_000,
+		},
+		Signature: phase0.BLSSignature{0xfe, 0xed},
+	}
+
+	got := NewSignedProposerPreferencesFromGloas(prefs)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	msg := got.GetMessage()
+	if msg == nil {
+		t.Fatal("expected non-nil message")
+	}
+
+	if msg.GetDependentRoot() != dependentRoot.String() {
+		t.Errorf("dependent_root mismatch: got %q want %q", msg.GetDependentRoot(), dependentRoot.String())
+	}
+
+	if v := msg.GetProposalSlot().GetValue(); v != 1234 {
+		t.Errorf("proposal_slot: got %d want 1234", v)
+	}
+
+	if v := msg.GetValidatorIndex().GetValue(); v != 56 {
+		t.Errorf("validator_index: got %d want 56", v)
+	}
+
+	if msg.GetFeeRecipient() != feeRecipient.String() {
+		t.Errorf("fee_recipient mismatch: got %q want %q", msg.GetFeeRecipient(), feeRecipient.String())
+	}
+
+	if v := msg.GetGasLimit().GetValue(); v != 30_000_000 {
+		t.Errorf("gas_limit: got %d want 30000000", v)
+	}
+
+	if got.GetSignature() != prefs.Signature.String() {
+		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), prefs.Signature.String())
+	}
+}
+
+func TestNewExecutionPayloadAvailableFromAPIV1_Nil(t *testing.T) {
+	if got := NewExecutionPayloadAvailableFromAPIV1(nil); got != nil {
+		t.Errorf("expected nil for nil input, got %v", got)
+	}
+}
+
+func TestNewExecutionPayloadAvailableFromAPIV1_Populated(t *testing.T) {
+	blockRoot := phase0.Root{0xab, 0xcd}
+
+	ev := &apiv1.ExecutionPayloadAvailableEvent{
+		BlockRoot: blockRoot,
+		Slot:      phase0.Slot(7),
+	}
+
+	got := NewExecutionPayloadAvailableFromAPIV1(ev)
+	if got == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	if got.GetBlockRoot() != blockRoot.String() {
+		t.Errorf("block_root mismatch: got %q want %q", got.GetBlockRoot(), blockRoot.String())
+	}
+
+	if v := got.GetSlot().GetValue(); v != 7 {
+		t.Errorf("slot: got %d want 7", v)
+	}
+}
+
+// electra is imported via the bid test path; reference here ensures the import
+// is preserved if other tests are removed.
+var _ = electra.SignedBeaconBlock{}

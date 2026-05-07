@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	bitfield "github.com/OffchainLabs/go-bitfield"
+	"github.com/OffchainLabs/go-bitfield"
 	"github.com/ethpandaops/go-eth2-client/api"
 	apiv1deneb "github.com/ethpandaops/go-eth2-client/api/v1/deneb"
 	apiv1electra "github.com/ethpandaops/go-eth2-client/api/v1/electra"
@@ -584,5 +584,12 @@ func TestNewEventBlockFromGloas(t *testing.T) {
 
 	if got := atts[0].GetData().GetSlot().GetValue(); got != 42 {
 		t.Errorf("payload_attestation data.slot = %d, want 42", got)
+	}
+
+	// parent_execution_requests is the parent block's deferred-payload
+	// requests, processed in this block's state transition. It must
+	// round-trip through the conversion even when empty.
+	if body.GetParentExecutionRequests() == nil {
+		t.Error("expected non-nil parent_execution_requests")
 	}
 }

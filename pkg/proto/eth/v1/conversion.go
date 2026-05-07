@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types/bal"
 	"github.com/ethereum/go-ethereum/rlp"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
@@ -454,19 +455,117 @@ func NewSignedExecutionPayloadBidFromGloas(bid *gloas.SignedExecutionPayloadBid)
 
 	return &SignedExecutionPayloadBid{
 		Message: &ExecutionPayloadBid{
-			ParentBlockHash:    msg.ParentBlockHash.String(),
-			ParentBlockRoot:    msg.ParentBlockRoot.String(),
-			BlockHash:          msg.BlockHash.String(),
-			PrevRandao:         msg.PrevRandao.String(),
-			FeeRecipient:       msg.FeeRecipient.String(),
-			GasLimit:           &wrapperspb.UInt64Value{Value: msg.GasLimit},
-			BuilderIndex:       &wrapperspb.UInt64Value{Value: uint64(msg.BuilderIndex)},
-			Slot:               &wrapperspb.UInt64Value{Value: uint64(msg.Slot)},
-			Value:              &wrapperspb.UInt64Value{Value: uint64(msg.Value)},
-			ExecutionPayment:   &wrapperspb.UInt64Value{Value: uint64(msg.ExecutionPayment)},
-			BlobKzgCommitments: commitments,
+			ParentBlockHash:       msg.ParentBlockHash.String(),
+			ParentBlockRoot:       msg.ParentBlockRoot.String(),
+			BlockHash:             msg.BlockHash.String(),
+			PrevRandao:            msg.PrevRandao.String(),
+			FeeRecipient:          msg.FeeRecipient.String(),
+			GasLimit:              &wrapperspb.UInt64Value{Value: msg.GasLimit},
+			BuilderIndex:          &wrapperspb.UInt64Value{Value: uint64(msg.BuilderIndex)},
+			Slot:                  &wrapperspb.UInt64Value{Value: uint64(msg.Slot)},
+			Value:                 &wrapperspb.UInt64Value{Value: uint64(msg.Value)},
+			ExecutionPayment:      &wrapperspb.UInt64Value{Value: uint64(msg.ExecutionPayment)},
+			BlobKzgCommitments:    commitments,
+			ExecutionRequestsRoot: msg.ExecutionRequestsRoot.String(),
 		},
 		Signature: bid.Signature.String(),
+	}
+}
+
+// NewSignedExecutionPayloadEnvelopeFromGloas converts the SDK's Gloas envelope
+// into our proto representation for sentry SSE emission. The payload section
+// is populated with metadata (block hash, state root, block number, fee
+// recipient, slot number) but bulk fields (transactions, withdrawals,
+// block_access_list, extra_data) are intentionally omitted — those are
+// captured via cannon backfill or libp2p gossip paths to keep the SSE-emitted
+// DecoratedEvent compact. Returns nil if the input is nil.
+func NewSignedExecutionPayloadEnvelopeFromGloas(envelope *gloas.SignedExecutionPayloadEnvelope) *SignedExecutionPayloadEnvelope {
+	if envelope == nil || envelope.Message == nil {
+		return nil
+	}
+
+	msg := envelope.Message
+
+	out := &ExecutionPayloadEnvelope{
+		BuilderIndex:          &wrapperspb.UInt64Value{Value: uint64(msg.BuilderIndex)},
+		BeaconBlockRoot:       msg.BeaconBlockRoot.String(),
+		ParentBeaconBlockRoot: msg.ParentBeaconBlockRoot.String(),
+	}
+
+	if msg.Payload != nil {
+		p := msg.Payload
+		out.Payload = &ExecutionPayloadGloas{
+			ParentHash:    p.ParentHash.String(),
+			FeeRecipient:  p.FeeRecipient.String(),
+			StateRoot:     p.StateRoot.String(),
+			ReceiptsRoot:  p.ReceiptsRoot.String(),
+			PrevRandao:    fmt.Sprintf("%#x", p.PrevRandao),
+			BlockNumber:   &wrapperspb.UInt64Value{Value: p.BlockNumber},
+			GasLimit:      &wrapperspb.UInt64Value{Value: p.GasLimit},
+			GasUsed:       &wrapperspb.UInt64Value{Value: p.GasUsed},
+			Timestamp:     &wrapperspb.UInt64Value{Value: p.Timestamp},
+			BlockHash:     p.BlockHash.String(),
+			BlobGasUsed:   &wrapperspb.UInt64Value{Value: p.BlobGasUsed},
+			ExcessBlobGas: &wrapperspb.UInt64Value{Value: p.ExcessBlobGas},
+			SlotNumber:    &wrapperspb.UInt64Value{Value: p.SlotNumber},
+		}
+	}
+
+	return &SignedExecutionPayloadEnvelope{
+		Message:   out,
+		Signature: envelope.Signature.String(),
+	}
+}
+
+// NewPayloadAttestationMessageFromGloas converts an individual PTC validator's
+// payload attestation message into our proto representation. Used by the
+// payload_attestation_message SSE handler (one per PTC validator per slot, ~512
+// per slot). The aggregated form is converted by NewPayloadAttestationsFromGloas.
+func NewPayloadAttestationMessageFromGloas(msg *gloas.PayloadAttestationMessage) *PayloadAttestationMessage {
+	if msg == nil {
+		return nil
+	}
+
+	return &PayloadAttestationMessage{
+		ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(msg.ValidatorIndex)},
+		Data:           newPayloadAttestationDataFromGloas(msg.Data),
+		Signature:      msg.Signature.String(),
+	}
+}
+
+// NewSignedProposerPreferencesFromGloas converts the SDK's Gloas signed
+// proposer preferences into our proto representation. Returns nil if the
+// input is nil.
+func NewSignedProposerPreferencesFromGloas(prefs *gloas.SignedProposerPreferences) *SignedProposerPreferences {
+	if prefs == nil || prefs.Message == nil {
+		return nil
+	}
+
+	msg := prefs.Message
+
+	return &SignedProposerPreferences{
+		Message: &ProposerPreferences{
+			ProposalSlot:   &wrapperspb.UInt64Value{Value: uint64(msg.ProposalSlot)},
+			ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(msg.ValidatorIndex)},
+			FeeRecipient:   msg.FeeRecipient.String(),
+			GasLimit:       &wrapperspb.UInt64Value{Value: msg.GasLimit},
+			DependentRoot:  msg.DependentRoot.String(),
+		},
+		Signature: prefs.Signature.String(),
+	}
+}
+
+// NewExecutionPayloadAvailableFromAPIV1 converts the SDK's
+// execution_payload_available SSE event (block_root + slot signal) into our
+// proto representation.
+func NewExecutionPayloadAvailableFromAPIV1(ev *apiv1.ExecutionPayloadAvailableEvent) *ExecutionPayloadAvailable {
+	if ev == nil {
+		return nil
+	}
+
+	return &ExecutionPayloadAvailable{
+		BlockRoot: ev.BlockRoot.String(),
+		Slot:      &wrapperspb.UInt64Value{Value: uint64(ev.Slot)},
 	}
 }
 

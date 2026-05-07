@@ -270,8 +270,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		b.appendEth1Data(body.GetEth1Data())
 
 		// Gloas blocks have no inline execution payload — it arrives
-		// via the ExecutionPayloadEnvelope event.
-		b.appendNoExecutionPayload()
+		// via the ExecutionPayloadEnvelope event. EPBS columns come
+		// from the bid in the block body.
+		b.appendNullInlinePayloadFields()
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
 
 		return nil
 	}
@@ -300,6 +302,15 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {
+	b.appendNullInlinePayloadFields()
+	b.appendNullEpbsColumns()
+}
+
+// appendNullInlinePayloadFields appends NULL/zero for every column that comes
+// from the (pre-Gloas) inline execution payload. Gloas blocks call this in
+// lieu of `appendNoExecutionPayload` because they populate the EPBS columns
+// from the bid instead.
+func (b *beaconApiEthV2BeaconBlockBatch) appendNullInlinePayloadFields() {
 	b.ExecutionPayloadBlockHash.Append(nil)
 	b.ExecutionPayloadBlockNumber.Append(0)
 	b.ExecutionPayloadFeeRecipient.Append("")
@@ -311,16 +322,45 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {
 	b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadStateRoot.Append(nil)
 	b.ExecutionPayloadParentHash.Append(nil)
-
-	b.appendNullEpbsColumns()
 }
 
-// TODO(epbs): Gloas blocks should populate these from SignedExecutionPayloadBid
-// once go-eth2-client lands. For now all blocks get NULL.
 func (b *beaconApiEthV2BeaconBlockBatch) appendNullEpbsColumns() {
 	b.BuilderIndex.Append(proto.Nullable[uint64]{})
 	b.BidValue.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	b.PayloadPresent.Append(proto.Nullable[bool]{})
+}
+
+// appendEpbsFromBid populates the four EPBS columns from a Gloas block's
+// SignedExecutionPayloadBid. payload_present is post-fact (requires PTC vote
+// or envelope arrival), so it stays NULL — fold in via downstream join.
+func (b *beaconApiEthV2BeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid) {
+	if bid == nil || bid.GetMessage() == nil {
+		b.appendNullEpbsColumns()
+
+		return
+	}
+
+	msg := bid.GetMessage()
+
+	if v := msg.GetBuilderIndex(); v != nil {
+		b.BuilderIndex.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := msg.GetValue(); v != nil {
+		b.BidValue.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.BidValue.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := msg.GetExecutionPayment(); v != nil {
+		b.ExecutionPayment.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	}
+
 	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 

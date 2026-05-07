@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -255,7 +255,20 @@ func (b *WithdrawalDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch
 	}
 }
 
+// builderWithdrawalIndexFlag is the bit set on validator_index for builder
+// withdrawals under EIP-7732 (validator_index >= 2^40 ⇒ builder withdrawal).
+const builderWithdrawalIndexFlag = uint64(1) << 40
+
 func (b *WithdrawalDeriver) getWithdrawals(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.WithdrawalV2, error) {
+	// EIP-7732 (Gloas): the block body no longer carries an inline
+	// ExecutionPayload. Withdrawals arrive in a separate
+	// ExecutionPayloadEnvelope, fetched here by block ID. envelope == nil
+	// means the builder withheld the payload (payload_status = EMPTY); no
+	// withdrawals to emit.
+	if block.Version >= spec.DataVersionGloas {
+		return b.getGloasWithdrawals(ctx, block)
+	}
+
 	withdrawals := []*xatuethv1.WithdrawalV2{}
 
 	withd, err := block.Withdrawals()
@@ -269,6 +282,47 @@ func (b *WithdrawalDeriver) getWithdrawals(ctx context.Context, block *spec.Vers
 			ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(withdrawal.ValidatorIndex)},
 			Address:        withdrawal.Address.String(),
 			Amount:         &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
+		})
+	}
+
+	return withdrawals, nil
+}
+
+func (b *WithdrawalDeriver) getGloasWithdrawals(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.WithdrawalV2, error) {
+	if block.Gloas == nil || block.Gloas.Message == nil {
+		return []*xatuethv1.WithdrawalV2{}, nil
+	}
+
+	slot := uint64(block.Gloas.Message.Slot)
+
+	envelope, err := b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(phase0.Slot(slot)))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch execution payload envelope for slot %d", slot)
+	}
+
+	// Builder withheld payload — no withdrawals applied this slot.
+	if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+		return []*xatuethv1.WithdrawalV2{}, nil
+	}
+
+	withd := envelope.Message.Payload.Withdrawals
+
+	withdrawals := make([]*xatuethv1.WithdrawalV2, 0, len(withd))
+
+	for _, withdrawal := range withd {
+		validatorIndex := uint64(withdrawal.ValidatorIndex)
+
+		withdrawalType := "validator"
+		if validatorIndex >= builderWithdrawalIndexFlag {
+			withdrawalType = "builder"
+		}
+
+		withdrawals = append(withdrawals, &xatuethv1.WithdrawalV2{
+			Index:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Index)},
+			ValidatorIndex: &wrapperspb.UInt64Value{Value: validatorIndex},
+			Address:        withdrawal.Address.String(),
+			Amount:         &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
+			WithdrawalType: withdrawalType,
 		})
 	}
 

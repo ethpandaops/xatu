@@ -18,10 +18,10 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
-	github.com/ethpandaops/beacon v0.67.1-0.20260507021101-bdc1647be069
+	github.com/ethpandaops/beacon v0.67.1-0.20260507052247-b31a645f6e36
 	github.com/ethpandaops/ethcore v0.0.0-20260507022150-a091f5d4b75f
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ethpandaops/go-eth2-client v0.1.2-0.20260501105559-03ed5eacf583
+	github.com/ethpandaops/go-eth2-client v0.1.2-0.20260507042554-4e9992fe2f0e
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4

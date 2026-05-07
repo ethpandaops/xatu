@@ -12,6 +12,10 @@ import "google/protobuf/wrappers.proto";
 
 // ProposerPreferences signals the proposer's preferences for their upcoming
 // slot (fee recipient, gas limit). Gossiped on P2P.
+//
+// Per the Gloas p2p-interface spec, dependent_root is logically the first
+// field; here it is field 5 because proto field numbers are independent of
+// the spec's container ordering and the other fields predate this addition.
 message ProposerPreferences {
   google.protobuf.UInt64Value proposal_slot = 1
       [ json_name = "proposal_slot" ];
@@ -22,6 +26,8 @@ message ProposerPreferences {
   string fee_recipient = 3 [ json_name = "fee_recipient" ];
 
   google.protobuf.UInt64Value gas_limit = 4 [ json_name = "gas_limit" ];
+
+  string dependent_root = 5 [ json_name = "dependent_root" ];
 }
 
 // SignedProposerPreferences wraps ProposerPreferences with the proposer's

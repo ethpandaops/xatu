@@ -230,6 +230,11 @@ message WithdrawalV2 {
   string address = 3;
 
   google.protobuf.UInt64Value amount = 4;
+
+  // EIP-7732 ePBS: classification of the withdrawal recipient. Empty on
+  // pre-Gloas blocks; "validator" or "builder" on Gloas+ blocks. Builder
+  // withdrawals are encoded by validator_index >= 2^40 in the spec.
+  string withdrawal_type = 5 [ json_name = "withdrawal_type" ];
 }
 
 message ExecutionPayloadHeaderCapella {

@@ -232,9 +232,10 @@ func (b *PayloadAttestationDeriver) processSlot(ctx context.Context, slot phase0
 
 	events := make([]*xatu.DecoratedEvent, 0, len(converted))
 
-	for i, att := range converted {
-		//nolint:gosec // i is bounded by MAX_PAYLOAD_ATTESTATIONS=4 (spec)
-		event, err := b.createEvent(ctx, att, blockIdentifier, uint32(i))
+	var position uint32
+
+	for _, att := range converted {
+		event, err := b.createEvent(ctx, att, blockIdentifier, position)
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")
 
@@ -242,6 +243,7 @@ func (b *PayloadAttestationDeriver) processSlot(ctx context.Context, slot phase0
 		}
 
 		events = append(events, event)
+		position++
 	}
 
 	return events, nil

@@ -3,7 +3,6 @@ package canonical
 import (
 	"encoding/hex"
 	"fmt"
-	"math/bits"
 	"strings"
 	"time"
 
@@ -78,6 +77,8 @@ func (b *canonicalBeaconBlockPayloadAttestationBatch) appendPayload(event *xatu.
 // popcountAggregationBits decodes a 0x-prefixed hex aggregation bitvector and
 // returns the count of set bits (i.e. attesting PTC members). Returns 0 on
 // any decode error so the column degrades gracefully on malformed input.
+// Iterates bits explicitly instead of using bits.OnesCount8 to avoid an
+// int->uint32 conversion that gosec's G115 flags.
 func popcountAggregationBits(hexStr string) uint32 {
 	trimmed := strings.TrimPrefix(hexStr, "0x")
 
@@ -86,14 +87,17 @@ func popcountAggregationBits(hexStr string) uint32 {
 		return 0
 	}
 
-	var count int
+	var count uint32
 
 	for _, byteValue := range raw {
-		count += bits.OnesCount8(byteValue)
+		for bit := byte(1); bit != 0; bit <<= 1 {
+			if byteValue&bit != 0 {
+				count++
+			}
+		}
 	}
 
-	//nolint:gosec // count is bounded by PTC_SIZE=512 bits, fits uint32
-	return uint32(count)
+	return count
 }
 
 func (b *canonicalBeaconBlockPayloadAttestationBatch) appendAdditionalData(

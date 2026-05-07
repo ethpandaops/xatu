@@ -16,13 +16,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/beevik/ntp"
+	"github.com/ethpandaops/beacon/pkg/beacon"
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/beevik/ntp"
-	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -631,6 +632,171 @@ func (s *Sentry) Start(ctx context.Context) error {
 			}
 
 			event := v1.NewEventsDataColumnSidecar(s.log, dataColumnSidecar, now, s.beacon, s.duplicateCache.BeaconEthV1EventsDataColumnSidecar, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		// EIP-7732 ePBS SSE handlers. The connected beacon node only emits
+		// these on Gloas+ networks; pre-Gloas the broker simply receives no
+		// events on these topics so the handlers are no-ops.
+		s.beacon.Node().OnExecutionPayload(ctx, func(ctx context.Context, envelope *gloas.SignedExecutionPayloadEnvelope) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsExecutionPayload(s.log, envelope, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayload, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnExecutionPayloadGossip(ctx, func(ctx context.Context, envelope *gloas.SignedExecutionPayloadEnvelope) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsExecutionPayloadGossip(s.log, envelope, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayloadGossip, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnExecutionPayloadAvailable(ctx, func(ctx context.Context, ev *eth2v1.ExecutionPayloadAvailableEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsExecutionPayloadAvailable(s.log, ev, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayloadAvailable, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnExecutionPayloadBid(ctx, func(ctx context.Context, bid *gloas.SignedExecutionPayloadBid) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsExecutionPayloadBid(s.log, bid, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayloadBid, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnPayloadAttestationMessage(ctx, func(ctx context.Context, msg *gloas.PayloadAttestationMessage) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsPayloadAttestation(s.log, msg, now, s.beacon, s.duplicateCache.BeaconETHV1EventsPayloadAttestationMessage, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
+		s.beacon.Node().OnProposerPreferences(ctx, func(ctx context.Context, prefs *gloas.SignedProposerPreferences) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsProposerPreferences(s.log, prefs, now, s.beacon, s.duplicateCache.BeaconETHV1EventsProposerPreferences, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {

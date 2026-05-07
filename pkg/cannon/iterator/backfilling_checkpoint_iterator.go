@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -431,7 +431,6 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 		marker = location.GetEthV2BeaconBlockSyncAggregate().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
 		marker = location.GetEthV2BeaconBlockAccessList().GetBackfillingCheckpointMarker()
-	// TODO(epbs): Wire up cannon derivers once go-eth2-client adds ePBS support.
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
 		marker = location.GetEthV2BeaconBlockPayloadAttestation().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID:
@@ -577,7 +576,6 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 				BackfillingCheckpointMarker: marker,
 			},
 		}
-	// TODO(epbs): Wire up cannon derivers once go-eth2-client adds ePBS support.
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
 		location.Data = &xatu.CannonLocation_EthV2BeaconBlockPayloadAttestation{
 			EthV2BeaconBlockPayloadAttestation: &xatu.CannonLocationEthV2BeaconBlockPayloadAttestation{

@@ -23,6 +23,7 @@ import "pkg/proto/eth/v1/block_access_list.proto";
 import "pkg/proto/eth/v1/payload_attestation.proto";
 import "pkg/proto/eth/v1/execution_payload_bid.proto";
 import "pkg/proto/eth/v1/execution_payload_envelope.proto";
+import "pkg/proto/eth/v1/execution_payload_available.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
@@ -967,10 +968,32 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  // AdditionalEthV1EventsExecutionPayloadGossipData contains additional data
+  // about execution payload envelopes seen on the gossip mesh from the beacon
+  // API SSE (analog of block_gossip).
+  message AdditionalEthV1EventsExecutionPayloadGossipData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalEthV1EventsExecutionPayloadAvailableData contains additional
+  // data about execution_payload_available signals from the beacon API SSE.
+  // Fires when the beacon node has confirmed the payload and blobs are
+  // locally available, ready for PTC vote.
+  message AdditionalEthV1EventsExecutionPayloadAvailableData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
   // AdditionalEthV2BeaconBlockPayloadAttestationData contains additional data
   // about aggregated PTC payload attestations derived from cannon blocks.
   message AdditionalEthV2BeaconBlockPayloadAttestationData {
     BlockIdentifier block = 1;
+    // Position is the 0-based index of this PayloadAttestation within
+    // block.Body.PayloadAttestations (max MAX_PAYLOAD_ATTESTATIONS=4).
+    google.protobuf.UInt32Value position = 2;
   }
 
   // AdditionalEthV2BeaconBlockExecutionPayloadBidData contains additional data
@@ -1901,6 +1924,10 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 103 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
     AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 104 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
     AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 105 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
+
+    // EIP-7732 ePBS: Sentry SSE additional data (gossip + available variants)
+    AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 106 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
+    AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 107 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2127,6 +2154,8 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 91;
     BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 92;
     BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 93;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 100;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE = 101;
 
     // EIP-7732 ePBS: Cannon derived events
     BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 94;
@@ -2472,6 +2501,12 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
     xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
+
+    // EIP-7732 ePBS: Sentry SSE events (gossip + available variants)
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 221
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
+    xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 222
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
   };
 }
 

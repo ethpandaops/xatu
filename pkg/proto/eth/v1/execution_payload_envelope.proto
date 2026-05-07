@@ -25,9 +25,7 @@ message ExecutionPayloadEnvelope {
 
   string beacon_block_root = 4 [ json_name = "beacon_block_root" ];
 
-  google.protobuf.UInt64Value slot = 5 [ json_name = "slot" ];
-
-  string state_root = 6 [ json_name = "state_root" ];
+  string parent_beacon_block_root = 7 [ json_name = "parent_beacon_block_root" ];
 }
 
 // SignedExecutionPayloadEnvelope wraps ExecutionPayloadEnvelope with the

@@ -8,15 +8,15 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-var beaconApiEthV1EventsProposerPreferencesEventNames = []xatu.Event_Name{
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES,
+var beaconApiEthV1EventsExecutionPayloadAvailableEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE,
 }
 
 func init() {
 	r, err := route.NewStaticRoute(
-		beaconApiEthV1EventsProposerPreferencesTableName,
-		beaconApiEthV1EventsProposerPreferencesEventNames,
-		func() route.ColumnarBatch { return newbeaconApiEthV1EventsProposerPreferencesBatch() },
+		beaconApiEthV1EventsExecutionPayloadAvailableTableName,
+		beaconApiEthV1EventsExecutionPayloadAvailableEventNames,
+		func() route.ColumnarBatch { return newbeaconApiEthV1EventsExecutionPayloadAvailableBatch() },
 	)
 	if err != nil {
 		route.RecordError(err)
@@ -29,15 +29,15 @@ func init() {
 	}
 }
 
-func (b *beaconApiEthV1EventsProposerPreferencesBatch) FlattenTo(
+func (b *beaconApiEthV1EventsExecutionPayloadAvailableBatch) FlattenTo(
 	event *xatu.DecoratedEvent,
 ) error {
 	if event == nil || event.GetEvent() == nil {
 		return nil
 	}
 
-	if event.GetEthV1EventsProposerPreferences() == nil {
-		return fmt.Errorf("nil eth_v1_events_proposer_preferences payload: %w", route.ErrInvalidEvent)
+	if event.GetEthV1EventsExecutionPayloadAvailable() == nil {
+		return fmt.Errorf("nil eth_v1_events_execution_payload_available payload: %w", route.ErrInvalidEvent)
 	}
 
 	b.appendRuntime(event)
@@ -49,7 +49,7 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) FlattenTo(
 	return nil
 }
 
-func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendRuntime(event *xatu.DecoratedEvent) {
+func (b *beaconApiEthV1EventsExecutionPayloadAvailableBatch) appendRuntime(event *xatu.DecoratedEvent) {
 	b.UpdatedDateTime.Append(time.Now())
 
 	if ts := event.GetEvent().GetDateTime(); ts != nil {
@@ -59,27 +59,13 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendRuntime(event *xatu
 	}
 }
 
-//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
-func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendPayload(event *xatu.DecoratedEvent) {
-	signed := event.GetEthV1EventsProposerPreferences()
-	prefs := signed.GetMessage()
+func (b *beaconApiEthV1EventsExecutionPayloadAvailableBatch) appendPayload(event *xatu.DecoratedEvent) {
+	signal := event.GetEthV1EventsExecutionPayloadAvailable()
 
-	if validatorIndex := prefs.GetValidatorIndex(); validatorIndex != nil {
-		b.ValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-	} else {
-		b.ValidatorIndex.Append(0)
-	}
-
-	b.FeeRecipient.Append([]byte(prefs.GetFeeRecipient()))
-
-	if gasLimit := prefs.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
-	} else {
-		b.GasLimit.Append(0)
-	}
+	b.BlockRoot.Append([]byte(signal.GetBlockRoot()))
 }
 
-func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendAdditionalData(
+func (b *beaconApiEthV1EventsExecutionPayloadAvailableBatch) appendAdditionalData(
 	event *xatu.DecoratedEvent,
 ) {
 	if event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
@@ -93,7 +79,7 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendAdditionalData(
 	}
 
 	client := event.GetMeta().GetClient()
-	additional := extractBeaconSlotEpochPropagation(client.GetEthV1EventsProposerPreferences())
+	additional := extractBeaconSlotEpochPropagation(client.GetEthV1EventsExecutionPayloadAvailable())
 
 	b.Slot.Append(uint32(additional.Slot)) //nolint:gosec // slot fits uint32
 	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))

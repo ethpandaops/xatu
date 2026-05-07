@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Execution Payload Available signal
+// https://github.com/ethereum/beacon-APIs/blob/master/apis/eventstream/index.yaml
+//
+// The beacon node emits this SSE event once it has verified that the
+// execution payload and blobs for a given beacon block are locally
+// available, i.e. ready for the PTC to vote `payload_present = true`.
+// Distinct from the `execution_payload` SSE topic which carries the full
+// SignedExecutionPayloadEnvelope on import.
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// ExecutionPayloadAvailable carries the block root + slot of a beacon block
+// whose execution payload + blobs the node has just confirmed available.
+message ExecutionPayloadAvailable {
+  string block_root = 1 [ json_name = "block_root" ];
+
+  google.protobuf.UInt64Value slot = 2 [ json_name = "slot" ];
+}

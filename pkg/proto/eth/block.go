@@ -498,6 +498,7 @@ func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSigna
 					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
 					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
+					ParentExecutionRequests:   v1.NewElectraExecutionRequestsFromElectra(block.Body.ParentExecutionRequests),
 				},
 			},
 		},

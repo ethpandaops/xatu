@@ -36,6 +36,8 @@ message ExecutionPayloadBid {
 
   repeated string blob_kzg_commitments = 11
       [ json_name = "blob_kzg_commitments" ];
+
+  string execution_requests_root = 12 [ json_name = "execution_requests_root" ];
 }
 
 // SignedExecutionPayloadBid wraps ExecutionPayloadBid with the builder's signature.

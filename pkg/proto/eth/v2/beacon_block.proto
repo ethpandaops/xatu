@@ -468,7 +468,7 @@ message BeaconBlockBodyDeneb {
   repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
       [ json_name = "bls_to_execution_changes" ];
 
-  repeated string blob_kzg_commitments = 12 
+  repeated string blob_kzg_commitments = 12
       [ json_name = "blob_kzg_commitments" ];
 }
 
@@ -500,9 +500,9 @@ message BeaconBlockBodyElectra {
   repeated SignedBLSToExecutionChange bls_to_execution_changes = 11
       [ json_name = "bls_to_execution_changes" ];
 
-  repeated string blob_kzg_commitments = 12 
+  repeated string blob_kzg_commitments = 12
       [ json_name = "blob_kzg_commitments" ];
-  
+
   v1.ElectraExecutionRequests execution_requests = 13 [ json_name = "execution_requests" ];
 }
 
@@ -578,6 +578,13 @@ message BeaconBlockBodyGloas {
   // EIP-7732 ePBS: Aggregated PTC attestations (max 4 per block).
   repeated v1.PayloadAttestation payload_attestations = 12
       [ json_name = "payload_attestations" ];
+
+  // EIP-7732 ePBS deferred payload processing:
+  // execution requests of the *parent* block's payload, processed in this
+  // block's state transition. Replaces the per-block execution_requests that
+  // existed before deferred processing was introduced.
+  v1.ElectraExecutionRequests parent_execution_requests = 13
+      [ json_name = "parent_execution_requests" ];
 }
 
 message BlindedBeaconBlockBodyCapella {

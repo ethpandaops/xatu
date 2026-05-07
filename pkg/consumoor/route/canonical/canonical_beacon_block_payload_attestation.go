@@ -1,7 +1,9 @@
 package canonical
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
@@ -67,13 +69,35 @@ func (b *canonicalBeaconBlockPayloadAttestationBatch) appendPayload(event *xatu.
 		b.BlobDataAvailable.Append(false)
 	}
 
-	b.AggregationBits.Append(attestation.GetAggregationBits())
+	aggregationBits := attestation.GetAggregationBits()
+	b.AggregationBits.Append(aggregationBits)
+	b.AttestingValidatorCount.Append(popcountAggregationBits(aggregationBits))
+}
 
-	// TODO(epbs): AttestingValidatorCount and Position are not available on the PayloadAttestation
-	// proto type. These require Additional*Data proto definitions to be populated by cannon.
-	// For now, zero-fill these fields.
-	b.AttestingValidatorCount.Append(0)
-	b.Position.Append(0)
+// popcountAggregationBits decodes a 0x-prefixed hex aggregation bitvector and
+// returns the count of set bits (i.e. attesting PTC members). Returns 0 on
+// any decode error so the column degrades gracefully on malformed input.
+// Iterates bits explicitly instead of using bits.OnesCount8 to avoid an
+// int->uint32 conversion that gosec's G115 flags.
+func popcountAggregationBits(hexStr string) uint32 {
+	trimmed := strings.TrimPrefix(hexStr, "0x")
+
+	raw, err := hex.DecodeString(trimmed)
+	if err != nil {
+		return 0
+	}
+
+	var count uint32
+
+	for _, byteValue := range raw {
+		for bit := byte(1); bit != 0; bit <<= 1 {
+			if byteValue&bit != 0 {
+				count++
+			}
+		}
+	}
+
+	return count
 }
 
 func (b *canonicalBeaconBlockPayloadAttestationBatch) appendAdditionalData(
@@ -87,10 +111,17 @@ func (b *canonicalBeaconBlockPayloadAttestationBatch) appendAdditionalData(
 		b.EpochStartDateTime.Append(time.Time{})
 		b.BlockRoot.Append(nil)
 		b.BlockVersion.Append("")
+		b.Position.Append(0)
 
 		return
 	}
 
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
+
+	if pos := additional.GetPosition(); pos != nil {
+		b.Position.Append(pos.GetValue())
+	} else {
+		b.Position.Append(0)
+	}
 }

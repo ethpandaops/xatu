@@ -19,6 +19,12 @@ DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_execution_payload_bid_loca
 DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_proposer_preferences ON CLUSTER '{cluster}';
 DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_proposer_preferences_local ON CLUSTER '{cluster}';
 
+DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_execution_payload_gossip ON CLUSTER '{cluster}';
+DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_execution_payload_gossip_local ON CLUSTER '{cluster}';
+
+DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_execution_payload_available ON CLUSTER '{cluster}';
+DROP TABLE IF EXISTS default.beacon_api_eth_v1_events_execution_payload_available_local ON CLUSTER '{cluster}';
+
 DROP TABLE IF EXISTS default.libp2p_gossipsub_execution_payload_envelope ON CLUSTER '{cluster}';
 DROP TABLE IF EXISTS default.libp2p_gossipsub_execution_payload_envelope_local ON CLUSTER '{cluster}';
 
@@ -55,6 +61,13 @@ ALTER TABLE default.beacon_api_eth_v2_beacon_block_local ON CLUSTER '{cluster}'
     DROP COLUMN IF EXISTS execution_payment,
     DROP COLUMN IF EXISTS bid_value,
     DROP COLUMN IF EXISTS builder_index;
+
+-- Remove withdrawal_type column added by 107
+ALTER TABLE default.canonical_beacon_block_withdrawal ON CLUSTER '{cluster}'
+    DROP COLUMN IF EXISTS withdrawal_type;
+
+ALTER TABLE default.canonical_beacon_block_withdrawal_local ON CLUSTER '{cluster}'
+    DROP COLUMN IF EXISTS withdrawal_type;
 
 -- Remove Gloas columns from DataColumnSidecar tables
 ALTER TABLE default.beacon_api_eth_v1_events_data_column_sidecar ON CLUSTER '{cluster}'

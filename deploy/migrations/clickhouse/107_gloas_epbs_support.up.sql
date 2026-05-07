@@ -154,7 +154,7 @@ CREATE TABLE default.beacon_api_eth_v1_events_execution_payload_local ON CLUSTER
     updated_date_time
 ) PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name, block_root)
-COMMENT 'Execution payload envelope arrivals from beacon API SSE (execution_payload_available event).';
+COMMENT 'Execution payload envelope arrivals from beacon API SSE (execution_payload event, fires on import into fork-choice).';
 
 CREATE TABLE default.beacon_api_eth_v1_events_execution_payload ON CLUSTER '{cluster}'
     AS default.beacon_api_eth_v1_events_execution_payload_local
@@ -317,6 +317,107 @@ CREATE TABLE default.beacon_api_eth_v1_events_proposer_preferences ON CLUSTER '{
     AS default.beacon_api_eth_v1_events_proposer_preferences_local
     ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_proposer_preferences_local,
         cityHash64(slot_start_date_time, meta_network_name, meta_client_name, validator_index));
+
+---------------------------------------------------------------------
+-- 3e. SENTRY SSE: beacon_api_eth_v1_events_execution_payload_gossip
+--     Full envelope on first gossip (analog of block_gossip).
+--     Fires earlier than execution_payload (which fires on import).
+---------------------------------------------------------------------
+CREATE TABLE default.beacon_api_eth_v1_events_execution_payload_gossip_local ON CLUSTER '{cluster}' (
+    `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
+    `event_date_time` DateTime64(3) COMMENT 'When the sentry received the event from a beacon node' CODEC(DoubleDelta, ZSTD(1)),
+    `slot` UInt32 COMMENT 'Slot number from the event payload' CODEC(DoubleDelta, ZSTD(1)),
+    `slot_start_date_time` DateTime COMMENT 'The wall clock time when the slot started' CODEC(DoubleDelta, ZSTD(1)),
+    `propagation_slot_start_diff` UInt32 COMMENT 'Difference between event_date_time and slot_start_date_time in ms' CODEC(ZSTD(1)),
+    `epoch` UInt32 COMMENT 'Epoch number' CODEC(DoubleDelta, ZSTD(1)),
+    `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
+    `block_root` FixedString(66) COMMENT 'Beacon block root the envelope references' CODEC(ZSTD(1)),
+    `builder_index` UInt64 COMMENT 'Index of the builder that produced the payload' CODEC(ZSTD(1)),
+    `block_hash` FixedString(66) COMMENT 'Execution block hash' CODEC(ZSTD(1)),
+    `state_root` FixedString(66) COMMENT 'Execution state root' CODEC(ZSTD(1)),
+    `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
+    `meta_client_id` String COMMENT 'Unique Session ID of the client' CODEC(ZSTD(1)),
+    `meta_client_version` LowCardinality(String) COMMENT 'Version of the client',
+    `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client',
+    `meta_client_os` LowCardinality(String) COMMENT 'Operating system of the client',
+    `meta_client_ip` Nullable(IPv6) COMMENT 'IP address of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_city` LowCardinality(String) COMMENT 'City of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country` LowCardinality(String) COMMENT 'Country of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country_code` LowCardinality(String) COMMENT 'Country code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_continent_code` LowCardinality(String) COMMENT 'Continent code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_longitude` Nullable(Float64) COMMENT 'Longitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_latitude` Nullable(Float64) COMMENT 'Latitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_number` Nullable(UInt32) COMMENT 'ASN of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_organization` Nullable(String) COMMENT 'AS organization of the client' CODEC(ZSTD(1)),
+    `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
+    `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name',
+    `meta_consensus_version` LowCardinality(String) COMMENT 'Consensus client version',
+    `meta_consensus_version_major` LowCardinality(String) COMMENT 'Consensus client major version',
+    `meta_consensus_version_minor` LowCardinality(String) COMMENT 'Consensus client minor version',
+    `meta_consensus_version_patch` LowCardinality(String) COMMENT 'Consensus client patch version',
+    `meta_consensus_implementation` LowCardinality(String) COMMENT 'Consensus client implementation',
+    `meta_labels` Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
+) ENGINE = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',
+    '{replica}',
+    updated_date_time
+) PARTITION BY toStartOfMonth(slot_start_date_time)
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name, block_root)
+COMMENT 'Execution payload envelope first-seen-on-gossip arrivals from beacon API SSE (execution_payload_gossip event, fires before import).';
+
+CREATE TABLE default.beacon_api_eth_v1_events_execution_payload_gossip ON CLUSTER '{cluster}'
+    AS default.beacon_api_eth_v1_events_execution_payload_gossip_local
+    ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_execution_payload_gossip_local,
+        cityHash64(slot_start_date_time, meta_network_name, meta_client_name, block_root));
+
+---------------------------------------------------------------------
+-- 3f. SENTRY SSE: beacon_api_eth_v1_events_execution_payload_available
+--     Lightweight signal that payload+blobs are locally available
+--     for PTC vote (block_root + slot only).
+---------------------------------------------------------------------
+CREATE TABLE default.beacon_api_eth_v1_events_execution_payload_available_local ON CLUSTER '{cluster}' (
+    `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
+    `event_date_time` DateTime64(3) COMMENT 'When the sentry received the event from a beacon node' CODEC(DoubleDelta, ZSTD(1)),
+    `slot` UInt32 COMMENT 'Slot of the block whose payload is now available' CODEC(DoubleDelta, ZSTD(1)),
+    `slot_start_date_time` DateTime COMMENT 'The wall clock time when the slot started' CODEC(DoubleDelta, ZSTD(1)),
+    `propagation_slot_start_diff` UInt32 COMMENT 'Difference between event_date_time and slot_start_date_time in ms' CODEC(ZSTD(1)),
+    `epoch` UInt32 COMMENT 'Epoch number' CODEC(DoubleDelta, ZSTD(1)),
+    `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
+    `block_root` FixedString(66) COMMENT 'Beacon block root whose payload+blobs are locally available' CODEC(ZSTD(1)),
+    `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
+    `meta_client_id` String COMMENT 'Unique Session ID of the client' CODEC(ZSTD(1)),
+    `meta_client_version` LowCardinality(String) COMMENT 'Version of the client',
+    `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client',
+    `meta_client_os` LowCardinality(String) COMMENT 'Operating system of the client',
+    `meta_client_ip` Nullable(IPv6) COMMENT 'IP address of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_city` LowCardinality(String) COMMENT 'City of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country` LowCardinality(String) COMMENT 'Country of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country_code` LowCardinality(String) COMMENT 'Country code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_continent_code` LowCardinality(String) COMMENT 'Continent code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_longitude` Nullable(Float64) COMMENT 'Longitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_latitude` Nullable(Float64) COMMENT 'Latitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_number` Nullable(UInt32) COMMENT 'ASN of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_organization` Nullable(String) COMMENT 'AS organization of the client' CODEC(ZSTD(1)),
+    `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
+    `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name',
+    `meta_consensus_version` LowCardinality(String) COMMENT 'Consensus client version',
+    `meta_consensus_version_major` LowCardinality(String) COMMENT 'Consensus client major version',
+    `meta_consensus_version_minor` LowCardinality(String) COMMENT 'Consensus client minor version',
+    `meta_consensus_version_patch` LowCardinality(String) COMMENT 'Consensus client patch version',
+    `meta_consensus_implementation` LowCardinality(String) COMMENT 'Consensus client implementation',
+    `meta_labels` Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
+) ENGINE = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',
+    '{replica}',
+    updated_date_time
+) PARTITION BY toStartOfMonth(slot_start_date_time)
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name, block_root)
+COMMENT 'Execution payload availability signals from beacon API SSE (execution_payload_available event, fires when payload+blobs are locally verified for PTC vote).';
+
+CREATE TABLE default.beacon_api_eth_v1_events_execution_payload_available ON CLUSTER '{cluster}'
+    AS default.beacon_api_eth_v1_events_execution_payload_available_local
+    ENGINE = Distributed('{cluster}', default, beacon_api_eth_v1_events_execution_payload_available_local,
+        cityHash64(slot_start_date_time, meta_network_name, meta_client_name, block_root));
 
 ---------------------------------------------------------------------
 -- 4. LIBP2P: libp2p_gossipsub_execution_payload_envelope
@@ -571,6 +672,17 @@ ALTER TABLE default.beacon_api_eth_v2_beacon_block ON CLUSTER '{cluster}'
     ADD COLUMN IF NOT EXISTS `bid_value` Nullable(UInt64) COMMENT 'Bid value in Gwei (Gloas+)' CODEC(ZSTD(1)) AFTER builder_index,
     ADD COLUMN IF NOT EXISTS `execution_payment` Nullable(UInt64) COMMENT 'Execution payment in Gwei (Gloas+)' CODEC(ZSTD(1)) AFTER bid_value,
     ADD COLUMN IF NOT EXISTS `payload_present` Nullable(Bool) COMMENT 'Whether execution payload was delivered (Gloas+)' CODEC(ZSTD(1)) AFTER execution_payment;
+
+---------------------------------------------------------------------
+-- 8b. ALTER: Add withdrawal_type column to canonical withdrawal tables
+--    EIP-7732 introduces "builder" withdrawals (validator_index >= 2^40).
+--    Pre-Gloas rows: empty string. Gloas+: "validator" or "builder".
+---------------------------------------------------------------------
+ALTER TABLE default.canonical_beacon_block_withdrawal_local ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder; pre-Gloas: empty)' CODEC(ZSTD(1));
+
+ALTER TABLE default.canonical_beacon_block_withdrawal ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder; pre-Gloas: empty)' CODEC(ZSTD(1));
 
 ---------------------------------------------------------------------
 -- 9. ALTER: Add Gloas columns to DataColumnSidecar tables (additive, NULL for Fulu)

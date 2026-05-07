@@ -22,6 +22,8 @@ type Config struct {
 	BeaconSyncCommitteeConfig      v1.BeaconSyncCommitteeDeriverConfig      `yaml:"beaconSyncCommittee"`
 	BeaconBlockSyncAggregateConfig v2.BeaconBlockSyncAggregateDeriverConfig `yaml:"beaconBlockSyncAggregate"`
 	BlockAccessListConfig          v2.BlockAccessListDeriverConfig          `yaml:"blockAccessList"`
+	PayloadAttestationConfig       v2.PayloadAttestationDeriverConfig       `yaml:"payloadAttestation"`
+	ExecutionPayloadBidConfig      v2.ExecutionPayloadBidDeriverConfig      `yaml:"executionPayloadBid"`
 }
 
 func (c *Config) Validate() error {

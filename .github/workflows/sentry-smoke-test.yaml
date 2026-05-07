@@ -183,8 +183,7 @@ jobs:
           beaconSubscriptions:
           - head
           - block
-          - attestation
-          - contribution_and_proof
+          - single_attestation
           - finalized_checkpoint
 
         beaconCommittees:

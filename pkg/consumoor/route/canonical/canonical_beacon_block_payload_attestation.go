@@ -92,6 +92,7 @@ func popcountAggregationBits(hexStr string) uint32 {
 		count += bits.OnesCount8(byteValue)
 	}
 
+	//nolint:gosec // count is bounded by PTC_SIZE=512 bits, fits uint32
 	return uint32(count)
 }
 

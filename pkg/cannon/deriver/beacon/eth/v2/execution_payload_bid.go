@@ -155,7 +155,6 @@ func (b *ExecutionPayloadBidDeriver) run(rctx context.Context) {
 					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
 				}),
 			}
-
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}

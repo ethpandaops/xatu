@@ -156,7 +156,6 @@ func (b *PayloadAttestationDeriver) run(rctx context.Context) {
 					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
 				}),
 			}
-
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
 				b.log.WithError(err).Warn("Failed to process")
 			}
@@ -234,6 +233,7 @@ func (b *PayloadAttestationDeriver) processSlot(ctx context.Context, slot phase0
 	events := make([]*xatu.DecoratedEvent, 0, len(converted))
 
 	for i, att := range converted {
+		//nolint:gosec // i is bounded by MAX_PAYLOAD_ATTESTATIONS=4 (spec)
 		event, err := b.createEvent(ctx, att, blockIdentifier, uint32(i))
 		if err != nil {
 			b.log.WithError(err).Error("Failed to create event")

@@ -655,6 +655,7 @@ func TestPersistenceIntegration(t *testing.T) {
 			assert.True(t, availableByENR["enr:-IS4QBalancedReth1-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"])
 
 			gethRecords := 0
+
 			for _, td := range testData {
 				if strings.HasPrefix(td.name, "Geth/") && availableByENR[td.enr] {
 					gethRecords++

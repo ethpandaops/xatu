@@ -109,6 +109,7 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 			}
 
 			added = true
+
 			if !addRecord(candidates[i]) {
 				break
 			}
@@ -121,6 +122,7 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 
 	if len(nodeRecords) < limit {
 		fillIgnoredNodeRecords := append([]string{}, ignoredNodeRecords...)
+
 		for _, record := range nodeRecords {
 			if record != nil {
 				fillIgnoredNodeRecords = append(fillIgnoredNodeRecords, *record)

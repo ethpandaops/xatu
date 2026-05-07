@@ -180,6 +180,12 @@ func (w *Writer) Start(ctx context.Context) error {
 		return fmt.Errorf("validating clickhouse tables: %w", err)
 	}
 
+	if err := w.ValidateColumns(ctx); err != nil {
+		w.cleanupStartFailure()
+
+		return fmt.Errorf("validating clickhouse columns: %w", err)
+	}
+
 	return nil
 }
 

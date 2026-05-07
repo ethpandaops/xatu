@@ -1,0 +1,100 @@
+sources:
+  docker:
+    type: docker_logs
+    docker_host: unix:///var/run/docker.sock
+
+transforms:
+  enrich:
+    type: remap
+    inputs:
+      - docker
+    source: |
+      # Capture fields before deleting originals
+      container = to_string(.container_name) ?? "unknown"
+      stream = to_string(.stream) ?? "stdout"
+      msg = to_string(.message) ?? ""
+      ts = .timestamp
+
+      # Detect source: docker-compose vs kurtosis vs unknown
+      compose_project = to_string(get!(., ["label", "com.docker.compose.project"])) ?? ""
+      compose_service = to_string(get!(., ["label", "com.docker.compose.service"])) ?? ""
+      kurtosis_id = to_string(get!(., ["label", "com.kurtosistech.id"])) ?? ""
+      kurtosis_enclave = to_string(get!(., ["label", "com.kurtosistech.enclave-id"])) ?? ""
+
+      ns_val = "docker"
+      pod_val = container
+
+      if compose_project != "" {
+        ns_val = compose_project
+        pod_val = compose_service
+      } else if kurtosis_id != "" {
+        ns_val = "kurtosis-" + slice!(kurtosis_enclave, start: 0, end: 8)
+        pod_val = kurtosis_id
+      }
+
+      # Build the output schema
+      .IngressUser = "local"
+      .Namespace = ns_val
+      .Pod = pod_val
+      .Container = container
+      .Node = "localhost"
+      .Stream = stream
+      .Message = msg
+      .Timestamp = ts
+
+      # Remove all original fields
+      del(.source_type)
+      del(.container_created_at)
+      del(.container_id)
+      del(.container_name)
+      del(.host)
+      del(.image)
+      del(.label)
+      del(.message)
+      del(.stream)
+      del(.timestamp)
+
+  enforce_limits:
+    type: remap
+    inputs:
+      - enrich
+    source: |
+      max_message_bytes = 262144
+      if length(string!(.Message)) > max_message_bytes {
+        .Message = slice!(string!(.Message), start: 0, end: max_message_bytes)
+      }
+
+sinks:
+  clickhouse_internal:
+    type: clickhouse
+    inputs:
+      - enforce_limits
+    endpoint: "http://${CLICKHOUSE_ENDPOINT:-xatu-clickhouse-01:8123}"
+    database: logs_internal
+    table: logs
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER:-default}"
+      password: "${CLICKHOUSE_PASSWORD:-}"
+    batch:
+      max_events: 1000
+      timeout_secs: 3
+    skip_unknown_fields: true
+    date_time_best_effort: true
+
+  clickhouse_external:
+    type: clickhouse
+    inputs:
+      - enforce_limits
+    endpoint: "http://${CLICKHOUSE_ENDPOINT:-xatu-clickhouse-01:8123}"
+    database: logs_external
+    table: logs
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER:-default}"
+      password: "${CLICKHOUSE_PASSWORD:-}"
+    batch:
+      max_events: 1000
+      timeout_secs: 3
+    skip_unknown_fields: true
+    date_time_best_effort: true

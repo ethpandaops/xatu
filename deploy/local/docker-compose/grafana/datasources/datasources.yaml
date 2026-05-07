@@ -27,6 +27,30 @@ datasources:
       user: readonly
     secureJsonData:
       password: $CLICKHOUSE_USER_READONLY_PASSWORD
+  - name: ClickHouse-logs-internal
+    type: grafana-clickhouse-datasource
+    jsonData:
+      defaultDatabase: logs_internal
+      port: 9000
+      server: xatu-clickhouse-01
+      tlsSkipVerify: true
+      username: readonly
+    user: readonly
+    secureJsonData:
+      password: $CLICKHOUSE_USER_READONLY_PASSWORD
+
+  - name: ClickHouse-logs-external
+    type: grafana-clickhouse-datasource
+    jsonData:
+      defaultDatabase: logs_external
+      port: 9000
+      server: xatu-clickhouse-01
+      tlsSkipVerify: true
+      username: readonly
+    user: readonly
+    secureJsonData:
+      password: $CLICKHOUSE_USER_READONLY_PASSWORD
+
   - name: Tempo
     type: tempo
     access: proxy

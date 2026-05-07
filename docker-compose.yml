@@ -524,6 +524,59 @@ services:
         condition: service_completed_successfully
       xatu-init-kafka:
         condition: service_completed_successfully
+
+  xatu-vector-logs-init:
+    profiles:
+      - ""
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    container_name: xatu-vector-logs-init
+    volumes:
+      - ./deploy/local/docker-compose/vector-logs-init.sql:/init.sql:ro
+    networks:
+      - xatu-net
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        clickhouse-client \
+          --host xatu-clickhouse-01 \
+          --user $${CLICKHOUSE_USER} \
+          --password $${CLICKHOUSE_PASSWORD} \
+          --multiquery \
+          --queries-file /init.sql
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+    depends_on:
+      xatu-clickhouse-01:
+        condition: service_healthy
+      xatu-clickhouse-02:
+        condition: service_healthy
+
+  xatu-vector-logs:
+    profiles:
+      - ""
+    image: timberio/vector:0.42.0-debian
+    container_name: xatu-vector-logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./deploy/local/docker-compose/vector-logs.yaml:/etc/vector/vector.yaml:ro
+    networks:
+      - xatu-net
+    environment:
+      CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      xatu-vector-logs-init:
+        condition: service_completed_successfully
+
   xatu-postgres-migrator:
     profiles:
       - ""

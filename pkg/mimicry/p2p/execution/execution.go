@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
@@ -60,10 +61,42 @@ type Peer struct {
 
 	mu           *sync.Mutex
 	ignoreBefore *time.Time
+
+	connectedMetricLabels []string
+	connectedMetricSet    bool
 }
 
 func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache, ethereumConfig *ethereum.Config) (*Peer, error) {
-	client, err := mimicry.New(ctx, log, nodeRecord, "xatu")
+	opts := []mimicry.Option{}
+
+	if ethereumConfig != nil && ethereumConfig.PrivateKey != "" {
+		privateKey, kerr := crypto.HexToECDSA(strings.TrimPrefix(ethereumConfig.PrivateKey, "0x"))
+		if kerr != nil {
+			return nil, fmt.Errorf("invalid ethereum.privateKey: %w", kerr)
+		}
+
+		opts = append(opts, mimicry.WithPrivateKey(privateKey))
+	}
+
+	if ethereumConfig != nil && ethereumConfig.BootstrapRPCURL != "" {
+		bootstrap, berr := newRPCBootstrap(ctx, log, ethereumConfig.BootstrapRPCURL)
+		if berr != nil {
+			return nil, fmt.Errorf("initialize execution bootstrap RPC: %w", berr)
+		}
+
+		if _, berr = bootstrap.currentStatus(ctx); berr != nil {
+			return nil, fmt.Errorf("validate execution bootstrap RPC: %w", berr)
+		}
+
+		opts = append(opts,
+			mimicry.WithStatusProvider(bootstrap.status),
+			mimicry.WithHeaderProvider(bootstrap.headers),
+			mimicry.WithBodyProvider(bootstrap.bodies),
+			mimicry.WithReceiptProvider(bootstrap.receipts),
+		)
+	}
+
+	client, err := mimicry.New(ctx, log, nodeRecord, mimicryClientName(), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -237,6 +270,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"fork_id_next": fmt.Sprintf("%d", status.GetForkIDNext()),
 		}).Debug("got client status")
 
+		p.markConnectedMetric()
+
 		// This is the avoid the initial deluge of transactions when a peer is first connected to.
 		ignoreBefore := time.Now().Add(p.captureDelay)
 		p.ignoreBefore = &ignoreBefore
@@ -313,6 +348,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"reason": str,
 		}).Debug("disconnected from client")
 
+		p.markDisconnectedMetric(str)
+
 		response <- errors.New("disconnected from peer (reason " + str + ")")
 
 		return nil
@@ -328,6 +365,49 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	}
 
 	return response, nil
+}
+
+func (p *Peer) markConnectedMetric() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.connectedMetricSet {
+		return
+	}
+
+	implementation := p.implmentation
+	networkID := fmt.Sprintf("%d", p.network.ID)
+
+	executionMetrics.IncConnectedPeer(implementation, networkID)
+	executionMetrics.SetConnectedPeerStartTime(implementation, networkID, p.nodeRecord, float64(time.Now().Unix()))
+
+	p.connectedMetricLabels = []string{implementation, networkID, p.nodeRecord}
+	p.connectedMetricSet = true
+}
+
+func (p *Peer) markDisconnectedMetric(reason string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	implementation := p.implmentation
+	executionMetrics.AddDisconnect(implementation, reason)
+
+	if !p.connectedMetricSet {
+		return
+	}
+
+	executionMetrics.DecConnectedPeer(p.connectedMetricLabels[0], p.connectedMetricLabels[1])
+	executionMetrics.DeleteConnectedPeerStartTime(
+		p.connectedMetricLabels[0],
+		p.connectedMetricLabels[1],
+		p.connectedMetricLabels[2],
+	)
+	p.connectedMetricLabels = nil
+	p.connectedMetricSet = false
+}
+
+func mimicryClientName() string {
+	return fmt.Sprintf("%s/%s/%s-%s/go", xatu.ImplementationLower(), xatu.Short(), xatu.GOOS, xatu.GOARCH)
 }
 
 // typically when first connecting to a peer, a dump of their transaction pool is sent.

@@ -46,6 +46,10 @@ Mimicry requires a single `yaml` config file. An example file can be found [here
 | labels | object |  | A key value map of labels to append to every mimicry event                                                                         |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                     |
 | captureDelay | string | `3m` | Delay before starting to capture transactions                                                                                      |
+| ethereum.bootstrapRpcUrl | string |  | Optional mainnet, Sepolia, or Holesky execution JSON-RPC endpoint used to build local `eth` Status and answer block data requests  |
+| ethereum.privateKey | string |  | Optional hex devp2p node private key. If omitted, mimicry reuses one generated process-local identity for all execution peers       |
+| ethereum.blobTransactionBatchSize | int | `1` | Number of blob transactions to request at a time via `GetPooledTransactions`                                                       |
+| ethereum.transactionBatchSize | int | `10` | Number of non-blob transactions to request at a time via `GetPooledTransactions`                                                   |
 | coordinator.type | string |  | Type of output (`xatu`, `static`)                                                                                                  |
 | coordinator.config | object |  | Coordinator type configuration [`xatu`](#coordinator-xatu-configuration)/[`static`](#coordinator-static-configuration)             |
 | outputs | array<object> |  | List of outputs for the mimicry to send data to                                                                                    |
@@ -74,6 +78,7 @@ Coordinator configuration to statically specify peers to connect to.
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |
 | coordinator.config.retryInterval | string |  | Interval between trying to connect to a peer |
+| coordinator.config.maxConcurrentPeers | int | `0` | Maximum number of in-flight and active peer connections. `0` means unlimited |
 | coordinator.config.nodeRecords | array<string> |  | List of ENR/ENode peers to connect to |
 
 ### Output `xatu` configuration
@@ -150,6 +155,7 @@ coordinator:
   type: static
   config:
     retryInterval: 60s
+    maxConcurrentPeers: 100
     nodeRecords:
       - enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8
 

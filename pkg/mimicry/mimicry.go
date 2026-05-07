@@ -16,6 +16,7 @@ import (
 
 	"github.com/beevik/ntp"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
+	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -57,6 +58,12 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	if overrides != nil {
 		if err := config.ApplyOverrides(overrides, log); err != nil {
 			return nil, fmt.Errorf("failed to apply overrides: %w", err)
+		}
+	}
+
+	if config.Ethereum.BootstrapRPCURL != "" {
+		if err := execution.ValidateBootstrapRPC(ctx, log, config.Ethereum.BootstrapRPCURL); err != nil {
+			return nil, fmt.Errorf("validate ethereum.bootstrapRpcUrl: %w", err)
 		}
 	}
 

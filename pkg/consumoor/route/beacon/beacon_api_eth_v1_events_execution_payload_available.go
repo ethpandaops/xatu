@@ -79,23 +79,9 @@ func (b *beaconApiEthV1EventsExecutionPayloadAvailableBatch) appendAdditionalDat
 	}
 
 	client := event.GetMeta().GetClient()
-	additionalV2 := client.GetEthV1EventsExecutionPayloadAvailable()
-	additional := extractBeaconSlotEpochPropagation(additionalV2)
+	additional := extractBeaconSlotEpochPropagation(client.GetEthV1EventsExecutionPayloadAvailable())
 
-	if additionalV2 != nil {
-		if slot := additionalV2.GetSlot(); slot != nil {
-			if num := slot.GetNumber(); num != nil {
-				b.Slot.Append(uint32(num.GetValue())) //nolint:gosec // slot fits uint32
-			} else {
-				b.Slot.Append(0)
-			}
-		} else {
-			b.Slot.Append(0)
-		}
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(additional.Slot)) //nolint:gosec // slot fits uint32
 	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
 	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
 	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32

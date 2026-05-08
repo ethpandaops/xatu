@@ -77,7 +77,7 @@ func (b *canonicalBeaconBlockAccessListBatch) appendPayload(event *xatu.Decorate
 	b.ChangeType.Append(change.GetChangeType())
 
 	if blockAccessIndex := change.GetBlockAccessIndex(); blockAccessIndex != nil {
-		b.BlockAccessIndex.Append(uint16(blockAccessIndex.GetValue())) //nolint:gosec // block_access_index fits uint16
+		b.BlockAccessIndex.Append(blockAccessIndex.GetValue())
 	} else {
 		b.BlockAccessIndex.Append(0)
 	}

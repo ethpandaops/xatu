@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS default.canonical_beacon_block_access_list_local ON C
     block_hash FixedString(66) CODEC(ZSTD(1)),
     address FixedString(42) CODEC(ZSTD(1)),
     change_type LowCardinality(String) CODEC(ZSTD(1)),
-    block_access_index UInt16 CODEC(DoubleDelta, ZSTD(1)),
+    block_access_index UInt32 CODEC(DoubleDelta, ZSTD(1)),
     storage_key FixedString(66) CODEC(ZSTD(1)),
     new_value Nullable(String) CODEC(ZSTD(1)),
     meta_client_name LowCardinality(String) CODEC(ZSTD(1)),

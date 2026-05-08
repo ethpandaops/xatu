@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -134,27 +133,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) appendPayload(event *xatu.Decora
 		b.KzgCommitmentsCount.Append(kzg.GetValue())
 	} else {
 		b.KzgCommitmentsCount.Append(0)
-	}
-
-	// On Gloas+ the DataColumnSidecar replaces SignedBeaconBlockHeader with
-	// top-level slot + beacon_block_root fields. Pre-Gloas producers populate
-	// state_root/parent_root from the embedded header; their absence is the
-	// Gloas-shape signal. Pre-Gloas rows leave the sidecar_* columns NULL.
-	if wrappedStringValue(payload.GetStateRoot()) == "" && wrappedStringValue(payload.GetParentRoot()) == "" {
-		if slot := payload.GetSlot(); slot != nil {
-			b.SidecarSlot.Append(proto.NewNullable[uint32](uint32(slot.GetValue())))
-		} else {
-			b.SidecarSlot.Append(proto.Nullable[uint32]{})
-		}
-
-		if blockRoot := wrappedStringValue(payload.GetBlockRoot()); blockRoot != "" {
-			b.SidecarBeaconBlockRoot.Append(proto.NewNullable[[]byte]([]byte(blockRoot)))
-		} else {
-			b.SidecarBeaconBlockRoot.Append(proto.Nullable[[]byte]{})
-		}
-	} else {
-		b.SidecarSlot.Append(proto.Nullable[uint32]{})
-		b.SidecarBeaconBlockRoot.Append(proto.Nullable[[]byte]{})
 	}
 }
 

@@ -45,8 +45,6 @@ type beaconApiEthV1EventsDataColumnSidecarBatch struct {
 	MetaConsensusVersionPatch                 proto.ColStr
 	MetaConsensusImplementation               proto.ColStr
 	MetaLabels                                *proto.ColMap[string, string]
-	SidecarSlot                               *proto.ColNullable[uint32]
-	SidecarBeaconBlockRoot                    *proto.ColNullable[[]byte]
 	rows                                      int
 }
 
@@ -60,8 +58,6 @@ func newbeaconApiEthV1EventsDataColumnSidecarBatch() *beaconApiEthV1EventsDataCo
 		MetaClientGeoAutonomousSystemNumber:       new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
 		MetaLabels:                                proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
-		SidecarSlot:                               new(proto.ColUInt32).Nullable(),
-		SidecarBeaconBlockRoot:                    route.NewNullableFixedStr(66),
 	}
 }
 
@@ -158,8 +154,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Input() proto.Input {
 		{Name: "meta_consensus_version_patch", Data: &b.MetaConsensusVersionPatch},
 		{Name: "meta_consensus_implementation", Data: &b.MetaConsensusImplementation},
 		{Name: "meta_labels", Data: b.MetaLabels},
-		{Name: "sidecar_slot", Data: b.SidecarSlot},
-		{Name: "sidecar_beacon_block_root", Data: b.SidecarBeaconBlockRoot},
 	}
 }
 
@@ -196,8 +190,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Reset() {
 	b.MetaConsensusVersionPatch.Reset()
 	b.MetaConsensusImplementation.Reset()
 	b.MetaLabels.Reset()
-	b.SidecarSlot.Reset()
-	b.SidecarBeaconBlockRoot.Reset()
 	b.rows = 0
 }
 
@@ -206,7 +198,7 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Snapshot() []map[string]any
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 34)
+		row := make(map[string]any, 32)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -259,16 +251,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) Snapshot() []map[string]any
 		row["meta_consensus_version_patch"] = b.MetaConsensusVersionPatch.Row(i)
 		row["meta_consensus_implementation"] = b.MetaConsensusImplementation.Row(i)
 		row["meta_labels"] = b.MetaLabels.Row(i)
-		if v := b.SidecarSlot.Row(i); v.Set {
-			row["sidecar_slot"] = v.Value
-		} else {
-			row["sidecar_slot"] = nil
-		}
-		if v := b.SidecarBeaconBlockRoot.Row(i); v.Set {
-			row["sidecar_beacon_block_root"] = string(v.Value)
-		} else {
-			row["sidecar_beacon_block_root"] = nil
-		}
 		out[i] = row
 	}
 

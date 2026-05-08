@@ -684,21 +684,3 @@ ALTER TABLE default.canonical_beacon_block_withdrawal_local ON CLUSTER '{cluster
 ALTER TABLE default.canonical_beacon_block_withdrawal ON CLUSTER '{cluster}'
     ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder; pre-Gloas: empty)' CODEC(ZSTD(1));
 
----------------------------------------------------------------------
--- 9. ALTER: Add Gloas columns to DataColumnSidecar tables (additive, NULL for Fulu)
----------------------------------------------------------------------
-ALTER TABLE default.beacon_api_eth_v1_events_data_column_sidecar_local ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `sidecar_slot` Nullable(UInt32) COMMENT 'Slot from sidecar container (Gloas+, replaces signed_block_header)' CODEC(DoubleDelta, ZSTD(1)),
-    ADD COLUMN IF NOT EXISTS `sidecar_beacon_block_root` Nullable(FixedString(66)) COMMENT 'Beacon block root from sidecar container (Gloas+, replaces signed_block_header)' CODEC(ZSTD(1));
-
-ALTER TABLE default.beacon_api_eth_v1_events_data_column_sidecar ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `sidecar_slot` Nullable(UInt32) COMMENT 'Slot from sidecar container (Gloas+, replaces signed_block_header)' CODEC(DoubleDelta, ZSTD(1)),
-    ADD COLUMN IF NOT EXISTS `sidecar_beacon_block_root` Nullable(FixedString(66)) COMMENT 'Beacon block root from sidecar container (Gloas+, replaces signed_block_header)' CODEC(ZSTD(1));
-
-ALTER TABLE default.libp2p_gossipsub_data_column_sidecar_local ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `sidecar_slot` Nullable(UInt32) COMMENT 'Slot from sidecar container (Gloas+, replaces signed_block_header)' CODEC(DoubleDelta, ZSTD(1)),
-    ADD COLUMN IF NOT EXISTS `sidecar_beacon_block_root` Nullable(FixedString(66)) COMMENT 'Beacon block root from sidecar container (Gloas+, replaces signed_block_header)' CODEC(ZSTD(1));
-
-ALTER TABLE default.libp2p_gossipsub_data_column_sidecar ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `sidecar_slot` Nullable(UInt32) COMMENT 'Slot from sidecar container (Gloas+, replaces signed_block_header)' CODEC(DoubleDelta, ZSTD(1)),
-    ADD COLUMN IF NOT EXISTS `sidecar_beacon_block_root` Nullable(FixedString(66)) COMMENT 'Beacon block root from sidecar container (Gloas+, replaces signed_block_header)' CODEC(ZSTD(1));

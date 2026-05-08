@@ -69,19 +69,3 @@ ALTER TABLE default.canonical_beacon_block_withdrawal ON CLUSTER '{cluster}'
 ALTER TABLE default.canonical_beacon_block_withdrawal_local ON CLUSTER '{cluster}'
     DROP COLUMN IF EXISTS withdrawal_type;
 
--- Remove Gloas columns from DataColumnSidecar tables
-ALTER TABLE default.beacon_api_eth_v1_events_data_column_sidecar ON CLUSTER '{cluster}'
-    DROP COLUMN IF EXISTS sidecar_beacon_block_root,
-    DROP COLUMN IF EXISTS sidecar_slot;
-
-ALTER TABLE default.beacon_api_eth_v1_events_data_column_sidecar_local ON CLUSTER '{cluster}'
-    DROP COLUMN IF EXISTS sidecar_beacon_block_root,
-    DROP COLUMN IF EXISTS sidecar_slot;
-
-ALTER TABLE default.libp2p_gossipsub_data_column_sidecar ON CLUSTER '{cluster}'
-    DROP COLUMN IF EXISTS sidecar_beacon_block_root,
-    DROP COLUMN IF EXISTS sidecar_slot;
-
-ALTER TABLE default.libp2p_gossipsub_data_column_sidecar_local ON CLUSTER '{cluster}'
-    DROP COLUMN IF EXISTS sidecar_beacon_block_root,
-    DROP COLUMN IF EXISTS sidecar_slot;

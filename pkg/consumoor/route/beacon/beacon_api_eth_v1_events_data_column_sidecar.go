@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -105,18 +104,6 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendPayload(event *xatu.D
 	} else {
 		b.KzgCommitmentsCount.Append(0)
 	}
-
-	// The beacon API SSE projection (DataColumnSidecarEvent) is fork-uniform
-	// — pre-Gloas and Gloas+ events both carry {slot, index, block_root,
-	// kzg_commitments}. There's no signal in the payload to distinguish the
-	// Gloas-shape sidecar (where slot/beacon_block_root are intrinsic
-	// container fields) from pre-Gloas (where the producer derives them from
-	// SignedBeaconBlockHeader). The forensic sidecar_* columns stay NULL on
-	// this path; the same data is preserved in the slot/block_root columns
-	// above. The libp2p gossip route populates these columns where the
-	// on-the-wire shape is observable.
-	b.SidecarSlot.Append(proto.Nullable[uint32]{})
-	b.SidecarBeaconBlockRoot.Append(proto.Nullable[[]byte]{})
 }
 
 func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendAdditionalData(

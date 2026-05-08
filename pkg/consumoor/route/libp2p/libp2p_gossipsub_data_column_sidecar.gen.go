@@ -54,8 +54,6 @@ type libp2pGossipsubDataColumnSidecarBatch struct {
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
 	MetaNetworkID                             proto.ColInt32
 	MetaNetworkName                           proto.ColStr
-	SidecarSlot                               *proto.ColNullable[uint32]
-	SidecarBeaconBlockRoot                    *proto.ColNullable[[]byte]
 	rows                                      int
 }
 
@@ -70,8 +68,6 @@ func newlibp2pGossipsubDataColumnSidecarBatch() *libp2pGossipsubDataColumnSideca
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber: new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
-		SidecarSlot:            new(proto.ColUInt32).Nullable(),
-		SidecarBeaconBlockRoot: route.NewNullableFixedStr(66),
 	}
 }
 
@@ -161,8 +157,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Input() proto.Input {
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
 		{Name: "meta_network_id", Data: &b.MetaNetworkID},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
-		{Name: "sidecar_slot", Data: b.SidecarSlot},
-		{Name: "sidecar_beacon_block_root", Data: b.SidecarBeaconBlockRoot},
 	}
 }
 
@@ -208,8 +202,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Reset() {
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
 	b.MetaNetworkID.Reset()
 	b.MetaNetworkName.Reset()
-	b.SidecarSlot.Reset()
-	b.SidecarBeaconBlockRoot.Reset()
 	b.rows = 0
 }
 
@@ -218,7 +210,7 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 43)
+		row := make(map[string]any, 41)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["version"] = b.Version.Row(i)
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
@@ -280,16 +272,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) Snapshot() []map[string]any {
 		}
 		row["meta_network_id"] = b.MetaNetworkID.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
-		if v := b.SidecarSlot.Row(i); v.Set {
-			row["sidecar_slot"] = v.Value
-		} else {
-			row["sidecar_slot"] = nil
-		}
-		if v := b.SidecarBeaconBlockRoot.Row(i); v.Set {
-			row["sidecar_beacon_block_root"] = string(v.Value)
-		} else {
-			row["sidecar_beacon_block_root"] = nil
-		}
 		out[i] = row
 	}
 

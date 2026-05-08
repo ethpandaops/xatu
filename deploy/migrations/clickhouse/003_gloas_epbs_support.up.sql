@@ -679,8 +679,8 @@ ALTER TABLE default.beacon_api_eth_v2_beacon_block ON CLUSTER '{cluster}'
 --    Pre-Gloas rows: empty string. Gloas+: "validator" or "builder".
 ---------------------------------------------------------------------
 ALTER TABLE default.canonical_beacon_block_withdrawal_local ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder; pre-Gloas: empty)' CODEC(ZSTD(1));
+    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder, pre-Gloas: empty)' CODEC(ZSTD(1));
 
 ALTER TABLE default.canonical_beacon_block_withdrawal ON CLUSTER '{cluster}'
-    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder; pre-Gloas: empty)' CODEC(ZSTD(1));
+    ADD COLUMN IF NOT EXISTS `withdrawal_type` LowCardinality(String) DEFAULT '' COMMENT 'Classification of the withdrawal recipient (Gloas+: validator|builder, pre-Gloas: empty)' CODEC(ZSTD(1));
 

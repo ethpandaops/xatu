@@ -224,16 +224,36 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 					return
 				}
 
-				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+				nodeRecord := res.GetNodeRecord()
+
+				if c.config.DiscV4 && c.discV4 != nil {
+					if err = c.discV4.UpdateBootNodes([]string{nodeRecord}); err != nil {
+						c.log.WithError(err).Error("Failed to update discV4 boot nodes")
+
+						return
+					}
+
+					if err = c.discV4.Start(ctx); err != nil {
+						c.log.WithError(err).Error("Failed to start discV4")
+
+						return
+					}
 
 					return
 				}
 
-				if err := c.discV5.Start(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to start discV5")
+				if c.config.DiscV5 && c.discV5 != nil {
+					if err = c.discV5.UpdateBootNodes([]string{nodeRecord}); err != nil {
+						c.log.WithError(err).Error("Failed to update discV5 boot nodes")
 
-					return
+						return
+					}
+
+					if err := c.discV5.Start(ctx); err != nil {
+						c.log.WithError(err).Error("Failed to start discV5")
+
+						return
+					}
 				}
 			},
 			ctx,

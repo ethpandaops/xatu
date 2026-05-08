@@ -163,7 +163,7 @@ func TestTopicForEvent(t *testing.T) {
 func TestExportItemsStaticTopic(t *testing.T) {
 	mock := &mockProducer{}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1000000},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		Topic:          "static-topic",
 	}, newTestLogger(), mock)
 
@@ -190,7 +190,7 @@ func TestExportItemsStaticTopic(t *testing.T) {
 func TestExportItemsTopicPattern(t *testing.T) {
 	mock := &mockProducer{}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1000000},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		TopicPattern:   "xatu-${event-name}",
 	}, newTestLogger(), mock)
 
@@ -210,7 +210,7 @@ func TestExportItemsTopicPattern(t *testing.T) {
 func TestExportItemsOversizedMessageSkipped(t *testing.T) {
 	mock := &mockProducer{}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
 
@@ -226,7 +226,7 @@ func TestExportItemsOversizedMessageSkipped(t *testing.T) {
 func TestExportItemsEmptyBatchAfterFiltering(t *testing.T) {
 	mock := &mockProducer{}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
 
@@ -249,7 +249,7 @@ func TestExportItemsProducerErrors(t *testing.T) {
 		err: sarama.ProducerErrors{prodErr},
 	}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1000000},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
 
@@ -270,7 +270,7 @@ func TestExportItemsGenericError(t *testing.T) {
 		err: errors.New("connection refused"),
 	}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1000000},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
 
@@ -285,7 +285,7 @@ func TestExportItemsGenericError(t *testing.T) {
 func TestShutdownClosesProducer(t *testing.T) {
 	mock := &mockProducer{}
 	exporter := NewItemExporter("test", &Config{
-		ProducerConfig: ProducerConfig{FlushBytes: 1000000},
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
 

@@ -60,11 +60,25 @@ func (s *Static) Type() string {
 }
 
 func (s *Static) Start(ctx context.Context) error {
+	var peerSlots chan struct{}
+	if s.config.MaxConcurrentPeers > 0 {
+		peerSlots = make(chan struct{}, s.config.MaxConcurrentPeers)
+	}
+
 	for _, nodeRecord := range s.config.NodeRecords {
 		(*s.peers)[nodeRecord] = false
+	}
+
+	for _, nodeRecord := range s.config.NodeRecords {
 		go func(record string, peers *map[string]bool) {
 			_ = retry.Do(
 				func() error {
+					releasePeerSlot, err := acquirePeerSlot(ctx, peerSlots)
+					if err != nil {
+						return err
+					}
+					defer releasePeerSlot()
+
 					peer, err := execution.New(ctx, s.log, record, s.handlers, s.captureDelay, s.cache, s.ethereumConfig)
 					if err != nil {
 						return err
@@ -96,6 +110,7 @@ func (s *Static) Start(ctx context.Context) error {
 					return response
 				},
 				retry.Attempts(0),
+				retry.Context(ctx),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
 					s.log.WithError(err).Debug("peer failed")
 
@@ -110,6 +125,19 @@ func (s *Static) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func acquirePeerSlot(ctx context.Context, peerSlots chan struct{}) (func(), error) {
+	if peerSlots == nil {
+		return func() {}, nil
+	}
+
+	select {
+	case peerSlots <- struct{}{}:
+		return func() { <-peerSlots }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (s *Static) Stop(ctx context.Context) error {

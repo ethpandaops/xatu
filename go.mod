@@ -19,9 +19,10 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
 	github.com/ethpandaops/beacon v0.67.1-0.20260507052247-b31a645f6e36
-	github.com/ethpandaops/ethcore v0.0.0-20260507022150-a091f5d4b75f
+	github.com/ethpandaops/ethcore v0.0.0-20260508010718-193cc4aa5947
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ethpandaops/go-eth2-client v0.1.2-0.20260507042554-4e9992fe2f0e
+	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/golang/protobuf v1.5.4
@@ -83,7 +84,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.24.0 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -152,6 +153,7 @@ require (
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/go-syslog/v3 v3.0.0 // indirect
+	github.com/influxdata/tdigest v0.0.1 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-log/v2 v2.8.0 // indirect
 	github.com/itchyny/gojq v0.12.18 // indirect
@@ -239,6 +241,7 @@ require (
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
 	github.com/pk910/dynamic-ssz v1.3.1 // indirect
 	github.com/pk910/hashtree-bindings v0.1.0 // indirect
+	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/common v0.67.1 // indirect

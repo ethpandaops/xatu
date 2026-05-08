@@ -13,6 +13,12 @@ type ExecutionConfig struct {
 	RetryDelay time.Duration `yaml:"retryDelay" default:"5s"`
 	// DialTimeout is the timeout for dialing a peer.
 	DialTimeout time.Duration `yaml:"dialTimeout" default:"15s"`
+	// BootstrapRPCURL is an optional execution JSON-RPC endpoint used to build
+	// our own Status message and serve lightweight block/header/body/receipt
+	// requests during the eth handshake. When set, discovery becomes a more
+	// useful peer and recovers connections that would otherwise drop after
+	// Status exchange.
+	BootstrapRPCURL string `yaml:"bootstrapRpcUrl" default:""`
 }
 
 // ConsensusConfig holds configuration for consensus layer node discovery dialing.

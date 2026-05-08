@@ -148,7 +148,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 					default:
 					}
 
-					peer, err := NewExecutionPeer(s.ctx, s.log, record, s.publishExecutionStatus)
+					peer, err := NewExecutionPeer(s.ctx, s.log, record, s.executionConfig.BootstrapRPCURL, s.publishExecutionStatus)
 					if err != nil {
 						return err
 					}

@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.25.x'
+          check-latest: true
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -37,27 +38,21 @@ jobs:
             exit 0
           fi
 
-          # Known unfixable vulnerabilities — all have no upstream fix available:
-          #   - GO-2026-4479: pion/dtls/v2 (transitive via libp2p in pkg/mimicry)
-          #   - GO-2026-4883: docker/docker off-by-one in plugin privilege validation
-          #     (transitive via testcontainers-go, only used by the code-gen tool
-          #     pkg/consumoor/route/cmd/generate — not in any runtime binary)
-          #   - GO-2026-4887: docker/docker AuthZ plugin bypass on oversized bodies
-          #     (same source as GO-2026-4883 — code-gen tool only)
-          # Verify that ONLY these expected vulnerabilities are reported.
-          UNEXPECTED=$(echo "$OUTPUT" \
-            | grep -oE "GO-[0-9]+-[0-9]+" \
-            | sort -u \
-            | grep -vE "^(GO-2026-4479|GO-2026-4883|GO-2026-4887)$" || true)
-          if [ -z "$UNEXPECTED" ]; then
+          # Known unfixable vulnerabilities (Fixed in: N/A upstream):
+          #   GO-2026-4479  pion/dtls/v2          — random nonce in AES-GCM
+          #   GO-2026-4883  docker/docker (moby)  — server-side plugin privilege off-by-one
+          #   GO-2026-4887  docker/docker (moby)  — server-side AuthZ plugin bypass
+          # The two docker vulns are server-side; we only use the client (via
+          # testcontainers in codegen, and via go-builder-client transitively).
+          ALLOWED='GO-2026-4479|GO-2026-4883|GO-2026-4887'
+          REPORTED=$(echo "$OUTPUT" | grep -oE 'Vulnerability #[0-9]+: GO-[0-9]+-[0-9]+' | grep -oE 'GO-[0-9]+-[0-9]+' | sort -u)
+          UNEXPECTED=$(echo "$REPORTED" | grep -vE "^($ALLOWED)$" || true)
+          if [ -z "$UNEXPECTED" ] && [ -n "$REPORTED" ]; then
             echo ""
-            echo "Only known unfixable vulnerabilities found — no upstream fix available"
+            echo "Only known unfixable vulnerabilities found:"
+            echo "$REPORTED" | sed 's/^/  /'
             exit 0
           fi
-
-          echo ""
-          echo "Unexpected vulnerabilities detected:"
-          echo "$UNEXPECTED"
 
           echo ""
           echo "New vulnerabilities found! Please fix them before merging."

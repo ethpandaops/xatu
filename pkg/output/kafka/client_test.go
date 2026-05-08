@@ -271,10 +271,11 @@ func TestInitSaramaConfig(t *testing.T) {
 
 	t.Run("producer settings propagated", func(t *testing.T) {
 		cfg := &ProducerConfig{
-			Brokers:        "localhost:9092",
-			FlushBytes:     2_000_000,
-			FlushFrequency: 5_000_000_000, // 5s as Duration
-			MaxRetries:     7,
+			Brokers:         "localhost:9092",
+			FlushBytes:      2_000_000,
+			FlushFrequency:  5_000_000_000, // 5s as Duration
+			MaxRetries:      7,
+			MaxMessageBytes: 10_485_760,
 		}
 
 		sc, err := InitSaramaConfig(cfg, 1024)
@@ -283,6 +284,7 @@ func TestInitSaramaConfig(t *testing.T) {
 		assert.Equal(t, 1024, sc.Producer.Flush.Messages)
 		assert.Equal(t, cfg.FlushFrequency, sc.Producer.Flush.Frequency)
 		assert.Equal(t, 7, sc.Producer.Retry.Max)
+		assert.Equal(t, 10_485_760, sc.Producer.MaxMessageBytes)
 		assert.True(t, sc.Producer.Return.Successes)
 		assert.False(t, sc.Metadata.Full)
 	})

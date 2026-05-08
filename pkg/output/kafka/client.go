@@ -64,12 +64,17 @@ var (
 // ProducerConfig contains the fields needed to build a Sarama producer.
 // It is shared by all Kafka-based sinks.
 type ProducerConfig struct {
-	Brokers         string              `yaml:"brokers"`
-	TLS             bool                `yaml:"tls" default:"false"`
-	TLSClientConfig *TLSClientConfig    `yaml:"tlsClientConfig"`
-	SASLConfig      *SASLConfig         `yaml:"sasl"`
-	FlushFrequency  time.Duration       `yaml:"flushFrequency" default:"10s"`
-	FlushBytes      int                 `yaml:"flushBytes" default:"1000000"`
+	Brokers         string           `yaml:"brokers"`
+	TLS             bool             `yaml:"tls" default:"false"`
+	TLSClientConfig *TLSClientConfig `yaml:"tlsClientConfig"`
+	SASLConfig      *SASLConfig      `yaml:"sasl"`
+	FlushFrequency  time.Duration    `yaml:"flushFrequency" default:"10s"`
+	FlushBytes      int              `yaml:"flushBytes" default:"1000000"`
+	// MaxMessageBytes is the maximum permitted size of a message produced
+	// by this client. Must be set <= the broker's message.max.bytes. Default
+	// 1000000 matches sarama's historical default; raise this when publishing
+	// large payloads (e.g. blob-tx mempool events with sidecars).
+	MaxMessageBytes int                 `yaml:"maxMessageBytes" default:"1000000"`
 	MaxRetries      int                 `yaml:"maxRetries" default:"3"`
 	Compression     CompressionStrategy `yaml:"compression" default:"none"`
 	RequiredAcks    RequiredAcks        `yaml:"requiredAcks" default:"leader"`
@@ -183,6 +188,7 @@ func NewSyncProducer(config *ProducerConfig, maxExportBatchSize int) (sarama.Syn
 func InitSaramaConfig(config *ProducerConfig, maxExportBatchSize int) (*sarama.Config, error) {
 	c := sarama.NewConfig()
 	c.Producer.Flush.Bytes = config.FlushBytes
+	c.Producer.MaxMessageBytes = config.MaxMessageBytes
 	c.Producer.Flush.Messages = maxExportBatchSize
 	c.Producer.Flush.Frequency = config.FlushFrequency
 	c.Producer.Retry.Max = config.MaxRetries

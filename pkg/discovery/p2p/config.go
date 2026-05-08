@@ -72,9 +72,10 @@ func (c *Config) GetExecutionConfig() *static.ExecutionConfig {
 
 		// Convert xatu.ExecutionConfig to static.ExecutionConfig
 		return c.applyExecutionDefaults(&static.ExecutionConfig{
-			RetryAttempts: conf.Execution.RetryAttempts,
-			RetryDelay:    conf.Execution.RetryDelay,
-			DialTimeout:   conf.Execution.DialTimeout,
+			RetryAttempts:   conf.Execution.RetryAttempts,
+			RetryDelay:      conf.Execution.RetryDelay,
+			DialTimeout:     conf.Execution.DialTimeout,
+			BootstrapRPCURL: conf.Execution.BootstrapRPCURL,
 		})
 	default:
 		return defaultConfig

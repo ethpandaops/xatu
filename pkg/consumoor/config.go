@@ -1,11 +1,12 @@
 package consumoor
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/consumoor/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -30,6 +31,10 @@ type Config struct {
 
 // Validate checks the configuration for errors.
 func (c *Config) Validate() error {
+	if c.MetricsAddr == "" {
+		return errors.New("metricsAddr is required")
+	}
+
 	if err := c.Kafka.Validate(); err != nil {
 		return err
 	}

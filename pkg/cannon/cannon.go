@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
@@ -363,10 +364,8 @@ func (c *Cannon) syncClockDrift(ctx context.Context) error {
 }
 
 func (c *Cannon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
-	for _, sink := range c.sinks {
-		if err := sink.HandleNewDecoratedEvents(ctx, events); err != nil {
-			return perrors.Wrapf(err, "failed to handle new decorated events in sink %s", sink.Name())
-		}
+	if err := fanOutToSinks(ctx, c.sinks, events); err != nil {
+		return err
 	}
 
 	for _, event := range events {
@@ -374,6 +373,56 @@ func (c *Cannon) handleNewDecoratedEvents(ctx context.Context, events []*xatu.De
 	}
 
 	return nil
+}
+
+// fanOutToSinks dispatches a batch to every configured sink concurrently
+// and waits for all of them to return before reporting the joined error
+// (or nil). All sinks are attempted on every call regardless of whether
+// any other sink failed — so a flaky sink does not prevent siblings from
+// making progress on an attempt. The deriver still gates checkpoint
+// advance on a nil return, so a single sink failure forces an epoch
+// retry against every sink, with ReplacingMergeTree absorbing the
+// resulting duplicate writes on the previously-succeeded paths.
+//
+// Goroutine cost is per-call rather than persistent: cannon's fan-out
+// fires at most a few times per second per deriver in steady state, so
+// per-call goroutines (~200 ns spawn) are cheaper overall than parking
+// persistent workers on channels (~80 ns per send/recv plus 2 KB of
+// resident stack each, even when idle).
+func fanOutToSinks(ctx context.Context, sinks []output.Sink, events []*xatu.DecoratedEvent) error {
+	if len(sinks) == 0 {
+		return nil
+	}
+
+	if len(sinks) == 1 {
+		// Skip the fan-out machinery entirely for the single-sink case so
+		// the common deployment shape pays nothing for concurrency.
+		if err := sinks[0].HandleNewDecoratedEvents(ctx, events); err != nil {
+			return perrors.Wrapf(err, "failed to handle new decorated events in sink %s", sinks[0].Name())
+		}
+
+		return nil
+	}
+
+	var wg sync.WaitGroup
+
+	errs := make([]error, len(sinks))
+
+	for i, sink := range sinks {
+		wg.Add(1)
+
+		go func(i int, s output.Sink) {
+			defer wg.Done()
+
+			if err := s.HandleNewDecoratedEvents(ctx, events); err != nil {
+				errs[i] = perrors.Wrapf(err, "failed to handle new decorated events in sink %s", s.Name())
+			}
+		}(i, sink)
+	}
+
+	wg.Wait()
+
+	return errors.Join(errs...)
 }
 
 func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {

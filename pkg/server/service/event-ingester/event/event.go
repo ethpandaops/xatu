@@ -114,10 +114,12 @@ var (
 	TypeLibP2PRPCDataColumnCustodyProbe         Type = Type(libp2p.TypeLibp2pRPCDataColumnCustodyProbe)
 
 	// EIP-7732 ePBS: Sentry SSE events
-	TypeBeaconETHV1EventsExecutionPayload    Type = v1.EventsExecutionPayloadType
-	TypeBeaconETHV1EventsPayloadAttestation  Type = v1.EventsPayloadAttestationType
-	TypeBeaconETHV1EventsExecutionPayloadBid Type = v1.EventsExecutionPayloadBidType
-	TypeBeaconETHV1EventsProposerPreferences Type = v1.EventsProposerPreferencesType
+	TypeBeaconETHV1EventsExecutionPayload          Type = v1.EventsExecutionPayloadType
+	TypeBeaconETHV1EventsExecutionPayloadGossip    Type = v1.EventsExecutionPayloadGossipType
+	TypeBeaconETHV1EventsExecutionPayloadAvailable Type = v1.EventsExecutionPayloadAvailableType
+	TypeBeaconETHV1EventsPayloadAttestation        Type = v1.EventsPayloadAttestationType
+	TypeBeaconETHV1EventsExecutionPayloadBid       Type = v1.EventsExecutionPayloadBidType
+	TypeBeaconETHV1EventsProposerPreferences       Type = v1.EventsProposerPreferencesType
 
 	// EIP-7732 ePBS: Cannon derived events
 	TypeBeaconEthV2BeaconBlockPayloadAttestation  Type = v2.BeaconBlockPayloadAttestationType
@@ -420,6 +422,12 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	// EIP-7732 ePBS: Sentry SSE events
 	router.RegisterHandler(TypeBeaconETHV1EventsExecutionPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsExecutionPayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsExecutionPayloadGossip, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsExecutionPayloadGossip(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsExecutionPayloadAvailable, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsExecutionPayloadAvailable(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsPayloadAttestation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsPayloadAttestation(router.log, event), nil

@@ -124,9 +124,16 @@ func (c *Client) ListAvailableExecutionNodeRecords(ctx context.Context, clientID
 	}
 
 	if len(caps) > 0 {
+		capLikes := make([]string, 0, len(caps))
 		for _, cap := range caps {
-			where = append(where, sb.Like("nre.capabilities", "%"+fmt.Sprint(cap)+"%"))
+			capLikes = append(capLikes, sb.Like("nre.capabilities", "%"+fmt.Sprint(cap)+"%"))
 		}
+		// Match peers that advertise ANY of the configured capabilities, not all of them.
+		// Each LIKE was previously AND'd via sb.Where(where...), which excluded peers that
+		// only advertise a subset (e.g. capabilities=[eth/68,eth/69,eth/70] would skip
+		// every peer not advertising all three — including most current geth/nethermind
+		// which advertise eth/68+eth/69 only).
+		where = append(where, sb.Or(capLikes...))
 	}
 
 	sb.Where(where...)

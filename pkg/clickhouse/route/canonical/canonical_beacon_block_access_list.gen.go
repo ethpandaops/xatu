@@ -23,7 +23,7 @@ type canonicalBeaconBlockAccessListBatch struct {
 	BlockHash                                 route.SafeColFixedStr
 	Address                                   route.SafeColFixedStr
 	ChangeType                                proto.ColStr
-	BlockAccessIndex                          proto.ColUInt16
+	BlockAccessIndex                          proto.ColUInt32
 	StorageKey                                route.SafeColFixedStr
 	NewValue                                  *proto.ColNullable[string]
 	MetaClientName                            proto.ColStr

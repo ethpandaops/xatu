@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/consumoor/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -135,10 +134,6 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) appendPayload(event *xatu.Decora
 	} else {
 		b.KzgCommitmentsCount.Append(0)
 	}
-
-	// TODO(epbs): populate with real sidecar slot/block root once available.
-	b.SidecarSlot.Append(proto.Nullable[uint32]{})
-	b.SidecarBeaconBlockRoot.Append(proto.Nullable[[]byte]{})
 }
 
 func (b *libp2pGossipsubDataColumnSidecarBatch) appendClientAdditionalData(

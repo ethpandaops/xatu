@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os/signal"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -19,6 +20,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
@@ -95,11 +97,23 @@ func New(
 		return nil, fmt.Errorf("invalid disabledEvents config: %w", err)
 	}
 
-	rtr := router.New(log, registeredRoutes, disabledEvents, metrics)
+	disabledTables := config.DisabledTableSet()
+	if err := validateDisabledTablesAgainstRoutes(disabledTables, registeredRoutes); err != nil {
+		return nil, err
+	}
 
-	// Register columnar batch factories from routes on the writer so
-	// each table gets zero-reflection inserts.
-	writer.RegisterBatchFactories(registeredRoutes)
+	enabledRoutes := filterRoutesByTable(registeredRoutes, disabledTables)
+
+	if len(disabledTables) > 0 {
+		log.WithField("disabled_tables", sortedKeys(disabledTables)).
+			Info("Skipping routes for disabled output tables")
+	}
+
+	rtr := router.New(log, registeredRoutes, disabledEvents, disabledTables, metrics)
+
+	// Register columnar batch factories from enabled routes so disabled
+	// tables never get a writer or ch-go connection allocated.
+	writer.RegisterBatchFactories(enabledRoutes)
 
 	// Discover matching Kafka topics and create one stream per topic.
 	topics, err := source.DiscoverTopics(ctx, &config.Kafka)
@@ -555,6 +569,68 @@ func (c *Consumoor) startTopicStream(
 
 		return nil
 	})
+}
+
+// validateDisabledTablesAgainstRoutes rejects entries that do not match any
+// registered route's table name so typos fail fast at startup instead of
+// silently doing nothing.
+func validateDisabledTablesAgainstRoutes(disabled map[string]struct{}, routes []route.Route) error {
+	if len(disabled) == 0 {
+		return nil
+	}
+
+	known := make(map[string]struct{}, len(routes))
+	for _, r := range routes {
+		known[r.TableName()] = struct{}{}
+	}
+
+	unknown := make([]string, 0)
+
+	for name := range disabled {
+		if _, ok := known[name]; !ok {
+			unknown = append(unknown, name)
+		}
+	}
+
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+
+		return fmt.Errorf("unknown disabledTables: %s", strings.Join(unknown, ", "))
+	}
+
+	return nil
+}
+
+// filterRoutesByTable returns a copy of routes excluding any whose target
+// table appears in disabled.
+func filterRoutesByTable(routes []route.Route, disabled map[string]struct{}) []route.Route {
+	if len(disabled) == 0 {
+		return routes
+	}
+
+	out := make([]route.Route, 0, len(routes))
+
+	for _, r := range routes {
+		if _, drop := disabled[r.TableName()]; drop {
+			continue
+		}
+
+		out = append(out, r)
+	}
+
+	return out
+}
+
+// sortedKeys returns the keys of m in ascending order. Used for stable log output.
+func sortedKeys(m map[string]struct{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 func (c *Consumoor) startPProf(_ context.Context) error {

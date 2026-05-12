@@ -188,7 +188,7 @@ func makeTestSink(
 	subsystem := fmt.Sprintf("sink_test_%d", time.Now().UnixNano())
 	metrics := telemetry.NewMetrics("xatu_sink_test", subsystem)
 
-	router := chrouter.New(log.WithField("c", "test_router"), routes, nil, metrics)
+	router := chrouter.New(log.WithField("c", "test_router"), routes, nil, nil, metrics)
 
 	if filterCfg == nil {
 		filterCfg = &xatu.EventFilterConfig{}

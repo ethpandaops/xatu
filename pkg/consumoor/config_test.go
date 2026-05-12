@@ -92,6 +92,43 @@ func TestDisabledEventEnums(t *testing.T) {
 	})
 }
 
+func TestDisabledTablesValidation(t *testing.T) {
+	mkConfig := func(disabled []string) *Config {
+		return &Config{
+			MetricsAddr:    ":9090",
+			Kafka:          *validKafkaConfig(),
+			ClickHouse:     *validClickHouseConfig(),
+			DisabledTables: disabled,
+		}
+	}
+
+	t.Run("accepts empty list", func(t *testing.T) {
+		require.NoError(t, mkConfig(nil).Validate())
+	})
+
+	t.Run("accepts non-empty entries", func(t *testing.T) {
+		require.NoError(t, mkConfig([]string{"libp2p_peer"}).Validate())
+	})
+
+	t.Run("rejects empty entry", func(t *testing.T) {
+		err := mkConfig([]string{"libp2p_peer", "  "}).Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "disabledTables[1]")
+	})
+}
+
+func TestDisabledTableSet(t *testing.T) {
+	cfg := &Config{
+		DisabledTables: []string{"libp2p_peer", "  libp2p_connected  ", ""},
+	}
+
+	got := cfg.DisabledTableSet()
+	assert.Equal(t, map[string]struct{}{
+		"libp2p_peer":      {},
+		"libp2p_connected": {},
+	}, got)
+}
+
 func TestClickHouseConfigValidateChGo(t *testing.T) {
 	t.Run("accepts valid ch-go settings", func(t *testing.T) {
 		cfg := validClickHouseConfig()

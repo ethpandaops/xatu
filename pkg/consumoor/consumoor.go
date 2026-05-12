@@ -98,8 +98,8 @@ func New(
 	}
 
 	disabledTables := config.DisabledTableSet()
-	if err := validateDisabledTablesAgainstRoutes(disabledTables, registeredRoutes); err != nil {
-		return nil, err
+	if vErr := validateDisabledTablesAgainstRoutes(disabledTables, registeredRoutes); vErr != nil {
+		return nil, vErr
 	}
 
 	enabledRoutes := filterRoutesByTable(registeredRoutes, disabledTables)

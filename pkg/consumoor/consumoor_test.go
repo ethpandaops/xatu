@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testTableLibp2pPeer    = "libp2p_peer"
+	testTableLibp2pConnect = "libp2p_connected"
+)
+
 type stubRoute struct {
 	table  string
 	events []xatu.Event_Name
@@ -21,8 +26,8 @@ func (r stubRoute) NewBatch() route.ColumnarBatch             { return nil }
 
 func TestValidateDisabledTablesAgainstRoutes(t *testing.T) {
 	routes := []route.Route{
-		stubRoute{table: "libp2p_peer"},
-		stubRoute{table: "libp2p_connected"},
+		stubRoute{table: testTableLibp2pPeer},
+		stubRoute{table: testTableLibp2pConnect},
 	}
 
 	t.Run("nil disabled set is fine", func(t *testing.T) {
@@ -31,38 +36,38 @@ func TestValidateDisabledTablesAgainstRoutes(t *testing.T) {
 
 	t.Run("accepts known table", func(t *testing.T) {
 		require.NoError(t, validateDisabledTablesAgainstRoutes(
-			map[string]struct{}{"libp2p_peer": {}}, routes,
+			map[string]struct{}{testTableLibp2pPeer: {}}, routes,
 		))
 	})
 
 	t.Run("rejects typo", func(t *testing.T) {
 		err := validateDisabledTablesAgainstRoutes(
-			map[string]struct{}{"lib2p2_peer": {}, "libp2p_peer": {}},
+			map[string]struct{}{"lib2p2_peer": {}, testTableLibp2pPeer: {}},
 			routes,
 		)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "lib2p2_peer")
-		assert.NotContains(t, err.Error(), "libp2p_peer,")
+		assert.NotContains(t, err.Error(), testTableLibp2pPeer+",")
 	})
 }
 
 func TestFilterRoutesByTable(t *testing.T) {
 	routes := []route.Route{
-		stubRoute{table: "libp2p_peer"},
-		stubRoute{table: "libp2p_connected"},
+		stubRoute{table: testTableLibp2pPeer},
+		stubRoute{table: testTableLibp2pConnect},
 		stubRoute{table: "libp2p_disconnected"},
 	}
 
-	got := filterRoutesByTable(routes, map[string]struct{}{"libp2p_peer": {}})
+	got := filterRoutesByTable(routes, map[string]struct{}{testTableLibp2pPeer: {}})
 
 	require.Len(t, got, 2)
-	assert.Equal(t, "libp2p_connected", got[0].TableName())
+	assert.Equal(t, testTableLibp2pConnect, got[0].TableName())
 	assert.Equal(t, "libp2p_disconnected", got[1].TableName())
 }
 
 func TestFilterRoutesByTableEmptyDisabledReturnsAll(t *testing.T) {
 	routes := []route.Route{
-		stubRoute{table: "libp2p_peer"},
+		stubRoute{table: testTableLibp2pPeer},
 	}
 
 	got := filterRoutesByTable(routes, nil)

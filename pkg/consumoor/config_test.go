@@ -107,11 +107,11 @@ func TestDisabledTablesValidation(t *testing.T) {
 	})
 
 	t.Run("accepts non-empty entries", func(t *testing.T) {
-		require.NoError(t, mkConfig([]string{"libp2p_peer"}).Validate())
+		require.NoError(t, mkConfig([]string{testTableLibp2pPeer}).Validate())
 	})
 
 	t.Run("rejects empty entry", func(t *testing.T) {
-		err := mkConfig([]string{"libp2p_peer", "  "}).Validate()
+		err := mkConfig([]string{testTableLibp2pPeer, "  "}).Validate()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "disabledTables[1]")
 	})
@@ -119,13 +119,13 @@ func TestDisabledTablesValidation(t *testing.T) {
 
 func TestDisabledTableSet(t *testing.T) {
 	cfg := &Config{
-		DisabledTables: []string{"libp2p_peer", "  libp2p_connected  ", ""},
+		DisabledTables: []string{testTableLibp2pPeer, "  " + testTableLibp2pConnect + "  ", ""},
 	}
 
 	got := cfg.DisabledTableSet()
 	assert.Equal(t, map[string]struct{}{
-		"libp2p_peer":      {},
-		"libp2p_connected": {},
+		testTableLibp2pPeer:    {},
+		testTableLibp2pConnect: {},
 	}, got)
 }
 

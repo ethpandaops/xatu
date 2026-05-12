@@ -16,11 +16,11 @@ jobs:
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
-          go-version: '1.25.x'
+          go-version-file: 'go.mod'
           check-latest: true
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
       - name: Run govulncheck
@@ -44,7 +44,17 @@ jobs:
           #   GO-2026-4887  docker/docker (moby)  — server-side AuthZ plugin bypass
           # The two docker vulns are server-side; we only use the client (via
           # testcontainers in codegen, and via go-builder-client transitively).
-          ALLOWED='GO-2026-4479|GO-2026-4883|GO-2026-4887'
+          #
+          # Stdlib advisories fixed in go1.26.3 — pinned to 1.26.2 to match
+          # goreleaser-cross:v1.26 (no v1.26.3 image yet). Remove these once the
+          # container catches up and go.mod/Dockerfile move to 1.26.3:
+          #   GO-2026-4918  net/http  (x/net portion fixed via v0.53.0 bump)
+          #   GO-2026-4971  net
+          #   GO-2026-4977  net/mail
+          #   GO-2026-4980  html/template
+          #   GO-2026-4982  html/template
+          #   GO-2026-4986  net/mail
+          ALLOWED='GO-2026-4479|GO-2026-4883|GO-2026-4887|GO-2026-4918|GO-2026-4971|GO-2026-4977|GO-2026-4980|GO-2026-4982|GO-2026-4986'
           REPORTED=$(echo "$OUTPUT" | grep -oE 'Vulnerability #[0-9]+: GO-[0-9]+-[0-9]+' | grep -oE 'GO-[0-9]+-[0-9]+' | sort -u)
           UNEXPECTED=$(echo "$REPORTED" | grep -vE "^($ALLOWED)$" || true)
           if [ -z "$UNEXPECTED" ] && [ -n "$REPORTED" ]; then

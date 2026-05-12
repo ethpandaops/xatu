@@ -7,17 +7,23 @@ go 1.26.2
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
+// Hold go-ethereum at bal-devnet-3 build (older than what prysm requires).
+// Prysm's go.mod requests v1.17.2 release, but ethcore's mimicry client uses
+// the older eth.NewPeer signature, so the bal-devnet-3 pre-release pin is
+// what actually builds cleanly across the dep tree.
+replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
+
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
-	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506
-	github.com/OffchainLabs/prysm/v7 v7.0.0
+	github.com/OffchainLabs/go-bitfield v0.0.0-20260504143531-5cbb6d0f5f2e
+	github.com/OffchainLabs/prysm/v7 v7.1.3-rc.3.0.20260511221050-17a03b4a55e4
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
+	github.com/ethereum/go-ethereum v1.17.3-0.20260506230850-230c6a5e11cf
 	github.com/ethpandaops/beacon v0.67.1-0.20260507052247-b31a645f6e36
 	github.com/ethpandaops/ethcore v0.0.0-20260508010718-193cc4aa5947
 	github.com/ethpandaops/ethwallclock v0.4.0
@@ -249,7 +255,7 @@ require (
 	github.com/protolambda/bls12-381-util v0.1.0 // indirect
 	github.com/protolambda/zrnt v0.34.1 // indirect
 	github.com/protolambda/ztyp v0.2.2 // indirect
-	github.com/prysmaticlabs/fastssz v0.0.0-20251103153600-259302269bfc // indirect
+	github.com/prysmaticlabs/fastssz v0.0.0-20260421202104-7a6eb71e6e45 // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect

@@ -127,6 +127,40 @@ func NewDataColumnSidecarPayload(dataColumn *ethtypes.DataColumnSidecar, meta *T
 	}
 }
 
+// ePBS (EIP-7732) payload builders
+
+// NewExecutionPayloadEnvelopePayload creates a Gloas execution_payload (envelope) gossip payload.
+func NewExecutionPayloadEnvelopePayload(envelope *ethtypes.SignedExecutionPayloadEnvelope, meta *TraceEventPayloadMetaData) *TraceEventExecutionPayloadEnvelope {
+	return &TraceEventExecutionPayloadEnvelope{
+		TraceEventPayloadMetaData: *meta,
+		ExecutionPayloadEnvelope:  envelope,
+	}
+}
+
+// NewExecutionPayloadBidPayload creates a Gloas execution_payload_bid gossip payload.
+func NewExecutionPayloadBidPayload(bid *ethtypes.SignedExecutionPayloadBid, meta *TraceEventPayloadMetaData) *TraceEventExecutionPayloadBid {
+	return &TraceEventExecutionPayloadBid{
+		TraceEventPayloadMetaData: *meta,
+		ExecutionPayloadBid:       bid,
+	}
+}
+
+// NewPayloadAttestationMessagePayload creates a Gloas payload_attestation_message gossip payload.
+func NewPayloadAttestationMessagePayload(msg *ethtypes.PayloadAttestationMessage, meta *TraceEventPayloadMetaData) *TraceEventPayloadAttestationMessage {
+	return &TraceEventPayloadAttestationMessage{
+		TraceEventPayloadMetaData: *meta,
+		PayloadAttestationMessage: msg,
+	}
+}
+
+// NewProposerPreferencesPayload creates a Gloas proposer_preferences gossip payload.
+func NewProposerPreferencesPayload(prefs *ethtypes.SignedProposerPreferences, meta *TraceEventPayloadMetaData) *TraceEventProposerPreferences {
+	return &TraceEventProposerPreferences{
+		TraceEventPayloadMetaData: *meta,
+		ProposerPreferences:       prefs,
+	}
+}
+
 // Custody probe payload builder
 
 // NewCustodyProbePayload creates a custody probe payload.

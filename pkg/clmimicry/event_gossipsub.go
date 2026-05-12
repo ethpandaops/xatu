@@ -15,11 +15,15 @@ import (
 // These match the values from github.com/OffchainLabs/prysm/v7/beacon-chain/p2p/topics.go
 // but are defined locally to avoid import cycles.
 const (
-	gossipAttestationMessage       = "beacon_attestation"
-	gossipBlockMessage             = "beacon_block"
-	gossipAggregateAndProofMessage = "beacon_aggregate_and_proof"
-	gossipBlobSidecarMessage       = "blob_sidecar"
-	gossipDataColumnSidecarMessage = "data_column_sidecar"
+	gossipAttestationMessage         = "beacon_attestation"
+	gossipBlockMessage               = "beacon_block"
+	gossipAggregateAndProofMessage   = "beacon_aggregate_and_proof"
+	gossipBlobSidecarMessage         = "blob_sidecar"
+	gossipDataColumnSidecarMessage   = "data_column_sidecar"
+	gossipExecutionPayloadMessage    = "execution_payload"
+	gossipExecutionPayloadBidMessage = "execution_payload_bid"
+	gossipPayloadAttestationMessage  = "payload_attestation_message"
+	gossipProposerPreferencesMessage = "proposer_preferences"
 )
 
 // Define a slice of all gossipsub event types.
@@ -27,13 +31,21 @@ var gossipsubEventTypes = []string{
 	TraceEvent_HANDLE_MESSAGE,
 }
 
-// Map of gossipsub topic substrings to Xatu event types.
+// Map of gossipsub topic-name segment to Xatu event type.
+// Resolution rule (see mapGossipSubEventToXatuEvent): exact match wins; otherwise
+// the longest "<key>_<subnet>" prefix match wins. Exact match priority is what
+// keeps `execution_payload` and `execution_payload_bid` from colliding now that
+// both are valid Gloas topics.
 var gossipsubTopicToXatuEventMap = map[string]string{
-	gossipAttestationMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
-	gossipBlockMessage:             xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
-	gossipBlobSidecarMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
-	gossipAggregateAndProofMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
-	gossipDataColumnSidecarMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
+	gossipAttestationMessage:         xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION.String(),
+	gossipBlockMessage:               xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_BLOCK.String(),
+	gossipBlobSidecarMessage:         xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR.String(),
+	gossipAggregateAndProofMessage:   xatu.Event_LIBP2P_TRACE_GOSSIPSUB_AGGREGATE_AND_PROOF.String(),
+	gossipDataColumnSidecarMessage:   xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR.String(),
+	gossipExecutionPayloadMessage:    xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE.String(),
+	gossipExecutionPayloadBidMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID.String(),
+	gossipPayloadAttestationMessage:  xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE.String(),
+	gossipProposerPreferencesMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES.String(),
 }
 
 // handleHermesGossipSubEvent handles GossipSub protocol events.
@@ -173,6 +185,90 @@ func (p *Processor) handleHermesGossipSubEvent(
 			return errors.Wrap(err, "failed to handle data column sidecar")
 		}
 
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE.String():
+		if !p.events.GossipSubExecutionPayloadEnvelopeEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*TraceEventExecutionPayloadEnvelope)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		if err := p.handleGossipExecutionPayloadEnvelope(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub execution payload envelope")
+		}
+
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID.String():
+		if !p.events.GossipSubExecutionPayloadBidEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*TraceEventExecutionPayloadBid)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		if err := p.handleGossipExecutionPayloadBid(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub execution payload bid")
+		}
+
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE.String():
+		if !p.events.GossipSubPayloadAttestationMessageEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*TraceEventPayloadAttestationMessage)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		if err := p.handleGossipPayloadAttestationMessage(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub payload attestation message")
+		}
+
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES.String():
+		if !p.events.GossipSubProposerPreferencesEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*TraceEventProposerPreferences)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		if err := p.handleGossipProposerPreferences(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub proposer preferences")
+		}
+
 	default:
 		p.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
 	}
@@ -180,11 +276,42 @@ func (p *Processor) handleHermesGossipSubEvent(
 	return nil
 }
 
+// mapGossipSubEventToXatuEvent resolves a gossipsub topic string to a xatu
+// event name. The topic shape is "/eth2/<fork_digest>/<topic_name>/<encoding>";
+// we match against the <topic_name> segment.
+//
+// Exact match on the segment wins. If no exact match, the longest matching
+// "<key>_" prefix wins — this handles subnet-suffixed topics like
+// "beacon_attestation_5" / "blob_sidecar_0" / "data_column_sidecar_5".
+// Map iteration is non-deterministic, so the "longest-prefix wins" pass is
+// what prevents a `execution_payload_bid` topic from being routed to the
+// `execution_payload` envelope branch (or vice versa).
 func mapGossipSubEventToXatuEvent(topic string) (string, error) {
-	for topicSubstr, xatuEvent := range gossipsubTopicToXatuEventMap {
-		if strings.Contains(topic, topicSubstr) {
-			return xatuEvent, nil
+	parts := strings.Split(topic, "/")
+	if len(parts) < 4 {
+		return "", fmt.Errorf("malformed gossipsub topic: %s", topic)
+	}
+
+	segment := parts[3]
+
+	if xatuEvent, ok := gossipsubTopicToXatuEventMap[segment]; ok {
+		return xatuEvent, nil
+	}
+
+	var (
+		bestKey   string
+		bestEvent string
+	)
+
+	for topicKey, xatuEvent := range gossipsubTopicToXatuEventMap {
+		if strings.HasPrefix(segment, topicKey+"_") && len(topicKey) > len(bestKey) {
+			bestKey = topicKey
+			bestEvent = xatuEvent
 		}
+	}
+
+	if bestEvent != "" {
+		return bestEvent, nil
 	}
 
 	return "", fmt.Errorf("unknown gossipsub event: %s", topic)

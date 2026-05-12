@@ -133,6 +133,30 @@ type TraceEventDataColumnSidecar struct {
 	DataColumnSidecar *ethtypes.DataColumnSidecar
 }
 
+// TraceEventExecutionPayloadEnvelope represents a Gloas execution_payload gossip event (EIP-7732).
+type TraceEventExecutionPayloadEnvelope struct {
+	TraceEventPayloadMetaData
+	ExecutionPayloadEnvelope *ethtypes.SignedExecutionPayloadEnvelope
+}
+
+// TraceEventExecutionPayloadBid represents a Gloas execution_payload_bid gossip event (EIP-7732).
+type TraceEventExecutionPayloadBid struct {
+	TraceEventPayloadMetaData
+	ExecutionPayloadBid *ethtypes.SignedExecutionPayloadBid
+}
+
+// TraceEventPayloadAttestationMessage represents a Gloas payload_attestation_message gossip event (EIP-7732).
+type TraceEventPayloadAttestationMessage struct {
+	TraceEventPayloadMetaData
+	PayloadAttestationMessage *ethtypes.PayloadAttestationMessage
+}
+
+// TraceEventProposerPreferences represents a Gloas proposer_preferences gossip event (EIP-7732).
+type TraceEventProposerPreferences struct {
+	TraceEventPayloadMetaData
+	ProposerPreferences *ethtypes.SignedProposerPreferences
+}
+
 // TraceEventCustodyProbe represents a data column custody probe event.
 //
 //nolint:tagliatelle // JSON tags match Hermes format for compatibility

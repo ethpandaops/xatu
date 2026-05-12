@@ -88,10 +88,10 @@ func (e *EventsProposerPreferences) ShouldIgnore(ctx context.Context) (bool, err
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"validator_index":       e.event.Message.ValidatorIndex,
-			"proposal_slot":         e.event.Message.ProposalSlot,
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			"validator_index":          e.event.Message.ValidatorIndex,
+			"proposal_slot":            e.event.Message.ProposalSlot,
 		}).Debug("Duplicate proposer preferences event received")
 
 		return true, nil

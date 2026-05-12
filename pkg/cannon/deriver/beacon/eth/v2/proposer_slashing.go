@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -44,8 +44,8 @@ type ProposerSlashingDeriver struct {
 func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/proposer_slashing",
-			"type":   ProposerSlashingDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/proposer_slashing",
+			typeLogField:   ProposerSlashingDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

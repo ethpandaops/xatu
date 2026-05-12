@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -46,8 +46,8 @@ type BLSToExecutionChangeDeriver struct {
 func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
 	return &BLSToExecutionChangeDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/bls_to_execution_change",
-			"type":   BLSToExecutionChangeDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/bls_to_execution_change",
+			typeLogField:   BLSToExecutionChangeDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

@@ -44,8 +44,8 @@ type WithdrawalDeriver struct {
 func NewWithdrawalDeriver(log logrus.FieldLogger, config *WithdrawalDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
 	return &WithdrawalDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/withdrawal",
-			"type":   WithdrawalDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/withdrawal",
+			typeLogField:   WithdrawalDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

@@ -56,8 +56,8 @@ func NewBlockAccessListDeriver(
 ) *BlockAccessListDeriver {
 	return &BlockAccessListDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/block_access_list",
-			"type":   BlockAccessListDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/block_access_list",
+			typeLogField:   BlockAccessListDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,
@@ -289,117 +289,134 @@ func (b *BlockAccessListDeriver) processSlot(
 
 	events := make([]*xatu.DecoratedEvent, 0)
 
-	// Iterate over entries and their changes, creating one event per change
 	for _, entry := range bal.GetEntries() {
-		address := entry.GetAddress()
-
-		for _, sc := range entry.GetStorageChanges() {
-			change := &xatuethv1.BlockAccessListChange{
-				Address:          address,
-				ChangeType:       "storage",
-				BlockAccessIndex: sc.GetBlockAccessIndex(),
-				StorageKey:       sc.GetKey(),
-				NewValue:         sc.GetNewValue(),
-			}
-
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create storage change event")
-			}
-
-			events = append(events, event)
+		entryEvents, err := b.processEntry(ctx, entry, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, err
 		}
 
-		for _, bc := range entry.GetBalanceChanges() {
-			change := &xatuethv1.BlockAccessListChange{
-				Address:          address,
-				ChangeType:       "balance",
-				BlockAccessIndex: bc.GetBlockAccessIndex(),
-				NewValue:         bc.GetPostBalance(),
-			}
+		events = append(events, entryEvents...)
+	}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create balance change event")
-			}
+	return events, nil
+}
 
-			events = append(events, event)
+func (b *BlockAccessListDeriver) processEntry(
+	ctx context.Context,
+	entry *xatuethv1.BlockAccessListEntry,
+	blockIdentifier *xatu.BlockIdentifier,
+	execBlockNumber uint64,
+	execBlockHash string,
+) ([]*xatu.DecoratedEvent, error) {
+	address := entry.GetAddress()
+	events := make([]*xatu.DecoratedEvent, 0)
+
+	for _, sc := range entry.GetStorageChanges() {
+		change := &xatuethv1.BlockAccessListChange{
+			Address:          address,
+			ChangeType:       "storage",
+			BlockAccessIndex: sc.GetBlockAccessIndex(),
+			StorageKey:       sc.GetKey(),
+			NewValue:         sc.GetNewValue(),
 		}
 
-		for _, nc := range entry.GetNonceChanges() {
-			var newValue *wrapperspb.StringValue
-			if nc.GetNewNonce() != nil {
-				newValue = &wrapperspb.StringValue{
-					Value: fmt.Sprintf("%d", nc.GetNewNonce().GetValue()),
-				}
-			}
-
-			change := &xatuethv1.BlockAccessListChange{
-				Address:          address,
-				ChangeType:       "nonce",
-				BlockAccessIndex: nc.GetBlockAccessIndex(),
-				NewValue:         newValue,
-			}
-
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create nonce change event")
-			}
-
-			events = append(events, event)
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create storage change event")
 		}
 
-		for _, cc := range entry.GetCodeChanges() {
-			change := &xatuethv1.BlockAccessListChange{
-				Address:          address,
-				ChangeType:       "code",
-				BlockAccessIndex: cc.GetBlockAccessIndex(),
-				NewValue:         cc.GetNewCode(),
-			}
+		events = append(events, event)
+	}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create code change event")
-			}
-
-			events = append(events, event)
+	for _, bc := range entry.GetBalanceChanges() {
+		change := &xatuethv1.BlockAccessListChange{
+			Address:          address,
+			ChangeType:       "balance",
+			BlockAccessIndex: bc.GetBlockAccessIndex(),
+			NewValue:         bc.GetPostBalance(),
 		}
 
-		for _, readKey := range entry.GetStorageReads() {
-			change := &xatuethv1.BlockAccessListChange{
-				Address:    address,
-				ChangeType: "storage_read",
-				StorageKey: readKey.GetKey(),
-			}
-
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create storage read event")
-			}
-
-			events = append(events, event)
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create balance change event")
 		}
 
-		// Emit a "touched" event for accounts with no state changes and no storage
-		// reads. These are accounts accessed via BALANCE, EXTCODESIZE, calls, etc.
-		// that had no state interactions. Valuable for parallel execution analysis.
-		if len(entry.GetStorageChanges()) == 0 &&
-			len(entry.GetStorageReads()) == 0 &&
-			len(entry.GetBalanceChanges()) == 0 &&
-			len(entry.GetNonceChanges()) == 0 &&
-			len(entry.GetCodeChanges()) == 0 {
-			change := &xatuethv1.BlockAccessListChange{
-				Address:    address,
-				ChangeType: "touched",
-			}
+		events = append(events, event)
+	}
 
-			event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create touched account event")
+	for _, nc := range entry.GetNonceChanges() {
+		var newValue *wrapperspb.StringValue
+		if nc.GetNewNonce() != nil {
+			newValue = &wrapperspb.StringValue{
+				Value: fmt.Sprintf("%d", nc.GetNewNonce().GetValue()),
 			}
-
-			events = append(events, event)
 		}
+
+		change := &xatuethv1.BlockAccessListChange{
+			Address:          address,
+			ChangeType:       "nonce",
+			BlockAccessIndex: nc.GetBlockAccessIndex(),
+			NewValue:         newValue,
+		}
+
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create nonce change event")
+		}
+
+		events = append(events, event)
+	}
+
+	for _, cc := range entry.GetCodeChanges() {
+		change := &xatuethv1.BlockAccessListChange{
+			Address:          address,
+			ChangeType:       "code",
+			BlockAccessIndex: cc.GetBlockAccessIndex(),
+			NewValue:         cc.GetNewCode(),
+		}
+
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create code change event")
+		}
+
+		events = append(events, event)
+	}
+
+	for _, readKey := range entry.GetStorageReads() {
+		change := &xatuethv1.BlockAccessListChange{
+			Address:    address,
+			ChangeType: "storage_read",
+			StorageKey: readKey.GetKey(),
+		}
+
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create storage read event")
+		}
+
+		events = append(events, event)
+	}
+
+	// Emit a "touched" event for accounts with no state changes and no storage
+	// reads. These are accounts accessed via BALANCE, EXTCODESIZE, calls, etc.
+	// that had no state interactions. Valuable for parallel execution analysis.
+	if len(entry.GetStorageChanges()) == 0 &&
+		len(entry.GetStorageReads()) == 0 &&
+		len(entry.GetBalanceChanges()) == 0 &&
+		len(entry.GetNonceChanges()) == 0 &&
+		len(entry.GetCodeChanges()) == 0 {
+		change := &xatuethv1.BlockAccessListChange{
+			Address:    address,
+			ChangeType: "touched",
+		}
+
+		event, err := b.createEvent(ctx, change, blockIdentifier, execBlockNumber, execBlockHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create touched account event")
+		}
+
+		events = append(events, event)
 	}
 
 	return events, nil

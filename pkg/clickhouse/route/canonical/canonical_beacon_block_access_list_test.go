@@ -9,6 +9,16 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+const (
+	balAddressKey          = "address"
+	balChangeTypeKey       = "change_type"
+	balBlockAccessIndexKey = "block_access_index"
+	balStorageKeyKey       = "storage_key"
+	balNewValueKey         = "new_value"
+
+	balChangeTypeBalance = "balance"
+)
+
 func TestSnapshot_canonical_beacon_block_access_list(t *testing.T) {
 	testfixture.AssertSnapshot(t, newcanonicalBeaconBlockAccessListBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -35,11 +45,11 @@ func TestSnapshot_canonical_beacon_block_access_list(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"address":            "0x1234567890abcdef1234567890abcdef12345678",
-		"change_type":        "storage",
-		"block_access_index": uint32(5),
-		"storage_key":        "0xabcdef",
-		"new_value":          "0xdeadbeef",
+		balAddressKey:          "0x1234567890abcdef1234567890abcdef12345678",
+		balChangeTypeKey:       "storage",
+		balBlockAccessIndexKey: uint32(5),
+		balStorageKeyKey:       "0xabcdef",
+		balNewValueKey:         "0xdeadbeef",
 	})
 }
 
@@ -62,16 +72,16 @@ func TestSnapshot_canonical_beacon_block_access_list_balance(t *testing.T) {
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockAccessList{
 			EthV2BeaconBlockAccessList: &ethv1.BlockAccessListChange{
 				Address:          wrapperspb.String("0xaabbccddee112233445566778899aabbccddeeff"),
-				ChangeType:       "balance",
+				ChangeType:       balChangeTypeBalance,
 				BlockAccessIndex: wrapperspb.UInt32(2),
 				NewValue:         wrapperspb.String("1000000000000000000"),
 			},
 		},
 	}, 1, map[string]any{
-		"address":            "0xaabbccddee112233445566778899aabbccddeeff",
-		"change_type":        "balance",
-		"block_access_index": uint32(2),
-		"storage_key":        "",
-		"new_value":          "1000000000000000000",
+		balAddressKey:          "0xaabbccddee112233445566778899aabbccddeeff",
+		balChangeTypeKey:       balChangeTypeBalance,
+		balBlockAccessIndexKey: uint32(2),
+		balStorageKeyKey:       "",
+		balNewValueKey:         "1000000000000000000",
 	})
 }

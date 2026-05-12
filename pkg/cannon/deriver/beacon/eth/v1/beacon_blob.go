@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -48,8 +48,8 @@ type BeaconBlobDeriver struct {
 func NewBeaconBlobDeriver(log logrus.FieldLogger, config *BeaconBlobDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlobDeriver {
 	return &BeaconBlobDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/beacon_blob",
-			"type":   BeaconBlobDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/beacon_blob",
+			typeLogField:   BeaconBlobDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

@@ -88,10 +88,10 @@ func (e *EventsPayloadAttestation) ShouldIgnore(ctx context.Context) (bool, erro
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"validator_index":       e.event.ValidatorIndex,
-			"slot":                  e.event.Data.Slot,
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			"validator_index":          e.event.ValidatorIndex,
+			slotLogField:               e.event.Data.Slot,
 		}).Debug("Duplicate payload attestation message received")
 
 		return true, nil

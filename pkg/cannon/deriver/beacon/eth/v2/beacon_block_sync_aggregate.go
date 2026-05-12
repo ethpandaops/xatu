@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -60,8 +60,8 @@ func NewBeaconBlockSyncAggregateDeriver(
 ) *BeaconBlockSyncAggregateDeriver {
 	return &BeaconBlockSyncAggregateDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/beacon_block_sync_aggregate",
-			"type":   BeaconBlockSyncAggregateDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/beacon_block_sync_aggregate",
+			typeLogField:   BeaconBlockSyncAggregateDeriverName.String(),
 		}),
 		cfg:                config,
 		iterator:           iter,

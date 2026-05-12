@@ -48,8 +48,8 @@ type ExecutionPayloadBidDeriver struct {
 func NewExecutionPayloadBidDeriver(log logrus.FieldLogger, config *ExecutionPayloadBidDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionPayloadBidDeriver {
 	return &ExecutionPayloadBidDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/execution_payload_bid",
-			"type":   ExecutionPayloadBidDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/execution_payload_bid",
+			typeLogField:   ExecutionPayloadBidDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

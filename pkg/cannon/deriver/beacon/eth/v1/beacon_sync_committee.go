@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v5"
 	client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -53,8 +53,8 @@ func NewBeaconSyncCommitteeDeriver(
 ) *BeaconSyncCommitteeDeriver {
 	return &BeaconSyncCommitteeDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/beacon_sync_committee",
-			"type":   BeaconSyncCommitteeDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/beacon_sync_committee",
+			typeLogField:   BeaconSyncCommitteeDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

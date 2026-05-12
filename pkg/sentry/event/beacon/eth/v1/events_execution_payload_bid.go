@@ -87,11 +87,11 @@ func (e *EventsExecutionPayloadBid) ShouldIgnore(ctx context.Context) (bool, err
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"slot":                  e.event.Message.Slot,
-			"builder_index":         e.event.Message.BuilderIndex,
-			"block_hash":            e.event.Message.BlockHash.String(),
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			slotLogField:               e.event.Message.Slot,
+			"builder_index":            e.event.Message.BuilderIndex,
+			"block_hash":               e.event.Message.BlockHash.String(),
 		}).Debug("Duplicate execution payload bid event received")
 
 		return true, nil

@@ -94,8 +94,8 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
 		}).Debug("Duplicate contribution and proof event received")
 
 		return true, nil

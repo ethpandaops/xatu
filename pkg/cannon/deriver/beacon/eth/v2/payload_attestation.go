@@ -49,8 +49,8 @@ type PayloadAttestationDeriver struct {
 func NewPayloadAttestationDeriver(log logrus.FieldLogger, config *PayloadAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *PayloadAttestationDeriver {
 	return &PayloadAttestationDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/payload_attestation",
-			"type":   PayloadAttestationDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/payload_attestation",
+			typeLogField:   PayloadAttestationDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

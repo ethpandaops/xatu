@@ -16,12 +16,12 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_bid(t *testing.T) {
 		Event: &xatu.Event{
 			Name:     beaconApiEthV1EventsExecutionPayloadBidEventNames[0],
 			DateTime: testfixture.TS(),
-			Id:       "snapshot-1",
+			Id:       testfixture.SnapshotID,
 		},
 		Meta: testfixture.BaseMeta(),
 		// TODO(epbs): Add event-specific Data field and MetaWithAdditional for richer assertions.
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
+		testfixture.MetaClientNameKey: testfixture.MetaClientName,
 		// TODO(epbs): Add payload-specific column assertions.
 	})
 }

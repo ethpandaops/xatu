@@ -5,9 +5,11 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -28,10 +30,14 @@ const gzSuffix = ".gz"
 
 // fakeUploader records every PutObject call for in-memory assertion.
 type fakeUploader struct {
-	mu      sync.Mutex
-	puts    map[string]putRecord
-	headErr error
-	putErr  error
+	mu          sync.Mutex
+	puts        map[string]putRecord
+	headErr     error
+	putErr      error
+	keyedErrs   map[string]error
+	beforePut   func(ctx context.Context, key string) error
+	inflight    atomic.Int64
+	maxInflight atomic.Int64
 }
 
 type putRecord struct {
@@ -47,12 +53,32 @@ func (f *fakeUploader) HeadBucket(_ context.Context) error {
 	return f.headErr
 }
 
-func (f *fakeUploader) PutObject(_ context.Context, key string, body []byte, opts xs3.PutOptions) error {
+func (f *fakeUploader) PutObject(ctx context.Context, key string, body []byte, opts xs3.PutOptions) error {
+	cur := f.inflight.Add(1)
+	defer f.inflight.Add(-1)
+
+	for {
+		max := f.maxInflight.Load()
+		if cur <= max || f.maxInflight.CompareAndSwap(max, cur) {
+			break
+		}
+	}
+
+	if f.beforePut != nil {
+		if err := f.beforePut(ctx, key); err != nil {
+			return err
+		}
+	}
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	if f.putErr != nil {
 		return f.putErr
+	}
+
+	if err, ok := f.keyedErrs[key]; ok {
+		return err
 	}
 
 	f.puts[key] = putRecord{body: append([]byte(nil), body...), opts: opts}
@@ -280,6 +306,129 @@ func TestStart_ChecksBucketExistence(t *testing.T) {
 
 	err := s.Start(context.Background())
 	assert.ErrorIs(t, err, bucketErr)
+}
+
+// TestHandleNewDecoratedEvents_ConcurrentPutOneFails simulates 16 blobs
+// landing through a Concurrency=4 sink with one keyed put error. Two
+// things matter: the error is returned (so cannon does not advance the
+// checkpoint), and the other 15 puts still happen (proving the failed
+// blob did not poison the rest of the batch).
+func TestHandleNewDecoratedEvents_ConcurrentPutOneFails(t *testing.T) {
+	const total = 16
+	const poisonIdx = 7
+
+	putErr := errors.New("upload boom")
+
+	events := make([]*xatu.DecoratedEvent, total)
+	for i := 0; i < total; i++ {
+		events[i] = newBlobEvent("mainnet", fmt.Sprintf("0x01%04d", i), fmt.Sprintf("0x%02x", i))
+	}
+
+	poisonKey := "mainnet/" + fmt.Sprintf("0x01%04d", poisonIdx) + gzSuffix
+
+	up := &fakeUploader{
+		puts:      map[string]putRecord{},
+		keyedErrs: map[string]error{poisonKey: putErr},
+		// Hold each put for long enough that errgroup's bounded
+		// concurrency actually produces observable overlap. Without
+		// this the map insert is too fast to race.
+		beforePut: func(_ context.Context, _ string) error {
+			time.Sleep(5 * time.Millisecond)
+
+			return nil
+		},
+	}
+	s := newTestSink(t, up, &Config{
+		Config: xs3.Config{
+			Endpoint: "e", Bucket: "b", AccessKeyID: "k", SecretAccessKey: "s",
+		},
+		KeySuffix:   gzSuffix,
+		Concurrency: 4,
+	})
+
+	err := s.HandleNewDecoratedEvents(context.Background(), events)
+	require.Error(t, err, "any put failure must propagate so cannon retries")
+	assert.ErrorIs(t, err, putErr)
+	assert.Equal(t, total-1, up.count(),
+		"every non-poisoned blob should have been uploaded despite one sibling failing")
+	assert.GreaterOrEqual(t, up.maxInflight.Load(), int64(2),
+		"Concurrency=4 with 16 blobs should observe at least 2 in-flight puts at peak")
+}
+
+// TestHandleNewDecoratedEvents_UserFilterOverridesHardcodedBlobFilter
+// covers the interaction between the sink's hard-coded blob_sidecar
+// filter and a user-supplied EventFilterConfig. A user filter that
+// excludes blob_sidecar must result in zero uploads; a filter that
+// excludes some other event must NOT block blob uploads.
+func TestHandleNewDecoratedEvents_UserFilterOverridesHardcodedBlobFilter(t *testing.T) {
+	t.Run("user excludes blob_sidecar -> no uploads", func(t *testing.T) {
+		up := newFakeUploader()
+		filter, err := xatu.NewEventFilter(&xatu.EventFilterConfig{
+			ExcludeEventNames: []string{"BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"},
+		})
+		require.NoError(t, err)
+
+		s := newTestSink(t, up, nil)
+		s.filter = filter
+
+		err = s.HandleNewDecoratedEvents(context.Background(),
+			[]*xatu.DecoratedEvent{newBlobEvent("mainnet", "0x01aa", "0x01")})
+		require.NoError(t, err)
+		assert.Equal(t, 0, up.count(),
+			"explicit user exclusion must override the sink's blob-only inclusion")
+	})
+
+	t.Run("user excludes other event -> blobs still upload", func(t *testing.T) {
+		up := newFakeUploader()
+		filter, err := xatu.NewEventFilter(&xatu.EventFilterConfig{
+			ExcludeEventNames: []string{"BEACON_API_ETH_V2_BEACON_BLOCK"},
+		})
+		require.NoError(t, err)
+
+		s := newTestSink(t, up, nil)
+		s.filter = filter
+
+		err = s.HandleNewDecoratedEvents(context.Background(),
+			[]*xatu.DecoratedEvent{newBlobEvent("mainnet", "0x01aa", "0x01")})
+		require.NoError(t, err)
+		assert.Equal(t, 1, up.count(),
+			"a user filter for an unrelated event must not block blob uploads")
+	})
+}
+
+// TestHandleNewDecoratedEvents_ContextCancellationPropagates cancels
+// the caller's context mid-batch. The sink should observe cancellation
+// at the upload boundary and surface it.
+func TestHandleNewDecoratedEvents_ContextCancellationPropagates(t *testing.T) {
+	up := &fakeUploader{
+		puts: map[string]putRecord{},
+		// Block PutObject until ctx is cancelled — proves the sink
+		// surfaces ctx.Err rather than swallowing the cancellation.
+		beforePut: func(ctx context.Context, _ string) error {
+			<-ctx.Done()
+
+			return ctx.Err()
+		},
+	}
+
+	s := newTestSink(t, up, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel shortly after the call starts so the uploads in-flight
+	// see the cancellation.
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	err := s.HandleNewDecoratedEvents(ctx, []*xatu.DecoratedEvent{
+		newBlobEvent("mainnet", "0x01aa", "0x01"),
+		newBlobEvent("mainnet", "0x01bb", "0x02"),
+	})
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.Canceled,
+		"canceled context must propagate to the caller through errgroup")
 }
 
 func TestSinkInterfaceCompliance(t *testing.T) {

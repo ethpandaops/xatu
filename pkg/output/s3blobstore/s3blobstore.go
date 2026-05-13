@@ -37,14 +37,6 @@ const (
 	contentEncoding = "gzip"
 )
 
-// s3Uploader is the subset of s3.Client the sink uses. Declared as an
-// interface so tests can substitute a stub without spinning up a real
-// object store.
-type s3Uploader interface {
-	HeadBucket(ctx context.Context) error
-	PutObject(ctx context.Context, key string, body []byte, opts s3.PutOptions) error
-}
-
 // Sink archives beacon blob sidecars to an S3-compatible store.
 type Sink struct {
 	name        string
@@ -54,6 +46,14 @@ type Sink struct {
 	keyPrefix   string
 	keySuffix   string
 	concurrency int
+}
+
+// s3Uploader is the subset of s3.Client the sink uses. Declared as an
+// interface so tests can substitute a stub without spinning up a real
+// object store.
+type s3Uploader interface {
+	HeadBucket(ctx context.Context) error
+	PutObject(ctx context.Context, key string, body []byte, opts s3.PutOptions) error
 }
 
 // New constructs an s3blobstore sink. shippingMethod is accepted for
@@ -79,7 +79,7 @@ func New(
 
 	if shippingMethod != "" && shippingMethod != processor.ShippingMethodSync {
 		sLog.WithField("shipping_method", shippingMethod).
-			Warn("s3blobstore sink ignores shippingMethod — uploads are inline per call so the deriver checkpoint advances only after the object store has acknowledged each blob")
+			Warn("s3blobstore ignores shippingMethod; uploads are inline")
 	}
 
 	client, err := s3.New(sLog, &cfg.Config)
@@ -189,7 +189,7 @@ func (s *Sink) uploadBlob(ctx context.Context, event *xatu.DecoratedEvent) error
 		// past data that never reached the archive. Returning an error
 		// pins cannon on this batch until the upstream is fixed.
 		return fmt.Errorf(
-			"blob_sidecar event %s missing required fields (network=%t versioned_hash=%t blob=%t) — refusing to archive",
+			"blob_sidecar event %s missing required fields (network=%t versioned_hash=%t blob=%t)",
 			event.GetEvent().GetId(),
 			network != "",
 			versionedHash != "",

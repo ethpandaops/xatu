@@ -649,6 +649,56 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		// fast_confirmation does not have a dedicated OnFastConfirmation
+		// publisher in ethpandaops/beacon yet, so we tap the raw event
+		// channel and dispatch ourselves. The beacon library publishes the
+		// raw event before bailing on the topic-specific switch.
+		s.beacon.Node().OnEvent(ctx, func(ctx context.Context, ev *eth2v1.Event) error {
+			if ev.Topic != "fast_confirmation" {
+				return nil
+			}
+
+			data, ok := ev.Data.(*eth2v1.FastConfirmationEvent)
+			if !ok {
+				return fmt.Errorf("invalid fast_confirmation event data type %T", ev.Data)
+			}
+
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsFastConfirmation(
+				s.log,
+				&v1.FastConfirmationData{
+					Slot:  uint64(data.Slot),
+					Block: xatuethv1.RootAsString(data.Block),
+				},
+				now,
+				s.beacon,
+				s.duplicateCache.BeaconETHV1EventsFastConfirmation,
+				meta,
+			)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
 		// Beacon blob metadata emission on block receipt
 		if s.Config.BeaconBlob != nil && s.Config.BeaconBlob.Enabled {
 			s.log.Info("Beacon blob metadata emission enabled")

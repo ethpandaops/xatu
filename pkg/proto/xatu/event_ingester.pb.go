@@ -172,6 +172,7 @@ const (
 	Event_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE          Event_Name = 86
 	Event_EXECUTION_BLOCK_METRICS                                Event_Name = 87
 	Event_LIBP2P_TRACE_IDENTIFY                                  Event_Name = 88
+	Event_BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION             Event_Name = 89
 )
 
 // Enum value maps for Event_Name.
@@ -265,6 +266,7 @@ var (
 		86: "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE",
 		87: "EXECUTION_BLOCK_METRICS",
 		88: "LIBP2P_TRACE_IDENTIFY",
+		89: "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION",
 	}
 	Event_Name_value = map[string]int32{
 		"BEACON_API_ETH_V1_EVENTS_UNKNOWN":                       0,
@@ -355,6 +357,7 @@ var (
 		"BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE":          86,
 		"EXECUTION_BLOCK_METRICS":                                87,
 		"LIBP2P_TRACE_IDENTIFY":                                  88,
+		"BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION":             89,
 	}
 )
 
@@ -2263,6 +2266,7 @@ type ClientMeta struct {
 	//	*ClientMeta_EthV1BeaconSyncCommittee
 	//	*ClientMeta_EthV2BeaconBlockSyncAggregate
 	//	*ClientMeta_Libp2PTraceIdentify
+	//	*ClientMeta_EthV1EventsFastConfirmation
 	AdditionalData isClientMeta_AdditionalData `protobuf_oneof:"AdditionalData"`
 	// ModuleName contains the name of the module that sent the event.
 	ModuleName ModuleName `protobuf:"varint,63,opt,name=module_name,proto3,enum=xatu.ModuleName" json:"module_name,omitempty"`
@@ -2932,6 +2936,13 @@ func (x *ClientMeta) GetLibp2PTraceIdentify() *ClientMeta_AdditionalLibP2PTraceI
 	return nil
 }
 
+func (x *ClientMeta) GetEthV1EventsFastConfirmation() *ClientMeta_AdditionalEthV1EventsFastConfirmationData {
+	if x, ok := x.GetAdditionalData().(*ClientMeta_EthV1EventsFastConfirmation); ok {
+		return x.EthV1EventsFastConfirmation
+	}
+	return nil
+}
+
 func (x *ClientMeta) GetModuleName() ModuleName {
 	if x != nil {
 		return x.ModuleName
@@ -3386,6 +3397,12 @@ type ClientMeta_Libp2PTraceIdentify struct {
 	Libp2PTraceIdentify *ClientMeta_AdditionalLibP2PTraceIdentifyData `protobuf:"bytes,94,opt,name=libp2p_trace_identify,json=LIBP2P_TRACE_IDENTIFY,proto3,oneof"`
 }
 
+type ClientMeta_EthV1EventsFastConfirmation struct {
+	// AdditionalEthV1EventsFastConfirmationData contains additional data about
+	// the eth v1 fast confirmation event.
+	EthV1EventsFastConfirmation *ClientMeta_AdditionalEthV1EventsFastConfirmationData `protobuf:"bytes,95,opt,name=eth_v1_events_fast_confirmation,json=BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION,proto3,oneof"`
+}
+
 func (*ClientMeta_EthV1EventsAttestation) isClientMeta_AdditionalData() {}
 
 func (*ClientMeta_EthV1EventsHead) isClientMeta_AdditionalData() {}
@@ -3547,6 +3564,8 @@ func (*ClientMeta_EthV1BeaconSyncCommittee) isClientMeta_AdditionalData() {}
 func (*ClientMeta_EthV2BeaconBlockSyncAggregate) isClientMeta_AdditionalData() {}
 
 func (*ClientMeta_Libp2PTraceIdentify) isClientMeta_AdditionalData() {}
+
+func (*ClientMeta_EthV1EventsFastConfirmation) isClientMeta_AdditionalData() {}
 
 type ServerMeta struct {
 	state         protoimpl.MessageState
@@ -4143,6 +4162,7 @@ type DecoratedEvent struct {
 	//	*DecoratedEvent_EthV1BeaconSyncCommittee
 	//	*DecoratedEvent_EthV2BeaconBlockSyncAggregate
 	//	*DecoratedEvent_ExecutionBlockMetrics
+	//	*DecoratedEvent_EthV1EventsFastConfirmation
 	Data isDecoratedEvent_Data `protobuf_oneof:"data"`
 }
 
@@ -4812,6 +4832,13 @@ func (x *DecoratedEvent) GetExecutionBlockMetrics() *ExecutionBlockMetrics {
 	return nil
 }
 
+func (x *DecoratedEvent) GetEthV1EventsFastConfirmation() *v1.EventFastConfirmation {
+	if x, ok := x.GetData().(*DecoratedEvent_EthV1EventsFastConfirmation); ok {
+		return x.EthV1EventsFastConfirmation
+	}
+	return nil
+}
+
 type isDecoratedEvent_Data interface {
 	isDecoratedEvent_Data()
 }
@@ -5173,6 +5200,10 @@ type DecoratedEvent_ExecutionBlockMetrics struct {
 	ExecutionBlockMetrics *ExecutionBlockMetrics `protobuf:"bytes,209,opt,name=execution_block_metrics,json=EXECUTION_BLOCK_METRICS,proto3,oneof"`
 }
 
+type DecoratedEvent_EthV1EventsFastConfirmation struct {
+	EthV1EventsFastConfirmation *v1.EventFastConfirmation `protobuf:"bytes,210,opt,name=eth_v1_events_fast_confirmation,json=BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION,proto3,oneof"`
+}
+
 func (*DecoratedEvent_EthV1EventsAttestation) isDecoratedEvent_Data() {}
 
 func (*DecoratedEvent_EthV1EventsBlock) isDecoratedEvent_Data() {}
@@ -5344,6 +5375,8 @@ func (*DecoratedEvent_EthV1BeaconSyncCommittee) isDecoratedEvent_Data() {}
 func (*DecoratedEvent_EthV2BeaconBlockSyncAggregate) isDecoratedEvent_Data() {}
 
 func (*DecoratedEvent_ExecutionBlockMetrics) isDecoratedEvent_Data() {}
+
+func (*DecoratedEvent_EthV1EventsFastConfirmation) isDecoratedEvent_Data() {}
 
 type ClientMeta_Ethereum struct {
 	state         protoimpl.MessageState
@@ -6125,6 +6158,73 @@ func (x *ClientMeta_AdditionalEthV1EventsBlockGossipData) GetPropagation() *Prop
 	return nil
 }
 
+type ClientMeta_AdditionalEthV1EventsFastConfirmationData struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Epoch contains the epoch information for the confirmed block.
+	Epoch *EpochV2 `protobuf:"bytes,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// Slot contains the slot information for the confirmed block.
+	Slot *SlotV2 `protobuf:"bytes,2,opt,name=slot,proto3" json:"slot,omitempty"`
+	// Propagation contains information about the propagation of the
+	// confirmation, relative to the start of the confirmed block's slot.
+	Propagation *PropagationV2 `protobuf:"bytes,3,opt,name=propagation,proto3" json:"propagation,omitempty"`
+}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) Reset() {
+	*x = ClientMeta_AdditionalEthV1EventsFastConfirmationData{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[41]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientMeta_AdditionalEthV1EventsFastConfirmationData) ProtoMessage() {}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[41]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientMeta_AdditionalEthV1EventsFastConfirmationData.ProtoReflect.Descriptor instead.
+func (*ClientMeta_AdditionalEthV1EventsFastConfirmationData) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 13}
+}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) GetEpoch() *EpochV2 {
+	if x != nil {
+		return x.Epoch
+	}
+	return nil
+}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) GetSlot() *SlotV2 {
+	if x != nil {
+		return x.Slot
+	}
+	return nil
+}
+
+func (x *ClientMeta_AdditionalEthV1EventsFastConfirmationData) GetPropagation() *PropagationV2 {
+	if x != nil {
+		return x.Propagation
+	}
+	return nil
+}
+
 type ClientMeta_AdditionalEthV1EventsVoluntaryExitData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6137,7 +6237,7 @@ type ClientMeta_AdditionalEthV1EventsVoluntaryExitData struct {
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsVoluntaryExitData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[41]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[42]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6150,7 +6250,7 @@ func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) String() string {
 func (*ClientMeta_AdditionalEthV1EventsVoluntaryExitData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[41]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[42]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6163,7 +6263,7 @@ func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) ProtoReflect() proto
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsVoluntaryExitData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsVoluntaryExitData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 13}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 14}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) GetEpoch() *Epoch {
@@ -6189,7 +6289,7 @@ type ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data struct {
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[42]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6202,7 +6302,7 @@ func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) String() string {
 func (*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[42]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6215,7 +6315,7 @@ func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) ProtoReflect() pro
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 14}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 15}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data) GetEpoch() *EpochV2 {
@@ -6251,7 +6351,7 @@ type ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData struct {
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[43]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6264,7 +6364,7 @@ func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) String() strin
 func (*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[43]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6277,7 +6377,7 @@ func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 15}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 16}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData) GetEpoch() *Epoch {
@@ -6299,7 +6399,7 @@ type ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data struct {
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[44]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6312,7 +6412,7 @@ func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) String() str
 func (*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[44]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6325,7 +6425,7 @@ func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) ProtoReflect
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 16}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 17}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data) GetEpoch() *EpochV2 {
@@ -6352,7 +6452,7 @@ type ClientMeta_AdditionalEthV1EventsChainReorgData struct {
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsChainReorgData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[45]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6365,7 +6465,7 @@ func (x *ClientMeta_AdditionalEthV1EventsChainReorgData) String() string {
 func (*ClientMeta_AdditionalEthV1EventsChainReorgData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[45]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6378,7 +6478,7 @@ func (x *ClientMeta_AdditionalEthV1EventsChainReorgData) ProtoReflect() protoref
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsChainReorgData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsChainReorgData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 17}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 18}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgData) GetEpoch() *Epoch {
@@ -6419,7 +6519,7 @@ type ClientMeta_AdditionalEthV1EventsChainReorgV2Data struct {
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsChainReorgV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[46]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6432,7 +6532,7 @@ func (x *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) String() string {
 func (*ClientMeta_AdditionalEthV1EventsChainReorgV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[46]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6445,7 +6545,7 @@ func (x *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) ProtoReflect() protor
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsChainReorgV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsChainReorgV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 18}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 19}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsChainReorgV2Data) GetEpoch() *EpochV2 {
@@ -6486,7 +6586,7 @@ type ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData struct
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[47]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6499,7 +6599,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) S
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[47]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6512,7 +6612,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) P
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 19}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 20}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData) GetEpoch() *Epoch {
@@ -6553,7 +6653,7 @@ type ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data stru
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[48]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6566,7 +6666,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[48]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6579,7 +6679,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 20}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 21}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data) GetEpoch() *EpochV2 {
@@ -6614,7 +6714,7 @@ type ClientMeta_AdditionalEthV1EventsContributionAndProofData struct {
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsContributionAndProofData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[49]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6627,7 +6727,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofData) String() stri
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[49]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6640,7 +6740,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofData) ProtoReflect(
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsContributionAndProofData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 21}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 22}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofData) GetContribution() *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData {
@@ -6661,7 +6761,7 @@ type ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data struct {
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[50]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6674,7 +6774,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) String() st
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[50]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6687,7 +6787,7 @@ func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) ProtoReflec
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 22}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 23}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data) GetContribution() *ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data {
@@ -6721,7 +6821,7 @@ type ClientMeta_ForkChoiceSnapshot struct {
 func (x *ClientMeta_ForkChoiceSnapshot) Reset() {
 	*x = ClientMeta_ForkChoiceSnapshot{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[51]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[52]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6734,7 +6834,7 @@ func (x *ClientMeta_ForkChoiceSnapshot) String() string {
 func (*ClientMeta_ForkChoiceSnapshot) ProtoMessage() {}
 
 func (x *ClientMeta_ForkChoiceSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[51]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[52]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6747,7 +6847,7 @@ func (x *ClientMeta_ForkChoiceSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientMeta_ForkChoiceSnapshot.ProtoReflect.Descriptor instead.
 func (*ClientMeta_ForkChoiceSnapshot) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 23}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 24}
 }
 
 func (x *ClientMeta_ForkChoiceSnapshot) GetRequestEpoch() *Epoch {
@@ -6809,7 +6909,7 @@ type ClientMeta_ForkChoiceSnapshotV2 struct {
 func (x *ClientMeta_ForkChoiceSnapshotV2) Reset() {
 	*x = ClientMeta_ForkChoiceSnapshotV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[52]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6822,7 +6922,7 @@ func (x *ClientMeta_ForkChoiceSnapshotV2) String() string {
 func (*ClientMeta_ForkChoiceSnapshotV2) ProtoMessage() {}
 
 func (x *ClientMeta_ForkChoiceSnapshotV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[52]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6835,7 +6935,7 @@ func (x *ClientMeta_ForkChoiceSnapshotV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientMeta_ForkChoiceSnapshotV2.ProtoReflect.Descriptor instead.
 func (*ClientMeta_ForkChoiceSnapshotV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 24}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 25}
 }
 
 func (x *ClientMeta_ForkChoiceSnapshotV2) GetRequestEpoch() *EpochV2 {
@@ -6884,7 +6984,7 @@ type ClientMeta_AdditionalEthV1DebugForkChoiceData struct {
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceData) Reset() {
 	*x = ClientMeta_AdditionalEthV1DebugForkChoiceData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[53]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6897,7 +6997,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceData) String() string {
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[53]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6910,7 +7010,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceData) ProtoReflect() protorefl
 
 // Deprecated: Use ClientMeta_AdditionalEthV1DebugForkChoiceData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 25}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 26}
 }
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceData) GetSnapshot() *ClientMeta_ForkChoiceSnapshot {
@@ -6931,7 +7031,7 @@ type ClientMeta_AdditionalEthV1DebugForkChoiceV2Data struct {
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1DebugForkChoiceV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[54]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6944,7 +7044,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) String() string {
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[54]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6957,7 +7057,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) ProtoReflect() protore
 
 // Deprecated: Use ClientMeta_AdditionalEthV1DebugForkChoiceV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 26}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 27}
 }
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceV2Data) GetSnapshot() *ClientMeta_ForkChoiceSnapshotV2 {
@@ -6979,7 +7079,7 @@ type ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData struct {
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) Reset() {
 	*x = ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[55]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6992,7 +7092,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) String() string {
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[55]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7005,7 +7105,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) ProtoReflect() prot
 
 // Deprecated: Use ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 27}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 28}
 }
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData) GetBefore() *ClientMeta_ForkChoiceSnapshot {
@@ -7034,7 +7134,7 @@ type ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data struct {
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[56]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7047,7 +7147,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) String() string {
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[56]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7060,7 +7160,7 @@ func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) ProtoReflect() pr
 
 // Deprecated: Use ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 28}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 29}
 }
 
 func (x *ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data) GetBefore() *ClientMeta_ForkChoiceSnapshotV2 {
@@ -7095,7 +7195,7 @@ type ClientMeta_AdditionalEthV1BeaconCommitteeData struct {
 func (x *ClientMeta_AdditionalEthV1BeaconCommitteeData) Reset() {
 	*x = ClientMeta_AdditionalEthV1BeaconCommitteeData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[57]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7108,7 +7208,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconCommitteeData) String() string {
 func (*ClientMeta_AdditionalEthV1BeaconCommitteeData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1BeaconCommitteeData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[57]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7121,7 +7221,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconCommitteeData) ProtoReflect() protorefl
 
 // Deprecated: Use ClientMeta_AdditionalEthV1BeaconCommitteeData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1BeaconCommitteeData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 29}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 30}
 }
 
 func (x *ClientMeta_AdditionalEthV1BeaconCommitteeData) GetEpoch() *EpochV2 {
@@ -7161,7 +7261,7 @@ type ClientMeta_AdditionalEthV1BeaconSyncCommitteeData struct {
 func (x *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) Reset() {
 	*x = ClientMeta_AdditionalEthV1BeaconSyncCommitteeData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[58]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7174,7 +7274,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) String() string {
 func (*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[58]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7187,7 +7287,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) ProtoReflect() proto
 
 // Deprecated: Use ClientMeta_AdditionalEthV1BeaconSyncCommitteeData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 30}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 31}
 }
 
 func (x *ClientMeta_AdditionalEthV1BeaconSyncCommitteeData) GetEpoch() *EpochV2 {
@@ -7220,7 +7320,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[59]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[60]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7233,7 +7333,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) String() string
 func (*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[59]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[60]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7246,7 +7346,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) ProtoReflect() 
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 31}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 32}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData) GetBlock() *BlockIdentifier {
@@ -7291,7 +7391,7 @@ type ClientMeta_AdditionalMempoolTransactionData struct {
 func (x *ClientMeta_AdditionalMempoolTransactionData) Reset() {
 	*x = ClientMeta_AdditionalMempoolTransactionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[60]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[61]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7304,7 +7404,7 @@ func (x *ClientMeta_AdditionalMempoolTransactionData) String() string {
 func (*ClientMeta_AdditionalMempoolTransactionData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalMempoolTransactionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[60]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[61]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7317,7 +7417,7 @@ func (x *ClientMeta_AdditionalMempoolTransactionData) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalMempoolTransactionData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalMempoolTransactionData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 32}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 33}
 }
 
 func (x *ClientMeta_AdditionalMempoolTransactionData) GetHash() string {
@@ -7427,7 +7527,7 @@ type ClientMeta_AdditionalMempoolTransactionV2Data struct {
 func (x *ClientMeta_AdditionalMempoolTransactionV2Data) Reset() {
 	*x = ClientMeta_AdditionalMempoolTransactionV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[61]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[62]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7440,7 +7540,7 @@ func (x *ClientMeta_AdditionalMempoolTransactionV2Data) String() string {
 func (*ClientMeta_AdditionalMempoolTransactionV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalMempoolTransactionV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[61]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[62]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7453,7 +7553,7 @@ func (x *ClientMeta_AdditionalMempoolTransactionV2Data) ProtoReflect() protorefl
 
 // Deprecated: Use ClientMeta_AdditionalMempoolTransactionV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalMempoolTransactionV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 33}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 34}
 }
 
 func (x *ClientMeta_AdditionalMempoolTransactionV2Data) GetHash() string {
@@ -7597,7 +7697,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[62]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[63]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7610,7 +7710,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockData) String() string {
 func (*ClientMeta_AdditionalEthV2BeaconBlockData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[62]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[63]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7623,7 +7723,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockData) ProtoReflect() protoreflect.
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 34}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 35}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockData) GetEpoch() *Epoch {
@@ -7700,7 +7800,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockV2Data struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockV2Data) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[63]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[64]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7713,7 +7813,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockV2Data) String() string {
 func (*ClientMeta_AdditionalEthV2BeaconBlockV2Data) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockV2Data) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[63]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[64]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7726,7 +7826,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockV2Data) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockV2Data.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockV2Data) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 35}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 36}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockV2Data) GetEpoch() *EpochV2 {
@@ -7812,7 +7912,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[64]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[65]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7825,7 +7925,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) String() str
 func (*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[64]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[65]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7838,7 +7938,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) ProtoReflect
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 36}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 37}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData) GetBlock() *BlockIdentifier {
@@ -7861,7 +7961,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[65]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[66]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7874,7 +7974,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) String() str
 func (*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[65]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[66]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7887,7 +7987,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) ProtoReflect
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 37}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 38}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData) GetBlock() *BlockIdentifier {
@@ -7910,7 +8010,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[66]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[67]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7923,7 +8023,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) String() string
 func (*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[66]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[67]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7936,7 +8036,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) ProtoReflect() 
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 38}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 39}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData) GetBlock() *BlockIdentifier {
@@ -7959,7 +8059,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockDepositData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockDepositData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockDepositData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[67]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[68]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7972,7 +8072,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockDepositData) String() string {
 func (*ClientMeta_AdditionalEthV2BeaconBlockDepositData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockDepositData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[67]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[68]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7985,7 +8085,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockDepositData) ProtoReflect() protor
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockDepositData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockDepositData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 39}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 40}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockDepositData) GetBlock() *BlockIdentifier {
@@ -8008,7 +8108,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[68]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[69]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8021,7 +8121,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) String()
 func (*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[68]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[69]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8034,7 +8134,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) ProtoRef
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 40}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 41}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData) GetBlock() *BlockIdentifier {
@@ -8067,7 +8167,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[69]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[70]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8080,7 +8180,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) String()
 func (*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[69]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[70]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8093,7 +8193,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) ProtoRef
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 41}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 42}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData) GetBlock() *BlockIdentifier {
@@ -8151,7 +8251,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[70]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[71]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8164,7 +8264,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) String() string {
 func (*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[70]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[71]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8177,7 +8277,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) ProtoReflect() pro
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 42}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 43}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData) GetBlock() *BlockIdentifier {
@@ -8206,7 +8306,7 @@ type ClientMeta_AttestationDataSnapshot struct {
 func (x *ClientMeta_AttestationDataSnapshot) Reset() {
 	*x = ClientMeta_AttestationDataSnapshot{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[71]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[72]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8219,7 +8319,7 @@ func (x *ClientMeta_AttestationDataSnapshot) String() string {
 func (*ClientMeta_AttestationDataSnapshot) ProtoMessage() {}
 
 func (x *ClientMeta_AttestationDataSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[71]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[72]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8232,7 +8332,7 @@ func (x *ClientMeta_AttestationDataSnapshot) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ClientMeta_AttestationDataSnapshot.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AttestationDataSnapshot) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 43}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 44}
 }
 
 func (x *ClientMeta_AttestationDataSnapshot) GetRequestedAtSlotStartDiffMs() *wrapperspb.UInt64Value {
@@ -8277,7 +8377,7 @@ type ClientMeta_AdditionalEthV1ValidatorAttestationDataData struct {
 func (x *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) Reset() {
 	*x = ClientMeta_AdditionalEthV1ValidatorAttestationDataData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[72]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8290,7 +8390,7 @@ func (x *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) String() string
 func (*ClientMeta_AdditionalEthV1ValidatorAttestationDataData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[72]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8303,7 +8403,7 @@ func (x *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) ProtoReflect() 
 
 // Deprecated: Use ClientMeta_AdditionalEthV1ValidatorAttestationDataData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1ValidatorAttestationDataData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 44}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 45}
 }
 
 func (x *ClientMeta_AdditionalEthV1ValidatorAttestationDataData) GetSource() *ClientMeta_AdditionalEthV1AttestationSourceV2Data {
@@ -8358,7 +8458,7 @@ type ClientMeta_AdditionalEthV1EventsBlobSidecarData struct {
 func (x *ClientMeta_AdditionalEthV1EventsBlobSidecarData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsBlobSidecarData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[73]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8371,7 +8471,7 @@ func (x *ClientMeta_AdditionalEthV1EventsBlobSidecarData) String() string {
 func (*ClientMeta_AdditionalEthV1EventsBlobSidecarData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsBlobSidecarData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[73]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8384,7 +8484,7 @@ func (x *ClientMeta_AdditionalEthV1EventsBlobSidecarData) ProtoReflect() protore
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsBlobSidecarData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsBlobSidecarData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 45}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 46}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsBlobSidecarData) GetEpoch() *EpochV2 {
@@ -8425,7 +8525,7 @@ type ClientMeta_AdditionalEthV1EventsDataColumnSidecarData struct {
 func (x *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) Reset() {
 	*x = ClientMeta_AdditionalEthV1EventsDataColumnSidecarData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[74]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[75]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8438,7 +8538,7 @@ func (x *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) String() string 
 func (*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[74]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[75]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8451,7 +8551,7 @@ func (x *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) ProtoReflect() p
 
 // Deprecated: Use ClientMeta_AdditionalEthV1EventsDataColumnSidecarData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 46}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 47}
 }
 
 func (x *ClientMeta_AdditionalEthV1EventsDataColumnSidecarData) GetEpoch() *EpochV2 {
@@ -8495,7 +8595,7 @@ type ClientMeta_AdditionalEthV1BeaconBlobSidecarData struct {
 func (x *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) Reset() {
 	*x = ClientMeta_AdditionalEthV1BeaconBlobSidecarData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[75]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8508,7 +8608,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) String() string {
 func (*ClientMeta_AdditionalEthV1BeaconBlobSidecarData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[75]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8521,7 +8621,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) ProtoReflect() protore
 
 // Deprecated: Use ClientMeta_AdditionalEthV1BeaconBlobSidecarData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1BeaconBlobSidecarData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 47}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 48}
 }
 
 func (x *ClientMeta_AdditionalEthV1BeaconBlobSidecarData) GetEpoch() *EpochV2 {
@@ -8590,7 +8690,7 @@ type ClientMeta_AdditionalBeaconP2PAttestationData struct {
 func (x *ClientMeta_AdditionalBeaconP2PAttestationData) Reset() {
 	*x = ClientMeta_AdditionalBeaconP2PAttestationData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[76]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8603,7 +8703,7 @@ func (x *ClientMeta_AdditionalBeaconP2PAttestationData) String() string {
 func (*ClientMeta_AdditionalBeaconP2PAttestationData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalBeaconP2PAttestationData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[76]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8616,7 +8716,7 @@ func (x *ClientMeta_AdditionalBeaconP2PAttestationData) ProtoReflect() protorefl
 
 // Deprecated: Use ClientMeta_AdditionalBeaconP2PAttestationData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalBeaconP2PAttestationData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 48}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 49}
 }
 
 func (x *ClientMeta_AdditionalBeaconP2PAttestationData) GetSource() *ClientMeta_AdditionalEthV1AttestationSourceV2Data {
@@ -8700,7 +8800,7 @@ type ClientMeta_AdditionalEthV1ProposerDutyData struct {
 func (x *ClientMeta_AdditionalEthV1ProposerDutyData) Reset() {
 	*x = ClientMeta_AdditionalEthV1ProposerDutyData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[77]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[78]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8713,7 +8813,7 @@ func (x *ClientMeta_AdditionalEthV1ProposerDutyData) String() string {
 func (*ClientMeta_AdditionalEthV1ProposerDutyData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1ProposerDutyData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[77]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[78]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8726,7 +8826,7 @@ func (x *ClientMeta_AdditionalEthV1ProposerDutyData) ProtoReflect() protoreflect
 
 // Deprecated: Use ClientMeta_AdditionalEthV1ProposerDutyData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1ProposerDutyData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 49}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 50}
 }
 
 func (x *ClientMeta_AdditionalEthV1ProposerDutyData) GetEpoch() *EpochV2 {
@@ -8774,7 +8874,7 @@ type ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData struct {
 func (x *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Reset() {
 	*x = ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[78]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[79]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8787,7 +8887,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) String(
 func (*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[78]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[79]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8800,7 +8900,7 @@ func (x *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) ProtoRe
 
 // Deprecated: Use ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 50}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 51}
 }
 
 func (x *ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData) GetBlock() *BlockIdentifier {
@@ -8857,7 +8957,7 @@ type ClientMeta_AdditionalLibP2PTraceAddPeerData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceAddPeerData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceAddPeerData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[79]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[80]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8870,7 +8970,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceAddPeerData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceAddPeerData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceAddPeerData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[79]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[80]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8883,7 +8983,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceAddPeerData) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceAddPeerData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceAddPeerData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 51}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 52}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceAddPeerData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -8905,7 +9005,7 @@ type ClientMeta_AdditionalLibP2PTraceRemovePeerData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRemovePeerData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRemovePeerData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[80]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[81]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8918,7 +9018,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRemovePeerData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceRemovePeerData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRemovePeerData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[80]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[81]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8931,7 +9031,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRemovePeerData) ProtoReflect() protoref
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRemovePeerData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRemovePeerData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 52}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 53}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRemovePeerData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -8953,7 +9053,7 @@ type ClientMeta_AdditionalLibP2PTraceRecvRPCData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRecvRPCData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRecvRPCData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[81]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[82]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8966,7 +9066,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRecvRPCData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceRecvRPCData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRecvRPCData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[81]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[82]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8979,7 +9079,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRecvRPCData) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRecvRPCData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRecvRPCData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 53}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 54}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRecvRPCData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9001,7 +9101,7 @@ type ClientMeta_AdditionalLibP2PTraceSendRPCData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceSendRPCData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceSendRPCData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[82]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[83]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9014,7 +9114,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceSendRPCData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceSendRPCData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceSendRPCData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[82]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[83]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9027,7 +9127,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceSendRPCData) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceSendRPCData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceSendRPCData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 54}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 55}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceSendRPCData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9049,7 +9149,7 @@ type ClientMeta_AdditionalLibP2PTraceDropRPCData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceDropRPCData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceDropRPCData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[83]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[84]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9062,7 +9162,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDropRPCData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceDropRPCData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceDropRPCData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[83]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[84]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9075,7 +9175,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDropRPCData) ProtoReflect() protoreflec
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceDropRPCData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceDropRPCData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 55}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 56}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceDropRPCData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9097,7 +9197,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[84]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[85]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9110,7 +9210,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) String() strin
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[84]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[85]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9123,7 +9223,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 56}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 57}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9145,7 +9245,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[85]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[86]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9158,7 +9258,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) String() strin
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[85]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[86]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9171,7 +9271,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 57}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 58}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9193,7 +9293,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[86]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[87]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9206,7 +9306,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) String() s
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[86]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[87]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9219,7 +9319,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) ProtoRefle
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 58}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 59}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9241,7 +9341,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[87]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[88]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9254,7 +9354,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) String() strin
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[87]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[88]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9267,7 +9367,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 59}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 60}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9289,7 +9389,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[88]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[89]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9302,7 +9402,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) String() strin
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[88]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[89]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9315,7 +9415,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 60}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 61}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9337,7 +9437,7 @@ type ClientMeta_AdditionalLibP2PTraceJoinData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceJoinData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceJoinData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[89]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[90]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9350,7 +9450,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceJoinData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceJoinData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceJoinData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[89]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[90]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9363,7 +9463,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceJoinData) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceJoinData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceJoinData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 61}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 62}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceJoinData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9385,7 +9485,7 @@ type ClientMeta_AdditionalLibP2PTraceLeaveData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceLeaveData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceLeaveData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[90]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[91]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9398,7 +9498,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceLeaveData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceLeaveData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceLeaveData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[90]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[91]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9411,7 +9511,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceLeaveData) ProtoReflect() protoreflect.
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceLeaveData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceLeaveData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 62}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 63}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceLeaveData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9433,7 +9533,7 @@ type ClientMeta_AdditionalLibP2PTraceGraftData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGraftData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGraftData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[91]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[92]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9446,7 +9546,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGraftData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceGraftData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGraftData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[91]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[92]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9459,7 +9559,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGraftData) ProtoReflect() protoreflect.
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGraftData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGraftData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 63}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 64}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGraftData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9481,7 +9581,7 @@ type ClientMeta_AdditionalLibP2PTracePruneData struct {
 func (x *ClientMeta_AdditionalLibP2PTracePruneData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTracePruneData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[92]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[93]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9494,7 +9594,7 @@ func (x *ClientMeta_AdditionalLibP2PTracePruneData) String() string {
 func (*ClientMeta_AdditionalLibP2PTracePruneData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTracePruneData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[92]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[93]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9507,7 +9607,7 @@ func (x *ClientMeta_AdditionalLibP2PTracePruneData) ProtoReflect() protoreflect.
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTracePruneData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTracePruneData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 64}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 65}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTracePruneData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9529,7 +9629,7 @@ type ClientMeta_AdditionalLibP2PTraceDuplicateMessageData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceDuplicateMessageData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[93]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[94]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9542,7 +9642,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[93]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[94]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9555,7 +9655,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) ProtoReflect() pr
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceDuplicateMessageData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 65}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 66}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9577,7 +9677,7 @@ type ClientMeta_AdditionalLibP2PTraceDeliverMessageData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceDeliverMessageData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[94]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[95]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9590,7 +9690,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceDeliverMessageData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[94]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[95]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9603,7 +9703,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) ProtoReflect() prot
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceDeliverMessageData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceDeliverMessageData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 66}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 67}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9625,7 +9725,7 @@ type ClientMeta_AdditionalLibP2PTracePublishMessageData struct {
 func (x *ClientMeta_AdditionalLibP2PTracePublishMessageData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTracePublishMessageData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[95]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[96]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9638,7 +9738,7 @@ func (x *ClientMeta_AdditionalLibP2PTracePublishMessageData) String() string {
 func (*ClientMeta_AdditionalLibP2PTracePublishMessageData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTracePublishMessageData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[95]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[96]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9651,7 +9751,7 @@ func (x *ClientMeta_AdditionalLibP2PTracePublishMessageData) ProtoReflect() prot
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTracePublishMessageData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTracePublishMessageData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 67}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 68}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTracePublishMessageData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9673,7 +9773,7 @@ type ClientMeta_AdditionalLibP2PTraceRejectMessageData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRejectMessageData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRejectMessageData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[96]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[97]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9686,7 +9786,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRejectMessageData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceRejectMessageData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRejectMessageData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[96]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[97]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9699,7 +9799,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRejectMessageData) ProtoReflect() proto
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRejectMessageData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRejectMessageData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 68}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 69}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRejectMessageData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9721,7 +9821,7 @@ type ClientMeta_AdditionalLibP2PTraceConnectedData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceConnectedData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceConnectedData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[97]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[98]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9734,7 +9834,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceConnectedData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceConnectedData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceConnectedData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[97]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[98]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9747,7 +9847,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceConnectedData) ProtoReflect() protorefl
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceConnectedData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceConnectedData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 69}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 70}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceConnectedData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9769,7 +9869,7 @@ type ClientMeta_AdditionalLibP2PTraceDisconnectedData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceDisconnectedData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceDisconnectedData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[98]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[99]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9782,7 +9882,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDisconnectedData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceDisconnectedData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceDisconnectedData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[98]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[99]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9795,7 +9895,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceDisconnectedData) ProtoReflect() protor
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceDisconnectedData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceDisconnectedData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 70}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 71}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceDisconnectedData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9817,7 +9917,7 @@ type ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[99]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[100]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9830,7 +9930,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) String() string
 func (*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[99]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[100]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9843,7 +9943,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ProtoReflect() 
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 71}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 72}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9865,7 +9965,7 @@ type ClientMeta_AdditionalLibP2PTraceHandleMetadataData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceHandleMetadataData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[100]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[101]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9878,7 +9978,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceHandleMetadataData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[100]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[101]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9891,7 +9991,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) ProtoReflect() prot
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceHandleMetadataData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceHandleMetadataData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 72}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 73}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9913,7 +10013,7 @@ type ClientMeta_AdditionalLibP2PTraceHandleStatusData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceHandleStatusData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceHandleStatusData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[101]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[102]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9926,7 +10026,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceHandleStatusData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceHandleStatusData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceHandleStatusData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[101]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[102]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9939,7 +10039,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceHandleStatusData) ProtoReflect() protor
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceHandleStatusData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceHandleStatusData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 73}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 74}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceHandleStatusData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -9960,7 +10060,7 @@ type ClientMeta_AdditionalLibP2PTraceIdentifyData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceIdentifyData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceIdentifyData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[102]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[103]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9973,7 +10073,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceIdentifyData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceIdentifyData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceIdentifyData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[102]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[103]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9986,7 +10086,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceIdentifyData) ProtoReflect() protorefle
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceIdentifyData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceIdentifyData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 74}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 75}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceIdentifyData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -10016,7 +10116,7 @@ type ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[103]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[104]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10029,7 +10129,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) String()
 func (*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[103]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[104]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10042,7 +10142,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) ProtoRef
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 75}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 76}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -10092,7 +10192,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[104]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[105]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10105,7 +10205,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) String() strin
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[104]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[105]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10118,7 +10218,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) ProtoReflect()
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 76}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 77}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -10140,7 +10240,7 @@ type ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[105]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[106]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10153,7 +10253,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) String() string {
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[105]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[106]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10166,7 +10266,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) ProtoReflect() prot
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 77}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 78}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) GetMetadata() *libp2p.TraceEventMetadata {
@@ -10205,7 +10305,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[106]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[107]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10218,7 +10318,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) String() stri
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[106]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[107]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10231,7 +10331,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) ProtoReflect(
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 78}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 79}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) GetEpoch() *EpochV2 {
@@ -10309,7 +10409,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData struct
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[107]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[108]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10322,7 +10422,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) S
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[107]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[108]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10335,7 +10435,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) P
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 79}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 80}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData) GetEpoch() *EpochV2 {
@@ -10357,7 +10457,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData struct
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[108]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[109]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10370,7 +10470,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) S
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[108]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[109]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10383,7 +10483,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) P
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 80}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 81}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData) GetEpoch() *EpochV2 {
@@ -10430,7 +10530,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[109]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[110]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10443,7 +10543,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) String(
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[109]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[110]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10456,7 +10556,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) ProtoRe
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 81}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 82}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) GetSource() *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData {
@@ -10573,7 +10673,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[110]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[111]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10586,7 +10686,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) String(
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[110]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[111]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10599,7 +10699,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) ProtoRe
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 82}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 83}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) GetEpoch() *EpochV2 {
@@ -10700,7 +10800,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[111]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[112]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10713,7 +10813,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) String() stri
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[111]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[112]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10726,7 +10826,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) ProtoReflect(
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 83}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 84}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) GetEpoch() *EpochV2 {
@@ -10820,7 +10920,7 @@ type ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData struct {
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Reset() {
 	*x = ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[112]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[113]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10833,7 +10933,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) String(
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[112]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[113]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10846,7 +10946,7 @@ func (x *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) ProtoRe
 
 // Deprecated: Use ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 84}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 85}
 }
 
 func (x *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) GetEpoch() *EpochV2 {
@@ -10924,7 +11024,7 @@ type ClientMeta_AdditionalEthV1ValidatorsData struct {
 func (x *ClientMeta_AdditionalEthV1ValidatorsData) Reset() {
 	*x = ClientMeta_AdditionalEthV1ValidatorsData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[113]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[114]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10937,7 +11037,7 @@ func (x *ClientMeta_AdditionalEthV1ValidatorsData) String() string {
 func (*ClientMeta_AdditionalEthV1ValidatorsData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1ValidatorsData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[113]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[114]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10950,7 +11050,7 @@ func (x *ClientMeta_AdditionalEthV1ValidatorsData) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ClientMeta_AdditionalEthV1ValidatorsData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1ValidatorsData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 85}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 86}
 }
 
 func (x *ClientMeta_AdditionalEthV1ValidatorsData) GetEpoch() *EpochV2 {
@@ -10985,7 +11085,7 @@ type ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData struct {
 func (x *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Reset() {
 	*x = ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[114]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[115]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10998,7 +11098,7 @@ func (x *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) String
 func (*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[114]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[115]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11011,7 +11111,7 @@ func (x *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) ProtoR
 
 // Deprecated: Use ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 86}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 87}
 }
 
 func (x *ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData) GetRelay() *mevrelay.Relay {
@@ -11088,7 +11188,7 @@ type ClientMeta_AdditionalMevRelayPayloadDeliveredData struct {
 func (x *ClientMeta_AdditionalMevRelayPayloadDeliveredData) Reset() {
 	*x = ClientMeta_AdditionalMevRelayPayloadDeliveredData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[115]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[116]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11101,7 +11201,7 @@ func (x *ClientMeta_AdditionalMevRelayPayloadDeliveredData) String() string {
 func (*ClientMeta_AdditionalMevRelayPayloadDeliveredData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalMevRelayPayloadDeliveredData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[115]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[116]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11114,7 +11214,7 @@ func (x *ClientMeta_AdditionalMevRelayPayloadDeliveredData) ProtoReflect() proto
 
 // Deprecated: Use ClientMeta_AdditionalMevRelayPayloadDeliveredData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalMevRelayPayloadDeliveredData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 87}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 88}
 }
 
 func (x *ClientMeta_AdditionalMevRelayPayloadDeliveredData) GetRelay() *mevrelay.Relay {
@@ -11203,7 +11303,7 @@ type ClientMeta_AdditionalEthV3ValidatorBlockData struct {
 func (x *ClientMeta_AdditionalEthV3ValidatorBlockData) Reset() {
 	*x = ClientMeta_AdditionalEthV3ValidatorBlockData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[116]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[117]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11216,7 +11316,7 @@ func (x *ClientMeta_AdditionalEthV3ValidatorBlockData) String() string {
 func (*ClientMeta_AdditionalEthV3ValidatorBlockData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV3ValidatorBlockData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[116]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[117]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11229,7 +11329,7 @@ func (x *ClientMeta_AdditionalEthV3ValidatorBlockData) ProtoReflect() protorefle
 
 // Deprecated: Use ClientMeta_AdditionalEthV3ValidatorBlockData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV3ValidatorBlockData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 88}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 89}
 }
 
 func (x *ClientMeta_AdditionalEthV3ValidatorBlockData) GetEpoch() *EpochV2 {
@@ -11339,7 +11439,7 @@ type ClientMeta_AdditionalMevRelayValidatorRegistrationData struct {
 func (x *ClientMeta_AdditionalMevRelayValidatorRegistrationData) Reset() {
 	*x = ClientMeta_AdditionalMevRelayValidatorRegistrationData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[117]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[118]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11352,7 +11452,7 @@ func (x *ClientMeta_AdditionalMevRelayValidatorRegistrationData) String() string
 func (*ClientMeta_AdditionalMevRelayValidatorRegistrationData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalMevRelayValidatorRegistrationData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[117]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[118]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11365,7 +11465,7 @@ func (x *ClientMeta_AdditionalMevRelayValidatorRegistrationData) ProtoReflect() 
 
 // Deprecated: Use ClientMeta_AdditionalMevRelayValidatorRegistrationData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalMevRelayValidatorRegistrationData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 89}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 90}
 }
 
 func (x *ClientMeta_AdditionalMevRelayValidatorRegistrationData) GetRelay() *mevrelay.Relay {
@@ -11427,7 +11527,7 @@ type ClientMeta_AdditionalNodeRecordConsensusData struct {
 func (x *ClientMeta_AdditionalNodeRecordConsensusData) Reset() {
 	*x = ClientMeta_AdditionalNodeRecordConsensusData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[118]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[119]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11440,7 +11540,7 @@ func (x *ClientMeta_AdditionalNodeRecordConsensusData) String() string {
 func (*ClientMeta_AdditionalNodeRecordConsensusData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalNodeRecordConsensusData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[118]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[119]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11453,7 +11553,7 @@ func (x *ClientMeta_AdditionalNodeRecordConsensusData) ProtoReflect() protorefle
 
 // Deprecated: Use ClientMeta_AdditionalNodeRecordConsensusData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalNodeRecordConsensusData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 90}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 91}
 }
 
 func (x *ClientMeta_AdditionalNodeRecordConsensusData) GetFinalizedEpoch() *EpochV2 {
@@ -11493,7 +11593,7 @@ type ClientMeta_AdditionalConsensusEngineAPINewPayloadData struct {
 func (x *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) Reset() {
 	*x = ClientMeta_AdditionalConsensusEngineAPINewPayloadData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[119]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[120]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11506,7 +11606,7 @@ func (x *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) String() string 
 func (*ClientMeta_AdditionalConsensusEngineAPINewPayloadData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[119]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[120]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11519,7 +11619,7 @@ func (x *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) ProtoReflect() p
 
 // Deprecated: Use ClientMeta_AdditionalConsensusEngineAPINewPayloadData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalConsensusEngineAPINewPayloadData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 91}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 92}
 }
 
 func (x *ClientMeta_AdditionalConsensusEngineAPINewPayloadData) GetEpoch() *EpochV2 {
@@ -11552,7 +11652,7 @@ type ClientMeta_AdditionalConsensusEngineAPIGetBlobsData struct {
 func (x *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) Reset() {
 	*x = ClientMeta_AdditionalConsensusEngineAPIGetBlobsData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[120]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[121]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11565,7 +11665,7 @@ func (x *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) String() string {
 func (*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[120]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[121]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11578,7 +11678,7 @@ func (x *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) ProtoReflect() pro
 
 // Deprecated: Use ClientMeta_AdditionalConsensusEngineAPIGetBlobsData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 92}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 93}
 }
 
 func (x *ClientMeta_AdditionalConsensusEngineAPIGetBlobsData) GetEpoch() *EpochV2 {
@@ -11611,7 +11711,7 @@ type ClientMeta_AdditionalEthV1BeaconBlobData struct {
 func (x *ClientMeta_AdditionalEthV1BeaconBlobData) Reset() {
 	*x = ClientMeta_AdditionalEthV1BeaconBlobData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[121]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[122]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11624,7 +11724,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconBlobData) String() string {
 func (*ClientMeta_AdditionalEthV1BeaconBlobData) ProtoMessage() {}
 
 func (x *ClientMeta_AdditionalEthV1BeaconBlobData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[121]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[122]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11637,7 +11737,7 @@ func (x *ClientMeta_AdditionalEthV1BeaconBlobData) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ClientMeta_AdditionalEthV1BeaconBlobData.ProtoReflect.Descriptor instead.
 func (*ClientMeta_AdditionalEthV1BeaconBlobData) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 93}
+	return file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP(), []int{22, 94}
 }
 
 func (x *ClientMeta_AdditionalEthV1BeaconBlobData) GetEpoch() *EpochV2 {
@@ -11668,7 +11768,7 @@ type ClientMeta_Ethereum_Network struct {
 func (x *ClientMeta_Ethereum_Network) Reset() {
 	*x = ClientMeta_Ethereum_Network{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[122]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[123]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11681,7 +11781,7 @@ func (x *ClientMeta_Ethereum_Network) String() string {
 func (*ClientMeta_Ethereum_Network) ProtoMessage() {}
 
 func (x *ClientMeta_Ethereum_Network) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[122]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[123]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11733,7 +11833,7 @@ type ClientMeta_Ethereum_Execution struct {
 func (x *ClientMeta_Ethereum_Execution) Reset() {
 	*x = ClientMeta_Ethereum_Execution{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[123]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[124]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11746,7 +11846,7 @@ func (x *ClientMeta_Ethereum_Execution) String() string {
 func (*ClientMeta_Ethereum_Execution) ProtoMessage() {}
 
 func (x *ClientMeta_Ethereum_Execution) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[123]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[124]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11818,7 +11918,7 @@ type ClientMeta_Ethereum_Consensus struct {
 func (x *ClientMeta_Ethereum_Consensus) Reset() {
 	*x = ClientMeta_Ethereum_Consensus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[124]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[125]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11831,7 +11931,7 @@ func (x *ClientMeta_Ethereum_Consensus) String() string {
 func (*ClientMeta_Ethereum_Consensus) ProtoMessage() {}
 
 func (x *ClientMeta_Ethereum_Consensus) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[124]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[125]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11873,7 +11973,7 @@ type ServerMeta_Event struct {
 func (x *ServerMeta_Event) Reset() {
 	*x = ServerMeta_Event{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[125]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[126]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11886,7 +11986,7 @@ func (x *ServerMeta_Event) String() string {
 func (*ServerMeta_Event) ProtoMessage() {}
 
 func (x *ServerMeta_Event) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[125]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[126]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11941,7 +12041,7 @@ type ServerMeta_Geo struct {
 func (x *ServerMeta_Geo) Reset() {
 	*x = ServerMeta_Geo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[126]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[127]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11954,7 +12054,7 @@ func (x *ServerMeta_Geo) String() string {
 func (*ServerMeta_Geo) ProtoMessage() {}
 
 func (x *ServerMeta_Geo) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[126]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[127]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12047,7 +12147,7 @@ type ServerMeta_Client struct {
 func (x *ServerMeta_Client) Reset() {
 	*x = ServerMeta_Client{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[127]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[128]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12060,7 +12160,7 @@ func (x *ServerMeta_Client) String() string {
 func (*ServerMeta_Client) ProtoMessage() {}
 
 func (x *ServerMeta_Client) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[127]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[128]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12116,7 +12216,7 @@ type ServerMeta_Peer struct {
 func (x *ServerMeta_Peer) Reset() {
 	*x = ServerMeta_Peer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[128]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[129]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12129,7 +12229,7 @@ func (x *ServerMeta_Peer) String() string {
 func (*ServerMeta_Peer) ProtoMessage() {}
 
 func (x *ServerMeta_Peer) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[128]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[129]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12163,7 +12263,7 @@ type ServerMeta_AdditionalBeaconP2PAttestationData struct {
 func (x *ServerMeta_AdditionalBeaconP2PAttestationData) Reset() {
 	*x = ServerMeta_AdditionalBeaconP2PAttestationData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[129]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[130]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12176,7 +12276,7 @@ func (x *ServerMeta_AdditionalBeaconP2PAttestationData) String() string {
 func (*ServerMeta_AdditionalBeaconP2PAttestationData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalBeaconP2PAttestationData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[129]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[130]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12210,7 +12310,7 @@ type ServerMeta_AdditionalLibp2PTraceConnectedData struct {
 func (x *ServerMeta_AdditionalLibp2PTraceConnectedData) Reset() {
 	*x = ServerMeta_AdditionalLibp2PTraceConnectedData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[130]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[131]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12223,7 +12323,7 @@ func (x *ServerMeta_AdditionalLibp2PTraceConnectedData) String() string {
 func (*ServerMeta_AdditionalLibp2PTraceConnectedData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalLibp2PTraceConnectedData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[130]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[131]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12257,7 +12357,7 @@ type ServerMeta_AdditionalLibp2PTraceDisconnectedData struct {
 func (x *ServerMeta_AdditionalLibp2PTraceDisconnectedData) Reset() {
 	*x = ServerMeta_AdditionalLibp2PTraceDisconnectedData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[131]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[132]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12270,7 +12370,7 @@ func (x *ServerMeta_AdditionalLibp2PTraceDisconnectedData) String() string {
 func (*ServerMeta_AdditionalLibp2PTraceDisconnectedData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalLibp2PTraceDisconnectedData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[131]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[132]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12304,7 +12404,7 @@ type ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData struct {
 func (x *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) Reset() {
 	*x = ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[132]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[133]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12317,7 +12417,7 @@ func (x *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) String() string
 func (*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[132]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[133]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12351,7 +12451,7 @@ type ServerMeta_AdditionalLibp2PTraceIdentifyData struct {
 func (x *ServerMeta_AdditionalLibp2PTraceIdentifyData) Reset() {
 	*x = ServerMeta_AdditionalLibp2PTraceIdentifyData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[133]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[134]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12364,7 +12464,7 @@ func (x *ServerMeta_AdditionalLibp2PTraceIdentifyData) String() string {
 func (*ServerMeta_AdditionalLibp2PTraceIdentifyData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalLibp2PTraceIdentifyData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[133]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[134]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12398,7 +12498,7 @@ type ServerMeta_AdditionalNodeRecordConsensusData struct {
 func (x *ServerMeta_AdditionalNodeRecordConsensusData) Reset() {
 	*x = ServerMeta_AdditionalNodeRecordConsensusData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[134]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[135]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12411,7 +12511,7 @@ func (x *ServerMeta_AdditionalNodeRecordConsensusData) String() string {
 func (*ServerMeta_AdditionalNodeRecordConsensusData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalNodeRecordConsensusData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[134]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[135]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12445,7 +12545,7 @@ type ServerMeta_AdditionalNodeRecordExecutionData struct {
 func (x *ServerMeta_AdditionalNodeRecordExecutionData) Reset() {
 	*x = ServerMeta_AdditionalNodeRecordExecutionData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[135]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[136]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12458,7 +12558,7 @@ func (x *ServerMeta_AdditionalNodeRecordExecutionData) String() string {
 func (*ServerMeta_AdditionalNodeRecordExecutionData) ProtoMessage() {}
 
 func (x *ServerMeta_AdditionalNodeRecordExecutionData) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[135]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[136]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12500,7 +12600,7 @@ type ExecutionBlockMetrics_StateReads struct {
 func (x *ExecutionBlockMetrics_StateReads) Reset() {
 	*x = ExecutionBlockMetrics_StateReads{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[136]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[137]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12513,7 +12613,7 @@ func (x *ExecutionBlockMetrics_StateReads) String() string {
 func (*ExecutionBlockMetrics_StateReads) ProtoMessage() {}
 
 func (x *ExecutionBlockMetrics_StateReads) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[136]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[137]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12580,7 +12680,7 @@ type ExecutionBlockMetrics_StateWrites struct {
 func (x *ExecutionBlockMetrics_StateWrites) Reset() {
 	*x = ExecutionBlockMetrics_StateWrites{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[137]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[138]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12593,7 +12693,7 @@ func (x *ExecutionBlockMetrics_StateWrites) String() string {
 func (*ExecutionBlockMetrics_StateWrites) ProtoMessage() {}
 
 func (x *ExecutionBlockMetrics_StateWrites) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[137]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[138]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12668,7 +12768,7 @@ type ExecutionBlockMetrics_CacheEntry struct {
 func (x *ExecutionBlockMetrics_CacheEntry) Reset() {
 	*x = ExecutionBlockMetrics_CacheEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[138]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[139]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12681,7 +12781,7 @@ func (x *ExecutionBlockMetrics_CacheEntry) String() string {
 func (*ExecutionBlockMetrics_CacheEntry) ProtoMessage() {}
 
 func (x *ExecutionBlockMetrics_CacheEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[138]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[139]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12739,7 +12839,7 @@ type ExecutionBlockMetrics_CodeCacheEntry struct {
 func (x *ExecutionBlockMetrics_CodeCacheEntry) Reset() {
 	*x = ExecutionBlockMetrics_CodeCacheEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[139]
+		mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[140]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12752,7 +12852,7 @@ func (x *ExecutionBlockMetrics_CodeCacheEntry) String() string {
 func (*ExecutionBlockMetrics_CodeCacheEntry) ProtoMessage() {}
 
 func (x *ExecutionBlockMetrics_CodeCacheEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[139]
+	mi := &file_pkg_proto_xatu_event_ingester_proto_msgTypes[140]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13193,7 +13293,7 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
 	0x55, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x15, 0x72, 0x65, 0x74,
 	0x75, 0x72, 0x6e, 0x65, 0x64, 0x5f, 0x62, 0x6c, 0x6f, 0x62, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78,
-	0x65, 0x73, 0x22, 0xb7, 0xf1, 0x01, 0x0a, 0x0a, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65,
+	0x65, 0x73, 0x22, 0xf7, 0xf3, 0x01, 0x0a, 0x0a, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65,
 	0x74, 0x61, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
 	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
@@ -13895,163 +13995,183 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x6c, 0x4c, 0x69, 0x62, 0x50, 0x32, 0x50, 0x54, 0x72, 0x61, 0x63, 0x65, 0x49, 0x64, 0x65, 0x6e,
 	0x74, 0x69, 0x66, 0x79, 0x44, 0x61, 0x74, 0x61, 0x48, 0x00, 0x52, 0x15, 0x4c, 0x49, 0x42, 0x50,
 	0x32, 0x50, 0x5f, 0x54, 0x52, 0x41, 0x43, 0x45, 0x5f, 0x49, 0x44, 0x45, 0x4e, 0x54, 0x49, 0x46,
-	0x59, 0x12, 0x32, 0x0a, 0x0b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65,
-	0x18, 0x3f, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x4d, 0x6f,
-	0x64, 0x75, 0x6c, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x0b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x70, 0x72, 0x65, 0x73, 0x65, 0x74, 0x5f,
-	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x40, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x70, 0x72, 0x65, 0x73,
-	0x65, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x1a, 0xb5, 0x04, 0x0a, 0x08, 0x45, 0x74, 0x68, 0x65,
-	0x72, 0x65, 0x75, 0x6d, 0x12, 0x3b, 0x0a, 0x07, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69,
-	0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d,
-	0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x52, 0x07, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
-	0x6b, 0x12, 0x41, 0x0a, 0x09, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65,
-	0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x2e,
-	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x65, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75,
-	0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43,
-	0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65,
-	0x75, 0x6d, 0x2e, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x09, 0x63, 0x6f,
-	0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x1a, 0x2d, 0x0a, 0x07, 0x4e, 0x65, 0x74, 0x77, 0x6f,
-	0x72, 0x6b, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x1a, 0xe7, 0x01, 0x0a, 0x09, 0x45, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x26, 0x0a, 0x07, 0x66, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x46, 0x6f, 0x72,
-	0x6b, 0x49, 0x44, 0x52, 0x07, 0x66, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x64, 0x12, 0x26, 0x0a, 0x0e,
-	0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24,
-	0x0a, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d,
-	0x61, 0x6a, 0x6f, 0x72, 0x12, 0x24, 0x0a, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
-	0x6d, 0x69, 0x6e, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x76, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x69, 0x6e, 0x6f, 0x72, 0x12, 0x24, 0x0a, 0x0d, 0x76, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x74, 0x63, 0x68, 0x18, 0x06, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x74, 0x63, 0x68,
-	0x1a, 0x4d, 0x0a, 0x09, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x12, 0x26, 0x0a,
-	0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x1a,
-	0x39, 0x0a, 0x0b, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10,
-	0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79,
-	0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x1a, 0x49, 0x0a, 0x24, 0x41, 0x64,
+	0x59, 0x12, 0x91, 0x01, 0x0a, 0x1f, 0x65, 0x74, 0x68, 0x5f, 0x76, 0x31, 0x5f, 0x65, 0x76, 0x65,
+	0x6e, 0x74, 0x73, 0x5f, 0x66, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x5f, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x78, 0x61,
+	0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64,
+	0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x73, 0x46, 0x61, 0x73, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x48, 0x00, 0x52, 0x2a, 0x42, 0x45, 0x41, 0x43, 0x4f,
+	0x4e, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x45, 0x54, 0x48, 0x5f, 0x56, 0x31, 0x5f, 0x45, 0x56, 0x45,
+	0x4e, 0x54, 0x53, 0x5f, 0x46, 0x41, 0x53, 0x54, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x52, 0x4d,
+	0x41, 0x54, 0x49, 0x4f, 0x4e, 0x12, 0x32, 0x0a, 0x0b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x3f, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x0b, 0x6d, 0x6f,
+	0x64, 0x75, 0x6c, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x70, 0x72, 0x65,
+	0x73, 0x65, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x40, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x70, 0x72, 0x65, 0x73, 0x65, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x1a, 0xb5, 0x04, 0x0a, 0x08,
+	0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x12, 0x3b, 0x0a, 0x07, 0x6e, 0x65, 0x74, 0x77,
+	0x6f, 0x72, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65,
+	0x72, 0x65, 0x75, 0x6d, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x52, 0x07, 0x6e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x12, 0x41, 0x0a, 0x09, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65, 0x72,
+	0x65, 0x75, 0x6d, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x65,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x73,
+	0x65, 0x6e, 0x73, 0x75, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x78, 0x61,
+	0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x45, 0x74,
+	0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x2e, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73,
+	0x52, 0x09, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x1a, 0x2d, 0x0a, 0x07, 0x4e,
+	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x1a, 0xe7, 0x01, 0x0a, 0x09, 0x45,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x26, 0x0a, 0x07, 0x66, 0x6f, 0x72, 0x6b,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x46, 0x6f, 0x72, 0x6b, 0x49, 0x44, 0x52, 0x07, 0x66, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x64,
+	0x12, 0x26, 0x0a, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61,
+	0x6a, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x12, 0x24, 0x0a, 0x0d, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x69, 0x6e, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x69, 0x6e, 0x6f, 0x72, 0x12, 0x24,
+	0x0a, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x74, 0x63, 0x68, 0x18,
+	0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x70,
+	0x61, 0x74, 0x63, 0x68, 0x1a, 0x4d, 0x0a, 0x09, 0x43, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75,
+	0x73, 0x12, 0x26, 0x0a, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x6d, 0x70, 0x6c, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x1a, 0x39, 0x0a, 0x0b, 0x4c, 0x61, 0x62, 0x65, 0x6c, 0x73, 0x45, 0x6e, 0x74,
+	0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x1a, 0x49,
+	0x0a, 0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56,
+	0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x44, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f,
+	0x63, 0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x1a, 0x4d, 0x0a, 0x26, 0x41, 0x64, 0x64,
+	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65,
+	0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x32, 0x44,
+	0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56,
+	0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x1a, 0x49, 0x0a, 0x24, 0x41, 0x64, 0x64, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73,
+	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61,
+	0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x52, 0x05, 0x65, 0x70,
+	0x6f, 0x63, 0x68, 0x1a, 0x4d, 0x0a, 0x26, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61,
+	0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a,
+	0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x1a, 0x88, 0x03, 0x0a, 0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61,
+	0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x41, 0x74, 0x74, 0x65,
+	0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x12, 0x4d, 0x0a, 0x06, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x78, 0x61,
+	0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64,
 	0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74,
 	0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x44, 0x61,
-	0x74, 0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x52, 0x05,
-	0x65, 0x70, 0x6f, 0x63, 0x68, 0x1a, 0x4d, 0x0a, 0x26, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x12,
-	0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d,
-	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65,
-	0x70, 0x6f, 0x63, 0x68, 0x1a, 0x49, 0x0a, 0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e,
-	0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x05,
-	0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61,
-	0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x1a,
-	0x4d, 0x0a, 0x26, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68,
-	0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x72,
-	0x67, 0x65, 0x74, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f,
-	0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
-	0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x1a, 0x88,
-	0x03, 0x0a, 0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68,
-	0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x12, 0x4d, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43,
-	0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69,
-	0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x06,
-	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4d, 0x0a, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6c,
-	0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x06, 0x74,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x1e, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x52,
-	0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x04,
+	0x74, 0x61, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4d, 0x0a, 0x06, 0x74, 0x61,
+	0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64,
+	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65,
+	0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x44, 0x61, 0x74,
+	0x61, 0x52, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x1e, 0x0a, 0x04, 0x73, 0x6c, 0x6f,
+	0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53,
+	0x6c, 0x6f, 0x74, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x45, 0x70, 0x6f, 0x63, 0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x33, 0x0a, 0x0b,
+	0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x11, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x4a, 0x0a, 0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x56,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74,
+	0x69, 0x6e, 0x67, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x1a, 0x96, 0x03,
+	0x0a, 0x26, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56,
+	0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x12, 0x4f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69, 0x74,
+	0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x32, 0x44, 0x61, 0x74,
+	0x61, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4f, 0x0a, 0x06, 0x74, 0x61, 0x72,
+	0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73,
+	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x56, 0x32, 0x44, 0x61,
+	0x74, 0x61, 0x52, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c,
+	0x6f, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x53, 0x6c, 0x6f, 0x74, 0x56, 0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x23, 0x0a, 0x05,
+	0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61,
+	0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63,
+	0x68, 0x12, 0x35, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72,
+	0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f,
+	0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x4c, 0x0a, 0x13, 0x61, 0x74, 0x74, 0x65,
+	0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18,
+	0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x41, 0x74, 0x74,
+	0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x56,
+	0x32, 0x52, 0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x1a, 0x97, 0x01, 0x0a, 0x1d, 0x41, 0x64, 0x64, 0x69, 0x74,
+	0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73,
+	0x48, 0x65, 0x61, 0x64, 0x44, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63,
+	0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45,
+	0x70, 0x6f, 0x63, 0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x1e, 0x0a, 0x04, 0x73,
+	0x6c, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x70,
+	0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x11, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x1a, 0x9f, 0x01, 0x0a, 0x1f, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45,
+	0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x65, 0x61, 0x64, 0x56, 0x32,
+	0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68,
+	0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c, 0x6f,
+	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53,
+	0x6c, 0x6f, 0x74, 0x56, 0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x0b, 0x70,
+	0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x13, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x56, 0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x1a, 0x98, 0x01, 0x0a, 0x1e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61,
+	0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x44, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63,
-	0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x33, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70,
-	0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
+	0x68, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x1e, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c,
+	0x6f, 0x74, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70,
+	0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
 	0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x4a, 0x0a,
-	0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64,
-	0x61, 0x74, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74,
-	0x75, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x69, 0x64,
-	0x61, 0x74, 0x6f, 0x72, 0x52, 0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f,
-	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x1a, 0x96, 0x03, 0x0a, 0x26, 0x41, 0x64,
-	0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x73, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x32,
-	0x44, 0x61, 0x74, 0x61, 0x12, 0x4f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x37, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69, 0x65,
-	0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61,
-	0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x52, 0x06, 0x73,
-	0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4f, 0x0a, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x6c, 0x69,
-	0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x2e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e,
-	0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x52, 0x06,
-	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74,
-	0x56, 0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63,
-	0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45,
-	0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x35, 0x0a,
-	0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x4c, 0x0a, 0x13, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e,
-	0x67, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69,
-	0x6e, 0x67, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x56, 0x32, 0x52, 0x13, 0x61,
-	0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
-	0x6f, 0x72, 0x1a, 0x97, 0x01, 0x0a, 0x1d, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61,
-	0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x65, 0x61, 0x64,
-	0x44, 0x61, 0x74, 0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68,
-	0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x1e, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f,
-	0x74, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61,
-	0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x78,
-	0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
-	0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x9f, 0x01, 0x0a,
-	0x1f, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x48, 0x65, 0x61, 0x64, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61,
-	0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05,
-	0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x56,
-	0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61,
-	0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x78,
-	0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56,
-	0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x98,
-	0x01, 0x0a, 0x1e, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68,
-	0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x44, 0x61, 0x74,
-	0x61, 0x12, 0x21, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x52, 0x05, 0x65,
-	0x70, 0x6f, 0x63, 0x68, 0x12, 0x1e, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x52, 0x04,
-	0x73, 0x6c, 0x6f, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x78, 0x61, 0x74, 0x75,
-	0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x70, 0x72,
-	0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0xa0, 0x01, 0x0a, 0x20, 0x41, 0x64,
-	0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x56, 0x32, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23,
-	0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e,
-	0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70,
-	0x6f, 0x63, 0x68, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x56, 0x32, 0x52,
-	0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x78, 0x61, 0x74,
-	0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x32, 0x52,
-	0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0xa4, 0x01, 0x0a,
-	0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x47, 0x6f, 0x73, 0x73, 0x69,
-	0x70, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01,
+	0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0xa0, 0x01,
+	0x0a, 0x20, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56,
+	0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x56, 0x32, 0x44, 0x61,
+	0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32,
+	0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f,
+	0x74, 0x56, 0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x0b, 0x70, 0x72, 0x6f,
+	0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x56, 0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x1a, 0xa4, 0x01, 0x0a, 0x24, 0x41, 0x64, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45,
+	0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x47,
+	0x6f, 0x73, 0x73, 0x69, 0x70, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f,
+	0x63, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x45, 0x70, 0x6f, 0x63, 0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x20,
+	0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x53, 0x6c, 0x6f, 0x74, 0x56, 0x32, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74,
+	0x12, 0x35, 0x0a, 0x0b, 0x70, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x50, 0x72, 0x6f,
+	0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x32, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x70,
+	0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0xa9, 0x01, 0x0a, 0x29, 0x41, 0x64, 0x64, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x45, 0x74, 0x68, 0x56, 0x31, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x73, 0x46, 0x61, 0x73, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x44, 0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x70, 0x6f, 0x63,
 	0x68, 0x56, 0x32, 0x52, 0x05, 0x65, 0x70, 0x6f, 0x63, 0x68, 0x12, 0x20, 0x0a, 0x04, 0x73, 0x6c,
 	0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
@@ -15259,7 +15379,7 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x65, 0x74, 0x61, 0x52, 0x06, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x12, 0x28, 0x0a, 0x06, 0x73,
 	0x65, 0x72, 0x76, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x78, 0x61,
 	0x74, 0x75, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4d, 0x65, 0x74, 0x61, 0x52, 0x06, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x22, 0xb6, 0x1c, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
+	0x65, 0x72, 0x76, 0x65, 0x72, 0x22, 0xe6, 0x1c, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
 	0x24, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e,
 	0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x4e, 0x61, 0x6d, 0x65, 0x52,
 	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x38, 0x0a, 0x09, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69,
@@ -15267,7 +15387,7 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
 	0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x12,
 	0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22,
-	0xbc, 0x1b, 0x0a, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x20, 0x42, 0x45, 0x41, 0x43,
+	0xec, 0x1b, 0x0a, 0x04, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x20, 0x42, 0x45, 0x41, 0x43,
 	0x4f, 0x4e, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x45, 0x54, 0x48, 0x5f, 0x56, 0x31, 0x5f, 0x45, 0x56,
 	0x45, 0x4e, 0x54, 0x53, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x22,
 	0x0a, 0x1e, 0x42, 0x45, 0x41, 0x43, 0x4f, 0x4e, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x45, 0x54, 0x48,
@@ -15484,7 +15604,10 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x1b, 0x0a, 0x17, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x42, 0x4c, 0x4f,
 	0x43, 0x4b, 0x5f, 0x4d, 0x45, 0x54, 0x52, 0x49, 0x43, 0x53, 0x10, 0x57, 0x12, 0x19, 0x0a, 0x15,
 	0x4c, 0x49, 0x42, 0x50, 0x32, 0x50, 0x5f, 0x54, 0x52, 0x41, 0x43, 0x45, 0x5f, 0x49, 0x44, 0x45,
-	0x4e, 0x54, 0x49, 0x46, 0x59, 0x10, 0x58, 0x22, 0x04, 0x08, 0x21, 0x10, 0x21, 0x2a, 0x1f, 0x42,
+	0x4e, 0x54, 0x49, 0x46, 0x59, 0x10, 0x58, 0x12, 0x2e, 0x0a, 0x2a, 0x42, 0x45, 0x41, 0x43, 0x4f,
+	0x4e, 0x5f, 0x41, 0x50, 0x49, 0x5f, 0x45, 0x54, 0x48, 0x5f, 0x56, 0x31, 0x5f, 0x45, 0x56, 0x45,
+	0x4e, 0x54, 0x53, 0x5f, 0x46, 0x41, 0x53, 0x54, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x52, 0x4d,
+	0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x59, 0x22, 0x04, 0x08, 0x21, 0x10, 0x21, 0x2a, 0x1f, 0x42,
 	0x4c, 0x4f, 0x43, 0x4b, 0x50, 0x52, 0x49, 0x4e, 0x54, 0x5f, 0x42, 0x4c, 0x4f, 0x43, 0x4b, 0x5f,
 	0x43, 0x4c, 0x41, 0x53, 0x53, 0x49, 0x46, 0x49, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x22, 0xf9,
 	0x10, 0x0a, 0x15, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63,
@@ -15622,7 +15745,7 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x0a, 0x6d, 0x69, 0x73, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x1b, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x62, 0x75, 0x66, 0x2e, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0a,
-	0x6d, 0x69, 0x73, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x22, 0xe0, 0x47, 0x0a, 0x0e, 0x44,
+	0x6d, 0x69, 0x73, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x22, 0xdc, 0x48, 0x0a, 0x0e, 0x44,
 	0x65, 0x63, 0x6f, 0x72, 0x61, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x21, 0x0a,
 	0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x78,
 	0x61, 0x74, 0x75, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x05, 0x65, 0x76, 0x65, 0x6e, 0x74,
@@ -16196,23 +16319,31 @@ var file_pkg_proto_xatu_event_ingester_proto_rawDesc = []byte{
 	0x78, 0x61, 0x74, 0x75, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x6c,
 	0x6f, 0x63, 0x6b, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x48, 0x00, 0x52, 0x17, 0x45, 0x58,
 	0x45, 0x43, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x42, 0x4c, 0x4f, 0x43, 0x4b, 0x5f, 0x4d, 0x45,
-	0x54, 0x52, 0x49, 0x43, 0x53, 0x42, 0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x2a, 0x6c, 0x0a,
-	0x0c, 0x45, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x1d, 0x0a,
-	0x19, 0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x55,
-	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x19, 0x0a, 0x15,
-	0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x53, 0x4e,
-	0x4f, 0x4f, 0x50, 0x45, 0x52, 0x10, 0x01, 0x12, 0x22, 0x0a, 0x1e, 0x45, 0x4e, 0x47, 0x49, 0x4e,
-	0x45, 0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x49,
-	0x4f, 0x4e, 0x5f, 0x43, 0x4c, 0x49, 0x45, 0x4e, 0x54, 0x10, 0x02, 0x32, 0x58, 0x0a, 0x0d, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x65, 0x72, 0x12, 0x47, 0x0a, 0x0c,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x19, 0x2e, 0x78,
-	0x61, 0x74, 0x75, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43,
-	0x72, 0x65, 0x61, 0x74, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f,
-	0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x78,
-	0x61, 0x74, 0x75, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x54, 0x52, 0x49, 0x43, 0x53, 0x12, 0x7a, 0x0a, 0x1f, 0x65, 0x74, 0x68, 0x5f, 0x76, 0x31, 0x5f,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x5f, 0x66, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0xd2, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x22, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x46, 0x61, 0x73, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x2a, 0x42, 0x45, 0x41, 0x43, 0x4f, 0x4e, 0x5f, 0x41, 0x50,
+	0x49, 0x5f, 0x45, 0x54, 0x48, 0x5f, 0x56, 0x31, 0x5f, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x53, 0x5f,
+	0x46, 0x41, 0x53, 0x54, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x52, 0x4d, 0x41, 0x54, 0x49, 0x4f,
+	0x4e, 0x42, 0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x2a, 0x6c, 0x0a, 0x0c, 0x45, 0x6e, 0x67,
+	0x69, 0x6e, 0x65, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x1d, 0x0a, 0x19, 0x45, 0x4e, 0x47,
+	0x49, 0x4e, 0x45, 0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x19, 0x0a, 0x15, 0x45, 0x4e, 0x47, 0x49,
+	0x4e, 0x45, 0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x53, 0x4e, 0x4f, 0x4f, 0x50, 0x45,
+	0x52, 0x10, 0x01, 0x12, 0x22, 0x0a, 0x1e, 0x45, 0x4e, 0x47, 0x49, 0x4e, 0x45, 0x5f, 0x53, 0x4f,
+	0x55, 0x52, 0x43, 0x45, 0x5f, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43,
+	0x4c, 0x49, 0x45, 0x4e, 0x54, 0x10, 0x02, 0x32, 0x58, 0x0a, 0x0d, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x65, 0x72, 0x12, 0x47, 0x0a, 0x0c, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x19, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x42, 0x2c, 0x5a, 0x2a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75,
+	0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -16228,7 +16359,7 @@ func file_pkg_proto_xatu_event_ingester_proto_rawDescGZIP() []byte {
 }
 
 var file_pkg_proto_xatu_event_ingester_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_pkg_proto_xatu_event_ingester_proto_msgTypes = make([]protoimpl.MessageInfo, 140)
+var file_pkg_proto_xatu_event_ingester_proto_msgTypes = make([]protoimpl.MessageInfo, 141)
 var file_pkg_proto_xatu_event_ingester_proto_goTypes = []any{
 	(EngineSource)(0),                    // 0: xatu.EngineSource
 	(Event_Name)(0),                      // 1: xatu.Event.Name
@@ -16273,726 +16404,733 @@ var file_pkg_proto_xatu_event_ingester_proto_goTypes = []any{
 	(*ClientMeta_AdditionalEthV1EventsBlockData)(nil),                              // 40: xatu.ClientMeta.AdditionalEthV1EventsBlockData
 	(*ClientMeta_AdditionalEthV1EventsBlockV2Data)(nil),                            // 41: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data
 	(*ClientMeta_AdditionalEthV1EventsBlockGossipData)(nil),                        // 42: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData
-	(*ClientMeta_AdditionalEthV1EventsVoluntaryExitData)(nil),                      // 43: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData
-	(*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data)(nil),                    // 44: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data
-	(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData)(nil),                // 45: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData
-	(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data)(nil),              // 46: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data
-	(*ClientMeta_AdditionalEthV1EventsChainReorgData)(nil),                         // 47: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData
-	(*ClientMeta_AdditionalEthV1EventsChainReorgV2Data)(nil),                       // 48: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data
-	(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData)(nil),   // 49: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData
-	(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)(nil), // 50: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data
-	(*ClientMeta_AdditionalEthV1EventsContributionAndProofData)(nil),               // 51: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData
-	(*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data)(nil),             // 52: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data
-	(*ClientMeta_ForkChoiceSnapshot)(nil),                                          // 53: xatu.ClientMeta.ForkChoiceSnapshot
-	(*ClientMeta_ForkChoiceSnapshotV2)(nil),                                        // 54: xatu.ClientMeta.ForkChoiceSnapshotV2
-	(*ClientMeta_AdditionalEthV1DebugForkChoiceData)(nil),                          // 55: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData
-	(*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data)(nil),                        // 56: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data
-	(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData)(nil),                     // 57: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData
-	(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data)(nil),                   // 58: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data
-	(*ClientMeta_AdditionalEthV1BeaconCommitteeData)(nil),                          // 59: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData
-	(*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData)(nil),                      // 60: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData
-	(*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData)(nil),                 // 61: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData
-	(*ClientMeta_AdditionalMempoolTransactionData)(nil),                            // 62: xatu.ClientMeta.AdditionalMempoolTransactionData
-	(*ClientMeta_AdditionalMempoolTransactionV2Data)(nil),                          // 63: xatu.ClientMeta.AdditionalMempoolTransactionV2Data
-	(*ClientMeta_AdditionalEthV2BeaconBlockData)(nil),                              // 64: xatu.ClientMeta.AdditionalEthV2BeaconBlockData
-	(*ClientMeta_AdditionalEthV2BeaconBlockV2Data)(nil),                            // 65: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data
-	(*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData)(nil),              // 66: xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData
-	(*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData)(nil),              // 67: xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData
-	(*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData)(nil),                 // 68: xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData
-	(*ClientMeta_AdditionalEthV2BeaconBlockDepositData)(nil),                       // 69: xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData
-	(*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData)(nil),          // 70: xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData
-	(*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData)(nil),          // 71: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData
-	(*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData)(nil),                    // 72: xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData
-	(*ClientMeta_AttestationDataSnapshot)(nil),                                     // 73: xatu.ClientMeta.AttestationDataSnapshot
-	(*ClientMeta_AdditionalEthV1ValidatorAttestationDataData)(nil),                 // 74: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData
-	(*ClientMeta_AdditionalEthV1EventsBlobSidecarData)(nil),                        // 75: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData
-	(*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData)(nil),                  // 76: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData
-	(*ClientMeta_AdditionalEthV1BeaconBlobSidecarData)(nil),                        // 77: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData
-	(*ClientMeta_AdditionalBeaconP2PAttestationData)(nil),                          // 78: xatu.ClientMeta.AdditionalBeaconP2PAttestationData
-	(*ClientMeta_AdditionalEthV1ProposerDutyData)(nil),                             // 79: xatu.ClientMeta.AdditionalEthV1ProposerDutyData
-	(*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData)(nil),         // 80: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData
-	(*ClientMeta_AdditionalLibP2PTraceAddPeerData)(nil),                            // 81: xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData
-	(*ClientMeta_AdditionalLibP2PTraceRemovePeerData)(nil),                         // 82: xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData
-	(*ClientMeta_AdditionalLibP2PTraceRecvRPCData)(nil),                            // 83: xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData
-	(*ClientMeta_AdditionalLibP2PTraceSendRPCData)(nil),                            // 84: xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData
-	(*ClientMeta_AdditionalLibP2PTraceDropRPCData)(nil),                            // 85: xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData)(nil),                // 86: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData)(nil),                // 87: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData)(nil),            // 88: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData)(nil),                // 89: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData)(nil),                // 90: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData
-	(*ClientMeta_AdditionalLibP2PTraceJoinData)(nil),                               // 91: xatu.ClientMeta.AdditionalLibP2PTraceJoinData
-	(*ClientMeta_AdditionalLibP2PTraceLeaveData)(nil),                              // 92: xatu.ClientMeta.AdditionalLibP2PTraceLeaveData
-	(*ClientMeta_AdditionalLibP2PTraceGraftData)(nil),                              // 93: xatu.ClientMeta.AdditionalLibP2PTraceGraftData
-	(*ClientMeta_AdditionalLibP2PTracePruneData)(nil),                              // 94: xatu.ClientMeta.AdditionalLibP2PTracePruneData
-	(*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData)(nil),                   // 95: xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData
-	(*ClientMeta_AdditionalLibP2PTraceDeliverMessageData)(nil),                     // 96: xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData
-	(*ClientMeta_AdditionalLibP2PTracePublishMessageData)(nil),                     // 97: xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData
-	(*ClientMeta_AdditionalLibP2PTraceRejectMessageData)(nil),                      // 98: xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData
-	(*ClientMeta_AdditionalLibP2PTraceConnectedData)(nil),                          // 99: xatu.ClientMeta.AdditionalLibP2PTraceConnectedData
-	(*ClientMeta_AdditionalLibP2PTraceDisconnectedData)(nil),                       // 100: xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData
-	(*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)(nil),                 // 101: xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
-	(*ClientMeta_AdditionalLibP2PTraceHandleMetadataData)(nil),                     // 102: xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData
-	(*ClientMeta_AdditionalLibP2PTraceHandleStatusData)(nil),                       // 103: xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData
-	(*ClientMeta_AdditionalLibP2PTraceIdentifyData)(nil),                           // 104: xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData
-	(*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData)(nil),          // 105: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData)(nil),                // 106: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData
-	(*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData)(nil),                     // 107: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData)(nil),               // 108: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData)(nil),   // 109: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData)(nil),   // 110: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData)(nil),         // 111: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData)(nil),         // 112: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData)(nil),               // 113: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData
-	(*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData)(nil),         // 114: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData
-	(*ClientMeta_AdditionalEthV1ValidatorsData)(nil),                               // 115: xatu.ClientMeta.AdditionalEthV1ValidatorsData
-	(*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData)(nil),        // 116: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData
-	(*ClientMeta_AdditionalMevRelayPayloadDeliveredData)(nil),                      // 117: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData
-	(*ClientMeta_AdditionalEthV3ValidatorBlockData)(nil),                           // 118: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData
-	(*ClientMeta_AdditionalMevRelayValidatorRegistrationData)(nil),                 // 119: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData
-	(*ClientMeta_AdditionalNodeRecordConsensusData)(nil),                           // 120: xatu.ClientMeta.AdditionalNodeRecordConsensusData
-	(*ClientMeta_AdditionalConsensusEngineAPINewPayloadData)(nil),                  // 121: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData
-	(*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData)(nil),                    // 122: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData
-	(*ClientMeta_AdditionalEthV1BeaconBlobData)(nil),                               // 123: xatu.ClientMeta.AdditionalEthV1BeaconBlobData
-	(*ClientMeta_Ethereum_Network)(nil),                                            // 124: xatu.ClientMeta.Ethereum.Network
-	(*ClientMeta_Ethereum_Execution)(nil),                                          // 125: xatu.ClientMeta.Ethereum.Execution
-	(*ClientMeta_Ethereum_Consensus)(nil),                                          // 126: xatu.ClientMeta.Ethereum.Consensus
-	(*ServerMeta_Event)(nil),                                                       // 127: xatu.ServerMeta.Event
-	(*ServerMeta_Geo)(nil),                                                         // 128: xatu.ServerMeta.Geo
-	(*ServerMeta_Client)(nil),                                                      // 129: xatu.ServerMeta.Client
-	(*ServerMeta_Peer)(nil),                                                        // 130: xatu.ServerMeta.Peer
-	(*ServerMeta_AdditionalBeaconP2PAttestationData)(nil),                          // 131: xatu.ServerMeta.AdditionalBeaconP2PAttestationData
-	(*ServerMeta_AdditionalLibp2PTraceConnectedData)(nil),                          // 132: xatu.ServerMeta.AdditionalLibp2PTraceConnectedData
-	(*ServerMeta_AdditionalLibp2PTraceDisconnectedData)(nil),                       // 133: xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData
-	(*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)(nil),                 // 134: xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
-	(*ServerMeta_AdditionalLibp2PTraceIdentifyData)(nil),                           // 135: xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData
-	(*ServerMeta_AdditionalNodeRecordConsensusData)(nil),                           // 136: xatu.ServerMeta.AdditionalNodeRecordConsensusData
-	(*ServerMeta_AdditionalNodeRecordExecutionData)(nil),                           // 137: xatu.ServerMeta.AdditionalNodeRecordExecutionData
-	(*ExecutionBlockMetrics_StateReads)(nil),                                       // 138: xatu.ExecutionBlockMetrics.StateReads
-	(*ExecutionBlockMetrics_StateWrites)(nil),                                      // 139: xatu.ExecutionBlockMetrics.StateWrites
-	(*ExecutionBlockMetrics_CacheEntry)(nil),                                       // 140: xatu.ExecutionBlockMetrics.CacheEntry
-	(*ExecutionBlockMetrics_CodeCacheEntry)(nil),                                   // 141: xatu.ExecutionBlockMetrics.CodeCacheEntry
-	(*wrapperspb.UInt64Value)(nil),                                                 // 142: google.protobuf.UInt64Value
-	(*timestamppb.Timestamp)(nil),                                                  // 143: google.protobuf.Timestamp
-	(*v1.ForkChoice)(nil),                                                          // 144: xatu.eth.v1.ForkChoice
-	(*v1.EventChainReorg)(nil),                                                     // 145: xatu.eth.v1.EventChainReorg
-	(*v1.ForkChoiceV2)(nil),                                                        // 146: xatu.eth.v1.ForkChoiceV2
-	(*v1.EventChainReorgV2)(nil),                                                   // 147: xatu.eth.v1.EventChainReorgV2
-	(*v1.Validator)(nil),                                                           // 148: xatu.eth.v1.Validator
-	(*v1.SyncCommittee)(nil),                                                       // 149: xatu.eth.v1.SyncCommittee
-	(*wrapperspb.UInt32Value)(nil),                                                 // 150: google.protobuf.UInt32Value
-	(ModuleName)(0),                                                                // 151: xatu.ModuleName
-	(*wrapperspb.DoubleValue)(nil),                                                 // 152: google.protobuf.DoubleValue
-	(*v1.Attestation)(nil),                                                         // 153: xatu.eth.v1.Attestation
-	(*v1.EventBlock)(nil),                                                          // 154: xatu.eth.v1.EventBlock
-	(*v1.EventFinalizedCheckpoint)(nil),                                            // 155: xatu.eth.v1.EventFinalizedCheckpoint
-	(*v1.EventHead)(nil),                                                           // 156: xatu.eth.v1.EventHead
-	(*v1.EventVoluntaryExit)(nil),                                                  // 157: xatu.eth.v1.EventVoluntaryExit
-	(*v1.EventContributionAndProof)(nil),                                           // 158: xatu.eth.v1.EventContributionAndProof
-	(*v2.EventBlock)(nil),                                                          // 159: xatu.eth.v2.EventBlock
-	(*v1.Committee)(nil),                                                           // 160: xatu.eth.v1.Committee
-	(*v1.AttestationDataV2)(nil),                                                   // 161: xatu.eth.v1.AttestationDataV2
-	(*v1.AttestationV2)(nil),                                                       // 162: xatu.eth.v1.AttestationV2
-	(*v1.EventBlockV2)(nil),                                                        // 163: xatu.eth.v1.EventBlockV2
-	(*v1.EventFinalizedCheckpointV2)(nil),                                          // 164: xatu.eth.v1.EventFinalizedCheckpointV2
-	(*v1.EventHeadV2)(nil),                                                         // 165: xatu.eth.v1.EventHeadV2
-	(*v1.EventVoluntaryExitV2)(nil),                                                // 166: xatu.eth.v1.EventVoluntaryExitV2
-	(*v1.EventContributionAndProofV2)(nil),                                         // 167: xatu.eth.v1.EventContributionAndProofV2
-	(*v2.EventBlockV2)(nil),                                                        // 168: xatu.eth.v2.EventBlockV2
-	(*v1.AttesterSlashingV2)(nil),                                                  // 169: xatu.eth.v1.AttesterSlashingV2
-	(*v1.ProposerSlashingV2)(nil),                                                  // 170: xatu.eth.v1.ProposerSlashingV2
-	(*v1.SignedVoluntaryExitV2)(nil),                                               // 171: xatu.eth.v1.SignedVoluntaryExitV2
-	(*v1.DepositV2)(nil),                                                           // 172: xatu.eth.v1.DepositV2
-	(*v2.SignedBLSToExecutionChangeV2)(nil),                                        // 173: xatu.eth.v2.SignedBLSToExecutionChangeV2
-	(*v1.Transaction)(nil),                                                         // 174: xatu.eth.v1.Transaction
-	(*v1.WithdrawalV2)(nil),                                                        // 175: xatu.eth.v1.WithdrawalV2
-	(*v1.EventBlobSidecar)(nil),                                                    // 176: xatu.eth.v1.EventBlobSidecar
-	(*v1.BlobSidecar)(nil),                                                         // 177: xatu.eth.v1.BlobSidecar
-	(*v1.ProposerDuty)(nil),                                                        // 178: xatu.eth.v1.ProposerDuty
-	(*v1.ElaboratedAttestation)(nil),                                               // 179: xatu.eth.v1.ElaboratedAttestation
-	(*libp2p.AddPeer)(nil),                                                         // 180: xatu.libp2p.AddPeer
-	(*libp2p.RemovePeer)(nil),                                                      // 181: xatu.libp2p.RemovePeer
-	(*libp2p.RecvRPC)(nil),                                                         // 182: xatu.libp2p.RecvRPC
-	(*libp2p.SendRPC)(nil),                                                         // 183: xatu.libp2p.SendRPC
-	(*libp2p.Join)(nil),                                                            // 184: xatu.libp2p.Join
-	(*libp2p.Connected)(nil),                                                       // 185: xatu.libp2p.Connected
-	(*libp2p.Disconnected)(nil),                                                    // 186: xatu.libp2p.Disconnected
-	(*libp2p.HandleMetadata)(nil),                                                  // 187: xatu.libp2p.HandleMetadata
-	(*libp2p.HandleStatus)(nil),                                                    // 188: xatu.libp2p.HandleStatus
-	(*gossipsub.BeaconBlock)(nil),                                                  // 189: xatu.libp2p.gossipsub.eth.BeaconBlock
-	(*gossipsub.BlobSidecar)(nil),                                                  // 190: xatu.libp2p.gossipsub.eth.BlobSidecar
-	(*mevrelay.BidTrace)(nil),                                                      // 191: xatu.mevrelay.BidTrace
-	(*mevrelay.ProposerPayloadDelivered)(nil),                                      // 192: xatu.mevrelay.ProposerPayloadDelivered
-	(*mevrelay.ValidatorRegistration)(nil),                                         // 193: xatu.mevrelay.ValidatorRegistration
-	(*v1.EventBlockGossip)(nil),                                                    // 194: xatu.eth.v1.EventBlockGossip
-	(*libp2p.DropRPC)(nil),                                                         // 195: xatu.libp2p.DropRPC
-	(*libp2p.Leave)(nil),                                                           // 196: xatu.libp2p.Leave
-	(*libp2p.Graft)(nil),                                                           // 197: xatu.libp2p.Graft
-	(*libp2p.Prune)(nil),                                                           // 198: xatu.libp2p.Prune
-	(*libp2p.DuplicateMessage)(nil),                                                // 199: xatu.libp2p.DuplicateMessage
-	(*libp2p.DeliverMessage)(nil),                                                  // 200: xatu.libp2p.DeliverMessage
-	(*libp2p.PublishMessage)(nil),                                                  // 201: xatu.libp2p.PublishMessage
-	(*libp2p.RejectMessage)(nil),                                                   // 202: xatu.libp2p.RejectMessage
-	(*libp2p.ControlIHaveMetaItem)(nil),                                            // 203: xatu.libp2p.ControlIHaveMetaItem
-	(*libp2p.ControlIWantMetaItem)(nil),                                            // 204: xatu.libp2p.ControlIWantMetaItem
-	(*libp2p.ControlIDontWantMetaItem)(nil),                                        // 205: xatu.libp2p.ControlIDontWantMetaItem
-	(*libp2p.ControlGraftMetaItem)(nil),                                            // 206: xatu.libp2p.ControlGraftMetaItem
-	(*libp2p.ControlPruneMetaItem)(nil),                                            // 207: xatu.libp2p.ControlPruneMetaItem
-	(*libp2p.SubMetaItem)(nil),                                                     // 208: xatu.libp2p.SubMetaItem
-	(*libp2p.MessageMetaItem)(nil),                                                 // 209: xatu.libp2p.MessageMetaItem
-	(*noderecord.Consensus)(nil),                                                   // 210: xatu.noderecord.Consensus
-	(*noderecord.Execution)(nil),                                                   // 211: xatu.noderecord.Execution
-	(*v1.SignedAggregateAttestationAndProofV2)(nil),                                // 212: xatu.eth.v1.SignedAggregateAttestationAndProofV2
-	(*v1.EventDataColumnSidecar)(nil),                                              // 213: xatu.eth.v1.EventDataColumnSidecar
-	(*gossipsub.DataColumnSidecar)(nil),                                            // 214: xatu.libp2p.gossipsub.eth.DataColumnSidecar
-	(*libp2p.SyntheticHeartbeat)(nil),                                              // 215: xatu.libp2p.SyntheticHeartbeat
-	(*libp2p.Identify)(nil),                                                        // 216: xatu.libp2p.Identify
-	(*libp2p.DataColumnCustodyProbe)(nil),                                          // 217: xatu.libp2p.DataColumnCustodyProbe
-	(*v1.Blob)(nil),                                                                // 218: xatu.eth.v1.Blob
-	(*libp2p.Peer)(nil),                                                            // 219: xatu.libp2p.Peer
-	(*wrapperspb.BoolValue)(nil),                                                   // 220: google.protobuf.BoolValue
-	(*libp2p.TraceEventMetadata)(nil),                                              // 221: xatu.libp2p.TraceEventMetadata
-	(*wrapperspb.StringValue)(nil),                                                 // 222: google.protobuf.StringValue
-	(*mevrelay.Relay)(nil),                                                         // 223: xatu.mevrelay.Relay
-	(*wrapperspb.Int64Value)(nil),                                                  // 224: google.protobuf.Int64Value
+	(*ClientMeta_AdditionalEthV1EventsFastConfirmationData)(nil),                   // 43: xatu.ClientMeta.AdditionalEthV1EventsFastConfirmationData
+	(*ClientMeta_AdditionalEthV1EventsVoluntaryExitData)(nil),                      // 44: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData
+	(*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data)(nil),                    // 45: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data
+	(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData)(nil),                // 46: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData
+	(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data)(nil),              // 47: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data
+	(*ClientMeta_AdditionalEthV1EventsChainReorgData)(nil),                         // 48: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData
+	(*ClientMeta_AdditionalEthV1EventsChainReorgV2Data)(nil),                       // 49: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data
+	(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData)(nil),   // 50: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData
+	(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data)(nil), // 51: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data
+	(*ClientMeta_AdditionalEthV1EventsContributionAndProofData)(nil),               // 52: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData
+	(*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data)(nil),             // 53: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data
+	(*ClientMeta_ForkChoiceSnapshot)(nil),                                          // 54: xatu.ClientMeta.ForkChoiceSnapshot
+	(*ClientMeta_ForkChoiceSnapshotV2)(nil),                                        // 55: xatu.ClientMeta.ForkChoiceSnapshotV2
+	(*ClientMeta_AdditionalEthV1DebugForkChoiceData)(nil),                          // 56: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData
+	(*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data)(nil),                        // 57: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data
+	(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData)(nil),                     // 58: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData
+	(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data)(nil),                   // 59: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data
+	(*ClientMeta_AdditionalEthV1BeaconCommitteeData)(nil),                          // 60: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData
+	(*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData)(nil),                      // 61: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData
+	(*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData)(nil),                 // 62: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData
+	(*ClientMeta_AdditionalMempoolTransactionData)(nil),                            // 63: xatu.ClientMeta.AdditionalMempoolTransactionData
+	(*ClientMeta_AdditionalMempoolTransactionV2Data)(nil),                          // 64: xatu.ClientMeta.AdditionalMempoolTransactionV2Data
+	(*ClientMeta_AdditionalEthV2BeaconBlockData)(nil),                              // 65: xatu.ClientMeta.AdditionalEthV2BeaconBlockData
+	(*ClientMeta_AdditionalEthV2BeaconBlockV2Data)(nil),                            // 66: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data
+	(*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData)(nil),              // 67: xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData
+	(*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData)(nil),              // 68: xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData
+	(*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData)(nil),                 // 69: xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData
+	(*ClientMeta_AdditionalEthV2BeaconBlockDepositData)(nil),                       // 70: xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData
+	(*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData)(nil),          // 71: xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData
+	(*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData)(nil),          // 72: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData
+	(*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData)(nil),                    // 73: xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData
+	(*ClientMeta_AttestationDataSnapshot)(nil),                                     // 74: xatu.ClientMeta.AttestationDataSnapshot
+	(*ClientMeta_AdditionalEthV1ValidatorAttestationDataData)(nil),                 // 75: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData
+	(*ClientMeta_AdditionalEthV1EventsBlobSidecarData)(nil),                        // 76: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData
+	(*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData)(nil),                  // 77: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData
+	(*ClientMeta_AdditionalEthV1BeaconBlobSidecarData)(nil),                        // 78: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData
+	(*ClientMeta_AdditionalBeaconP2PAttestationData)(nil),                          // 79: xatu.ClientMeta.AdditionalBeaconP2PAttestationData
+	(*ClientMeta_AdditionalEthV1ProposerDutyData)(nil),                             // 80: xatu.ClientMeta.AdditionalEthV1ProposerDutyData
+	(*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData)(nil),         // 81: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData
+	(*ClientMeta_AdditionalLibP2PTraceAddPeerData)(nil),                            // 82: xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData
+	(*ClientMeta_AdditionalLibP2PTraceRemovePeerData)(nil),                         // 83: xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData
+	(*ClientMeta_AdditionalLibP2PTraceRecvRPCData)(nil),                            // 84: xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData
+	(*ClientMeta_AdditionalLibP2PTraceSendRPCData)(nil),                            // 85: xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData
+	(*ClientMeta_AdditionalLibP2PTraceDropRPCData)(nil),                            // 86: xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData)(nil),                // 87: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData)(nil),                // 88: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData)(nil),            // 89: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData)(nil),                // 90: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData)(nil),                // 91: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData
+	(*ClientMeta_AdditionalLibP2PTraceJoinData)(nil),                               // 92: xatu.ClientMeta.AdditionalLibP2PTraceJoinData
+	(*ClientMeta_AdditionalLibP2PTraceLeaveData)(nil),                              // 93: xatu.ClientMeta.AdditionalLibP2PTraceLeaveData
+	(*ClientMeta_AdditionalLibP2PTraceGraftData)(nil),                              // 94: xatu.ClientMeta.AdditionalLibP2PTraceGraftData
+	(*ClientMeta_AdditionalLibP2PTracePruneData)(nil),                              // 95: xatu.ClientMeta.AdditionalLibP2PTracePruneData
+	(*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData)(nil),                   // 96: xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData
+	(*ClientMeta_AdditionalLibP2PTraceDeliverMessageData)(nil),                     // 97: xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData
+	(*ClientMeta_AdditionalLibP2PTracePublishMessageData)(nil),                     // 98: xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData
+	(*ClientMeta_AdditionalLibP2PTraceRejectMessageData)(nil),                      // 99: xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData
+	(*ClientMeta_AdditionalLibP2PTraceConnectedData)(nil),                          // 100: xatu.ClientMeta.AdditionalLibP2PTraceConnectedData
+	(*ClientMeta_AdditionalLibP2PTraceDisconnectedData)(nil),                       // 101: xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData
+	(*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)(nil),                 // 102: xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
+	(*ClientMeta_AdditionalLibP2PTraceHandleMetadataData)(nil),                     // 103: xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData
+	(*ClientMeta_AdditionalLibP2PTraceHandleStatusData)(nil),                       // 104: xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData
+	(*ClientMeta_AdditionalLibP2PTraceIdentifyData)(nil),                           // 105: xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData
+	(*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData)(nil),          // 106: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData)(nil),                // 107: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData
+	(*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData)(nil),                     // 108: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData)(nil),               // 109: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData)(nil),   // 110: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData)(nil),   // 111: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData)(nil),         // 112: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData)(nil),         // 113: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData)(nil),               // 114: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData
+	(*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData)(nil),         // 115: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData
+	(*ClientMeta_AdditionalEthV1ValidatorsData)(nil),                               // 116: xatu.ClientMeta.AdditionalEthV1ValidatorsData
+	(*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData)(nil),        // 117: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData
+	(*ClientMeta_AdditionalMevRelayPayloadDeliveredData)(nil),                      // 118: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData
+	(*ClientMeta_AdditionalEthV3ValidatorBlockData)(nil),                           // 119: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData
+	(*ClientMeta_AdditionalMevRelayValidatorRegistrationData)(nil),                 // 120: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData
+	(*ClientMeta_AdditionalNodeRecordConsensusData)(nil),                           // 121: xatu.ClientMeta.AdditionalNodeRecordConsensusData
+	(*ClientMeta_AdditionalConsensusEngineAPINewPayloadData)(nil),                  // 122: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData
+	(*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData)(nil),                    // 123: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData
+	(*ClientMeta_AdditionalEthV1BeaconBlobData)(nil),                               // 124: xatu.ClientMeta.AdditionalEthV1BeaconBlobData
+	(*ClientMeta_Ethereum_Network)(nil),                                            // 125: xatu.ClientMeta.Ethereum.Network
+	(*ClientMeta_Ethereum_Execution)(nil),                                          // 126: xatu.ClientMeta.Ethereum.Execution
+	(*ClientMeta_Ethereum_Consensus)(nil),                                          // 127: xatu.ClientMeta.Ethereum.Consensus
+	(*ServerMeta_Event)(nil),                                                       // 128: xatu.ServerMeta.Event
+	(*ServerMeta_Geo)(nil),                                                         // 129: xatu.ServerMeta.Geo
+	(*ServerMeta_Client)(nil),                                                      // 130: xatu.ServerMeta.Client
+	(*ServerMeta_Peer)(nil),                                                        // 131: xatu.ServerMeta.Peer
+	(*ServerMeta_AdditionalBeaconP2PAttestationData)(nil),                          // 132: xatu.ServerMeta.AdditionalBeaconP2PAttestationData
+	(*ServerMeta_AdditionalLibp2PTraceConnectedData)(nil),                          // 133: xatu.ServerMeta.AdditionalLibp2PTraceConnectedData
+	(*ServerMeta_AdditionalLibp2PTraceDisconnectedData)(nil),                       // 134: xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData
+	(*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData)(nil),                 // 135: xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
+	(*ServerMeta_AdditionalLibp2PTraceIdentifyData)(nil),                           // 136: xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData
+	(*ServerMeta_AdditionalNodeRecordConsensusData)(nil),                           // 137: xatu.ServerMeta.AdditionalNodeRecordConsensusData
+	(*ServerMeta_AdditionalNodeRecordExecutionData)(nil),                           // 138: xatu.ServerMeta.AdditionalNodeRecordExecutionData
+	(*ExecutionBlockMetrics_StateReads)(nil),                                       // 139: xatu.ExecutionBlockMetrics.StateReads
+	(*ExecutionBlockMetrics_StateWrites)(nil),                                      // 140: xatu.ExecutionBlockMetrics.StateWrites
+	(*ExecutionBlockMetrics_CacheEntry)(nil),                                       // 141: xatu.ExecutionBlockMetrics.CacheEntry
+	(*ExecutionBlockMetrics_CodeCacheEntry)(nil),                                   // 142: xatu.ExecutionBlockMetrics.CodeCacheEntry
+	(*wrapperspb.UInt64Value)(nil),                                                 // 143: google.protobuf.UInt64Value
+	(*timestamppb.Timestamp)(nil),                                                  // 144: google.protobuf.Timestamp
+	(*v1.ForkChoice)(nil),                                                          // 145: xatu.eth.v1.ForkChoice
+	(*v1.EventChainReorg)(nil),                                                     // 146: xatu.eth.v1.EventChainReorg
+	(*v1.ForkChoiceV2)(nil),                                                        // 147: xatu.eth.v1.ForkChoiceV2
+	(*v1.EventChainReorgV2)(nil),                                                   // 148: xatu.eth.v1.EventChainReorgV2
+	(*v1.Validator)(nil),                                                           // 149: xatu.eth.v1.Validator
+	(*v1.SyncCommittee)(nil),                                                       // 150: xatu.eth.v1.SyncCommittee
+	(*wrapperspb.UInt32Value)(nil),                                                 // 151: google.protobuf.UInt32Value
+	(ModuleName)(0),                                                                // 152: xatu.ModuleName
+	(*wrapperspb.DoubleValue)(nil),                                                 // 153: google.protobuf.DoubleValue
+	(*v1.Attestation)(nil),                                                         // 154: xatu.eth.v1.Attestation
+	(*v1.EventBlock)(nil),                                                          // 155: xatu.eth.v1.EventBlock
+	(*v1.EventFinalizedCheckpoint)(nil),                                            // 156: xatu.eth.v1.EventFinalizedCheckpoint
+	(*v1.EventHead)(nil),                                                           // 157: xatu.eth.v1.EventHead
+	(*v1.EventVoluntaryExit)(nil),                                                  // 158: xatu.eth.v1.EventVoluntaryExit
+	(*v1.EventContributionAndProof)(nil),                                           // 159: xatu.eth.v1.EventContributionAndProof
+	(*v2.EventBlock)(nil),                                                          // 160: xatu.eth.v2.EventBlock
+	(*v1.Committee)(nil),                                                           // 161: xatu.eth.v1.Committee
+	(*v1.AttestationDataV2)(nil),                                                   // 162: xatu.eth.v1.AttestationDataV2
+	(*v1.AttestationV2)(nil),                                                       // 163: xatu.eth.v1.AttestationV2
+	(*v1.EventBlockV2)(nil),                                                        // 164: xatu.eth.v1.EventBlockV2
+	(*v1.EventFinalizedCheckpointV2)(nil),                                          // 165: xatu.eth.v1.EventFinalizedCheckpointV2
+	(*v1.EventHeadV2)(nil),                                                         // 166: xatu.eth.v1.EventHeadV2
+	(*v1.EventVoluntaryExitV2)(nil),                                                // 167: xatu.eth.v1.EventVoluntaryExitV2
+	(*v1.EventContributionAndProofV2)(nil),                                         // 168: xatu.eth.v1.EventContributionAndProofV2
+	(*v2.EventBlockV2)(nil),                                                        // 169: xatu.eth.v2.EventBlockV2
+	(*v1.AttesterSlashingV2)(nil),                                                  // 170: xatu.eth.v1.AttesterSlashingV2
+	(*v1.ProposerSlashingV2)(nil),                                                  // 171: xatu.eth.v1.ProposerSlashingV2
+	(*v1.SignedVoluntaryExitV2)(nil),                                               // 172: xatu.eth.v1.SignedVoluntaryExitV2
+	(*v1.DepositV2)(nil),                                                           // 173: xatu.eth.v1.DepositV2
+	(*v2.SignedBLSToExecutionChangeV2)(nil),                                        // 174: xatu.eth.v2.SignedBLSToExecutionChangeV2
+	(*v1.Transaction)(nil),                                                         // 175: xatu.eth.v1.Transaction
+	(*v1.WithdrawalV2)(nil),                                                        // 176: xatu.eth.v1.WithdrawalV2
+	(*v1.EventBlobSidecar)(nil),                                                    // 177: xatu.eth.v1.EventBlobSidecar
+	(*v1.BlobSidecar)(nil),                                                         // 178: xatu.eth.v1.BlobSidecar
+	(*v1.ProposerDuty)(nil),                                                        // 179: xatu.eth.v1.ProposerDuty
+	(*v1.ElaboratedAttestation)(nil),                                               // 180: xatu.eth.v1.ElaboratedAttestation
+	(*libp2p.AddPeer)(nil),                                                         // 181: xatu.libp2p.AddPeer
+	(*libp2p.RemovePeer)(nil),                                                      // 182: xatu.libp2p.RemovePeer
+	(*libp2p.RecvRPC)(nil),                                                         // 183: xatu.libp2p.RecvRPC
+	(*libp2p.SendRPC)(nil),                                                         // 184: xatu.libp2p.SendRPC
+	(*libp2p.Join)(nil),                                                            // 185: xatu.libp2p.Join
+	(*libp2p.Connected)(nil),                                                       // 186: xatu.libp2p.Connected
+	(*libp2p.Disconnected)(nil),                                                    // 187: xatu.libp2p.Disconnected
+	(*libp2p.HandleMetadata)(nil),                                                  // 188: xatu.libp2p.HandleMetadata
+	(*libp2p.HandleStatus)(nil),                                                    // 189: xatu.libp2p.HandleStatus
+	(*gossipsub.BeaconBlock)(nil),                                                  // 190: xatu.libp2p.gossipsub.eth.BeaconBlock
+	(*gossipsub.BlobSidecar)(nil),                                                  // 191: xatu.libp2p.gossipsub.eth.BlobSidecar
+	(*mevrelay.BidTrace)(nil),                                                      // 192: xatu.mevrelay.BidTrace
+	(*mevrelay.ProposerPayloadDelivered)(nil),                                      // 193: xatu.mevrelay.ProposerPayloadDelivered
+	(*mevrelay.ValidatorRegistration)(nil),                                         // 194: xatu.mevrelay.ValidatorRegistration
+	(*v1.EventBlockGossip)(nil),                                                    // 195: xatu.eth.v1.EventBlockGossip
+	(*libp2p.DropRPC)(nil),                                                         // 196: xatu.libp2p.DropRPC
+	(*libp2p.Leave)(nil),                                                           // 197: xatu.libp2p.Leave
+	(*libp2p.Graft)(nil),                                                           // 198: xatu.libp2p.Graft
+	(*libp2p.Prune)(nil),                                                           // 199: xatu.libp2p.Prune
+	(*libp2p.DuplicateMessage)(nil),                                                // 200: xatu.libp2p.DuplicateMessage
+	(*libp2p.DeliverMessage)(nil),                                                  // 201: xatu.libp2p.DeliverMessage
+	(*libp2p.PublishMessage)(nil),                                                  // 202: xatu.libp2p.PublishMessage
+	(*libp2p.RejectMessage)(nil),                                                   // 203: xatu.libp2p.RejectMessage
+	(*libp2p.ControlIHaveMetaItem)(nil),                                            // 204: xatu.libp2p.ControlIHaveMetaItem
+	(*libp2p.ControlIWantMetaItem)(nil),                                            // 205: xatu.libp2p.ControlIWantMetaItem
+	(*libp2p.ControlIDontWantMetaItem)(nil),                                        // 206: xatu.libp2p.ControlIDontWantMetaItem
+	(*libp2p.ControlGraftMetaItem)(nil),                                            // 207: xatu.libp2p.ControlGraftMetaItem
+	(*libp2p.ControlPruneMetaItem)(nil),                                            // 208: xatu.libp2p.ControlPruneMetaItem
+	(*libp2p.SubMetaItem)(nil),                                                     // 209: xatu.libp2p.SubMetaItem
+	(*libp2p.MessageMetaItem)(nil),                                                 // 210: xatu.libp2p.MessageMetaItem
+	(*noderecord.Consensus)(nil),                                                   // 211: xatu.noderecord.Consensus
+	(*noderecord.Execution)(nil),                                                   // 212: xatu.noderecord.Execution
+	(*v1.SignedAggregateAttestationAndProofV2)(nil),                                // 213: xatu.eth.v1.SignedAggregateAttestationAndProofV2
+	(*v1.EventDataColumnSidecar)(nil),                                              // 214: xatu.eth.v1.EventDataColumnSidecar
+	(*gossipsub.DataColumnSidecar)(nil),                                            // 215: xatu.libp2p.gossipsub.eth.DataColumnSidecar
+	(*libp2p.SyntheticHeartbeat)(nil),                                              // 216: xatu.libp2p.SyntheticHeartbeat
+	(*libp2p.Identify)(nil),                                                        // 217: xatu.libp2p.Identify
+	(*libp2p.DataColumnCustodyProbe)(nil),                                          // 218: xatu.libp2p.DataColumnCustodyProbe
+	(*v1.Blob)(nil),                                                                // 219: xatu.eth.v1.Blob
+	(*v1.EventFastConfirmation)(nil),                                               // 220: xatu.eth.v1.EventFastConfirmation
+	(*libp2p.Peer)(nil),                                                            // 221: xatu.libp2p.Peer
+	(*wrapperspb.BoolValue)(nil),                                                   // 222: google.protobuf.BoolValue
+	(*libp2p.TraceEventMetadata)(nil),                                              // 223: xatu.libp2p.TraceEventMetadata
+	(*wrapperspb.StringValue)(nil),                                                 // 224: google.protobuf.StringValue
+	(*mevrelay.Relay)(nil),                                                         // 225: xatu.mevrelay.Relay
+	(*wrapperspb.Int64Value)(nil),                                                  // 226: google.protobuf.Int64Value
 }
 var file_pkg_proto_xatu_event_ingester_proto_depIdxs = []int32{
 	29,  // 0: xatu.CreateEventsRequest.events:type_name -> xatu.DecoratedEvent
-	142, // 1: xatu.CreateEventsResponse.events_ingested:type_name -> google.protobuf.UInt64Value
-	143, // 2: xatu.Epoch.start_date_time:type_name -> google.protobuf.Timestamp
-	142, // 3: xatu.EpochV2.number:type_name -> google.protobuf.UInt64Value
-	143, // 4: xatu.EpochV2.start_date_time:type_name -> google.protobuf.Timestamp
-	143, // 5: xatu.Slot.start_date_time:type_name -> google.protobuf.Timestamp
-	142, // 6: xatu.SlotV2.number:type_name -> google.protobuf.UInt64Value
-	143, // 7: xatu.SlotV2.start_date_time:type_name -> google.protobuf.Timestamp
-	142, // 8: xatu.PropagationV2.slot_start_diff:type_name -> google.protobuf.UInt64Value
-	142, // 9: xatu.AttestingValidatorV2.committee_index:type_name -> google.protobuf.UInt64Value
-	142, // 10: xatu.AttestingValidatorV2.index:type_name -> google.protobuf.UInt64Value
-	144, // 11: xatu.DebugForkChoiceReorg.before:type_name -> xatu.eth.v1.ForkChoice
-	144, // 12: xatu.DebugForkChoiceReorg.after:type_name -> xatu.eth.v1.ForkChoice
-	145, // 13: xatu.DebugForkChoiceReorg.event:type_name -> xatu.eth.v1.EventChainReorg
-	146, // 14: xatu.DebugForkChoiceReorgV2.before:type_name -> xatu.eth.v1.ForkChoiceV2
-	146, // 15: xatu.DebugForkChoiceReorgV2.after:type_name -> xatu.eth.v1.ForkChoiceV2
-	147, // 16: xatu.DebugForkChoiceReorgV2.event:type_name -> xatu.eth.v1.EventChainReorgV2
-	148, // 17: xatu.Validators.validators:type_name -> xatu.eth.v1.Validator
-	149, // 18: xatu.SyncCommitteeData.sync_committee:type_name -> xatu.eth.v1.SyncCommittee
-	142, // 19: xatu.SyncAggregateData.validators_participated:type_name -> google.protobuf.UInt64Value
-	142, // 20: xatu.SyncAggregateData.validators_missed:type_name -> google.protobuf.UInt64Value
-	142, // 21: xatu.SyncAggregateData.participation_count:type_name -> google.protobuf.UInt64Value
+	143, // 1: xatu.CreateEventsResponse.events_ingested:type_name -> google.protobuf.UInt64Value
+	144, // 2: xatu.Epoch.start_date_time:type_name -> google.protobuf.Timestamp
+	143, // 3: xatu.EpochV2.number:type_name -> google.protobuf.UInt64Value
+	144, // 4: xatu.EpochV2.start_date_time:type_name -> google.protobuf.Timestamp
+	144, // 5: xatu.Slot.start_date_time:type_name -> google.protobuf.Timestamp
+	143, // 6: xatu.SlotV2.number:type_name -> google.protobuf.UInt64Value
+	144, // 7: xatu.SlotV2.start_date_time:type_name -> google.protobuf.Timestamp
+	143, // 8: xatu.PropagationV2.slot_start_diff:type_name -> google.protobuf.UInt64Value
+	143, // 9: xatu.AttestingValidatorV2.committee_index:type_name -> google.protobuf.UInt64Value
+	143, // 10: xatu.AttestingValidatorV2.index:type_name -> google.protobuf.UInt64Value
+	145, // 11: xatu.DebugForkChoiceReorg.before:type_name -> xatu.eth.v1.ForkChoice
+	145, // 12: xatu.DebugForkChoiceReorg.after:type_name -> xatu.eth.v1.ForkChoice
+	146, // 13: xatu.DebugForkChoiceReorg.event:type_name -> xatu.eth.v1.EventChainReorg
+	147, // 14: xatu.DebugForkChoiceReorgV2.before:type_name -> xatu.eth.v1.ForkChoiceV2
+	147, // 15: xatu.DebugForkChoiceReorgV2.after:type_name -> xatu.eth.v1.ForkChoiceV2
+	148, // 16: xatu.DebugForkChoiceReorgV2.event:type_name -> xatu.eth.v1.EventChainReorgV2
+	149, // 17: xatu.Validators.validators:type_name -> xatu.eth.v1.Validator
+	150, // 18: xatu.SyncCommitteeData.sync_committee:type_name -> xatu.eth.v1.SyncCommittee
+	143, // 19: xatu.SyncAggregateData.validators_participated:type_name -> google.protobuf.UInt64Value
+	143, // 20: xatu.SyncAggregateData.validators_missed:type_name -> google.protobuf.UInt64Value
+	143, // 21: xatu.SyncAggregateData.participation_count:type_name -> google.protobuf.UInt64Value
 	5,   // 22: xatu.BlockIdentifier.epoch:type_name -> xatu.EpochV2
 	7,   // 23: xatu.BlockIdentifier.slot:type_name -> xatu.SlotV2
-	143, // 24: xatu.ConsensusEngineAPINewPayload.requested_at:type_name -> google.protobuf.Timestamp
-	142, // 25: xatu.ConsensusEngineAPINewPayload.duration_ms:type_name -> google.protobuf.UInt64Value
-	142, // 26: xatu.ConsensusEngineAPINewPayload.slot:type_name -> google.protobuf.UInt64Value
-	142, // 27: xatu.ConsensusEngineAPINewPayload.proposer_index:type_name -> google.protobuf.UInt64Value
-	142, // 28: xatu.ConsensusEngineAPINewPayload.block_number:type_name -> google.protobuf.UInt64Value
-	142, // 29: xatu.ConsensusEngineAPINewPayload.gas_used:type_name -> google.protobuf.UInt64Value
-	142, // 30: xatu.ConsensusEngineAPINewPayload.gas_limit:type_name -> google.protobuf.UInt64Value
-	150, // 31: xatu.ConsensusEngineAPINewPayload.tx_count:type_name -> google.protobuf.UInt32Value
-	150, // 32: xatu.ConsensusEngineAPINewPayload.blob_count:type_name -> google.protobuf.UInt32Value
-	143, // 33: xatu.ConsensusEngineAPIGetBlobs.requested_at:type_name -> google.protobuf.Timestamp
-	142, // 34: xatu.ConsensusEngineAPIGetBlobs.duration_ms:type_name -> google.protobuf.UInt64Value
-	142, // 35: xatu.ConsensusEngineAPIGetBlobs.slot:type_name -> google.protobuf.UInt64Value
-	150, // 36: xatu.ConsensusEngineAPIGetBlobs.requested_count:type_name -> google.protobuf.UInt32Value
-	150, // 37: xatu.ConsensusEngineAPIGetBlobs.returned_count:type_name -> google.protobuf.UInt32Value
+	144, // 24: xatu.ConsensusEngineAPINewPayload.requested_at:type_name -> google.protobuf.Timestamp
+	143, // 25: xatu.ConsensusEngineAPINewPayload.duration_ms:type_name -> google.protobuf.UInt64Value
+	143, // 26: xatu.ConsensusEngineAPINewPayload.slot:type_name -> google.protobuf.UInt64Value
+	143, // 27: xatu.ConsensusEngineAPINewPayload.proposer_index:type_name -> google.protobuf.UInt64Value
+	143, // 28: xatu.ConsensusEngineAPINewPayload.block_number:type_name -> google.protobuf.UInt64Value
+	143, // 29: xatu.ConsensusEngineAPINewPayload.gas_used:type_name -> google.protobuf.UInt64Value
+	143, // 30: xatu.ConsensusEngineAPINewPayload.gas_limit:type_name -> google.protobuf.UInt64Value
+	151, // 31: xatu.ConsensusEngineAPINewPayload.tx_count:type_name -> google.protobuf.UInt32Value
+	151, // 32: xatu.ConsensusEngineAPINewPayload.blob_count:type_name -> google.protobuf.UInt32Value
+	144, // 33: xatu.ConsensusEngineAPIGetBlobs.requested_at:type_name -> google.protobuf.Timestamp
+	143, // 34: xatu.ConsensusEngineAPIGetBlobs.duration_ms:type_name -> google.protobuf.UInt64Value
+	143, // 35: xatu.ConsensusEngineAPIGetBlobs.slot:type_name -> google.protobuf.UInt64Value
+	151, // 36: xatu.ConsensusEngineAPIGetBlobs.requested_count:type_name -> google.protobuf.UInt32Value
+	151, // 37: xatu.ConsensusEngineAPIGetBlobs.returned_count:type_name -> google.protobuf.UInt32Value
 	0,   // 38: xatu.ExecutionEngineNewPayload.source:type_name -> xatu.EngineSource
-	143, // 39: xatu.ExecutionEngineNewPayload.requested_at:type_name -> google.protobuf.Timestamp
-	142, // 40: xatu.ExecutionEngineNewPayload.duration_ms:type_name -> google.protobuf.UInt64Value
-	142, // 41: xatu.ExecutionEngineNewPayload.block_number:type_name -> google.protobuf.UInt64Value
-	142, // 42: xatu.ExecutionEngineNewPayload.gas_used:type_name -> google.protobuf.UInt64Value
-	142, // 43: xatu.ExecutionEngineNewPayload.gas_limit:type_name -> google.protobuf.UInt64Value
-	150, // 44: xatu.ExecutionEngineNewPayload.tx_count:type_name -> google.protobuf.UInt32Value
-	150, // 45: xatu.ExecutionEngineNewPayload.blob_count:type_name -> google.protobuf.UInt32Value
+	144, // 39: xatu.ExecutionEngineNewPayload.requested_at:type_name -> google.protobuf.Timestamp
+	143, // 40: xatu.ExecutionEngineNewPayload.duration_ms:type_name -> google.protobuf.UInt64Value
+	143, // 41: xatu.ExecutionEngineNewPayload.block_number:type_name -> google.protobuf.UInt64Value
+	143, // 42: xatu.ExecutionEngineNewPayload.gas_used:type_name -> google.protobuf.UInt64Value
+	143, // 43: xatu.ExecutionEngineNewPayload.gas_limit:type_name -> google.protobuf.UInt64Value
+	151, // 44: xatu.ExecutionEngineNewPayload.tx_count:type_name -> google.protobuf.UInt32Value
+	151, // 45: xatu.ExecutionEngineNewPayload.blob_count:type_name -> google.protobuf.UInt32Value
 	0,   // 46: xatu.ExecutionEngineGetBlobs.source:type_name -> xatu.EngineSource
-	143, // 47: xatu.ExecutionEngineGetBlobs.requested_at:type_name -> google.protobuf.Timestamp
-	142, // 48: xatu.ExecutionEngineGetBlobs.duration_ms:type_name -> google.protobuf.UInt64Value
-	150, // 49: xatu.ExecutionEngineGetBlobs.requested_count:type_name -> google.protobuf.UInt32Value
-	150, // 50: xatu.ExecutionEngineGetBlobs.returned_count:type_name -> google.protobuf.UInt32Value
-	150, // 51: xatu.ExecutionEngineGetBlobs.returned_blob_indexes:type_name -> google.protobuf.UInt32Value
+	144, // 47: xatu.ExecutionEngineGetBlobs.requested_at:type_name -> google.protobuf.Timestamp
+	143, // 48: xatu.ExecutionEngineGetBlobs.duration_ms:type_name -> google.protobuf.UInt64Value
+	151, // 49: xatu.ExecutionEngineGetBlobs.requested_count:type_name -> google.protobuf.UInt32Value
+	151, // 50: xatu.ExecutionEngineGetBlobs.returned_count:type_name -> google.protobuf.UInt32Value
+	151, // 51: xatu.ExecutionEngineGetBlobs.returned_blob_indexes:type_name -> google.protobuf.UInt32Value
 	30,  // 52: xatu.ClientMeta.ethereum:type_name -> xatu.ClientMeta.Ethereum
 	31,  // 53: xatu.ClientMeta.labels:type_name -> xatu.ClientMeta.LabelsEntry
 	36,  // 54: xatu.ClientMeta.eth_v1_events_attestation:type_name -> xatu.ClientMeta.AdditionalEthV1EventsAttestationData
 	38,  // 55: xatu.ClientMeta.eth_v1_events_head:type_name -> xatu.ClientMeta.AdditionalEthV1EventsHeadData
 	40,  // 56: xatu.ClientMeta.eth_v1_events_block:type_name -> xatu.ClientMeta.AdditionalEthV1EventsBlockData
-	43,  // 57: xatu.ClientMeta.eth_v1_events_voluntary_exit:type_name -> xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData
-	45,  // 58: xatu.ClientMeta.eth_v1_events_finalized_checkpoint:type_name -> xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData
-	47,  // 59: xatu.ClientMeta.eth_v1_events_chain_reorg:type_name -> xatu.ClientMeta.AdditionalEthV1EventsChainReorgData
-	51,  // 60: xatu.ClientMeta.eth_v1_events_contribution_and_proof:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData
-	62,  // 61: xatu.ClientMeta.mempool_transaction:type_name -> xatu.ClientMeta.AdditionalMempoolTransactionData
-	64,  // 62: xatu.ClientMeta.eth_v2_beacon_block:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockData
-	55,  // 63: xatu.ClientMeta.eth_v1_debug_fork_choice:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData
-	57,  // 64: xatu.ClientMeta.eth_v1_debug_fork_choice_reorg:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData
-	59,  // 65: xatu.ClientMeta.eth_v1_beacon_committee:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData
-	74,  // 66: xatu.ClientMeta.eth_v1_validator_attestation_data:type_name -> xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData
+	44,  // 57: xatu.ClientMeta.eth_v1_events_voluntary_exit:type_name -> xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData
+	46,  // 58: xatu.ClientMeta.eth_v1_events_finalized_checkpoint:type_name -> xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData
+	48,  // 59: xatu.ClientMeta.eth_v1_events_chain_reorg:type_name -> xatu.ClientMeta.AdditionalEthV1EventsChainReorgData
+	52,  // 60: xatu.ClientMeta.eth_v1_events_contribution_and_proof:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData
+	63,  // 61: xatu.ClientMeta.mempool_transaction:type_name -> xatu.ClientMeta.AdditionalMempoolTransactionData
+	65,  // 62: xatu.ClientMeta.eth_v2_beacon_block:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockData
+	56,  // 63: xatu.ClientMeta.eth_v1_debug_fork_choice:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData
+	58,  // 64: xatu.ClientMeta.eth_v1_debug_fork_choice_reorg:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData
+	60,  // 65: xatu.ClientMeta.eth_v1_beacon_committee:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData
+	75,  // 66: xatu.ClientMeta.eth_v1_validator_attestation_data:type_name -> xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData
 	37,  // 67: xatu.ClientMeta.eth_v1_events_attestation_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data
 	39,  // 68: xatu.ClientMeta.eth_v1_events_head_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data
 	41,  // 69: xatu.ClientMeta.eth_v1_events_block_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data
-	44,  // 70: xatu.ClientMeta.eth_v1_events_voluntary_exit_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data
-	46,  // 71: xatu.ClientMeta.eth_v1_events_finalized_checkpoint_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data
-	48,  // 72: xatu.ClientMeta.eth_v1_events_chain_reorg_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data
-	52,  // 73: xatu.ClientMeta.eth_v1_events_contribution_and_proof_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data
-	63,  // 74: xatu.ClientMeta.mempool_transaction_v2:type_name -> xatu.ClientMeta.AdditionalMempoolTransactionV2Data
-	65,  // 75: xatu.ClientMeta.eth_v2_beacon_block_v2:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data
-	56,  // 76: xatu.ClientMeta.eth_v1_debug_fork_choice_v2:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data
-	58,  // 77: xatu.ClientMeta.eth_v1_debug_fork_choice_reorg_v2:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data
-	66,  // 78: xatu.ClientMeta.eth_v2_beacon_block_attester_slashing:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData
-	67,  // 79: xatu.ClientMeta.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData
-	68,  // 80: xatu.ClientMeta.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData
-	69,  // 81: xatu.ClientMeta.eth_v2_beacon_block_deposit:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData
-	70,  // 82: xatu.ClientMeta.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData
-	71,  // 83: xatu.ClientMeta.eth_v2_beacon_block_execution_transaction:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData
-	72,  // 84: xatu.ClientMeta.eth_v2_beacon_block_withdrawal:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData
-	75,  // 85: xatu.ClientMeta.eth_v1_events_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData
-	77,  // 86: xatu.ClientMeta.eth_v1_beacon_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData
-	78,  // 87: xatu.ClientMeta.beacon_p2p_attestation:type_name -> xatu.ClientMeta.AdditionalBeaconP2PAttestationData
-	79,  // 88: xatu.ClientMeta.eth_v1_proposer_duty:type_name -> xatu.ClientMeta.AdditionalEthV1ProposerDutyData
-	80,  // 89: xatu.ClientMeta.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData
-	81,  // 90: xatu.ClientMeta.libp2p_trace_add_peer:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData
-	82,  // 91: xatu.ClientMeta.libp2p_trace_remove_peer:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData
-	83,  // 92: xatu.ClientMeta.libp2p_trace_recv_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData
-	84,  // 93: xatu.ClientMeta.libp2p_trace_send_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData
-	91,  // 94: xatu.ClientMeta.libp2p_trace_join:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceJoinData
-	99,  // 95: xatu.ClientMeta.libp2p_trace_connected:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceConnectedData
-	100, // 96: xatu.ClientMeta.libp2p_trace_disconnected:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData
-	102, // 97: xatu.ClientMeta.libp2p_trace_handle_metadata:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData
-	103, // 98: xatu.ClientMeta.libp2p_trace_handle_status:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData
-	108, // 99: xatu.ClientMeta.libp2p_trace_gossipsub_beacon_block:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData
-	111, // 100: xatu.ClientMeta.libp2p_trace_gossipsub_beacon_attestation:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData
-	113, // 101: xatu.ClientMeta.libp2p_trace_gossipsub_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData
-	115, // 102: xatu.ClientMeta.eth_v1_validators:type_name -> xatu.ClientMeta.AdditionalEthV1ValidatorsData
-	116, // 103: xatu.ClientMeta.mev_relay_bid_trace_builder_block_submission:type_name -> xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData
-	117, // 104: xatu.ClientMeta.mev_relay_payload_delivered:type_name -> xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData
-	118, // 105: xatu.ClientMeta.eth_v3_validator_block:type_name -> xatu.ClientMeta.AdditionalEthV3ValidatorBlockData
-	119, // 106: xatu.ClientMeta.mev_relay_validator_registration:type_name -> xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData
+	45,  // 70: xatu.ClientMeta.eth_v1_events_voluntary_exit_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data
+	47,  // 71: xatu.ClientMeta.eth_v1_events_finalized_checkpoint_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data
+	49,  // 72: xatu.ClientMeta.eth_v1_events_chain_reorg_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data
+	53,  // 73: xatu.ClientMeta.eth_v1_events_contribution_and_proof_v2:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data
+	64,  // 74: xatu.ClientMeta.mempool_transaction_v2:type_name -> xatu.ClientMeta.AdditionalMempoolTransactionV2Data
+	66,  // 75: xatu.ClientMeta.eth_v2_beacon_block_v2:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data
+	57,  // 76: xatu.ClientMeta.eth_v1_debug_fork_choice_v2:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data
+	59,  // 77: xatu.ClientMeta.eth_v1_debug_fork_choice_reorg_v2:type_name -> xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data
+	67,  // 78: xatu.ClientMeta.eth_v2_beacon_block_attester_slashing:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData
+	68,  // 79: xatu.ClientMeta.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData
+	69,  // 80: xatu.ClientMeta.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData
+	70,  // 81: xatu.ClientMeta.eth_v2_beacon_block_deposit:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData
+	71,  // 82: xatu.ClientMeta.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData
+	72,  // 83: xatu.ClientMeta.eth_v2_beacon_block_execution_transaction:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData
+	73,  // 84: xatu.ClientMeta.eth_v2_beacon_block_withdrawal:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData
+	76,  // 85: xatu.ClientMeta.eth_v1_events_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData
+	78,  // 86: xatu.ClientMeta.eth_v1_beacon_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData
+	79,  // 87: xatu.ClientMeta.beacon_p2p_attestation:type_name -> xatu.ClientMeta.AdditionalBeaconP2PAttestationData
+	80,  // 88: xatu.ClientMeta.eth_v1_proposer_duty:type_name -> xatu.ClientMeta.AdditionalEthV1ProposerDutyData
+	81,  // 89: xatu.ClientMeta.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData
+	82,  // 90: xatu.ClientMeta.libp2p_trace_add_peer:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData
+	83,  // 91: xatu.ClientMeta.libp2p_trace_remove_peer:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData
+	84,  // 92: xatu.ClientMeta.libp2p_trace_recv_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData
+	85,  // 93: xatu.ClientMeta.libp2p_trace_send_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData
+	92,  // 94: xatu.ClientMeta.libp2p_trace_join:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceJoinData
+	100, // 95: xatu.ClientMeta.libp2p_trace_connected:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceConnectedData
+	101, // 96: xatu.ClientMeta.libp2p_trace_disconnected:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData
+	103, // 97: xatu.ClientMeta.libp2p_trace_handle_metadata:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData
+	104, // 98: xatu.ClientMeta.libp2p_trace_handle_status:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData
+	109, // 99: xatu.ClientMeta.libp2p_trace_gossipsub_beacon_block:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData
+	112, // 100: xatu.ClientMeta.libp2p_trace_gossipsub_beacon_attestation:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData
+	114, // 101: xatu.ClientMeta.libp2p_trace_gossipsub_blob_sidecar:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData
+	116, // 102: xatu.ClientMeta.eth_v1_validators:type_name -> xatu.ClientMeta.AdditionalEthV1ValidatorsData
+	117, // 103: xatu.ClientMeta.mev_relay_bid_trace_builder_block_submission:type_name -> xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData
+	118, // 104: xatu.ClientMeta.mev_relay_payload_delivered:type_name -> xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData
+	119, // 105: xatu.ClientMeta.eth_v3_validator_block:type_name -> xatu.ClientMeta.AdditionalEthV3ValidatorBlockData
+	120, // 106: xatu.ClientMeta.mev_relay_validator_registration:type_name -> xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData
 	42,  // 107: xatu.ClientMeta.eth_v1_events_block_gossip:type_name -> xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData
-	85,  // 108: xatu.ClientMeta.libp2p_trace_drop_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData
-	92,  // 109: xatu.ClientMeta.libp2p_trace_leave:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceLeaveData
-	93,  // 110: xatu.ClientMeta.libp2p_trace_graft:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGraftData
-	94,  // 111: xatu.ClientMeta.libp2p_trace_prune:type_name -> xatu.ClientMeta.AdditionalLibP2PTracePruneData
-	95,  // 112: xatu.ClientMeta.libp2p_trace_duplicate_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData
-	96,  // 113: xatu.ClientMeta.libp2p_trace_deliver_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData
-	97,  // 114: xatu.ClientMeta.libp2p_trace_publish_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData
-	98,  // 115: xatu.ClientMeta.libp2p_trace_reject_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData
-	86,  // 116: xatu.ClientMeta.libp2p_trace_rpc_meta_control_ihave:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData
-	87,  // 117: xatu.ClientMeta.libp2p_trace_rpc_meta_control_iwant:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData
-	88,  // 118: xatu.ClientMeta.libp2p_trace_rpc_meta_control_idontwant:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData
-	89,  // 119: xatu.ClientMeta.libp2p_trace_rpc_meta_control_graft:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData
-	90,  // 120: xatu.ClientMeta.libp2p_trace_rpc_meta_control_prune:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData
-	106, // 121: xatu.ClientMeta.libp2p_trace_rpc_meta_subscription:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData
-	107, // 122: xatu.ClientMeta.libp2p_trace_rpc_meta_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData
-	120, // 123: xatu.ClientMeta.node_record_consensus:type_name -> xatu.ClientMeta.AdditionalNodeRecordConsensusData
-	112, // 124: xatu.ClientMeta.libp2p_trace_gossipsub_aggregate_and_proof:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData
-	76,  // 125: xatu.ClientMeta.eth_v1_events_data_column_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData
-	114, // 126: xatu.ClientMeta.libp2p_trace_gossipsub_data_column_sidecar:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData
-	101, // 127: xatu.ClientMeta.libp2p_trace_synthetic_heartbeat:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
-	105, // 128: xatu.ClientMeta.libp2p_trace_rpc_data_column_custody_probe:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData
-	121, // 129: xatu.ClientMeta.consensus_engine_api_new_payload:type_name -> xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData
-	122, // 130: xatu.ClientMeta.consensus_engine_api_get_blobs:type_name -> xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData
-	123, // 131: xatu.ClientMeta.eth_v1_beacon_blob:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconBlobData
-	60,  // 132: xatu.ClientMeta.eth_v1_beacon_sync_committee:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData
-	61,  // 133: xatu.ClientMeta.eth_v2_beacon_block_sync_aggregate:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData
-	104, // 134: xatu.ClientMeta.libp2p_trace_identify:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData
-	151, // 135: xatu.ClientMeta.module_name:type_name -> xatu.ModuleName
-	127, // 136: xatu.ServerMeta.event:type_name -> xatu.ServerMeta.Event
-	129, // 137: xatu.ServerMeta.client:type_name -> xatu.ServerMeta.Client
-	131, // 138: xatu.ServerMeta.BEACON_P2P_ATTESTATION:type_name -> xatu.ServerMeta.AdditionalBeaconP2PAttestationData
-	132, // 139: xatu.ServerMeta.LIBP2P_TRACE_CONNECTED:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceConnectedData
-	133, // 140: xatu.ServerMeta.LIBP2P_TRACE_DISCONNECTED:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData
-	136, // 141: xatu.ServerMeta.NODE_RECORD_CONSENSUS:type_name -> xatu.ServerMeta.AdditionalNodeRecordConsensusData
-	137, // 142: xatu.ServerMeta.NODE_RECORD_EXECUTION:type_name -> xatu.ServerMeta.AdditionalNodeRecordExecutionData
-	134, // 143: xatu.ServerMeta.LIBP2P_TRACE_SYNTHETIC_HEARTBEAT:type_name -> xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
-	135, // 144: xatu.ServerMeta.LIBP2P_TRACE_IDENTIFY:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData
-	24,  // 145: xatu.Meta.client:type_name -> xatu.ClientMeta
-	25,  // 146: xatu.Meta.server:type_name -> xatu.ServerMeta
-	1,   // 147: xatu.Event.name:type_name -> xatu.Event.Name
-	143, // 148: xatu.Event.date_time:type_name -> google.protobuf.Timestamp
-	142, // 149: xatu.ExecutionBlockMetrics.block_number:type_name -> google.protobuf.UInt64Value
-	142, // 150: xatu.ExecutionBlockMetrics.gas_used:type_name -> google.protobuf.UInt64Value
-	150, // 151: xatu.ExecutionBlockMetrics.tx_count:type_name -> google.protobuf.UInt32Value
-	152, // 152: xatu.ExecutionBlockMetrics.execution_ms:type_name -> google.protobuf.DoubleValue
-	152, // 153: xatu.ExecutionBlockMetrics.state_read_ms:type_name -> google.protobuf.DoubleValue
-	152, // 154: xatu.ExecutionBlockMetrics.state_hash_ms:type_name -> google.protobuf.DoubleValue
-	152, // 155: xatu.ExecutionBlockMetrics.commit_ms:type_name -> google.protobuf.DoubleValue
-	152, // 156: xatu.ExecutionBlockMetrics.total_ms:type_name -> google.protobuf.DoubleValue
-	152, // 157: xatu.ExecutionBlockMetrics.mgas_per_sec:type_name -> google.protobuf.DoubleValue
-	138, // 158: xatu.ExecutionBlockMetrics.state_reads:type_name -> xatu.ExecutionBlockMetrics.StateReads
-	139, // 159: xatu.ExecutionBlockMetrics.state_writes:type_name -> xatu.ExecutionBlockMetrics.StateWrites
-	140, // 160: xatu.ExecutionBlockMetrics.account_cache:type_name -> xatu.ExecutionBlockMetrics.CacheEntry
-	140, // 161: xatu.ExecutionBlockMetrics.storage_cache:type_name -> xatu.ExecutionBlockMetrics.CacheEntry
-	141, // 162: xatu.ExecutionBlockMetrics.code_cache:type_name -> xatu.ExecutionBlockMetrics.CodeCacheEntry
-	27,  // 163: xatu.DecoratedEvent.event:type_name -> xatu.Event
-	26,  // 164: xatu.DecoratedEvent.meta:type_name -> xatu.Meta
-	153, // 165: xatu.DecoratedEvent.eth_v1_events_attestation:type_name -> xatu.eth.v1.Attestation
-	154, // 166: xatu.DecoratedEvent.eth_v1_events_block:type_name -> xatu.eth.v1.EventBlock
-	145, // 167: xatu.DecoratedEvent.eth_v1_events_chain_reorg:type_name -> xatu.eth.v1.EventChainReorg
-	155, // 168: xatu.DecoratedEvent.eth_v1_events_finalized_checkpoint:type_name -> xatu.eth.v1.EventFinalizedCheckpoint
-	156, // 169: xatu.DecoratedEvent.eth_v1_events_head:type_name -> xatu.eth.v1.EventHead
-	157, // 170: xatu.DecoratedEvent.eth_v1_events_voluntary_exit:type_name -> xatu.eth.v1.EventVoluntaryExit
-	158, // 171: xatu.DecoratedEvent.eth_v1_events_contribution_and_proof:type_name -> xatu.eth.v1.EventContributionAndProof
-	159, // 172: xatu.DecoratedEvent.eth_v2_beacon_block:type_name -> xatu.eth.v2.EventBlock
-	144, // 173: xatu.DecoratedEvent.eth_v1_fork_choice:type_name -> xatu.eth.v1.ForkChoice
-	13,  // 174: xatu.DecoratedEvent.eth_v1_fork_choice_reorg:type_name -> xatu.DebugForkChoiceReorg
-	160, // 175: xatu.DecoratedEvent.eth_v1_beacon_committee:type_name -> xatu.eth.v1.Committee
-	161, // 176: xatu.DecoratedEvent.eth_v1_validator_attestation_data:type_name -> xatu.eth.v1.AttestationDataV2
-	162, // 177: xatu.DecoratedEvent.eth_v1_events_attestation_v2:type_name -> xatu.eth.v1.AttestationV2
-	163, // 178: xatu.DecoratedEvent.eth_v1_events_block_v2:type_name -> xatu.eth.v1.EventBlockV2
-	147, // 179: xatu.DecoratedEvent.eth_v1_events_chain_reorg_v2:type_name -> xatu.eth.v1.EventChainReorgV2
-	164, // 180: xatu.DecoratedEvent.eth_v1_events_finalized_checkpoint_v2:type_name -> xatu.eth.v1.EventFinalizedCheckpointV2
-	165, // 181: xatu.DecoratedEvent.eth_v1_events_head_v2:type_name -> xatu.eth.v1.EventHeadV2
-	166, // 182: xatu.DecoratedEvent.eth_v1_events_voluntary_exit_v2:type_name -> xatu.eth.v1.EventVoluntaryExitV2
-	167, // 183: xatu.DecoratedEvent.eth_v1_events_contribution_and_proof_v2:type_name -> xatu.eth.v1.EventContributionAndProofV2
-	168, // 184: xatu.DecoratedEvent.eth_v2_beacon_block_v2:type_name -> xatu.eth.v2.EventBlockV2
-	146, // 185: xatu.DecoratedEvent.eth_v1_fork_choice_v2:type_name -> xatu.eth.v1.ForkChoiceV2
-	14,  // 186: xatu.DecoratedEvent.eth_v1_fork_choice_reorg_v2:type_name -> xatu.DebugForkChoiceReorgV2
-	169, // 187: xatu.DecoratedEvent.eth_v2_beacon_block_attester_slashing:type_name -> xatu.eth.v1.AttesterSlashingV2
-	170, // 188: xatu.DecoratedEvent.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.eth.v1.ProposerSlashingV2
-	171, // 189: xatu.DecoratedEvent.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.eth.v1.SignedVoluntaryExitV2
-	172, // 190: xatu.DecoratedEvent.eth_v2_beacon_block_deposit:type_name -> xatu.eth.v1.DepositV2
-	173, // 191: xatu.DecoratedEvent.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.eth.v2.SignedBLSToExecutionChangeV2
-	174, // 192: xatu.DecoratedEvent.eth_v2_beacon_block_execution_transaction:type_name -> xatu.eth.v1.Transaction
-	175, // 193: xatu.DecoratedEvent.eth_v2_beacon_block_withdrawal:type_name -> xatu.eth.v1.WithdrawalV2
-	176, // 194: xatu.DecoratedEvent.eth_v1_events_blob_sidecar:type_name -> xatu.eth.v1.EventBlobSidecar
-	177, // 195: xatu.DecoratedEvent.eth_v1_beacon_block_blob_sidecar:type_name -> xatu.eth.v1.BlobSidecar
-	162, // 196: xatu.DecoratedEvent.beacon_p2p_attestation:type_name -> xatu.eth.v1.AttestationV2
-	178, // 197: xatu.DecoratedEvent.eth_v1_proposer_duty:type_name -> xatu.eth.v1.ProposerDuty
-	179, // 198: xatu.DecoratedEvent.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.eth.v1.ElaboratedAttestation
-	180, // 199: xatu.DecoratedEvent.libp2p_trace_add_peer:type_name -> xatu.libp2p.AddPeer
-	181, // 200: xatu.DecoratedEvent.libp2p_trace_remove_peer:type_name -> xatu.libp2p.RemovePeer
-	182, // 201: xatu.DecoratedEvent.libp2p_trace_recv_rpc:type_name -> xatu.libp2p.RecvRPC
-	183, // 202: xatu.DecoratedEvent.libp2p_trace_send_rpc:type_name -> xatu.libp2p.SendRPC
-	184, // 203: xatu.DecoratedEvent.libp2p_trace_join:type_name -> xatu.libp2p.Join
-	185, // 204: xatu.DecoratedEvent.libp2p_trace_connected:type_name -> xatu.libp2p.Connected
-	186, // 205: xatu.DecoratedEvent.libp2p_trace_disconnected:type_name -> xatu.libp2p.Disconnected
-	187, // 206: xatu.DecoratedEvent.libp2p_trace_handle_metadata:type_name -> xatu.libp2p.HandleMetadata
-	188, // 207: xatu.DecoratedEvent.libp2p_trace_handle_status:type_name -> xatu.libp2p.HandleStatus
-	189, // 208: xatu.DecoratedEvent.libp2p_trace_gossipsub_beacon_block:type_name -> xatu.libp2p.gossipsub.eth.BeaconBlock
-	153, // 209: xatu.DecoratedEvent.libp2p_trace_gossipsub_beacon_attestation:type_name -> xatu.eth.v1.Attestation
-	190, // 210: xatu.DecoratedEvent.libp2p_trace_gossipsub_blob_sidecar:type_name -> xatu.libp2p.gossipsub.eth.BlobSidecar
-	15,  // 211: xatu.DecoratedEvent.eth_v1_validators:type_name -> xatu.Validators
-	191, // 212: xatu.DecoratedEvent.mev_relay_bid_trace_builder_block_submission:type_name -> xatu.mevrelay.BidTrace
-	192, // 213: xatu.DecoratedEvent.mev_relay_payload_delivered:type_name -> xatu.mevrelay.ProposerPayloadDelivered
-	168, // 214: xatu.DecoratedEvent.eth_v3_validator_block:type_name -> xatu.eth.v2.EventBlockV2
-	193, // 215: xatu.DecoratedEvent.mev_relay_validator_registration:type_name -> xatu.mevrelay.ValidatorRegistration
-	194, // 216: xatu.DecoratedEvent.eth_v1_events_block_gossip:type_name -> xatu.eth.v1.EventBlockGossip
-	195, // 217: xatu.DecoratedEvent.libp2p_trace_drop_rpc:type_name -> xatu.libp2p.DropRPC
-	196, // 218: xatu.DecoratedEvent.libp2p_trace_leave:type_name -> xatu.libp2p.Leave
-	197, // 219: xatu.DecoratedEvent.libp2p_trace_graft:type_name -> xatu.libp2p.Graft
-	198, // 220: xatu.DecoratedEvent.libp2p_trace_prune:type_name -> xatu.libp2p.Prune
-	199, // 221: xatu.DecoratedEvent.libp2p_trace_duplicate_message:type_name -> xatu.libp2p.DuplicateMessage
-	200, // 222: xatu.DecoratedEvent.libp2p_trace_deliver_message:type_name -> xatu.libp2p.DeliverMessage
-	201, // 223: xatu.DecoratedEvent.libp2p_trace_publish_message:type_name -> xatu.libp2p.PublishMessage
-	202, // 224: xatu.DecoratedEvent.libp2p_trace_reject_message:type_name -> xatu.libp2p.RejectMessage
-	203, // 225: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_ihave:type_name -> xatu.libp2p.ControlIHaveMetaItem
-	204, // 226: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_iwant:type_name -> xatu.libp2p.ControlIWantMetaItem
-	205, // 227: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_idontwant:type_name -> xatu.libp2p.ControlIDontWantMetaItem
-	206, // 228: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_graft:type_name -> xatu.libp2p.ControlGraftMetaItem
-	207, // 229: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_prune:type_name -> xatu.libp2p.ControlPruneMetaItem
-	208, // 230: xatu.DecoratedEvent.libp2p_trace_rpc_meta_subscription:type_name -> xatu.libp2p.SubMetaItem
-	209, // 231: xatu.DecoratedEvent.libp2p_trace_rpc_meta_message:type_name -> xatu.libp2p.MessageMetaItem
-	210, // 232: xatu.DecoratedEvent.node_record_consensus:type_name -> xatu.noderecord.Consensus
-	211, // 233: xatu.DecoratedEvent.node_record_execution:type_name -> xatu.noderecord.Execution
-	212, // 234: xatu.DecoratedEvent.libp2p_trace_gossipsub_aggregate_and_proof:type_name -> xatu.eth.v1.SignedAggregateAttestationAndProofV2
-	213, // 235: xatu.DecoratedEvent.eth_v1_events_data_column_sidecar:type_name -> xatu.eth.v1.EventDataColumnSidecar
-	214, // 236: xatu.DecoratedEvent.libp2p_trace_gossipsub_data_column_sidecar:type_name -> xatu.libp2p.gossipsub.eth.DataColumnSidecar
-	215, // 237: xatu.DecoratedEvent.libp2p_trace_synthetic_heartbeat:type_name -> xatu.libp2p.SyntheticHeartbeat
-	216, // 238: xatu.DecoratedEvent.libp2p_trace_identify:type_name -> xatu.libp2p.Identify
-	217, // 239: xatu.DecoratedEvent.libp2p_trace_rpc_data_column_custody_probe:type_name -> xatu.libp2p.DataColumnCustodyProbe
-	19,  // 240: xatu.DecoratedEvent.execution_state_size:type_name -> xatu.ExecutionStateSize
-	20,  // 241: xatu.DecoratedEvent.consensus_engine_api_new_payload:type_name -> xatu.ConsensusEngineAPINewPayload
-	21,  // 242: xatu.DecoratedEvent.consensus_engine_api_get_blobs:type_name -> xatu.ConsensusEngineAPIGetBlobs
-	22,  // 243: xatu.DecoratedEvent.execution_engine_new_payload:type_name -> xatu.ExecutionEngineNewPayload
-	23,  // 244: xatu.DecoratedEvent.execution_engine_get_blobs:type_name -> xatu.ExecutionEngineGetBlobs
-	218, // 245: xatu.DecoratedEvent.eth_v1_beacon_blob:type_name -> xatu.eth.v1.Blob
-	16,  // 246: xatu.DecoratedEvent.eth_v1_beacon_sync_committee:type_name -> xatu.SyncCommitteeData
-	17,  // 247: xatu.DecoratedEvent.eth_v2_beacon_block_sync_aggregate:type_name -> xatu.SyncAggregateData
-	28,  // 248: xatu.DecoratedEvent.execution_block_metrics:type_name -> xatu.ExecutionBlockMetrics
-	124, // 249: xatu.ClientMeta.Ethereum.network:type_name -> xatu.ClientMeta.Ethereum.Network
-	125, // 250: xatu.ClientMeta.Ethereum.execution:type_name -> xatu.ClientMeta.Ethereum.Execution
-	126, // 251: xatu.ClientMeta.Ethereum.consensus:type_name -> xatu.ClientMeta.Ethereum.Consensus
-	4,   // 252: xatu.ClientMeta.AdditionalEthV1AttestationSourceData.epoch:type_name -> xatu.Epoch
-	5,   // 253: xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data.epoch:type_name -> xatu.EpochV2
-	4,   // 254: xatu.ClientMeta.AdditionalEthV1AttestationTargetData.epoch:type_name -> xatu.Epoch
-	5,   // 255: xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data.epoch:type_name -> xatu.EpochV2
-	32,  // 256: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceData
-	34,  // 257: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetData
-	6,   // 258: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.slot:type_name -> xatu.Slot
-	4,   // 259: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.epoch:type_name -> xatu.Epoch
-	9,   // 260: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.propagation:type_name -> xatu.Propagation
-	11,  // 261: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.attesting_validator:type_name -> xatu.AttestingValidator
-	33,  // 262: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
-	35,  // 263: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
-	7,   // 264: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.slot:type_name -> xatu.SlotV2
-	5,   // 265: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.epoch:type_name -> xatu.EpochV2
-	10,  // 266: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.propagation:type_name -> xatu.PropagationV2
-	12,  // 267: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.attesting_validator:type_name -> xatu.AttestingValidatorV2
-	4,   // 268: xatu.ClientMeta.AdditionalEthV1EventsHeadData.epoch:type_name -> xatu.Epoch
-	6,   // 269: xatu.ClientMeta.AdditionalEthV1EventsHeadData.slot:type_name -> xatu.Slot
-	9,   // 270: xatu.ClientMeta.AdditionalEthV1EventsHeadData.propagation:type_name -> xatu.Propagation
-	5,   // 271: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.epoch:type_name -> xatu.EpochV2
-	7,   // 272: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.slot:type_name -> xatu.SlotV2
-	10,  // 273: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.propagation:type_name -> xatu.PropagationV2
-	4,   // 274: xatu.ClientMeta.AdditionalEthV1EventsBlockData.epoch:type_name -> xatu.Epoch
-	6,   // 275: xatu.ClientMeta.AdditionalEthV1EventsBlockData.slot:type_name -> xatu.Slot
-	9,   // 276: xatu.ClientMeta.AdditionalEthV1EventsBlockData.propagation:type_name -> xatu.Propagation
-	5,   // 277: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.epoch:type_name -> xatu.EpochV2
-	7,   // 278: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.slot:type_name -> xatu.SlotV2
-	10,  // 279: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.propagation:type_name -> xatu.PropagationV2
-	5,   // 280: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.epoch:type_name -> xatu.EpochV2
-	7,   // 281: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.slot:type_name -> xatu.SlotV2
-	10,  // 282: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.propagation:type_name -> xatu.PropagationV2
-	4,   // 283: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData.epoch:type_name -> xatu.Epoch
-	5,   // 284: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.epoch:type_name -> xatu.EpochV2
-	5,   // 285: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 286: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.wallclock_slot:type_name -> xatu.SlotV2
-	4,   // 287: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData.epoch:type_name -> xatu.Epoch
-	5,   // 288: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data.epoch:type_name -> xatu.EpochV2
-	4,   // 289: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.epoch:type_name -> xatu.Epoch
-	6,   // 290: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.slot:type_name -> xatu.Slot
-	9,   // 291: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.propagation:type_name -> xatu.Propagation
-	5,   // 292: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.epoch:type_name -> xatu.EpochV2
-	7,   // 293: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.slot:type_name -> xatu.SlotV2
-	10,  // 294: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.propagation:type_name -> xatu.PropagationV2
-	4,   // 295: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.epoch:type_name -> xatu.Epoch
-	6,   // 296: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.slot:type_name -> xatu.Slot
-	9,   // 297: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
-	5,   // 298: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.epoch:type_name -> xatu.EpochV2
-	7,   // 299: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.slot:type_name -> xatu.SlotV2
-	10,  // 300: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.propagation:type_name -> xatu.PropagationV2
-	49,  // 301: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData.contribution:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData
-	50,  // 302: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data.contribution:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data
-	4,   // 303: xatu.ClientMeta.ForkChoiceSnapshot.request_epoch:type_name -> xatu.Epoch
-	6,   // 304: xatu.ClientMeta.ForkChoiceSnapshot.request_slot:type_name -> xatu.Slot
-	143, // 305: xatu.ClientMeta.ForkChoiceSnapshot.timestamp:type_name -> google.protobuf.Timestamp
-	5,   // 306: xatu.ClientMeta.ForkChoiceSnapshotV2.request_epoch:type_name -> xatu.EpochV2
-	7,   // 307: xatu.ClientMeta.ForkChoiceSnapshotV2.request_slot:type_name -> xatu.SlotV2
-	142, // 308: xatu.ClientMeta.ForkChoiceSnapshotV2.requested_at_slot_start_diff_ms:type_name -> google.protobuf.UInt64Value
-	142, // 309: xatu.ClientMeta.ForkChoiceSnapshotV2.request_duration_ms:type_name -> google.protobuf.UInt64Value
-	143, // 310: xatu.ClientMeta.ForkChoiceSnapshotV2.timestamp:type_name -> google.protobuf.Timestamp
-	53,  // 311: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData.Snapshot:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
-	54,  // 312: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data.Snapshot:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
-	53,  // 313: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData.before:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
-	53,  // 314: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData.after:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
-	54,  // 315: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data.before:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
-	54,  // 316: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data.after:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
-	5,   // 317: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData.epoch:type_name -> xatu.EpochV2
-	7,   // 318: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData.slot:type_name -> xatu.SlotV2
-	5,   // 319: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData.epoch:type_name -> xatu.EpochV2
-	142, // 320: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData.sync_committee_period:type_name -> google.protobuf.UInt64Value
-	18,  // 321: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData.block:type_name -> xatu.BlockIdentifier
-	142, // 322: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData.sync_committee_period:type_name -> google.protobuf.UInt64Value
-	142, // 323: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.nonce:type_name -> google.protobuf.UInt64Value
-	142, // 324: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.gas:type_name -> google.protobuf.UInt64Value
-	150, // 325: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.type:type_name -> google.protobuf.UInt32Value
-	142, // 326: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.blob_gas:type_name -> google.protobuf.UInt64Value
-	4,   // 327: xatu.ClientMeta.AdditionalEthV2BeaconBlockData.epoch:type_name -> xatu.Epoch
-	6,   // 328: xatu.ClientMeta.AdditionalEthV2BeaconBlockData.slot:type_name -> xatu.Slot
-	5,   // 329: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.epoch:type_name -> xatu.EpochV2
-	7,   // 330: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.slot:type_name -> xatu.SlotV2
-	142, // 331: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_count:type_name -> google.protobuf.UInt64Value
-	142, // 332: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_total_bytes:type_name -> google.protobuf.UInt64Value
-	142, // 333: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_total_bytes_compressed:type_name -> google.protobuf.UInt64Value
-	142, // 334: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.total_bytes:type_name -> google.protobuf.UInt64Value
-	142, // 335: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.total_bytes_compressed:type_name -> google.protobuf.UInt64Value
-	18,  // 336: xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData.block:type_name -> xatu.BlockIdentifier
-	18,  // 337: xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData.block:type_name -> xatu.BlockIdentifier
-	18,  // 338: xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData.block:type_name -> xatu.BlockIdentifier
-	18,  // 339: xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData.block:type_name -> xatu.BlockIdentifier
-	18,  // 340: xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData.block:type_name -> xatu.BlockIdentifier
-	18,  // 341: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData.block:type_name -> xatu.BlockIdentifier
-	142, // 342: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData.position_in_block:type_name -> google.protobuf.UInt64Value
-	18,  // 343: xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData.block:type_name -> xatu.BlockIdentifier
-	142, // 344: xatu.ClientMeta.AttestationDataSnapshot.requested_at_slot_start_diff_ms:type_name -> google.protobuf.UInt64Value
-	142, // 345: xatu.ClientMeta.AttestationDataSnapshot.request_duration_ms:type_name -> google.protobuf.UInt64Value
-	143, // 346: xatu.ClientMeta.AttestationDataSnapshot.timestamp:type_name -> google.protobuf.Timestamp
-	33,  // 347: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
-	35,  // 348: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
-	5,   // 349: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.epoch:type_name -> xatu.EpochV2
-	7,   // 350: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.slot:type_name -> xatu.SlotV2
-	73,  // 351: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.Snapshot:type_name -> xatu.ClientMeta.AttestationDataSnapshot
-	5,   // 352: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.epoch:type_name -> xatu.EpochV2
-	7,   // 353: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.slot:type_name -> xatu.SlotV2
-	10,  // 354: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.propagation:type_name -> xatu.PropagationV2
-	5,   // 355: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.epoch:type_name -> xatu.EpochV2
-	7,   // 356: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.slot:type_name -> xatu.SlotV2
-	10,  // 357: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.propagation:type_name -> xatu.PropagationV2
-	5,   // 358: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.epoch:type_name -> xatu.EpochV2
-	7,   // 359: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.slot:type_name -> xatu.SlotV2
-	142, // 360: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.data_size:type_name -> google.protobuf.UInt64Value
-	142, // 361: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.data_empty_size:type_name -> google.protobuf.UInt64Value
-	33,  // 362: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
-	35,  // 363: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
-	7,   // 364: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.slot:type_name -> xatu.SlotV2
-	5,   // 365: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.epoch:type_name -> xatu.EpochV2
-	10,  // 366: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.propagation:type_name -> xatu.PropagationV2
-	12,  // 367: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.attesting_validator:type_name -> xatu.AttestingValidatorV2
-	219, // 368: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.peer:type_name -> xatu.libp2p.Peer
-	150, // 369: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.subnet:type_name -> google.protobuf.UInt32Value
-	220, // 370: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.validated:type_name -> google.protobuf.BoolValue
-	5,   // 371: xatu.ClientMeta.AdditionalEthV1ProposerDutyData.epoch:type_name -> xatu.EpochV2
-	7,   // 372: xatu.ClientMeta.AdditionalEthV1ProposerDutyData.slot:type_name -> xatu.SlotV2
-	18,  // 373: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.block:type_name -> xatu.BlockIdentifier
-	142, // 374: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.position_in_block:type_name -> google.protobuf.UInt64Value
-	5,   // 375: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.epoch:type_name -> xatu.EpochV2
-	7,   // 376: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.slot:type_name -> xatu.SlotV2
-	33,  // 377: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
-	35,  // 378: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
-	221, // 379: xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 380: xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 381: xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 382: xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 383: xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 384: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 385: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 386: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 387: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 388: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 389: xatu.ClientMeta.AdditionalLibP2PTraceJoinData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 390: xatu.ClientMeta.AdditionalLibP2PTraceLeaveData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 391: xatu.ClientMeta.AdditionalLibP2PTraceGraftData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 392: xatu.ClientMeta.AdditionalLibP2PTracePruneData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 393: xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 394: xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 395: xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 396: xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 397: xatu.ClientMeta.AdditionalLibP2PTraceConnectedData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 398: xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 399: xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 400: xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 401: xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 402: xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 403: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	5,   // 404: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.epoch:type_name -> xatu.EpochV2
-	7,   // 405: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.slot:type_name -> xatu.SlotV2
-	5,   // 406: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 407: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.wallclock_slot:type_name -> xatu.SlotV2
-	221, // 408: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	221, // 409: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	5,   // 410: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.epoch:type_name -> xatu.EpochV2
-	7,   // 411: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.slot:type_name -> xatu.SlotV2
-	5,   // 412: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 413: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.wallclock_slot:type_name -> xatu.SlotV2
-	10,  // 414: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.propagation:type_name -> xatu.PropagationV2
-	221, // 415: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	222, // 416: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.topic:type_name -> google.protobuf.StringValue
-	150, // 417: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.message_size:type_name -> google.protobuf.UInt32Value
-	222, // 418: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.message_id:type_name -> google.protobuf.StringValue
-	5,   // 419: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData.epoch:type_name -> xatu.EpochV2
-	5,   // 420: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData.epoch:type_name -> xatu.EpochV2
-	109, // 421: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.source:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData
-	110, // 422: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.target:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData
-	7,   // 423: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.slot:type_name -> xatu.SlotV2
-	5,   // 424: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.epoch:type_name -> xatu.EpochV2
-	10,  // 425: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.propagation:type_name -> xatu.PropagationV2
-	12,  // 426: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.attesting_validator:type_name -> xatu.AttestingValidatorV2
-	5,   // 427: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 428: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.wallclock_slot:type_name -> xatu.SlotV2
-	221, // 429: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	222, // 430: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.topic:type_name -> google.protobuf.StringValue
-	150, // 431: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.message_size:type_name -> google.protobuf.UInt32Value
-	222, // 432: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.message_id:type_name -> google.protobuf.StringValue
-	5,   // 433: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.epoch:type_name -> xatu.EpochV2
-	7,   // 434: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.slot:type_name -> xatu.SlotV2
-	5,   // 435: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 436: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.wallclock_slot:type_name -> xatu.SlotV2
-	10,  // 437: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.propagation:type_name -> xatu.PropagationV2
-	142, // 438: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.aggregator_index:type_name -> google.protobuf.UInt64Value
-	221, // 439: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	222, // 440: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.topic:type_name -> google.protobuf.StringValue
-	150, // 441: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.message_size:type_name -> google.protobuf.UInt32Value
-	222, // 442: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.message_id:type_name -> google.protobuf.StringValue
-	5,   // 443: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.epoch:type_name -> xatu.EpochV2
-	7,   // 444: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.slot:type_name -> xatu.SlotV2
-	5,   // 445: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 446: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.wallclock_slot:type_name -> xatu.SlotV2
-	10,  // 447: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.propagation:type_name -> xatu.PropagationV2
-	221, // 448: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	222, // 449: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.topic:type_name -> google.protobuf.StringValue
-	150, // 450: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.message_size:type_name -> google.protobuf.UInt32Value
-	222, // 451: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.message_id:type_name -> google.protobuf.StringValue
-	5,   // 452: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.epoch:type_name -> xatu.EpochV2
-	7,   // 453: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.slot:type_name -> xatu.SlotV2
-	5,   // 454: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.wallclock_epoch:type_name -> xatu.EpochV2
-	7,   // 455: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.wallclock_slot:type_name -> xatu.SlotV2
-	10,  // 456: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.propagation:type_name -> xatu.PropagationV2
-	221, // 457: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
-	222, // 458: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.topic:type_name -> google.protobuf.StringValue
-	150, // 459: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.message_size:type_name -> google.protobuf.UInt32Value
-	222, // 460: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.message_id:type_name -> google.protobuf.StringValue
-	5,   // 461: xatu.ClientMeta.AdditionalEthV1ValidatorsData.epoch:type_name -> xatu.EpochV2
-	223, // 462: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.relay:type_name -> xatu.mevrelay.Relay
-	7,   // 463: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.slot:type_name -> xatu.SlotV2
-	7,   // 464: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.wallclock_slot:type_name -> xatu.SlotV2
-	5,   // 465: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.epoch:type_name -> xatu.EpochV2
-	5,   // 466: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.wallclock_epoch:type_name -> xatu.EpochV2
-	142, // 467: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.requested_at_slot_time:type_name -> google.protobuf.UInt64Value
-	142, // 468: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.response_at_slot_time:type_name -> google.protobuf.UInt64Value
-	223, // 469: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.relay:type_name -> xatu.mevrelay.Relay
-	7,   // 470: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.slot:type_name -> xatu.SlotV2
-	7,   // 471: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.wallclock_slot:type_name -> xatu.SlotV2
-	5,   // 472: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.epoch:type_name -> xatu.EpochV2
-	5,   // 473: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.wallclock_epoch:type_name -> xatu.EpochV2
-	142, // 474: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.requested_at_slot_time:type_name -> google.protobuf.UInt64Value
-	142, // 475: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.response_at_slot_time:type_name -> google.protobuf.UInt64Value
-	5,   // 476: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.epoch:type_name -> xatu.EpochV2
-	7,   // 477: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.slot:type_name -> xatu.SlotV2
-	142, // 478: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_count:type_name -> google.protobuf.UInt64Value
-	142, // 479: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_total_bytes:type_name -> google.protobuf.UInt64Value
-	142, // 480: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_total_bytes_compressed:type_name -> google.protobuf.UInt64Value
-	142, // 481: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.total_bytes:type_name -> google.protobuf.UInt64Value
-	142, // 482: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.total_bytes_compressed:type_name -> google.protobuf.UInt64Value
-	142, // 483: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.request_duration_ms:type_name -> google.protobuf.UInt64Value
-	143, // 484: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.requested_at:type_name -> google.protobuf.Timestamp
-	223, // 485: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.relay:type_name -> xatu.mevrelay.Relay
-	7,   // 486: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.slot:type_name -> xatu.SlotV2
-	7,   // 487: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.wallclock_slot:type_name -> xatu.SlotV2
-	5,   // 488: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.epoch:type_name -> xatu.EpochV2
-	5,   // 489: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.wallclock_epoch:type_name -> xatu.EpochV2
-	142, // 490: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.validator_index:type_name -> google.protobuf.UInt64Value
-	5,   // 491: xatu.ClientMeta.AdditionalNodeRecordConsensusData.finalized_epoch:type_name -> xatu.EpochV2
-	7,   // 492: xatu.ClientMeta.AdditionalNodeRecordConsensusData.head_slot:type_name -> xatu.SlotV2
-	5,   // 493: xatu.ClientMeta.AdditionalNodeRecordConsensusData.head_epoch:type_name -> xatu.EpochV2
-	5,   // 494: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData.epoch:type_name -> xatu.EpochV2
-	7,   // 495: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData.slot:type_name -> xatu.SlotV2
-	5,   // 496: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData.epoch:type_name -> xatu.EpochV2
-	7,   // 497: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData.slot:type_name -> xatu.SlotV2
-	5,   // 498: xatu.ClientMeta.AdditionalEthV1BeaconBlobData.epoch:type_name -> xatu.EpochV2
-	7,   // 499: xatu.ClientMeta.AdditionalEthV1BeaconBlobData.slot:type_name -> xatu.SlotV2
-	8,   // 500: xatu.ClientMeta.Ethereum.Execution.fork_id:type_name -> xatu.ForkID
-	143, // 501: xatu.ServerMeta.Event.received_date_time:type_name -> google.protobuf.Timestamp
-	128, // 502: xatu.ServerMeta.Client.geo:type_name -> xatu.ServerMeta.Geo
-	128, // 503: xatu.ServerMeta.Peer.geo:type_name -> xatu.ServerMeta.Geo
-	130, // 504: xatu.ServerMeta.AdditionalBeaconP2PAttestationData.peer:type_name -> xatu.ServerMeta.Peer
-	130, // 505: xatu.ServerMeta.AdditionalLibp2PTraceConnectedData.peer:type_name -> xatu.ServerMeta.Peer
-	130, // 506: xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData.peer:type_name -> xatu.ServerMeta.Peer
-	130, // 507: xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData.peer:type_name -> xatu.ServerMeta.Peer
-	130, // 508: xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData.peer:type_name -> xatu.ServerMeta.Peer
-	128, // 509: xatu.ServerMeta.AdditionalNodeRecordConsensusData.geo:type_name -> xatu.ServerMeta.Geo
-	128, // 510: xatu.ServerMeta.AdditionalNodeRecordExecutionData.geo:type_name -> xatu.ServerMeta.Geo
-	142, // 511: xatu.ExecutionBlockMetrics.StateReads.accounts:type_name -> google.protobuf.UInt64Value
-	142, // 512: xatu.ExecutionBlockMetrics.StateReads.storage_slots:type_name -> google.protobuf.UInt64Value
-	142, // 513: xatu.ExecutionBlockMetrics.StateReads.code:type_name -> google.protobuf.UInt64Value
-	142, // 514: xatu.ExecutionBlockMetrics.StateReads.code_bytes:type_name -> google.protobuf.UInt64Value
-	142, // 515: xatu.ExecutionBlockMetrics.StateWrites.accounts:type_name -> google.protobuf.UInt64Value
-	142, // 516: xatu.ExecutionBlockMetrics.StateWrites.accounts_deleted:type_name -> google.protobuf.UInt64Value
-	142, // 517: xatu.ExecutionBlockMetrics.StateWrites.storage_slots:type_name -> google.protobuf.UInt64Value
-	142, // 518: xatu.ExecutionBlockMetrics.StateWrites.storage_slots_deleted:type_name -> google.protobuf.UInt64Value
-	142, // 519: xatu.ExecutionBlockMetrics.StateWrites.code:type_name -> google.protobuf.UInt64Value
-	142, // 520: xatu.ExecutionBlockMetrics.StateWrites.code_bytes:type_name -> google.protobuf.UInt64Value
-	224, // 521: xatu.ExecutionBlockMetrics.CacheEntry.hits:type_name -> google.protobuf.Int64Value
-	224, // 522: xatu.ExecutionBlockMetrics.CacheEntry.misses:type_name -> google.protobuf.Int64Value
-	152, // 523: xatu.ExecutionBlockMetrics.CacheEntry.hit_rate:type_name -> google.protobuf.DoubleValue
-	224, // 524: xatu.ExecutionBlockMetrics.CodeCacheEntry.hits:type_name -> google.protobuf.Int64Value
-	224, // 525: xatu.ExecutionBlockMetrics.CodeCacheEntry.misses:type_name -> google.protobuf.Int64Value
-	152, // 526: xatu.ExecutionBlockMetrics.CodeCacheEntry.hit_rate:type_name -> google.protobuf.DoubleValue
-	224, // 527: xatu.ExecutionBlockMetrics.CodeCacheEntry.hit_bytes:type_name -> google.protobuf.Int64Value
-	224, // 528: xatu.ExecutionBlockMetrics.CodeCacheEntry.miss_bytes:type_name -> google.protobuf.Int64Value
-	2,   // 529: xatu.EventIngester.CreateEvents:input_type -> xatu.CreateEventsRequest
-	3,   // 530: xatu.EventIngester.CreateEvents:output_type -> xatu.CreateEventsResponse
-	530, // [530:531] is the sub-list for method output_type
-	529, // [529:530] is the sub-list for method input_type
-	529, // [529:529] is the sub-list for extension type_name
-	529, // [529:529] is the sub-list for extension extendee
-	0,   // [0:529] is the sub-list for field type_name
+	86,  // 108: xatu.ClientMeta.libp2p_trace_drop_rpc:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData
+	93,  // 109: xatu.ClientMeta.libp2p_trace_leave:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceLeaveData
+	94,  // 110: xatu.ClientMeta.libp2p_trace_graft:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGraftData
+	95,  // 111: xatu.ClientMeta.libp2p_trace_prune:type_name -> xatu.ClientMeta.AdditionalLibP2PTracePruneData
+	96,  // 112: xatu.ClientMeta.libp2p_trace_duplicate_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData
+	97,  // 113: xatu.ClientMeta.libp2p_trace_deliver_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData
+	98,  // 114: xatu.ClientMeta.libp2p_trace_publish_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData
+	99,  // 115: xatu.ClientMeta.libp2p_trace_reject_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData
+	87,  // 116: xatu.ClientMeta.libp2p_trace_rpc_meta_control_ihave:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData
+	88,  // 117: xatu.ClientMeta.libp2p_trace_rpc_meta_control_iwant:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData
+	89,  // 118: xatu.ClientMeta.libp2p_trace_rpc_meta_control_idontwant:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData
+	90,  // 119: xatu.ClientMeta.libp2p_trace_rpc_meta_control_graft:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData
+	91,  // 120: xatu.ClientMeta.libp2p_trace_rpc_meta_control_prune:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData
+	107, // 121: xatu.ClientMeta.libp2p_trace_rpc_meta_subscription:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData
+	108, // 122: xatu.ClientMeta.libp2p_trace_rpc_meta_message:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData
+	121, // 123: xatu.ClientMeta.node_record_consensus:type_name -> xatu.ClientMeta.AdditionalNodeRecordConsensusData
+	113, // 124: xatu.ClientMeta.libp2p_trace_gossipsub_aggregate_and_proof:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData
+	77,  // 125: xatu.ClientMeta.eth_v1_events_data_column_sidecar:type_name -> xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData
+	115, // 126: xatu.ClientMeta.libp2p_trace_gossipsub_data_column_sidecar:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData
+	102, // 127: xatu.ClientMeta.libp2p_trace_synthetic_heartbeat:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
+	106, // 128: xatu.ClientMeta.libp2p_trace_rpc_data_column_custody_probe:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData
+	122, // 129: xatu.ClientMeta.consensus_engine_api_new_payload:type_name -> xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData
+	123, // 130: xatu.ClientMeta.consensus_engine_api_get_blobs:type_name -> xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData
+	124, // 131: xatu.ClientMeta.eth_v1_beacon_blob:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconBlobData
+	61,  // 132: xatu.ClientMeta.eth_v1_beacon_sync_committee:type_name -> xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData
+	62,  // 133: xatu.ClientMeta.eth_v2_beacon_block_sync_aggregate:type_name -> xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData
+	105, // 134: xatu.ClientMeta.libp2p_trace_identify:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData
+	43,  // 135: xatu.ClientMeta.eth_v1_events_fast_confirmation:type_name -> xatu.ClientMeta.AdditionalEthV1EventsFastConfirmationData
+	152, // 136: xatu.ClientMeta.module_name:type_name -> xatu.ModuleName
+	128, // 137: xatu.ServerMeta.event:type_name -> xatu.ServerMeta.Event
+	130, // 138: xatu.ServerMeta.client:type_name -> xatu.ServerMeta.Client
+	132, // 139: xatu.ServerMeta.BEACON_P2P_ATTESTATION:type_name -> xatu.ServerMeta.AdditionalBeaconP2PAttestationData
+	133, // 140: xatu.ServerMeta.LIBP2P_TRACE_CONNECTED:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceConnectedData
+	134, // 141: xatu.ServerMeta.LIBP2P_TRACE_DISCONNECTED:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData
+	137, // 142: xatu.ServerMeta.NODE_RECORD_CONSENSUS:type_name -> xatu.ServerMeta.AdditionalNodeRecordConsensusData
+	138, // 143: xatu.ServerMeta.NODE_RECORD_EXECUTION:type_name -> xatu.ServerMeta.AdditionalNodeRecordExecutionData
+	135, // 144: xatu.ServerMeta.LIBP2P_TRACE_SYNTHETIC_HEARTBEAT:type_name -> xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData
+	136, // 145: xatu.ServerMeta.LIBP2P_TRACE_IDENTIFY:type_name -> xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData
+	24,  // 146: xatu.Meta.client:type_name -> xatu.ClientMeta
+	25,  // 147: xatu.Meta.server:type_name -> xatu.ServerMeta
+	1,   // 148: xatu.Event.name:type_name -> xatu.Event.Name
+	144, // 149: xatu.Event.date_time:type_name -> google.protobuf.Timestamp
+	143, // 150: xatu.ExecutionBlockMetrics.block_number:type_name -> google.protobuf.UInt64Value
+	143, // 151: xatu.ExecutionBlockMetrics.gas_used:type_name -> google.protobuf.UInt64Value
+	151, // 152: xatu.ExecutionBlockMetrics.tx_count:type_name -> google.protobuf.UInt32Value
+	153, // 153: xatu.ExecutionBlockMetrics.execution_ms:type_name -> google.protobuf.DoubleValue
+	153, // 154: xatu.ExecutionBlockMetrics.state_read_ms:type_name -> google.protobuf.DoubleValue
+	153, // 155: xatu.ExecutionBlockMetrics.state_hash_ms:type_name -> google.protobuf.DoubleValue
+	153, // 156: xatu.ExecutionBlockMetrics.commit_ms:type_name -> google.protobuf.DoubleValue
+	153, // 157: xatu.ExecutionBlockMetrics.total_ms:type_name -> google.protobuf.DoubleValue
+	153, // 158: xatu.ExecutionBlockMetrics.mgas_per_sec:type_name -> google.protobuf.DoubleValue
+	139, // 159: xatu.ExecutionBlockMetrics.state_reads:type_name -> xatu.ExecutionBlockMetrics.StateReads
+	140, // 160: xatu.ExecutionBlockMetrics.state_writes:type_name -> xatu.ExecutionBlockMetrics.StateWrites
+	141, // 161: xatu.ExecutionBlockMetrics.account_cache:type_name -> xatu.ExecutionBlockMetrics.CacheEntry
+	141, // 162: xatu.ExecutionBlockMetrics.storage_cache:type_name -> xatu.ExecutionBlockMetrics.CacheEntry
+	142, // 163: xatu.ExecutionBlockMetrics.code_cache:type_name -> xatu.ExecutionBlockMetrics.CodeCacheEntry
+	27,  // 164: xatu.DecoratedEvent.event:type_name -> xatu.Event
+	26,  // 165: xatu.DecoratedEvent.meta:type_name -> xatu.Meta
+	154, // 166: xatu.DecoratedEvent.eth_v1_events_attestation:type_name -> xatu.eth.v1.Attestation
+	155, // 167: xatu.DecoratedEvent.eth_v1_events_block:type_name -> xatu.eth.v1.EventBlock
+	146, // 168: xatu.DecoratedEvent.eth_v1_events_chain_reorg:type_name -> xatu.eth.v1.EventChainReorg
+	156, // 169: xatu.DecoratedEvent.eth_v1_events_finalized_checkpoint:type_name -> xatu.eth.v1.EventFinalizedCheckpoint
+	157, // 170: xatu.DecoratedEvent.eth_v1_events_head:type_name -> xatu.eth.v1.EventHead
+	158, // 171: xatu.DecoratedEvent.eth_v1_events_voluntary_exit:type_name -> xatu.eth.v1.EventVoluntaryExit
+	159, // 172: xatu.DecoratedEvent.eth_v1_events_contribution_and_proof:type_name -> xatu.eth.v1.EventContributionAndProof
+	160, // 173: xatu.DecoratedEvent.eth_v2_beacon_block:type_name -> xatu.eth.v2.EventBlock
+	145, // 174: xatu.DecoratedEvent.eth_v1_fork_choice:type_name -> xatu.eth.v1.ForkChoice
+	13,  // 175: xatu.DecoratedEvent.eth_v1_fork_choice_reorg:type_name -> xatu.DebugForkChoiceReorg
+	161, // 176: xatu.DecoratedEvent.eth_v1_beacon_committee:type_name -> xatu.eth.v1.Committee
+	162, // 177: xatu.DecoratedEvent.eth_v1_validator_attestation_data:type_name -> xatu.eth.v1.AttestationDataV2
+	163, // 178: xatu.DecoratedEvent.eth_v1_events_attestation_v2:type_name -> xatu.eth.v1.AttestationV2
+	164, // 179: xatu.DecoratedEvent.eth_v1_events_block_v2:type_name -> xatu.eth.v1.EventBlockV2
+	148, // 180: xatu.DecoratedEvent.eth_v1_events_chain_reorg_v2:type_name -> xatu.eth.v1.EventChainReorgV2
+	165, // 181: xatu.DecoratedEvent.eth_v1_events_finalized_checkpoint_v2:type_name -> xatu.eth.v1.EventFinalizedCheckpointV2
+	166, // 182: xatu.DecoratedEvent.eth_v1_events_head_v2:type_name -> xatu.eth.v1.EventHeadV2
+	167, // 183: xatu.DecoratedEvent.eth_v1_events_voluntary_exit_v2:type_name -> xatu.eth.v1.EventVoluntaryExitV2
+	168, // 184: xatu.DecoratedEvent.eth_v1_events_contribution_and_proof_v2:type_name -> xatu.eth.v1.EventContributionAndProofV2
+	169, // 185: xatu.DecoratedEvent.eth_v2_beacon_block_v2:type_name -> xatu.eth.v2.EventBlockV2
+	147, // 186: xatu.DecoratedEvent.eth_v1_fork_choice_v2:type_name -> xatu.eth.v1.ForkChoiceV2
+	14,  // 187: xatu.DecoratedEvent.eth_v1_fork_choice_reorg_v2:type_name -> xatu.DebugForkChoiceReorgV2
+	170, // 188: xatu.DecoratedEvent.eth_v2_beacon_block_attester_slashing:type_name -> xatu.eth.v1.AttesterSlashingV2
+	171, // 189: xatu.DecoratedEvent.eth_v2_beacon_block_proposer_slashing:type_name -> xatu.eth.v1.ProposerSlashingV2
+	172, // 190: xatu.DecoratedEvent.eth_v2_beacon_block_voluntary_exit:type_name -> xatu.eth.v1.SignedVoluntaryExitV2
+	173, // 191: xatu.DecoratedEvent.eth_v2_beacon_block_deposit:type_name -> xatu.eth.v1.DepositV2
+	174, // 192: xatu.DecoratedEvent.eth_v2_beacon_block_bls_to_execution_change:type_name -> xatu.eth.v2.SignedBLSToExecutionChangeV2
+	175, // 193: xatu.DecoratedEvent.eth_v2_beacon_block_execution_transaction:type_name -> xatu.eth.v1.Transaction
+	176, // 194: xatu.DecoratedEvent.eth_v2_beacon_block_withdrawal:type_name -> xatu.eth.v1.WithdrawalV2
+	177, // 195: xatu.DecoratedEvent.eth_v1_events_blob_sidecar:type_name -> xatu.eth.v1.EventBlobSidecar
+	178, // 196: xatu.DecoratedEvent.eth_v1_beacon_block_blob_sidecar:type_name -> xatu.eth.v1.BlobSidecar
+	163, // 197: xatu.DecoratedEvent.beacon_p2p_attestation:type_name -> xatu.eth.v1.AttestationV2
+	179, // 198: xatu.DecoratedEvent.eth_v1_proposer_duty:type_name -> xatu.eth.v1.ProposerDuty
+	180, // 199: xatu.DecoratedEvent.eth_v2_beacon_block_elaborated_attestation:type_name -> xatu.eth.v1.ElaboratedAttestation
+	181, // 200: xatu.DecoratedEvent.libp2p_trace_add_peer:type_name -> xatu.libp2p.AddPeer
+	182, // 201: xatu.DecoratedEvent.libp2p_trace_remove_peer:type_name -> xatu.libp2p.RemovePeer
+	183, // 202: xatu.DecoratedEvent.libp2p_trace_recv_rpc:type_name -> xatu.libp2p.RecvRPC
+	184, // 203: xatu.DecoratedEvent.libp2p_trace_send_rpc:type_name -> xatu.libp2p.SendRPC
+	185, // 204: xatu.DecoratedEvent.libp2p_trace_join:type_name -> xatu.libp2p.Join
+	186, // 205: xatu.DecoratedEvent.libp2p_trace_connected:type_name -> xatu.libp2p.Connected
+	187, // 206: xatu.DecoratedEvent.libp2p_trace_disconnected:type_name -> xatu.libp2p.Disconnected
+	188, // 207: xatu.DecoratedEvent.libp2p_trace_handle_metadata:type_name -> xatu.libp2p.HandleMetadata
+	189, // 208: xatu.DecoratedEvent.libp2p_trace_handle_status:type_name -> xatu.libp2p.HandleStatus
+	190, // 209: xatu.DecoratedEvent.libp2p_trace_gossipsub_beacon_block:type_name -> xatu.libp2p.gossipsub.eth.BeaconBlock
+	154, // 210: xatu.DecoratedEvent.libp2p_trace_gossipsub_beacon_attestation:type_name -> xatu.eth.v1.Attestation
+	191, // 211: xatu.DecoratedEvent.libp2p_trace_gossipsub_blob_sidecar:type_name -> xatu.libp2p.gossipsub.eth.BlobSidecar
+	15,  // 212: xatu.DecoratedEvent.eth_v1_validators:type_name -> xatu.Validators
+	192, // 213: xatu.DecoratedEvent.mev_relay_bid_trace_builder_block_submission:type_name -> xatu.mevrelay.BidTrace
+	193, // 214: xatu.DecoratedEvent.mev_relay_payload_delivered:type_name -> xatu.mevrelay.ProposerPayloadDelivered
+	169, // 215: xatu.DecoratedEvent.eth_v3_validator_block:type_name -> xatu.eth.v2.EventBlockV2
+	194, // 216: xatu.DecoratedEvent.mev_relay_validator_registration:type_name -> xatu.mevrelay.ValidatorRegistration
+	195, // 217: xatu.DecoratedEvent.eth_v1_events_block_gossip:type_name -> xatu.eth.v1.EventBlockGossip
+	196, // 218: xatu.DecoratedEvent.libp2p_trace_drop_rpc:type_name -> xatu.libp2p.DropRPC
+	197, // 219: xatu.DecoratedEvent.libp2p_trace_leave:type_name -> xatu.libp2p.Leave
+	198, // 220: xatu.DecoratedEvent.libp2p_trace_graft:type_name -> xatu.libp2p.Graft
+	199, // 221: xatu.DecoratedEvent.libp2p_trace_prune:type_name -> xatu.libp2p.Prune
+	200, // 222: xatu.DecoratedEvent.libp2p_trace_duplicate_message:type_name -> xatu.libp2p.DuplicateMessage
+	201, // 223: xatu.DecoratedEvent.libp2p_trace_deliver_message:type_name -> xatu.libp2p.DeliverMessage
+	202, // 224: xatu.DecoratedEvent.libp2p_trace_publish_message:type_name -> xatu.libp2p.PublishMessage
+	203, // 225: xatu.DecoratedEvent.libp2p_trace_reject_message:type_name -> xatu.libp2p.RejectMessage
+	204, // 226: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_ihave:type_name -> xatu.libp2p.ControlIHaveMetaItem
+	205, // 227: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_iwant:type_name -> xatu.libp2p.ControlIWantMetaItem
+	206, // 228: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_idontwant:type_name -> xatu.libp2p.ControlIDontWantMetaItem
+	207, // 229: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_graft:type_name -> xatu.libp2p.ControlGraftMetaItem
+	208, // 230: xatu.DecoratedEvent.libp2p_trace_rpc_meta_control_prune:type_name -> xatu.libp2p.ControlPruneMetaItem
+	209, // 231: xatu.DecoratedEvent.libp2p_trace_rpc_meta_subscription:type_name -> xatu.libp2p.SubMetaItem
+	210, // 232: xatu.DecoratedEvent.libp2p_trace_rpc_meta_message:type_name -> xatu.libp2p.MessageMetaItem
+	211, // 233: xatu.DecoratedEvent.node_record_consensus:type_name -> xatu.noderecord.Consensus
+	212, // 234: xatu.DecoratedEvent.node_record_execution:type_name -> xatu.noderecord.Execution
+	213, // 235: xatu.DecoratedEvent.libp2p_trace_gossipsub_aggregate_and_proof:type_name -> xatu.eth.v1.SignedAggregateAttestationAndProofV2
+	214, // 236: xatu.DecoratedEvent.eth_v1_events_data_column_sidecar:type_name -> xatu.eth.v1.EventDataColumnSidecar
+	215, // 237: xatu.DecoratedEvent.libp2p_trace_gossipsub_data_column_sidecar:type_name -> xatu.libp2p.gossipsub.eth.DataColumnSidecar
+	216, // 238: xatu.DecoratedEvent.libp2p_trace_synthetic_heartbeat:type_name -> xatu.libp2p.SyntheticHeartbeat
+	217, // 239: xatu.DecoratedEvent.libp2p_trace_identify:type_name -> xatu.libp2p.Identify
+	218, // 240: xatu.DecoratedEvent.libp2p_trace_rpc_data_column_custody_probe:type_name -> xatu.libp2p.DataColumnCustodyProbe
+	19,  // 241: xatu.DecoratedEvent.execution_state_size:type_name -> xatu.ExecutionStateSize
+	20,  // 242: xatu.DecoratedEvent.consensus_engine_api_new_payload:type_name -> xatu.ConsensusEngineAPINewPayload
+	21,  // 243: xatu.DecoratedEvent.consensus_engine_api_get_blobs:type_name -> xatu.ConsensusEngineAPIGetBlobs
+	22,  // 244: xatu.DecoratedEvent.execution_engine_new_payload:type_name -> xatu.ExecutionEngineNewPayload
+	23,  // 245: xatu.DecoratedEvent.execution_engine_get_blobs:type_name -> xatu.ExecutionEngineGetBlobs
+	219, // 246: xatu.DecoratedEvent.eth_v1_beacon_blob:type_name -> xatu.eth.v1.Blob
+	16,  // 247: xatu.DecoratedEvent.eth_v1_beacon_sync_committee:type_name -> xatu.SyncCommitteeData
+	17,  // 248: xatu.DecoratedEvent.eth_v2_beacon_block_sync_aggregate:type_name -> xatu.SyncAggregateData
+	28,  // 249: xatu.DecoratedEvent.execution_block_metrics:type_name -> xatu.ExecutionBlockMetrics
+	220, // 250: xatu.DecoratedEvent.eth_v1_events_fast_confirmation:type_name -> xatu.eth.v1.EventFastConfirmation
+	125, // 251: xatu.ClientMeta.Ethereum.network:type_name -> xatu.ClientMeta.Ethereum.Network
+	126, // 252: xatu.ClientMeta.Ethereum.execution:type_name -> xatu.ClientMeta.Ethereum.Execution
+	127, // 253: xatu.ClientMeta.Ethereum.consensus:type_name -> xatu.ClientMeta.Ethereum.Consensus
+	4,   // 254: xatu.ClientMeta.AdditionalEthV1AttestationSourceData.epoch:type_name -> xatu.Epoch
+	5,   // 255: xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data.epoch:type_name -> xatu.EpochV2
+	4,   // 256: xatu.ClientMeta.AdditionalEthV1AttestationTargetData.epoch:type_name -> xatu.Epoch
+	5,   // 257: xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data.epoch:type_name -> xatu.EpochV2
+	32,  // 258: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceData
+	34,  // 259: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetData
+	6,   // 260: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.slot:type_name -> xatu.Slot
+	4,   // 261: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.epoch:type_name -> xatu.Epoch
+	9,   // 262: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.propagation:type_name -> xatu.Propagation
+	11,  // 263: xatu.ClientMeta.AdditionalEthV1EventsAttestationData.attesting_validator:type_name -> xatu.AttestingValidator
+	33,  // 264: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
+	35,  // 265: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
+	7,   // 266: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.slot:type_name -> xatu.SlotV2
+	5,   // 267: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.epoch:type_name -> xatu.EpochV2
+	10,  // 268: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.propagation:type_name -> xatu.PropagationV2
+	12,  // 269: xatu.ClientMeta.AdditionalEthV1EventsAttestationV2Data.attesting_validator:type_name -> xatu.AttestingValidatorV2
+	4,   // 270: xatu.ClientMeta.AdditionalEthV1EventsHeadData.epoch:type_name -> xatu.Epoch
+	6,   // 271: xatu.ClientMeta.AdditionalEthV1EventsHeadData.slot:type_name -> xatu.Slot
+	9,   // 272: xatu.ClientMeta.AdditionalEthV1EventsHeadData.propagation:type_name -> xatu.Propagation
+	5,   // 273: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.epoch:type_name -> xatu.EpochV2
+	7,   // 274: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.slot:type_name -> xatu.SlotV2
+	10,  // 275: xatu.ClientMeta.AdditionalEthV1EventsHeadV2Data.propagation:type_name -> xatu.PropagationV2
+	4,   // 276: xatu.ClientMeta.AdditionalEthV1EventsBlockData.epoch:type_name -> xatu.Epoch
+	6,   // 277: xatu.ClientMeta.AdditionalEthV1EventsBlockData.slot:type_name -> xatu.Slot
+	9,   // 278: xatu.ClientMeta.AdditionalEthV1EventsBlockData.propagation:type_name -> xatu.Propagation
+	5,   // 279: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.epoch:type_name -> xatu.EpochV2
+	7,   // 280: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.slot:type_name -> xatu.SlotV2
+	10,  // 281: xatu.ClientMeta.AdditionalEthV1EventsBlockV2Data.propagation:type_name -> xatu.PropagationV2
+	5,   // 282: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.epoch:type_name -> xatu.EpochV2
+	7,   // 283: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.slot:type_name -> xatu.SlotV2
+	10,  // 284: xatu.ClientMeta.AdditionalEthV1EventsBlockGossipData.propagation:type_name -> xatu.PropagationV2
+	5,   // 285: xatu.ClientMeta.AdditionalEthV1EventsFastConfirmationData.epoch:type_name -> xatu.EpochV2
+	7,   // 286: xatu.ClientMeta.AdditionalEthV1EventsFastConfirmationData.slot:type_name -> xatu.SlotV2
+	10,  // 287: xatu.ClientMeta.AdditionalEthV1EventsFastConfirmationData.propagation:type_name -> xatu.PropagationV2
+	4,   // 288: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitData.epoch:type_name -> xatu.Epoch
+	5,   // 289: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.epoch:type_name -> xatu.EpochV2
+	5,   // 290: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 291: xatu.ClientMeta.AdditionalEthV1EventsVoluntaryExitV2Data.wallclock_slot:type_name -> xatu.SlotV2
+	4,   // 292: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointData.epoch:type_name -> xatu.Epoch
+	5,   // 293: xatu.ClientMeta.AdditionalEthV1EventsFinalizedCheckpointV2Data.epoch:type_name -> xatu.EpochV2
+	4,   // 294: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.epoch:type_name -> xatu.Epoch
+	6,   // 295: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.slot:type_name -> xatu.Slot
+	9,   // 296: xatu.ClientMeta.AdditionalEthV1EventsChainReorgData.propagation:type_name -> xatu.Propagation
+	5,   // 297: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.epoch:type_name -> xatu.EpochV2
+	7,   // 298: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.slot:type_name -> xatu.SlotV2
+	10,  // 299: xatu.ClientMeta.AdditionalEthV1EventsChainReorgV2Data.propagation:type_name -> xatu.PropagationV2
+	4,   // 300: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.epoch:type_name -> xatu.Epoch
+	6,   // 301: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.slot:type_name -> xatu.Slot
+	9,   // 302: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData.propagation:type_name -> xatu.Propagation
+	5,   // 303: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.epoch:type_name -> xatu.EpochV2
+	7,   // 304: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.slot:type_name -> xatu.SlotV2
+	10,  // 305: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data.propagation:type_name -> xatu.PropagationV2
+	50,  // 306: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofData.contribution:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionData
+	51,  // 307: xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofV2Data.contribution:type_name -> xatu.ClientMeta.AdditionalEthV1EventsContributionAndProofContributionV2Data
+	4,   // 308: xatu.ClientMeta.ForkChoiceSnapshot.request_epoch:type_name -> xatu.Epoch
+	6,   // 309: xatu.ClientMeta.ForkChoiceSnapshot.request_slot:type_name -> xatu.Slot
+	144, // 310: xatu.ClientMeta.ForkChoiceSnapshot.timestamp:type_name -> google.protobuf.Timestamp
+	5,   // 311: xatu.ClientMeta.ForkChoiceSnapshotV2.request_epoch:type_name -> xatu.EpochV2
+	7,   // 312: xatu.ClientMeta.ForkChoiceSnapshotV2.request_slot:type_name -> xatu.SlotV2
+	143, // 313: xatu.ClientMeta.ForkChoiceSnapshotV2.requested_at_slot_start_diff_ms:type_name -> google.protobuf.UInt64Value
+	143, // 314: xatu.ClientMeta.ForkChoiceSnapshotV2.request_duration_ms:type_name -> google.protobuf.UInt64Value
+	144, // 315: xatu.ClientMeta.ForkChoiceSnapshotV2.timestamp:type_name -> google.protobuf.Timestamp
+	54,  // 316: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceData.Snapshot:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
+	55,  // 317: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceV2Data.Snapshot:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
+	54,  // 318: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData.before:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
+	54,  // 319: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgData.after:type_name -> xatu.ClientMeta.ForkChoiceSnapshot
+	55,  // 320: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data.before:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
+	55,  // 321: xatu.ClientMeta.AdditionalEthV1DebugForkChoiceReOrgV2Data.after:type_name -> xatu.ClientMeta.ForkChoiceSnapshotV2
+	5,   // 322: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData.epoch:type_name -> xatu.EpochV2
+	7,   // 323: xatu.ClientMeta.AdditionalEthV1BeaconCommitteeData.slot:type_name -> xatu.SlotV2
+	5,   // 324: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData.epoch:type_name -> xatu.EpochV2
+	143, // 325: xatu.ClientMeta.AdditionalEthV1BeaconSyncCommitteeData.sync_committee_period:type_name -> google.protobuf.UInt64Value
+	18,  // 326: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData.block:type_name -> xatu.BlockIdentifier
+	143, // 327: xatu.ClientMeta.AdditionalEthV2BeaconBlockSyncAggregateData.sync_committee_period:type_name -> google.protobuf.UInt64Value
+	143, // 328: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.nonce:type_name -> google.protobuf.UInt64Value
+	143, // 329: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.gas:type_name -> google.protobuf.UInt64Value
+	151, // 330: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.type:type_name -> google.protobuf.UInt32Value
+	143, // 331: xatu.ClientMeta.AdditionalMempoolTransactionV2Data.blob_gas:type_name -> google.protobuf.UInt64Value
+	4,   // 332: xatu.ClientMeta.AdditionalEthV2BeaconBlockData.epoch:type_name -> xatu.Epoch
+	6,   // 333: xatu.ClientMeta.AdditionalEthV2BeaconBlockData.slot:type_name -> xatu.Slot
+	5,   // 334: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.epoch:type_name -> xatu.EpochV2
+	7,   // 335: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.slot:type_name -> xatu.SlotV2
+	143, // 336: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_count:type_name -> google.protobuf.UInt64Value
+	143, // 337: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_total_bytes:type_name -> google.protobuf.UInt64Value
+	143, // 338: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.transactions_total_bytes_compressed:type_name -> google.protobuf.UInt64Value
+	143, // 339: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.total_bytes:type_name -> google.protobuf.UInt64Value
+	143, // 340: xatu.ClientMeta.AdditionalEthV2BeaconBlockV2Data.total_bytes_compressed:type_name -> google.protobuf.UInt64Value
+	18,  // 341: xatu.ClientMeta.AdditionalEthV2BeaconBlockAttesterSlashingData.block:type_name -> xatu.BlockIdentifier
+	18,  // 342: xatu.ClientMeta.AdditionalEthV2BeaconBlockProposerSlashingData.block:type_name -> xatu.BlockIdentifier
+	18,  // 343: xatu.ClientMeta.AdditionalEthV2BeaconBlockVoluntaryExitData.block:type_name -> xatu.BlockIdentifier
+	18,  // 344: xatu.ClientMeta.AdditionalEthV2BeaconBlockDepositData.block:type_name -> xatu.BlockIdentifier
+	18,  // 345: xatu.ClientMeta.AdditionalEthV2BeaconBlockBLSToExecutionChangeData.block:type_name -> xatu.BlockIdentifier
+	18,  // 346: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData.block:type_name -> xatu.BlockIdentifier
+	143, // 347: xatu.ClientMeta.AdditionalEthV2BeaconBlockExecutionTransactionData.position_in_block:type_name -> google.protobuf.UInt64Value
+	18,  // 348: xatu.ClientMeta.AdditionalEthV2BeaconBlockWithdrawalData.block:type_name -> xatu.BlockIdentifier
+	143, // 349: xatu.ClientMeta.AttestationDataSnapshot.requested_at_slot_start_diff_ms:type_name -> google.protobuf.UInt64Value
+	143, // 350: xatu.ClientMeta.AttestationDataSnapshot.request_duration_ms:type_name -> google.protobuf.UInt64Value
+	144, // 351: xatu.ClientMeta.AttestationDataSnapshot.timestamp:type_name -> google.protobuf.Timestamp
+	33,  // 352: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
+	35,  // 353: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
+	5,   // 354: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.epoch:type_name -> xatu.EpochV2
+	7,   // 355: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.slot:type_name -> xatu.SlotV2
+	74,  // 356: xatu.ClientMeta.AdditionalEthV1ValidatorAttestationDataData.Snapshot:type_name -> xatu.ClientMeta.AttestationDataSnapshot
+	5,   // 357: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.epoch:type_name -> xatu.EpochV2
+	7,   // 358: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.slot:type_name -> xatu.SlotV2
+	10,  // 359: xatu.ClientMeta.AdditionalEthV1EventsBlobSidecarData.propagation:type_name -> xatu.PropagationV2
+	5,   // 360: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.epoch:type_name -> xatu.EpochV2
+	7,   // 361: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.slot:type_name -> xatu.SlotV2
+	10,  // 362: xatu.ClientMeta.AdditionalEthV1EventsDataColumnSidecarData.propagation:type_name -> xatu.PropagationV2
+	5,   // 363: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.epoch:type_name -> xatu.EpochV2
+	7,   // 364: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.slot:type_name -> xatu.SlotV2
+	143, // 365: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.data_size:type_name -> google.protobuf.UInt64Value
+	143, // 366: xatu.ClientMeta.AdditionalEthV1BeaconBlobSidecarData.data_empty_size:type_name -> google.protobuf.UInt64Value
+	33,  // 367: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
+	35,  // 368: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
+	7,   // 369: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.slot:type_name -> xatu.SlotV2
+	5,   // 370: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.epoch:type_name -> xatu.EpochV2
+	10,  // 371: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.propagation:type_name -> xatu.PropagationV2
+	12,  // 372: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.attesting_validator:type_name -> xatu.AttestingValidatorV2
+	221, // 373: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.peer:type_name -> xatu.libp2p.Peer
+	151, // 374: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.subnet:type_name -> google.protobuf.UInt32Value
+	222, // 375: xatu.ClientMeta.AdditionalBeaconP2PAttestationData.validated:type_name -> google.protobuf.BoolValue
+	5,   // 376: xatu.ClientMeta.AdditionalEthV1ProposerDutyData.epoch:type_name -> xatu.EpochV2
+	7,   // 377: xatu.ClientMeta.AdditionalEthV1ProposerDutyData.slot:type_name -> xatu.SlotV2
+	18,  // 378: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.block:type_name -> xatu.BlockIdentifier
+	143, // 379: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.position_in_block:type_name -> google.protobuf.UInt64Value
+	5,   // 380: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.epoch:type_name -> xatu.EpochV2
+	7,   // 381: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.slot:type_name -> xatu.SlotV2
+	33,  // 382: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.source:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationSourceV2Data
+	35,  // 383: xatu.ClientMeta.AdditionalEthV2BeaconBlockElaboratedAttestationData.target:type_name -> xatu.ClientMeta.AdditionalEthV1AttestationTargetV2Data
+	223, // 384: xatu.ClientMeta.AdditionalLibP2PTraceAddPeerData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 385: xatu.ClientMeta.AdditionalLibP2PTraceRemovePeerData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 386: xatu.ClientMeta.AdditionalLibP2PTraceRecvRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 387: xatu.ClientMeta.AdditionalLibP2PTraceSendRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 388: xatu.ClientMeta.AdditionalLibP2PTraceDropRPCData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 389: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIHaveData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 390: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIWantData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 391: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlIDontWantData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 392: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlGraftData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 393: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaControlPruneData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 394: xatu.ClientMeta.AdditionalLibP2PTraceJoinData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 395: xatu.ClientMeta.AdditionalLibP2PTraceLeaveData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 396: xatu.ClientMeta.AdditionalLibP2PTraceGraftData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 397: xatu.ClientMeta.AdditionalLibP2PTracePruneData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 398: xatu.ClientMeta.AdditionalLibP2PTraceDuplicateMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 399: xatu.ClientMeta.AdditionalLibP2PTraceDeliverMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 400: xatu.ClientMeta.AdditionalLibP2PTracePublishMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 401: xatu.ClientMeta.AdditionalLibP2PTraceRejectMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 402: xatu.ClientMeta.AdditionalLibP2PTraceConnectedData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 403: xatu.ClientMeta.AdditionalLibP2PTraceDisconnectedData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 404: xatu.ClientMeta.AdditionalLibP2PTraceSyntheticHeartbeatData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 405: xatu.ClientMeta.AdditionalLibP2PTraceHandleMetadataData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 406: xatu.ClientMeta.AdditionalLibP2PTraceHandleStatusData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 407: xatu.ClientMeta.AdditionalLibP2PTraceIdentifyData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 408: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	5,   // 409: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.epoch:type_name -> xatu.EpochV2
+	7,   // 410: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.slot:type_name -> xatu.SlotV2
+	5,   // 411: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 412: xatu.ClientMeta.AdditionalLibP2PTraceRpcDataColumnCustodyProbeData.wallclock_slot:type_name -> xatu.SlotV2
+	223, // 413: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaSubscriptionData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	223, // 414: xatu.ClientMeta.AdditionalLibP2PTraceRPCMetaMessageData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	5,   // 415: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.epoch:type_name -> xatu.EpochV2
+	7,   // 416: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.slot:type_name -> xatu.SlotV2
+	5,   // 417: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 418: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.wallclock_slot:type_name -> xatu.SlotV2
+	10,  // 419: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.propagation:type_name -> xatu.PropagationV2
+	223, // 420: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	224, // 421: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.topic:type_name -> google.protobuf.StringValue
+	151, // 422: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.message_size:type_name -> google.protobuf.UInt32Value
+	224, // 423: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconBlockData.message_id:type_name -> google.protobuf.StringValue
+	5,   // 424: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData.epoch:type_name -> xatu.EpochV2
+	5,   // 425: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData.epoch:type_name -> xatu.EpochV2
+	110, // 426: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.source:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData
+	111, // 427: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.target:type_name -> xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData
+	7,   // 428: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.slot:type_name -> xatu.SlotV2
+	5,   // 429: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.epoch:type_name -> xatu.EpochV2
+	10,  // 430: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.propagation:type_name -> xatu.PropagationV2
+	12,  // 431: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.attesting_validator:type_name -> xatu.AttestingValidatorV2
+	5,   // 432: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 433: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.wallclock_slot:type_name -> xatu.SlotV2
+	223, // 434: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	224, // 435: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.topic:type_name -> google.protobuf.StringValue
+	151, // 436: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.message_size:type_name -> google.protobuf.UInt32Value
+	224, // 437: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBeaconAttestationData.message_id:type_name -> google.protobuf.StringValue
+	5,   // 438: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.epoch:type_name -> xatu.EpochV2
+	7,   // 439: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.slot:type_name -> xatu.SlotV2
+	5,   // 440: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 441: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.wallclock_slot:type_name -> xatu.SlotV2
+	10,  // 442: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.propagation:type_name -> xatu.PropagationV2
+	143, // 443: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.aggregator_index:type_name -> google.protobuf.UInt64Value
+	223, // 444: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	224, // 445: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.topic:type_name -> google.protobuf.StringValue
+	151, // 446: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.message_size:type_name -> google.protobuf.UInt32Value
+	224, // 447: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubAggregateAndProofData.message_id:type_name -> google.protobuf.StringValue
+	5,   // 448: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.epoch:type_name -> xatu.EpochV2
+	7,   // 449: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.slot:type_name -> xatu.SlotV2
+	5,   // 450: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 451: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.wallclock_slot:type_name -> xatu.SlotV2
+	10,  // 452: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.propagation:type_name -> xatu.PropagationV2
+	223, // 453: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	224, // 454: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.topic:type_name -> google.protobuf.StringValue
+	151, // 455: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.message_size:type_name -> google.protobuf.UInt32Value
+	224, // 456: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubBlobSidecarData.message_id:type_name -> google.protobuf.StringValue
+	5,   // 457: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.epoch:type_name -> xatu.EpochV2
+	7,   // 458: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.slot:type_name -> xatu.SlotV2
+	5,   // 459: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.wallclock_epoch:type_name -> xatu.EpochV2
+	7,   // 460: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.wallclock_slot:type_name -> xatu.SlotV2
+	10,  // 461: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.propagation:type_name -> xatu.PropagationV2
+	223, // 462: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.metadata:type_name -> xatu.libp2p.TraceEventMetadata
+	224, // 463: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.topic:type_name -> google.protobuf.StringValue
+	151, // 464: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.message_size:type_name -> google.protobuf.UInt32Value
+	224, // 465: xatu.ClientMeta.AdditionalLibP2PTraceGossipSubDataColumnSidecarData.message_id:type_name -> google.protobuf.StringValue
+	5,   // 466: xatu.ClientMeta.AdditionalEthV1ValidatorsData.epoch:type_name -> xatu.EpochV2
+	225, // 467: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.relay:type_name -> xatu.mevrelay.Relay
+	7,   // 468: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.slot:type_name -> xatu.SlotV2
+	7,   // 469: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.wallclock_slot:type_name -> xatu.SlotV2
+	5,   // 470: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.epoch:type_name -> xatu.EpochV2
+	5,   // 471: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.wallclock_epoch:type_name -> xatu.EpochV2
+	143, // 472: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.requested_at_slot_time:type_name -> google.protobuf.UInt64Value
+	143, // 473: xatu.ClientMeta.AdditionalMevRelayBidTraceBuilderBlockSubmissionData.response_at_slot_time:type_name -> google.protobuf.UInt64Value
+	225, // 474: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.relay:type_name -> xatu.mevrelay.Relay
+	7,   // 475: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.slot:type_name -> xatu.SlotV2
+	7,   // 476: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.wallclock_slot:type_name -> xatu.SlotV2
+	5,   // 477: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.epoch:type_name -> xatu.EpochV2
+	5,   // 478: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.wallclock_epoch:type_name -> xatu.EpochV2
+	143, // 479: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.requested_at_slot_time:type_name -> google.protobuf.UInt64Value
+	143, // 480: xatu.ClientMeta.AdditionalMevRelayPayloadDeliveredData.response_at_slot_time:type_name -> google.protobuf.UInt64Value
+	5,   // 481: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.epoch:type_name -> xatu.EpochV2
+	7,   // 482: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.slot:type_name -> xatu.SlotV2
+	143, // 483: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_count:type_name -> google.protobuf.UInt64Value
+	143, // 484: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_total_bytes:type_name -> google.protobuf.UInt64Value
+	143, // 485: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.transactions_total_bytes_compressed:type_name -> google.protobuf.UInt64Value
+	143, // 486: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.total_bytes:type_name -> google.protobuf.UInt64Value
+	143, // 487: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.total_bytes_compressed:type_name -> google.protobuf.UInt64Value
+	143, // 488: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.request_duration_ms:type_name -> google.protobuf.UInt64Value
+	144, // 489: xatu.ClientMeta.AdditionalEthV3ValidatorBlockData.requested_at:type_name -> google.protobuf.Timestamp
+	225, // 490: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.relay:type_name -> xatu.mevrelay.Relay
+	7,   // 491: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.slot:type_name -> xatu.SlotV2
+	7,   // 492: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.wallclock_slot:type_name -> xatu.SlotV2
+	5,   // 493: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.epoch:type_name -> xatu.EpochV2
+	5,   // 494: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.wallclock_epoch:type_name -> xatu.EpochV2
+	143, // 495: xatu.ClientMeta.AdditionalMevRelayValidatorRegistrationData.validator_index:type_name -> google.protobuf.UInt64Value
+	5,   // 496: xatu.ClientMeta.AdditionalNodeRecordConsensusData.finalized_epoch:type_name -> xatu.EpochV2
+	7,   // 497: xatu.ClientMeta.AdditionalNodeRecordConsensusData.head_slot:type_name -> xatu.SlotV2
+	5,   // 498: xatu.ClientMeta.AdditionalNodeRecordConsensusData.head_epoch:type_name -> xatu.EpochV2
+	5,   // 499: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData.epoch:type_name -> xatu.EpochV2
+	7,   // 500: xatu.ClientMeta.AdditionalConsensusEngineAPINewPayloadData.slot:type_name -> xatu.SlotV2
+	5,   // 501: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData.epoch:type_name -> xatu.EpochV2
+	7,   // 502: xatu.ClientMeta.AdditionalConsensusEngineAPIGetBlobsData.slot:type_name -> xatu.SlotV2
+	5,   // 503: xatu.ClientMeta.AdditionalEthV1BeaconBlobData.epoch:type_name -> xatu.EpochV2
+	7,   // 504: xatu.ClientMeta.AdditionalEthV1BeaconBlobData.slot:type_name -> xatu.SlotV2
+	8,   // 505: xatu.ClientMeta.Ethereum.Execution.fork_id:type_name -> xatu.ForkID
+	144, // 506: xatu.ServerMeta.Event.received_date_time:type_name -> google.protobuf.Timestamp
+	129, // 507: xatu.ServerMeta.Client.geo:type_name -> xatu.ServerMeta.Geo
+	129, // 508: xatu.ServerMeta.Peer.geo:type_name -> xatu.ServerMeta.Geo
+	131, // 509: xatu.ServerMeta.AdditionalBeaconP2PAttestationData.peer:type_name -> xatu.ServerMeta.Peer
+	131, // 510: xatu.ServerMeta.AdditionalLibp2PTraceConnectedData.peer:type_name -> xatu.ServerMeta.Peer
+	131, // 511: xatu.ServerMeta.AdditionalLibp2PTraceDisconnectedData.peer:type_name -> xatu.ServerMeta.Peer
+	131, // 512: xatu.ServerMeta.AdditionalLibP2PTraceSyntheticHeartbeatData.peer:type_name -> xatu.ServerMeta.Peer
+	131, // 513: xatu.ServerMeta.AdditionalLibp2PTraceIdentifyData.peer:type_name -> xatu.ServerMeta.Peer
+	129, // 514: xatu.ServerMeta.AdditionalNodeRecordConsensusData.geo:type_name -> xatu.ServerMeta.Geo
+	129, // 515: xatu.ServerMeta.AdditionalNodeRecordExecutionData.geo:type_name -> xatu.ServerMeta.Geo
+	143, // 516: xatu.ExecutionBlockMetrics.StateReads.accounts:type_name -> google.protobuf.UInt64Value
+	143, // 517: xatu.ExecutionBlockMetrics.StateReads.storage_slots:type_name -> google.protobuf.UInt64Value
+	143, // 518: xatu.ExecutionBlockMetrics.StateReads.code:type_name -> google.protobuf.UInt64Value
+	143, // 519: xatu.ExecutionBlockMetrics.StateReads.code_bytes:type_name -> google.protobuf.UInt64Value
+	143, // 520: xatu.ExecutionBlockMetrics.StateWrites.accounts:type_name -> google.protobuf.UInt64Value
+	143, // 521: xatu.ExecutionBlockMetrics.StateWrites.accounts_deleted:type_name -> google.protobuf.UInt64Value
+	143, // 522: xatu.ExecutionBlockMetrics.StateWrites.storage_slots:type_name -> google.protobuf.UInt64Value
+	143, // 523: xatu.ExecutionBlockMetrics.StateWrites.storage_slots_deleted:type_name -> google.protobuf.UInt64Value
+	143, // 524: xatu.ExecutionBlockMetrics.StateWrites.code:type_name -> google.protobuf.UInt64Value
+	143, // 525: xatu.ExecutionBlockMetrics.StateWrites.code_bytes:type_name -> google.protobuf.UInt64Value
+	226, // 526: xatu.ExecutionBlockMetrics.CacheEntry.hits:type_name -> google.protobuf.Int64Value
+	226, // 527: xatu.ExecutionBlockMetrics.CacheEntry.misses:type_name -> google.protobuf.Int64Value
+	153, // 528: xatu.ExecutionBlockMetrics.CacheEntry.hit_rate:type_name -> google.protobuf.DoubleValue
+	226, // 529: xatu.ExecutionBlockMetrics.CodeCacheEntry.hits:type_name -> google.protobuf.Int64Value
+	226, // 530: xatu.ExecutionBlockMetrics.CodeCacheEntry.misses:type_name -> google.protobuf.Int64Value
+	153, // 531: xatu.ExecutionBlockMetrics.CodeCacheEntry.hit_rate:type_name -> google.protobuf.DoubleValue
+	226, // 532: xatu.ExecutionBlockMetrics.CodeCacheEntry.hit_bytes:type_name -> google.protobuf.Int64Value
+	226, // 533: xatu.ExecutionBlockMetrics.CodeCacheEntry.miss_bytes:type_name -> google.protobuf.Int64Value
+	2,   // 534: xatu.EventIngester.CreateEvents:input_type -> xatu.CreateEventsRequest
+	3,   // 535: xatu.EventIngester.CreateEvents:output_type -> xatu.CreateEventsResponse
+	535, // [535:536] is the sub-list for method output_type
+	534, // [534:535] is the sub-list for method input_type
+	534, // [534:534] is the sub-list for extension type_name
+	534, // [534:534] is the sub-list for extension extendee
+	0,   // [0:534] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_xatu_event_ingester_proto_init() }
@@ -17483,7 +17621,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[41].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsVoluntaryExitData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsFastConfirmationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17495,7 +17633,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[42].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsVoluntaryExitData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17507,7 +17645,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[43].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsVoluntaryExitV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17519,7 +17657,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[44].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17531,7 +17669,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[45].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsChainReorgData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsFinalizedCheckpointV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17543,7 +17681,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[46].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsChainReorgV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsChainReorgData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17555,7 +17693,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[47].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsChainReorgV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17567,7 +17705,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[48].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17579,7 +17717,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[49].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofContributionV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17591,7 +17729,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[50].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17603,7 +17741,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[51].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_ForkChoiceSnapshot); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsContributionAndProofV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17615,7 +17753,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[52].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_ForkChoiceSnapshotV2); i {
+			switch v := v.(*ClientMeta_ForkChoiceSnapshot); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17627,7 +17765,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[53].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceData); i {
+			switch v := v.(*ClientMeta_ForkChoiceSnapshotV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17639,7 +17777,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[54].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17651,7 +17789,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[55].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17663,7 +17801,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[56].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17675,7 +17813,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[57].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1BeaconCommitteeData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1DebugForkChoiceReOrgV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17687,7 +17825,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[58].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1BeaconCommitteeData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17699,7 +17837,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[59].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1BeaconSyncCommitteeData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17711,7 +17849,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[60].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalMempoolTransactionData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17723,7 +17861,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[61].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalMempoolTransactionV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalMempoolTransactionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17735,7 +17873,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[62].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockData); i {
+			switch v := v.(*ClientMeta_AdditionalMempoolTransactionV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17747,7 +17885,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[63].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockV2Data); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17759,7 +17897,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[64].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockV2Data); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17771,7 +17909,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[65].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17783,7 +17921,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[66].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockProposerSlashingData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17795,7 +17933,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[67].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockDepositData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockVoluntaryExitData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17807,7 +17945,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[68].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockDepositData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17819,7 +17957,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[69].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17831,7 +17969,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[70].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17843,7 +17981,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[71].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AttestationDataSnapshot); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockWithdrawalData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17855,7 +17993,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[72].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1ValidatorAttestationDataData); i {
+			switch v := v.(*ClientMeta_AttestationDataSnapshot); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17867,7 +18005,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[73].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsBlobSidecarData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1ValidatorAttestationDataData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17879,7 +18017,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[74].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsBlobSidecarData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17891,7 +18029,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[75].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1BeaconBlobSidecarData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1EventsDataColumnSidecarData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17903,7 +18041,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[76].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalBeaconP2PAttestationData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1BeaconBlobSidecarData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17915,7 +18053,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[77].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1ProposerDutyData); i {
+			switch v := v.(*ClientMeta_AdditionalBeaconP2PAttestationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17927,7 +18065,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[78].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1ProposerDutyData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17939,7 +18077,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[79].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceAddPeerData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV2BeaconBlockElaboratedAttestationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17951,7 +18089,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[80].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRemovePeerData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceAddPeerData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17963,7 +18101,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[81].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRecvRPCData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRemovePeerData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17975,7 +18113,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[82].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceSendRPCData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRecvRPCData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17987,7 +18125,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[83].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDropRPCData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceSendRPCData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -17999,7 +18137,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[84].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDropRPCData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18011,7 +18149,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[85].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18023,7 +18161,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[86].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18035,7 +18173,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[87].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18047,7 +18185,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[88].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18059,7 +18197,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[89].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceJoinData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18071,7 +18209,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[90].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceLeaveData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceJoinData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18083,7 +18221,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[91].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGraftData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceLeaveData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18095,7 +18233,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[92].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTracePruneData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGraftData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18107,7 +18245,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[93].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTracePruneData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18119,7 +18257,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[94].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDeliverMessageData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDuplicateMessageData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18131,7 +18269,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[95].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTracePublishMessageData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDeliverMessageData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18143,7 +18281,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[96].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRejectMessageData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTracePublishMessageData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18155,7 +18293,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[97].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceConnectedData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRejectMessageData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18167,7 +18305,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[98].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDisconnectedData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceConnectedData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18179,7 +18317,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[99].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceDisconnectedData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18191,7 +18329,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[100].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceHandleMetadataData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18203,7 +18341,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[101].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceHandleStatusData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceHandleMetadataData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18215,7 +18353,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[102].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceIdentifyData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceHandleStatusData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18227,7 +18365,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[103].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceIdentifyData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18239,7 +18377,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[104].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18251,7 +18389,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[105].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18263,7 +18401,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[106].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18275,7 +18413,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[107].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18287,7 +18425,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[108].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationSourceData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18299,7 +18437,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[109].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationTargetData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18311,7 +18449,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[110].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18323,7 +18461,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[111].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18335,7 +18473,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[112].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18347,7 +18485,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[113].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1ValidatorsData); i {
+			switch v := v.(*ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18359,7 +18497,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[114].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1ValidatorsData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18371,7 +18509,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[115].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalMevRelayPayloadDeliveredData); i {
+			switch v := v.(*ClientMeta_AdditionalMevRelayBidTraceBuilderBlockSubmissionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18383,7 +18521,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[116].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV3ValidatorBlockData); i {
+			switch v := v.(*ClientMeta_AdditionalMevRelayPayloadDeliveredData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18395,7 +18533,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[117].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalMevRelayValidatorRegistrationData); i {
+			switch v := v.(*ClientMeta_AdditionalEthV3ValidatorBlockData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18407,7 +18545,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[118].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalNodeRecordConsensusData); i {
+			switch v := v.(*ClientMeta_AdditionalMevRelayValidatorRegistrationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18419,7 +18557,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[119].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalConsensusEngineAPINewPayloadData); i {
+			switch v := v.(*ClientMeta_AdditionalNodeRecordConsensusData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18431,7 +18569,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[120].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData); i {
+			switch v := v.(*ClientMeta_AdditionalConsensusEngineAPINewPayloadData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18443,7 +18581,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[121].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_AdditionalEthV1BeaconBlobData); i {
+			switch v := v.(*ClientMeta_AdditionalConsensusEngineAPIGetBlobsData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18455,7 +18593,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[122].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_Ethereum_Network); i {
+			switch v := v.(*ClientMeta_AdditionalEthV1BeaconBlobData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18467,7 +18605,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[123].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_Ethereum_Execution); i {
+			switch v := v.(*ClientMeta_Ethereum_Network); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18479,7 +18617,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[124].Exporter = func(v any, i int) any {
-			switch v := v.(*ClientMeta_Ethereum_Consensus); i {
+			switch v := v.(*ClientMeta_Ethereum_Execution); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18491,7 +18629,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[125].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_Event); i {
+			switch v := v.(*ClientMeta_Ethereum_Consensus); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18503,7 +18641,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[126].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_Geo); i {
+			switch v := v.(*ServerMeta_Event); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18515,7 +18653,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[127].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_Client); i {
+			switch v := v.(*ServerMeta_Geo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18527,7 +18665,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[128].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_Peer); i {
+			switch v := v.(*ServerMeta_Client); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18539,7 +18677,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[129].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalBeaconP2PAttestationData); i {
+			switch v := v.(*ServerMeta_Peer); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18551,7 +18689,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[130].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalLibp2PTraceConnectedData); i {
+			switch v := v.(*ServerMeta_AdditionalBeaconP2PAttestationData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18563,7 +18701,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[131].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalLibp2PTraceDisconnectedData); i {
+			switch v := v.(*ServerMeta_AdditionalLibp2PTraceConnectedData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18575,7 +18713,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[132].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData); i {
+			switch v := v.(*ServerMeta_AdditionalLibp2PTraceDisconnectedData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18587,7 +18725,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[133].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalLibp2PTraceIdentifyData); i {
+			switch v := v.(*ServerMeta_AdditionalLibP2PTraceSyntheticHeartbeatData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18599,7 +18737,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[134].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalNodeRecordConsensusData); i {
+			switch v := v.(*ServerMeta_AdditionalLibp2PTraceIdentifyData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18611,7 +18749,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[135].Exporter = func(v any, i int) any {
-			switch v := v.(*ServerMeta_AdditionalNodeRecordExecutionData); i {
+			switch v := v.(*ServerMeta_AdditionalNodeRecordConsensusData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18623,7 +18761,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[136].Exporter = func(v any, i int) any {
-			switch v := v.(*ExecutionBlockMetrics_StateReads); i {
+			switch v := v.(*ServerMeta_AdditionalNodeRecordExecutionData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18635,7 +18773,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[137].Exporter = func(v any, i int) any {
-			switch v := v.(*ExecutionBlockMetrics_StateWrites); i {
+			switch v := v.(*ExecutionBlockMetrics_StateReads); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18647,7 +18785,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[138].Exporter = func(v any, i int) any {
-			switch v := v.(*ExecutionBlockMetrics_CacheEntry); i {
+			switch v := v.(*ExecutionBlockMetrics_StateWrites); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -18659,6 +18797,18 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			}
 		}
 		file_pkg_proto_xatu_event_ingester_proto_msgTypes[139].Exporter = func(v any, i int) any {
+			switch v := v.(*ExecutionBlockMetrics_CacheEntry); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_xatu_event_ingester_proto_msgTypes[140].Exporter = func(v any, i int) any {
 			switch v := v.(*ExecutionBlockMetrics_CodeCacheEntry); i {
 			case 0:
 				return &v.state
@@ -18753,6 +18903,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 		(*ClientMeta_EthV1BeaconSyncCommittee)(nil),
 		(*ClientMeta_EthV2BeaconBlockSyncAggregate)(nil),
 		(*ClientMeta_Libp2PTraceIdentify)(nil),
+		(*ClientMeta_EthV1EventsFastConfirmation)(nil),
 	}
 	file_pkg_proto_xatu_event_ingester_proto_msgTypes[23].OneofWrappers = []any{
 		(*ServerMeta_BEACON_P2P_ATTESTATION)(nil),
@@ -18850,6 +19001,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 		(*DecoratedEvent_EthV1BeaconSyncCommittee)(nil),
 		(*DecoratedEvent_EthV2BeaconBlockSyncAggregate)(nil),
 		(*DecoratedEvent_ExecutionBlockMetrics)(nil),
+		(*DecoratedEvent_EthV1EventsFastConfirmation)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -18857,7 +19009,7 @@ func file_pkg_proto_xatu_event_ingester_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_xatu_event_ingester_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   140,
+			NumMessages:   141,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

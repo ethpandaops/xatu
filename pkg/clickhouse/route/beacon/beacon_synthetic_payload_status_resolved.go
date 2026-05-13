@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -81,16 +82,40 @@ func (b *beaconSyntheticPayloadStatusResolvedBatch) appendPayload(
 	b.Status.Append(payloadStatusEnumName(payload.GetStatus()))
 	b.PreviousStatus.Append(payloadStatusEnumName(payload.GetPreviousStatus()))
 
-	if v := payload.GetPayloadTimelinessVote(); v != nil {
-		b.PayloadTimelinessVote.Append(v.GetValue())
+	if v := payload.GetPayloadTimelinessVotesPositive(); v != nil {
+		b.PayloadTimelinessVotesPositive.Append(v.GetValue())
 	} else {
-		b.PayloadTimelinessVote.Append(0)
+		b.PayloadTimelinessVotesPositive.Append(0)
 	}
 
-	if v := payload.GetDataAvailableVote(); v != nil {
-		b.DataAvailableVote.Append(v.GetValue())
+	if v := payload.GetPayloadTimelinessVotesNegative(); v != nil {
+		b.PayloadTimelinessVotesNegative.Append(proto.NewNullable[uint64](v.GetValue()))
 	} else {
-		b.DataAvailableVote.Append(0)
+		b.PayloadTimelinessVotesNegative.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := payload.GetPayloadTimelinessVotesAbsent(); v != nil {
+		b.PayloadTimelinessVotesAbsent.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.PayloadTimelinessVotesAbsent.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := payload.GetDataAvailableVotesPositive(); v != nil {
+		b.DataAvailableVotesPositive.Append(v.GetValue())
+	} else {
+		b.DataAvailableVotesPositive.Append(0)
+	}
+
+	if v := payload.GetDataAvailableVotesNegative(); v != nil {
+		b.DataAvailableVotesNegative.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.DataAvailableVotesNegative.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := payload.GetDataAvailableVotesAbsent(); v != nil {
+		b.DataAvailableVotesAbsent.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.DataAvailableVotesAbsent.Append(proto.Nullable[uint64]{})
 	}
 
 	if v := payload.GetPtcSize(); v != nil {

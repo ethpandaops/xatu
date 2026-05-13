@@ -53,6 +53,46 @@ func (m *PayloadStatusResolved) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.DataAvailableVotesAbsent != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesAbsent).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if m.DataAvailableVotesNegative != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesNegative).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x62
+	}
+	if m.PayloadTimelinessVotesAbsent != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesAbsent).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.PayloadTimelinessVotesNegative != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesNegative).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
+	}
 	if m.ResolvedAt != nil {
 		size, err := (*timestamppb.Timestamp)(m.ResolvedAt).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -73,8 +113,8 @@ func (m *PayloadStatusResolved) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i--
 		dAtA[i] = 0x42
 	}
-	if m.DataAvailableVote != nil {
-		size, err := (*wrapperspb.UInt64Value)(m.DataAvailableVote).MarshalToSizedBufferVT(dAtA[:i])
+	if m.DataAvailableVotesPositive != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesPositive).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -83,8 +123,8 @@ func (m *PayloadStatusResolved) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i--
 		dAtA[i] = 0x3a
 	}
-	if m.PayloadTimelinessVote != nil {
-		size, err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVote).MarshalToSizedBufferVT(dAtA[:i])
+	if m.PayloadTimelinessVotesPositive != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesPositive).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -300,12 +340,12 @@ func (m *PayloadStatusResolved) SizeVT() (n int) {
 	if m.PreviousStatus != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.PreviousStatus))
 	}
-	if m.PayloadTimelinessVote != nil {
-		l = (*wrapperspb.UInt64Value)(m.PayloadTimelinessVote).SizeVT()
+	if m.PayloadTimelinessVotesPositive != nil {
+		l = (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesPositive).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.DataAvailableVote != nil {
-		l = (*wrapperspb.UInt64Value)(m.DataAvailableVote).SizeVT()
+	if m.DataAvailableVotesPositive != nil {
+		l = (*wrapperspb.UInt64Value)(m.DataAvailableVotesPositive).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.PtcSize != nil {
@@ -314,6 +354,22 @@ func (m *PayloadStatusResolved) SizeVT() (n int) {
 	}
 	if m.ResolvedAt != nil {
 		l = (*timestamppb.Timestamp)(m.ResolvedAt).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.PayloadTimelinessVotesNegative != nil {
+		l = (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesNegative).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.PayloadTimelinessVotesAbsent != nil {
+		l = (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesAbsent).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.DataAvailableVotesNegative != nil {
+		l = (*wrapperspb.UInt64Value)(m.DataAvailableVotesNegative).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.DataAvailableVotesAbsent != nil {
+		l = (*wrapperspb.UInt64Value)(m.DataAvailableVotesAbsent).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -530,7 +586,7 @@ func (m *PayloadStatusResolved) UnmarshalVT(dAtA []byte) error {
 			}
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PayloadTimelinessVote", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PayloadTimelinessVotesPositive", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -557,16 +613,16 @@ func (m *PayloadStatusResolved) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.PayloadTimelinessVote == nil {
-				m.PayloadTimelinessVote = &wrapperspb1.UInt64Value{}
+			if m.PayloadTimelinessVotesPositive == nil {
+				m.PayloadTimelinessVotesPositive = &wrapperspb1.UInt64Value{}
 			}
-			if err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVote).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesPositive).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DataAvailableVote", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DataAvailableVotesPositive", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -593,10 +649,10 @@ func (m *PayloadStatusResolved) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.DataAvailableVote == nil {
-				m.DataAvailableVote = &wrapperspb1.UInt64Value{}
+			if m.DataAvailableVotesPositive == nil {
+				m.DataAvailableVotesPositive = &wrapperspb1.UInt64Value{}
 			}
-			if err := (*wrapperspb.UInt64Value)(m.DataAvailableVote).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesPositive).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -669,6 +725,150 @@ func (m *PayloadStatusResolved) UnmarshalVT(dAtA []byte) error {
 				m.ResolvedAt = &timestamppb1.Timestamp{}
 			}
 			if err := (*timestamppb.Timestamp)(m.ResolvedAt).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PayloadTimelinessVotesNegative", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PayloadTimelinessVotesNegative == nil {
+				m.PayloadTimelinessVotesNegative = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesNegative).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PayloadTimelinessVotesAbsent", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PayloadTimelinessVotesAbsent == nil {
+				m.PayloadTimelinessVotesAbsent = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.PayloadTimelinessVotesAbsent).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataAvailableVotesNegative", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DataAvailableVotesNegative == nil {
+				m.DataAvailableVotesNegative = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesNegative).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataAvailableVotesAbsent", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DataAvailableVotesAbsent == nil {
+				m.DataAvailableVotesAbsent = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.DataAvailableVotesAbsent).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

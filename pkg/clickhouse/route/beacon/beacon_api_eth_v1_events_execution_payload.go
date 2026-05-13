@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -75,9 +77,16 @@ func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendPayload(event *xatu.De
 	if payload := msg.GetPayload(); payload != nil {
 		b.BlockHash.Append([]byte(payload.GetBlockHash()))
 		b.StateRoot.Append([]byte(payload.GetStateRoot()))
+
+		if sn := payload.GetSlotNumber(); sn != nil {
+			b.SlotNumber.Append(proto.NewNullable[uint64](sn.GetValue()))
+		} else {
+			b.SlotNumber.Append(proto.Nullable[uint64]{})
+		}
 	} else {
 		b.BlockHash.Append(nil)
 		b.StateRoot.Append(nil)
+		b.SlotNumber.Append(proto.Nullable[uint64]{})
 	}
 }
 

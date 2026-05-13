@@ -174,7 +174,7 @@ func (b *canonicalBeaconBlockBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 55)
+		row := make(map[string]any, 34)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()

@@ -123,5 +123,20 @@ func (e *EventsFastConfirmation) getAdditionalData(_ context.Context) (*xatu.Cli
 		},
 	}
 
+	wallclockSlot, wallclockEpoch, err := e.beacon.Metadata().Wallclock().Now()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
+	}
+
+	extra.WallclockSlot = &xatu.SlotV2{
+		Number:        &wrapperspb.UInt64Value{Value: wallclockSlot.Number()},
+		StartDateTime: timestamppb.New(wallclockSlot.TimeWindow().Start()),
+	}
+
+	extra.WallclockEpoch = &xatu.EpochV2{
+		Number:        &wrapperspb.UInt64Value{Value: wallclockEpoch.Number()},
+		StartDateTime: timestamppb.New(wallclockEpoch.TimeWindow().Start()),
+	}
+
 	return extra, nil
 }

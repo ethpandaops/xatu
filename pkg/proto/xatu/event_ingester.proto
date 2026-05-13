@@ -548,6 +548,16 @@ message ClientMeta {
     // Propagation contains information about the propagation of the
     // confirmation, relative to the start of the confirmed block's slot.
     PropagationV2 propagation = 3;
+
+    // WallclockSlot is the wall clock slot at which the sentry received
+    // the confirmation event. The confirmed block's slot (above) is
+    // typically a past slot, so this is needed to know when the
+    // confirmation actually arrived.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // WallclockEpoch is the wall clock epoch at which the sentry received
+    // the confirmation event.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
   }
 
   message AdditionalEthV1EventsVoluntaryExitData {

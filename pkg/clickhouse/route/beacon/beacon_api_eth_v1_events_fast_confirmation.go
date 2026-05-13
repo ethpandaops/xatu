@@ -90,15 +90,54 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) appendAdditionalData(event *
 		b.PropagationSlotStartDiff.Append(0)
 		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
+		b.WallclockSlot.Append(0)
+		b.WallclockSlotStartDateTime.Append(time.Time{})
+		b.WallclockEpoch.Append(0)
+		b.WallclockEpochStartDateTime.Append(time.Time{})
 
 		return
 	}
 
 	client := event.GetMeta().GetClient()
-	additional := extractBeaconSlotEpochPropagation(client.GetEthV1EventsFastConfirmation())
+	additionalV2 := client.GetEthV1EventsFastConfirmation()
+	additional := extractBeaconSlotEpochPropagation(additionalV2)
 
 	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
 	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
 	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32
 	b.EpochStartDateTime.Append(time.Unix(additional.EpochStartDateTime, 0))
+
+	if wallclockSlot := additionalV2.GetWallclockSlot(); wallclockSlot != nil {
+		if n := wallclockSlot.GetNumber(); n != nil {
+			b.WallclockSlot.Append(uint32(n.GetValue())) //nolint:gosec // slot fits uint32
+		} else {
+			b.WallclockSlot.Append(0)
+		}
+
+		if startDateTime := wallclockSlot.GetStartDateTime(); startDateTime != nil {
+			b.WallclockSlotStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.WallclockSlotStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.WallclockSlot.Append(0)
+		b.WallclockSlotStartDateTime.Append(time.Time{})
+	}
+
+	if wallclockEpoch := additionalV2.GetWallclockEpoch(); wallclockEpoch != nil {
+		if n := wallclockEpoch.GetNumber(); n != nil {
+			b.WallclockEpoch.Append(uint32(n.GetValue())) //nolint:gosec // epoch fits uint32
+		} else {
+			b.WallclockEpoch.Append(0)
+		}
+
+		if startDateTime := wallclockEpoch.GetStartDateTime(); startDateTime != nil {
+			b.WallclockEpochStartDateTime.Append(startDateTime.AsTime())
+		} else {
+			b.WallclockEpochStartDateTime.Append(time.Time{})
+		}
+	} else {
+		b.WallclockEpoch.Append(0)
+		b.WallclockEpochStartDateTime.Append(time.Time{})
+	}
 }

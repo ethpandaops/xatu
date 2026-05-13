@@ -2540,6 +2540,26 @@ func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) MarshalToSizedBuf
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.WallclockEpoch != nil {
+		size, err := m.WallclockEpoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.WallclockSlot != nil {
+		size, err := m.WallclockSlot.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.Propagation != nil {
 		size, err := m.Propagation.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -13596,6 +13616,8 @@ func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) ResetVT() {
 		m.Epoch.ReturnToVTPool()
 		m.Slot.ReturnToVTPool()
 		m.Propagation.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
 		m.Reset()
 	}
 }
@@ -17424,6 +17446,14 @@ func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) SizeVT() (n int) 
 	}
 	if m.Propagation != nil {
 		l = m.Propagation.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WallclockSlot != nil {
+		l = m.WallclockSlot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WallclockEpoch != nil {
+		l = m.WallclockEpoch.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -28746,6 +28776,78 @@ func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) UnmarshalVT(dAtA 
 				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WallclockSlot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WallclockSlot == nil {
+				m.WallclockSlot = SlotV2FromVTPool()
+			}
+			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WallclockEpoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WallclockEpoch == nil {
+				m.WallclockEpoch = EpochV2FromVTPool()
+			}
+			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

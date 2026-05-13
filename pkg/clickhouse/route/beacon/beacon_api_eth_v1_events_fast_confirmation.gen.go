@@ -21,6 +21,10 @@ type beaconApiEthV1EventsFastConfirmationBatch struct {
 	Block                                     route.SafeColFixedStr
 	Epoch                                     proto.ColUInt32
 	EpochStartDateTime                        proto.ColDateTime
+	WallclockSlot                             proto.ColUInt32
+	WallclockSlotStartDateTime                proto.ColDateTime
+	WallclockEpoch                            proto.ColUInt32
+	WallclockEpochStartDateTime               proto.ColDateTime
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -115,6 +119,10 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Input() proto.Input {
 		{Name: "block", Data: &b.Block},
 		{Name: "epoch", Data: &b.Epoch},
 		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
+		{Name: "wallclock_slot", Data: &b.WallclockSlot},
+		{Name: "wallclock_slot_start_date_time", Data: &b.WallclockSlotStartDateTime},
+		{Name: "wallclock_epoch", Data: &b.WallclockEpoch},
+		{Name: "wallclock_epoch_start_date_time", Data: &b.WallclockEpochStartDateTime},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -146,6 +154,10 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Reset() {
 	b.Block.Reset()
 	b.Epoch.Reset()
 	b.EpochStartDateTime.Reset()
+	b.WallclockSlot.Reset()
+	b.WallclockSlotStartDateTime.Reset()
+	b.WallclockEpoch.Reset()
+	b.WallclockEpochStartDateTime.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
@@ -182,6 +194,10 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Snapshot() []map[string]any 
 		row["block"] = string(b.Block.Row(i))
 		row["epoch"] = b.Epoch.Row(i)
 		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
+		row["wallclock_slot"] = b.WallclockSlot.Row(i)
+		row["wallclock_slot_start_date_time"] = b.WallclockSlotStartDateTime.Row(i).Unix()
+		row["wallclock_epoch"] = b.WallclockEpoch.Row(i)
+		row["wallclock_epoch_start_date_time"] = b.WallclockEpochStartDateTime.Row(i).Unix()
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

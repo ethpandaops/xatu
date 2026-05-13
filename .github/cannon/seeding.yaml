@@ -40,3 +40,7 @@ event_types:
   - name: BEACON_API_ETH_V1_BEACON_COMMITTEE
     table: canonical_beacon_committee
     description: "Beacon committees - many per epoch"
+
+  - name: BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR
+    table: canonical_beacon_blob_sidecar
+    description: "Blob sidecars - several per blob-carrying block (also archived to s3blobstore)"

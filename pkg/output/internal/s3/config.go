@@ -26,11 +26,11 @@ type Config struct {
 	Region string `yaml:"region" default:"auto"`
 
 	// AccessKeyID and SecretAccessKey authenticate the client. Required.
-	AccessKeyID     string `yaml:"accessKeyID"`
+	AccessKeyID     string `yaml:"accessKeyId"`
 	SecretAccessKey string `yaml:"secretAccessKey"`
 
 	// UseSSL controls whether the client connects via HTTPS.
-	UseSSL bool `yaml:"useSSL" default:"true"`
+	UseSSL bool `yaml:"useSsl" default:"true"`
 }
 
 // Validate checks for the minimum required fields.
@@ -48,7 +48,7 @@ func (c *Config) Validate() error {
 	}
 
 	if c.AccessKeyID == "" {
-		return errors.New("accessKeyID is required")
+		return errors.New("accessKeyId is required")
 	}
 
 	if c.SecretAccessKey == "" {

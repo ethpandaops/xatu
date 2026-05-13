@@ -169,7 +169,6 @@ func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 	g.SetLimit(s.concurrency)
 
 	for _, blob := range blobs {
-		blob := blob
 		g.Go(func() error {
 			return s.uploadBlob(gctx, blob)
 		})
@@ -218,6 +217,7 @@ func gzipBytes(in []byte) ([]byte, error) {
 
 	if _, err := w.Write(in); err != nil {
 		_ = w.Close()
+
 		return nil, err
 	}
 

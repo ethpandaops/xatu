@@ -27,16 +27,19 @@ func TestConfigValidate(t *testing.T) {
 		{"nil", nil, "config is required"},
 		{"missing endpoint", &xs3.Config{Bucket: "b", AccessKeyID: "k", SecretAccessKey: "s"}, "endpoint is required"},
 		{"missing bucket", &xs3.Config{Endpoint: "e", AccessKeyID: "k", SecretAccessKey: "s"}, "bucket is required"},
-		{"missing access key", &xs3.Config{Endpoint: "e", Bucket: "b", SecretAccessKey: "s"}, "accessKeyID is required"},
+		{"missing access key", &xs3.Config{Endpoint: "e", Bucket: "b", SecretAccessKey: "s"}, "accessKeyId is required"},
 		{"missing secret", &xs3.Config{Endpoint: "e", Bucket: "b", AccessKeyID: "k"}, "secretAccessKey is required"},
 		{"ok", &xs3.Config{Endpoint: "e", Bucket: "b", AccessKeyID: "k", SecretAccessKey: "s"}, ""},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.cfg.Validate()
 			if tc.err == "" {
 				assert.NoError(t, err)
+
 				return
 			}
 
@@ -106,8 +109,8 @@ func startMinio(t *testing.T, ctx context.Context) (endpoint, accessKey, secretK
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		if err := c.Terminate(context.Background()); err != nil {
-			t.Logf("terminating minio container: %v", err)
+		if termErr := c.Terminate(context.Background()); termErr != nil {
+			t.Logf("terminating minio container: %v", termErr)
 		}
 	})
 
@@ -143,6 +146,7 @@ func getObject(t *testing.T, ctx context.Context, endpoint, ak, sk, bucket, key 
 
 	obj, err := mc.GetObject(ctx, bucket, key, miniogo.GetObjectOptions{})
 	require.NoError(t, err)
+
 	defer obj.Close()
 
 	body, err := io.ReadAll(obj)

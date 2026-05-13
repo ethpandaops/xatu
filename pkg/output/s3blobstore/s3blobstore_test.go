@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const gzSuffix = ".gz"
+
 // fakeUploader records every PutObject call for in-memory assertion.
 type fakeUploader struct {
 	mu      sync.Mutex
@@ -85,7 +87,7 @@ func newTestSink(t *testing.T, up *fakeUploader, cfg *Config) *Sink {
 				AccessKeyID:     "x",
 				SecretAccessKey: "y",
 			},
-			KeySuffix:   ".gz",
+			KeySuffix:   gzSuffix,
 			Concurrency: 4,
 		}
 	}
@@ -141,12 +143,14 @@ func newNonBlobEvent() *xatu.DecoratedEvent {
 }
 
 func TestHandleNewDecoratedEvents_UploadsBlobAtExpectedKey(t *testing.T) {
+	const (
+		network   = "mainnet"
+		versioned = "0x01abcdef"
+		blobHex   = "0x1234"
+	)
+
 	up := newFakeUploader()
 	s := newTestSink(t, up, nil)
-
-	const network = "mainnet"
-	const versioned = "0x01abcdef"
-	const blobHex = "0x1234"
 
 	err := s.HandleNewDecoratedEvents(context.Background(),
 		[]*xatu.DecoratedEvent{newBlobEvent(network, versioned, blobHex)})
@@ -173,7 +177,7 @@ func TestHandleNewDecoratedEvents_KeyPrefixIsHonoured(t *testing.T) {
 			Endpoint: "e", Bucket: "b", AccessKeyID: "k", SecretAccessKey: "s",
 		},
 		KeyPrefix:   "archive/",
-		KeySuffix:   ".gz",
+		KeySuffix:   gzSuffix,
 		Concurrency: 1,
 	}
 
@@ -232,7 +236,7 @@ func TestHandleNewDecoratedEvents_BatchUploadsAll(t *testing.T) {
 	assert.Equal(t, 3, up.count(), "only blob events should produce uploads")
 
 	for _, h := range []string{"0x01aa", "0x01bb", "0x01cc"} {
-		_, ok := up.get("mainnet/" + h + ".gz")
+		_, ok := up.get("mainnet/" + h + gzSuffix)
 		assert.True(t, ok, "missing object for %s", h)
 	}
 }
@@ -296,7 +300,7 @@ func TestEndToEnd_AgainstMinio(t *testing.T) {
 			SecretAccessKey: secretKey,
 			UseSSL:          false,
 		},
-		KeySuffix:   ".gz",
+		KeySuffix:   gzSuffix,
 		Concurrency: 4,
 	}
 
@@ -306,9 +310,11 @@ func TestEndToEnd_AgainstMinio(t *testing.T) {
 	require.NoError(t, sink.Start(ctx))
 	t.Cleanup(func() { _ = sink.Stop(ctx) })
 
-	const network = "mainnet"
-	const versioned = "0x01deadbeef"
-	const blobHex = "0xc0ffee"
+	const (
+		network   = "mainnet"
+		versioned = "0x01deadbeef"
+		blobHex   = "0xc0ffee"
+	)
 
 	require.NoError(t, sink.HandleNewDecoratedEvents(ctx,
 		[]*xatu.DecoratedEvent{newBlobEvent(network, versioned, blobHex)}))
@@ -331,8 +337,8 @@ func startMinio(t *testing.T, ctx context.Context) (endpoint, accessKey, secretK
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		if err := c.Terminate(context.Background()); err != nil {
-			t.Logf("terminating minio container: %v", err)
+		if termErr := c.Terminate(context.Background()); termErr != nil {
+			t.Logf("terminating minio container: %v", termErr)
 		}
 	})
 
@@ -367,6 +373,7 @@ func getObject(t *testing.T, ctx context.Context, endpoint, ak, sk, bucket, key 
 
 	obj, err := mc.GetObject(ctx, bucket, key, miniogo.GetObjectOptions{})
 	require.NoError(t, err)
+
 	defer obj.Close()
 
 	body, err := io.ReadAll(obj)

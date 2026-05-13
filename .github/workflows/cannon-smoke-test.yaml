@@ -281,9 +281,9 @@ jobs:
               endpoint: xatu-minio:9000
               bucket: xatu-blobs
               region: us-east-1
-              accessKeyID: minioadmin
+              accessKeyId: minioadmin
               secretAccessKey: minioadmin
-              useSSL: false
+              useSsl: false
         EOF
     - name: Show config
       run: |

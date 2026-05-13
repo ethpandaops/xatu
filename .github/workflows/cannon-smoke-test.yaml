@@ -283,7 +283,7 @@ jobs:
               region: us-east-1
               accessKeyId: minioadmin
               secretAccessKey: minioadmin
-              useSsl: false
+              insecure: true
         EOF
     - name: Show config
       run: |

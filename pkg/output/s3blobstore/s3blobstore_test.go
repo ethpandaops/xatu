@@ -298,7 +298,7 @@ func TestEndToEnd_AgainstMinio(t *testing.T) {
 			Region:          "us-east-1",
 			AccessKeyID:     accessKey,
 			SecretAccessKey: secretKey,
-			UseSSL:          false,
+			Insecure:        true,
 		},
 		KeySuffix:   gzSuffix,
 		Concurrency: 4,

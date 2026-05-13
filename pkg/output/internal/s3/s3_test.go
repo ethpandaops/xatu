@@ -64,7 +64,7 @@ func TestClient_PutObject_HeadBucket(t *testing.T) {
 		Region:          "us-east-1",
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secretKey,
-		UseSSL:          false,
+		Insecure:        true,
 	})
 	require.NoError(t, err)
 
@@ -91,7 +91,7 @@ func TestClient_HeadBucket_NotFound(t *testing.T) {
 		Region:          "us-east-1",
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secretKey,
-		UseSSL:          false,
+		Insecure:        true,
 	})
 	require.NoError(t, err)
 

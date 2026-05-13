@@ -15,7 +15,7 @@ type Config struct {
 	// Endpoint is the S3 endpoint host. For Cloudflare R2 use the
 	// account-scoped endpoint (e.g. "<account>.r2.cloudflarestorage.com").
 	// For AWS use the regional endpoint (e.g. "s3.us-east-1.amazonaws.com").
-	// Must NOT include a scheme — set UseSSL for that.
+	// Must NOT include a scheme — set Insecure to toggle HTTPS/HTTP.
 	Endpoint string `yaml:"endpoint"`
 
 	// Bucket is the destination bucket name. Must already exist.
@@ -29,8 +29,12 @@ type Config struct {
 	AccessKeyID     string `yaml:"accessKeyId"`
 	SecretAccessKey string `yaml:"secretAccessKey"`
 
-	// UseSSL controls whether the client connects via HTTPS.
-	UseSSL bool `yaml:"useSsl" default:"true"`
+	// Insecure disables HTTPS (plain HTTP). Defaults to false — i.e. SSL
+	// is used. Modeled as opt-in plain-HTTP rather than opt-in SSL because
+	// `bool` zero-value defaulting traps the opposite shape: an explicit
+	// `useSsl: false` would be indistinguishable from "unset" and get
+	// overridden back to true by the defaults loader.
+	Insecure bool `yaml:"insecure"`
 }
 
 // Validate checks for the minimum required fields.

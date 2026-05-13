@@ -40,7 +40,7 @@ func New(log logrus.FieldLogger, cfg *Config) (*Client, error) {
 
 	mc, err := minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
-		Secure: cfg.UseSSL,
+		Secure: !cfg.Insecure,
 		Region: cfg.Region,
 	})
 	if err != nil {

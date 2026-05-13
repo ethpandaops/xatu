@@ -53,12 +53,8 @@ func (b *libp2pJoinBatch) FlattenTo(
 }
 
 func (b *libp2pJoinBatch) validate(event *xatu.DecoratedEvent) error {
-	peerID := peerIDFromMetadata(event, func(c *xatu.ClientMeta) peerIDMetadataProvider {
-		return c.GetLibp2PTraceJoin()
-	})
-
-	if peerID == "" {
-		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
+	if event.GetMeta().GetClient().GetLibp2PTraceJoin().GetLocalPeerId() == "" {
+		return fmt.Errorf("nil LocalPeerId: %w", route.ErrInvalidEvent)
 	}
 
 	return nil
@@ -92,11 +88,7 @@ func (b *libp2pJoinBatch) appendPayload(
 		b.TopicEncoding.Append("")
 	}
 
-	// Compute peer_id_unique_key from client metadata peer ID.
-	peerID := peerIDFromMetadata(event, func(c *xatu.ClientMeta) peerIDMetadataProvider {
-		return c.GetLibp2PTraceJoin()
-	})
-
+	localPeerID := event.GetMeta().GetClient().GetLibp2PTraceJoin().GetLocalPeerId()
 	networkName := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName()
-	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
+	b.LocalPeerIDUniqueKey.Append(computePeerIDUniqueKey(localPeerID, networkName))
 }

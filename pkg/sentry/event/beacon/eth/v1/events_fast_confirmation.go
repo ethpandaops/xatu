@@ -89,9 +89,9 @@ func (e *EventsFastConfirmation) ShouldIgnore(ctx context.Context) (bool, error)
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"slot":                  e.event.Slot,
+			"hash":                  hash,                     //nolint:goconst // matches existing event handler style
+			"time_since_first_item": time.Since(item.Value()), //nolint:goconst // matches existing event handler style
+			"slot":                  e.event.Slot,             //nolint:goconst // matches existing event handler style
 		}).Debug("Duplicate fast confirmation event received")
 
 		return true, nil

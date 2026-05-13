@@ -181,10 +181,10 @@ github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab h1:rvv6MJ
 github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab/go.mod h1:IuLm4IsPipXKF7CW5Lzf68PIbZ5yl7FFd74l/E0o9A8=
 github.com/ethereum/go-ethereum v1.17.1 h1:IjlQDjgxg2uL+GzPRkygGULPMLzcYWncEI7wbaizvho=
 github.com/ethereum/go-ethereum v1.17.1/go.mod h1:7UWOVHL7K3b8RfVRea022btnzLCaanwHtBuH1jUCH/I=
-github.com/ethpandaops/beacon v0.67.1-0.20260513071905-c8b3f94737a5 h1:Ny1V8ZZ/JqUCVfrZ+c1SLA2iPOlS/usdcEWYjSOQWR8=
-github.com/ethpandaops/beacon v0.67.1-0.20260513071905-c8b3f94737a5/go.mod h1:A/TEBvCp+4aUKPPXWMgGFpWpoJFr3L3muQX72i+DEx4=
-github.com/ethpandaops/ethcore v0.0.0-20260513080115-92929a109192 h1:M4v0obmhp/uIuS2fcA7RyiRkxDNXOUOgDBWBeS02oBI=
-github.com/ethpandaops/ethcore v0.0.0-20260513080115-92929a109192/go.mod h1:JrLNevTfdx2VjwpBQM3DLX7tJP5AwL1nMe7XfZ9j56o=
+github.com/ethpandaops/beacon v0.68.0 h1:qm3Yvn8ZypYNxoGicTuJijaQs1EixCOWqwKLK4mQPLg=
+github.com/ethpandaops/beacon v0.68.0/go.mod h1:A/TEBvCp+4aUKPPXWMgGFpWpoJFr3L3muQX72i+DEx4=
+github.com/ethpandaops/ethcore v0.0.0-20260513090510-be891b9812d8 h1:KCZkl5/P79QqwpSVq5JWUnA331J+3Xg5VMp0MQFunvQ=
+github.com/ethpandaops/ethcore v0.0.0-20260513090510-be891b9812d8/go.mod h1:RbeOhj2Umh5rF3tJ69vlOBGn8zXtSWGsZz8cLnClkv4=
 github.com/ethpandaops/ethereum-package-go v0.8.1 h1:VN5l8UXveyw7gp0Glj8BRzS/D5RKyvhLeaoi/C5Jy5M=
 github.com/ethpandaops/ethereum-package-go v0.8.1/go.mod h1:LQThCwlCeeNBTdXOFV+xSwudoced53x+o/Orya3Y+oo=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=

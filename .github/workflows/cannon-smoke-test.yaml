@@ -341,13 +341,17 @@ jobs:
           sleep 5
         done
 
-        # Sanity-check the key shape and gzip integrity.
-        FIRST_KEY=$(docker run --rm --network xatu_xatu-net \
+        # Sanity-check the key shape and gzip integrity. `mc find` prints
+        # one full path per line — no awk in the mc image, so basename is
+        # extracted with POSIX parameter expansion.
+        FIRST_PATH=$(docker run --rm --network xatu_xatu-net \
           --entrypoint sh \
           minio/mc:RELEASE.2024-09-16T17-43-14Z \
-          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/ | awk '{print \$NF}' | head -1")
+          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc find local/xatu-blobs/${NETWORK_NAME}/ --name '*.gz' | head -1" \
+          | tr -d '\r')
 
-        echo "Sampling object: $FIRST_KEY"
+        FIRST_KEY=${FIRST_PATH##*/}
+        echo "Sampling object: $FIRST_KEY (from $FIRST_PATH)"
 
         if [[ ! "$FIRST_KEY" =~ ^0x01[0-9a-f]+\.gz$ ]]; then
           echo "::error::object key '$FIRST_KEY' does not match expected <versioned_hash>.gz shape"

@@ -804,3 +804,63 @@ CREATE TABLE default.beacon_synthetic_builder_pending_payment_settlement ON CLUS
     AS default.beacon_synthetic_builder_pending_payment_settlement_local
     ENGINE = Distributed('{cluster}', default, beacon_synthetic_builder_pending_payment_settlement_local,
         cityHash64(epoch_start_date_time, meta_network_name, meta_client_name, builder_index, outcome));
+
+---------------------------------------------------------------------
+-- 3. beacon_synthetic_payload_attestation_processed
+--    Per-PTC-vote enrichment: fires after a payload_attestation_message has
+--    passed full gossip validation (signature, validator-in-PTC, block-root
+--    seen + valid, slot-current, first-from-this-validator dedup) and been
+--    committed for downstream pipeline use. Counterpart to the gossip-receipt
+--    `beacon_api_eth_v1_events_payload_attestation`: observing both gives a
+--    per-validator picture of validation latency and whether the vote was
+--    admitted vs dropped at some validation stage.
+---------------------------------------------------------------------
+CREATE TABLE default.beacon_synthetic_payload_attestation_processed_local ON CLUSTER '{cluster}' (
+    `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
+    `event_date_time` DateTime64(3) COMMENT 'When the beacon node processed this PTC vote (TYSM ProcessedAt)' CODEC(DoubleDelta, ZSTD(1)),
+    `slot` UInt32 COMMENT 'Slot the PTC vote applies to' CODEC(DoubleDelta, ZSTD(1)),
+    `slot_start_date_time` DateTime COMMENT 'The wall clock time when the slot started' CODEC(DoubleDelta, ZSTD(1)),
+    `propagation_slot_start_diff` UInt32 COMMENT 'Difference between processed_at and slot_start_date_time in ms' CODEC(ZSTD(1)),
+    `epoch` UInt32 COMMENT 'Epoch number' CODEC(DoubleDelta, ZSTD(1)),
+    `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
+    `beacon_block_root` FixedString(66) COMMENT 'Beacon block root the PTC validator attested to' CODEC(ZSTD(1)),
+    `validator_index` UInt32 COMMENT 'Index of the PTC validator' CODEC(ZSTD(1)),
+    `payload_present` Bool COMMENT 'Whether the validator attests payload was present' CODEC(ZSTD(1)),
+    `blob_data_available` Bool COMMENT 'Whether the validator attests blob data was available' CODEC(ZSTD(1)),
+    `peer_id` String COMMENT 'Peer ID we received this PTC vote from on the gossip wire' CODEC(ZSTD(1)),
+    `processing_duration_ms` UInt64 COMMENT 'Time from gossip receipt to processing completion in milliseconds' CODEC(ZSTD(1)),
+    `received_at` DateTime64(3) COMMENT 'Wall-clock time the PTC vote was first received from gossip' CODEC(DoubleDelta, ZSTD(1)),
+    `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
+    `meta_client_id` String COMMENT 'Unique Session ID of the client' CODEC(ZSTD(1)),
+    `meta_client_version` LowCardinality(String) COMMENT 'Version of the client',
+    `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client',
+    `meta_client_os` LowCardinality(String) COMMENT 'Operating system of the client',
+    `meta_client_ip` Nullable(IPv6) COMMENT 'IP address of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_city` LowCardinality(String) COMMENT 'City of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country` LowCardinality(String) COMMENT 'Country of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_country_code` LowCardinality(String) COMMENT 'Country code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_continent_code` LowCardinality(String) COMMENT 'Continent code of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_longitude` Nullable(Float64) COMMENT 'Longitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_latitude` Nullable(Float64) COMMENT 'Latitude of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_number` Nullable(UInt32) COMMENT 'ASN of the client' CODEC(ZSTD(1)),
+    `meta_client_geo_autonomous_system_organization` Nullable(String) COMMENT 'AS organization of the client' CODEC(ZSTD(1)),
+    `meta_network_id` Int32 COMMENT 'Ethereum network ID' CODEC(DoubleDelta, ZSTD(1)),
+    `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name',
+    `meta_consensus_version` LowCardinality(String) COMMENT 'Consensus client version',
+    `meta_consensus_version_major` LowCardinality(String) COMMENT 'Consensus client major version',
+    `meta_consensus_version_minor` LowCardinality(String) COMMENT 'Consensus client minor version',
+    `meta_consensus_version_patch` LowCardinality(String) COMMENT 'Consensus client patch version',
+    `meta_consensus_implementation` LowCardinality(String) COMMENT 'Consensus client implementation',
+    `meta_labels` Map(String, String) COMMENT 'Labels associated with the event' CODEC(ZSTD(1))
+) ENGINE = ReplicatedReplacingMergeTree(
+    '/clickhouse/{installation}/{cluster}/{database}/tables/{table}/{shard}',
+    '{replica}',
+    updated_date_time
+) PARTITION BY toStartOfMonth(slot_start_date_time)
+ORDER BY (slot_start_date_time, meta_network_name, meta_client_name, beacon_block_root, validator_index)
+COMMENT 'PTC votes after full gossip validation completed (EIP-7732 ePBS) synthesized from TYSM-instrumented beacon node internals. Enrichment counterpart to beacon_api_eth_v1_events_payload_attestation. Multi-witness (per-node).';
+
+CREATE TABLE default.beacon_synthetic_payload_attestation_processed ON CLUSTER '{cluster}'
+    AS default.beacon_synthetic_payload_attestation_processed_local
+    ENGINE = Distributed('{cluster}', default, beacon_synthetic_payload_attestation_processed_local,
+        cityHash64(slot_start_date_time, meta_network_name, meta_client_name, beacon_block_root, validator_index));

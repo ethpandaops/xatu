@@ -35,6 +35,7 @@ const (
 	TraceEvent_IDENTIFY                                            = "IDENTIFY"
 	TraceEvent_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED            = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED"
 	TraceEvent_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT"
+	TraceEvent_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED      = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED"
 )
 
 // handleHermesEvent processes events from Hermes and routes them to appropriate handlers based on their type.

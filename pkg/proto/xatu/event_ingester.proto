@@ -1005,6 +1005,16 @@ message ClientMeta {
     EpochV2 epoch = 1;
   }
 
+  // AdditionalBeaconSyntheticPayloadAttestationProcessedData contains
+  // additional data about a PTC vote that finished full gossip-validation
+  // and was committed for downstream pipeline use. Observed from beacon
+  // node internals (TYSM-instrumented).
+  message AdditionalBeaconSyntheticPayloadAttestationProcessedData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
   // AdditionalEthV2BeaconBlockPayloadAttestationData contains additional data
   // about aggregated PTC payload attestations derived from cannon blocks.
   message AdditionalEthV2BeaconBlockPayloadAttestationData {
@@ -1951,6 +1961,7 @@ message ClientMeta {
     // (TYSM-instrumented). No beacon API equivalent today.
     AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 108 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
     AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 109 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
+    AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 110 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2195,6 +2206,7 @@ message Event {
     // beacon node, not just proposers — multi-witness signal.
     BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 102;
     BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 103;
+    BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 104;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2542,6 +2554,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
     xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 224
         [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
+    xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 225
+        [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
   };
 }
 

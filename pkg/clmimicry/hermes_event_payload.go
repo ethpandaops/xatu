@@ -280,6 +280,33 @@ type TraceEventBeaconSyntheticPayloadStatusResolved struct {
 	PTCSize uint64 `json:"ptc_size"`
 }
 
+// TraceEventBeaconSyntheticPayloadAttestationProcessed represents a PTC vote
+// that has cleared every gossip-validation check (signature, validator-in-PTC,
+// block-root seen/valid, slot-current, first-from-this-validator dedup) and
+// been committed for downstream pipeline use. Observed from beacon-node
+// internals (TYSM-instrumented). EIP-7732 ePBS.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticPayloadAttestationProcessed struct {
+	TraceEventPayloadMetaData
+
+	ReceivedAt  time.Time `json:"received_at"`
+	ProcessedAt time.Time `json:"processed_at"`
+
+	Slot              uint64 `json:"slot"`
+	BeaconBlockRoot   string `json:"beacon_block_root"`
+	ValidatorIndex    uint64 `json:"validator_index"`
+	PayloadPresent    bool   `json:"payload_present"`
+	BlobDataAvailable bool   `json:"blob_data_available"`
+
+	// PeerID we received this PTC vote from on the gossip wire.
+	PeerID string `json:"peer_id"`
+
+	// ProcessingDurationMs is the time from gossip receipt to processing
+	// completion in milliseconds.
+	ProcessingDurationMs uint64 `json:"processing_duration_ms"`
+}
+
 // TraceEventBeaconSyntheticBuilderPendingPaymentSettlement represents an
 // epoch-boundary builder pending payment settle/drop decision observed from
 // beacon node internals (TYSM-instrumented). EIP-7732 ePBS.

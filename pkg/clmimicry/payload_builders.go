@@ -291,6 +291,33 @@ func NewBeaconSyntheticPayloadStatusResolvedPayload(
 	}
 }
 
+// NewBeaconSyntheticPayloadAttestationProcessedPayload creates a
+// payload-attestation-processed event. Fires after a PTC vote has cleared
+// full gossip validation (signature, validator-in-PTC, block-root seen/valid,
+// slot-current, first-from-this-validator dedup) and been committed for
+// downstream pipeline use.
+func NewBeaconSyntheticPayloadAttestationProcessedPayload(
+	receivedAt, processedAt time.Time,
+	slot uint64,
+	beaconBlockRoot string,
+	validatorIndex uint64,
+	payloadPresent, blobDataAvailable bool,
+	peerID string,
+	processingDurationMs uint64,
+) *TraceEventBeaconSyntheticPayloadAttestationProcessed {
+	return &TraceEventBeaconSyntheticPayloadAttestationProcessed{
+		ReceivedAt:           receivedAt,
+		ProcessedAt:          processedAt,
+		Slot:                 slot,
+		BeaconBlockRoot:      beaconBlockRoot,
+		ValidatorIndex:       validatorIndex,
+		PayloadPresent:       payloadPresent,
+		BlobDataAvailable:    blobDataAvailable,
+		PeerID:               peerID,
+		ProcessingDurationMs: processingDurationMs,
+	}
+}
+
 // NewBeaconSyntheticBuilderPendingPaymentSettlementPayload creates a builder-pending-payment-settlement event.
 func NewBeaconSyntheticBuilderPendingPaymentSettlementPayload(
 	resolvedAt time.Time,

@@ -93,6 +93,47 @@ message PayloadStatusResolved {
   google.protobuf.Timestamp resolved_at = 9 [ json_name = "resolved_at" ];
 }
 
+// PayloadAttestationProcessed is emitted observe-only when a PTC vote
+// message has cleared every gossip-validation check (signature, validator
+// membership in the PTC committee, block-root-seen/valid, slot-current,
+// first-from-this-validator dedup) and been committed for downstream
+// pipeline use. This is the "Processed" enrichment counterpart to the
+// gossip-receipt `BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION` event:
+// observing both gives a per-validator picture of how long full validation
+// took and whether the vote was actually admitted (vs. dropped at some
+// validation stage). EIP-7732 ePBS.
+//
+// Fires on every TYSM-patched beacon node — multi-witness signal.
+message PayloadAttestationProcessed {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  // BeaconBlockRoot is the block root the PTC validator attested to.
+  string beacon_block_root = 2 [ json_name = "beacon_block_root" ];
+
+  google.protobuf.UInt64Value validator_index = 3
+      [ json_name = "validator_index" ];
+
+  // PayloadPresent / BlobDataAvailable are the two PTC vote bits.
+  bool payload_present = 4 [ json_name = "payload_present" ];
+  bool blob_data_available = 5 [ json_name = "blob_data_available" ];
+
+  // PeerID we received this PTC vote from on the gossip wire.
+  string peer_id = 6 [ json_name = "peer_id" ];
+
+  // ProcessingDurationMs is the time from gossip-receipt to processing
+  // completion (signature verification, PTC committee check, dedup).
+  google.protobuf.UInt64Value processing_duration_ms = 7
+      [ json_name = "processing_duration_ms" ];
+
+  // ReceivedAt is the wall-clock time the PTC vote was first received
+  // from the gossip wire.
+  google.protobuf.Timestamp received_at = 8 [ json_name = "received_at" ];
+
+  // ProcessedAt is the wall-clock time the PTC vote completed processing
+  // and was committed for downstream consumers.
+  google.protobuf.Timestamp processed_at = 9 [ json_name = "processed_at" ];
+}
+
 // BuilderPendingPaymentSettlement is emitted observe-only when a builder
 // pending payment reaches an epoch boundary and is either settled into
 // pending withdrawals or dropped because quorum was not met.

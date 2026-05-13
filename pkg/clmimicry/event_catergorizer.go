@@ -88,6 +88,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	// No Topic / no MsgID — same sharding profile as engine API / custody probe events.
 	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED, GroupD, false, false, false)
 }
 
 // addEvent is a helper to add event information

@@ -70,7 +70,7 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload(t *testing.T) {
 			envelope := &ethv1.SignedExecutionPayloadEnvelope{
 				Message: &ethv1.ExecutionPayloadEnvelope{
 					BuilderIndex:    wrapperspb.UInt64(42),
-					BeaconBlockRoot: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					BeaconBlockRoot: blockRoot64A,
 					Payload:         payload,
 				},
 				Signature: "0xdead",

@@ -145,3 +145,80 @@ func (p *Processor) deriveAdditionalDataForBeaconSyntheticBuilderPendingPaymentS
 
 	return extra
 }
+
+// handleBeaconSyntheticPayloadAttestationProcessedEvent handles a PTC vote
+// that has finished full gossip validation and been committed for downstream
+// pipeline use. EIP-7732 ePBS.
+func (p *Processor) handleBeaconSyntheticPayloadAttestationProcessedEvent(
+	ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	event *TraceEvent,
+) error {
+	data, err := TraceEventToBeaconSyntheticPayloadAttestationProcessed(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to beacon synthetic payload attestation processed event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	extra := p.deriveAdditionalDataForBeaconSyntheticPayloadAttestationProcessed(data)
+
+	metadata.AdditionalData = &xatu.ClientMeta_BeaconSyntheticPayloadAttestationProcessed{
+		BeaconSyntheticPayloadAttestationProcessed: extra,
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED,
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_BeaconSyntheticPayloadAttestationProcessed{
+			BeaconSyntheticPayloadAttestationProcessed: data,
+		},
+	}
+
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (p *Processor) deriveAdditionalDataForBeaconSyntheticPayloadAttestationProcessed(
+	data *ethv1.PayloadAttestationProcessed,
+) *xatu.ClientMeta_AdditionalBeaconSyntheticPayloadAttestationProcessedData {
+	extra := &xatu.ClientMeta_AdditionalBeaconSyntheticPayloadAttestationProcessedData{}
+
+	slot := p.wallclock.Slots().FromNumber(data.GetSlot().GetValue())
+	epoch := p.wallclock.Epochs().FromSlot(data.GetSlot().GetValue())
+
+	slotStart := slot.TimeWindow().Start()
+
+	extra.Slot = &xatu.SlotV2{
+		Number:        wrapperspb.UInt64(slot.Number()),
+		StartDateTime: timestamppb.New(slotStart),
+	}
+	extra.Epoch = &xatu.EpochV2{
+		Number:        wrapperspb.UInt64(epoch.Number()),
+		StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
+	}
+
+	// PropagationSlotStartDiff = ProcessedAt - slot_start, in milliseconds.
+	var slotStartDiffMs uint64
+
+	if processedAt := data.GetProcessedAt(); processedAt != nil {
+		diff := processedAt.AsTime().Sub(slotStart).Milliseconds()
+		if diff > 0 {
+			slotStartDiffMs = uint64(diff)
+		}
+	}
+
+	extra.Propagation = &xatu.PropagationV2{
+		SlotStartDiff: wrapperspb.UInt64(slotStartDiffMs),
+	}
+
+	return extra
+}

@@ -1062,3 +1062,27 @@ func TraceEventToBeaconSyntheticBuilderPendingPaymentSettlement(event *TraceEven
 		ResolvedAt: timestamppb.New(typed.ResolvedAt),
 	}, nil
 }
+
+// TraceEventToBeaconSyntheticPayloadAttestationProcessed converts a TraceEvent
+// to a PayloadAttestationProcessed protobuf message. EIP-7732 ePBS.
+func TraceEventToBeaconSyntheticPayloadAttestationProcessed(event *TraceEvent) (*ethv1.PayloadAttestationProcessed, error) {
+	typed, ok := event.Payload.(*TraceEventBeaconSyntheticPayloadAttestationProcessed)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for BeaconSyntheticPayloadAttestationProcessed: expected *TraceEventBeaconSyntheticPayloadAttestationProcessed, got %T",
+			event.Payload,
+		)
+	}
+
+	return &ethv1.PayloadAttestationProcessed{
+		Slot:                 wrapperspb.UInt64(typed.Slot),
+		BeaconBlockRoot:      typed.BeaconBlockRoot,
+		ValidatorIndex:       wrapperspb.UInt64(typed.ValidatorIndex),
+		PayloadPresent:       typed.PayloadPresent,
+		BlobDataAvailable:    typed.BlobDataAvailable,
+		PeerId:               typed.PeerID,
+		ProcessingDurationMs: wrapperspb.UInt64(typed.ProcessingDurationMs),
+		ReceivedAt:           timestamppb.New(typed.ReceivedAt),
+		ProcessedAt:          timestamppb.New(typed.ProcessedAt),
+	}, nil
+}

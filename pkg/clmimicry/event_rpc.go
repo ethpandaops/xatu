@@ -24,6 +24,7 @@ var rpcToXatuEventMap = map[string]string{
 	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS:                       xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String(),
 	TraceEvent_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED:            xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED.String(),
 	TraceEvent_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT: xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT.String(),
+	TraceEvent_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED:      xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED.String(),
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
@@ -150,6 +151,20 @@ func (p *Processor) handleHermesRPCEvent(
 		}
 
 		return p.handleBeaconSyntheticBuilderPendingPaymentSettlementEvent(ctx, clientMeta, event)
+
+	case xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED.String():
+		if !p.events.BeaconSyntheticPayloadAttestationProcessedEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleBeaconSyntheticPayloadAttestationProcessedEvent(ctx, clientMeta, event)
 	}
 
 	return nil

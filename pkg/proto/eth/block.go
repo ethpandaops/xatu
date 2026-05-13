@@ -4,18 +4,30 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/attestantio/go-eth2-client/api"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/altair"
-	"github.com/attestantio/go-eth2-client/spec/bellatrix"
-	"github.com/attestantio/go-eth2-client/spec/capella"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
-	"github.com/attestantio/go-eth2-client/spec/electra"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/altair"
+	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+// baseFeePerGasFromLE converts the fork's little-endian 32-byte base fee
+// representation to its decimal string form, matching the wire format the
+// upstream library used to produce directly via BaseFeePerGas.
+func baseFeePerGasFromLE(le [32]byte) string {
+	var be [32]byte
+	for i := 0; i < 32; i++ {
+		be[i] = le[31-i]
+	}
+
+	return new(big.Int).SetBytes(be[:]).String()
+}
 
 func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.EventBlockV2, error) {
 	var data *v2.EventBlockV2
@@ -177,7 +189,7 @@ func NewEventBlockFromBellatrix(block *bellatrix.BeaconBlock, signature *phase0.
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: new(big.Int).SetBytes(block.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
+						BaseFeePerGas: baseFeePerGasFromLE(block.Body.ExecutionPayload.BaseFeePerGasLE),
 						BlockHash:     block.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Body.ExecutionPayload.Transactions),
 					},
@@ -231,7 +243,7 @@ func NewEventBlockFromCapella(block *capella.BeaconBlock, signature *phase0.BLSS
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: new(big.Int).SetBytes(block.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
+						BaseFeePerGas: baseFeePerGasFromLE(block.Body.ExecutionPayload.BaseFeePerGasLE),
 						BlockHash:     block.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Body.ExecutionPayload.Transactions),
 						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Body.ExecutionPayload.Withdrawals),

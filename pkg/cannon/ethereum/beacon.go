@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	client "github.com/attestantio/go-eth2-client"
-	"github.com/attestantio/go-eth2-client/api"
-	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
-	ehttp "github.com/attestantio/go-eth2-client/http"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	client "github.com/ethpandaops/go-eth2-client"
+	"github.com/ethpandaops/go-eth2-client/api"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	ehttp "github.com/ethpandaops/go-eth2-client/http"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -56,7 +56,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.
 		DisablePrometheusMetrics()
 
 	opts.GoEth2ClientParams = []ehttp.Parameter{
-		// Default JSON until https://github.com/attestantio/go-eth2-client/pull/198 is merged.
+		// Default JSON until https://github.com/ethpandaops/go-eth2-client/pull/198 is merged.
 		ehttp.WithEnforceJSON(true),
 	}
 

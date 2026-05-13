@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"

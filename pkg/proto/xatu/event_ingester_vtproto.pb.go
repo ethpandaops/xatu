@@ -11460,8 +11460,126 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.StorageTrienodeBytesDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeBytesDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.StorageTrienodeDeleteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeDeleteBytes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xc2
+	}
+	if m.StorageTrienodeDeletes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeDeletes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xba
+	}
+	if m.StorageDeleteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageDeleteBytes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	}
+	if m.StorageDeletes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageDeletes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xaa
+	}
+	if m.ContractCodeDeleteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.ContractCodeDeleteBytes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
+	if m.ContractCodeDeletes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.ContractCodeDeletes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
+	}
+	if m.AccountTrienodeDeleteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeDeleteBytes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x92
+	}
+	if m.AccountTrienodeDeletes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeDeletes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	if m.AccountDeleteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountDeleteBytes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	if m.AccountDeletes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountDeletes).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x7a
+	}
+	if m.StorageTrienodeWriteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeWriteBytes).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11470,8 +11588,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x72
 	}
-	if m.StorageTrienodeDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.StorageTrienodeWrites != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageTrienodeWrites).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11480,8 +11598,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x6a
 	}
-	if m.StorageBytesDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.StorageBytesDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.StorageWriteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageWriteBytes).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11490,8 +11608,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x62
 	}
-	if m.StorageDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.StorageDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.StorageWrites != nil {
+		size, err := (*wrapperspb.Int64Value)(m.StorageWrites).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11500,8 +11618,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x5a
 	}
-	if m.ContractCodeBytesDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.ContractCodeBytesDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.ContractCodeWriteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.ContractCodeWriteBytes).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11510,8 +11628,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x52
 	}
-	if m.ContractCodeDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.ContractCodeDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.ContractCodeWrites != nil {
+		size, err := (*wrapperspb.Int64Value)(m.ContractCodeWrites).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11520,8 +11638,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x4a
 	}
-	if m.AccountTrienodeBytesDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeBytesDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.AccountTrienodeWriteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeWriteBytes).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11530,8 +11648,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x42
 	}
-	if m.AccountTrienodeDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.AccountTrienodeWrites != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountTrienodeWrites).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11540,8 +11658,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x3a
 	}
-	if m.AccountBytesDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.AccountBytesDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.AccountWriteBytes != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountWriteBytes).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -11550,8 +11668,8 @@ func (m *ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x32
 	}
-	if m.AccountDelta != nil {
-		size, err := (*wrapperspb.Int64Value)(m.AccountDelta).MarshalToSizedBufferVT(dAtA[:i])
+	if m.AccountWrites != nil {
+		size, err := (*wrapperspb.Int64Value)(m.AccountWrites).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -23088,45 +23206,85 @@ func (m *ExecutionStateSizeDelta) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.AccountDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.AccountDelta).SizeVT()
+	if m.AccountWrites != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountWrites).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.AccountBytesDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.AccountBytesDelta).SizeVT()
+	if m.AccountWriteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountWriteBytes).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.AccountTrienodeDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.AccountTrienodeDelta).SizeVT()
+	if m.AccountTrienodeWrites != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountTrienodeWrites).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.AccountTrienodeBytesDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.AccountTrienodeBytesDelta).SizeVT()
+	if m.AccountTrienodeWriteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountTrienodeWriteBytes).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.ContractCodeDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.ContractCodeDelta).SizeVT()
+	if m.ContractCodeWrites != nil {
+		l = (*wrapperspb.Int64Value)(m.ContractCodeWrites).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.ContractCodeBytesDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.ContractCodeBytesDelta).SizeVT()
+	if m.ContractCodeWriteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.ContractCodeWriteBytes).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.StorageDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.StorageDelta).SizeVT()
+	if m.StorageWrites != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageWrites).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.StorageBytesDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.StorageBytesDelta).SizeVT()
+	if m.StorageWriteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageWriteBytes).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.StorageTrienodeDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.StorageTrienodeDelta).SizeVT()
+	if m.StorageTrienodeWrites != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageTrienodeWrites).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.StorageTrienodeBytesDelta != nil {
-		l = (*wrapperspb.Int64Value)(m.StorageTrienodeBytesDelta).SizeVT()
+	if m.StorageTrienodeWriteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageTrienodeWriteBytes).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AccountDeletes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountDeletes).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AccountDeleteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountDeleteBytes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AccountTrienodeDeletes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountTrienodeDeletes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AccountTrienodeDeleteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.AccountTrienodeDeleteBytes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ContractCodeDeletes != nil {
+		l = (*wrapperspb.Int64Value)(m.ContractCodeDeletes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ContractCodeDeleteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.ContractCodeDeleteBytes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.StorageDeletes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageDeletes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.StorageDeleteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageDeleteBytes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.StorageTrienodeDeletes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageTrienodeDeletes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.StorageTrienodeDeleteBytes != nil {
+		l = (*wrapperspb.Int64Value)(m.StorageTrienodeDeleteBytes).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -52584,7 +52742,7 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccountDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountWrites", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52611,16 +52769,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AccountDelta == nil {
-				m.AccountDelta = &wrapperspb1.Int64Value{}
+			if m.AccountWrites == nil {
+				m.AccountWrites = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.AccountDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.AccountWrites).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccountBytesDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountWriteBytes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52647,16 +52805,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AccountBytesDelta == nil {
-				m.AccountBytesDelta = &wrapperspb1.Int64Value{}
+			if m.AccountWriteBytes == nil {
+				m.AccountWriteBytes = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.AccountBytesDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.AccountWriteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeWrites", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52683,16 +52841,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AccountTrienodeDelta == nil {
-				m.AccountTrienodeDelta = &wrapperspb1.Int64Value{}
+			if m.AccountTrienodeWrites == nil {
+				m.AccountTrienodeWrites = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeWrites).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeBytesDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeWriteBytes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52719,16 +52877,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AccountTrienodeBytesDelta == nil {
-				m.AccountTrienodeBytesDelta = &wrapperspb1.Int64Value{}
+			if m.AccountTrienodeWriteBytes == nil {
+				m.AccountTrienodeWriteBytes = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeBytesDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeWriteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeWrites", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52755,16 +52913,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.ContractCodeDelta == nil {
-				m.ContractCodeDelta = &wrapperspb1.Int64Value{}
+			if m.ContractCodeWrites == nil {
+				m.ContractCodeWrites = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.ContractCodeDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.ContractCodeWrites).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeBytesDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeWriteBytes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52791,16 +52949,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.ContractCodeBytesDelta == nil {
-				m.ContractCodeBytesDelta = &wrapperspb1.Int64Value{}
+			if m.ContractCodeWriteBytes == nil {
+				m.ContractCodeWriteBytes = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.ContractCodeBytesDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.ContractCodeWriteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StorageDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageWrites", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52827,16 +52985,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.StorageDelta == nil {
-				m.StorageDelta = &wrapperspb1.Int64Value{}
+			if m.StorageWrites == nil {
+				m.StorageWrites = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.StorageDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.StorageWrites).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StorageBytesDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageWriteBytes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52863,16 +53021,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.StorageBytesDelta == nil {
-				m.StorageBytesDelta = &wrapperspb1.Int64Value{}
+			if m.StorageWriteBytes == nil {
+				m.StorageWriteBytes = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.StorageBytesDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.StorageWriteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeWrites", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52899,16 +53057,16 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.StorageTrienodeDelta == nil {
-				m.StorageTrienodeDelta = &wrapperspb1.Int64Value{}
+			if m.StorageTrienodeWrites == nil {
+				m.StorageTrienodeWrites = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeWrites).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeBytesDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeWriteBytes", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -52935,10 +53093,370 @@ func (m *ExecutionStateSizeDelta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.StorageTrienodeBytesDelta == nil {
-				m.StorageTrienodeBytesDelta = &wrapperspb1.Int64Value{}
+			if m.StorageTrienodeWriteBytes == nil {
+				m.StorageTrienodeWriteBytes = &wrapperspb1.Int64Value{}
 			}
-			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeBytesDelta).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeWriteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountDeletes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AccountDeletes == nil {
+				m.AccountDeletes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.AccountDeletes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountDeleteBytes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AccountDeleteBytes == nil {
+				m.AccountDeleteBytes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.AccountDeleteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeDeletes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AccountTrienodeDeletes == nil {
+				m.AccountTrienodeDeletes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeDeletes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountTrienodeDeleteBytes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AccountTrienodeDeleteBytes == nil {
+				m.AccountTrienodeDeleteBytes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.AccountTrienodeDeleteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeDeletes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ContractCodeDeletes == nil {
+				m.ContractCodeDeletes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.ContractCodeDeletes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractCodeDeleteBytes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ContractCodeDeleteBytes == nil {
+				m.ContractCodeDeleteBytes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.ContractCodeDeleteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageDeletes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StorageDeletes == nil {
+				m.StorageDeletes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.StorageDeletes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageDeleteBytes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StorageDeleteBytes == nil {
+				m.StorageDeleteBytes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.StorageDeleteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeDeletes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StorageTrienodeDeletes == nil {
+				m.StorageTrienodeDeletes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeDeletes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 24:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageTrienodeDeleteBytes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StorageTrienodeDeleteBytes == nil {
+				m.StorageTrienodeDeleteBytes = &wrapperspb1.Int64Value{}
+			}
+			if err := (*wrapperspb.Int64Value)(m.StorageTrienodeDeleteBytes).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

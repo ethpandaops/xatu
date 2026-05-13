@@ -2116,8 +2116,11 @@ message ExecutionBlockMetrics {
   CodeCacheEntry code_cache = 16 [ json_name = "code_cache" ];
 }
 
-// ExecutionStateSizeDelta contains state size delta metrics captured from
-// execution client structured logging output via the sentry-logs pipeline.
+// ExecutionStateSizeDelta contains state-size write/delete metrics captured
+// from execution client structured logging output via the sentry-logs pipeline.
+// Updates are accounted as BOTH a write and a delete, so net delta is
+// recoverable as (writes - deletes). Contract-code deletes are always 0 in
+// the current tracer (state sizer does not ref-count code blobs).
 // Maps to the execution_state_size_delta ClickHouse table.
 message ExecutionStateSizeDelta {
   // Source identifies where this event was captured (e.g., "client-logs").
@@ -2128,26 +2131,33 @@ message ExecutionStateSizeDelta {
   string state_root = 3 [ json_name = "state_root" ];
   // ParentStateRoot is the state root hash at the parent block.
   string parent_state_root = 4 [ json_name = "parent_state_root" ];
-  // AccountDelta is the change in number of accounts.
-  google.protobuf.Int64Value account_delta = 5 [ json_name = "account_delta" ];
-  // AccountBytesDelta is the change in bytes used by account data.
-  google.protobuf.Int64Value account_bytes_delta = 6 [ json_name = "account_bytes_delta" ];
-  // AccountTrienodeDelta is the change in account trie node count.
-  google.protobuf.Int64Value account_trienode_delta = 7 [ json_name = "account_trienode_delta" ];
-  // AccountTrienodeBytesDelta is the change in bytes used by account trie nodes.
-  google.protobuf.Int64Value account_trienode_bytes_delta = 8 [ json_name = "account_trienode_bytes_delta" ];
-  // ContractCodeDelta is the change in number of contract codes.
-  google.protobuf.Int64Value contract_code_delta = 9 [ json_name = "contract_code_delta" ];
-  // ContractCodeBytesDelta is the change in bytes used by contract code.
-  google.protobuf.Int64Value contract_code_bytes_delta = 10 [ json_name = "contract_code_bytes_delta" ];
-  // StorageDelta is the change in number of storage slots.
-  google.protobuf.Int64Value storage_delta = 11 [ json_name = "storage_delta" ];
-  // StorageBytesDelta is the change in bytes used by storage data.
-  google.protobuf.Int64Value storage_bytes_delta = 12 [ json_name = "storage_bytes_delta" ];
-  // StorageTrienodeDelta is the change in storage trie node count.
-  google.protobuf.Int64Value storage_trienode_delta = 13 [ json_name = "storage_trienode_delta" ];
-  // StorageTrienodeBytesDelta is the change in bytes used by storage trie nodes.
-  google.protobuf.Int64Value storage_trienode_bytes_delta = 14 [ json_name = "storage_trienode_bytes_delta" ];
+
+  // Writes: count and bytes of state entries written at this block. Updates
+  // contribute to both writes and deletes.
+  google.protobuf.Int64Value account_writes = 5 [ json_name = "account_writes" ];
+  google.protobuf.Int64Value account_write_bytes = 6 [ json_name = "account_write_bytes" ];
+  google.protobuf.Int64Value account_trienode_writes = 7 [ json_name = "account_trienode_writes" ];
+  google.protobuf.Int64Value account_trienode_write_bytes = 8 [ json_name = "account_trienode_write_bytes" ];
+  google.protobuf.Int64Value contract_code_writes = 9 [ json_name = "contract_code_writes" ];
+  google.protobuf.Int64Value contract_code_write_bytes = 10 [ json_name = "contract_code_write_bytes" ];
+  google.protobuf.Int64Value storage_writes = 11 [ json_name = "storage_writes" ];
+  google.protobuf.Int64Value storage_write_bytes = 12 [ json_name = "storage_write_bytes" ];
+  google.protobuf.Int64Value storage_trienode_writes = 13 [ json_name = "storage_trienode_writes" ];
+  google.protobuf.Int64Value storage_trienode_write_bytes = 14 [ json_name = "storage_trienode_write_bytes" ];
+
+  // Deletes: count and bytes of state entries deleted at this block. Updates
+  // contribute to both writes and deletes. contract_code_deletes and
+  // contract_code_delete_bytes are always 0 (see message-level comment).
+  google.protobuf.Int64Value account_deletes = 15 [ json_name = "account_deletes" ];
+  google.protobuf.Int64Value account_delete_bytes = 16 [ json_name = "account_delete_bytes" ];
+  google.protobuf.Int64Value account_trienode_deletes = 17 [ json_name = "account_trienode_deletes" ];
+  google.protobuf.Int64Value account_trienode_delete_bytes = 18 [ json_name = "account_trienode_delete_bytes" ];
+  google.protobuf.Int64Value contract_code_deletes = 19 [ json_name = "contract_code_deletes" ];
+  google.protobuf.Int64Value contract_code_delete_bytes = 20 [ json_name = "contract_code_delete_bytes" ];
+  google.protobuf.Int64Value storage_deletes = 21 [ json_name = "storage_deletes" ];
+  google.protobuf.Int64Value storage_delete_bytes = 22 [ json_name = "storage_delete_bytes" ];
+  google.protobuf.Int64Value storage_trienode_deletes = 23 [ json_name = "storage_trienode_deletes" ];
+  google.protobuf.Int64Value storage_trienode_delete_bytes = 24 [ json_name = "storage_trienode_delete_bytes" ];
 }
 
 // ExecutionMPTDepth contains Merkle Patricia Trie depth metrics captured from

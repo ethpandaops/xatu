@@ -105,6 +105,39 @@ jobs:
           xatu-postgres-migrator \
           xatu-server \
           xatu-clickhouse-migrator
+    - name: Start MinIO + create blob bucket
+      run: |
+        # MinIO is the S3-compatible target for the s3blobstore output sink.
+        # Attached to xatu's docker network so cannon can reach it as
+        # "xatu-minio:9000". Not exposed on the host — the docker-compose
+        # ClickHouse already maps :9000 — and nothing outside the network
+        # needs to reach MinIO.
+        docker run -d \
+          --name xatu-minio \
+          --network xatu_xatu-net \
+          --hostname xatu-minio \
+          -e MINIO_ROOT_USER=minioadmin \
+          -e MINIO_ROOT_PASSWORD=minioadmin \
+          minio/minio:RELEASE.2024-09-13T20-26-02Z \
+          server /data
+
+        echo "Waiting for MinIO and creating bucket..."
+        for i in $(seq 1 30); do
+          if docker run --rm --network xatu_xatu-net \
+              --entrypoint sh \
+              minio/mc:RELEASE.2024-09-16T17-43-14Z \
+              -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin && mc mb --ignore-existing local/xatu-blobs" \
+              >/dev/null 2>&1; then
+            echo "MinIO is ready and bucket created."
+            break
+          fi
+          if [ "$i" -eq 30 ]; then
+            echo "::error::MinIO failed to become ready (could not create bucket)"
+            docker logs xatu-minio 2>&1 | tail -50
+            exit 1
+          fi
+          sleep 2
+        done
     - name: Wait for Xatu stack to be ready
       run: |
         echo "Waiting for xatu-server gRPC to be ready on port 8080..."
@@ -218,7 +251,7 @@ jobs:
           beaconBlock:
             enabled: true
           beaconBlobSidecar:
-            enabled: false
+            enabled: true
           proposerDuty:
             enabled: true
           beaconCommittee:
@@ -242,6 +275,15 @@ jobs:
               chgo:
                 adaptiveLimiter:
                   enabled: false
+          - name: blob-archive
+            type: s3blobstore
+            config:
+              endpoint: xatu-minio:9000
+              bucket: xatu-blobs
+              region: us-east-1
+              accessKeyID: minioadmin
+              secretAccessKey: minioadmin
+              useSSL: false
         EOF
     - name: Show config
       run: |
@@ -263,6 +305,63 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    - name: Verify s3blobstore output landed blobs in MinIO
+      timeout-minutes: 5
+      env:
+        NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
+      run: |
+        # Cannon's fan-out also pushes blob_sidecar events to the
+        # s3blobstore sink. Assert the bucket holds at least one object
+        # under <network>/0x01<...>.gz — the same convention the existing
+        # Vector-based blob archive uses.
+        set -euo pipefail
+
+        MAX_ATTEMPTS=30
+        for i in $(seq 1 "$MAX_ATTEMPTS"); do
+          OBJECT_LINE=$(docker run --rm --network xatu_xatu-net \
+            --entrypoint sh \
+            minio/mc:RELEASE.2024-09-16T17-43-14Z \
+            -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/ 2>/dev/null | head -1" || true)
+
+          if [ -n "$OBJECT_LINE" ]; then
+            echo "Found object: $OBJECT_LINE"
+            break
+          fi
+
+          if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+            echo "::error::No blob objects landed in MinIO under ${NETWORK_NAME}/ after $MAX_ATTEMPTS attempts"
+            echo "=== xatu-cannon logs (last 100) ==="
+            docker logs xatu-cannon 2>&1 | tail -100
+            echo "=== xatu-minio logs (last 50) ==="
+            docker logs xatu-minio 2>&1 | tail -50
+            exit 1
+          fi
+
+          echo "  no objects yet (attempt $i/$MAX_ATTEMPTS)..."
+          sleep 5
+        done
+
+        # Sanity-check the key shape and gzip integrity.
+        FIRST_KEY=$(docker run --rm --network xatu_xatu-net \
+          --entrypoint sh \
+          minio/mc:RELEASE.2024-09-16T17-43-14Z \
+          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/ | awk '{print \$NF}' | head -1")
+
+        echo "Sampling object: $FIRST_KEY"
+
+        if [[ ! "$FIRST_KEY" =~ ^0x01[0-9a-f]+\.gz$ ]]; then
+          echo "::error::object key '$FIRST_KEY' does not match expected <versioned_hash>.gz shape"
+          exit 1
+        fi
+
+        docker run --rm --network xatu_xatu-net \
+          --entrypoint sh \
+          minio/mc:RELEASE.2024-09-16T17-43-14Z \
+          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc cat local/xatu-blobs/${NETWORK_NAME}/${FIRST_KEY}" \
+          | gunzip | head -c 4 | grep -q '^0x' \
+          || { echo "::error::gunzipped body does not start with 0x — payload format is wrong"; exit 1; }
+
+        echo "✓ MinIO blob archive contains at least one well-formed object"
     # Direct-CH path only: assert the Distributed forward queue on
     # xatu-clickhouse-01 is fully drained.
     #
@@ -348,6 +447,9 @@ jobs:
         echo ""
         echo "=== xatu-cannon logs (last 50) ==="
         docker logs xatu-cannon 2>&1 | tail -50 || echo "Container not found"
+        echo ""
+        echo "=== xatu-minio logs (last 30) ==="
+        docker logs xatu-minio 2>&1 | tail -30 || echo "Container not found"
     - name: Collect docker logs on failure
       if: failure() || cancelled()
       uses: jwalton/gh-docker-logs@2741064ab9d7af54b0b1ffb6076cf64c16f0220e # v2.2.2

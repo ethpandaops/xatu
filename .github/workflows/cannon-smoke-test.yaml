@@ -305,31 +305,65 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
-    - name: Verify s3blobstore output landed blobs in MinIO
+    - name: Verify s3blobstore output landed the CH-sampled blob in MinIO
       timeout-minutes: 5
       env:
+        TARGET_EPOCH: ${{ steps.beacon.outputs.target_epoch }}
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
-        # Cannon's fan-out also pushes blob_sidecar events to the
-        # s3blobstore sink. Assert the bucket holds at least one object
-        # under <network>/0x01<...>.gz — the same convention the existing
-        # Vector-based blob archive uses.
+        # Tie the MinIO assertion to a real versioned_hash that cannon
+        # actually derived and wrote to ClickHouse for this epoch. A
+        # sink that always wrote one hard-coded key would still match
+        # "*.gz exists" but cannot match a CH-sampled hash. We also run
+        # the full `gunzip -t` integrity check and sanity-check the
+        # payload size against the mainnet 4096-byte-field × 32-field
+        # blob shape (131072 bytes raw → 262146 chars of "0x"-hex).
         set -euo pipefail
 
+        # 1. Sample a versioned_hash cannon actually produced for the
+        #    target epoch. CH side has already been asserted above so
+        #    this will return a row.
+        SAMPLE_HASH=$(clickhouse-client \
+          -h localhost --port 9000 \
+          -u default --password "" \
+          -d default \
+          -q "SELECT versioned_hash FROM canonical_beacon_blob_sidecar FINAL WHERE meta_network_name = '${NETWORK_NAME}' AND epoch >= ${TARGET_EPOCH} LIMIT 1" \
+          </dev/null | tr -d '\r\n')
+
+        if [ -z "$SAMPLE_HASH" ]; then
+          echo "::error::No versioned_hash sample available in canonical_beacon_blob_sidecar — cannot tie MinIO assertion to a real cannon output"
+          exit 1
+        fi
+
+        EXPECTED_KEY="${NETWORK_NAME}/${SAMPLE_HASH}.gz"
+        echo "CH-sampled versioned_hash: $SAMPLE_HASH"
+        echo "Expecting MinIO object:    local/xatu-blobs/$EXPECTED_KEY"
+
+        # 2. Wait for that exact key to land in MinIO. The s3blobstore
+        #    sink runs concurrent to the CH sink under cannon's fan-out
+        #    but each has its own batching cadence, so retry briefly.
         MAX_ATTEMPTS=30
+        FOUND_BYTES=""
         for i in $(seq 1 "$MAX_ATTEMPTS"); do
-          OBJECT_LINE=$(docker run --rm --network xatu_xatu-net \
+          STAT=$(docker run --rm --network xatu_xatu-net \
             --entrypoint sh \
             minio/mc:RELEASE.2024-09-16T17-43-14Z \
-            -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/ 2>/dev/null | head -1" || true)
+            -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc stat --json local/xatu-blobs/${EXPECTED_KEY} 2>/dev/null" \
+            || true)
 
-          if [ -n "$OBJECT_LINE" ]; then
-            echo "Found object: $OBJECT_LINE"
+          if echo "$STAT" | jq -e '.size' >/dev/null 2>&1; then
+            FOUND_BYTES=$(echo "$STAT" | jq -r '.size')
+            echo "Object found ($FOUND_BYTES bytes gzipped) after $i attempt(s)"
             break
           fi
 
           if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
-            echo "::error::No blob objects landed in MinIO under ${NETWORK_NAME}/ after $MAX_ATTEMPTS attempts"
+            echo "::error::CH-sampled key '$EXPECTED_KEY' did not appear in MinIO after $MAX_ATTEMPTS attempts"
+            echo "=== Available keys under ${NETWORK_NAME}/ ==="
+            docker run --rm --network xatu_xatu-net \
+              --entrypoint sh \
+              minio/mc:RELEASE.2024-09-16T17-43-14Z \
+              -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/" || true
             echo "=== xatu-cannon logs (last 100) ==="
             docker logs xatu-cannon 2>&1 | tail -100
             echo "=== xatu-minio logs (last 50) ==="
@@ -337,45 +371,58 @@ jobs:
             exit 1
           fi
 
-          echo "  no objects yet (attempt $i/$MAX_ATTEMPTS)..."
+          echo "  not yet present (attempt $i/$MAX_ATTEMPTS)..."
           sleep 5
         done
 
-        # Sanity-check the key shape and gzip integrity. `mc find` prints
-        # one full path per line — no awk in the mc image, so basename is
-        # extracted with POSIX parameter expansion.
-        FIRST_PATH=$(docker run --rm --network xatu_xatu-net \
+        # 3. Pull the object, run full gunzip -t over the whole stream,
+        #    and inspect the decompressed payload.
+        TMP_GZ=$(mktemp /tmp/blob.XXXXXX.gz)
+        TMP_RAW=$(mktemp /tmp/blob.XXXXXX.raw)
+        trap 'rm -f "$TMP_GZ" "$TMP_RAW"' EXIT
+
+        docker run --rm --network xatu_xatu-net \
           --entrypoint sh \
           minio/mc:RELEASE.2024-09-16T17-43-14Z \
-          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc find local/xatu-blobs/${NETWORK_NAME}/ --name '*.gz' | head -1" \
-          | tr -d '\r')
+          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc cat local/xatu-blobs/${EXPECTED_KEY}" \
+          > "$TMP_GZ"
 
-        FIRST_KEY=${FIRST_PATH##*/}
-        echo "Sampling object: $FIRST_KEY (from $FIRST_PATH)"
-
-        if [[ ! "$FIRST_KEY" =~ ^0x01[0-9a-f]+\.gz$ ]]; then
-          echo "::error::object key '$FIRST_KEY' does not match expected <versioned_hash>.gz shape"
+        if ! gunzip -t "$TMP_GZ"; then
+          echo "::error::gunzip -t failed on $EXPECTED_KEY — object is not a valid gzip stream"
           exit 1
         fi
 
-        # `head -c 4` closes its stdin once full; gunzip then takes a
-        # SIGPIPE on its next write and the pipeline exits non-zero under
-        # `set -o pipefail`. Disable pipefail just for this capture so
-        # the broken-pipe-after-success is treated as success.
-        set +o pipefail
-        PREVIEW=$(docker run --rm --network xatu_xatu-net \
-          --entrypoint sh \
-          minio/mc:RELEASE.2024-09-16T17-43-14Z \
-          -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc cat local/xatu-blobs/${NETWORK_NAME}/${FIRST_KEY}" \
-          | gunzip -c | head -c 4)
-        set -o pipefail
+        gunzip -c "$TMP_GZ" > "$TMP_RAW"
 
-        if [[ "$PREVIEW" != 0x* ]]; then
-          echo "::error::gunzipped body starts with $(printf '%q' "$PREVIEW") — expected leading 0x"
+        RAW_LEN=$(wc -c < "$TMP_RAW" | tr -d ' ')
+        # mainnet blob = 4096 field elements × 32 bytes = 131072 bytes raw,
+        # hex-encoded as "0x" + 2 chars/byte = 262146 chars.
+        EXPECTED_LEN=262146
+        if [ "$RAW_LEN" -ne "$EXPECTED_LEN" ]; then
+          echo "::error::decompressed payload is $RAW_LEN bytes, expected $EXPECTED_LEN for a mainnet 131072-byte blob"
           exit 1
         fi
 
-        echo "✓ MinIO blob archive contains at least one well-formed object"
+        PREFIX=$(head -c 4 "$TMP_RAW")
+        if [[ "$PREFIX" != 0x* ]]; then
+          echo "::error::decompressed payload starts with $(printf '%q' "$PREFIX") — expected leading 0x"
+          exit 1
+        fi
+
+        # Body must be 0x + lowercase hex only. Inspect a small window;
+        # a full regex over 262kB hurts log readability without adding
+        # information beyond the length + prefix asserts above.
+        if ! head -c 130 "$TMP_RAW" | grep -qE '^0x[0-9a-f]+$'; then
+          echo "::error::decompressed payload does not begin with 0x + lowercase hex"
+          head -c 130 "$TMP_RAW"
+          echo
+          exit 1
+        fi
+
+        echo "✓ CH-sampled blob $SAMPLE_HASH archived to MinIO at $EXPECTED_KEY"
+        echo "  gzipped size:        $FOUND_BYTES bytes"
+        echo "  decompressed size:   $RAW_LEN bytes (matches mainnet blob shape)"
+        echo "  payload prefix:      $PREFIX..."
     # Direct-CH path only: assert the Distributed forward queue on
     # xatu-clickhouse-01 is fully drained.
     #

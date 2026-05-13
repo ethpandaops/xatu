@@ -183,14 +183,18 @@ func (s *Sink) uploadBlob(ctx context.Context, event *xatu.DecoratedEvent) error
 	blob := event.GetEthV1BeaconBlockBlobSidecar().GetBlob()
 
 	if network == "" || versionedHash == "" || blob == "" {
-		s.log.WithFields(logrus.Fields{
-			"event_id":          event.GetEvent().GetId(),
-			"network_present":   network != "",
-			"versioned_present": versionedHash != "",
-			"blob_present":      blob != "",
-		}).Error("blob_sidecar event missing required fields — skipping; cannon should always populate these")
-
-		return nil
+		// Fail closed. Cannon always populates these for blob_sidecar
+		// events; if any is empty, the cluster shape has changed and
+		// swallowing the event would silently advance the checkpoint
+		// past data that never reached the archive. Returning an error
+		// pins cannon on this batch until the upstream is fixed.
+		return fmt.Errorf(
+			"blob_sidecar event %s missing required fields (network=%t versioned_hash=%t blob=%t) — refusing to archive",
+			event.GetEvent().GetId(),
+			network != "",
+			versionedHash != "",
+			blob != "",
+		)
 	}
 
 	body, err := gzipBytes([]byte(blob))

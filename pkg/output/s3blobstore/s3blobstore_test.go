@@ -204,19 +204,31 @@ func TestHandleNewDecoratedEvents_IgnoresNonBlobEvents(t *testing.T) {
 	assert.Equal(t, 0, up.count(), "non-blob events should not produce any uploads")
 }
 
-func TestHandleNewDecoratedEvents_MalformedBlobIsSkipped(t *testing.T) {
-	up := newFakeUploader()
-	s := newTestSink(t, up, nil)
+func TestHandleNewDecoratedEvents_MalformedBlobFailsClosed(t *testing.T) {
+	cases := []struct {
+		name  string
+		event *xatu.DecoratedEvent
+	}{
+		{"missing network", newBlobEvent("", "0x01ff", "0xab")},
+		{"missing versioned hash", newBlobEvent("mainnet", "", "0xab")},
+		{"missing blob payload", newBlobEvent("mainnet", "0x01ff", "")},
+	}
 
-	missingNetwork := newBlobEvent("", "0x01ff", "0xab")
-	missingHash := newBlobEvent("mainnet", "", "0xab")
-	missingBlob := newBlobEvent("mainnet", "0x01ff", "")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			up := newFakeUploader()
+			s := newTestSink(t, up, nil)
 
-	err := s.HandleNewDecoratedEvents(context.Background(), []*xatu.DecoratedEvent{
-		missingNetwork, missingHash, missingBlob,
-	})
-	require.NoError(t, err, "malformed events should be logged + skipped, not error out")
-	assert.Equal(t, 0, up.count())
+			err := s.HandleNewDecoratedEvents(context.Background(),
+				[]*xatu.DecoratedEvent{tc.event})
+			require.Error(t, err,
+				"malformed blob events must fail closed so cannon retries; "+
+					"silent skip would advance the checkpoint past data the archive never saw")
+			assert.Contains(t, err.Error(), "missing required fields")
+			assert.Equal(t, 0, up.count(),
+				"no upload should be attempted when any required field is empty")
+		})
+	}
 }
 
 func TestHandleNewDecoratedEvents_BatchUploadsAll(t *testing.T) {

@@ -406,7 +406,7 @@ func failedIndexesFromBatchError(t *testing.T, msgs service.MessageBatch, err er
 func newRouter(t *testing.T, routes []route.Route) *router.Engine {
 	t.Helper()
 
-	return router.New(logrus.New(), routes, nil, newTestMetrics())
+	return router.New(logrus.New(), routes, nil, nil, newTestMetrics())
 }
 
 func newTestMetrics() *telemetry.Metrics {

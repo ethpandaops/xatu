@@ -123,7 +123,7 @@ func New(
 			Info("Restricted clickhouse route catalog by table prefix")
 	}
 
-	router := chrouter.New(sLog, routes, nil, metrics)
+	router := chrouter.New(sLog, routes, nil, nil, metrics)
 
 	writer.RegisterBatchFactories(routes)
 

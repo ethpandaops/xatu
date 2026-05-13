@@ -35,6 +35,11 @@ type Engine struct {
 	// produces multiple.
 	routesByEvent map[xatu.Event_Name][]route.Route
 
+	// disabledByConfig marks event names that had at least one registered
+	// route before config-driven filtering removed all of them. These are
+	// dropped (StatusDelivered) rather than NAK'd at Route() time.
+	disabledByConfig map[xatu.Event_Name]struct{}
+
 	metrics    *telemetry.Metrics
 	logSampler *telemetry.LogSampler
 }
@@ -44,13 +49,15 @@ func New(
 	log logrus.FieldLogger,
 	routes []route.Route,
 	disabledEvents []xatu.Event_Name,
+	disabledTables map[string]struct{},
 	metrics *telemetry.Metrics,
 ) *Engine {
 	r := &Engine{
-		log:           log.WithField("component", "router"),
-		routesByEvent: make(map[xatu.Event_Name][]route.Route, len(routes)),
-		metrics:       metrics,
-		logSampler:    telemetry.NewLogSampler(logSampleInterval),
+		log:              log.WithField("component", "router"),
+		routesByEvent:    make(map[xatu.Event_Name][]route.Route, len(routes)),
+		disabledByConfig: make(map[xatu.Event_Name]struct{}, len(disabledEvents)),
+		metrics:          metrics,
+		logSampler:       telemetry.NewLogSampler(logSampleInterval),
 	}
 
 	disabled := make(map[xatu.Event_Name]struct{}, len(disabledEvents))
@@ -58,10 +65,22 @@ func New(
 		disabled[name] = struct{}{}
 	}
 
-	// Register routes by event name.
+	// Register routes by event name, skipping routes whose target table is
+	// disabled or whose event is disabled. Event names that had any route
+	// before filtering are recorded in disabledByConfig so they are dropped
+	// (not NAK'd) at Route() time when all their routes are filtered out.
 	for _, route := range routes {
+		tableDisabled := false
+		if _, ok := disabledTables[route.TableName()]; ok {
+			tableDisabled = true
+		}
+
 		for _, name := range route.EventNames() {
-			if _, isDisabled := disabled[name]; isDisabled {
+			_, eventDisabled := disabled[name]
+
+			if tableDisabled || eventDisabled {
+				r.disabledByConfig[name] = struct{}{}
+
 				continue
 			}
 
@@ -69,9 +88,16 @@ func New(
 		}
 	}
 
+	// An event that had at least one surviving route is not disabled —
+	// drop it from disabledByConfig so Route() does not short-circuit it.
+	for name := range r.routesByEvent {
+		delete(r.disabledByConfig, name)
+	}
+
 	// Log registration summary
 	log.WithField("registered_events", len(r.routesByEvent)).
 		WithField("disabled_events", len(disabled)).
+		WithField("disabled_tables", len(disabledTables)).
 		Info("Routing engine initialized")
 
 	return r
@@ -93,6 +119,23 @@ func (r *Engine) Route(event *xatu.DecoratedEvent) Outcome {
 	// matching route is deployed.
 	routesForEvent, ok := r.routesByEvent[eventName]
 	if !ok {
+		if _, disabledByConfig := r.disabledByConfig[eventName]; disabledByConfig {
+			if r.metrics != nil {
+				r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "disabled_by_config").Inc()
+			}
+
+			if ok, suppressed := r.logSampler.Allow("config_drop:" + eventName.String()); ok {
+				entry := r.log.WithField("event_name", eventName.String())
+				if suppressed > 0 {
+					entry = entry.WithField("suppressed", suppressed)
+				}
+
+				entry.Debug("Event has no enabled routes after config filtering — dropping")
+			}
+
+			return Outcome{Status: StatusDelivered}
+		}
+
 		if reason, intentionallyUnsupported := route.UnsupportedReason(eventName); intentionallyUnsupported {
 			if r.metrics != nil {
 				r.metrics.MessagesDropped().WithLabelValues(eventName.String(), "no_flattener").Inc()

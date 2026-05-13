@@ -12,6 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testEventID            = "e1"
+	testTableLibp2pPeer    = "libp2p_peer"
+	testTableLibp2pConnect = "libp2p_connected"
+)
+
 type filterTestRoute struct {
 	table  route.TableName
 	events []xatu.Event_Name
@@ -55,6 +61,7 @@ func TestNewRouterSkipsDisabledEvents(t *testing.T) {
 		logrus.New(),
 		routes,
 		[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED},
+		nil,
 		newTestMetrics(),
 	)
 
@@ -67,6 +74,86 @@ func TestNewRouterSkipsDisabledEvents(t *testing.T) {
 	require.Equal(t, "table_b", disconnectedRoutes[0].TableName())
 }
 
+func TestNewRouterSkipsDisabledTables(t *testing.T) {
+	routes := []route.Route{
+		filterTestRoute{
+			table:  route.TableName(testTableLibp2pPeer),
+			events: []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED, xatu.Event_LIBP2P_TRACE_DISCONNECTED},
+		},
+		filterTestRoute{
+			table:  route.TableName(testTableLibp2pConnect),
+			events: []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED},
+		},
+	}
+
+	router := New(
+		logrus.New(),
+		routes,
+		nil,
+		map[string]struct{}{testTableLibp2pPeer: {}},
+		newTestMetrics(),
+	)
+
+	require.Contains(t, router.routesByEvent, xatu.Event_LIBP2P_TRACE_CONNECTED)
+	require.Len(t, router.routesByEvent[xatu.Event_LIBP2P_TRACE_CONNECTED], 1)
+	require.Equal(t, testTableLibp2pConnect, router.routesByEvent[xatu.Event_LIBP2P_TRACE_CONNECTED][0].TableName())
+	require.NotContains(t, router.routesByEvent, xatu.Event_LIBP2P_TRACE_DISCONNECTED)
+}
+
+func TestRouteEventWithAllTablesDisabledIsDropped(t *testing.T) {
+	routes := []route.Route{
+		filterTestRoute{
+			table:  route.TableName(testTableLibp2pPeer),
+			events: []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_DISCONNECTED},
+		},
+	}
+
+	router := New(
+		logrus.New(),
+		routes,
+		nil,
+		map[string]struct{}{testTableLibp2pPeer: {}},
+		newTestMetrics(),
+	)
+
+	outcome := router.Route(&xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:   testEventID,
+			Name: xatu.Event_LIBP2P_TRACE_DISCONNECTED,
+		},
+	})
+
+	require.Equal(t, StatusDelivered, outcome.Status)
+	require.Empty(t, outcome.Results)
+}
+
+func TestRouteDisabledEventIsDropped(t *testing.T) {
+	routes := []route.Route{
+		filterTestRoute{
+			table:  route.TableName(testTableLibp2pConnect),
+			events: []xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED},
+		},
+	}
+
+	router := New(
+		logrus.New(),
+		routes,
+		[]xatu.Event_Name{xatu.Event_LIBP2P_TRACE_CONNECTED},
+		nil,
+		newTestMetrics(),
+	)
+
+	outcome := router.Route(&xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:   testEventID,
+			Name: xatu.Event_LIBP2P_TRACE_CONNECTED,
+		},
+	})
+
+	require.Equal(t, StatusDelivered, outcome.Status)
+	require.Empty(t, outcome.Results)
+}
+
 func TestRouteIntentionallyUnsupportedEventIsDropped(t *testing.T) {
 	routes := []route.Route{
 		filterTestRoute{
@@ -75,11 +162,11 @@ func TestRouteIntentionallyUnsupportedEventIsDropped(t *testing.T) {
 		},
 	}
 
-	router := New(logrus.New(), routes, nil, newTestMetrics())
+	router := New(logrus.New(), routes, nil, nil, newTestMetrics())
 
 	outcome := router.Route(&xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Id:   "e1",
+			Id:   testEventID,
 			Name: xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2,
 		},
 	})
@@ -96,11 +183,11 @@ func TestRouteUnknownEventIsNAKed(t *testing.T) {
 		},
 	}
 
-	router := New(logrus.New(), routes, nil, newTestMetrics())
+	router := New(logrus.New(), routes, nil, nil, newTestMetrics())
 
 	outcome := router.Route(&xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Id:   "e1",
+			Id:   testEventID,
 			Name: xatu.Event_Name(999_999),
 		},
 	})

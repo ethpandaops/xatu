@@ -27,6 +27,12 @@ type Config struct {
 
 	// DisabledEvents is a list of event names to drop without processing.
 	DisabledEvents []string `yaml:"disabledEvents"`
+
+	// DisabledTables is a list of ClickHouse table names whose routes should
+	// be skipped. Events that route to these tables are not flattened or
+	// written. Events that route to both a disabled and an enabled table
+	// continue to be written to the enabled table.
+	DisabledTables []string `yaml:"disabledTables"`
 }
 
 // Validate checks the configuration for errors.
@@ -45,6 +51,38 @@ func (c *Config) Validate() error {
 
 	if _, err := c.DisabledEventEnums(); err != nil {
 		return err
+	}
+
+	if err := c.validateDisabledTables(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DisabledTableSet returns the configured disabled tables as a set for
+// fast membership lookup. Empty strings are ignored.
+func (c *Config) DisabledTableSet() map[string]struct{} {
+	out := make(map[string]struct{}, len(c.DisabledTables))
+
+	for _, name := range c.DisabledTables {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" {
+			continue
+		}
+
+		out[trimmed] = struct{}{}
+	}
+
+	return out
+}
+
+// validateDisabledTables rejects empty entries so typos surface at startup.
+func (c *Config) validateDisabledTables() error {
+	for i, name := range c.DisabledTables {
+		if strings.TrimSpace(name) == "" {
+			return fmt.Errorf("disabledTables[%d] is empty", i)
+		}
 	}
 
 	return nil

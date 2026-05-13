@@ -37,6 +37,12 @@ DROP TABLE IF EXISTS default.libp2p_gossipsub_payload_attestation_message_local 
 DROP TABLE IF EXISTS default.libp2p_gossipsub_proposer_preferences ON CLUSTER '{cluster}';
 DROP TABLE IF EXISTS default.libp2p_gossipsub_proposer_preferences_local ON CLUSTER '{cluster}';
 
+DROP TABLE IF EXISTS default.beacon_synthetic_payload_status_resolved ON CLUSTER '{cluster}';
+DROP TABLE IF EXISTS default.beacon_synthetic_payload_status_resolved_local ON CLUSTER '{cluster}';
+
+DROP TABLE IF EXISTS default.beacon_synthetic_builder_pending_payment_settlement ON CLUSTER '{cluster}';
+DROP TABLE IF EXISTS default.beacon_synthetic_builder_pending_payment_settlement_local ON CLUSTER '{cluster}';
+
 -- Remove ePBS columns from beacon block tables
 ALTER TABLE default.canonical_beacon_block ON CLUSTER '{cluster}'
     DROP COLUMN IF EXISTS payload_present,

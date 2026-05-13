@@ -25,6 +25,7 @@ import "pkg/proto/eth/v1/execution_payload_bid.proto";
 import "pkg/proto/eth/v1/execution_payload_envelope.proto";
 import "pkg/proto/eth/v1/execution_payload_available.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";
+import "pkg/proto/eth/v1/beacon_synthetic.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
@@ -987,6 +988,23 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  // AdditionalBeaconSyntheticPayloadStatusResolvedData contains additional
+  // data about a fork-choice payload status transition observed from beacon
+  // node internals (TYSM-instrumented). Fires on every beacon node.
+  message AdditionalBeaconSyntheticPayloadStatusResolvedData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    PropagationV2 propagation = 3;
+  }
+
+  // AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData contains
+  // additional data about an epoch-boundary builder pending payment
+  // settle/drop decision observed from beacon node internals. Fires on
+  // every beacon node, every epoch.
+  message AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData {
+    EpochV2 epoch = 1;
+  }
+
   // AdditionalEthV2BeaconBlockPayloadAttestationData contains additional data
   // about aggregated PTC payload attestations derived from cannon blocks.
   message AdditionalEthV2BeaconBlockPayloadAttestationData {
@@ -1928,6 +1946,11 @@ message ClientMeta {
     // EIP-7732 ePBS: Sentry SSE additional data (gossip + available variants)
     AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 106 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
     AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 107 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
+
+    // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
+    // (TYSM-instrumented). No beacon API equivalent today.
+    AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 108 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
+    AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 109 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2166,6 +2189,12 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 97;
     LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 98;
     LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 99;
+
+    // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
+    // (TYSM-instrumented). No beacon API equivalent today. Captured by every
+    // beacon node, not just proposers — multi-witness signal.
+    BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 102;
+    BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 103;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2507,6 +2536,12 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
     xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 222
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
+
+    // EIP-7732 ePBS: Synthesized observability events (TYSM-instrumented)
+    xatu.eth.v1.PayloadStatusResolved beacon_synthetic_payload_status_resolved = 223
+        [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
+    xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 224
+        [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
   };
 }
 

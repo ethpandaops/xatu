@@ -17,11 +17,13 @@ import (
 
 // Map of RPC event types to Xatu event types.
 var rpcToXatuEventMap = map[string]string{
-	TraceEvent_HANDLE_METADATA:                 xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
-	TraceEvent_HANDLE_STATUS:                   xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
-	TraceEvent_CUSTODY_PROBE:                   xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
-	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD: xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String(),
-	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS:   xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String(),
+	TraceEvent_HANDLE_METADATA:                                     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
+	TraceEvent_HANDLE_STATUS:                                       xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
+	TraceEvent_CUSTODY_PROBE:                                       xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
+	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD:                     xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String(),
+	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS:                       xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String(),
+	TraceEvent_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED:            xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED.String(),
+	TraceEvent_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT: xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT.String(),
 }
 
 // handleHermesRPCEvent handles Request/Response (RPC) protocol events.
@@ -120,6 +122,34 @@ func (p *Processor) handleHermesRPCEvent(
 		}
 
 		return p.handleConsensusEngineAPIGetBlobsEvent(ctx, clientMeta, event)
+
+	case xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED.String():
+		if !p.events.BeaconSyntheticPayloadStatusResolvedEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleBeaconSyntheticPayloadStatusResolvedEvent(ctx, clientMeta, event)
+
+	case xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT.String():
+		if !p.events.BeaconSyntheticBuilderPendingPaymentSettlementEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleBeaconSyntheticBuilderPendingPaymentSettlementEvent(ctx, clientMeta, event)
 	}
 
 	return nil

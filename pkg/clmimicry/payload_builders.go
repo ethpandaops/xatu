@@ -254,3 +254,47 @@ func NewConsensusEngineAPIGetBlobsPayload(
 		ExecutionClientVersion: executionClientVersion,
 	}
 }
+
+// Beacon synthetic payload builders (EIP-7732 ePBS, TYSM-instrumented)
+
+// NewBeaconSyntheticPayloadStatusResolvedPayload creates a payload-status-resolved event.
+func NewBeaconSyntheticPayloadStatusResolvedPayload(
+	resolvedAt time.Time,
+	slot uint64,
+	blockRoot, blockHash string,
+	status, previousStatus uint32,
+	payloadTimelinessVote, dataAvailableVote, ptcSize uint64,
+) *TraceEventBeaconSyntheticPayloadStatusResolved {
+	return &TraceEventBeaconSyntheticPayloadStatusResolved{
+		ResolvedAt:            resolvedAt,
+		Slot:                  slot,
+		BlockRoot:             blockRoot,
+		BlockHash:             blockHash,
+		Status:                status,
+		PreviousStatus:        previousStatus,
+		PayloadTimelinessVote: payloadTimelinessVote,
+		DataAvailableVote:     dataAvailableVote,
+		PTCSize:               ptcSize,
+	}
+}
+
+// NewBeaconSyntheticBuilderPendingPaymentSettlementPayload creates a builder-pending-payment-settlement event.
+func NewBeaconSyntheticBuilderPendingPaymentSettlementPayload(
+	resolvedAt time.Time,
+	epoch uint64,
+	builderIndex uint64,
+	feeRecipient string,
+	amount, weight, quorum uint64,
+	outcome uint32,
+) *TraceEventBeaconSyntheticBuilderPendingPaymentSettlement {
+	return &TraceEventBeaconSyntheticBuilderPendingPaymentSettlement{
+		ResolvedAt:   resolvedAt,
+		Epoch:        epoch,
+		BuilderIndex: builderIndex,
+		FeeRecipient: feeRecipient,
+		Amount:       amount,
+		Weight:       weight,
+		Quorum:       quorum,
+		Outcome:      outcome,
+	}
+}

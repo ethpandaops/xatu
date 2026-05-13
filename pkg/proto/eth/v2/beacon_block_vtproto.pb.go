@@ -9,6 +9,7 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
+	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
 	io "io"
@@ -341,6 +342,56 @@ func (m *SignedBeaconBlockFulu) MarshalToVT(dAtA []byte) (int, error) {
 }
 
 func (m *SignedBeaconBlockFulu) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Signature) > 0 {
+		i -= len(m.Signature)
+		copy(dAtA[i:], m.Signature)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Signature)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Message != nil {
+		size, err := m.Message.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignedBeaconBlockGloas) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignedBeaconBlockGloas) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SignedBeaconBlockGloas) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1335,6 +1386,83 @@ func (m *BeaconBlockFulu) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *BeaconBlockGloas) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BeaconBlockGloas) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BeaconBlockGloas) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Body != nil {
+		size, err := m.Body.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.StateRoot) > 0 {
+		i -= len(m.StateRoot)
+		copy(dAtA[i:], m.StateRoot)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateRoot)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ParentRoot) > 0 {
+		i -= len(m.ParentRoot)
+		copy(dAtA[i:], m.ParentRoot)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ParentRoot)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.ProposerIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.ProposerIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Slot != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Slot).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *BlindedBeaconBlockCapella) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1654,81 +1782,165 @@ func (m *BeaconBlockBodyBellatrix) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -1741,12 +1953,24 @@ func (m *BeaconBlockBodyBellatrix) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1791,81 +2015,165 @@ func (m *BeaconBlockBodyBellatrixV2) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -1878,12 +2186,24 @@ func (m *BeaconBlockBodyBellatrixV2) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1928,81 +2248,165 @@ func (m *BlindedBeaconBlockBodyBellatrix) MarshalToSizedBufferVT(dAtA []byte) (i
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionPayloadHeader != nil {
-		size, err := m.ExecutionPayloadHeader.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayloadHeader)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2015,12 +2419,24 @@ func (m *BlindedBeaconBlockBodyBellatrix) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2065,81 +2481,165 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) MarshalToSizedBufferVT(dAtA []byte) 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionPayloadHeader != nil {
-		size, err := m.ExecutionPayloadHeader.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayloadHeader)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2152,12 +2652,24 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) MarshalToSizedBufferVT(dAtA []byte) 
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2214,81 +2726,165 @@ func (m *BeaconBlockBodyCapella) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		}
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2301,12 +2897,24 @@ func (m *BeaconBlockBodyCapella) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2363,81 +2971,165 @@ func (m *BeaconBlockBodyCapellaV2) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		}
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2450,12 +3142,24 @@ func (m *BeaconBlockBodyCapellaV2) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2521,81 +3225,165 @@ func (m *BeaconBlockBodyDeneb) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		}
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2608,12 +3396,24 @@ func (m *BeaconBlockBodyDeneb) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2658,12 +3458,24 @@ func (m *BeaconBlockBodyElectra) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionRequests != nil {
-		size, err := m.ExecutionRequests.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.ExecutionRequests).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionRequests)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x6a
 	}
@@ -2689,81 +3501,165 @@ func (m *BeaconBlockBodyElectra) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		}
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2776,12 +3672,24 @@ func (m *BeaconBlockBodyElectra) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2826,12 +3734,24 @@ func (m *BeaconBlockBodyFulu) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ExecutionRequests != nil {
-		size, err := m.ExecutionRequests.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.ExecutionRequests).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionRequests)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x6a
 	}
@@ -2857,81 +3777,165 @@ func (m *BeaconBlockBodyFulu) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 	}
 	if m.ExecutionPayload != nil {
-		size, err := m.ExecutionPayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -2944,12 +3948,315 @@ func (m *BeaconBlockBodyFulu) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.RandaoReveal) > 0 {
+		i -= len(m.RandaoReveal)
+		copy(dAtA[i:], m.RandaoReveal)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.RandaoReveal)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BeaconBlockBodyGloas) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BeaconBlockBodyGloas) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BeaconBlockBodyGloas) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ParentExecutionRequests != nil {
+		if vtmsg, ok := interface{}(m.ParentExecutionRequests).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ParentExecutionRequests)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x6a
+	}
+	if len(m.PayloadAttestations) > 0 {
+		for iNdEx := len(m.PayloadAttestations) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.PayloadAttestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.PayloadAttestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x62
+		}
+	}
+	if m.SignedExecutionPayloadBid != nil {
+		if vtmsg, ok := interface{}(m.SignedExecutionPayloadBid).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SignedExecutionPayloadBid)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x5a
+	}
+	if len(m.BlsToExecutionChanges) > 0 {
+		for iNdEx := len(m.BlsToExecutionChanges) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.BlsToExecutionChanges[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x52
+		}
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if len(m.Deposits) > 0 {
+		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
+	if len(m.Attestations) > 0 {
+		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
+	if len(m.AttesterSlashings) > 0 {
+		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if len(m.ProposerSlashings) > 0 {
+		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Graffiti) > 0 {
+		i -= len(m.Graffiti)
+		copy(dAtA[i:], m.Graffiti)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Graffiti)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Eth1Data != nil {
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3006,81 +4313,165 @@ func (m *BlindedBeaconBlockBodyCapella) MarshalToSizedBufferVT(dAtA []byte) (int
 		}
 	}
 	if m.ExecutionPayloadHeader != nil {
-		size, err := m.ExecutionPayloadHeader.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayloadHeader)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -3093,12 +4484,24 @@ func (m *BlindedBeaconBlockBodyCapella) MarshalToSizedBufferVT(dAtA []byte) (int
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3155,81 +4558,165 @@ func (m *BlindedBeaconBlockBodyCapellaV2) MarshalToSizedBufferVT(dAtA []byte) (i
 		}
 	}
 	if m.ExecutionPayloadHeader != nil {
-		size, err := m.ExecutionPayloadHeader.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x52
-	}
-	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ExecutionPayloadHeader)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if m.SyncAggregate != nil {
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -3242,12 +4729,24 @@ func (m *BlindedBeaconBlockBodyCapellaV2) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3292,71 +4791,143 @@ func (m *BeaconBlockBodyAltair) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -3369,12 +4940,24 @@ func (m *BeaconBlockBodyAltair) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3419,71 +5002,143 @@ func (m *BeaconBlockBodyAltairV2) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.SyncAggregate != nil {
-		size, err := m.SyncAggregate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.VoluntaryExits) > 0 {
-		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.VoluntaryExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+		if vtmsg, ok := interface{}(m.SyncAggregate).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.SyncAggregate)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for iNdEx := len(m.VoluntaryExits) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.VoluntaryExits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.VoluntaryExits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x42
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for iNdEx := len(m.Deposits) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Deposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Deposits[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Deposits[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Attestations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.Attestations[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Attestations[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x32
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for iNdEx := len(m.AttesterSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.AttesterSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.AttesterSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AttesterSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x2a
 		}
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for iNdEx := len(m.ProposerSlashings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ProposerSlashings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
+			if vtmsg, ok := interface{}(m.ProposerSlashings[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ProposerSlashings[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
 			dAtA[i] = 0x22
 		}
@@ -3496,12 +5151,24 @@ func (m *BeaconBlockBodyAltairV2) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		dAtA[i] = 0x1a
 	}
 	if m.Eth1Data != nil {
-		size, err := m.Eth1Data.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Eth1Data).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Eth1Data)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3667,6 +5334,28 @@ func (m *SignedBeaconBlockFulu) ReturnToVTPool() {
 }
 func SignedBeaconBlockFuluFromVTPool() *SignedBeaconBlockFulu {
 	return vtprotoPool_SignedBeaconBlockFulu.Get().(*SignedBeaconBlockFulu)
+}
+
+var vtprotoPool_SignedBeaconBlockGloas = sync.Pool{
+	New: func() interface{} {
+		return &SignedBeaconBlockGloas{}
+	},
+}
+
+func (m *SignedBeaconBlockGloas) ResetVT() {
+	if m != nil {
+		m.Message.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *SignedBeaconBlockGloas) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_SignedBeaconBlockGloas.Put(m)
+	}
+}
+func SignedBeaconBlockGloasFromVTPool() *SignedBeaconBlockGloas {
+	return vtprotoPool_SignedBeaconBlockGloas.Get().(*SignedBeaconBlockGloas)
 }
 
 var vtprotoPool_SignedBlindedBeaconBlockBellatrix = sync.Pool{
@@ -3997,6 +5686,28 @@ func (m *BeaconBlockFulu) ReturnToVTPool() {
 }
 func BeaconBlockFuluFromVTPool() *BeaconBlockFulu {
 	return vtprotoPool_BeaconBlockFulu.Get().(*BeaconBlockFulu)
+}
+
+var vtprotoPool_BeaconBlockGloas = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockGloas{}
+	},
+}
+
+func (m *BeaconBlockGloas) ResetVT() {
+	if m != nil {
+		m.Body.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *BeaconBlockGloas) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockGloas.Put(m)
+	}
+}
+func BeaconBlockGloasFromVTPool() *BeaconBlockGloas {
+	return vtprotoPool_BeaconBlockGloas.Get().(*BeaconBlockGloas)
 }
 
 var vtprotoPool_BlindedBeaconBlockCapella = sync.Pool{
@@ -4561,6 +6272,66 @@ func BeaconBlockBodyFuluFromVTPool() *BeaconBlockBodyFulu {
 	return vtprotoPool_BeaconBlockBodyFulu.Get().(*BeaconBlockBodyFulu)
 }
 
+var vtprotoPool_BeaconBlockBodyGloas = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockBodyGloas{}
+	},
+}
+
+func (m *BeaconBlockBodyGloas) ResetVT() {
+	if m != nil {
+		m.Eth1Data.ReturnToVTPool()
+		for _, mm := range m.ProposerSlashings {
+			mm.ResetVT()
+		}
+		f0 := m.ProposerSlashings[:0]
+		for _, mm := range m.AttesterSlashings {
+			mm.ResetVT()
+		}
+		f1 := m.AttesterSlashings[:0]
+		for _, mm := range m.Attestations {
+			mm.ResetVT()
+		}
+		f2 := m.Attestations[:0]
+		for _, mm := range m.Deposits {
+			mm.ResetVT()
+		}
+		f3 := m.Deposits[:0]
+		for _, mm := range m.VoluntaryExits {
+			mm.ResetVT()
+		}
+		f4 := m.VoluntaryExits[:0]
+		m.SyncAggregate.ReturnToVTPool()
+		for _, mm := range m.BlsToExecutionChanges {
+			mm.ResetVT()
+		}
+		f5 := m.BlsToExecutionChanges[:0]
+		m.SignedExecutionPayloadBid.ReturnToVTPool()
+		for _, mm := range m.PayloadAttestations {
+			mm.ResetVT()
+		}
+		f6 := m.PayloadAttestations[:0]
+		m.ParentExecutionRequests.ReturnToVTPool()
+		m.Reset()
+		m.ProposerSlashings = f0
+		m.AttesterSlashings = f1
+		m.Attestations = f2
+		m.Deposits = f3
+		m.VoluntaryExits = f4
+		m.BlsToExecutionChanges = f5
+		m.PayloadAttestations = f6
+	}
+}
+func (m *BeaconBlockBodyGloas) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockBodyGloas.Put(m)
+	}
+}
+func BeaconBlockBodyGloasFromVTPool() *BeaconBlockBodyGloas {
+	return vtprotoPool_BeaconBlockBodyGloas.Get().(*BeaconBlockBodyGloas)
+}
+
 var vtprotoPool_BlindedBeaconBlockBodyCapella = sync.Pool{
 	New: func() interface{} {
 		return &BlindedBeaconBlockBodyCapella{}
@@ -4873,6 +6644,24 @@ func (m *SignedBeaconBlockElectra) SizeVT() (n int) {
 }
 
 func (m *SignedBeaconBlockFulu) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Message != nil {
+		l = m.Message.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *SignedBeaconBlockGloas) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5262,6 +7051,36 @@ func (m *BeaconBlockFulu) SizeVT() (n int) {
 	return n
 }
 
+func (m *BeaconBlockGloas) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Slot != nil {
+		l = (*wrapperspb.UInt64Value)(m.Slot).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ProposerIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.ProposerIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ParentRoot)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateRoot)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Body != nil {
+		l = m.Body.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *BlindedBeaconBlockCapella) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -5389,7 +7208,13 @@ func (m *BeaconBlockBodyBellatrix) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5398,40 +7223,82 @@ func (m *BeaconBlockBodyBellatrix) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5449,7 +7316,13 @@ func (m *BeaconBlockBodyBellatrixV2) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5458,40 +7331,82 @@ func (m *BeaconBlockBodyBellatrixV2) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5509,7 +7424,13 @@ func (m *BlindedBeaconBlockBodyBellatrix) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5518,40 +7439,82 @@ func (m *BlindedBeaconBlockBodyBellatrix) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayloadHeader != nil {
-		l = m.ExecutionPayloadHeader.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayloadHeader)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5569,7 +7532,13 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5578,40 +7547,82 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayloadHeader != nil {
-		l = m.ExecutionPayloadHeader.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayloadHeader)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5629,7 +7640,13 @@ func (m *BeaconBlockBodyCapella) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5638,40 +7655,82 @@ func (m *BeaconBlockBodyCapella) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -5695,7 +7754,13 @@ func (m *BeaconBlockBodyCapellaV2) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5704,40 +7769,82 @@ func (m *BeaconBlockBodyCapellaV2) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -5761,7 +7868,13 @@ func (m *BeaconBlockBodyDeneb) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5770,40 +7883,82 @@ func (m *BeaconBlockBodyDeneb) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -5833,7 +7988,13 @@ func (m *BeaconBlockBodyElectra) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5842,40 +8003,82 @@ func (m *BeaconBlockBodyElectra) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -5891,7 +8094,13 @@ func (m *BeaconBlockBodyElectra) SizeVT() (n int) {
 		}
 	}
 	if m.ExecutionRequests != nil {
-		l = m.ExecutionRequests.SizeVT()
+		if size, ok := interface{}(m.ExecutionRequests).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionRequests)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5909,7 +8118,13 @@ func (m *BeaconBlockBodyFulu) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5918,40 +8133,82 @@ func (m *BeaconBlockBodyFulu) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayload != nil {
-		l = m.ExecutionPayload.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayload)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -5967,7 +8224,149 @@ func (m *BeaconBlockBodyFulu) SizeVT() (n int) {
 		}
 	}
 	if m.ExecutionRequests != nil {
-		l = m.ExecutionRequests.SizeVT()
+		if size, ok := interface{}(m.ExecutionRequests).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionRequests)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BeaconBlockBodyGloas) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RandaoReveal)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Eth1Data != nil {
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Graffiti)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.ProposerSlashings) > 0 {
+		for _, e := range m.ProposerSlashings {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.AttesterSlashings) > 0 {
+		for _, e := range m.AttesterSlashings {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.Attestations) > 0 {
+		for _, e := range m.Attestations {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.Deposits) > 0 {
+		for _, e := range m.Deposits {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.VoluntaryExits) > 0 {
+		for _, e := range m.VoluntaryExits {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if m.SyncAggregate != nil {
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.BlsToExecutionChanges) > 0 {
+		for _, e := range m.BlsToExecutionChanges {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if m.SignedExecutionPayloadBid != nil {
+		if size, ok := interface{}(m.SignedExecutionPayloadBid).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SignedExecutionPayloadBid)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.PayloadAttestations) > 0 {
+		for _, e := range m.PayloadAttestations {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if m.ParentExecutionRequests != nil {
+		if size, ok := interface{}(m.ParentExecutionRequests).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ParentExecutionRequests)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -5985,7 +8384,13 @@ func (m *BlindedBeaconBlockBodyCapella) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -5994,40 +8399,82 @@ func (m *BlindedBeaconBlockBodyCapella) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayloadHeader != nil {
-		l = m.ExecutionPayloadHeader.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayloadHeader)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -6051,7 +8498,13 @@ func (m *BlindedBeaconBlockBodyCapellaV2) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -6060,40 +8513,82 @@ func (m *BlindedBeaconBlockBodyCapellaV2) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ExecutionPayloadHeader != nil {
-		l = m.ExecutionPayloadHeader.SizeVT()
+		if size, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ExecutionPayloadHeader)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.BlsToExecutionChanges) > 0 {
@@ -6117,7 +8612,13 @@ func (m *BeaconBlockBodyAltair) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -6126,36 +8627,72 @@ func (m *BeaconBlockBodyAltair) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -6173,7 +8710,13 @@ func (m *BeaconBlockBodyAltairV2) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Eth1Data != nil {
-		l = m.Eth1Data.SizeVT()
+		if size, ok := interface{}(m.Eth1Data).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Eth1Data)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Graffiti)
@@ -6182,36 +8725,72 @@ func (m *BeaconBlockBodyAltairV2) SizeVT() (n int) {
 	}
 	if len(m.ProposerSlashings) > 0 {
 		for _, e := range m.ProposerSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.AttesterSlashings) > 0 {
 		for _, e := range m.AttesterSlashings {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Attestations) > 0 {
 		for _, e := range m.Attestations {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.Deposits) > 0 {
 		for _, e := range m.Deposits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if len(m.VoluntaryExits) > 0 {
 		for _, e := range m.VoluntaryExits {
-			l = e.SizeVT()
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
 	if m.SyncAggregate != nil {
-		l = m.SyncAggregate.SizeVT()
+		if size, ok := interface{}(m.SyncAggregate).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.SyncAggregate)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -6992,6 +9571,125 @@ func (m *SignedBeaconBlockFulu) UnmarshalVT(dAtA []byte) error {
 			}
 			if m.Message == nil {
 				m.Message = BeaconBlockFuluFromVTPool()
+			}
+			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signature = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignedBeaconBlockGloas) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignedBeaconBlockGloas: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignedBeaconBlockGloas: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Message == nil {
+				m.Message = BeaconBlockGloasFromVTPool()
 			}
 			if err := m.Message.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -9670,6 +12368,229 @@ func (m *BeaconBlockFulu) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *BeaconBlockGloas) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BeaconBlockGloas: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BeaconBlockGloas: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Slot == nil {
+				m.Slot = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Slot).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposerIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProposerIndex == nil {
+				m.ProposerIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.ProposerIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ParentRoot", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ParentRoot = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateRoot", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateRoot = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Body", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Body == nil {
+				m.Body = BeaconBlockBodyGloasFromVTPool()
+			}
+			if err := m.Body.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *BlindedBeaconBlockCapella) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -10587,8 +13508,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -10660,8 +13589,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -10701,8 +13638,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -10742,8 +13687,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -10783,8 +13736,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -10824,8 +13785,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -10860,8 +13829,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -10896,8 +13873,16 @@ func (m *BeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadFromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -11015,8 +14000,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -11088,8 +14081,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -11129,8 +14130,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -11170,8 +14179,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -11211,8 +14228,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -11252,8 +14277,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -11288,8 +14321,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -11324,8 +14365,16 @@ func (m *BeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadV2FromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -11443,8 +14492,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -11516,8 +14573,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -11557,8 +14622,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -11598,8 +14671,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -11639,8 +14720,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -11680,8 +14769,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -11716,8 +14813,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -11752,8 +14857,16 @@ func (m *BlindedBeaconBlockBodyBellatrix) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayloadHeader == nil {
 				m.ExecutionPayloadHeader = v1.ExecutionPayloadHeaderFromVTPool()
 			}
-			if err := m.ExecutionPayloadHeader.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayloadHeader); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -11871,8 +14984,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -11944,8 +15065,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -11985,8 +15114,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -12026,8 +15163,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -12067,8 +15212,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -12108,8 +15261,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -12144,8 +15305,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -12180,8 +15349,16 @@ func (m *BlindedBeaconBlockBodyBellatrixV2) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayloadHeader == nil {
 				m.ExecutionPayloadHeader = v1.ExecutionPayloadHeaderV2FromVTPool()
 			}
-			if err := m.ExecutionPayloadHeader.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayloadHeader); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -12299,8 +15476,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -12372,8 +15557,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -12413,8 +15606,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -12454,8 +15655,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -12495,8 +15704,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -12536,8 +15753,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -12572,8 +15797,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -12608,8 +15841,16 @@ func (m *BeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadCapellaFromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -12768,8 +16009,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -12841,8 +16090,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -12882,8 +16139,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -12923,8 +16188,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -12964,8 +16237,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -13005,8 +16286,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -13041,8 +16330,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -13077,8 +16374,16 @@ func (m *BeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadCapellaV2FromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -13237,8 +16542,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -13310,8 +16623,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -13351,8 +16672,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -13392,8 +16721,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -13433,8 +16770,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -13474,8 +16819,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -13510,8 +16863,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -13546,8 +16907,16 @@ func (m *BeaconBlockBodyDeneb) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadDenebFromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -13738,8 +17107,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -13811,8 +17188,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -13852,8 +17237,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -13893,8 +17286,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -13934,8 +17335,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -13975,8 +17384,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -14011,8 +17428,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -14047,8 +17472,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadElectraFromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -14156,8 +17589,16 @@ func (m *BeaconBlockBodyElectra) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionRequests == nil {
 				m.ExecutionRequests = v1.ElectraExecutionRequestsFromVTPool()
 			}
-			if err := m.ExecutionRequests.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionRequests).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionRequests); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -14275,8 +17716,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -14348,8 +17797,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -14389,8 +17846,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -14430,8 +17895,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -14471,8 +17944,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -14512,8 +17993,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -14548,8 +18037,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -14584,8 +18081,16 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayload == nil {
 				m.ExecutionPayload = v1.ExecutionPayloadElectraFromVTPool()
 			}
-			if err := m.ExecutionPayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayload).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayload); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -14693,8 +18198,642 @@ func (m *BeaconBlockBodyFulu) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionRequests == nil {
 				m.ExecutionRequests = v1.ElectraExecutionRequestsFromVTPool()
 			}
-			if err := m.ExecutionRequests.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if unmarshal, ok := interface{}(m.ExecutionRequests).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionRequests); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
 				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BeaconBlockBodyGloas) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BeaconBlockBodyGloas: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BeaconBlockBodyGloas: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RandaoReveal", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RandaoReveal = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Eth1Data", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Eth1Data == nil {
+				m.Eth1Data = v1.Eth1DataFromVTPool()
+			}
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Graffiti", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Graffiti = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposerSlashings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.ProposerSlashings) == cap(m.ProposerSlashings) {
+				m.ProposerSlashings = append(m.ProposerSlashings, &v1.ProposerSlashing{})
+			} else {
+				m.ProposerSlashings = m.ProposerSlashings[:len(m.ProposerSlashings)+1]
+				if m.ProposerSlashings[len(m.ProposerSlashings)-1] == nil {
+					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttesterSlashings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.AttesterSlashings) == cap(m.AttesterSlashings) {
+				m.AttesterSlashings = append(m.AttesterSlashings, &v1.AttesterSlashing{})
+			} else {
+				m.AttesterSlashings = m.AttesterSlashings[:len(m.AttesterSlashings)+1]
+				if m.AttesterSlashings[len(m.AttesterSlashings)-1] == nil {
+					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Attestations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.Attestations) == cap(m.Attestations) {
+				m.Attestations = append(m.Attestations, &v1.Attestation{})
+			} else {
+				m.Attestations = m.Attestations[:len(m.Attestations)+1]
+				if m.Attestations[len(m.Attestations)-1] == nil {
+					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Deposits", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.Deposits) == cap(m.Deposits) {
+				m.Deposits = append(m.Deposits, &v1.Deposit{})
+			} else {
+				m.Deposits = m.Deposits[:len(m.Deposits)+1]
+				if m.Deposits[len(m.Deposits)-1] == nil {
+					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VoluntaryExits", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.VoluntaryExits) == cap(m.VoluntaryExits) {
+				m.VoluntaryExits = append(m.VoluntaryExits, &v1.SignedVoluntaryExit{})
+			} else {
+				m.VoluntaryExits = m.VoluntaryExits[:len(m.VoluntaryExits)+1]
+				if m.VoluntaryExits[len(m.VoluntaryExits)-1] == nil {
+					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SyncAggregate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SyncAggregate == nil {
+				m.SyncAggregate = v1.SyncAggregateFromVTPool()
+			}
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlsToExecutionChanges", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.BlsToExecutionChanges) == cap(m.BlsToExecutionChanges) {
+				m.BlsToExecutionChanges = append(m.BlsToExecutionChanges, &SignedBLSToExecutionChange{})
+			} else {
+				m.BlsToExecutionChanges = m.BlsToExecutionChanges[:len(m.BlsToExecutionChanges)+1]
+				if m.BlsToExecutionChanges[len(m.BlsToExecutionChanges)-1] == nil {
+					m.BlsToExecutionChanges[len(m.BlsToExecutionChanges)-1] = &SignedBLSToExecutionChange{}
+				}
+			}
+			if err := m.BlsToExecutionChanges[len(m.BlsToExecutionChanges)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignedExecutionPayloadBid", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SignedExecutionPayloadBid == nil {
+				m.SignedExecutionPayloadBid = v1.SignedExecutionPayloadBidFromVTPool()
+			}
+			if unmarshal, ok := interface{}(m.SignedExecutionPayloadBid).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SignedExecutionPayloadBid); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PayloadAttestations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.PayloadAttestations) == cap(m.PayloadAttestations) {
+				m.PayloadAttestations = append(m.PayloadAttestations, &v1.PayloadAttestation{})
+			} else {
+				m.PayloadAttestations = m.PayloadAttestations[:len(m.PayloadAttestations)+1]
+				if m.PayloadAttestations[len(m.PayloadAttestations)-1] == nil {
+					m.PayloadAttestations[len(m.PayloadAttestations)-1] = &v1.PayloadAttestation{}
+				}
+			}
+			if unmarshal, ok := interface{}(m.PayloadAttestations[len(m.PayloadAttestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.PayloadAttestations[len(m.PayloadAttestations)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ParentExecutionRequests", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ParentExecutionRequests == nil {
+				m.ParentExecutionRequests = v1.ElectraExecutionRequestsFromVTPool()
+			}
+			if unmarshal, ok := interface{}(m.ParentExecutionRequests).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ParentExecutionRequests); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -14812,8 +18951,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -14885,8 +19032,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -14926,8 +19081,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -14967,8 +19130,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -15008,8 +19179,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -15049,8 +19228,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -15085,8 +19272,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -15121,8 +19316,16 @@ func (m *BlindedBeaconBlockBodyCapella) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayloadHeader == nil {
 				m.ExecutionPayloadHeader = v1.ExecutionPayloadHeaderCapellaFromVTPool()
 			}
-			if err := m.ExecutionPayloadHeader.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayloadHeader); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -15281,8 +19484,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -15354,8 +19565,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -15395,8 +19614,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -15436,8 +19663,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -15477,8 +19712,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -15518,8 +19761,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -15554,8 +19805,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -15590,8 +19849,16 @@ func (m *BlindedBeaconBlockBodyCapellaV2) UnmarshalVT(dAtA []byte) error {
 			if m.ExecutionPayloadHeader == nil {
 				m.ExecutionPayloadHeader = v1.ExecutionPayloadHeaderCapellaV2FromVTPool()
 			}
-			if err := m.ExecutionPayloadHeader.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ExecutionPayloadHeader).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayloadHeader); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 11:
@@ -15750,8 +20017,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -15823,8 +20098,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -15864,8 +20147,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -15905,8 +20196,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -15946,8 +20245,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -15987,8 +20294,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -16023,8 +20338,16 @@ func (m *BeaconBlockBodyAltair) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -16142,8 +20465,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 			if m.Eth1Data == nil {
 				m.Eth1Data = v1.Eth1DataFromVTPool()
 			}
-			if err := m.Eth1Data.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Eth1Data).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Eth1Data); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -16215,8 +20546,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 					m.ProposerSlashings[len(m.ProposerSlashings)-1] = &v1.ProposerSlashing{}
 				}
 			}
-			if err := m.ProposerSlashings[len(m.ProposerSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.ProposerSlashings[len(m.ProposerSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ProposerSlashings[len(m.ProposerSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 5:
@@ -16256,8 +20595,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 					m.AttesterSlashings[len(m.AttesterSlashings)-1] = &v1.AttesterSlashing{}
 				}
 			}
-			if err := m.AttesterSlashings[len(m.AttesterSlashings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.AttesterSlashings[len(m.AttesterSlashings)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AttesterSlashings[len(m.AttesterSlashings)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -16297,8 +20644,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 					m.Attestations[len(m.Attestations)-1] = &v1.Attestation{}
 				}
 			}
-			if err := m.Attestations[len(m.Attestations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Attestations[len(m.Attestations)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Attestations[len(m.Attestations)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -16338,8 +20693,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 					m.Deposits[len(m.Deposits)-1] = &v1.Deposit{}
 				}
 			}
-			if err := m.Deposits[len(m.Deposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Deposits[len(m.Deposits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deposits[len(m.Deposits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -16379,8 +20742,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 					m.VoluntaryExits[len(m.VoluntaryExits)-1] = &v1.SignedVoluntaryExit{}
 				}
 			}
-			if err := m.VoluntaryExits[len(m.VoluntaryExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VoluntaryExits[len(m.VoluntaryExits)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VoluntaryExits[len(m.VoluntaryExits)-1]); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 9:
@@ -16415,8 +20786,16 @@ func (m *BeaconBlockBodyAltairV2) UnmarshalVT(dAtA []byte) error {
 			if m.SyncAggregate == nil {
 				m.SyncAggregate = v1.SyncAggregateFromVTPool()
 			}
-			if err := m.SyncAggregate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.SyncAggregate).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.SyncAggregate); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:

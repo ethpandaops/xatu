@@ -242,3 +242,51 @@ type TraceEventConsensusEngineAPIGetBlobs struct {
 	// Parsed into components when converting to protobuf.
 	ExecutionClientVersion string `json:"execution_client_version"`
 }
+
+// TraceEventBeaconSyntheticPayloadStatusResolved represents a fork-choice
+// payload status transition observed from beacon node internals (TYSM-instrumented).
+// EIP-7732 ePBS.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticPayloadStatusResolved struct {
+	TraceEventPayloadMetaData
+
+	ResolvedAt time.Time `json:"resolved_at"`
+
+	Slot      uint64 `json:"slot"`
+	BlockRoot string `json:"block_root"`
+	BlockHash string `json:"block_hash"`
+
+	// Status / PreviousStatus follow eth.v1.PayloadStatus enum semantics:
+	// 0=PENDING, 1=FULL, 2=EMPTY, 3=INVALID.
+	Status         uint32 `json:"status"`
+	PreviousStatus uint32 `json:"previous_status"`
+
+	PayloadTimelinessVote uint64 `json:"payload_timeliness_vote"`
+	DataAvailableVote     uint64 `json:"data_available_vote"`
+	PTCSize               uint64 `json:"ptc_size"`
+}
+
+// TraceEventBeaconSyntheticBuilderPendingPaymentSettlement represents an
+// epoch-boundary builder pending payment settle/drop decision observed from
+// beacon node internals (TYSM-instrumented). EIP-7732 ePBS.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticBuilderPendingPaymentSettlement struct {
+	TraceEventPayloadMetaData
+
+	ResolvedAt time.Time `json:"resolved_at"`
+
+	Epoch        uint64 `json:"epoch"`
+	BuilderIndex uint64 `json:"builder_index"`
+	FeeRecipient string `json:"fee_recipient"`
+
+	// Amount, Weight, Quorum are Gwei.
+	Amount uint64 `json:"amount"`
+	Weight uint64 `json:"weight"`
+	Quorum uint64 `json:"quorum"`
+
+	// Outcome follows eth.v1.BuilderPendingPaymentOutcome enum semantics:
+	// 0=SETTLED, 1=DROPPED.
+	Outcome uint32 `json:"outcome"`
+}

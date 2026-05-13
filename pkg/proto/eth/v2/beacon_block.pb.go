@@ -3078,7 +3078,7 @@ type BeaconBlockBodyGloas struct {
 	SignedExecutionPayloadBid *v1.SignedExecutionPayloadBid `protobuf:"bytes,11,opt,name=signed_execution_payload_bid,proto3" json:"signed_execution_payload_bid,omitempty"`
 	// EIP-7732 ePBS: Aggregated PTC attestations (max 4 per block).
 	PayloadAttestations []*v1.PayloadAttestation `protobuf:"bytes,12,rep,name=payload_attestations,proto3" json:"payload_attestations,omitempty"`
-	// EIP-7732 ePBS + consensus-specs PR #5094 (deferred payload processing):
+	// EIP-7732 ePBS deferred payload processing:
 	// execution requests of the *parent* block's payload, processed in this
 	// block's state transition. Replaces the per-block execution_requests that
 	// existed before deferred processing was introduced.

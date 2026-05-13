@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
 	sync "sync"
@@ -82,12 +83,24 @@ func (m *EventBlock_Phase0Block) MarshalToVT(dAtA []byte) (int, error) {
 func (m *EventBlock_Phase0Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Phase0Block != nil {
-		size, err := m.Phase0Block.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Phase0Block).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Phase0Block)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -207,6 +220,25 @@ func (m *EventBlock_FuluBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
+func (m *EventBlock_GloasBlock) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *EventBlock_GloasBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GloasBlock != nil {
+		size, err := m.GloasBlock.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
+	}
+	return len(dAtA) - i, nil
+}
 func (m *EventBlockV2) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -269,12 +301,24 @@ func (m *EventBlockV2_Phase0Block) MarshalToVT(dAtA []byte) (int, error) {
 func (m *EventBlockV2_Phase0Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Phase0Block != nil {
-		size, err := m.Phase0Block.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Phase0Block).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Phase0Block)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -394,6 +438,25 @@ func (m *EventBlockV2_FuluBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
+func (m *EventBlockV2_GloasBlock) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *EventBlockV2_GloasBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GloasBlock != nil {
+		size, err := m.GloasBlock.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x52
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_EventBlock = sync.Pool{
 	New: func() interface{} {
@@ -423,6 +486,9 @@ func (m *EventBlock) ResetVT() {
 		}
 		if oneof, ok := m.Message.(*EventBlock_FuluBlock); ok {
 			oneof.FuluBlock.ReturnToVTPool()
+		}
+		if oneof, ok := m.Message.(*EventBlock_GloasBlock); ok {
+			oneof.GloasBlock.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -466,6 +532,9 @@ func (m *EventBlockV2) ResetVT() {
 		if oneof, ok := m.Message.(*EventBlockV2_FuluBlock); ok {
 			oneof.FuluBlock.ReturnToVTPool()
 		}
+		if oneof, ok := m.Message.(*EventBlockV2_GloasBlock); ok {
+			oneof.GloasBlock.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -505,7 +574,13 @@ func (m *EventBlock_Phase0Block) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Phase0Block != nil {
-		l = m.Phase0Block.SizeVT()
+		if size, ok := interface{}(m.Phase0Block).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Phase0Block)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -582,6 +657,18 @@ func (m *EventBlock_FuluBlock) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *EventBlock_GloasBlock) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GloasBlock != nil {
+		l = m.GloasBlock.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *EventBlockV2) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -609,7 +696,13 @@ func (m *EventBlockV2_Phase0Block) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Phase0Block != nil {
-		l = m.Phase0Block.SizeVT()
+		if size, ok := interface{}(m.Phase0Block).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Phase0Block)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -686,6 +779,18 @@ func (m *EventBlockV2_FuluBlock) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *EventBlockV2_GloasBlock) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GloasBlock != nil {
+		l = m.GloasBlock.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -745,13 +850,29 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Message.(*EventBlock_Phase0Block); ok {
-				if err := oneof.Phase0Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Phase0Block).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Phase0Block); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := v1.BeaconBlockFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Message = &EventBlock_Phase0Block{Phase0Block: v}
 			}
@@ -1053,6 +1174,47 @@ func (m *EventBlock) UnmarshalVT(dAtA []byte) error {
 				m.Message = &EventBlock_FuluBlock{FuluBlock: v}
 			}
 			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GloasBlock", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Message.(*EventBlock_GloasBlock); ok {
+				if err := oneof.GloasBlock.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BeaconBlockGloasFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Message = &EventBlock_GloasBlock{GloasBlock: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1134,13 +1296,29 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Message.(*EventBlockV2_Phase0Block); ok {
-				if err := oneof.Phase0Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Phase0Block).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Phase0Block); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := v1.BeaconBlockV2FromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Message = &EventBlockV2_Phase0Block{Phase0Block: v}
 			}
@@ -1440,6 +1618,47 @@ func (m *EventBlockV2) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Message = &EventBlockV2_FuluBlock{FuluBlock: v}
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GloasBlock", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Message.(*EventBlockV2_GloasBlock); ok {
+				if err := oneof.GloasBlock.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BeaconBlockGloasFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Message = &EventBlockV2_GloasBlock{GloasBlock: v}
 			}
 			iNdEx = postIndex
 		default:

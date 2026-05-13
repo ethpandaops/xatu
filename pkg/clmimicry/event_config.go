@@ -40,6 +40,10 @@ type EventConfig struct {
 	GossipSubProposerPreferencesEnabled       bool `yaml:"gossipSubProposerPreferencesEnabled" default:"true"`
 	EngineAPINewPayloadEnabled                bool `yaml:"engineApiNewPayloadEnabled" default:"false"`
 	EngineAPIGetBlobsEnabled                  bool `yaml:"engineApiGetBlobsEnabled" default:"false"`
+
+	// Beacon synthetic events (TYSM-instrumented internals, EIP-7732 ePBS).
+	BeaconSyntheticPayloadStatusResolvedEnabled           bool `yaml:"beaconSyntheticPayloadStatusResolvedEnabled" default:"true"`
+	BeaconSyntheticBuilderPendingPaymentSettlementEnabled bool `yaml:"beaconSyntheticBuilderPendingPaymentSettlementEnabled" default:"true"`
 }
 
 // Validate validates the event config.

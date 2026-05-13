@@ -12,6 +12,7 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v2"
 	v3 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v3"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/synthetic"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/consensus"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/execution"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/libp2p"
@@ -130,6 +131,11 @@ var (
 	TypeLibP2PTraceGossipSubExecutionPayloadBid       Type = Type(libp2p.TraceGossipSubExecutionPayloadBidType)
 	TypeLibP2PTraceGossipSubPayloadAttestationMessage Type = Type(libp2p.TraceGossipSubPayloadAttestationMessageType)
 	TypeLibP2PTraceGossipSubProposerPreferences       Type = Type(libp2p.TraceGossipSubProposerPreferencesType)
+
+	// EIP-7732 ePBS: synthesized observability events from beacon-node internals
+	// (TYSM-instrumented). No beacon API equivalent today.
+	TypeBeaconSyntheticPayloadStatusResolved           Type = synthetic.PayloadStatusResolvedType
+	TypeBeaconSyntheticBuilderPendingPaymentSettlement Type = synthetic.BuilderPendingPaymentSettlementType
 )
 
 type Event interface {
@@ -459,6 +465,14 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubProposerPreferences, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubProposerPreferences(router.log, event), nil
+	})
+
+	// EIP-7732 ePBS: synthesized observability events (TYSM-instrumented)
+	router.RegisterHandler(TypeBeaconSyntheticPayloadStatusResolved, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return synthetic.NewPayloadStatusResolved(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconSyntheticBuilderPendingPaymentSettlement, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return synthetic.NewBuilderPendingPaymentSettlement(router.log, event), nil
 	})
 
 	return router

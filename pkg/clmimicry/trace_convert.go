@@ -1016,12 +1016,27 @@ func TraceEventToBeaconSyntheticPayloadStatusResolved(event *TraceEvent) (*ethv1
 		//nolint:gosec // enum value bounded to small range (PENDING/FULL/EMPTY/INVALID).
 		Status: ethv1.PayloadStatus(int32(typed.Status)),
 		//nolint:gosec // enum value bounded to small range (PENDING/FULL/EMPTY/INVALID).
-		PreviousStatus:        ethv1.PayloadStatus(int32(typed.PreviousStatus)),
-		PayloadTimelinessVote: wrapperspb.UInt64(typed.PayloadTimelinessVote),
-		DataAvailableVote:     wrapperspb.UInt64(typed.DataAvailableVote),
-		PtcSize:               wrapperspb.UInt64(typed.PTCSize),
-		ResolvedAt:            timestamppb.New(typed.ResolvedAt),
+		PreviousStatus:                 ethv1.PayloadStatus(int32(typed.PreviousStatus)),
+		PayloadTimelinessVotesPositive: wrapperspb.UInt64(typed.PayloadTimelinessVotesPositive),
+		PayloadTimelinessVotesNegative: optionalUInt64(typed.PayloadTimelinessVotesNegative),
+		PayloadTimelinessVotesAbsent:   optionalUInt64(typed.PayloadTimelinessVotesAbsent),
+		DataAvailableVotesPositive:     wrapperspb.UInt64(typed.DataAvailableVotesPositive),
+		DataAvailableVotesNegative:     optionalUInt64(typed.DataAvailableVotesNegative),
+		DataAvailableVotesAbsent:       optionalUInt64(typed.DataAvailableVotesAbsent),
+		PtcSize:                        wrapperspb.UInt64(typed.PTCSize),
+		ResolvedAt:                     timestamppb.New(typed.ResolvedAt),
 	}, nil
+}
+
+// optionalUInt64 converts a *uint64 to a *wrapperspb.UInt64Value. Returns
+// nil when the source is nil, preserving the three-state semantic from
+// consensus-specs PR #5180 (Optional[boolean] PTC votes).
+func optionalUInt64(v *uint64) *wrapperspb.UInt64Value {
+	if v == nil {
+		return nil
+	}
+
+	return wrapperspb.UInt64(*v)
 }
 
 // TraceEventToBeaconSyntheticBuilderPendingPaymentSettlement converts a TraceEvent

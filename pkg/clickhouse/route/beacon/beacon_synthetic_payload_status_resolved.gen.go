@@ -24,8 +24,12 @@ type beaconSyntheticPayloadStatusResolvedBatch struct {
 	BlockHash                                 route.SafeColFixedStr
 	Status                                    proto.ColStr
 	PreviousStatus                            proto.ColStr
-	PayloadTimelinessVote                     proto.ColUInt64
-	DataAvailableVote                         proto.ColUInt64
+	PayloadTimelinessVotesPositive            proto.ColUInt64
+	PayloadTimelinessVotesNegative            *proto.ColNullable[uint64]
+	PayloadTimelinessVotesAbsent              *proto.ColNullable[uint64]
+	DataAvailableVotesPositive                proto.ColUInt64
+	DataAvailableVotesNegative                *proto.ColNullable[uint64]
+	DataAvailableVotesAbsent                  *proto.ColNullable[uint64]
 	PtcSize                                   proto.ColUInt64
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
@@ -54,15 +58,19 @@ type beaconSyntheticPayloadStatusResolvedBatch struct {
 
 func newbeaconSyntheticPayloadStatusResolvedBatch() *beaconSyntheticPayloadStatusResolvedBatch {
 	return &beaconSyntheticPayloadStatusResolvedBatch{
-		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
-		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
-		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
-		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
-		MetaClientGeoAutonomousSystemNumber: new(proto.ColUInt32).Nullable(),
+		EventDateTime:                             func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		BlockRoot:                                 func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BlockHash:                                 func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		PayloadTimelinessVotesNegative:            new(proto.ColUInt64).Nullable(),
+		PayloadTimelinessVotesAbsent:              new(proto.ColUInt64).Nullable(),
+		DataAvailableVotesNegative:                new(proto.ColUInt64).Nullable(),
+		DataAvailableVotesAbsent:                  new(proto.ColUInt64).Nullable(),
+		MetaClientIP:                              new(proto.ColIPv6).Nullable(),
+		MetaClientGeoLongitude:                    new(proto.ColFloat64).Nullable(),
+		MetaClientGeoLatitude:                     new(proto.ColFloat64).Nullable(),
+		MetaClientGeoAutonomousSystemNumber:       new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
-		MetaLabels: proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
+		MetaLabels:                                proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
 	}
 }
 
@@ -139,8 +147,12 @@ func (b *beaconSyntheticPayloadStatusResolvedBatch) Input() proto.Input {
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "status", Data: &b.Status},
 		{Name: "previous_status", Data: &b.PreviousStatus},
-		{Name: "payload_timeliness_vote", Data: &b.PayloadTimelinessVote},
-		{Name: "data_available_vote", Data: &b.DataAvailableVote},
+		{Name: "payload_timeliness_votes_positive", Data: &b.PayloadTimelinessVotesPositive},
+		{Name: "payload_timeliness_votes_negative", Data: b.PayloadTimelinessVotesNegative},
+		{Name: "payload_timeliness_votes_absent", Data: b.PayloadTimelinessVotesAbsent},
+		{Name: "data_available_votes_positive", Data: &b.DataAvailableVotesPositive},
+		{Name: "data_available_votes_negative", Data: b.DataAvailableVotesNegative},
+		{Name: "data_available_votes_absent", Data: b.DataAvailableVotesAbsent},
 		{Name: "ptc_size", Data: &b.PtcSize},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_id", Data: &b.MetaClientID},
@@ -179,8 +191,12 @@ func (b *beaconSyntheticPayloadStatusResolvedBatch) Reset() {
 	b.BlockHash.Reset()
 	b.Status.Reset()
 	b.PreviousStatus.Reset()
-	b.PayloadTimelinessVote.Reset()
-	b.DataAvailableVote.Reset()
+	b.PayloadTimelinessVotesPositive.Reset()
+	b.PayloadTimelinessVotesNegative.Reset()
+	b.PayloadTimelinessVotesAbsent.Reset()
+	b.DataAvailableVotesPositive.Reset()
+	b.DataAvailableVotesNegative.Reset()
+	b.DataAvailableVotesAbsent.Reset()
 	b.PtcSize.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientID.Reset()
@@ -212,7 +228,7 @@ func (b *beaconSyntheticPayloadStatusResolvedBatch) Snapshot() []map[string]any 
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 36)
+		row := make(map[string]any, 40)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -224,8 +240,28 @@ func (b *beaconSyntheticPayloadStatusResolvedBatch) Snapshot() []map[string]any 
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["status"] = b.Status.Row(i)
 		row["previous_status"] = b.PreviousStatus.Row(i)
-		row["payload_timeliness_vote"] = b.PayloadTimelinessVote.Row(i)
-		row["data_available_vote"] = b.DataAvailableVote.Row(i)
+		row["payload_timeliness_votes_positive"] = b.PayloadTimelinessVotesPositive.Row(i)
+		if v := b.PayloadTimelinessVotesNegative.Row(i); v.Set {
+			row["payload_timeliness_votes_negative"] = v.Value
+		} else {
+			row["payload_timeliness_votes_negative"] = nil
+		}
+		if v := b.PayloadTimelinessVotesAbsent.Row(i); v.Set {
+			row["payload_timeliness_votes_absent"] = v.Value
+		} else {
+			row["payload_timeliness_votes_absent"] = nil
+		}
+		row["data_available_votes_positive"] = b.DataAvailableVotesPositive.Row(i)
+		if v := b.DataAvailableVotesNegative.Row(i); v.Set {
+			row["data_available_votes_negative"] = v.Value
+		} else {
+			row["data_available_votes_negative"] = nil
+		}
+		if v := b.DataAvailableVotesAbsent.Row(i); v.Set {
+			row["data_available_votes_absent"] = v.Value
+		} else {
+			row["data_available_votes_absent"] = nil
+		}
 		row["ptc_size"] = b.PtcSize.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_id"] = b.MetaClientID.Row(i)

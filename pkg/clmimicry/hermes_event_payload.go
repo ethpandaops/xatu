@@ -247,6 +247,13 @@ type TraceEventConsensusEngineAPIGetBlobs struct {
 // payload status transition observed from beacon node internals (TYSM-instrumented).
 // EIP-7732 ePBS.
 //
+// PTC vote counts follow the three-state model introduced by consensus-specs
+// PR #5180 (Optional[boolean]): a validator may vote positive, vote negative,
+// or not vote at all. *_VotesPositive is always populated (the existing PTC
+// quorum metric); *_VotesNegative and *_VotesAbsent are *uint64 — nil when
+// the emitting CL doesn't surface the three-state breakdown. The relation
+// positive + negative + absent == ptc_size holds when all three are non-nil.
+//
 //nolint:tagliatelle // JSON tags match expected format for compatibility
 type TraceEventBeaconSyntheticPayloadStatusResolved struct {
 	TraceEventPayloadMetaData
@@ -262,9 +269,15 @@ type TraceEventBeaconSyntheticPayloadStatusResolved struct {
 	Status         uint32 `json:"status"`
 	PreviousStatus uint32 `json:"previous_status"`
 
-	PayloadTimelinessVote uint64 `json:"payload_timeliness_vote"`
-	DataAvailableVote     uint64 `json:"data_available_vote"`
-	PTCSize               uint64 `json:"ptc_size"`
+	PayloadTimelinessVotesPositive uint64  `json:"payload_timeliness_votes_positive"`
+	PayloadTimelinessVotesNegative *uint64 `json:"payload_timeliness_votes_negative,omitempty"`
+	PayloadTimelinessVotesAbsent   *uint64 `json:"payload_timeliness_votes_absent,omitempty"`
+
+	DataAvailableVotesPositive uint64  `json:"data_available_votes_positive"`
+	DataAvailableVotesNegative *uint64 `json:"data_available_votes_negative,omitempty"`
+	DataAvailableVotesAbsent   *uint64 `json:"data_available_votes_absent,omitempty"`
+
+	PTCSize uint64 `json:"ptc_size"`
 }
 
 // TraceEventBeaconSyntheticBuilderPendingPaymentSettlement represents an

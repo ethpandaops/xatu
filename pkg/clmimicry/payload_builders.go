@@ -258,23 +258,36 @@ func NewConsensusEngineAPIGetBlobsPayload(
 // Beacon synthetic payload builders (EIP-7732 ePBS, TYSM-instrumented)
 
 // NewBeaconSyntheticPayloadStatusResolvedPayload creates a payload-status-resolved event.
+//
+// The PTC three-state vote breakdown (positive/negative/absent) follows
+// consensus-specs PR #5180. Positive counts are always known; negative and
+// absent counts are nil when the emitting CL hasn't surfaced the
+// Optional[boolean] tracking yet.
 func NewBeaconSyntheticPayloadStatusResolvedPayload(
 	resolvedAt time.Time,
 	slot uint64,
 	blockRoot, blockHash string,
 	status, previousStatus uint32,
-	payloadTimelinessVote, dataAvailableVote, ptcSize uint64,
+	payloadTimelinessVotesPositive uint64,
+	payloadTimelinessVotesNegative, payloadTimelinessVotesAbsent *uint64,
+	dataAvailableVotesPositive uint64,
+	dataAvailableVotesNegative, dataAvailableVotesAbsent *uint64,
+	ptcSize uint64,
 ) *TraceEventBeaconSyntheticPayloadStatusResolved {
 	return &TraceEventBeaconSyntheticPayloadStatusResolved{
-		ResolvedAt:            resolvedAt,
-		Slot:                  slot,
-		BlockRoot:             blockRoot,
-		BlockHash:             blockHash,
-		Status:                status,
-		PreviousStatus:        previousStatus,
-		PayloadTimelinessVote: payloadTimelinessVote,
-		DataAvailableVote:     dataAvailableVote,
-		PTCSize:               ptcSize,
+		ResolvedAt:                     resolvedAt,
+		Slot:                           slot,
+		BlockRoot:                      blockRoot,
+		BlockHash:                      blockHash,
+		Status:                         status,
+		PreviousStatus:                 previousStatus,
+		PayloadTimelinessVotesPositive: payloadTimelinessVotesPositive,
+		PayloadTimelinessVotesNegative: payloadTimelinessVotesNegative,
+		PayloadTimelinessVotesAbsent:   payloadTimelinessVotesAbsent,
+		DataAvailableVotesPositive:     dataAvailableVotesPositive,
+		DataAvailableVotesNegative:     dataAvailableVotesNegative,
+		DataAvailableVotesAbsent:       dataAvailableVotesAbsent,
+		PTCSize:                        ptcSize,
 	}
 }
 

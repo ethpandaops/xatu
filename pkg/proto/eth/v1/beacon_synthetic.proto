@@ -37,6 +37,15 @@ enum BuilderPendingPaymentOutcome {
 // PayloadStatusResolved is emitted observe-only when fork choice resolves
 // a slot's payload status. Fires on every beacon node, every transition
 // (a slot may go PENDING -> FULL or PENDING -> EMPTY, etc.).
+//
+// PTC vote counts follow the three-state model introduced by
+// consensus-specs PR #5180 (`Optional[boolean]`): a validator may vote
+// positive, vote negative, or not vote at all. `payload_timeliness_votes_positive`
+// is always populated (the existing PTC quorum metric); the negative and
+// absent counts are populated only once the emitting CL surfaces the
+// three-state breakdown, and are NULL otherwise. The relation
+// `positive + negative + absent == ptc_size` holds when all three are
+// non-NULL.
 message PayloadStatusResolved {
   google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
@@ -48,15 +57,36 @@ message PayloadStatusResolved {
 
   PayloadStatus previous_status = 5 [ json_name = "previous_status" ];
 
-  // PayloadTimelinessVote is the sum of PTC votes with payload_present=true.
-  google.protobuf.UInt64Value payload_timeliness_vote = 6
-      [ json_name = "payload_timeliness_vote" ];
+  // Count of PTC votes with payload_present=true.
+  google.protobuf.UInt64Value payload_timeliness_votes_positive = 6
+      [ json_name = "payload_timeliness_votes_positive" ];
 
-  // DataAvailableVote is the sum of PTC votes with blob_data_available=true.
-  google.protobuf.UInt64Value data_available_vote = 7
-      [ json_name = "data_available_vote" ];
+  // Count of PTC votes with payload_present=false (explicit negative).
+  // NULL when the CL doesn't surface the three-state breakdown.
+  google.protobuf.UInt64Value payload_timeliness_votes_negative = 10
+      [ json_name = "payload_timeliness_votes_negative" ];
 
-  // PtcSize is the total PTC committee size (typically 512).
+  // Count of PTC seats with no vote observed (`Optional[bool] == None`).
+  // NULL when the CL doesn't surface the three-state breakdown.
+  google.protobuf.UInt64Value payload_timeliness_votes_absent = 11
+      [ json_name = "payload_timeliness_votes_absent" ];
+
+  // Count of PTC votes with blob_data_available=true.
+  google.protobuf.UInt64Value data_available_votes_positive = 7
+      [ json_name = "data_available_votes_positive" ];
+
+  // Count of PTC votes with blob_data_available=false (explicit negative).
+  // NULL when the CL doesn't surface the three-state breakdown.
+  google.protobuf.UInt64Value data_available_votes_negative = 12
+      [ json_name = "data_available_votes_negative" ];
+
+  // Count of PTC seats with no data-availability vote observed
+  // (`Optional[bool] == None`). NULL when the CL doesn't surface the
+  // three-state breakdown.
+  google.protobuf.UInt64Value data_available_votes_absent = 13
+      [ json_name = "data_available_votes_absent" ];
+
+  // Total PTC committee size (typically 512).
   google.protobuf.UInt64Value ptc_size = 8 [ json_name = "ptc_size" ];
 
   // ResolvedAt is the wall-clock time the beacon node resolved this status.

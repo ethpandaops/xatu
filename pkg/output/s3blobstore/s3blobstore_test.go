@@ -58,8 +58,8 @@ func (f *fakeUploader) PutObject(ctx context.Context, key string, body []byte, o
 	defer f.inflight.Add(-1)
 
 	for {
-		max := f.maxInflight.Load()
-		if cur <= max || f.maxInflight.CompareAndSwap(max, cur) {
+		peak := f.maxInflight.Load()
+		if cur <= peak || f.maxInflight.CompareAndSwap(peak, cur) {
 			break
 		}
 	}
@@ -314,8 +314,10 @@ func TestStart_ChecksBucketExistence(t *testing.T) {
 // checkpoint), and the other 15 puts still happen (proving the failed
 // blob did not poison the rest of the batch).
 func TestHandleNewDecoratedEvents_ConcurrentPutOneFails(t *testing.T) {
-	const total = 16
-	const poisonIdx = 7
+	const (
+		total     = 16
+		poisonIdx = 7
+	)
 
 	putErr := errors.New("upload boom")
 

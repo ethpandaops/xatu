@@ -68,6 +68,10 @@ func TestCompletenessMinimalFlatten(t *testing.T) {
 	}
 }
 
+// supersededByV2 is the shared justification for V1 enum values that are
+// kept for proto wire compatibility but never get a ClickHouse route.
+const supersededByV2 = "deprecated, superseded by _V2"
+
 // eventNamesWithoutRoute lists Event_Name values that intentionally have no
 // ClickHouse route. New entries here must come with a justification —
 // typically a deprecated V1 event superseded by a V2 sibling, or an event
@@ -75,16 +79,16 @@ func TestCompletenessMinimalFlatten(t *testing.T) {
 var eventNamesWithoutRoute = map[xatu.Event_Name]string{
 	xatu.Event_BEACON_API_ETH_V1_EVENTS_UNKNOWN:                "sentinel zero value",
 	xatu.Event_LIBP2P_TRACE_UNKNOWN:                            "sentinel for unhandled libp2p traces",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK:                  "deprecated, superseded by BEACON_API_ETH_V1_EVENTS_BLOCK_V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG:            "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT:   "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD:                   "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:         "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION:            "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF: "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK:                  "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:             "deprecated, superseded by _V2",
-	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:       "deprecated, superseded by _V2",
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK:                  supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_CHAIN_REORG:            supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT:   supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD:                   supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT:         supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION:            supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF: supersededByV2,
+	xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK:                  supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE:             supersededByV2,
+	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG:       supersededByV2,
 	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2:          "debug fork choice is sentry-tracked but not ClickHouse-bound",
 	xatu.Event_BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2:    "debug fork choice is sentry-tracked but not ClickHouse-bound",
 	xatu.Event_BEACON_P2P_ATTESTATION:                          "sentry-only legacy event without a ClickHouse table",
@@ -102,7 +106,7 @@ func TestCompletenessEveryEventNameHasRoute(t *testing.T) {
 
 	for _, r := range allRoutes {
 		for _, name := range r.EventNames() {
-			routedEventNames[name] = append(routedEventNames[name], string(r.TableName()))
+			routedEventNames[name] = append(routedEventNames[name], r.TableName())
 		}
 	}
 

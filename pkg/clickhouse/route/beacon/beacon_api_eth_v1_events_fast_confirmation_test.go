@@ -31,9 +31,9 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"slot":              uint32(100),
-		"block":             "0xfastconfirmblock",
-		"meta_client_name":  "test-client",
-		"meta_network_name": "mainnet",
+		"slot":              uint32(100),          //nolint:goconst // shared with sibling event tests
+		"block":             "0xfastconfirmblock", //nolint:goconst // shared with sibling event tests
+		"meta_client_name":  "test-client",        //nolint:goconst // shared with sibling event tests
+		"meta_network_name": "mainnet",            //nolint:goconst // shared with sibling event tests
 	})
 }

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
+	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
 

@@ -3,7 +3,7 @@ package ethereum
 import (
 	"crypto/sha256"
 
-	"github.com/attestantio/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 )
 
 const blobCommitmentVersionKZG uint8 = 0x01

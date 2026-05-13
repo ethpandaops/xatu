@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/attestantio/go-eth2-client/api"
-	"github.com/attestantio/go-eth2-client/spec"
-	"github.com/attestantio/go-eth2-client/spec/deneb"
-	"github.com/attestantio/go-eth2-client/spec/phase0"
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -434,7 +434,12 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 
 		switch block.Version {
 		case spec.DataVersionBellatrix:
-			baseFee = new(big.Int).SetBytes(block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGas[:])
+			le := block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGasLE
+			var be [32]byte
+			for i := 0; i < 32; i++ {
+				be[i] = le[31-i]
+			}
+			baseFee = new(big.Int).SetBytes(be[:])
 		case spec.DataVersionDeneb:
 			executionPayload := block.Deneb.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())

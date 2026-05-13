@@ -11,16 +11,16 @@ require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
 	github.com/OffchainLabs/prysm/v7 v7.0.0
-	github.com/attestantio/go-eth2-client v0.27.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.1
-	github.com/ethpandaops/beacon v0.65.0
-	github.com/ethpandaops/ethcore v0.0.0-20260506100832-68848ea0ddaa
+	github.com/ethpandaops/beacon v0.67.1-0.20260513071905-c8b3f94737a5
+	github.com/ethpandaops/ethcore v0.0.0-20260513080115-92929a109192
 	github.com/ethpandaops/ethwallclock v0.4.0
+	github.com/ethpandaops/go-eth2-client v0.1.2
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -71,6 +71,7 @@ require (
 )
 
 require (
+	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
@@ -78,6 +79,7 @@ require (
 	github.com/moby/moby/api v1.54.1 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
+	github.com/pk910/hashtree-bindings v0.1.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
@@ -144,7 +146,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-redsync/redsync/v4 v4.13.0 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
+	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gofrs/uuid/v5 v5.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -253,7 +255,7 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v0.0.6 // indirect
+	github.com/pk910/dynamic-ssz v1.3.2-0.20260505131440-111bcb265c8f // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
@@ -321,7 +323,6 @@ require (
 	golang.org/x/tools v0.43.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
-	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -3,8 +3,8 @@ package v2
 import (
 	"fmt"
 
-	"github.com/attestantio/go-eth2-client/spec"
 	"github.com/ethpandaops/ethwallclock"
+	"github.com/ethpandaops/go-eth2-client/spec"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/types/known/timestamppb"

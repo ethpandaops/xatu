@@ -20,7 +20,7 @@ require (
 	github.com/ethpandaops/beacon v0.69.0
 	github.com/ethpandaops/ethcore v0.0.0-20260513090510-be891b9812d8
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ethpandaops/go-eth2-client v0.1.3-0.20260514055930-70e764a00d26
+	github.com/ethpandaops/go-eth2-client v0.1.3-0.20260514061636-bc9a4456dc4f
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6

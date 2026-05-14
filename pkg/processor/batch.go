@@ -304,10 +304,13 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		}
 
 		for _, ti := range p.traceItems {
-			if ti.resultCh != nil {
-				ti.resultCh <- err
-				close(ti.resultCh)
+			if ti.resultCh == nil {
+				continue
 			}
+
+			ti.resultCh <- err
+
+			close(ti.resultCh)
 		}
 	}
 

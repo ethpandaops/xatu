@@ -150,7 +150,7 @@ func (p *Pipeline) createSinks() ([]output.Sink, error) {
 			out.SinkType,
 			out.Config,
 			p.log,
-			out.FilterConfig,
+			&out.FilterConfig,
 			*out.ShippingMethod,
 		)
 		if err != nil {

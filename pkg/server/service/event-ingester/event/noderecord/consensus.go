@@ -123,7 +123,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	// Validate and parse IP address.
 	ip := net.ParseIP(consensusData.Ip.GetValue())
 	if ip == nil {
-		b.log.WithField("ip", consensusData.Ip.GetValue()).WithContext(ctx).Error("failed to parse IP address")
+		b.log.WithField("ip", consensusData.GetIp().GetValue()).WithContext(ctx).Error("failed to parse IP address")
 
 		return meta
 	}
@@ -132,7 +132,7 @@ func (b *Consensus) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 		if err != nil {
-			b.log.WithField("ip", consensusData.Ip.GetValue()).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
+			b.log.WithField("ip", consensusData.GetIp().GetValue()).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 
 			return meta
 		}

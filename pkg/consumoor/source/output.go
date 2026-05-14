@@ -334,10 +334,11 @@ func (o *xatuClickHouseOutput) processGroup(
 			continue
 		}
 
-		var key [24]byte
-
 		tid := sc.TraceID()
 		sid := sc.SpanID()
+
+		var key [24]byte
+
 		copy(key[:16], tid[:])
 		copy(key[16:], sid[:])
 

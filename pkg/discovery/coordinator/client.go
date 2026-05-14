@@ -142,7 +142,7 @@ func (c *Client) ListStaleConsensusNodeRecords(ctx context.Context) ([]string, e
 }
 
 func (c *Client) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	c.log.WithField("record", status.NodeRecord).WithContext(ctx).Debug("found execution node status, sending to coordinator")
+	c.log.WithField("record", status.GetNodeRecord()).WithContext(ctx).Debug("found execution node status, sending to coordinator")
 
 	req := xatu.CreateExecutionNodeRecordStatusRequest{
 		Status: status,
@@ -157,7 +157,7 @@ func (c *Client) HandleExecutionNodeRecordStatus(ctx context.Context, status *xa
 }
 
 func (c *Client) HandleConsensusNodeRecordStatus(ctx context.Context, status *xatu.ConsensusNodeStatus) error {
-	c.log.WithField("record", status.NodeRecord).WithContext(ctx).Debug("found consensus node status, sending to coordinator")
+	c.log.WithField("record", status.GetNodeRecord()).WithContext(ctx).Debug("found consensus node status, sending to coordinator")
 
 	req := xatu.CreateConsensusNodeRecordStatusRequest{
 		Status: status,

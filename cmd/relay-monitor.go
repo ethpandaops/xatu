@@ -81,7 +81,7 @@ var relayMonitorCmd = &cobra.Command{
 
 		shutdownObs, err := observability.Setup(cmd.Context(), log,
 			xatu.WithModule(xatu.ModuleName_RELAY_MONITOR), xatu.Short(),
-			config.Tracing,
+			&config.Tracing,
 		)
 		if err != nil {
 			log.Fatal(err)

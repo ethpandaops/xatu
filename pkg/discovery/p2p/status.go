@@ -350,14 +350,14 @@ func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context
 	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
 		// exclude execution status for network ids that are not in the list
 		if len(networkIds) > 0 && !slices.Contains(networkIds, status.NetworkId) {
-			s.log.WithField("network_id", status.NetworkId).WithContext(ctx).Warn("skipping execution status for network id")
+			s.log.WithField("network_id", status.GetNetworkId()).WithContext(ctx).Warn("skipping execution status for network id")
 
 			return
 		}
 
 		// exclude execution status for fork id hashes that are not in the list
 		if len(forkIdHashes) > 0 && !slices.Contains(forkIdHashes, fmt.Sprintf("0x%x", status.ForkId.Hash)) {
-			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.ForkId.Hash)).WithContext(ctx).Warn("skipping execution status for fork id hash")
+			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.GetForkId().GetHash())).WithContext(ctx).Warn("skipping execution status for fork id hash")
 
 			return
 		}

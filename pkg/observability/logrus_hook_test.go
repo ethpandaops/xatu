@@ -17,7 +17,10 @@ func TestTraceContextHook_NoSpan(t *testing.T) {
 
 	log.WithContext(context.Background()).Info("hello")
 
-	entry := decode(t, log.Out.(*bytes.Buffer))
+	buf, ok := log.Out.(*bytes.Buffer)
+	require.True(t, ok)
+
+	entry := decode(t, buf)
 	_, hasTrace := entry["trace_id"]
 	require.False(t, hasTrace, "trace_id should not be set when no span is active")
 }
@@ -35,7 +38,10 @@ func TestTraceContextHook_WithSpan(t *testing.T) {
 
 	log.WithContext(ctx).Info("hello")
 
-	entry := decode(t, log.Out.(*bytes.Buffer))
+	buf, ok := log.Out.(*bytes.Buffer)
+	require.True(t, ok)
+
+	entry := decode(t, buf)
 
 	require.Equal(t, span.SpanContext().TraceID().String(), entry["trace_id"])
 	require.Equal(t, span.SpanContext().SpanID().String(), entry["span_id"])

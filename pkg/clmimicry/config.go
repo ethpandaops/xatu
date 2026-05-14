@@ -85,7 +85,7 @@ func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink,
 			out.SinkType,
 			out.Config,
 			log,
-			out.FilterConfig,
+			&out.FilterConfig,
 			*out.ShippingMethod,
 		)
 		if err != nil {

@@ -36,7 +36,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewSink(name string, sinkType SinkType, config *RawMessage, log observability.ContextualLogger, filterConfig pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (Sink, error) {
+func NewSink(name string, sinkType SinkType, config *RawMessage, log observability.ContextualLogger, filterConfig *pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}
@@ -55,7 +55,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return http.New(name, conf, log, &filterConfig, shippingMethod)
+		return http.New(name, conf, log, filterConfig, shippingMethod)
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
@@ -69,7 +69,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return stdout.New(name, conf, log, &filterConfig, shippingMethod)
+		return stdout.New(name, conf, log, filterConfig, shippingMethod)
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
@@ -83,7 +83,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return xatu.New(name, conf, log, &filterConfig, shippingMethod)
+		return xatu.New(name, conf, log, filterConfig, shippingMethod)
 	case SinkTypeKafka:
 		conf := &kafka.Config{}
 
@@ -97,7 +97,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return kafka.New(name, conf, log, &filterConfig, shippingMethod)
+		return kafka.New(name, conf, log, filterConfig, shippingMethod)
 	case SinkTypeClickhouse:
 		conf := &chSink.Config{}
 
@@ -111,7 +111,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return chSink.New(name, conf, log, &filterConfig, shippingMethod)
+		return chSink.New(name, conf, log, filterConfig, shippingMethod)
 	case SinkTypeS3BlobStore:
 		conf := &s3blobstore.Config{}
 
@@ -125,7 +125,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 			return nil, err
 		}
 
-		return s3blobstore.New(name, conf, log, &filterConfig, shippingMethod)
+		return s3blobstore.New(name, conf, log, filterConfig, shippingMethod)
 	default:
 		return nil, fmt.Errorf("sink type %s is unknown", sinkType)
 	}

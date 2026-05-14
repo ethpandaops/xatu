@@ -123,7 +123,7 @@ func (c *Config) createSink(out *output.Config, log observability.ContextualLogg
 		out.SinkType,
 		out.Config,
 		log,
-		out.FilterConfig,
+		&out.FilterConfig,
 		*out.ShippingMethod,
 	)
 }

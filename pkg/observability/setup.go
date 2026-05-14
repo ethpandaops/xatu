@@ -16,9 +16,9 @@ func Setup(
 	ctx context.Context,
 	log *logrus.Logger,
 	serviceName, serviceVersion string,
-	traceCfg TracingConfig,
+	traceCfg *TracingConfig,
 ) (shutdown func(context.Context) error, err error) {
-	var shutdownFuncs []func(context.Context) error
+	shutdownFuncs := make([]func(context.Context) error, 0, 1)
 
 	shutdown = func(ctx context.Context) error {
 		var sErr error

@@ -81,7 +81,7 @@ var mimicryCmd = &cobra.Command{
 
 		shutdownObs, err := observability.Setup(cmd.Context(), log,
 			xatu.WithModule(xatu.ModuleName_EL_MIMICRY), xatu.Short(),
-			config.Tracing,
+			&config.Tracing,
 		)
 		if err != nil {
 			log.Fatal(err)

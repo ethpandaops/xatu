@@ -140,7 +140,7 @@ var cannonCmd = &cobra.Command{
 
 		shutdownObs, err := observability.Setup(cmd.Context(), log,
 			xatu.WithModule(xatu.ModuleName_CANNON), xatu.Short(),
-			config.Tracing,
+			&config.Tracing,
 		)
 		if err != nil {
 			log.Fatal(err)

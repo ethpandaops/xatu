@@ -118,7 +118,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	// Validate and parse IP address.
 	ip := net.ParseIP(executionData.Ip.GetValue())
 	if ip == nil {
-		b.log.WithField("ip", executionData.Ip.GetValue()).WithContext(ctx).Error("failed to parse IP address")
+		b.log.WithField("ip", executionData.GetIp().GetValue()).WithContext(ctx).Error("failed to parse IP address")
 
 		return meta
 	}
@@ -127,7 +127,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 		if err != nil {
-			b.log.WithField("ip", executionData.Ip.GetValue()).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
+			b.log.WithField("ip", executionData.GetIp().GetValue()).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 
 			return meta
 		}

@@ -136,7 +136,7 @@ func (c *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, record
 }
 
 func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	c.log.WithField("record", status.NodeRecord).WithContext(ctx).Debug("found execution node status, sending to coordinator")
+	c.log.WithField("record", status.GetNodeRecord()).WithContext(ctx).Debug("found execution node status, sending to coordinator")
 
 	req := xatu.CreateExecutionNodeRecordStatusRequest{
 		Status: status,

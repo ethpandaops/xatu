@@ -101,7 +101,7 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 	)
 	defer span.End()
 
-	e.log.WithField("events", len(req.Events)).WithContext(ctx).Debug("Received batch of events")
+	e.log.WithField("events", len(req.GetEvents())).WithContext(ctx).Debug("Received batch of events")
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

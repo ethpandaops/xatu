@@ -11,11 +11,6 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -25,6 +20,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -37,7 +38,7 @@ type BeaconBlobDeriverConfig struct {
 }
 
 type BeaconBlobDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BeaconBlobDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -45,7 +46,7 @@ type BeaconBlobDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewBeaconBlobDeriver(log logrus.FieldLogger, config *BeaconBlobDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlobDeriver {
+func NewBeaconBlobDeriver(log observability.ContextualLogger, config *BeaconBlobDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlobDeriver {
 	return &BeaconBlobDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v1/beacon_blob",
@@ -76,12 +77,12 @@ func (b *BeaconBlobDeriver) OnEventsDerived(ctx context.Context, fn func(ctx con
 
 func (b *BeaconBlobDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Beacon blob deriver disabled")
+		b.log.WithContext(ctx).Info("Beacon blob deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Beacon blob deriver enabled")
+	b.log.WithContext(ctx).Info("Beacon blob deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -138,7 +139,7 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -169,12 +170,12 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -285,7 +286,7 @@ func (b *BeaconBlobDeriver) createEventFromBlob(ctx context.Context, blob *deneb
 
 	additionalData, err := b.getAdditionalData(ctx, blob)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to get extra beacon blob data")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to get extra beacon blob data")
 
 		return nil, err
 	} else {

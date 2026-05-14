@@ -16,6 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethpandaops/ethcore/pkg/ethereum/clients"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 //go:generate mockgen -package mock -destination mock/client.mock.go github.com/ethpandaops/xatu/pkg/sentry/execution ClientProvider
@@ -40,7 +42,7 @@ type ClientProvider interface {
 
 // ExecutionClient represents a unified execution client with both WebSocket and RPC capabilities.
 type Client struct {
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	config *Config
 	ctx    context.Context //nolint:containedctx // client ctx only.
 	cancel context.CancelFunc
@@ -63,7 +65,7 @@ type Client struct {
 }
 
 // NewClient creates a new unified execution client.
-func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Client, error) {
+func NewClient(ctx context.Context, log observability.ContextualLogger, config *Config) (*Client, error) {
 	// Validate required configuration.
 	if config.WebsocketEnabled && config.WSAddress == "" {
 		return nil, fmt.Errorf("WSAddress is required")
@@ -96,7 +98,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 			return nil, fmt.Errorf("failed to dial execution node WebSocket: %w", err)
 		}
 
-		client.log.WithField("address", config.WSAddress).Debug("Connected to execution node WS endpoint")
+		client.log.WithField("address", config.WSAddress).WithContext(ctx).Debug("Connected to execution node WS endpoint")
 	}
 
 	// Initialize RPC client (required)
@@ -115,7 +117,7 @@ func NewClient(ctx context.Context, log logrus.FieldLogger, config *Config) (*Cl
 		return nil, fmt.Errorf("failed to dial execution node RPC: %w", err)
 	}
 
-	client.log.WithField("address", config.RPCAddress).Debug("Connected to execution node RPC endpoint")
+	client.log.WithField("address", config.RPCAddress).WithContext(ctx).Debug("Connected to execution node RPC endpoint")
 
 	return client, nil
 }
@@ -135,7 +137,7 @@ func (c *Client) Start(ctx context.Context) error {
 		"client_implementation": c.clientImplementation,
 		"ws_address":            c.config.WSAddress,
 		"rpc_address":           c.config.RPCAddress,
-	}).Info("Connected to execution client")
+	}).WithContext(ctx).Info("Connected to execution client")
 
 	// Start periodic refresh of client metadata (every 5 minutes).
 	go c.startPeriodicMetadataRefresh()
@@ -145,7 +147,7 @@ func (c *Client) Start(ctx context.Context) error {
 
 // Stop stops the execution client.
 func (c *Client) Stop(ctx context.Context) error {
-	c.log.Info("Stopping execution client")
+	c.log.WithContext(ctx).Info("Stopping execution client")
 
 	c.cancel()
 
@@ -445,9 +447,9 @@ func (c *Client) InitSigner(ctx context.Context) {
 
 	// Get chain ID and initialise our signer.
 	if err := c.rpcClient.CallContext(ctx, &chainIDHex, "eth_chainId"); err != nil {
-		c.log.WithError(err).Warn("Failed to get chain ID, using mainnet as default")
+		c.log.WithError(err).WithContext(ctx).Warn("Failed to get chain ID, using mainnet as default")
 	} else if decoded, err := hexutil.DecodeUint64(chainIDHex); err != nil {
-		c.log.WithError(err).Warn("Failed to decode chain ID, using mainnet as default")
+		c.log.WithError(err).WithContext(ctx).Warn("Failed to decode chain ID, using mainnet as default")
 	} else {
 		chainID = decoded
 	}

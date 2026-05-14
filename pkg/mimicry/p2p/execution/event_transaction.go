@@ -9,19 +9,20 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event *types.Transaction) (*xatu.DecoratedEvent, error) {
-	p.log.Debug("Transaction received")
+	p.log.WithContext(ctx).Debug("Transaction received")
 
 	meta, err := p.createNewClientMeta(ctx)
 	if err != nil {
@@ -54,7 +55,7 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 
 	additionalData, err := p.getTransactionData(ctx, event, meta, now)
 	if err != nil {
-		p.log.WithError(err).Error("Failed to get extra transaction data")
+		p.log.WithError(err).WithContext(ctx).Error("Failed to get extra transaction data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_MempoolTransactionV2{
 			MempoolTransactionV2: additionalData,
@@ -72,7 +73,7 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 
 	from, err := p.signer.Sender(event)
 	if err != nil {
-		p.log.WithError(err).Error("failed to get sender")
+		p.log.WithError(err).WithContext(ctx).Error("failed to get sender")
 
 		return nil, err
 	}
@@ -133,12 +134,12 @@ type TransactionHashItem struct {
 }
 
 type TransactionExporter struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	handler func(ctx context.Context, items []*TransactionHashItem) error
 }
 
-func NewTransactionExporter(log logrus.FieldLogger, handler func(ctx context.Context, items []*TransactionHashItem) error) (TransactionExporter, error) {
+func NewTransactionExporter(log observability.ContextualLogger, handler func(ctx context.Context, items []*TransactionHashItem) error) (TransactionExporter, error) {
 	return TransactionExporter{
 		log:     log,
 		handler: handler,
@@ -215,7 +216,7 @@ func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.
 
 	txs, err := p.client.GetPooledTransactions(ctx, hashes)
 	if err != nil {
-		p.log.WithError(err).Warn("Failed to get pooled transactions")
+		p.log.WithError(err).WithContext(ctx).Warn("Failed to get pooled transactions")
 
 		return
 	}
@@ -226,7 +227,7 @@ func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.
 
 	transactions, err := (*eth.PooledTransactionsPacket)(txs).List.Items()
 	if err != nil {
-		p.log.WithError(err).Warn("Failed to decode pooled transactions")
+		p.log.WithError(err).WithContext(ctx).Warn("Failed to decode pooled transactions")
 
 		return
 	}
@@ -239,19 +240,19 @@ func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.
 			seen := meta.Seen
 
 			if seen.IsZero() {
-				p.log.WithField("hash", tx.Hash().String()).Error("Failed to find seen time for transaction")
+				p.log.WithField("hash", tx.Hash().String()).WithContext(ctx).Error("Failed to find seen time for transaction")
 
 				seen = time.Now()
 			}
 
 			event, err := p.handleTransaction(ctx, seen, tx)
 			if err != nil {
-				p.log.WithError(err).Error("Failed to handle transaction")
+				p.log.WithError(err).WithContext(ctx).Error("Failed to handle transaction")
 			}
 
 			if event != nil {
 				if err := p.handlers.DecoratedEvent(ctx, event); err != nil {
-					p.log.WithError(err).Error("Failed to handle transaction")
+					p.log.WithError(err).WithContext(ctx).Error("Failed to handle transaction")
 				}
 			}
 		}

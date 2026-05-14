@@ -12,13 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
-	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
-	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 	ocodes "go.opentelemetry.io/otel/codes"
@@ -27,6 +20,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 
 // Ingester handles HTTP event ingestion.
 type Ingester struct {
-	log      logrus.FieldLogger
+	log      observability.ContextualLogger
 	config   *Config
 	pipeline *eventingester.Pipeline
 	server   *http.Server
@@ -45,8 +45,7 @@ type Ingester struct {
 // The eventIngesterConf is the shared event ingester configuration from services.eventIngester.
 func NewIngester(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	conf *Config,
+	log observability.ContextualLogger, conf *Config,
 	eventIngesterConf *eventingester.Config,
 	clockDrift *time.Duration,
 	geoipProvider geoip.Provider,
@@ -75,7 +74,7 @@ func (i *Ingester) Name() string {
 
 // Start starts the HTTP ingester server.
 func (i *Ingester) Start(ctx context.Context) error {
-	i.log.WithField("addr", i.config.Addr).Info("Starting HTTP ingester")
+	i.log.WithField("addr", i.config.Addr).WithContext(ctx).Info("Starting HTTP ingester")
 
 	if err := i.pipeline.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start pipeline: %w", err)
@@ -100,7 +99,7 @@ func (i *Ingester) Start(ctx context.Context) error {
 
 // Stop stops the HTTP ingester server.
 func (i *Ingester) Stop(ctx context.Context) error {
-	i.log.Info("Stopping HTTP ingester")
+	i.log.WithContext(ctx).Info("Stopping HTTP ingester")
 
 	if err := i.pipeline.Stop(ctx); err != nil {
 		return fmt.Errorf("failed to stop pipeline: %w", err)

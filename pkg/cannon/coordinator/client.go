@@ -6,25 +6,25 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type Client struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Client, error) {
+func New(config *Config, log observability.ContextualLogger) (*Client, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}

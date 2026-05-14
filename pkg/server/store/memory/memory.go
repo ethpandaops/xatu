@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const Type = "memory"
@@ -13,14 +14,14 @@ const Type = "memory"
 type Memory struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	client *ttlcache.Cache[string, string]
 
 	metrics *Metrics
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Memory, error) {
+func New(config *Config, log observability.ContextualLogger) (*Memory, error) {
 	return &Memory{
 		config:  config,
 		log:     log.WithField("store/cache", Type),

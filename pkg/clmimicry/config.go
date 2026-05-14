@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -73,7 +71,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
@@ -125,7 +123,7 @@ func (c *Config) validateSharding() error {
 }
 
 // ApplyOverrides applies any overrides to the config.
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}

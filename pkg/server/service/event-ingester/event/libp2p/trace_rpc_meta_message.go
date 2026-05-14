@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRPCMetaMessage struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRPCMetaMessage(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRPCMetaMessage {
+func NewTraceRPCMetaMessage(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRPCMetaMessage {
 	return &TraceRPCMetaMessage{
 		log:   log.WithField("event", TraceRPCMetaMessageType),
 		event: event,

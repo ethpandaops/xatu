@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type ProposerPayloadDelivered struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewProposerPayloadDelivered(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ProposerPayloadDelivered {
+func NewProposerPayloadDelivered(log observability.ContextualLogger, event *xatu.DecoratedEvent) *ProposerPayloadDelivered {
 	return &ProposerPayloadDelivered{
 		log:   log.WithField("event", ProposerPayloadDeliveredType),
 		event: event,

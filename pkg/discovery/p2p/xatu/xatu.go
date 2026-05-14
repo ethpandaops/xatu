@@ -10,8 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/discovery"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -19,6 +17,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const Type = "xatu"
@@ -30,7 +31,7 @@ type Coordinator struct {
 	discV5  *discovery.DiscV5
 	handler func(ctx context.Context, node *enode.Node, source string) error
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
@@ -38,7 +39,7 @@ type Coordinator struct {
 	scheduler gocron.Scheduler
 }
 
-func New(ctx context.Context, config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Coordinator, error) {
+func New(ctx context.Context, config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log observability.ContextualLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -49,7 +50,7 @@ func New(ctx context.Context, config *Config, handler func(ctx context.Context, 
 
 	// If networkConfig is provided, fetch and apply the devnet configuration
 	if config.NetworkConfig != nil && config.NetworkConfig.URL != "" {
-		log.WithField("url", config.NetworkConfig.URL).Info("Fetching network configuration from URL")
+		log.WithField("url", config.NetworkConfig.URL).WithContext(ctx).Info("Fetching network configuration from URL")
 
 		fetched, err := config.NetworkConfig.Fetch(ctx)
 		if err != nil {
@@ -69,7 +70,7 @@ func New(ctx context.Context, config *Config, handler func(ctx context.Context, 
 			"fork_digests": fetched.ForkDigestHexes(),
 			"boot_nodes":   len(fetched.BootNodes),
 			"enodes":       len(fetched.Enodes),
-		}).Info("Applied network configuration from URL")
+		}).WithContext(ctx).Info("Applied network configuration from URL")
 	}
 
 	opts := []grpc.DialOption{
@@ -141,7 +142,7 @@ func (c *Coordinator) Start(ctx context.Context) error {
 func (c *Coordinator) startSeedDiscovery(ctx context.Context) error {
 	// Use consensus boot nodes (ENRs) for discV5
 	if c.config.DiscV5 && len(c.config.BootNodes) > 0 {
-		c.log.WithField("count", len(c.config.BootNodes)).Info("Starting seed discovery with boot nodes from network config")
+		c.log.WithField("count", len(c.config.BootNodes)).WithContext(ctx).Info("Starting seed discovery with boot nodes from network config")
 
 		if err := c.discV5.UpdateBootNodes(c.config.BootNodes); err != nil {
 			return fmt.Errorf("failed to update discV5 with seed boot nodes: %w", err)
@@ -154,7 +155,7 @@ func (c *Coordinator) startSeedDiscovery(ctx context.Context) error {
 
 	// Use execution enodes for discV4
 	if c.config.DiscV4 && len(c.config.Enodes) > 0 {
-		c.log.WithField("count", len(c.config.Enodes)).Info("Starting seed discovery with enodes from network config")
+		c.log.WithField("count", len(c.config.Enodes)).WithContext(ctx).Info("Starting seed discovery with enodes from network config")
 
 		if err := c.discV4.UpdateBootNodes(c.config.Enodes); err != nil {
 			return fmt.Errorf("failed to update discV4 with seed enodes: %w", err)
@@ -171,7 +172,7 @@ func (c *Coordinator) startSeedDiscovery(ctx context.Context) error {
 func (c *Coordinator) Stop(ctx context.Context) error {
 	if c.scheduler != nil {
 		if err := c.scheduler.Shutdown(); err != nil {
-			c.log.WithError(err).Error("Failed to shutdown scheduler")
+			c.log.WithError(err).WithContext(ctx).Error("Failed to shutdown scheduler")
 		}
 	}
 
@@ -222,19 +223,19 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				res, err := c.pb.GetDiscoveryExecutionNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a execution discovery node record")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to get a execution discovery node record")
 
 					return
 				}
 
 				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to update discV5 boot nodes")
 
 					return
 				}
 
 				if err := c.discV5.Start(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to start discV5")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to start discV5")
 
 					return
 				}
@@ -270,19 +271,19 @@ func (c *Coordinator) startCrons(ctx context.Context) error {
 				res, err := c.pb.GetDiscoveryConsensusNodeRecord(ctx, &req, grpc.UseCompressor(gzip.Name))
 
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get a consensus discovery node record")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to get a consensus discovery node record")
 
 					return
 				}
 
 				if err = c.discV5.UpdateBootNodes([]string{res.NodeRecord}); err != nil {
-					c.log.WithError(err).Error("Failed to update discV5 boot nodes")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to update discV5 boot nodes")
 
 					return
 				}
 
 				if err := c.discV5.Start(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to start discV5")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to start discV5")
 
 					return
 				}

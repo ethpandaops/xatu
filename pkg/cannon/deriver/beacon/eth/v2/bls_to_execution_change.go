@@ -8,16 +8,17 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -35,7 +36,7 @@ type BLSToExecutionChangeDeriverConfig struct {
 }
 
 type BLSToExecutionChangeDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BLSToExecutionChangeDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -43,7 +44,7 @@ type BLSToExecutionChangeDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewBLSToExecutionChangeDeriver(log logrus.FieldLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
+func NewBLSToExecutionChangeDeriver(log observability.ContextualLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
 	return &BLSToExecutionChangeDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/bls_to_execution_change",
@@ -74,12 +75,12 @@ func (b *BLSToExecutionChangeDeriver) ActivationFork() spec.DataVersion {
 
 func (b *BLSToExecutionChangeDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("BLS to execution change deriver disabled")
+		b.log.WithContext(ctx).Info("BLS to execution change deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("BLS to execution change deriver enabled")
+	b.log.WithContext(ctx).Info("BLS to execution change deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -126,7 +127,7 @@ func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -154,12 +155,12 @@ func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -169,7 +170,7 @@ func (b *BLSToExecutionChangeDeriver) run(rctx context.Context) {
 func (b *BLSToExecutionChangeDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}
@@ -244,7 +245,7 @@ func (b *BLSToExecutionChangeDeriver) processSlot(ctx context.Context, slot phas
 	for _, change := range changes {
 		event, err := b.createEvent(ctx, change, blockIdentifier)
 		if err != nil {
-			b.log.WithError(err).Error("Failed to create event")
+			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create event for BLS to execution change %s", change.String())
 		}

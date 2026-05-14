@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	chwriter "github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
@@ -29,10 +33,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // SinkType identifies this sink in output.Config.
@@ -68,7 +68,7 @@ type chWriter interface {
 // xatu server / Kafka path.
 type Sink struct {
 	name             string
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	writer           chWriter
 	router           *chrouter.Engine
 	filter           xatu.EventFilter
@@ -80,8 +80,7 @@ type Sink struct {
 func New(
 	name string,
 	config *Config,
-	log logrus.FieldLogger,
-	filterConfig *xatu.EventFilterConfig,
+	log observability.ContextualLogger, filterConfig *xatu.EventFilterConfig,
 	shippingMethod processor.ShippingMethod,
 ) (*Sink, error) {
 	if config == nil {
@@ -235,7 +234,7 @@ func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 	result := s.writer.FlushTableEvents(ctx, tableEvents)
 
 	if len(result.InvalidEvents) > 0 {
-		s.log.WithField("count", len(result.InvalidEvents)).
+		s.log.WithField("count", len(result.InvalidEvents)).WithContext(ctx).
 			Warn("clickhouse flush produced invalid events that could not be flattened — dropping")
 	}
 

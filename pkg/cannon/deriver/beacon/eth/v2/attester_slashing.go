@@ -8,11 +8,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -33,7 +34,7 @@ type AttesterSlashingDeriverConfig struct {
 }
 
 type AttesterSlashingDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *AttesterSlashingDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -41,7 +42,7 @@ type AttesterSlashingDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewAttesterSlashingDeriver(log logrus.FieldLogger, config *AttesterSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
+func NewAttesterSlashingDeriver(log observability.ContextualLogger, config *AttesterSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *AttesterSlashingDeriver {
 	return &AttesterSlashingDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/attester_slashing",
@@ -72,12 +73,12 @@ func (a *AttesterSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(c
 
 func (a *AttesterSlashingDeriver) Start(ctx context.Context) error {
 	if !a.cfg.Enabled {
-		a.log.Info("Attester slashing deriver disabled")
+		a.log.WithContext(ctx).Info("Attester slashing deriver disabled")
 
 		return nil
 	}
 
-	a.log.Info("Attester slashing deriver enabled")
+	a.log.WithContext(ctx).Info("Attester slashing deriver enabled")
 
 	if err := a.iterator.Start(ctx, a.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -125,7 +126,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := a.processEpoch(ctx, position.Next)
 				if err != nil {
-					a.log.WithError(err).Error("Failed to process epoch")
+					a.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -153,12 +154,12 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					a.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					a.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				a.log.WithError(err).Warn("Failed to process")
+				a.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -168,7 +169,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 func (a *AttesterSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	sp, err := a.beacon.Node().Spec()
 	if err != nil {
-		a.log.WithError(err).Warn("Failed to look ahead at epoch")
+		a.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}
@@ -243,7 +244,7 @@ func (a *AttesterSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 	for _, slashing := range slashings {
 		event, err := a.createEvent(ctx, slashing, blockIdentifier)
 		if err != nil {
-			a.log.WithError(err).Error("Failed to create event")
+			a.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create event for attester slashing %s", slashing.String())
 		}

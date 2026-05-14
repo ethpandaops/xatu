@@ -7,18 +7,20 @@
 package xatu
 
 import (
+	reflect "reflect"
+	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	gossipsub "github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
 	mevrelay "github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	noderecord "github.com/ethpandaops/xatu/pkg/proto/noderecord"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (

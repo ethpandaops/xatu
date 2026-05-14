@@ -4,11 +4,12 @@ import (
 	"os"
 
 	"github.com/creasty/defaults"
+	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v3"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server"
-	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 )
 
 var (

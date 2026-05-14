@@ -13,27 +13,27 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	"github.com/ethpandaops/xatu/pkg/server/persistence"
-	"github.com/ethpandaops/xatu/pkg/server/service"
-	httpingester "github.com/ethpandaops/xatu/pkg/server/service/http-ingester"
-	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/go-co-op/gocron/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/persistence"
+	"github.com/ethpandaops/xatu/pkg/server/service"
+	httpingester "github.com/ethpandaops/xatu/pkg/server/service/http-ingester"
+	"github.com/ethpandaops/xatu/pkg/server/store"
+
 	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 type Xatu struct {
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	config *Config
 
 	services []service.GRPCService
@@ -55,7 +55,7 @@ type Xatu struct {
 	shutdownFuncs []func(ctx context.Context) error
 }
 
-func NewXatu(ctx context.Context, log logrus.FieldLogger, conf *Config, o *Override) (*Xatu, error) {
+func NewXatu(ctx context.Context, log observability.ContextualLogger, conf *Config, o *Override) (*Xatu, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (x *Xatu) Start(ctx context.Context) error {
 	defer stop()
 
 	if err := x.startCrons(ctx); err != nil {
-		x.log.WithError(err).Fatal("Failed to start crons")
+		x.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
 	if x.config.Persistence.Enabled {
@@ -214,7 +214,7 @@ func (x *Xatu) Start(ctx context.Context) error {
 }
 
 func (x *Xatu) stop(ctx context.Context) error {
-	x.log.WithField("pre_stop_sleep_seconds", x.config.PreStopSleepSeconds).Info("Stopping server")
+	x.log.WithField("pre_stop_sleep_seconds", x.config.PreStopSleepSeconds).WithContext(ctx).Info("Stopping server")
 
 	time.Sleep(time.Duration(x.config.PreStopSleepSeconds) * time.Second)
 
@@ -275,7 +275,7 @@ func (x *Xatu) stop(ctx context.Context) error {
 		}
 	}
 
-	x.log.Info("Server stopped")
+	x.log.WithContext(ctx).Info("Server stopped")
 
 	return nil
 }
@@ -314,7 +314,7 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 					x.log.
 						WithField("method", info.FullMethod).
 						WithField("duration", time.Since(start)).
-						WithError(err).
+						WithError(err).WithContext(ctx).
 						Error("RPC Error")
 				}
 
@@ -329,11 +329,11 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 			return fmt.Errorf("failed to convert keepalive params: %w", err)
 		}
 
-		x.log.WithField("params", x.config.KeepaliveParams.String()).Info("Enabling keepalive")
+		x.log.WithField("params", x.config.KeepaliveParams.String()).WithContext(ctx).Info("Enabling keepalive")
 
 		opts = append(opts, grpc.KeepaliveParams(keepaliveParams))
 	} else {
-		x.log.Info("Keepalive disabled")
+		x.log.WithContext(ctx).Info("Keepalive disabled")
 	}
 
 	x.grpcServer = grpc.NewServer(opts...)
@@ -357,7 +357,7 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 
 	grpc_prometheus.Register(x.grpcServer)
 
-	x.log.WithField("addr", x.config.Addr).Info("Starting gRPC server with health checks enabled")
+	x.log.WithField("addr", x.config.Addr).WithContext(ctx).Info("Starting gRPC server with health checks enabled")
 
 	return x.grpcServer.Serve(lis)
 }
@@ -366,7 +366,7 @@ func (x *Xatu) startMetrics(ctx context.Context) error {
 	sm := http.NewServeMux()
 	sm.Handle("/metrics", promhttp.Handler())
 
-	x.log.WithField("addr", x.config.MetricsAddr).Info("Starting metrics server")
+	x.log.WithField("addr", x.config.MetricsAddr).WithContext(ctx).Info("Starting metrics server")
 
 	x.metricsServer = &http.Server{
 		Addr:              x.config.MetricsAddr,
@@ -402,7 +402,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := x.syncClockDrift(ctx); err != nil {
-					x.log.WithError(err).Error("Failed to sync clock drift")
+					x.log.WithError(err).WithContext(ctx).Error("Failed to sync clock drift")
 				}
 			},
 			ctx,

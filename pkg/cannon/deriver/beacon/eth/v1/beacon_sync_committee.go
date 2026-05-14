@@ -10,11 +10,6 @@ import (
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -24,6 +19,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -36,7 +37,7 @@ type BeaconSyncCommitteeDeriverConfig struct {
 }
 
 type BeaconSyncCommitteeDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BeaconSyncCommitteeDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -45,8 +46,7 @@ type BeaconSyncCommitteeDeriver struct {
 }
 
 func NewBeaconSyncCommitteeDeriver(
-	log logrus.FieldLogger,
-	config *BeaconSyncCommitteeDeriverConfig,
+	log observability.ContextualLogger, config *BeaconSyncCommitteeDeriverConfig,
 	iter *iterator.BackfillingCheckpoint,
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,
@@ -84,12 +84,12 @@ func (b *BeaconSyncCommitteeDeriver) OnEventsDerived(
 
 func (b *BeaconSyncCommitteeDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Beacon sync committee deriver disabled")
+		b.log.WithContext(ctx).Info("Beacon sync committee deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Beacon sync committee deriver enabled")
+	b.log.WithContext(ctx).Info("Beacon sync committee deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -151,7 +151,7 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 					// Process the period boundary epoch
 					events, err := b.processEpoch(ctx, boundaryEpoch)
 					if err != nil {
-						b.log.WithError(err).Error("Failed to process epoch")
+						b.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
 						span.SetStatus(codes.Error, err.Error())
 
 						return "", err
@@ -189,11 +189,11 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -273,7 +273,7 @@ func (b *BeaconSyncCommitteeDeriver) processEpoch(
 	b.log.WithFields(logrus.Fields{
 		"epoch":                 epoch,
 		"sync_committee_period": syncCommitteePeriod,
-	}).Debug("Fetching sync committee")
+	}).WithContext(ctx).Debug("Fetching sync committee")
 
 	// Calculate the slot at the epoch boundary
 	boundarySlot := phase0.Slot(uint64(epoch) * uint64(sp.SlotsPerEpoch))
@@ -289,7 +289,7 @@ func (b *BeaconSyncCommitteeDeriver) processEpoch(
 		b.log.
 			WithError(err).
 			WithField("epoch", epoch).
-			WithField("sync_committee_period", syncCommitteePeriod).
+			WithField("sync_committee_period", syncCommitteePeriod).WithContext(ctx).
 			Error("Failed to create event from sync committee")
 
 		return nil, err
@@ -373,7 +373,7 @@ func (b *BeaconSyncCommitteeDeriver) createEventFromSyncCommittee(
 
 	additionalData, err := b.getAdditionalData(ctx, epoch, syncCommitteePeriod)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to get extra sync committee data")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to get extra sync committee data")
 
 		return nil, err
 	}

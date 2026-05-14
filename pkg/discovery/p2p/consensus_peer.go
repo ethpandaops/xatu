@@ -4,13 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ConsensusPeer struct {
-	log        logrus.FieldLogger
+	log        observability.ContextualLogger
 	nodeRecord string
 	handler    func(*xatu.ConsensusNodeStatus)
 	crawler    *ConsensusCrawler
@@ -18,8 +17,7 @@ type ConsensusPeer struct {
 
 func NewConsensusPeer(
 	_ context.Context,
-	log logrus.FieldLogger,
-	nodeRecord string,
+	log observability.ContextualLogger, nodeRecord string,
 	handler func(*xatu.ConsensusNodeStatus),
 	crawler *ConsensusCrawler,
 ) (*ConsensusPeer, error) {

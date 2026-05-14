@@ -9,15 +9,16 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -44,7 +45,7 @@ type eventGroup struct {
 }
 
 type xatuClickHouseOutput struct {
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	encoding         string
 	router           *router.Engine
 	writer           Writer
@@ -343,7 +344,7 @@ func (o *xatuClickHouseOutput) processGroup(
 				"max_attempts":  o.groupRetryMaxAttempts,
 				"delay":         delay,
 				"failed_tables": len(tableEvents),
-			}).Warn("Retrying failed tables with backoff")
+			}).WithContext(ctx).Warn("Retrying failed tables with backoff")
 
 			o.metrics.GroupRetries().WithLabelValues(
 				g.messages[0].event.GetEvent().GetName().String(),
@@ -428,7 +429,7 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 
 		o.log.WithError(err).
-			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).
+			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).WithContext(ctx).
 			Warn("Permanent write error during group flush")
 	} else {
 		for _, gm := range g.messages {

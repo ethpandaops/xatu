@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconBlobSidecar struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconBlobSidecar(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlobSidecar {
+func NewBeaconBlobSidecar(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconBlobSidecar {
 	return &BeaconBlobSidecar{
 		log:   log.WithField("event", BeaconBlobSidecarType),
 		event: event,

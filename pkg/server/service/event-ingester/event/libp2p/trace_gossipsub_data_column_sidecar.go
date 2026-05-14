@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -14,11 +13,11 @@ var (
 )
 
 type TraceGossipSubDataColumnSidecar struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceGossipSubDataColumnSidecar(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGossipSubDataColumnSidecar {
+func NewTraceGossipSubDataColumnSidecar(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceGossipSubDataColumnSidecar {
 	return &TraceGossipSubDataColumnSidecar{
 		log:   log.WithField("event", TraceGossipSubDataColumnSidecarType),
 		event: event,

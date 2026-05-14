@@ -7,20 +7,21 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type Coordinator struct {
 	name   string
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	conn *grpc.ClientConn
 	pb   xatu.CoordinatorClient
@@ -28,14 +29,14 @@ type Coordinator struct {
 	metrics *Metrics
 }
 
-func NewCoordinator(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*Coordinator, error) {
+func NewCoordinator(ctx context.Context, name string, config *Config, log observability.ContextualLogger) (*Coordinator, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
 
 	// If networkConfig is provided, fetch and apply the devnet configuration
 	if config.NetworkConfig != nil && config.NetworkConfig.URL != "" {
-		log.WithField("url", config.NetworkConfig.URL).Info("Fetching network configuration from URL")
+		log.WithField("url", config.NetworkConfig.URL).WithContext(ctx).Info("Fetching network configuration from URL")
 
 		fetched, err := config.NetworkConfig.Fetch(ctx)
 		if err != nil {
@@ -52,7 +53,7 @@ func NewCoordinator(ctx context.Context, name string, config *Config, log logrus
 			"fork_id_hash": fetched.ForkIDHashHex(),
 			"boot_nodes":   len(fetched.BootNodes),
 			"enodes":       len(fetched.Enodes),
-		}).Info("Applied network configuration from URL")
+		}).WithContext(ctx).Info("Applied network configuration from URL")
 	}
 
 	if err := config.Validate(); err != nil {
@@ -135,7 +136,7 @@ func (c *Coordinator) CoordinateExecutionNodeRecords(ctx context.Context, record
 }
 
 func (c *Coordinator) HandleExecutionNodeRecordStatus(ctx context.Context, status *xatu.ExecutionNodeStatus) error {
-	c.log.WithField("record", status.NodeRecord).Debug("found execution node status, sending to coordinator")
+	c.log.WithField("record", status.NodeRecord).WithContext(ctx).Debug("found execution node status, sending to coordinator")
 
 	req := xatu.CreateExecutionNodeRecordStatusRequest{
 		Status: status,

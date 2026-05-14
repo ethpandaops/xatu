@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 // EngineAPINewPayloadData contains the data for an engine_newPayload call event.
@@ -47,7 +49,7 @@ type EngineAPINewPayloadData struct {
 
 // EngineAPINewPayload is an event that represents timing data for an engine_newPayload call.
 type EngineAPINewPayload struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	now            time.Time
 	data           *EngineAPINewPayloadData
 	beacon         *ethereum.BeaconNode
@@ -58,8 +60,7 @@ type EngineAPINewPayload struct {
 
 // NewEngineAPINewPayload creates a new EngineAPINewPayload event.
 func NewEngineAPINewPayload(
-	log logrus.FieldLogger,
-	data *EngineAPINewPayloadData,
+	log observability.ContextualLogger, data *EngineAPINewPayloadData,
 	now time.Time,
 	beacon *ethereum.BeaconNode,
 	duplicateCache *ttlcache.Cache[string, time.Time],
@@ -112,7 +113,7 @@ func (e *EngineAPINewPayload) Decorate(ctx context.Context) (*xatu.DecoratedEven
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get additional engine_newPayload data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get additional engine_newPayload data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_ConsensusEngineApiNewPayload{
 			ConsensusEngineApiNewPayload: additionalData,
@@ -139,7 +140,7 @@ func (e *EngineAPINewPayload) ShouldIgnore(ctx context.Context) (bool, error) {
 			"slot":                  e.data.Slot,
 			"block_hash":            e.data.BlockHash,
 			"time_since_first_seen": time.Since(existing.Value()),
-		}).Debug("Ignoring duplicate engine_newPayload event")
+		}).WithContext(ctx).Debug("Ignoring duplicate engine_newPayload event")
 
 		return true, nil
 	}

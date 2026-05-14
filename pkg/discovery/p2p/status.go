@@ -13,9 +13,10 @@ import (
 	"github.com/chuckpreslar/emission"
 	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/crawler"
 	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/host"
+
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -27,7 +28,7 @@ type Status struct {
 	config           *Config
 	executionConfig  *static.ExecutionConfig
 	consensusConfig  *static.ConsensusConfig
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	broker           *emission.Emitter
 	activeExecution  int
 	activeConsensus  int
@@ -39,7 +40,7 @@ type Status struct {
 	cancel           context.CancelFunc
 }
 
-func NewStatus(ctx context.Context, config *Config, log logrus.FieldLogger) (*Status, error) {
+func NewStatus(ctx context.Context, config *Config, log observability.ContextualLogger) (*Status, error) {
 	consensusConfig := config.GetConsensusConfig()
 
 	s := &Status{
@@ -96,9 +97,9 @@ func (s *Status) Stop(ctx context.Context) error {
 
 	select {
 	case <-done:
-		s.log.Info("All active workers finished")
+		s.log.WithContext(ctx).Info("All active workers finished")
 	case <-time.After(5 * time.Second):
-		s.log.Warn("Timeout waiting for active workers to finish")
+		s.log.WithContext(ctx).Warn("Timeout waiting for active workers to finish")
 	}
 
 	if s.consensusCrawler != nil {
@@ -168,7 +169,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 							s.metrics.AddDialedNodeRecod(1, status, "execution")
 
 							if err = peer.Stop(s.ctx); err != nil {
-								s.log.WithError(err).Warn("failed to stop peer")
+								s.log.WithError(err).WithContext(ctx).Warn("failed to stop peer")
 							}
 						}
 					}()
@@ -203,7 +204,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 					case <-s.ctx.Done():
 						return 0
 					default:
-						s.log.WithError(err).Debug("peer failed")
+						s.log.WithError(err).WithContext(ctx).Debug("peer failed")
 
 						return s.executionConfig.RetryDelay
 					}
@@ -349,14 +350,14 @@ func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context
 	s.broker.On(topicExecutionStatus, func(status *xatu.ExecutionNodeStatus) {
 		// exclude execution status for network ids that are not in the list
 		if len(networkIds) > 0 && !slices.Contains(networkIds, status.NetworkId) {
-			s.log.WithField("network_id", status.NetworkId).Warn("skipping execution status for network id")
+			s.log.WithField("network_id", status.NetworkId).WithContext(ctx).Warn("skipping execution status for network id")
 
 			return
 		}
 
 		// exclude execution status for fork id hashes that are not in the list
 		if len(forkIdHashes) > 0 && !slices.Contains(forkIdHashes, fmt.Sprintf("0x%x", status.ForkId.Hash)) {
-			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.ForkId.Hash)).Warn("skipping execution status for fork id hash")
+			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.ForkId.Hash)).WithContext(ctx).Warn("skipping execution status for fork id hash")
 
 			return
 		}

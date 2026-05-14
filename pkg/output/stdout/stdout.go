@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const SinkType = "stdout"
@@ -14,12 +14,12 @@ const SinkType = "stdout"
 type StdOut struct {
 	name   string
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 	filter xatu.EventFilter
 }
 
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*StdOut, error) {
+func New(name string, config *Config, log observability.ContextualLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*StdOut, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}

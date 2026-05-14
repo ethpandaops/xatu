@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const Type = "redis-cluster"
@@ -14,7 +15,7 @@ const Type = "redis-cluster"
 type Cluster struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	options *redis.ClusterOptions
 	client  *redis.ClusterClient
@@ -22,7 +23,7 @@ type Cluster struct {
 	metrics *Metrics
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Cluster, error) {
+func New(config *Config, log observability.ContextualLogger) (*Cluster, error) {
 	options, err := redis.ParseClusterURL(config.Address)
 	if err != nil {
 		return nil, err

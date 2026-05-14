@@ -3,8 +3,9 @@ package persistence
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 )
 
 var nodeRecordConsensusStruct = sqlbuilder.NewStruct(new(node.Consensus)).For(sqlbuilder.PostgreSQL)
@@ -36,7 +37,7 @@ func (c *Client) InsertNodeRecordConsensus(ctx context.Context, record *node.Con
 	_, err := c.db.ExecContext(ctx, sql, args...)
 
 	if err != nil {
-		c.log.WithError(err).Error("failed to insert node record consensus")
+		c.log.WithError(err).WithContext(ctx).Error("failed to insert node record consensus")
 	}
 
 	return err
@@ -131,7 +132,7 @@ func (c *Client) BulkInsertNodeRecordConsensus(ctx context.Context, records []*n
 
 		sql, args := ib.Build()
 		if _, err := c.db.ExecContext(ctx, sql, args...); err != nil {
-			c.log.WithError(err).Errorf("failed to bulk insert node record consensus batch %d-%d", i, end-1)
+			c.log.WithError(err).WithContext(ctx).Errorf("failed to bulk insert node record consensus batch %d-%d", i, end-1)
 
 			return err
 		}

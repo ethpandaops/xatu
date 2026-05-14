@@ -9,14 +9,15 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
 )
 
 func (r *RelayMonitor) scheduleBidTraceFetchingAtSlotTime(ctx context.Context, at time.Duration, client *relay.Client) {
@@ -48,7 +49,7 @@ func (r *RelayMonitor) scheduleProposerPayloadDeliveredFetching(ctx context.Cont
 
 		err := r.fetchProposerPayloadDelivered(ctx, client, phase0.Slot(slot.Number()))
 		if err != nil {
-			r.log.WithError(err).Error("Failed to fetch proposer payload delivered")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to fetch proposer payload delivered")
 		}
 	})
 }
@@ -73,7 +74,7 @@ func (r *RelayMonitor) fetchProposerPayloadDelivered(ctx context.Context, client
 
 		err = r.handleNewDecoratedEvent(ctx, event)
 		if err != nil {
-			r.log.WithError(err).Error("Failed to handle new decorated event")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 		}
 	}
 
@@ -192,7 +193,7 @@ func (r *RelayMonitor) fetchBidTraces(ctx context.Context, client *relay.Client,
 
 		err = r.handleNewDecoratedEvent(ctx, event)
 		if err != nil {
-			r.log.WithError(err).Error("Failed to handle new decorated event")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 		}
 	}
 

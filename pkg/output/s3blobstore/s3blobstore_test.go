@@ -13,10 +13,6 @@ import (
 	"testing"
 	"time"
 
-	xs3 "github.com/ethpandaops/xatu/pkg/output/internal/s3"
-	"github.com/ethpandaops/xatu/pkg/processor"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	miniogo "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
@@ -24,6 +20,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/minio"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	xs3 "github.com/ethpandaops/xatu/pkg/output/internal/s3"
+	"github.com/ethpandaops/xatu/pkg/processor"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const gzSuffix = ".gz"

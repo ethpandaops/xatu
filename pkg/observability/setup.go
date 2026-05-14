@@ -36,7 +36,7 @@ func Setup(
 		return shutdown, nil
 	}
 
-	log.Info("OTel tracing enabled")
+	log.WithContext(ctx).Info("OTel tracing enabled")
 
 	res, err := NewResource(serviceName, serviceVersion)
 	if err != nil {

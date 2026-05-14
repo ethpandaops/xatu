@@ -3,12 +3,13 @@ package route_test
 import (
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
-	tabledefs "github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	tabledefs "github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // routeIndex maps table names to routes for O(1) lookup in fuzz functions.

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
 )
 
 type GroupsConfig map[string]GroupConfig
@@ -23,7 +25,7 @@ type GroupConfig struct {
 type Groups map[string]*Group
 
 type Group struct {
-	log                logrus.FieldLogger
+	log                observability.ContextualLogger
 	users              *Users
 	name               string
 	eventFilter        xatu.EventFilter
@@ -50,7 +52,7 @@ func (g *Group) ComputeClientName(user, salt, clientName string) string {
 	return computedClientName
 }
 
-func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error) {
+func NewGroup(log observability.ContextualLogger, name string, c GroupConfig) (*Group, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("group config is invalid: %w", err)
 	}

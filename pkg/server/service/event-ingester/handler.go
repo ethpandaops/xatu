@@ -8,20 +8,21 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	eventHandler "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Handler struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	clockDrift     *time.Duration
 	geoipProvider  geoip.Provider
 	cache          store.Cache
@@ -31,7 +32,7 @@ type Handler struct {
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
+func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
 	return &Handler{
 		log:            log,
 		clockDrift:     clockDrift,
@@ -131,7 +132,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			// get geoip locational data
 			geoipLookupResult, err := h.geoipProvider.LookupIP(ctx, ip, precision)
 			if err != nil {
-				h.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				h.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {
@@ -168,19 +169,19 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		e, err := h.eventRouter.Route(eventHandler.Type(eventName), event)
 		if err != nil {
-			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
+			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to create event handler")
 
 			return nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
 		}
 
 		if err := e.Validate(ctx); err != nil {
-			h.log.WithError(err).WithField("event", eventName).Warn("failed to validate event")
+			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to validate event")
 
 			return nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
 		}
 
 		if shouldFilter := e.Filter(ctx); shouldFilter {
-			h.log.WithField("event", eventName).Debug("event filtered")
+			h.log.WithField("event", eventName).WithContext(ctx).Debug("event filtered")
 
 			continue
 		}

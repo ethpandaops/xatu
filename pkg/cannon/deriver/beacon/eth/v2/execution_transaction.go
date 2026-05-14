@@ -14,11 +14,6 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -27,10 +22,16 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ExecutionTransactionDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *ExecutionTransactionDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -47,7 +48,7 @@ const (
 	ExecutionTransactionDeriverName = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION
 )
 
-func NewExecutionTransactionDeriver(log logrus.FieldLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
+func NewExecutionTransactionDeriver(log observability.ContextualLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
 	return &ExecutionTransactionDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/execution_transaction",
@@ -78,12 +79,12 @@ func (b *ExecutionTransactionDeriver) OnEventsDerived(ctx context.Context, fn fu
 
 func (b *ExecutionTransactionDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Execution transaction deriver disabled")
+		b.log.WithContext(ctx).Info("Execution transaction deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Execution transaction deriver enabled")
+	b.log.WithContext(ctx).Info("Execution transaction deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -130,7 +131,7 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -158,12 +159,12 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -201,7 +202,7 @@ func (b *ExecutionTransactionDeriver) processEpoch(ctx context.Context, epoch ph
 func (b *ExecutionTransactionDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}
@@ -247,7 +248,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			if errors.As(errr, &apiErr) {
 				switch apiErr.StatusCode {
 				case 404:
-					b.log.WithError(errr).WithField("slot", slot).Debug("no beacon block blob sidecars found for slot")
+					b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
 				case 503:
 					return nil, errors.New("beacon node is syncing")
 				default:
@@ -330,7 +331,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			blobHashes := make([]string, len(transaction.BlobHashes()))
 
 			if len(transaction.BlobHashes()) == 0 {
-				b.log.WithField("transaction", transaction.Hash().Hex()).Warn("no versioned hashes for type 3 transaction")
+				b.log.WithField("transaction", transaction.Hash().Hex()).WithContext(ctx).Warn("no versioned hashes for type 3 transaction")
 			}
 
 			for i := 0; i < len(transaction.BlobHashes()); i++ {
@@ -342,7 +343,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 					sidecarsSize += len(sidecar.Blob)
 					sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar.Blob[:], 4)
 				} else {
-					b.log.WithField("versioned hash", hash.String()).WithField("transaction", transaction.Hash().Hex()).Warn("missing blob sidecar")
+					b.log.WithField("versioned hash", hash.String()).WithField("transaction", transaction.Hash().Hex()).WithContext(ctx).Warn("missing blob sidecar")
 				}
 			}
 
@@ -353,7 +354,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 
 		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction, sidecarsSize, sidecarsEmptySize)
 		if err != nil {
-			b.log.WithError(err).Error("Failed to create event")
+			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create event for execution transaction %s", transaction.Hash())
 		}

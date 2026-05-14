@@ -8,14 +8,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-co-op/gocron/v2"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
 	xatuPeer "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/peer"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatupb "github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/sirupsen/logrus"
 )
 
 const Type = "xatu"
@@ -24,7 +26,7 @@ type Xatu struct {
 	handlers       *handler.Peer
 	captureDelay   time.Duration
 	ethereumConfig *ethereum.Config
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 
 	cache       *cache.SharedCache
 	coordinator *xatuCoordinator.Coordinator
@@ -35,7 +37,7 @@ type Xatu struct {
 	metrics *Metrics
 }
 
-func New(ctx context.Context, name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Xatu, error) {
+func New(ctx context.Context, name string, config *xatuCoordinator.Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log observability.ContextualLogger) (*Xatu, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -97,7 +99,7 @@ func (x *Xatu) addSeedPeers(ctx context.Context) error {
 		return nil
 	}
 
-	x.log.WithField("count", len(enodes)).Info("Adding seed peers from network config enodes")
+	x.log.WithField("count", len(enodes)).WithContext(ctx).Info("Adding seed peers from network config enodes")
 
 	x.mu.Lock()
 	defer x.mu.Unlock()
@@ -109,7 +111,7 @@ func (x *Xatu) addSeedPeers(ctx context.Context) error {
 			x.peers[enode] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, enode, 60*time.Second, x.captureDelay, x.ethereumConfig)
 
 			if err := x.peers[enode].Start(ctx); err != nil {
-				x.log.WithError(err).WithField("enode", enode).Error("Failed to start seed peer")
+				x.log.WithError(err).WithField("enode", enode).WithContext(ctx).Error("Failed to start seed peer")
 				delete(x.peers, enode)
 			} else {
 				started++
@@ -124,7 +126,7 @@ func (x *Xatu) addSeedPeers(ctx context.Context) error {
 	x.log.WithFields(logrus.Fields{
 		"started": started,
 		"total":   len(enodes),
-	}).Info("Started seed peers from network config")
+	}).WithContext(ctx).Info("Started seed peers from network config")
 
 	return nil
 }
@@ -179,13 +181,13 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 
 				res, err := x.coordinator.CoordinateExecutionNodeRecords(ctx, records)
 				if err != nil {
-					x.log.WithError(err).Error("failed to coordinate execution node records")
+					x.log.WithError(err).WithContext(ctx).Error("failed to coordinate execution node records")
 
 					return
 				}
 
 				if res == nil {
-					x.log.Error("failed to coordinate execution node records: nil response")
+					x.log.WithContext(ctx).Error("failed to coordinate execution node records: nil response")
 
 					return
 				}
@@ -202,7 +204,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 					// remove peer
 					if !found {
 						if err := peer.Stop(); err != nil {
-							x.log.WithError(err).Error("failed to stop peer")
+							x.log.WithError(err).WithContext(ctx).Error("failed to stop peer")
 						}
 						delete(x.peers, i)
 					}
@@ -212,7 +214,7 @@ func (x *Xatu) startCrons(ctx context.Context) error {
 					if _, ok := x.peers[record]; !ok {
 						x.peers[record] = xatuPeer.NewPeer(x.log, x.handlers, x.cache, record, retryDelay, x.captureDelay, x.ethereumConfig)
 						if err := x.peers[record].Start(ctx); err != nil {
-							x.log.WithError(err).Error("failed to start peer")
+							x.log.WithError(err).WithContext(ctx).Error("failed to start peer")
 							delete(x.peers, record)
 						}
 					}

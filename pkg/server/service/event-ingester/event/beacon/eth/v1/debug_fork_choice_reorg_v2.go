@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type DebugForkChoiceReorgV2 struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewDebugForkChoiceReorgV2(log logrus.FieldLogger, event *xatu.DecoratedEvent) *DebugForkChoiceReorgV2 {
+func NewDebugForkChoiceReorgV2(log observability.ContextualLogger, event *xatu.DecoratedEvent) *DebugForkChoiceReorgV2 {
 	return &DebugForkChoiceReorgV2{
 		log:   log.WithField("event", DebugForkChoiceReorgV2Type),
 		event: event,

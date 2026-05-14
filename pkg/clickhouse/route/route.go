@@ -2,6 +2,7 @@ package route
 
 import (
 	"github.com/ClickHouse/ch-go/proto"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 

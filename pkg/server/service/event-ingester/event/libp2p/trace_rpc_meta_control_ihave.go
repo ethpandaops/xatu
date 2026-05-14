@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRPCMetaControlIHave struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRPCMetaControlIHave(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRPCMetaControlIHave {
+func NewTraceRPCMetaControlIHave(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRPCMetaControlIHave {
 	return &TraceRPCMetaControlIHave{
 		log:   log.WithField("event", TraceRPCMetaControlIHaveType),
 		event: event,

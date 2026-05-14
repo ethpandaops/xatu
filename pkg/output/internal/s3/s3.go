@@ -7,14 +7,15 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // Client wraps an S3-compatible object store client.
 type Client struct {
 	mc     *minio.Client
 	bucket string
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 }
 
 // PutOptions describes per-object metadata applied at upload time.
@@ -33,7 +34,7 @@ type PutOptions struct {
 // New builds a Client. The connection is established lazily on first use;
 // callers should issue a HEAD against the bucket via HeadBucket if they
 // want startup-time validation.
-func New(log logrus.FieldLogger, cfg *Config) (*Client, error) {
+func New(log observability.ContextualLogger, cfg *Config) (*Client, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}

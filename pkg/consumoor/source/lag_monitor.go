@@ -11,14 +11,14 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
-	"github.com/sirupsen/logrus"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // LagMonitor periodically polls Kafka to compute consumer group lag and
 // updates a Prometheus gauge. It reuses the same broker/SASL/TLS config
 // as the main consumer.
 type LagMonitor struct {
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 	metrics *telemetry.Metrics
 
 	interval       time.Duration
@@ -35,8 +35,7 @@ type LagMonitor struct {
 // The consumerGroups slice contains the consumer group names to monitor
 // for lag (one per-topic consumer group).
 func NewLagMonitor(
-	log logrus.FieldLogger,
-	cfg *KafkaConfig,
+	log observability.ContextualLogger, cfg *KafkaConfig,
 	consumerGroups []string,
 	metrics *telemetry.Metrics,
 ) (*LagMonitor, error) {
@@ -128,7 +127,7 @@ func (m *LagMonitor) Stop() error {
 func (m *LagMonitor) poll(ctx context.Context) {
 	lags, err := m.admClient.Lag(ctx, m.consumerGroups...)
 	if err != nil {
-		m.log.WithError(err).Warn("Failed to fetch consumer group lag")
+		m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch consumer group lag")
 
 		return
 	}
@@ -136,7 +135,7 @@ func (m *LagMonitor) poll(ctx context.Context) {
 	for _, group := range m.consumerGroups {
 		groupLag, ok := lags[group]
 		if !ok {
-			m.log.WithField("consumer_group", group).
+			m.log.WithField("consumer_group", group).WithContext(ctx).
 				Debug("Consumer group not found in lag response")
 
 			continue
@@ -144,7 +143,7 @@ func (m *LagMonitor) poll(ctx context.Context) {
 
 		if groupLag.Error() != nil {
 			m.log.WithError(groupLag.Error()).
-				WithField("consumer_group", group).
+				WithField("consumer_group", group).WithContext(ctx).
 				Warn("Error in consumer group lag response")
 
 			continue
@@ -158,7 +157,7 @@ func (m *LagMonitor) poll(ctx context.Context) {
 					m.log.WithError(ml.Err).
 						WithField("topic", topic).
 						WithField("partition", partition).
-						WithField("consumer_group", group).
+						WithField("consumer_group", group).WithContext(ctx).
 						Warn("Error computing lag for partition")
 
 					continue

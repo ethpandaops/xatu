@@ -4,17 +4,19 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	executionClient "github.com/ethpandaops/xatu/pkg/sentry/execution"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	executionClient "github.com/ethpandaops/xatu/pkg/sentry/execution"
 )
 
 // ExecutionStateSize is an event that represents state size data from the execution layer.
 type ExecutionStateSize struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	now            time.Time
 	data           *executionClient.DebugStateSizeResponse
 	duplicateCache *ttlcache.Cache[string, time.Time]
@@ -24,8 +26,7 @@ type ExecutionStateSize struct {
 
 // NewExecutionStateSize creates a new ExecutionStateSize event.
 func NewExecutionStateSize(
-	log logrus.FieldLogger,
-	data *executionClient.DebugStateSizeResponse,
+	log observability.ContextualLogger, data *executionClient.DebugStateSizeResponse,
 	now time.Time,
 	duplicateCache *ttlcache.Cache[string, time.Time],
 	clientMeta *xatu.ClientMeta,
@@ -84,7 +85,7 @@ func (e *ExecutionStateSize) ShouldIgnore(ctx context.Context) (bool, error) {
 			"state_root":            e.data.StateRoot,
 			"block_number":          e.data.BlockNumber,
 			"time_since_first_seen": time.Since(existing.Value()),
-		}).Debug("Ignoring duplicate state size event")
+		}).WithContext(ctx).Debug("Ignoring duplicate state size event")
 
 		return true, nil
 	}

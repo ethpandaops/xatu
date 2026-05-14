@@ -4,9 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 var (

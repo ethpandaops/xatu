@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type AuthorizationConfig struct {
@@ -23,10 +23,10 @@ type AuthorizationConfig struct {
 type Authorization struct {
 	enabled bool
 	groups  Groups
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 }
 
-func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Authorization, error) {
+func NewAuthorization(log observability.ContextualLogger, config AuthorizationConfig) (*Authorization, error) {
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid authorization config: %w", err)
 	}
@@ -64,7 +64,7 @@ func (a *Authorization) Start(ctx context.Context) error {
 			userNames[user] = true
 		}
 
-		a.log.WithField("group", group.Name()).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
+		a.log.WithField("group", group.Name()).WithField("users", len(group.Users().Usernames())).WithContext(ctx).Info("Loaded group with users")
 	}
 
 	return nil

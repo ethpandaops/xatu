@@ -23,7 +23,13 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/go-co-op/gocron/v2"
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"gopkg.in/yaml.v3"
+
 	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -33,11 +39,6 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 const unknown = "unknown"
@@ -53,7 +54,7 @@ type Sentry struct {
 
 	clockDrift time.Duration
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	duplicateCache *cache.DuplicateCache
 
@@ -73,7 +74,7 @@ type Sentry struct {
 	summary *Summary
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Sentry, error) {
+func New(ctx context.Context, log observability.ContextualLogger, config *Config, overrides *Override) (*Sentry, error) {
 	log = log.WithField("module", "sentry")
 
 	if config == nil {
@@ -99,7 +100,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 		preset = p
 
-		log.WithField("preset", presetName).Info("Applying preset")
+		log.WithField("preset", presetName).WithContext(ctx).Info("Applying preset")
 
 		// Merge the 2 yaml files
 		if err := yaml.Unmarshal(preset.Value, config); err != nil {
@@ -109,14 +110,14 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 	// If the beacon node override is set, use it
 	if overrides.BeaconNodeURL.Enabled {
-		log.Info("Overriding beacon node URL")
+		log.WithContext(ctx).Info("Overriding beacon node URL")
 
 		config.Ethereum.BeaconNodeAddress = overrides.BeaconNodeURL.Value
 	}
 
 	// If the metrics address override is set, use it
 	if overrides.MetricsAddr.Enabled {
-		log.WithField("address", overrides.MetricsAddr.Value).Info("Overriding metrics address")
+		log.WithField("address", overrides.MetricsAddr.Value).WithContext(ctx).Info("Overriding metrics address")
 
 		config.MetricsAddr = overrides.MetricsAddr.Value
 	}
@@ -148,18 +149,18 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 	}
 
 	if hasAttestationSubscription {
-		log.Info("Enabling beacon committees as we are subscribed to attestation events")
+		log.WithContext(ctx).Info("Enabling beacon committees as we are subscribed to attestation events")
 
 		beaconOpts.WithFetchBeaconCommittees(true)
 	}
 
 	if config.BeaconCommittees != nil && config.BeaconCommittees.Enabled {
-		log.Info("Enabling beacon committees as we need to fetch them on interval")
+		log.WithContext(ctx).Info("Enabling beacon committees as we need to fetch them on interval")
 		beaconOpts.WithFetchBeaconCommittees(true)
 	}
 
 	if config.ProposerDuty != nil && config.ProposerDuty.Enabled {
-		log.Info("Enabling proposer duties as we need to fetch them on interval")
+		log.WithContext(ctx).Info("Enabling proposer duties as we need to fetch them on interval")
 		beaconOpts.WithFetchProposerDuties(true)
 	}
 
@@ -196,7 +197,7 @@ func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides 
 
 	// If the output authorization override is set, use it
 	if overrides.XatuOutputAuth.Enabled {
-		log.Info("Overriding output authorization")
+		log.WithContext(ctx).Info("Overriding output authorization")
 
 		for _, sink := range s.sinks {
 			if sink.Type() == string(output.SinkTypeXatu) {
@@ -227,7 +228,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 	s.log.
 		WithField("version", xatu.Full()).
-		WithField("id", s.id.String()).
+		WithField("id", s.id.String()).WithContext(ctx).
 		Info("Starting Xatu in sentry mode")
 
 	if err := s.startBeaconCommitteesWatcher(ctx); err != nil {
@@ -245,10 +246,10 @@ func (s *Sentry) Start(ctx context.Context) error {
 	})
 
 	s.beacon.OnReady(ctx, func(ctx context.Context) error {
-		s.log.Info("Internal beacon node is ready, subscribing to events")
+		s.log.WithContext(ctx).Info("Internal beacon node is ready, subscribing to events")
 
 		if s.beacon.Metadata().Network.Name == networks.NetworkNameUnknown {
-			s.log.Fatal("Unable to determine Ethereum network. Provide an override network name via ethereum.overrideNetworkName")
+			s.log.WithContext(ctx).Fatal("Unable to determine Ethereum network. Provide an override network name via ethereum.overrideNetworkName")
 		}
 
 		s.beacon.Node().OnSingleAttestation(ctx, func(ctx context.Context, ev *electra.SingleAttestation) error {
@@ -348,11 +349,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 				beaconBlock, err := s.beacon.Node().FetchBlock(ctx, blockRoot)
 				if err != nil {
-					s.log.WithError(err).Error("Failed to fetch block")
+					s.log.WithError(err).WithContext(ctx).Error("Failed to fetch block")
 				} else {
 					beaconBlockMeta, err := s.createNewClientMeta(ctx)
 					if err != nil {
-						s.log.WithError(err).Error("Failed to create client meta")
+						s.log.WithError(err).WithContext(ctx).Error("Failed to create client meta")
 
 						return
 					}
@@ -363,7 +364,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 					if err != nil {
 						s.log.
 							WithError(err).
-							WithField("event", xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK).
+							WithField("event", xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK).WithContext(ctx).
 							Error("Failed to check if event should be ignored")
 
 						return
@@ -375,13 +376,13 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 					decoratedEvent, err := event.Decorate(ctx)
 					if err != nil {
-						s.log.WithError(err).Error("Failed to decorate event")
+						s.log.WithError(err).WithContext(ctx).Error("Failed to decorate event")
 
 						return
 					}
 
 					if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
-						s.log.WithError(err).Error("Failed to handle new decorated event")
+						s.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 
 						return
 					}
@@ -475,7 +476,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			// Trigger state size polling if enabled in "head" mode.
 			if err := s.onHeadEventForStateSize(ctx); err != nil {
-				s.log.WithError(err).Debug("Failed to trigger state size polling on head event")
+				s.log.WithError(err).WithContext(ctx).Debug("Failed to trigger state size polling on head event")
 			}
 
 			return nil
@@ -618,7 +619,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 		// Beacon blob metadata emission on block receipt
 		if s.Config.BeaconBlob != nil && s.Config.BeaconBlob.Enabled {
-			s.log.Info("Beacon blob metadata emission enabled")
+			s.log.WithContext(ctx).Info("Beacon blob metadata emission enabled")
 
 			s.beacon.Node().OnBlock(ctx, func(ctx context.Context, block *eth2v1.BlockEvent) error {
 				// Small delay to ensure block is available for fetching
@@ -646,13 +647,13 @@ func (s *Sentry) Start(ctx context.Context) error {
 		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
 			// If we can't reach the execution node, we can't start the mempool transaction watcher.
 			// Instead of preventing the sentry from starting, we'll log an error and continue.
-			s.log.WithError(err).Error("failed to start mempool transaction watcher")
+			s.log.WithError(err).WithContext(ctx).Error("failed to start mempool transaction watcher")
 
 			return nil
 		}
 
 		if err := s.startExecutionStateSizeWatcher(ctx); err != nil {
-			s.log.WithError(err).Error("failed to start execution debug state size watcher")
+			s.log.WithError(err).WithContext(ctx).Error("failed to start execution debug state size watcher")
 
 			return err
 		}
@@ -661,11 +662,11 @@ func (s *Sentry) Start(ctx context.Context) error {
 	})
 
 	if err := s.startCrons(ctx); err != nil {
-		s.log.WithError(err).Fatal("Failed to start crons")
+		s.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
 	for _, sink := range s.sinks {
-		s.log.WithField("type", sink.Type()).WithField("name", sink.Name()).Info("Starting sink")
+		s.log.WithField("type", sink.Type()).WithField("name", sink.Name()).WithContext(ctx).Info("Starting sink")
 
 		if err := sink.Start(ctx); err != nil {
 			return err
@@ -675,7 +676,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 	go s.summary.Start(ctx)
 
 	if s.Config.Ethereum.OverrideNetworkName != "" {
-		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).Info("Overriding network name")
+		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
 	if err := s.beacon.Start(ctx); err != nil {
@@ -686,9 +687,9 @@ func (s *Sentry) Start(ctx context.Context) error {
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
-	s.log.Printf("Caught signal: %v", sig)
+	s.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 
-	s.log.Printf("Flushing sinks")
+	s.log.WithContext(ctx).Printf("Flushing sinks")
 
 	for _, sink := range s.sinks {
 		if err := sink.Stop(ctx); err != nil {
@@ -716,10 +717,10 @@ func (s *Sentry) ServeMetrics(ctx context.Context) error {
 			Handler:           sm,
 		}
 
-		s.log.Infof("Serving metrics at %s", s.Config.MetricsAddr)
+		s.log.WithContext(ctx).Infof("Serving metrics at %s", s.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
-			s.log.Fatal(err)
+			s.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -733,10 +734,10 @@ func (s *Sentry) ServePProf(ctx context.Context) error {
 	}
 
 	go func() {
-		s.log.Infof("Serving pprof at %s", *s.Config.PProfAddr)
+		s.log.WithContext(ctx).Infof("Serving pprof at %s", *s.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
-			s.log.Fatal(err)
+			s.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -800,7 +801,7 @@ func (s *Sentry) startCrons(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := s.syncClockDrift(ctx); err != nil {
-					s.log.WithError(err).Error("Failed to sync clock drift")
+					s.log.WithError(err).WithContext(ctx).Error("Failed to sync clock drift")
 				}
 			},
 			ctx,
@@ -863,7 +864,7 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 			s.log.
 				WithError(err).
 				WithField("sink", sink.Type()).
-				WithField("event_type", event.GetEvent().GetName()).
+				WithField("event_type", event.GetEvent().GetName()).WithContext(ctx).
 				Error("Failed to send event to sink")
 		}
 	}

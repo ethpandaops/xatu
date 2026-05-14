@@ -3,9 +3,10 @@ package event_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {

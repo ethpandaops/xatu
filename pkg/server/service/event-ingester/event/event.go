@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	v1 "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event/beacon/eth/v1"
@@ -121,13 +120,13 @@ type Event interface {
 }
 
 type EventRouter struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	cache         store.Cache
 	geoipProvider geoip.Provider
 	routes        map[Type]func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error)
 }
 
-func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geoip.Provider) *EventRouter {
+func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoipProvider geoip.Provider) *EventRouter {
 	router := &EventRouter{
 		log:           log,
 		cache:         cache,

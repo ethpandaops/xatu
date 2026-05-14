@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 var canonicalBeaconSyncCommitteeEventNames = []xatu.Event_Name{

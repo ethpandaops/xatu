@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestProtojsonUnmarshalExecutionBlockMetrics(t *testing.T) {

@@ -21,6 +21,11 @@ import (
 
 	"github.com/beevik/ntp"
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	"github.com/go-co-op/gocron/v2"
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -28,10 +33,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/registrations"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 )
 
 type RelayMonitor struct {
@@ -41,7 +42,7 @@ type RelayMonitor struct {
 
 	clockDrift time.Duration
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	id uuid.UUID
 
@@ -64,7 +65,7 @@ const (
 	namespace = "xatu_relay_monitor"
 )
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*RelayMonitor, error) {
+func New(ctx context.Context, log observability.ContextualLogger, config *Config, overrides *Override) (*RelayMonitor, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -154,22 +155,22 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 
 	r.log.
 		WithField("version", xatu.Full()).
-		WithField("id", r.id.String()).
+		WithField("id", r.id.String()).WithContext(ctx).
 		Info("Starting Xatu in relay monitor mode")
 
 	// Sync clock drift
 	if err := r.syncClockDrift(ctx); err != nil {
 		// This is not fatal, as we will sync it on the first poll
-		r.log.WithError(err).Warn("Failed to sync clock drift")
+		r.log.WithError(err).WithContext(ctx).Warn("Failed to sync clock drift")
 	}
 
 	if r.clockDrift != 0 {
-		r.log.WithField("drift", r.clockDrift).Info("Clock drift detected")
+		r.log.WithField("drift", r.clockDrift).WithContext(ctx).Info("Clock drift detected")
 
 		maxDrift := time.Second * 60 * 5
 
 		if r.clockDrift > maxDrift || r.clockDrift < -maxDrift {
-			r.log.WithField("drift", r.clockDrift).Fatal("Clock drift is too high, exiting")
+			r.log.WithField("drift", r.clockDrift).WithContext(ctx).Fatal("Clock drift is too high, exiting")
 		}
 	}
 
@@ -184,7 +185,7 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 	}
 
 	if err := r.startCrons(ctx); err != nil {
-		r.log.WithError(err).Fatal("Failed to start crons")
+		r.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
 	if r.Config.ValidatorRegistrations.Enabled != nil && *r.Config.ValidatorRegistrations.Enabled {
@@ -196,12 +197,12 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 	// Start coordinator client if configured
 	if r.coordinatorClient != nil {
 		if err := r.coordinatorClient.Start(ctx); err != nil {
-			r.log.WithError(err).Error("Failed to start coordinator client")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to start coordinator client")
 		}
 
 		// Start consistency processes if configured
 		if err := r.startConsistencyProcesses(ctx); err != nil {
-			r.log.WithError(err).Error("Failed to start consistency processes")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to start consistency processes")
 		}
 	}
 
@@ -209,16 +210,16 @@ func (r *RelayMonitor) Start(ctx context.Context) error {
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
-	r.log.Printf("Caught signal: %v", sig)
+	r.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 
 	// Stop coordinator client if running
 	if r.coordinatorClient != nil {
 		if err := r.coordinatorClient.Stop(ctx); err != nil {
-			r.log.WithError(err).Error("Failed to stop coordinator client")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to stop coordinator client")
 		}
 	}
 
-	r.log.Printf("Flushing sinks")
+	r.log.WithContext(ctx).Printf("Flushing sinks")
 
 	for _, sink := range r.sinks {
 		if err := sink.Stop(ctx); err != nil {
@@ -240,10 +241,10 @@ func (r *RelayMonitor) ServeMetrics(ctx context.Context) error {
 			Handler:           sm,
 		}
 
-		r.log.Infof("Serving metrics at %s", r.Config.MetricsAddr)
+		r.log.WithContext(ctx).Infof("Serving metrics at %s", r.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
-			r.log.Fatal(err)
+			r.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -257,10 +258,10 @@ func (r *RelayMonitor) ServePProf(ctx context.Context) error {
 	}
 
 	go func() {
-		r.log.Infof("Serving pprof at %s", *r.Config.PProfAddr)
+		r.log.WithContext(ctx).Infof("Serving pprof at %s", *r.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
-			r.log.Fatal(err)
+			r.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -275,16 +276,16 @@ func (r *RelayMonitor) ServeProbe(ctx context.Context) error {
 			w.WriteHeader(http.StatusOK)
 			_, err := w.Write([]byte("OK"))
 			if err != nil {
-				r.log.Error("Failed to write response: ", err)
+				r.log.WithContext(ctx).Error("Failed to write response: ", err)
 			}
 		}),
 	}
 
 	go func() {
-		r.log.Infof("Serving probe at %s", *r.Config.ProbeAddr)
+		r.log.WithContext(ctx).Infof("Serving probe at %s", *r.Config.ProbeAddr)
 
 		if err := probeServer.ListenAndServe(); err != nil {
-			r.log.Fatal(err)
+			r.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -323,7 +324,7 @@ func (r *RelayMonitor) startCrons(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := r.syncClockDrift(ctx); err != nil {
-					r.log.WithError(err).Error("Failed to sync clock drift")
+					r.log.WithError(err).WithContext(ctx).Error("Failed to sync clock drift")
 				}
 			},
 			ctx,
@@ -342,7 +343,7 @@ func (r *RelayMonitor) startCrons(ctx context.Context) error {
 	}
 
 	if !r.Config.FetchProposerPayloadDelivered {
-		r.log.Warn("Proposer payload delivered fetching is disabled")
+		r.log.WithContext(ctx).Warn("Proposer payload delivered fetching is disabled")
 	} else {
 		for _, relayClient := range r.relays {
 			r.scheduleProposerPayloadDeliveredFetching(ctx, relayClient)
@@ -366,7 +367,7 @@ func (r *RelayMonitor) syncClockDrift(ctx context.Context) error {
 	}
 
 	r.clockDrift = response.ClockOffset
-	r.log.WithField("drift", r.clockDrift).Info("Updated clock drift")
+	r.log.WithField("drift", r.clockDrift).WithContext(ctx).Info("Updated clock drift")
 
 	return err
 }
@@ -381,7 +382,7 @@ func (r *RelayMonitor) handleNewDecoratedEvent(ctx context.Context, event *xatu.
 
 	for _, sink := range r.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			r.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")
+			r.log.WithError(err).WithField("sink", sink.Type()).WithContext(ctx).Error("Failed to send event to sink")
 		}
 	}
 
@@ -398,13 +399,13 @@ func (r *RelayMonitor) handleValidatorRegistrationEvents(ctx context.Context) {
 
 			ev, err := r.createValidatorRegistrationEvent(ctx, event.Validator, event.Relay, event.Registration)
 			if err != nil {
-				r.log.WithError(err).Error("Failed to create validator registration event")
+				r.log.WithError(err).WithContext(ctx).Error("Failed to create validator registration event")
 
 				continue
 			}
 
 			if err := r.handleNewDecoratedEvent(ctx, ev); err != nil {
-				r.log.WithError(err).Error("Failed to handle new decorated event")
+				r.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 			}
 		case <-ctx.Done():
 			return
@@ -498,7 +499,7 @@ func (r *RelayMonitor) createValidatorRegistrationEvent(
 			MevRelayValidatorRegistration: additionalData,
 		}
 	} else {
-		r.log.WithError(err).Error("Failed to create validator registration additional data")
+		r.log.WithError(err).WithContext(ctx).Error("Failed to create validator registration additional data")
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{

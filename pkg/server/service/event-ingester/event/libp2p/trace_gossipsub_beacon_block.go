@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceGossipSubBeaconBlock struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceGossipSubBeaconBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGossipSubBeaconBlock {
+func NewTraceGossipSubBeaconBlock(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceGossipSubBeaconBlock {
 	return &TraceGossipSubBeaconBlock{
 		log:   log.WithField("event", TraceGossipSubBeaconBlockType),
 		event: event,

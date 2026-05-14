@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceLeave struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceLeave(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceLeave {
+func NewTraceLeave(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceLeave {
 	return &TraceLeave{
 		log:   log.WithField("event", TraceLeaveType),
 		event: event,

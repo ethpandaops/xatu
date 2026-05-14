@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type Transaction struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTransaction(log logrus.FieldLogger, event *xatu.DecoratedEvent) *Transaction {
+func NewTransaction(log observability.ContextualLogger, event *xatu.DecoratedEvent) *Transaction {
 	return &Transaction{
 		log:   log.WithField("event", TransactionType),
 		event: event,

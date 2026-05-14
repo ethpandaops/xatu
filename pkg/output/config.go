@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/kafka"
@@ -13,7 +15,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	pxatu "github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -35,7 +36,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewSink(name string, sinkType SinkType, config *RawMessage, log logrus.FieldLogger, filterConfig pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (Sink, error) {
+func NewSink(name string, sinkType SinkType, config *RawMessage, log observability.ContextualLogger, filterConfig pxatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (Sink, error) {
 	if sinkType == SinkTypeUnknown {
 		return nil, errors.New("sink type is required")
 	}

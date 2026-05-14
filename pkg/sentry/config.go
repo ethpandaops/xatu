@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/human"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -84,7 +84,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {

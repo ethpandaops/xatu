@@ -1,9 +1,19 @@
 package observability
 
 import (
+	"context"
+
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 )
+
+// ContextualLogger extends logrus.FieldLogger with WithContext so call
+// sites that have a context.Context can attach it to log entries. Both
+// *logrus.Logger and *logrus.Entry satisfy this interface.
+type ContextualLogger interface {
+	logrus.FieldLogger
+	WithContext(ctx context.Context) *logrus.Entry
+}
 
 // TraceContextHook is a logrus hook that stamps the active OTel span's
 // trace_id and span_id onto each log entry that carries a context.

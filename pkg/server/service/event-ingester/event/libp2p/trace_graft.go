@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceGraft struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceGraft(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGraft {
+func NewTraceGraft(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceGraft {
 	return &TraceGraft{
 		log:   log.WithField("event", TraceGraftType),
 		event: event,

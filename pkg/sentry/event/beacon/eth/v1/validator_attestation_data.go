@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ValidatorAttestationData struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	snapshot *ValidatorAttestationDataSnapshot
 	event    *phase0.AttestationData
@@ -31,7 +32,7 @@ type ValidatorAttestationDataSnapshot struct {
 	RequestDuration time.Duration
 }
 
-func NewValidatorAttestationData(log logrus.FieldLogger, snapshot *ValidatorAttestationDataSnapshot, event *phase0.AttestationData, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
+func NewValidatorAttestationData(log observability.ContextualLogger, snapshot *ValidatorAttestationDataSnapshot, event *phase0.AttestationData, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ValidatorAttestationData {
 	return &ValidatorAttestationData{
 		log:        log.WithField("event", "BEACON_API_ETH_V1_VALIDATOR_ATTESTATION_DATA"),
 		snapshot:   snapshot,
@@ -75,7 +76,7 @@ func (e *ValidatorAttestationData) Decorate(ctx context.Context) (*xatu.Decorate
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra validator attestation data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra validator attestation data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1ValidatorAttestationData{
 			EthV1ValidatorAttestationData: additionalData,

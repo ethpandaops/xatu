@@ -8,18 +8,19 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type BackfillingCheckpoint struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cannonType        xatu.CannonType
 	coordinator       coordinator.Client
 	wallclock         *ethwallclock.EthereumBeaconChain
@@ -47,8 +48,7 @@ type BackFillingCheckpointNextResponse struct {
 }
 
 func NewBackfillingCheckpoint(
-	log logrus.FieldLogger,
-	networkName, networkID string,
+	log observability.ContextualLogger, networkName, networkID string,
 	cannonType xatu.CannonType,
 	coordinatorClient *coordinator.Client,
 	wallclock *ethwallclock.EthereumBeaconChain,
@@ -87,9 +87,9 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 
 		c.log.WithFields(logrus.Fields{
 			"backfill_target_epoch": epoch,
-		}).Info("Backfilling is enabled")
+		}).WithContext(ctx).Info("Backfilling is enabled")
 	} else {
-		c.log.Info("Backfilling is disabled")
+		c.log.WithContext(ctx).Info("Backfilling is disabled")
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0
 	c.log.WithFields(logrus.Fields{
 		"direction": direction,
 		"epoch":     epoch,
-	}).Debug("Updating cannon location")
+	}).WithContext(ctx).Debug("Updating cannon location")
 
 	err = c.coordinator.UpsertCannonLocationRequest(ctx, newLocation)
 	if err != nil {
@@ -140,7 +140,7 @@ func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0
 	c.log.WithFields(logrus.Fields{
 		"direction": direction,
 		"epoch":     epoch,
-	}).Debug("Updated cannon location")
+	}).WithContext(ctx).Debug("Updated cannon location")
 
 	c.metrics.SetBackfillEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.BackfillEpoch))
 	c.metrics.SetFinalizedEpoch(c.cannonType.String(), c.networkName, c.checkpointName, float64(marker.FinalizedEpoch))
@@ -165,7 +165,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				"next_epoch":  rsp.Next,
 				"direction":   rsp.Direction,
 				"look_aheads": rsp.LookAheads,
-			}).Debug("Returning next epoch")
+			}).WithContext(ctx).Debug("Returning next epoch")
 
 			span.SetAttributes(attribute.Int64("next_epoch", int64(rsp.Next)))
 			span.SetAttributes(attribute.String("direction", string(rsp.Direction)))
@@ -237,7 +237,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				"sleep_for":             sleepFor.String(),
 				"checkpoint_epoch":      checkpoint.Epoch,
 				"backfill_target_epoch": backfillTargetEpoch,
-			}).Info("Sleeping until next epoch as the fork for the iterator is not yet active")
+			}).WithContext(ctx).Info("Sleeping until next epoch as the fork for the iterator is not yet active")
 
 			time.Sleep(sleepFor)
 
@@ -293,7 +293,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			c.log.WithFields(logrus.Fields{
 				"next_epoch":   next,
 				"target_epoch": backfillTargetEpoch,
-			}).Info("Derived next backfill epoch to process")
+			}).WithContext(ctx).Info("Derived next backfill epoch to process")
 
 			return &BackFillingCheckpointNextResponse{
 				Next:       next,
@@ -316,7 +316,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				"backfill_epoch_marker": marker.BackfillEpoch,
 				"head_epoch_marker":     marker.FinalizedEpoch,
 				"backfill_epoch_target": backfillTargetEpoch,
-			}).Info("Sleeping until next epoch")
+			}).WithContext(ctx).Info("Sleeping until next epoch")
 
 			time.Sleep(sleepFor)
 
@@ -332,7 +332,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			"marker_backfill_epoch":  marker.BackfillEpoch,
 			"checkpoint_epoch":       checkpoint.Epoch,
 			"backfill_target_epoch":  backfillTargetEpoch,
-		}).Info("Current state before returning unknown state")
+		}).WithContext(ctx).Info("Current state before returning unknown state")
 
 		return nil, errors.New("unknown state")
 	}

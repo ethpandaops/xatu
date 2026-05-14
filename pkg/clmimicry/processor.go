@@ -4,7 +4,8 @@ import (
 	"time"
 
 	"github.com/ethpandaops/ethwallclock"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // Processor encapsulates all event processing logic for Hermes events
@@ -29,7 +30,7 @@ type Processor struct {
 	events EventConfig
 
 	// Logging
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 }
 
 // NewProcessor creates a new Processor instance
@@ -43,8 +44,7 @@ func NewProcessor(
 	wallclock *ethwallclock.EthereumBeaconChain,
 	clockDrift time.Duration,
 	events EventConfig,
-	log logrus.FieldLogger,
-) *Processor {
+	log observability.ContextualLogger) *Processor {
 	return &Processor{
 		duties:           duties,
 		output:           output,

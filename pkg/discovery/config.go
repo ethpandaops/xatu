@@ -8,7 +8,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -52,7 +51,7 @@ func (c *Config) Validate() error {
 }
 
 // ApplyOverrides applies any overrides to the config.
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}
@@ -67,7 +66,7 @@ func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
 }
 
 // CreateSinks creates the sinks from the configuration.
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {

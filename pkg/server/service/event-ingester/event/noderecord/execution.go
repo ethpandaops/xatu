@@ -6,11 +6,13 @@ import (
 	"net"
 
 	coreenr "github.com/ethpandaops/ethcore/pkg/ethereum/node/enr"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 var (
@@ -18,12 +20,12 @@ var (
 )
 
 type Execution struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewExecution(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *Execution {
+func NewExecution(log observability.ContextualLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *Execution {
 	return &Execution{
 		log:           log.WithField("event", ExecutionType),
 		event:         event,
@@ -52,7 +54,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	// Extract ENR from the execution event data.
 	executionData := b.event.GetNodeRecordExecution()
 	if executionData == nil {
-		b.log.Error("failed to get execution data from event")
+		b.log.WithContext(ctx).Error("failed to get execution data from event")
 
 		return meta
 	}
@@ -64,7 +66,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	if enrString == "" {
-		b.log.Debug("no ENR data available for IP extraction")
+		b.log.WithContext(ctx).Debug("no ENR data available for IP extraction")
 
 		return meta
 	}
@@ -72,7 +74,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	// Parse ENR to extract IP address.
 	parsedENR, err := coreenr.Parse(enrString)
 	if err != nil {
-		b.log.WithError(err).WithField("enr", enrString).Error("failed to parse ENR")
+		b.log.WithError(err).WithField("enr", enrString).WithContext(ctx).Error("failed to parse ENR")
 
 		return meta
 	}
@@ -104,7 +106,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	}
 
 	if executionData.Ip == nil {
-		b.log.Debug("no IP address found in ENR")
+		b.log.WithContext(ctx).Debug("no IP address found in ENR")
 
 		return meta
 	}
@@ -116,7 +118,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	// Validate and parse IP address.
 	ip := net.ParseIP(executionData.Ip.GetValue())
 	if ip == nil {
-		b.log.WithField("ip", executionData.Ip.GetValue()).Error("failed to parse IP address")
+		b.log.WithField("ip", executionData.Ip.GetValue()).WithContext(ctx).Error("failed to parse IP address")
 
 		return meta
 	}
@@ -125,7 +127,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 	if b.geoipProvider != nil {
 		geoipResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 		if err != nil {
-			b.log.WithField("ip", executionData.Ip.GetValue()).WithError(err).Warn("failed to lookup geoip data")
+			b.log.WithField("ip", executionData.Ip.GetValue()).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 
 			return meta
 		}
@@ -150,7 +152,7 @@ func (b *Execution) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta)
 				"ip":      executionData.Ip.GetValue(),
 				"country": geoipResult.CountryName,
 				"city":    geoipResult.CityName,
-			}).Debug("successfully updated server meta with execution node geo information")
+			}).WithContext(ctx).Debug("successfully updated server meta with execution node geo information")
 		}
 	}
 

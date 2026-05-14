@@ -3,8 +3,9 @@ package persistence
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 )
 
 var nodeRecordStruct = sqlbuilder.NewStruct(new(node.Record)).For(sqlbuilder.PostgreSQL)

@@ -9,8 +9,9 @@ import (
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
 	"github.com/go-co-op/gocron/v2"
+
+	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
 )
 
 func (s *Sentry) startValidatorBlockSchedule(ctx context.Context) error {
@@ -80,7 +81,7 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3
 
 	provider, ok := s.beacon.Node().Service().(eth2client.ProposalProvider)
 	if !ok {
-		s.log.Error("Beacon node service client is not ProposalProvider")
+		s.log.WithContext(ctx).Error("Beacon node service client is not ProposalProvider")
 
 		return nil, fmt.Errorf("unexpected service client type, expected: eth2client.ProposalProvider, got %T", s.beacon.Node().Service())
 	}
@@ -105,7 +106,7 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3
 		BuilderBoostFactor:     &boostFactor,
 	})
 	if err != nil {
-		s.log.WithError(err).Error("Failed to get proposal")
+		s.log.WithError(err).WithContext(ctx).Error("Failed to get proposal")
 
 		return nil, err
 	}

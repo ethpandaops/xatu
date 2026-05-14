@@ -6,6 +6,7 @@ import (
 	"time"
 
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -22,7 +23,7 @@ import (
 // beacon node has confirmed the payload + blobs are locally available, ready
 // for the PTC to vote payload_present = true. Carries only block_root + slot.
 type EventsExecutionPayloadAvailable struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -33,7 +34,7 @@ type EventsExecutionPayloadAvailable struct {
 	id             uuid.UUID
 }
 
-func NewEventsExecutionPayloadAvailable(log logrus.FieldLogger, event *apiv1.ExecutionPayloadAvailableEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayloadAvailable {
+func NewEventsExecutionPayloadAvailable(log observability.ContextualLogger, event *apiv1.ExecutionPayloadAvailableEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayloadAvailable {
 	return &EventsExecutionPayloadAvailable{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE"),
 		now:            now,
@@ -62,7 +63,7 @@ func (e *EventsExecutionPayloadAvailable) Decorate(ctx context.Context) (*xatu.D
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra execution payload available data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra execution payload available data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsExecutionPayloadAvailable{
 			EthV1EventsExecutionPayloadAvailable: additionalData,
@@ -92,7 +93,7 @@ func (e *EventsExecutionPayloadAvailable) ShouldIgnore(ctx context.Context) (boo
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			slotLogField:               e.event.Slot,
-		}).Debug("Duplicate execution payload available event received")
+		}).WithContext(ctx).Debug("Duplicate execution payload available event received")
 
 		return true, nil
 	}

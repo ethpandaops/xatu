@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -21,7 +22,7 @@ import (
 // which carries the full SignedExecutionPayloadEnvelope and fires when the
 // beacon node has imported the envelope into the fork-choice store.
 type EventsExecutionPayload struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -32,7 +33,7 @@ type EventsExecutionPayload struct {
 	id             uuid.UUID
 }
 
-func NewEventsExecutionPayload(log logrus.FieldLogger, event *gloas.SignedExecutionPayloadEnvelope, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayload {
+func NewEventsExecutionPayload(log observability.ContextualLogger, event *gloas.SignedExecutionPayloadEnvelope, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayload {
 	return &EventsExecutionPayload{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD"),
 		now:            now,
@@ -61,7 +62,7 @@ func (e *EventsExecutionPayload) Decorate(ctx context.Context) (*xatu.DecoratedE
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra execution payload data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra execution payload data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsExecutionPayload{
 			EthV1EventsExecutionPayload: additionalData,
@@ -91,7 +92,7 @@ func (e *EventsExecutionPayload) ShouldIgnore(ctx context.Context) (bool, error)
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			"beacon_block_root":        e.event.Message.BeaconBlockRoot.String(),
-		}).Debug("Duplicate execution payload event received")
+		}).WithContext(ctx).Debug("Duplicate execution payload event received")
 
 		return true, nil
 	}

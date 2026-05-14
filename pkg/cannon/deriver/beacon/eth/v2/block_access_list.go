@@ -38,7 +38,7 @@ type BlockAccessListDeriverConfig struct {
 // Gloas fork onwards. The BAL data is embedded in the ExecutionPayload as the
 // BlockAccessList field.
 type BlockAccessListDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BlockAccessListDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -48,7 +48,7 @@ type BlockAccessListDeriver struct {
 
 // NewBlockAccessListDeriver creates a new BlockAccessListDeriver.
 func NewBlockAccessListDeriver(
-	log logrus.FieldLogger,
+	log observability.ContextualLogger,
 	config *BlockAccessListDeriverConfig,
 	iter *iterator.BackfillingCheckpoint,
 	beacon *ethereum.BeaconNode,
@@ -92,12 +92,12 @@ func (b *BlockAccessListDeriver) OnEventsDerived(
 // Start begins the deriver's main processing loop.
 func (b *BlockAccessListDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Block access list deriver disabled")
+		b.log.WithContext(ctx).Info("Block access list deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Block access list deriver enabled")
+	b.log.WithContext(ctx).Info("Block access list deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -147,7 +147,7 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -175,12 +175,12 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).
 						Warn("Failed to process")
 				}),
 			}
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -277,11 +277,11 @@ func (b *BlockAccessListDeriver) processSlot(
 
 	// Decode the BAL from the ExecutionPayload (now sourced via envelope)
 	rawBAL := execPayload.BlockAccessList
-	b.log.WithField("slot", slot).WithField("raw_bal_len", len(rawBAL)).Debug("Processing BAL data")
+	b.log.WithField("slot", slot).WithField("raw_bal_len", len(rawBAL)).WithContext(ctx).Debug("Processing BAL data")
 
 	bal := xatuethv1.NewBlockAccessListFromGloas(rawBAL)
 
-	b.log.WithField("slot", slot).WithField("entries", len(bal.GetEntries())).Debug("Decoded BAL entries")
+	b.log.WithField("slot", slot).WithField("entries", len(bal.GetEntries())).WithContext(ctx).Debug("Decoded BAL entries")
 
 	if bal == nil || len(bal.GetEntries()) == 0 {
 		return []*xatu.DecoratedEvent{}, nil
@@ -472,7 +472,7 @@ func (b *BlockAccessListDeriver) lookAhead(
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

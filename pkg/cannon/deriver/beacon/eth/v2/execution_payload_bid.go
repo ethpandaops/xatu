@@ -37,7 +37,7 @@ type ExecutionPayloadBidDeriverConfig struct {
 // events from `block.Body.SignedExecutionPayloadBid` on Gloas+ blocks. One
 // bid per block (the proposer's chosen builder).
 type ExecutionPayloadBidDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *ExecutionPayloadBidDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -45,7 +45,7 @@ type ExecutionPayloadBidDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewExecutionPayloadBidDeriver(log logrus.FieldLogger, config *ExecutionPayloadBidDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionPayloadBidDeriver {
+func NewExecutionPayloadBidDeriver(log observability.ContextualLogger, config *ExecutionPayloadBidDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionPayloadBidDeriver {
 	return &ExecutionPayloadBidDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v2/execution_payload_bid",
@@ -78,12 +78,12 @@ func (b *ExecutionPayloadBidDeriver) OnEventsDerived(ctx context.Context, fn fun
 
 func (b *ExecutionPayloadBidDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Execution payload bid deriver disabled")
+		b.log.WithContext(ctx).Info("Execution payload bid deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Execution payload bid deriver enabled")
+	b.log.WithContext(ctx).Info("Execution payload bid deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -127,7 +127,7 @@ func (b *ExecutionPayloadBidDeriver) run(rctx context.Context) {
 
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -152,11 +152,11 @@ func (b *ExecutionPayloadBidDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -234,7 +234,7 @@ func (b *ExecutionPayloadBidDeriver) processSlot(ctx context.Context, slot phase
 
 	event, err := b.createEvent(ctx, bid, blockIdentifier)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to create event")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 		return nil, errors.Wrapf(err, "failed to create execution payload bid event for slot %d", slot)
 	}
@@ -255,7 +255,7 @@ func (b *ExecutionPayloadBidDeriver) lookAhead(ctx context.Context, epochs []pha
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,11 +16,11 @@ const (
 // — fork-choice slot payload status transitions synthesized from beacon-node
 // internals (TYSM-instrumented, EIP-7732 ePBS).
 type PayloadStatusResolved struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewPayloadStatusResolved(log logrus.FieldLogger, event *xatu.DecoratedEvent) *PayloadStatusResolved {
+func NewPayloadStatusResolved(log observability.ContextualLogger, event *xatu.DecoratedEvent) *PayloadStatusResolved {
 	return &PayloadStatusResolved{
 		log:   log.WithField("event", PayloadStatusResolvedType),
 		event: event,

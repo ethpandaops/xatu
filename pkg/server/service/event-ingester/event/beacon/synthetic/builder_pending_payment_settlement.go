@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,11 +16,11 @@ const (
 // events — epoch-boundary builder pending payment settle/drop decisions synthesized
 // from beacon-node internals (TYSM-instrumented, EIP-7732 ePBS).
 type BuilderPendingPaymentSettlement struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBuilderPendingPaymentSettlement(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BuilderPendingPaymentSettlement {
+func NewBuilderPendingPaymentSettlement(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BuilderPendingPaymentSettlement {
 	return &BuilderPendingPaymentSettlement{
 		log:   log.WithField("event", BuilderPendingPaymentSettlementType),
 		event: event,

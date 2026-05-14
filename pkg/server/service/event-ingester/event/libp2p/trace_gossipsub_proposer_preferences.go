@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type TraceGossipSubProposerPreferences struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceGossipSubProposerPreferences(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGossipSubProposerPreferences {
+func NewTraceGossipSubProposerPreferences(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceGossipSubProposerPreferences {
 	return &TraceGossipSubProposerPreferences{
 		log:   log.WithField("event", TraceGossipSubProposerPreferencesType),
 		event: event,

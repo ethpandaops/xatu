@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -20,7 +21,7 @@ import (
 // EventsExecutionPayloadBid handles the EIP-7732 `execution_payload_bid` SSE
 // event — the builder's signed bid for the upcoming slot's execution payload.
 type EventsExecutionPayloadBid struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -31,7 +32,7 @@ type EventsExecutionPayloadBid struct {
 	id             uuid.UUID
 }
 
-func NewEventsExecutionPayloadBid(log logrus.FieldLogger, event *gloas.SignedExecutionPayloadBid, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayloadBid {
+func NewEventsExecutionPayloadBid(log observability.ContextualLogger, event *gloas.SignedExecutionPayloadBid, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsExecutionPayloadBid {
 	return &EventsExecutionPayloadBid{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID"),
 		now:            now,
@@ -60,7 +61,7 @@ func (e *EventsExecutionPayloadBid) Decorate(ctx context.Context) (*xatu.Decorat
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra execution payload bid data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra execution payload bid data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsExecutionPayloadBid{
 			EthV1EventsExecutionPayloadBid: additionalData,
@@ -92,7 +93,7 @@ func (e *EventsExecutionPayloadBid) ShouldIgnore(ctx context.Context) (bool, err
 			slotLogField:               e.event.Message.Slot,
 			"builder_index":            e.event.Message.BuilderIndex,
 			"block_hash":               e.event.Message.BlockHash.String(),
-		}).Debug("Duplicate execution payload bid event received")
+		}).WithContext(ctx).Debug("Duplicate execution payload bid event received")
 
 		return true, nil
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -21,7 +22,7 @@ import (
 // event — a proposer's signed declaration of their fee recipient + gas limit
 // preferences for an upcoming slot.
 type EventsProposerPreferences struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -32,7 +33,7 @@ type EventsProposerPreferences struct {
 	id             uuid.UUID
 }
 
-func NewEventsProposerPreferences(log logrus.FieldLogger, event *gloas.SignedProposerPreferences, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsProposerPreferences {
+func NewEventsProposerPreferences(log observability.ContextualLogger, event *gloas.SignedProposerPreferences, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsProposerPreferences {
 	return &EventsProposerPreferences{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES"),
 		now:            now,
@@ -61,7 +62,7 @@ func (e *EventsProposerPreferences) Decorate(ctx context.Context) (*xatu.Decorat
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra proposer preferences data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra proposer preferences data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsProposerPreferences{
 			EthV1EventsProposerPreferences: additionalData,
@@ -92,7 +93,7 @@ func (e *EventsProposerPreferences) ShouldIgnore(ctx context.Context) (bool, err
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			"validator_index":          e.event.Message.ValidatorIndex,
 			"proposal_slot":            e.event.Message.ProposalSlot,
-		}).Debug("Duplicate proposer preferences event received")
+		}).WithContext(ctx).Debug("Duplicate proposer preferences event received")
 
 		return true, nil
 	}

@@ -136,6 +136,7 @@ var (
 	// (TYSM-instrumented). No beacon API equivalent today.
 	TypeBeaconSyntheticPayloadStatusResolved           Type = synthetic.PayloadStatusResolvedType
 	TypeBeaconSyntheticBuilderPendingPaymentSettlement Type = synthetic.BuilderPendingPaymentSettlementType
+	TypeBeaconSyntheticPayloadAttestationProcessed     Type = synthetic.PayloadAttestationProcessedType
 )
 
 type Event interface {
@@ -473,6 +474,9 @@ func NewEventRouter(log logrus.FieldLogger, cache store.Cache, geoipProvider geo
 	})
 	router.RegisterHandler(TypeBeaconSyntheticBuilderPendingPaymentSettlement, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return synthetic.NewBuilderPendingPaymentSettlement(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconSyntheticPayloadAttestationProcessed, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return synthetic.NewPayloadAttestationProcessed(router.log, event), nil
 	})
 
 	return router

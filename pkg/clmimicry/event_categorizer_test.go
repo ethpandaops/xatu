@@ -19,8 +19,8 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 35 known events
-	assert.Equal(t, totalEvents, 35, "Should have exactly 35 events categorized")
+	// We should have categorized all 36 known events
+	assert.Equal(t, totalEvents, 36, "Should have exactly 36 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
@@ -179,6 +179,7 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
 		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED,
 		xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT,
+		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED,
 	}
 
 	// Check all events are properly categorized

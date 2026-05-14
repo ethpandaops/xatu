@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethpandaops/ethwallclock"
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/ethwallclock"
 	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
 	"github.com/go-co-op/gocron/v2"
 )

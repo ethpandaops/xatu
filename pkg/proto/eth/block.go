@@ -18,6 +18,18 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// baseFeePerGasFromLE converts the fork's little-endian 32-byte base fee
+// representation to its decimal string form, matching the wire format the
+// upstream library used to produce directly via BaseFeePerGas.
+func baseFeePerGasFromLE(le [32]byte) string {
+	var be [32]byte
+	for i := 0; i < 32; i++ {
+		be[i] = le[31-i]
+	}
+
+	return new(big.Int).SetBytes(be[:]).String()
+}
+
 func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.EventBlockV2, error) {
 	var data *v2.EventBlockV2
 
@@ -182,7 +194,7 @@ func NewEventBlockFromBellatrix(block *bellatrix.BeaconBlock, signature *phase0.
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: new(big.Int).SetBytes(block.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
+						BaseFeePerGas: baseFeePerGasFromLE(block.Body.ExecutionPayload.BaseFeePerGasLE),
 						BlockHash:     block.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Body.ExecutionPayload.Transactions),
 					},
@@ -236,7 +248,7 @@ func NewEventBlockFromCapella(block *capella.BeaconBlock, signature *phase0.BLSS
 						GasUsed:       &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.GasUsed},
 						Timestamp:     &wrapperspb.UInt64Value{Value: block.Body.ExecutionPayload.Timestamp},
 						ExtraData:     fmt.Sprintf("0x%x", block.Body.ExecutionPayload.ExtraData),
-						BaseFeePerGas: new(big.Int).SetBytes(block.Body.ExecutionPayload.BaseFeePerGas[:]).String(),
+						BaseFeePerGas: baseFeePerGasFromLE(block.Body.ExecutionPayload.BaseFeePerGasLE),
 						BlockHash:     block.Body.ExecutionPayload.BlockHash.String(),
 						Transactions:  getTransactions(block.Body.ExecutionPayload.Transactions),
 						Withdrawals:   v1.NewWithdrawalsFromCapella(block.Body.ExecutionPayload.Withdrawals),
@@ -395,6 +407,55 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 	return event
 }
 
+// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7732 + EIP-7928) beacon block.
+//
+// Under EIP-7732 the block body no longer carries an inline ExecutionPayload,
+// BlobKZGCommitments or ExecutionRequests:
+//   - ExecutionPayload  → arrives separately in an ExecutionPayloadEnvelope (sourced in cannon).
+//   - BlobKZGCommitments → carried inside SignedExecutionPayloadBid.
+//   - ExecutionRequests → moves into ExecutionPayloadEnvelope.ExecutionRequests.
+func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_GLOAS,
+		Message: &v2.EventBlockV2_GloasBlock{
+			GloasBlock: &v2.BeaconBlockGloas{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyGloas{
+					RandaoReveal: block.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
+					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
+					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
+					ParentExecutionRequests:   v1.NewElectraExecutionRequestsFromElectra(block.Body.ParentExecutionRequests),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
+}
+
 // Note: Fulu and electra blocks are identical.
 func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
 	kzgCommitments := []string{}
@@ -450,55 +511,6 @@ func NewEventBlockFromFulu(block *electra.BeaconBlock, signature *phase0.BLSSign
 					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					BlobKzgCommitments:    kzgCommitments,
 					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
-				},
-			},
-		},
-	}
-
-	if signature != nil && !signature.IsZero() {
-		event.Signature = signature.String()
-	}
-
-	return event
-}
-
-// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7732 + EIP-7928) beacon block.
-//
-// Under EIP-7732 the block body no longer carries an inline ExecutionPayload,
-// BlobKZGCommitments or ExecutionRequests:
-//   - ExecutionPayload  → arrives separately in an ExecutionPayloadEnvelope (sourced in cannon).
-//   - BlobKZGCommitments → carried inside SignedExecutionPayloadBid.
-//   - ExecutionRequests → moves into ExecutionPayloadEnvelope.ExecutionRequests.
-func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
-	event := &v2.EventBlockV2{
-		Version: v2.BlockVersion_GLOAS,
-		Message: &v2.EventBlockV2_GloasBlock{
-			GloasBlock: &v2.BeaconBlockGloas{
-				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
-				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
-				ParentRoot:    block.ParentRoot.String(),
-				StateRoot:     block.StateRoot.String(),
-				Body: &v2.BeaconBlockBodyGloas{
-					RandaoReveal: block.Body.RANDAOReveal.String(),
-					Eth1Data: &v1.Eth1Data{
-						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
-						DepositCount: block.Body.ETH1Data.DepositCount,
-						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
-					},
-					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
-					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
-					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
-					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
-					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
-					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
-					SyncAggregate: &v1.SyncAggregate{
-						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
-						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
-					},
-					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
-					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
-					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
-					ParentExecutionRequests:   v1.NewElectraExecutionRequestsFromElectra(block.Body.ParentExecutionRequests),
 				},
 			},
 		},

@@ -464,8 +464,8 @@ func (b *BeaconNode) GetExecutionPayloadEnvelope(
 		}
 
 		var envelope *gloas.SignedExecutionPayloadEnvelope
-		if resp != nil {
-			envelope = resp.Data
+		if resp != nil && resp.Data != nil {
+			envelope = resp.Data.Gloas
 		}
 
 		b.envelopeCache.Set(blockID, envelope, time.Hour)

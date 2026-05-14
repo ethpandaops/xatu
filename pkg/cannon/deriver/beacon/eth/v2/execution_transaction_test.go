@@ -63,9 +63,9 @@ func TestGetGasPrice_DynamicFee_PreGloas(t *testing.T) {
 		want  *big.Int
 	}{
 		{
-			// Bellatrix's BaseFeePerGas is a fixed [32]byte — the existing
-			// production code reads it via big.Int.SetBytes (big-endian), so
-			// put the value in the least-significant byte to encode 10.
+			// Bellatrix's BaseFeePerGasLE is a fixed little-endian [32]byte —
+			// the production code reverses it to big-endian then SetBytes,
+			// so put the value in the least-significant byte (index 0) to encode 10.
 			name: "Bellatrix base_fee=10",
 			block: &spec.VersionedSignedBeaconBlock{
 				Version: spec.DataVersionBellatrix,
@@ -73,7 +73,7 @@ func TestGetGasPrice_DynamicFee_PreGloas(t *testing.T) {
 					Message: &bellatrix.BeaconBlock{
 						Body: &bellatrix.BeaconBlockBody{
 							ExecutionPayload: &bellatrix.ExecutionPayload{
-								BaseFeePerGas: [32]byte{31: 10},
+								BaseFeePerGasLE: [32]byte{0: 10},
 							},
 						},
 					},

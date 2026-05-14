@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/ethpandaops/beacon/pkg/beacon"
+	"github.com/ethpandaops/ethwallclock"
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/beacon/pkg/beacon"
-	"github.com/ethpandaops/ethwallclock"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

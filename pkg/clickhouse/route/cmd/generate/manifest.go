@@ -16,6 +16,7 @@ var prefixRoutes = []struct {
 	{"consensus_engine_", "execution"},
 	{"execution_block_metrics", "execution"},
 	{"execution_engine_", "execution"},
+	{"execution_mpt_depth", "execution"},
 	{"execution_state_size", "execution"},
 	{"mempool_transaction", "execution"},
 	{"libp2p_", "libp2p"},

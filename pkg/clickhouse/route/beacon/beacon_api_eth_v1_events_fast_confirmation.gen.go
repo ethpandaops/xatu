@@ -4,6 +4,7 @@ package beacon
 
 import (
 	"net"
+	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
@@ -17,14 +18,14 @@ type beaconApiEthV1EventsFastConfirmationBatch struct {
 	EventDateTime                             proto.ColDateTime64
 	Slot                                      proto.ColUInt32
 	SlotStartDateTime                         proto.ColDateTime
-	PropagationSlotStartDiff                  proto.ColUInt32
+	PropagationSlotStartDiff                  *proto.ColNullable[uint32]
 	Block                                     route.SafeColFixedStr
-	Epoch                                     proto.ColUInt32
-	EpochStartDateTime                        proto.ColDateTime
-	WallclockSlot                             proto.ColUInt32
-	WallclockSlotStartDateTime                proto.ColDateTime
-	WallclockEpoch                            proto.ColUInt32
-	WallclockEpochStartDateTime               proto.ColDateTime
+	Epoch                                     *proto.ColNullable[uint32]
+	EpochStartDateTime                        *proto.ColNullable[time.Time]
+	WallclockSlot                             *proto.ColNullable[uint32]
+	WallclockSlotStartDateTime                *proto.ColNullable[time.Time]
+	WallclockEpoch                            *proto.ColNullable[uint32]
+	WallclockEpochStartDateTime               *proto.ColNullable[time.Time]
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -50,7 +51,14 @@ type beaconApiEthV1EventsFastConfirmationBatch struct {
 func newbeaconApiEthV1EventsFastConfirmationBatch() *beaconApiEthV1EventsFastConfirmationBatch {
 	return &beaconApiEthV1EventsFastConfirmationBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		PropagationSlotStartDiff:            new(proto.ColUInt32).Nullable(),
 		Block:                               func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		Epoch:                               new(proto.ColUInt32).Nullable(),
+		EpochStartDateTime:                  new(proto.ColDateTime).Nullable(),
+		WallclockSlot:                       new(proto.ColUInt32).Nullable(),
+		WallclockSlotStartDateTime:          new(proto.ColDateTime).Nullable(),
+		WallclockEpoch:                      new(proto.ColUInt32).Nullable(),
+		WallclockEpochStartDateTime:         new(proto.ColDateTime).Nullable(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
@@ -115,14 +123,14 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Input() proto.Input {
 		{Name: "event_date_time", Data: &b.EventDateTime},
 		{Name: "slot", Data: &b.Slot},
 		{Name: "slot_start_date_time", Data: &b.SlotStartDateTime},
-		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
+		{Name: "propagation_slot_start_diff", Data: b.PropagationSlotStartDiff},
 		{Name: "block", Data: &b.Block},
-		{Name: "epoch", Data: &b.Epoch},
-		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
-		{Name: "wallclock_slot", Data: &b.WallclockSlot},
-		{Name: "wallclock_slot_start_date_time", Data: &b.WallclockSlotStartDateTime},
-		{Name: "wallclock_epoch", Data: &b.WallclockEpoch},
-		{Name: "wallclock_epoch_start_date_time", Data: &b.WallclockEpochStartDateTime},
+		{Name: "epoch", Data: b.Epoch},
+		{Name: "epoch_start_date_time", Data: b.EpochStartDateTime},
+		{Name: "wallclock_slot", Data: b.WallclockSlot},
+		{Name: "wallclock_slot_start_date_time", Data: b.WallclockSlotStartDateTime},
+		{Name: "wallclock_epoch", Data: b.WallclockEpoch},
+		{Name: "wallclock_epoch_start_date_time", Data: b.WallclockEpochStartDateTime},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -190,14 +198,42 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Snapshot() []map[string]any 
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()
-		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
+		if v := b.PropagationSlotStartDiff.Row(i); v.Set {
+			row["propagation_slot_start_diff"] = v.Value
+		} else {
+			row["propagation_slot_start_diff"] = nil
+		}
 		row["block"] = string(b.Block.Row(i))
-		row["epoch"] = b.Epoch.Row(i)
-		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
-		row["wallclock_slot"] = b.WallclockSlot.Row(i)
-		row["wallclock_slot_start_date_time"] = b.WallclockSlotStartDateTime.Row(i).Unix()
-		row["wallclock_epoch"] = b.WallclockEpoch.Row(i)
-		row["wallclock_epoch_start_date_time"] = b.WallclockEpochStartDateTime.Row(i).Unix()
+		if v := b.Epoch.Row(i); v.Set {
+			row["epoch"] = v.Value
+		} else {
+			row["epoch"] = nil
+		}
+		if v := b.EpochStartDateTime.Row(i); v.Set {
+			row["epoch_start_date_time"] = v.Value.Unix()
+		} else {
+			row["epoch_start_date_time"] = nil
+		}
+		if v := b.WallclockSlot.Row(i); v.Set {
+			row["wallclock_slot"] = v.Value
+		} else {
+			row["wallclock_slot"] = nil
+		}
+		if v := b.WallclockSlotStartDateTime.Row(i); v.Set {
+			row["wallclock_slot_start_date_time"] = v.Value.Unix()
+		} else {
+			row["wallclock_slot_start_date_time"] = nil
+		}
+		if v := b.WallclockEpoch.Row(i); v.Set {
+			row["wallclock_epoch"] = v.Value
+		} else {
+			row["wallclock_epoch"] = nil
+		}
+		if v := b.WallclockEpochStartDateTime.Row(i); v.Set {
+			row["wallclock_epoch_start_date_time"] = v.Value.Unix()
+		} else {
+			row["wallclock_epoch_start_date_time"] = nil
+		}
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

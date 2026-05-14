@@ -4,9 +4,31 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+func appendNullableNumberAndStart(
+	numCol *proto.ColNullable[uint32],
+	timeCol *proto.ColNullable[time.Time],
+	number *wrapperspb.UInt64Value,
+	start *timestamppb.Timestamp,
+) {
+	if number != nil {
+		numCol.Append(proto.NewNullable(uint32(number.GetValue()))) //nolint:gosec // slot/epoch fits uint32
+	} else {
+		numCol.Append(proto.Nullable[uint32]{})
+	}
+
+	if start != nil {
+		timeCol.Append(proto.NewNullable(start.AsTime()))
+	} else {
+		timeCol.Append(proto.Nullable[time.Time]{})
+	}
+}
 
 var beaconApiEthV1EventsFastConfirmationEventNames = []xatu.Event_Name{
 	xatu.Event_BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION,
@@ -87,57 +109,40 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) appendPayload(event *xatu.De
 func (b *beaconApiEthV1EventsFastConfirmationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	if event.GetMeta() == nil || event.GetMeta().GetClient() == nil {
 		b.SlotStartDateTime.Append(time.Time{})
-		b.PropagationSlotStartDiff.Append(0)
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
-		b.WallclockSlot.Append(0)
-		b.WallclockSlotStartDateTime.Append(time.Time{})
-		b.WallclockEpoch.Append(0)
-		b.WallclockEpochStartDateTime.Append(time.Time{})
+		b.PropagationSlotStartDiff.Append(proto.Nullable[uint32]{})
+		b.Epoch.Append(proto.Nullable[uint32]{})
+		b.EpochStartDateTime.Append(proto.Nullable[time.Time]{})
+		b.WallclockSlot.Append(proto.Nullable[uint32]{})
+		b.WallclockSlotStartDateTime.Append(proto.Nullable[time.Time]{})
+		b.WallclockEpoch.Append(proto.Nullable[uint32]{})
+		b.WallclockEpochStartDateTime.Append(proto.Nullable[time.Time]{})
 
 		return
 	}
 
-	client := event.GetMeta().GetClient()
-	additionalV2 := client.GetEthV1EventsFastConfirmation()
-	additional := extractBeaconSlotEpochPropagation(additionalV2)
+	additionalV2 := event.GetMeta().GetClient().GetEthV1EventsFastConfirmation()
 
-	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
-	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
-	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32
-	b.EpochStartDateTime.Append(time.Unix(additional.EpochStartDateTime, 0))
-
-	if wallclockSlot := additionalV2.GetWallclockSlot(); wallclockSlot != nil {
-		if n := wallclockSlot.GetNumber(); n != nil {
-			b.WallclockSlot.Append(uint32(n.GetValue())) //nolint:gosec // slot fits uint32
+	if slot := additionalV2.GetSlot(); slot != nil {
+		if startDateTime := slot.GetStartDateTime(); startDateTime != nil {
+			b.SlotStartDateTime.Append(startDateTime.AsTime())
 		} else {
-			b.WallclockSlot.Append(0)
-		}
-
-		if startDateTime := wallclockSlot.GetStartDateTime(); startDateTime != nil {
-			b.WallclockSlotStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.WallclockSlotStartDateTime.Append(time.Time{})
+			b.SlotStartDateTime.Append(time.Time{})
 		}
 	} else {
-		b.WallclockSlot.Append(0)
-		b.WallclockSlotStartDateTime.Append(time.Time{})
+		b.SlotStartDateTime.Append(time.Time{})
 	}
 
-	if wallclockEpoch := additionalV2.GetWallclockEpoch(); wallclockEpoch != nil {
-		if n := wallclockEpoch.GetNumber(); n != nil {
-			b.WallclockEpoch.Append(uint32(n.GetValue())) //nolint:gosec // epoch fits uint32
+	if propagation := additionalV2.GetPropagation(); propagation != nil {
+		if diff := propagation.GetSlotStartDiff(); diff != nil {
+			b.PropagationSlotStartDiff.Append(proto.NewNullable(uint32(diff.GetValue()))) //nolint:gosec // diff fits uint32
 		} else {
-			b.WallclockEpoch.Append(0)
-		}
-
-		if startDateTime := wallclockEpoch.GetStartDateTime(); startDateTime != nil {
-			b.WallclockEpochStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.WallclockEpochStartDateTime.Append(time.Time{})
+			b.PropagationSlotStartDiff.Append(proto.Nullable[uint32]{})
 		}
 	} else {
-		b.WallclockEpoch.Append(0)
-		b.WallclockEpochStartDateTime.Append(time.Time{})
+		b.PropagationSlotStartDiff.Append(proto.Nullable[uint32]{})
 	}
+
+	appendNullableNumberAndStart(b.Epoch, b.EpochStartDateTime, additionalV2.GetEpoch().GetNumber(), additionalV2.GetEpoch().GetStartDateTime())
+	appendNullableNumberAndStart(b.WallclockSlot, b.WallclockSlotStartDateTime, additionalV2.GetWallclockSlot().GetNumber(), additionalV2.GetWallclockSlot().GetStartDateTime())
+	appendNullableNumberAndStart(b.WallclockEpoch, b.WallclockEpochStartDateTime, additionalV2.GetWallclockEpoch().GetNumber(), additionalV2.GetWallclockEpoch().GetStartDateTime())
 }

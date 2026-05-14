@@ -138,7 +138,7 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 
 				events, slot, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).WithField("epoch", position.Next).WithContext(rctx).Error("Failed to process epoch")
+					b.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 

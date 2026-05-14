@@ -242,7 +242,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if unmarshalErr != nil {
-		i.log.WithError(unmarshalErr).WithField("body_length", len(body)).WithField("content_type", contentType).Error("Failed to unmarshal request")
+		i.log.WithError(unmarshalErr).WithContext(ctx).WithField("body_length", len(body)).WithField("content_type", contentType).Error("Failed to unmarshal request")
 		span.SetStatus(ocodes.Error, unmarshalErr.Error())
 		http.Error(w, fmt.Sprintf("failed to parse request: %v", unmarshalErr), http.StatusBadRequest)
 
@@ -260,7 +260,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		i.log.WithField("events_count", len(req.GetEvents())).WithField("event_types", eventTypes).Debug("Received events via HTTP")
+		i.log.WithContext(ctx).WithField("events_count", len(req.GetEvents())).WithField("event_types", eventTypes).Debug("Received events via HTTP")
 	}
 
 	// Extract client IP
@@ -281,14 +281,14 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	// Process events through the pipeline
 	filteredCount, processErr := i.pipeline.ProcessAndSend(ctx, req.GetEvents(), user, group, "HTTPIngester.handleEvents")
 	if processErr != nil {
-		i.log.WithError(processErr).WithField("events_count", len(req.GetEvents())).Error("Failed to process events")
+		i.log.WithError(processErr).WithContext(ctx).WithField("events_count", len(req.GetEvents())).Error("Failed to process events")
 		span.SetStatus(ocodes.Error, processErr.Error())
 		http.Error(w, fmt.Sprintf("failed to process events: %v", processErr), http.StatusInternalServerError)
 
 		return
 	}
 
-	i.log.WithField("filtered_events_count", filteredCount).WithField("input_events_count", len(req.GetEvents())).Debug("Events processed by handler")
+	i.log.WithContext(ctx).WithField("filtered_events_count", filteredCount).WithField("input_events_count", len(req.GetEvents())).Debug("Events processed by handler")
 
 	// Build response
 	response := &xatu.CreateEventsResponse{
@@ -309,7 +309,7 @@ func (i *Ingester) handleEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 
 	if _, err := w.Write(respBytes); err != nil {
-		i.log.WithError(err).Error("Failed to write response")
+		i.log.WithError(err).WithContext(ctx).Error("Failed to write response")
 	}
 }
 

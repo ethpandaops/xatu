@@ -114,7 +114,7 @@ func (p *Pipeline) ProcessAndSend(
 	}
 
 	for _, sink := range p.sinks {
-		_, span := observability.Tracer().Start(ctx,
+		sinkCtx, span := observability.Tracer().Start(ctx,
 			spanPrefix+".SendEventsToSink",
 			trace.WithAttributes(
 				attribute.String("sink", sink.Name()),
@@ -122,7 +122,7 @@ func (p *Pipeline) ProcessAndSend(
 			),
 		)
 
-		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
+		if err := sink.HandleNewDecoratedEvents(sinkCtx, filteredEvents); err != nil {
 			span.SetStatus(ocodes.Error, err.Error())
 			span.End()
 

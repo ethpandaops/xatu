@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
@@ -122,6 +123,7 @@ type BatchItemProcessor[T any] struct {
 
 type TraceableItem[T any] struct {
 	item        *T
+	callerCtx   context.Context //nolint:containedctx // trace context propagation across async batching
 	errCh       chan error
 	completedCh chan struct{}
 }
@@ -237,7 +239,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 
 			item := &TraceableItem[T]{
-				item: i,
+				item:      i,
+				callerCtx: context.WithoutCancel(ctx),
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -280,6 +283,8 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
+	exportCtx := exportContext(ctx, itemsBatch)
+
 	// Since the batch processor filters out nil items upstream,
 	// we can optimize by pre-allocating the full slice size.
 	// Worst case is a few wasted allocations if any nil items slip through.
@@ -287,7 +292,7 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 
 	for i, item := range itemsBatch {
 		if item == nil {
-			bvp.log.WithContext(ctx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+			bvp.log.WithContext(exportCtx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
 
 			continue
 		}
@@ -297,7 +302,7 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 
 	startTime := time.Now()
 
-	err := bvp.e.ExportItems(ctx, items)
+	err := bvp.e.ExportItems(exportCtx, items)
 
 	duration := time.Since(startTime)
 
@@ -513,6 +518,34 @@ func (bvp *BatchItemProcessor[T]) drainQueue() {
 	bvp.log.Info("Draining queue: all items processed")
 
 	close(bvp.queue)
+}
+
+// exportContext builds the context an exporter sees: trace context
+// (and any baggage) from the first item that carried one, combined
+// with the worker's cancellation/timeout chain so shutdown still
+// propagates. Items without a caller context fall through to the
+// worker context.
+//
+// For batches that bridge multiple traces, only the first item's
+// trace becomes the parent; all other source traces are not linked
+// here. That edge case is acceptable for xatu's current shape (Write
+// is typically called per single calling trace) and can be revisited
+// with Span Links if cross-trace batching becomes common.
+func exportContext[T any](workerCtx context.Context, itemsBatch []*TraceableItem[T]) context.Context {
+	for _, item := range itemsBatch {
+		if item == nil || item.callerCtx == nil {
+			continue
+		}
+
+		sc := trace.SpanContextFromContext(item.callerCtx)
+		if !sc.IsValid() {
+			continue
+		}
+
+		return trace.ContextWithSpanContext(workerCtx, sc)
+	}
+
+	return workerCtx
 }
 
 func recoverSendOnClosedChan() {

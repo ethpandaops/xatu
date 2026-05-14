@@ -37,6 +37,7 @@ type groupMessage struct {
 	event      *xatu.DecoratedEvent
 	kafka      kafkaMessageMetadata
 	tables     []string
+	traceCtx   context.Context //nolint:containedctx // upstream trace context preserved for the CH write span
 }
 
 // eventGroup collects all successfully decoded messages for one event type.
@@ -134,7 +135,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
 
 		msgCtx := propagator.Extract(ctx, newBenthosHeaderCarrier(msg))
-		_, msgSpan := tracer.Start(msgCtx, "consumoor.HandleMessage",
+		msgCtx, msgSpan := tracer.Start(msgCtx, "consumoor.HandleMessage",
 			trace.WithSpanKind(trace.SpanKindConsumer),
 			trace.WithAttributes(
 				attribute.String("messaging.system", "kafka"),
@@ -150,6 +151,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			if ok, suppressed := o.logSampler.Allow("read_bytes:" + kafka.Topic); ok {
 				entry := o.log.WithError(err).
+					WithContext(msgCtx).
 					WithField("topic", kafka.Topic).
 					WithField("partition", kafka.Partition).
 					WithField("offset", kafka.Offset)
@@ -160,7 +162,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				entry.Warn("Failed to read message bytes")
 			}
 
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason: rejectReasonDecode,
 				Err:    err.Error(),
 				Kafka:  kafka,
@@ -179,6 +181,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			if ok, suppressed := o.logSampler.Allow("decode:" + kafka.Topic); ok {
 				entry := o.log.WithError(err).
+					WithContext(msgCtx).
 					WithField("topic", kafka.Topic).
 					WithField("partition", kafka.Partition).
 					WithField("offset", kafka.Offset)
@@ -189,7 +192,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				entry.Warn("Failed to decode message")
 			}
 
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason:  rejectReasonDecode,
 				Err:     err.Error(),
 				Payload: raw,
@@ -208,7 +211,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		outcome := o.router.Route(event)
 
 		if outcome.Status == router.StatusRejected {
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason:    rejectReasonRouteRejected,
 				Err:       "route rejected message",
 				Payload:   raw,
@@ -249,6 +252,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				event:      event,
 				kafka:      kafka,
 				tables:     []string{result.Table},
+				traceCtx:   trace.ContextWithSpanContext(context.Background(), msgSpan.SpanContext()),
 			})
 		}
 
@@ -317,8 +321,31 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 	}
 
+	links := make([]trace.Link, 0, len(g.messages))
+	seen := make(map[trace.SpanID]struct{}, len(g.messages))
+
+	for _, gm := range g.messages {
+		if gm.traceCtx == nil {
+			continue
+		}
+
+		sc := trace.SpanContextFromContext(gm.traceCtx)
+		if !sc.IsValid() {
+			continue
+		}
+
+		if _, dup := seen[sc.SpanID()]; dup {
+			continue
+		}
+
+		seen[sc.SpanID()] = struct{}{}
+
+		links = append(links, trace.Link{SpanContext: sc})
+	}
+
 	ctx, span := observability.Tracer().Start(ctx, "consumoor.WriteGroup",
 		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithLinks(links...),
 		trace.WithAttributes(
 			attribute.Int("messaging.batch.message_count", len(g.messages)),
 			attribute.Int("clickhouse.tables", len(tableEvents)),

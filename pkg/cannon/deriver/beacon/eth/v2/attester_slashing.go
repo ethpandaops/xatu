@@ -126,7 +126,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := a.processEpoch(ctx, position.Next)
 				if err != nil {
-					a.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
+					a.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}

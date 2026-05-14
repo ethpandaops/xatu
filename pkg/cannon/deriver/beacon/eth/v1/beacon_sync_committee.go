@@ -151,7 +151,7 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 					// Process the period boundary epoch
 					events, err := b.processEpoch(ctx, boundaryEpoch)
 					if err != nil {
-						b.log.WithError(err).WithContext(rctx).Error("Failed to process epoch")
+						b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 						span.SetStatus(codes.Error, err.Error())
 
 						return "", err

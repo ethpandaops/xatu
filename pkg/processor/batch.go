@@ -8,9 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // ItemExporter is an interface for exporting items.
@@ -213,9 +211,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 		return nil
 	}
 
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
-	defer span.End()
-
 	if bvp.e == nil {
 		return errors.New("exporter is nil")
 	}
@@ -275,12 +270,6 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 
 	bvp.metrics.IncWorkerExportInProgress(bvp.name)
 	defer bvp.metrics.DecWorkerExportInProgress(bvp.name)
-
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
-	defer span.End()
-
-	span.SetAttributes(attribute.String("processor", bvp.name))
-	span.SetAttributes(attribute.Int("batch_size", len(itemsBatch)))
 
 	if bvp.o.ExportTimeout > 0 {
 		var cancel context.CancelFunc

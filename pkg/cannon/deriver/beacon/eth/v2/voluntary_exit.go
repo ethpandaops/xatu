@@ -164,11 +164,6 @@ func (b *VoluntaryExitDeriver) run(rctx context.Context) {
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *VoluntaryExitDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"VoluntaryExitDeriver.lookAheadAtLocations",
-	)
-	defer span.End()
-
 	if epochs == nil {
 		return
 	}

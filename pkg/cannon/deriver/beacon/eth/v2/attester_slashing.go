@@ -166,11 +166,6 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 
 // lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
 func (a *AttesterSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"AttesterSlashingDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := a.beacon.Node().Spec()
 	if err != nil {
 		a.log.WithError(err).Warn("Failed to look ahead at epoch")

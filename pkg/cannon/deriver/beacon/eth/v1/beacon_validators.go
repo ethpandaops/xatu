@@ -184,11 +184,6 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 
 // lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
 func (b *BeaconValidatorsDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"BeaconValidatorsDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		b.log.WithError(err).Warn("Failed to look ahead at epoch")

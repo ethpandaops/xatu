@@ -272,11 +272,6 @@ func (b *ProposerSlashingDeriver) getProposerSlashings(ctx context.Context, bloc
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *ProposerSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"ProposerSlashingDeriver.lookAhead",
-	)
-	defer span.End()
-
 	if epochs == nil {
 		return
 	}

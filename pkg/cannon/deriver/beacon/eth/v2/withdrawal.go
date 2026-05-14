@@ -233,11 +233,6 @@ func (b *WithdrawalDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *WithdrawalDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"WithdrawalDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		b.log.WithError(err).Warn("Failed to look ahead at epoch")

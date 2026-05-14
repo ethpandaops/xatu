@@ -316,6 +316,15 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 	}
 
+	ctx, span := observability.Tracer().Start(ctx, "consumoor.WriteGroup",
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(
+			attribute.Int("messaging.batch.message_count", len(g.messages)),
+			attribute.Int("clickhouse.tables", len(tableEvents)),
+		),
+	)
+	defer span.End()
+
 	var (
 		allInvalidEvents []*xatu.DecoratedEvent
 		lastResult       *clickhouse.FlushResult

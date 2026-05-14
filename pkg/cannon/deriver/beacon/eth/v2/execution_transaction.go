@@ -199,11 +199,6 @@ func (b *ExecutionTransactionDeriver) processEpoch(ctx context.Context, epoch ph
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *ExecutionTransactionDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"ExecutionTransactionDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
 		b.log.WithError(err).Warn("Failed to look ahead at epoch")

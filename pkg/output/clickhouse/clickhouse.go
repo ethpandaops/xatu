@@ -26,9 +26,13 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
 	chrouter "github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // SinkType identifies this sink in output.Config.
@@ -176,6 +180,12 @@ func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 		return nil
 	}
 
+	ctx, span := observability.Tracer().Start(ctx, "ClickHouseSink.HandleNewDecoratedEvents",
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(attribute.Int("num_events", len(events))),
+	)
+	defer span.End()
+
 	tableEvents := make(map[string][]*xatu.DecoratedEvent, 8)
 
 	for _, event := range events {
@@ -230,8 +240,12 @@ func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 	}
 
 	if err := result.Err(); err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
 		return fmt.Errorf("clickhouse flush: %w", err)
 	}
+
+	span.SetAttributes(attribute.Int("clickhouse.tables", len(tableEvents)))
 
 	return nil
 }

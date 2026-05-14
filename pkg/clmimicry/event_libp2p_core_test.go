@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/output/mock"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+
+	"github.com/ethpandaops/xatu/pkg/output/mock"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func Test_mapLibp2pCoreEventToXatuEvent(t *testing.T) {

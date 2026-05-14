@@ -6,21 +6,21 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
 )
 
 var TraceIdentifyType = xatu.Event_LIBP2P_TRACE_IDENTIFY.String()
 
 type TraceIdentify struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewTraceIdentify(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceIdentify {
+func NewTraceIdentify(log observability.ContextualLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceIdentify {
 	return &TraceIdentify{
 		log:           log.WithField("event", TraceIdentifyType),
 		event:         event,
@@ -52,7 +52,7 @@ func (ti *TraceIdentify) Filter(ctx context.Context) bool {
 func (ti *TraceIdentify) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
 	data, ok := ti.event.GetData().(*xatu.DecoratedEvent_Libp2PTraceIdentify)
 	if !ok {
-		ti.log.Error("failed to cast event data")
+		ti.log.WithContext(ctx).Error("failed to cast event data")
 
 		return meta
 	}
@@ -74,7 +74,7 @@ func (ti *TraceIdentify) AppendServerMeta(ctx context.Context, meta *xatu.Server
 		if ip != nil && ti.geoipProvider != nil {
 			geoipLookupResult, err := ti.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
-				ti.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				ti.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {

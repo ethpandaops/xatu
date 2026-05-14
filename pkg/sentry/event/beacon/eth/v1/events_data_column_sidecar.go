@@ -6,19 +6,21 @@ import (
 	"time"
 
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsDataColumnSidecar struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -29,7 +31,7 @@ type EventsDataColumnSidecar struct {
 	id             uuid.UUID
 }
 
-func NewEventsDataColumnSidecar(log logrus.FieldLogger, event *apiv1.DataColumnSidecarEvent, now time.Time, beaconNode *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsDataColumnSidecar {
+func NewEventsDataColumnSidecar(log observability.ContextualLogger, event *apiv1.DataColumnSidecarEvent, now time.Time, beaconNode *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsDataColumnSidecar {
 	return &EventsDataColumnSidecar{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_DATA_COLUMN_SIDECAR"),
 		now:            now,
@@ -64,7 +66,7 @@ func (e *EventsDataColumnSidecar) Decorate(ctx context.Context) (*xatu.Decorated
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra data column sidecar data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra data column sidecar data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsDataColumnSidecar{
 			EthV1EventsDataColumnSidecar: additionalData,
@@ -91,7 +93,7 @@ func (e *EventsDataColumnSidecar) ShouldIgnore(ctx context.Context) (bool, error
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			slotLogField:               e.event.Slot,
 			indexLogField:              e.event.Index,
-		}).Debug("Duplicate data column sidecar event received")
+		}).WithContext(ctx).Debug("Duplicate data column sidecar event received")
 
 		return true, nil
 	}

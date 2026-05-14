@@ -6,19 +6,21 @@ import (
 	"time"
 
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsFinalizedCheckpoint struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -29,7 +31,7 @@ type EventsFinalizedCheckpoint struct {
 	id             uuid.UUID
 }
 
-func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *eth2v1.FinalizedCheckpointEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsFinalizedCheckpoint {
+func NewEventsFinalizedCheckpoint(log observability.ContextualLogger, event *eth2v1.FinalizedCheckpointEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsFinalizedCheckpoint {
 	return &EventsFinalizedCheckpoint{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_FINALIZED_CHECKPOINT_V2"),
 		now:            now,
@@ -62,7 +64,7 @@ func (e *EventsFinalizedCheckpoint) Decorate(ctx context.Context) (*xatu.Decorat
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra finalized checkpoint data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra finalized checkpoint data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsFinalizedCheckpointV2{
 			EthV1EventsFinalizedCheckpointV2: additionalData,
@@ -88,7 +90,7 @@ func (e *EventsFinalizedCheckpoint) ShouldIgnore(ctx context.Context) (bool, err
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			epochLogField:              e.event.Epoch,
-		}).Debug("Duplicate finalized checkpoint event received")
+		}).WithContext(ctx).Debug("Duplicate finalized checkpoint event received")
 
 		return true, nil
 	}

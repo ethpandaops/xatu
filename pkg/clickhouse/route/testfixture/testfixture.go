@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // Reusable identifiers and column-name keys for snapshot tests.

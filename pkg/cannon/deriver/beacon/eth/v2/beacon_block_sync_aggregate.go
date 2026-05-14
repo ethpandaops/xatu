@@ -13,11 +13,6 @@ import (
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -27,6 +22,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -39,7 +40,7 @@ type BeaconBlockSyncAggregateDeriverConfig struct {
 }
 
 type BeaconBlockSyncAggregateDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BeaconBlockSyncAggregateDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -52,8 +53,7 @@ type BeaconBlockSyncAggregateDeriver struct {
 }
 
 func NewBeaconBlockSyncAggregateDeriver(
-	log logrus.FieldLogger,
-	config *BeaconBlockSyncAggregateDeriverConfig,
+	log observability.ContextualLogger, config *BeaconBlockSyncAggregateDeriverConfig,
 	iter *iterator.BackfillingCheckpoint,
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,
@@ -92,12 +92,12 @@ func (b *BeaconBlockSyncAggregateDeriver) OnEventsDerived(
 
 func (b *BeaconBlockSyncAggregateDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Beacon block sync aggregate deriver disabled")
+		b.log.WithContext(ctx).Info("Beacon block sync aggregate deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Beacon block sync aggregate deriver enabled")
+	b.log.WithContext(ctx).Info("Beacon block sync aggregate deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -153,7 +153,7 @@ func (b *BeaconBlockSyncAggregateDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -190,11 +190,11 @@ func (b *BeaconBlockSyncAggregateDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -202,14 +202,9 @@ func (b *BeaconBlockSyncAggregateDeriver) run(rctx context.Context) {
 
 // lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
 func (b *BeaconBlockSyncAggregateDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"BeaconBlockSyncAggregateDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}
@@ -617,7 +612,7 @@ func (b *BeaconBlockSyncAggregateDeriver) createEvent(
 
 	additionalData, err := b.getAdditionalData(ctx, block)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to get additional sync aggregate data")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to get additional sync aggregate data")
 
 		return nil, err
 	}

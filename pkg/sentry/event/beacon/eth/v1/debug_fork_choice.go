@@ -6,17 +6,18 @@ import (
 
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ForkChoice struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	snapshot *ForkChoiceSnapshot
 
@@ -33,7 +34,7 @@ type ForkChoiceSnapshot struct {
 	RequestDuration time.Duration
 }
 
-func NewForkChoice(log logrus.FieldLogger, snapshot *ForkChoiceSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoice {
+func NewForkChoice(log observability.ContextualLogger, snapshot *ForkChoiceSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoice {
 	return &ForkChoice{
 		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2"),
 		snapshot:   snapshot,

@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	ocodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -12,16 +16,12 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	ocodes "go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Pipeline manages the shared event processing infrastructure used by
 // different transport layers (gRPC, HTTP) to ingest events.
 type Pipeline struct {
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 	config  *Config
 	auth    *auth.Authorization
 	handler *Handler
@@ -31,8 +31,7 @@ type Pipeline struct {
 // NewPipeline creates a new event processing pipeline.
 func NewPipeline(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	config *Config,
+	log observability.ContextualLogger, config *Config,
 	clockDrift *time.Duration,
 	geoipProvider geoip.Provider,
 	cache store.Cache,
@@ -115,7 +114,7 @@ func (p *Pipeline) ProcessAndSend(
 	}
 
 	for _, sink := range p.sinks {
-		_, span := observability.Tracer().Start(ctx,
+		sinkCtx, span := observability.Tracer().Start(ctx,
 			spanPrefix+".SendEventsToSink",
 			trace.WithAttributes(
 				attribute.String("sink", sink.Name()),
@@ -123,7 +122,7 @@ func (p *Pipeline) ProcessAndSend(
 			),
 		)
 
-		if err := sink.HandleNewDecoratedEvents(ctx, filteredEvents); err != nil {
+		if err := sink.HandleNewDecoratedEvents(sinkCtx, filteredEvents); err != nil {
 			span.SetStatus(ocodes.Error, err.Error())
 			span.End()
 
@@ -151,7 +150,7 @@ func (p *Pipeline) createSinks() ([]output.Sink, error) {
 			out.SinkType,
 			out.Config,
 			p.log,
-			out.FilterConfig,
+			&out.FilterConfig,
 			*out.ShippingMethod,
 		)
 		if err != nil {

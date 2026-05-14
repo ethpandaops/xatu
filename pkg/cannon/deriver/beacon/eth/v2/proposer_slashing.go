@@ -8,11 +8,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -33,7 +34,7 @@ type ProposerSlashingDeriverConfig struct {
 }
 
 type ProposerSlashingDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *ProposerSlashingDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -41,7 +42,7 @@ type ProposerSlashingDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewProposerSlashingDeriver(log logrus.FieldLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
+func NewProposerSlashingDeriver(log observability.ContextualLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v2/proposer_slashing",
@@ -72,12 +73,12 @@ func (b *ProposerSlashingDeriver) OnEventsDerived(ctx context.Context, fn func(c
 
 func (b *ProposerSlashingDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Proposer slashing deriver disabled")
+		b.log.WithContext(ctx).Info("Proposer slashing deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Proposer slashing deriver enabled")
+	b.log.WithContext(ctx).Info("Proposer slashing deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -124,7 +125,7 @@ func (b *ProposerSlashingDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -152,12 +153,12 @@ func (b *ProposerSlashingDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -223,7 +224,7 @@ func (b *ProposerSlashingDeriver) processSlot(ctx context.Context, slot phase0.S
 	for _, slashing := range slashings {
 		event, err := b.createEvent(ctx, slashing, blockIdentifier)
 		if err != nil {
-			b.log.WithError(err).Error("Failed to create event")
+			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create event for proposer slashing %s", slashing.String())
 		}
@@ -272,18 +273,13 @@ func (b *ProposerSlashingDeriver) getProposerSlashings(ctx context.Context, bloc
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *ProposerSlashingDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"ProposerSlashingDeriver.lookAhead",
-	)
-	defer span.End()
-
 	if epochs == nil {
 		return
 	}
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

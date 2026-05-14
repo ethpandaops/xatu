@@ -13,9 +13,10 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // baseFeePerGasFromLE converts the fork's little-endian 32-byte base fee

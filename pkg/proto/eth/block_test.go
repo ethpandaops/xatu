@@ -17,8 +17,9 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/holiman/uint256"
+
+	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 )
 
 func TestNewEventBlockV2FromVersionedProposal(t *testing.T) {

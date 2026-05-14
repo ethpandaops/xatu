@@ -12,16 +12,18 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type BeaconNode struct {
-	log       logrus.FieldLogger
+	log       observability.ContextualLogger
 	config    *Config
 	node      beacon.Node
 	wallclock *ethwallclock.EthereumBeaconChain
 }
 
-func NewBeaconNode(name string, log logrus.FieldLogger, config *Config) (*BeaconNode, error) {
+func NewBeaconNode(name string, log observability.ContextualLogger, config *Config) (*BeaconNode, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -100,7 +102,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	b.log.WithFields(logrus.Fields{
 		"current_slot":  slot.Number(),
 		"current_epoch": epoch.Number(),
-	}).Info("Beacon chain wallclock initialized")
+	}).WithContext(ctx).Info("Beacon chain wallclock initialized")
 
 	return nil
 }

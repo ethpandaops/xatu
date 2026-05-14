@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsBlockGossip struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsBlockGossip(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsBlockGossip {
+func NewEventsBlockGossip(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsBlockGossip {
 	return &EventsBlockGossip{
 		log:   log.WithField("event", EventsBlockGossipType),
 		event: event,

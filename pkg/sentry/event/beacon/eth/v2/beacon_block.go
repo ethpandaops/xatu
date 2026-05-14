@@ -6,9 +6,6 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
-	"github.com/ethpandaops/xatu/pkg/proto/eth"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
@@ -17,10 +14,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type BeaconBlock struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -32,7 +34,7 @@ type BeaconBlock struct {
 	id             uuid.UUID
 }
 
-func NewBeaconBlock(log logrus.FieldLogger, blockRoot string, event *spec.VersionedSignedBeaconBlock, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlock {
+func NewBeaconBlock(log observability.ContextualLogger, blockRoot string, event *spec.VersionedSignedBeaconBlock, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlock {
 	return &BeaconBlock{
 		log:            log.WithField("event", "BEACON_API_ETH_V2_BEACON_BLOCK_V2"),
 		now:            now,
@@ -67,7 +69,7 @@ func (e *BeaconBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra beacon block data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra beacon block data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV2BeaconBlockV2{
 			EthV2BeaconBlockV2: additionalData,
@@ -97,7 +99,7 @@ func (e *BeaconBlock) ShouldIgnore(ctx context.Context) (bool, error) {
 			"hash":                  hash,
 			"time_since_first_item": time.Since(item.Value()),
 			"slot":                  e.event.Slot,
-		}).Debug("Duplicate beacon block event received")
+		}).WithContext(ctx).Debug("Duplicate beacon block event received")
 
 		return true, nil
 	}

@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
 )
 
 type BeaconNode struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	beacon beacon.Node
 
@@ -23,7 +24,7 @@ type BeaconNode struct {
 	onReadyCallbacks []func(ctx context.Context) error
 }
 
-func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger, opt *Options) (*BeaconNode, error) {
+func NewBeaconNode(ctx context.Context, name string, config *Config, log observability.ContextualLogger, opt *Options) (*BeaconNode, error) {
 	opts := *beacon.
 		DefaultOptions().
 		DisablePrometheusMetrics()
@@ -67,7 +68,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	healthyFirstTime := make(chan struct{})
 
 	b.beacon.OnFirstTimeHealthy(ctx, func(ctx context.Context, event *beacon.FirstTimeHealthyEvent) error {
-		b.log.Info("Upstream beacon node is healthy")
+		b.log.WithContext(ctx).Info("Upstream beacon node is healthy")
 
 		close(healthyFirstTime)
 
@@ -77,25 +78,25 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			wg.Add(1)
 
 			service.OnReady(ctx, func(ctx context.Context) error {
-				b.log.WithField("service", service.Name()).Info("Service is ready")
+				b.log.WithField("service", service.Name()).WithContext(ctx).Info("Service is ready")
 
 				wg.Done()
 
 				return nil
 			})
 
-			b.log.WithField("service", service.Name()).Info("Starting service")
+			b.log.WithField("service", service.Name()).WithContext(ctx).Info("Starting service")
 
 			if err := service.Start(ctx); err != nil {
 				errs <- fmt.Errorf("failed to start service: %w", err)
 			}
 
-			b.log.WithField("service", service.Name()).Info("Waiting for service to be ready")
+			b.log.WithField("service", service.Name()).WithContext(ctx).Info("Waiting for service to be ready")
 
 			wg.Wait()
 		}
 
-		b.log.Info("All services are ready")
+		b.log.WithContext(ctx).Info("All services are ready")
 
 		for _, callback := range b.onReadyCallbacks {
 			if err := callback(ctx); err != nil {

@@ -8,11 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/clickhouse"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethpandaops/xatu/pkg/clickhouse"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // mockWriter implements source.Writer for testing health checks.

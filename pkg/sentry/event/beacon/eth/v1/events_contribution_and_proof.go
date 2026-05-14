@@ -6,19 +6,21 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsContributionAndProof struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -29,7 +31,7 @@ type EventsContributionAndProof struct {
 	id             uuid.UUID
 }
 
-func NewEventsContributionAndProof(log logrus.FieldLogger, event *altair.SignedContributionAndProof, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsContributionAndProof {
+func NewEventsContributionAndProof(log observability.ContextualLogger, event *altair.SignedContributionAndProof, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsContributionAndProof {
 	return &EventsContributionAndProof{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_CONTRIBUTION_AND_PROOF_V2"),
 		now:            now,
@@ -71,7 +73,7 @@ func (e *EventsContributionAndProof) Decorate(ctx context.Context) (*xatu.Decora
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra contribution and proof data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra contribution and proof data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsContributionAndProofV2{
 			EthV1EventsContributionAndProofV2: additionalData,
@@ -96,7 +98,7 @@ func (e *EventsContributionAndProof) ShouldIgnore(ctx context.Context) (bool, er
 		e.log.WithFields(logrus.Fields{
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
-		}).Debug("Duplicate contribution and proof event received")
+		}).WithContext(ctx).Debug("Duplicate contribution and proof event received")
 
 		return true, nil
 	}

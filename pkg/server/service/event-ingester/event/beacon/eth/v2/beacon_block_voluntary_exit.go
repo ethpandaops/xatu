@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconBlockVoluntaryExit struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconBlockVoluntaryExit(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlockVoluntaryExit {
+func NewBeaconBlockVoluntaryExit(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconBlockVoluntaryExit {
 	return &BeaconBlockVoluntaryExit{
 		log:   log.WithField("event", BeaconBlockVoluntaryExitType),
 		event: event,

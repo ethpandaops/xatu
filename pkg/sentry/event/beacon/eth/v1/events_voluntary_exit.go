@@ -6,19 +6,21 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsVoluntaryExit struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -29,7 +31,7 @@ type EventsVoluntaryExit struct {
 	id             uuid.UUID
 }
 
-func NewEventsVoluntaryExit(log logrus.FieldLogger, event *phase0.SignedVoluntaryExit, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsVoluntaryExit {
+func NewEventsVoluntaryExit(log observability.ContextualLogger, event *phase0.SignedVoluntaryExit, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsVoluntaryExit {
 	return &EventsVoluntaryExit{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_VOLUNTARY_EXIT_V2"),
 		now:            now,
@@ -64,7 +66,7 @@ func (e *EventsVoluntaryExit) Decorate(ctx context.Context) (*xatu.DecoratedEven
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra voluntary exit data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra voluntary exit data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsVoluntaryExitV2{
 			EthV1EventsVoluntaryExitV2: additionalData,
@@ -91,7 +93,7 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			epochLogField:              e.event.Message.Epoch,
-		}).Debug("Duplicate voluntary exit event received")
+		}).WithContext(ctx).Debug("Duplicate voluntary exit event received")
 
 		return true, nil
 	}

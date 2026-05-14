@@ -6,12 +6,13 @@ import (
 	"time"
 
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	"github.com/go-co-op/gocron/v2"
+	"github.com/pkg/errors"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/ethereum"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type ValidatorRegistrationEvent struct {
@@ -21,7 +22,7 @@ type ValidatorRegistrationEvent struct {
 }
 
 type ValidatorMonitor struct {
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	config *Config
 
 	relays     []*relay.Client
@@ -35,8 +36,7 @@ type ValidatorMonitor struct {
 }
 
 func NewValidatorMonitor(
-	log logrus.FieldLogger,
-	config *Config,
+	log observability.ContextualLogger, config *Config,
 	relays []*relay.Client,
 	beaconNode *ethereum.BeaconNode,
 	eventsCh chan *ValidatorRegistrationEvent,
@@ -58,7 +58,7 @@ func NewValidatorMonitor(
 
 func (r *ValidatorMonitor) Start(ctx context.Context) error {
 	if r.config.Enabled == nil || !*r.config.Enabled {
-		r.log.Info("Validator registration monitoring is disabled")
+		r.log.WithContext(ctx).Info("Validator registration monitoring is disabled")
 
 		return nil
 	}
@@ -73,7 +73,7 @@ func (r *ValidatorMonitor) Start(ctx context.Context) error {
 	}
 
 	r.log.
-		WithField("interval", r.config.ActiveValidatorsFetchInterval.String()).
+		WithField("interval", r.config.ActiveValidatorsFetchInterval.String()).WithContext(ctx).
 		Info("Scheduling active validators fetch job")
 
 	if _, err := c.NewJob(
@@ -81,7 +81,7 @@ func (r *ValidatorMonitor) Start(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := r.updateActiveValidators(ctx); err != nil {
-					r.log.WithError(err).Error("Failed to update active validators")
+					r.log.WithError(err).WithContext(ctx).Error("Failed to update active validators")
 				}
 			},
 			ctx,
@@ -106,7 +106,7 @@ func (r *ValidatorMonitor) Start(ctx context.Context) error {
 
 	r.log.
 		WithField("workers", r.config.Workers).
-		WithField("num_relays", len(r.relays)).
+		WithField("num_relays", len(r.relays)).WithContext(ctx).
 		Info("Starting validator registration scrapers")
 
 	for _, relay := range r.relays {
@@ -155,7 +155,7 @@ func (r *ValidatorMonitor) startFeedingValidators(ctx context.Context) {
 			WithField("shard", r.walker.Shard()).
 			WithField("num_shards", r.walker.NumShards()).
 			WithField("validators_in_shard", r.walker.NumValidatorsInShard()).
-			WithField("validators_per_second", math.Round(1/interval.Seconds()*100)/100).
+			WithField("validators_per_second", math.Round(1/interval.Seconds()*100)/100).WithContext(ctx).
 			Info("Starting validator feeder")
 
 		ticker := time.NewTicker(interval)
@@ -165,20 +165,20 @@ func (r *ValidatorMonitor) startFeedingValidators(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				r.log.Info("Stopping validator feeder")
+				r.log.WithContext(ctx).Info("Stopping validator feeder")
 
 				return
 			case <-ticker.C:
 				next, err := r.walker.Next()
 				if err != nil {
-					r.log.WithError(err).Error("Failed to get next validator index")
+					r.log.WithError(err).WithContext(ctx).Error("Failed to get next validator index")
 
 					continue
 				}
 
 				validator, err := r.walker.GetValidator(&next)
 				if err != nil {
-					r.log.WithError(err).Error("Failed to get validator")
+					r.log.WithError(err).WithContext(ctx).Error("Failed to get validator")
 
 					continue
 				}

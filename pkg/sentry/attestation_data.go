@@ -6,8 +6,9 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 	"github.com/go-co-op/gocron/v2"
+
+	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 )
 
 func (s *Sentry) startAttestationDataSchedule(ctx context.Context) error {

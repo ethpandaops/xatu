@@ -69,7 +69,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 	// Map gossipsub event to Xatu event.
 	xatuEvent, err := mapGossipSubEventToXatuEvent(topic)
 	if err != nil {
-		p.log.WithField("topic", topic).Tracef("unsupported topic in handleHermesGossipSubEvent event")
+		p.log.WithField("topic", topic).WithContext(ctx).Tracef("unsupported topic in handleHermesGossipSubEvent event")
 
 		//nolint:nilerr // we don't want to return an error here.
 		return nil
@@ -270,7 +270,7 @@ func (p *Processor) handleHermesGossipSubEvent(
 		}
 
 	default:
-		p.log.WithField("topic", topic).Trace("Unsupported topic in HandleMessage event")
+		p.log.WithField("topic", topic).WithContext(ctx).Trace("Unsupported topic in HandleMessage event")
 	}
 
 	return nil

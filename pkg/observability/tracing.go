@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -13,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	otrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func Tracer() otrace.Tracer {

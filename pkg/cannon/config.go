@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
@@ -12,7 +13,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/processor"
-	"github.com/sirupsen/logrus"
 )
 
 // cannonClickhouseMetricsSubsystem is the Prometheus subsystem cannon
@@ -86,7 +86,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
@@ -113,7 +113,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 // cannon and that its derivers only emit canonical_* events; the user
 // shouldn't have to express either fact in config. All other sink
 // types pass through to output.NewSink unchanged.
-func (c *Config) createSink(out *output.Config, log logrus.FieldLogger) (output.Sink, error) {
+func (c *Config) createSink(out *output.Config, log observability.ContextualLogger) (output.Sink, error) {
 	if out.SinkType == output.SinkTypeClickhouse {
 		return newCannonClickhouseSink(out, log)
 	}
@@ -123,7 +123,7 @@ func (c *Config) createSink(out *output.Config, log logrus.FieldLogger) (output.
 		out.SinkType,
 		out.Config,
 		log,
-		out.FilterConfig,
+		&out.FilterConfig,
 		*out.ShippingMethod,
 	)
 }
@@ -132,7 +132,7 @@ func (c *Config) createSink(out *output.Config, log logrus.FieldLogger) (output.
 // output.NewSink does internally for the clickhouse sink, but inserts
 // cannon-specific defaults between the YAML decode and the sink
 // constructor. User-supplied values always win.
-func newCannonClickhouseSink(out *output.Config, log logrus.FieldLogger) (output.Sink, error) {
+func newCannonClickhouseSink(out *output.Config, log observability.ContextualLogger) (output.Sink, error) {
 	conf := &chSink.Config{}
 
 	if out.Config != nil {
@@ -156,7 +156,7 @@ func newCannonClickhouseSink(out *output.Config, log logrus.FieldLogger) (output
 	return chSink.New(out.Name, conf, log, &out.FilterConfig, *out.ShippingMethod)
 }
 
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}

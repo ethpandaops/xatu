@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconCommittee struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconCommittee(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconCommittee {
+func NewBeaconCommittee(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconCommittee {
 	return &BeaconCommittee{
 		log:   log.WithField("event", BeaconCommitteeType),
 		event: event,

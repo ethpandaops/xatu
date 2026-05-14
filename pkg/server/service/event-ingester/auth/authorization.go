@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type AuthorizationConfig struct {
@@ -23,10 +23,10 @@ type AuthorizationConfig struct {
 type Authorization struct {
 	enabled bool
 	groups  Groups
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 }
 
-func NewAuthorization(log logrus.FieldLogger, config AuthorizationConfig) (*Authorization, error) {
+func NewAuthorization(log observability.ContextualLogger, config AuthorizationConfig) (*Authorization, error) {
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid authorization config: %w", err)
 	}
@@ -64,7 +64,7 @@ func (a *Authorization) Start(ctx context.Context) error {
 			userNames[user] = true
 		}
 
-		a.log.WithField("group", group.Name()).WithField("users", len(group.Users().Usernames())).Info("Loaded group with users")
+		a.log.WithField("group", group.Name()).WithField("users", len(group.Users().Usernames())).WithContext(ctx).Info("Loaded group with users")
 	}
 
 	return nil
@@ -151,27 +151,15 @@ func (a *Authorization) GetUserAndGroup(username string) (*User, *Group, error) 
 }
 
 func (a *Authorization) FilterEvents(ctx context.Context, user *User, group *Group, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
-	ctx, span := observability.Tracer().Start(ctx,
-		"Auth/Authorization.FilterEvents",
-		trace.WithAttributes(
-			attribute.Int64("events", int64(len(events))),
-			attribute.String("user", user.Username()),
-			attribute.String("group", group.Name()),
-		),
-	)
-	defer span.End()
-
 	if !a.enabled {
 		return events, nil
 	}
 
-	// Filter events for the user first since they're the most restrictive
 	filteredUserEvents, err := user.ApplyFilter(ctx, events)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter events for user %s: %w", user.Username(), err)
 	}
 
-	// Then filter events for the group
 	filteredGroupEvents, err := group.ApplyFilter(ctx, filteredUserEvents)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter events for group %s: %w", group.Name(), err)
@@ -181,15 +169,6 @@ func (a *Authorization) FilterEvents(ctx context.Context, user *User, group *Gro
 }
 
 func (a *Authorization) RedactEvents(ctx context.Context, group *Group, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
-	ctx, span := observability.Tracer().Start(ctx,
-		"Auth/Authorization.RedactEvents",
-		trace.WithAttributes(
-			attribute.Int64("events", int64(len(events))),
-			attribute.String("group", group.Name()),
-		),
-	)
-	defer span.End()
-
 	redactedEvents, err := group.ApplyRedacter(ctx, events)
 	if err != nil {
 		return nil, fmt.Errorf("failed to redact events for group %s: %w", group.Name(), err)

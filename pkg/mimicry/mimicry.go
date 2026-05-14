@@ -15,15 +15,16 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/beevik/ntp"
-	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
-	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
-	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
-	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
+	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
+	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const unknown = "unknown"
@@ -37,7 +38,7 @@ type Mimicry struct {
 
 	clockDrift time.Duration
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	id uuid.UUID
 
@@ -46,7 +47,7 @@ type Mimicry struct {
 	startupTime time.Time
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Mimicry, error) {
+func New(ctx context.Context, log observability.ContextualLogger, config *Config, overrides *Override) (*Mimicry, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -112,11 +113,11 @@ func (m *Mimicry) Start(ctx context.Context) error {
 
 	m.log.
 		WithField("version", xatu.Full()).
-		WithField("id", m.id.String()).
+		WithField("id", m.id.String()).WithContext(ctx).
 		Info("Starting Xatu in mimicry mode")
 
 	if err := m.startCrons(ctx); err != nil {
-		m.log.WithError(err).Fatal("Failed to start crons")
+		m.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
 	for _, sink := range m.sinks {
@@ -133,9 +134,9 @@ func (m *Mimicry) Start(ctx context.Context) error {
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
-	m.log.Printf("Caught signal: %v", sig)
+	m.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 
-	m.log.Printf("Flushing sinks")
+	m.log.WithContext(ctx).Printf("Flushing sinks")
 
 	for _, sink := range m.sinks {
 		if err := sink.Stop(ctx); err != nil {
@@ -157,10 +158,10 @@ func (m *Mimicry) ServeMetrics(ctx context.Context) error {
 			Handler:           sm,
 		}
 
-		m.log.Infof("Serving metrics at %s", m.Config.MetricsAddr)
+		m.log.WithContext(ctx).Infof("Serving metrics at %s", m.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
-			m.log.Fatal(err)
+			m.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -174,10 +175,10 @@ func (m *Mimicry) ServePProf(ctx context.Context) error {
 	}
 
 	go func() {
-		m.log.Infof("Serving pprof at %s", *m.Config.PProfAddr)
+		m.log.WithContext(ctx).Infof("Serving pprof at %s", *m.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
-			m.log.Fatal(err)
+			m.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -193,23 +194,23 @@ func (m *Mimicry) ServeProbe(ctx context.Context) error {
 				w.WriteHeader(http.StatusOK)
 				_, err := w.Write([]byte("OK"))
 				if err != nil {
-					m.log.Error("Failed to write response: ", err)
+					m.log.WithContext(ctx).Error("Failed to write response: ", err)
 				}
 			} else {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				_, err := w.Write([]byte("Service is not ready yet"))
 				if err != nil {
-					m.log.Error("Failed to write response: ", err)
+					m.log.WithContext(ctx).Error("Failed to write response: ", err)
 				}
 			}
 		}),
 	}
 
 	go func() {
-		m.log.Infof("Serving probe at %s", *m.Config.ProbeAddr)
+		m.log.WithContext(ctx).Infof("Serving probe at %s", *m.Config.ProbeAddr)
 
 		if err := probeServer.ListenAndServe(); err != nil {
-			m.log.Fatal(err)
+			m.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -240,7 +241,7 @@ func (m *Mimicry) startCrons(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := m.syncClockDrift(ctx); err != nil {
-					m.log.WithError(err).Error("Failed to sync clock drift")
+					m.log.WithError(err).WithContext(ctx).Error("Failed to sync clock drift")
 				}
 			},
 			ctx,
@@ -267,7 +268,7 @@ func (m *Mimicry) syncClockDrift(ctx context.Context) error {
 	}
 
 	m.clockDrift = response.ClockOffset
-	m.log.WithField("drift", m.clockDrift).Info("Updated clock drift")
+	m.log.WithField("drift", m.clockDrift).WithContext(ctx).Info("Updated clock drift")
 
 	return err
 }
@@ -289,7 +290,7 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 
 	for _, sink := range m.sinks {
 		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			m.log.WithError(err).WithField("sink", sink.Type()).Error("Failed to send event to sink")
+			m.log.WithError(err).WithField("sink", sink.Type()).WithContext(ctx).Error("Failed to send event to sink")
 		}
 	}
 

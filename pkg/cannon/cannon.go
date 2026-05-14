@@ -19,6 +19,11 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/go-co-op/gocron/v2"
+	"github.com/google/uuid"
+	perrors "github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
@@ -29,12 +34,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/google/uuid"
-	perrors "github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Cannon struct {
@@ -46,7 +45,7 @@ type Cannon struct {
 
 	clockDrift time.Duration
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	id uuid.UUID
 
@@ -63,7 +62,7 @@ type Cannon struct {
 	overrides *Override
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, config *Config, overrides *Override) (*Cannon, error) {
+func New(ctx context.Context, log observability.ContextualLogger, config *Config, overrides *Override) (*Cannon, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -120,7 +119,7 @@ func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) erro
 	}
 
 	if c.overrides.XatuOutputAuth.Enabled {
-		c.log.Info("Overriding output authorization on xatu sinks")
+		c.log.WithContext(ctx).Info("Overriding output authorization on xatu sinks")
 
 		for _, sink := range c.sinks {
 			if sink.Type() == string(output.SinkTypeXatu) {
@@ -129,7 +128,7 @@ func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) erro
 					return perrors.New("failed to assert xatu sink")
 				}
 
-				c.log.WithField("sink_name", sink.Name()).Info("Overriding xatu output authorization")
+				c.log.WithField("sink_name", sink.Name()).WithContext(ctx).Info("Overriding xatu output authorization")
 
 				xatuSink.SetAuthorization(c.overrides.XatuOutputAuth.Value)
 			}
@@ -140,36 +139,6 @@ func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) erro
 }
 
 func (c *Cannon) Start(ctx context.Context) error {
-	// Start tracing if enabled
-	if c.Config.Tracing.Enabled {
-		c.log.Info("Tracing enabled")
-
-		res, err := observability.NewResource(xatu.WithModule(xatu.ModuleName_CANNON), xatu.Short())
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing resource")
-		}
-
-		opts := []trace.TracerProviderOption{
-			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(c.Config.Tracing.Sampling.Rate))),
-		}
-
-		tracer, err := observability.NewHTTPTraceProvider(ctx,
-			res,
-			c.Config.Tracing.AsOTelOpts(),
-			opts...,
-		)
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing provider")
-		}
-
-		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
-		if err != nil {
-			return perrors.Wrap(err, "failed to setup tracing SDK")
-		}
-
-		c.shutdownFuncs = append(c.shutdownFuncs, shutdown)
-	}
-
 	if err := c.ServeMetrics(ctx); err != nil {
 		return err
 	}
@@ -186,11 +155,11 @@ func (c *Cannon) Start(ctx context.Context) error {
 
 	c.log.
 		WithField("version", xatu.Full()).
-		WithField("id", c.id.String()).
+		WithField("id", c.id.String()).WithContext(ctx).
 		Info("Starting Xatu in cannon mode 💣")
 
 	if err := c.startCrons(ctx); err != nil {
-		c.log.WithError(err).Fatal("Failed to start crons")
+		c.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
 	for _, sink := range c.sinks {
@@ -204,7 +173,7 @@ func (c *Cannon) Start(ctx context.Context) error {
 	}
 
 	if c.Config.Ethereum.OverrideNetworkName != "" {
-		c.log.WithField("network", c.Config.Ethereum.OverrideNetworkName).Info("Overriding network name")
+		c.log.WithField("network", c.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
 	if err := c.beacon.Start(ctx); err != nil {
@@ -215,7 +184,7 @@ func (c *Cannon) Start(ctx context.Context) error {
 	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-cancel
-	c.log.Printf("Caught signal: %v", sig)
+	c.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 
 	if err := c.Shutdown(ctx); err != nil {
 		return err
@@ -225,7 +194,7 @@ func (c *Cannon) Start(ctx context.Context) error {
 }
 
 func (c *Cannon) Shutdown(ctx context.Context) error {
-	c.log.Printf("Shutting down")
+	c.log.WithContext(ctx).Printf("Shutting down")
 
 	for _, sink := range c.sinks {
 		if err := sink.Stop(ctx); err != nil {
@@ -263,10 +232,10 @@ func (c *Cannon) ServeMetrics(ctx context.Context) error {
 			Handler:           sm,
 		}
 
-		c.log.Infof("Serving metrics at %s", c.Config.MetricsAddr)
+		c.log.WithContext(ctx).Infof("Serving metrics at %s", c.Config.MetricsAddr)
 
 		if err := server.ListenAndServe(); err != nil {
-			c.log.Fatal(err)
+			c.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -280,10 +249,10 @@ func (c *Cannon) ServePProf(ctx context.Context) error {
 	}
 
 	go func() {
-		c.log.Infof("Serving pprof at %s", *c.Config.PProfAddr)
+		c.log.WithContext(ctx).Infof("Serving pprof at %s", *c.Config.PProfAddr)
 
 		if err := pprofServer.ListenAndServe(); err != nil {
-			c.log.Fatal(err)
+			c.log.WithContext(ctx).Fatal(err)
 		}
 	}()
 
@@ -331,7 +300,7 @@ func (c *Cannon) startCrons(ctx context.Context) error {
 		gocron.NewTask(
 			func(ctx context.Context) {
 				if err := c.syncClockDrift(ctx); err != nil {
-					c.log.WithError(err).Error("Failed to sync clock drift")
+					c.log.WithError(err).WithContext(ctx).Error("Failed to sync clock drift")
 				}
 			},
 			ctx,
@@ -358,7 +327,7 @@ func (c *Cannon) syncClockDrift(ctx context.Context) error {
 	}
 
 	c.clockDrift = response.ClockOffset
-	c.log.WithField("drift", c.clockDrift).Info("Updated clock drift")
+	c.log.WithField("drift", c.clockDrift).WithContext(ctx).Info("Updated clock drift")
 
 	return err
 }
@@ -427,7 +396,7 @@ func fanOutToSinks(ctx context.Context, sinks []output.Sink, events []*xatu.Deco
 
 func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 	c.beacon.OnReady(ctx, func(ctx context.Context) error {
-		c.log.Info("Internal beacon node is ready, firing up event derivers")
+		c.log.WithContext(ctx).Info("Internal beacon node is ready, firing up event derivers")
 
 		networkName := string(c.beacon.Metadata().Network.Name)
 		networkID := fmt.Sprintf("%d", c.beacon.Metadata().Network.ID)
@@ -794,7 +763,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		c.beacon.Metadata().Wallclock().OnEpochChanged(func(current ethwallclock.Epoch) {
 			_, err := c.beacon.Node().FetchSpec(ctx)
 			if err != nil {
-				c.log.WithError(err).Error("Failed to refresh spec")
+				c.log.WithError(err).WithContext(ctx).Error("Failed to refresh spec")
 			}
 		})
 
@@ -809,7 +778,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				if err := c.startDeriverWhenReady(ctx, d); err != nil {
 					c.log.
 						WithField("deriver", d.Name()).
-						WithError(err).Fatal("Failed to start deriver")
+						WithError(err).WithContext(ctx).Fatal("Failed to start deriver")
 				}
 			}()
 		}
@@ -827,7 +796,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 		if d.ActivationFork() != spec.DataVersionPhase0 {
 			spec, err := c.beacon.Node().Spec()
 			if err != nil {
-				c.log.WithError(err).Error("Failed to get spec")
+				c.log.WithError(err).WithContext(ctx).Error("Failed to get spec")
 
 				time.Sleep(5 * time.Second)
 
@@ -836,7 +805,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 
 			fork, err := spec.ForkEpochs.GetByName(d.ActivationFork().String())
 			if err != nil {
-				c.log.WithError(err).Errorf("unknown activation fork: %s", d.ActivationFork())
+				c.log.WithError(err).WithContext(ctx).Errorf("unknown activation fork: %s", d.ActivationFork())
 
 				epoch := c.beacon.Metadata().Wallclock().Epochs().Current()
 
@@ -868,7 +837,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 					WithField("estimated_time_until_fork", time.Until(
 						activationForkEpoch.TimeWindow().Start(),
 					)).
-					WithField("check_again_in", sleepFor).
+					WithField("check_again_in", sleepFor).WithContext(ctx).
 					Warn("Deriver required fork is not active yet")
 
 				time.Sleep(sleepFor)
@@ -878,7 +847,7 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 		}
 
 		c.log.
-			WithField("deriver", d.Name()).
+			WithField("deriver", d.Name()).WithContext(ctx).
 			Info("Starting cannon event deriver")
 
 		return d.Start(ctx)

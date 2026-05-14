@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -38,6 +38,9 @@ type Config struct {
 
 	// CaptureDelay is the Delay before capturing transactions from a peer
 	CaptureDelay time.Duration `yaml:"captureDelay" default:"3m"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -59,10 +62,14 @@ func (c *Config) Validate() error {
 		}
 	}
 
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
+	}
+
 	return nil
 }
 
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
@@ -76,7 +83,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 			out.SinkType,
 			out.Config,
 			log,
-			out.FilterConfig,
+			&out.FilterConfig,
 			*out.ShippingMethod,
 		)
 		if err != nil {
@@ -90,7 +97,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 }
 
 // ApplyOverrides applies any overrides to the config.
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}

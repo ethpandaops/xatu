@@ -8,11 +8,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -33,7 +34,7 @@ type VoluntaryExitDeriverConfig struct {
 }
 
 type VoluntaryExitDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *VoluntaryExitDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -41,7 +42,7 @@ type VoluntaryExitDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewVoluntaryExitDeriver(log logrus.FieldLogger, config *VoluntaryExitDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
+func NewVoluntaryExitDeriver(log observability.ContextualLogger, config *VoluntaryExitDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
 	return &VoluntaryExitDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v2/voluntary_exit",
@@ -72,12 +73,12 @@ func (b *VoluntaryExitDeriver) OnEventsDerived(ctx context.Context, fn func(ctx 
 
 func (b *VoluntaryExitDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Voluntary exit deriver disabled")
+		b.log.WithContext(ctx).Info("Voluntary exit deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Voluntary exit deriver enabled")
+	b.log.WithContext(ctx).Info("Voluntary exit deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -124,7 +125,7 @@ func (b *VoluntaryExitDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -151,12 +152,12 @@ func (b *VoluntaryExitDeriver) run(rctx context.Context) {
 
 			retryOpts := []backoff.RetryOption{
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -164,11 +165,6 @@ func (b *VoluntaryExitDeriver) run(rctx context.Context) {
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *VoluntaryExitDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"VoluntaryExitDeriver.lookAheadAtLocations",
-	)
-	defer span.End()
-
 	if epochs == nil {
 		return
 	}
@@ -176,7 +172,7 @@ func (b *VoluntaryExitDeriver) lookAhead(ctx context.Context, epochs []phase0.Ep
 	for _, epoch := range epochs {
 		sp, err := b.beacon.Node().Spec()
 		if err != nil {
-			b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+			b.log.WithError(err).WithField("epoch", epoch).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 			return
 		}
@@ -250,7 +246,7 @@ func (b *VoluntaryExitDeriver) processSlot(ctx context.Context, slot phase0.Slot
 	for _, exit := range exits {
 		event, err := b.createEvent(ctx, exit, blockIdentifier)
 		if err != nil {
-			b.log.WithError(err).Error("Failed to create event")
+			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create event for voluntary exit %s", exit.String())
 		}

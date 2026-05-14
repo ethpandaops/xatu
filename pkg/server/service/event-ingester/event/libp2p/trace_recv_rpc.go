@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRecvRPC struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRecvRPC(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRecvRPC {
+func NewTraceRecvRPC(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRecvRPC {
 	return &TraceRecvRPC{
 		log:   log.WithField("event", TraceRecvRPCType),
 		event: event,

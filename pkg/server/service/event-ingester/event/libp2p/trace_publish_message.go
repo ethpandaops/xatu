@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TracePublishMessage struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTracePublishMessage(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TracePublishMessage {
+func NewTracePublishMessage(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TracePublishMessage {
 	return &TracePublishMessage{
 		log:   log.WithField("event", TracePublishMessageType),
 		event: event,

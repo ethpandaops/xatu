@@ -6,19 +6,21 @@ import (
 	"time"
 
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsBlock struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -29,7 +31,7 @@ type EventsBlock struct {
 	id             uuid.UUID
 }
 
-func NewEventsBlock(log logrus.FieldLogger, event *eth2v1.BlockEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsBlock {
+func NewEventsBlock(log observability.ContextualLogger, event *eth2v1.BlockEvent, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsBlock {
 	return &EventsBlock{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_BLOCK_V2"),
 		now:            now,
@@ -62,7 +64,7 @@ func (e *EventsBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra block data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra block data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsBlockV2{
 			EthV1EventsBlockV2: additionalData,
@@ -88,7 +90,7 @@ func (e *EventsBlock) ShouldIgnore(ctx context.Context) (bool, error) {
 			hashLogField:               hash,
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			slotLogField:               e.event.Slot,
-		}).Debug("Duplicate block event received")
+		}).WithContext(ctx).Debug("Duplicate block event received")
 
 		return true, nil
 	}

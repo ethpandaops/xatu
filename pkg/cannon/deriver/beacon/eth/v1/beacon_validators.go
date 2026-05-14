@@ -9,11 +9,6 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -23,6 +18,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -36,7 +37,7 @@ type BeaconValidatorsDeriverConfig struct {
 }
 
 type BeaconValidatorsDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BeaconValidatorsDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -44,7 +45,7 @@ type BeaconValidatorsDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewBeaconValidatorsDeriver(log logrus.FieldLogger, config *BeaconValidatorsDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconValidatorsDeriver {
+func NewBeaconValidatorsDeriver(log observability.ContextualLogger, config *BeaconValidatorsDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconValidatorsDeriver {
 	return &BeaconValidatorsDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v1/validators",
@@ -77,15 +78,15 @@ func (b *BeaconValidatorsDeriver) Start(ctx context.Context) error {
 	b.log.WithFields(logrus.Fields{
 		"chunk_size": b.cfg.ChunkSize,
 		"enabled":    b.cfg.Enabled,
-	}).Info("Starting BeaconValidatorsDeriver")
+	}).WithContext(ctx).Info("Starting BeaconValidatorsDeriver")
 
 	if !b.cfg.Enabled {
-		b.log.Info("Validator states deriver disabled")
+		b.log.WithContext(ctx).Info("Validator states deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Validator states deriver enabled")
+	b.log.WithContext(ctx).Info("Validator states deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -137,7 +138,7 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 
 				events, slot, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).WithField("epoch", position.Next).Error("Failed to process epoch")
+					b.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -171,12 +172,12 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -184,14 +185,9 @@ func (b *BeaconValidatorsDeriver) run(rctx context.Context) {
 
 // lookAhead takes the upcoming epochs and looks ahead to do any pre-processing that might be required.
 func (b *BeaconValidatorsDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"BeaconValidatorsDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}
@@ -250,7 +246,7 @@ func (b *BeaconValidatorsDeriver) processEpoch(ctx context.Context, epoch phase0
 				WithError(err).
 				WithField("chunk_size", len(chunk)).
 				WithField("chunk_number", chunkNum).
-				WithField("epoch", epoch).
+				WithField("epoch", epoch).WithContext(ctx).
 				Error("Failed to create event from validator state")
 
 			return nil, 0, err
@@ -303,7 +299,7 @@ func (b *BeaconValidatorsDeriver) createEventFromValidators(ctx context.Context,
 
 	additionalData, err := b.getAdditionalData(ctx, epoch)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to get extra validator state data")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to get extra validator state data")
 
 		return nil, err
 	} else {

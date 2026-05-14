@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
+
 	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ExecutionPeer struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	nodeRecord string
 
@@ -24,7 +24,7 @@ type ExecutionPeer struct {
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
 }
 
-func NewExecutionPeer(ctx context.Context, log logrus.FieldLogger, nodeRecord, bootstrapRPCURL string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*ExecutionPeer, error) {
+func NewExecutionPeer(ctx context.Context, log observability.ContextualLogger, nodeRecord, bootstrapRPCURL string, handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)) (*ExecutionPeer, error) {
 	opts := []mimicry.Option{}
 
 	if bootstrapRPCURL != "" {

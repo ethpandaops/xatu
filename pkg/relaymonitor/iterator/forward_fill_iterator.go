@@ -8,10 +8,11 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/pkg/errors"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 // DefaultBatchSize is the default number of payloads to fetch per batch.
@@ -30,7 +31,7 @@ type BatchRequest struct {
 }
 
 type ForwardFillIterator struct {
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	relayMonitorType xatu.RelayMonitorType
 	coordinator      coordinator.Client
 	wallclock        *ethwallclock.EthereumBeaconChain
@@ -43,8 +44,7 @@ type ForwardFillIterator struct {
 }
 
 func NewForwardFillIterator(
-	log logrus.FieldLogger,
-	networkName, clientName string,
+	log observability.ContextualLogger, networkName, clientName string,
 	relayMonitorType xatu.RelayMonitorType,
 	relayName string,
 	coordinatorClient *coordinator.Client,
@@ -210,7 +210,7 @@ func (f *ForwardFillIterator) UpdateLocation(ctx context.Context, slot phase0.Sl
 	// Create new location with updated slot
 	newLocation := f.createLocation(uint64(slot))
 
-	f.log.WithField("slot", slot).Debug("Updating forward fill location")
+	f.log.WithField("slot", slot).WithContext(ctx).Debug("Updating forward fill location")
 
 	return f.coordinator.UpsertRelayMonitorLocation(ctx, newLocation)
 }

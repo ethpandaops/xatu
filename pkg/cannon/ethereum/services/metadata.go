@@ -11,15 +11,17 @@ import (
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/ethwallclock"
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
-	"github.com/ethpandaops/xatu/pkg/networks"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 )
 
 type MetadataService struct {
 	beacon beacon.Node
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	overrideNetworkName string
 	Network             *networks.Network
@@ -34,7 +36,7 @@ type MetadataService struct {
 	mu sync.Mutex
 }
 
-func NewMetadataService(log logrus.FieldLogger, sbeacon beacon.Node) MetadataService {
+func NewMetadataService(log observability.ContextualLogger, sbeacon beacon.Node) MetadataService {
 	return MetadataService{
 		overrideNetworkName: "",
 		beacon:              sbeacon,
@@ -68,17 +70,17 @@ func (m *MetadataService) Start(ctx context.Context) error {
 		retryOpts := []backoff.RetryOption{
 			backoff.WithBackOff(backoff.NewExponentialBackOff()),
 			backoff.WithNotify(func(err error, timer time.Duration) {
-				m.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to refresh metadata")
+				m.log.WithError(err).WithField("next_attempt", timer).WithContext(ctx).Warn("Failed to refresh metadata")
 			}),
 		}
 
 		if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
-			m.log.WithError(err).Warn("Failed to refresh metadata")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to refresh metadata")
 		}
 
 		for _, cb := range m.onReadyCallbacks {
 			if err := cb(ctx); err != nil {
-				m.log.WithError(err).Warn("Failed to execute onReady callback")
+				m.log.WithError(err).WithContext(ctx).Warn("Failed to execute onReady callback")
 			}
 		}
 	}()
@@ -140,11 +142,11 @@ func (m *MetadataService) Ready(ctx context.Context) error {
 
 func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	if err := m.fetchSpec(ctx); err != nil {
-		m.log.WithError(err).Warn("Failed to fetch spec for refresh")
+		m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch spec for refresh")
 	}
 
 	if err := m.fetchGenesis(ctx); err != nil {
-		m.log.WithError(err).Warn("Failed to fetch genesis for refresh")
+		m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch genesis for refresh")
 	}
 
 	if m.Genesis != nil && m.Spec != nil && m.wallclock == nil {
@@ -158,7 +160,7 @@ func (m *MetadataService) RefreshAll(ctx context.Context) error {
 	}
 
 	if err := m.DeriveNetwork(ctx); err != nil {
-		m.log.WithError(err).Warn("Failed to derive network name for refresh")
+		m.log.WithError(err).WithContext(ctx).Warn("Failed to derive network name for refresh")
 	}
 
 	return nil

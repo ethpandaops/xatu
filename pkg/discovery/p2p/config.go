@@ -9,9 +9,10 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/ethereum"
+
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/xatu"
-	"github.com/sirupsen/logrus"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type Config struct {
@@ -188,7 +189,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (P2P, error) {
+func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(ctx context.Context, node *enode.Node, source string) error, log observability.ContextualLogger) (P2P, error) {
 	if p2pType == TypeUnknown {
 		return nil, errors.New("p2p type is required")
 	}

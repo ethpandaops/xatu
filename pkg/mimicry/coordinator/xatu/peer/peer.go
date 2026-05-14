@@ -7,16 +7,17 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 type Peer struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	handlers       *handler.Peer
 	cache          *cache.SharedCache
 	retryDelay     time.Duration
@@ -29,7 +30,7 @@ type Peer struct {
 	Record *xatu.CoordinatedNodeRecord
 }
 
-func NewPeer(log logrus.FieldLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay, captureDelay time.Duration, ethereumConfig *ethereum.Config) *Peer {
+func NewPeer(log observability.ContextualLogger, handlers *handler.Peer, sharedCache *cache.SharedCache, record string, retryDelay, captureDelay time.Duration, ethereumConfig *ethereum.Config) *Peer {
 	return &Peer{
 		log:            log,
 		handlers:       handlers,
@@ -56,7 +57,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 				// return unrecoverable error if peer has been stopped
 				if p.stopped {
-					p.log.Debug("peer stopped")
+					p.log.WithContext(ctx).Debug("peer stopped")
 					p.mu.Unlock()
 
 					return retry.Unrecoverable(errors.New("peer stopped"))
@@ -74,7 +75,7 @@ func (p *Peer) Start(ctx context.Context) error {
 
 					if peer != nil {
 						if err = peer.Stop(ctx); err != nil {
-							p.log.WithError(err).Warn("failed to stop peer")
+							p.log.WithError(err).WithContext(ctx).Warn("failed to stop peer")
 						}
 					}
 				}()
@@ -95,7 +96,7 @@ func (p *Peer) Start(ctx context.Context) error {
 				p.mu.Lock()
 				defer p.mu.Unlock()
 
-				p.log.WithError(err).Debug("peer failed")
+				p.log.WithError(err).WithContext(ctx).Debug("peer failed")
 
 				if !p.stopped {
 					p.Record.ConnectionAttempts++

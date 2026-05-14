@@ -101,3 +101,10 @@ outputs:
     exportTimeout: 15s
     maxExportBatchSize: 200
     workers: 5
+
+tracing:
+  enabled: false
+  endpoint: localhost:4318
+  insecure: true
+  sampling:
+    rate: 0.01

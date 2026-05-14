@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,11 +15,11 @@ const (
 )
 
 type ValidatorBlock struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewValidatorBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ValidatorBlock {
+func NewValidatorBlock(log observability.ContextualLogger, event *xatu.DecoratedEvent) *ValidatorBlock {
 	return &ValidatorBlock{
 		log:   log.WithField("event", ValidatorBlockType),
 		event: event,

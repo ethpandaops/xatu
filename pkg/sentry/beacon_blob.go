@@ -10,10 +10,11 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/sirupsen/logrus"
+
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
-	"github.com/sirupsen/logrus"
 )
 
 // fetchAndEmitBeaconBlobs fetches the block and emits beacon blob events for each KZG commitment.
@@ -28,14 +29,14 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 				s.log.WithFields(logrus.Fields{
 					"block_root": blockRoot,
 					"slot":       slot,
-				}).Debug("Block not found for beacon blob extraction")
+				}).WithContext(ctx).Debug("Block not found for beacon blob extraction")
 
 				return
 			case 503:
 				s.log.WithFields(logrus.Fields{
 					"block_root": blockRoot,
 					"slot":       slot,
-				}).Warn("Beacon node is syncing, cannot fetch block for beacon blob extraction")
+				}).WithContext(ctx).Warn("Beacon node is syncing, cannot fetch block for beacon blob extraction")
 
 				return
 			}
@@ -44,7 +45,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Error("Failed to fetch block for beacon blob extraction")
+		}).WithContext(ctx).Error("Failed to fetch block for beacon blob extraction")
 
 		return
 	}
@@ -53,7 +54,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Debug("Block is nil for beacon blob extraction")
+		}).WithContext(ctx).Debug("Block is nil for beacon blob extraction")
 
 		return
 	}
@@ -65,7 +66,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 			"block_root": blockRoot,
 			"slot":       slot,
 			"version":    block.Version.String(),
-		}).Debug("Block version does not support KZG commitments")
+		}).WithContext(ctx).Debug("Block version does not support KZG commitments")
 
 		return
 	}
@@ -74,7 +75,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Debug("No KZG commitments found in block")
+		}).WithContext(ctx).Debug("No KZG commitments found in block")
 
 		return
 	}
@@ -85,7 +86,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Error("Failed to get proposer index from block")
+		}).WithContext(ctx).Error("Failed to get proposer index from block")
 
 		return
 	}
@@ -95,7 +96,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Error("Failed to get parent root from block")
+		}).WithContext(ctx).Error("Failed to get parent root from block")
 
 		return
 	}
@@ -107,7 +108,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"block_root": blockRoot,
 			"slot":       slot,
-		}).Error("Failed to parse block root for beacon blob extraction")
+		}).WithContext(ctx).Error("Failed to parse block root for beacon blob extraction")
 
 		return
 	}
@@ -127,7 +128,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 
 		meta, err := s.createNewClientMeta(ctx)
 		if err != nil {
-			s.log.WithError(err).Error("Failed to create client meta for beacon blob")
+			s.log.WithError(err).WithContext(ctx).Error("Failed to create client meta for beacon blob")
 
 			continue
 		}
@@ -147,7 +148,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 				"block_root": blockRoot,
 				"slot":       slot,
 				"index":      i,
-			}).Error("Failed to check if beacon blob event should be ignored")
+			}).WithContext(ctx).Error("Failed to check if beacon blob event should be ignored")
 
 			continue
 		}
@@ -162,7 +163,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 				"block_root": blockRoot,
 				"slot":       slot,
 				"index":      i,
-			}).Error("Failed to decorate beacon blob event")
+			}).WithContext(ctx).Error("Failed to decorate beacon blob event")
 
 			continue
 		}
@@ -172,7 +173,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 				"block_root": blockRoot,
 				"slot":       slot,
 				"index":      i,
-			}).Error("Failed to handle beacon blob event")
+			}).WithContext(ctx).Error("Failed to handle beacon blob event")
 
 			continue
 		}
@@ -182,7 +183,7 @@ func (s *Sentry) fetchAndEmitBeaconBlobs(ctx context.Context, blockRoot string, 
 		"block_root": blockRoot,
 		"slot":       slot,
 		"count":      len(kzgCommitments),
-	}).Debug("Fetched and emitted beacon blobs for block")
+	}).WithContext(ctx).Debug("Fetched and emitted beacon blobs for block")
 }
 
 // extractKZGCommitments extracts KZG commitments from a block based on its version.

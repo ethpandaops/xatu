@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type GroupsConfig map[string]GroupConfig
@@ -26,7 +25,7 @@ type GroupConfig struct {
 type Groups map[string]*Group
 
 type Group struct {
-	log                logrus.FieldLogger
+	log                observability.ContextualLogger
 	users              *Users
 	name               string
 	eventFilter        xatu.EventFilter
@@ -53,7 +52,7 @@ func (g *Group) ComputeClientName(user, salt, clientName string) string {
 	return computedClientName
 }
 
-func NewGroup(log logrus.FieldLogger, name string, c GroupConfig) (*Group, error) {
+func NewGroup(log observability.ContextualLogger, name string, c GroupConfig) (*Group, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("group config is invalid: %w", err)
 	}
@@ -192,16 +191,10 @@ func (g *Group) EventFilter() xatu.EventFilter {
 	return g.eventFilter
 }
 
-func (g *Group) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
+func (g *Group) ApplyFilter(_ context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if g.eventFilter == nil {
 		return events, nil
 	}
-
-	_, span := observability.Tracer().Start(ctx,
-		"Auth/Group.ApplyFilter",
-		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
-	)
-	defer span.End()
 
 	filteredEvents := make([]*xatu.DecoratedEvent, 0)
 
@@ -221,13 +214,7 @@ func (g *Group) ApplyFilter(ctx context.Context, events []*xatu.DecoratedEvent) 
 	return filteredEvents, nil
 }
 
-func (g *Group) ApplyRedacter(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
-	_, span := observability.Tracer().Start(ctx,
-		"Auth/Group.ApplyRedacter",
-		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
-	)
-	defer span.End()
-
+func (g *Group) ApplyRedacter(_ context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if g.redacter == nil {
 		return events, nil
 	}

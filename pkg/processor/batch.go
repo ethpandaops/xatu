@@ -122,10 +122,12 @@ type BatchItemProcessor[T any] struct {
 }
 
 type TraceableItem[T any] struct {
-	item        *T
-	callerCtx   context.Context //nolint:containedctx // trace context propagation across async batching
-	errCh       chan error
-	completedCh chan struct{}
+	item      *T
+	callerCtx context.Context //nolint:containedctx // trace context propagation across async batching
+	// resultCh signals export completion for sync shipping. A nil value
+	// means success; a non-nil error means the export failed. Closed
+	// exactly once by the worker after the value is sent.
+	resultCh chan error
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -244,8 +246,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
-				item.errCh = make(chan error, 1)
-				item.completedCh = make(chan struct{}, 1)
+				item.resultCh = make(chan error, 1)
 			}
 
 			prepared = append(prepared, item)
@@ -303,14 +304,9 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		}
 
 		for _, ti := range p.traceItems {
-			if ti.errCh != nil {
-				ti.errCh <- err
-				close(ti.errCh)
-			}
-
-			if ti.completedCh != nil {
-				ti.completedCh <- struct{}{}
-				close(ti.completedCh)
+			if ti.resultCh != nil {
+				ti.resultCh <- err
+				close(ti.resultCh)
 			}
 		}
 	}
@@ -402,12 +398,10 @@ func WithMetrics(metrics *Metrics) BatchItemProcessorOption {
 func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, items []*TraceableItem[T]) error {
 	for _, item := range items {
 		select {
-		case err := <-item.errCh:
+		case err := <-item.resultCh:
 			if err != nil {
 				return err
 			}
-		case <-item.completedCh:
-			continue
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -523,9 +517,13 @@ type exportPartition[T any] struct {
 //
 // The partition's ctx is derived from workerCtx (preserving cancellation
 // and timeout) with the partition's trace span context grafted on.
+// Returned partitions appear in first-seen order (with the no-trace
+// partition first if present) so export ordering is deterministic.
 func partitionByTrace[T any](workerCtx context.Context, itemsBatch []*TraceableItem[T], log observability.ContextualLogger) []*exportPartition[T] {
 	byTrace := make(map[trace.TraceID]*exportPartition[T], 1)
-	noTrace := (*exportPartition[T])(nil)
+	order := make([]*exportPartition[T], 0, 1)
+
+	var noTrace *exportPartition[T]
 
 	for _, item := range itemsBatch {
 		if item == nil {
@@ -550,6 +548,8 @@ func partitionByTrace[T any](workerCtx context.Context, itemsBatch []*TraceableI
 					ctx: trace.ContextWithSpanContext(workerCtx, sc),
 				}
 				byTrace[tid] = partition
+
+				order = append(order, partition)
 			}
 		} else {
 			if noTrace == nil {
@@ -563,15 +563,13 @@ func partitionByTrace[T any](workerCtx context.Context, itemsBatch []*TraceableI
 		partition.traceItems = append(partition.traceItems, item)
 	}
 
-	out := make([]*exportPartition[T], 0, len(byTrace)+1)
+	out := make([]*exportPartition[T], 0, len(order)+1)
 
 	if noTrace != nil {
 		out = append(out, noTrace)
 	}
 
-	for _, p := range byTrace {
-		out = append(out, p)
-	}
+	out = append(out, order...)
 
 	return out
 }

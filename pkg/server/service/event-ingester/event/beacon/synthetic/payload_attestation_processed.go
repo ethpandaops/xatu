@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,11 +16,11 @@ const (
 // — per-PTC-vote observation synthesized from beacon-node internals
 // (TYSM-instrumented, EIP-7732 ePBS).
 type PayloadAttestationProcessed struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewPayloadAttestationProcessed(log logrus.FieldLogger, event *xatu.DecoratedEvent) *PayloadAttestationProcessed {
+func NewPayloadAttestationProcessed(log observability.ContextualLogger, event *xatu.DecoratedEvent) *PayloadAttestationProcessed {
 	return &PayloadAttestationProcessed{
 		log:   log.WithField("event", PayloadAttestationProcessedType),
 		event: event,

@@ -38,7 +38,7 @@ type PayloadAttestationDeriverConfig struct {
 // events from `block.Body.PayloadAttestations` on Gloas+ blocks. Up to
 // MAX_PAYLOAD_ATTESTATIONS=4 entries per block.
 type PayloadAttestationDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *PayloadAttestationDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -46,7 +46,7 @@ type PayloadAttestationDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewPayloadAttestationDeriver(log logrus.FieldLogger, config *PayloadAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *PayloadAttestationDeriver {
+func NewPayloadAttestationDeriver(log observability.ContextualLogger, config *PayloadAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *PayloadAttestationDeriver {
 	return &PayloadAttestationDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v2/payload_attestation",
@@ -79,12 +79,12 @@ func (b *PayloadAttestationDeriver) OnEventsDerived(ctx context.Context, fn func
 
 func (b *PayloadAttestationDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Payload attestation deriver disabled")
+		b.log.WithContext(ctx).Info("Payload attestation deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Payload attestation deriver enabled")
+	b.log.WithContext(ctx).Info("Payload attestation deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -128,7 +128,7 @@ func (b *PayloadAttestationDeriver) run(rctx context.Context) {
 
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -153,11 +153,11 @@ func (b *PayloadAttestationDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -237,7 +237,7 @@ func (b *PayloadAttestationDeriver) processSlot(ctx context.Context, slot phase0
 	for _, att := range converted {
 		event, err := b.createEvent(ctx, att, blockIdentifier, position)
 		if err != nil {
-			b.log.WithError(err).Error("Failed to create event")
+			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
 			return nil, errors.Wrapf(err, "failed to create payload attestation event for slot %d", slot)
 		}
@@ -262,7 +262,7 @@ func (b *PayloadAttestationDeriver) lookAhead(ctx context.Context, epochs []phas
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

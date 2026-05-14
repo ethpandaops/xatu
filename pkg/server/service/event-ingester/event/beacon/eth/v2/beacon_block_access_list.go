@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconBlockAccessList struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconBlockAccessList(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlockAccessList {
+func NewBeaconBlockAccessList(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconBlockAccessList {
 	return &BeaconBlockAccessList{
 		log:   log.WithField("event", BeaconBlockAccessListType),
 		event: event,

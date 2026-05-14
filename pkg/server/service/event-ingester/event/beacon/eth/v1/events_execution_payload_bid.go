@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsExecutionPayloadBid struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsExecutionPayloadBid(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsExecutionPayloadBid {
+func NewEventsExecutionPayloadBid(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsExecutionPayloadBid {
 	return &EventsExecutionPayloadBid{
 		log:   log.WithField("event", EventsExecutionPayloadBidType),
 		event: event,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type TraceGossipSubExecutionPayloadEnvelope struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceGossipSubExecutionPayloadEnvelope(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceGossipSubExecutionPayloadEnvelope {
+func NewTraceGossipSubExecutionPayloadEnvelope(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceGossipSubExecutionPayloadEnvelope {
 	return &TraceGossipSubExecutionPayloadEnvelope{
 		log:   log.WithField("event", TraceGossipSubExecutionPayloadEnvelopeType),
 		event: event,

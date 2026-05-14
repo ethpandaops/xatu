@@ -392,7 +392,7 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 				valueHash := write.ValueAfter.ToHash()
 
 				entry.StorageChanges = append(entry.StorageChanges, &BlockAccessListStorageChange{
-					BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(write.TxIdx)},
+					BlockAccessIndex: &wrapperspb.UInt32Value{Value: write.TxIdx},
 					Key:              &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotHash)},
 					NewValue:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", valueHash)},
 				})
@@ -402,7 +402,7 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		// Balance changes
 		for _, change := range access.BalanceChanges {
 			entry.BalanceChanges = append(entry.BalanceChanges, &BlockAccessListBalanceChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(change.TxIdx)},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.TxIdx},
 				PostBalance:      &wrapperspb.StringValue{Value: change.Balance.String()},
 			})
 		}
@@ -410,7 +410,7 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		// Nonce changes
 		for _, change := range access.NonceChanges {
 			entry.NonceChanges = append(entry.NonceChanges, &BlockAccessListNonceChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(change.TxIdx)},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.TxIdx},
 				NewNonce:         &wrapperspb.UInt64Value{Value: change.Nonce},
 			})
 		}

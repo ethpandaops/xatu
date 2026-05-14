@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
@@ -21,7 +22,7 @@ import (
 // SSE event — an individual PTC validator's payload attestation. ~512 messages
 // per slot, high volume.
 type EventsPayloadAttestation struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -32,7 +33,7 @@ type EventsPayloadAttestation struct {
 	id             uuid.UUID
 }
 
-func NewEventsPayloadAttestation(log logrus.FieldLogger, event *gloas.PayloadAttestationMessage, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsPayloadAttestation {
+func NewEventsPayloadAttestation(log observability.ContextualLogger, event *gloas.PayloadAttestationMessage, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *EventsPayloadAttestation {
 	return &EventsPayloadAttestation{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION"),
 		now:            now,
@@ -61,7 +62,7 @@ func (e *EventsPayloadAttestation) Decorate(ctx context.Context) (*xatu.Decorate
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra payload attestation data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra payload attestation data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsPayloadAttestation{
 			EthV1EventsPayloadAttestation: additionalData,
@@ -92,7 +93,7 @@ func (e *EventsPayloadAttestation) ShouldIgnore(ctx context.Context) (bool, erro
 			timeSinceFirstItemLogField: time.Since(item.Value()),
 			"validator_index":          e.event.ValidatorIndex,
 			slotLogField:               e.event.Data.Slot,
-		}).Debug("Duplicate payload attestation message received")
+		}).WithContext(ctx).Debug("Duplicate payload attestation message received")
 
 		return true, nil
 	}

@@ -30,18 +30,18 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 		Data: &xatu.DecoratedEvent_EthV1EventsFastConfirmation{
 			EthV1EventsFastConfirmation: &ethv1.EventFastConfirmation{
 				Slot:  wrapperspb.UInt64(100),
-				Block: "0xfastconfirmblock",
+				Block: "0xfastconfirmblock", //nolint:goconst // shared with sibling test
 			},
 		},
 	}, 1, map[string]any{
-		"slot":                        uint32(100),          //nolint:goconst // shared with sibling event tests
-		"block":                       "0xfastconfirmblock", //nolint:goconst // shared with sibling event tests
-		"meta_client_name":            "test-client",        //nolint:goconst // shared with sibling event tests
-		"meta_network_name":           "mainnet",            //nolint:goconst // shared with sibling event tests
-		"propagation_slot_start_diff": uint32(500),
-		"epoch":                       uint32(3),
-		"wallclock_slot":              uint32(100),
-		"wallclock_epoch":             uint32(3),
+		"slot":                        uint32(100),          //nolint:goconst // column key reused across event tests
+		"block":                       "0xfastconfirmblock", //nolint:goconst // column key reused across event tests
+		"meta_client_name":            "test-client",        //nolint:goconst // column key reused across event tests
+		"meta_network_name":           "mainnet",            //nolint:goconst // column key reused across event tests
+		"propagation_slot_start_diff": uint32(500),          //nolint:goconst // column key reused across event tests
+		"epoch":                       uint32(3),            //nolint:goconst // column key reused across event tests
+		"wallclock_slot":              uint32(100),          //nolint:goconst // column key reused across event tests
+		"wallclock_epoch":             uint32(3),            //nolint:goconst // column key reused across event tests
 	})
 }
 
@@ -56,18 +56,18 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation_no_additional_data(
 		Data: &xatu.DecoratedEvent_EthV1EventsFastConfirmation{
 			EthV1EventsFastConfirmation: &ethv1.EventFastConfirmation{
 				Slot:  wrapperspb.UInt64(100),
-				Block: "0xfastconfirmblock",
+				Block: "0xfastconfirmblock", //nolint:goconst // shared with sibling test
 			},
 		},
 	}, 1, map[string]any{
-		"slot":                            uint32(100),
-		"block":                           "0xfastconfirmblock",
-		"propagation_slot_start_diff":     nil,
-		"epoch":                           nil,
-		"epoch_start_date_time":           nil,
-		"wallclock_slot":                  nil,
-		"wallclock_slot_start_date_time":  nil,
-		"wallclock_epoch":                 nil,
-		"wallclock_epoch_start_date_time": nil,
+		"slot":                            uint32(100),          //nolint:goconst // shared with sibling test
+		"block":                           "0xfastconfirmblock", //nolint:goconst // shared with sibling test
+		"propagation_slot_start_diff":     nil,                  //nolint:goconst // column key reused across event tests
+		"epoch":                           nil,                  //nolint:goconst // column key reused across event tests
+		"epoch_start_date_time":           nil,                  //nolint:goconst // column key reused across event tests
+		"wallclock_slot":                  nil,                  //nolint:goconst // column key reused across event tests
+		"wallclock_slot_start_date_time":  nil,                  //nolint:goconst // column key reused across event tests
+		"wallclock_epoch":                 nil,                  //nolint:goconst // column key reused across event tests
+		"wallclock_epoch_start_date_time": nil,                  //nolint:goconst // column key reused across event tests
 	})
 }

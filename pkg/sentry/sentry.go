@@ -815,6 +815,43 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
+		s.beacon.Node().OnFastConfirmation(ctx, func(ctx context.Context, ev *eth2v1.FastConfirmationEvent) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsFastConfirmation(
+				s.log,
+				&v1.FastConfirmationData{
+					Slot:  uint64(ev.Slot),
+					Block: xatuethv1.RootAsString(ev.Block),
+				},
+				now,
+				s.beacon,
+				s.duplicateCache.BeaconETHV1EventsFastConfirmation,
+				meta,
+			)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+		})
+
 		// Beacon blob metadata emission on block receipt
 		if s.Config.BeaconBlob != nil && s.Config.BeaconBlob.Enabled {
 			s.log.Info("Beacon blob metadata emission enabled")

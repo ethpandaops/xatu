@@ -545,6 +545,28 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsFastConfirmationData {
+    // Epoch contains the epoch information for the confirmed block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the confirmed block.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the
+    // confirmation, relative to the start of the confirmed block's slot.
+    PropagationV2 propagation = 3;
+
+    // WallclockSlot is the wall clock slot at which the sentry received
+    // the confirmation event. The confirmed block's slot (above) is
+    // typically a past slot, so this is needed to know when the
+    // confirmation actually arrived.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // WallclockEpoch is the wall clock epoch at which the sentry received
+    // the confirmation event.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
+  }
+
   message AdditionalEthV1EventsVoluntaryExitData {
     // Epoch contains the epoch information for the voluntary exit.
     Epoch epoch = 1;
@@ -1933,35 +1955,39 @@ message ClientMeta {
     // AdditionalEthV2BeaconBlockSyncAggregateData contains additional data about the sync aggregate.
     AdditionalEthV2BeaconBlockSyncAggregateData eth_v2_beacon_block_sync_aggregate = 93 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     AdditionalLibP2PTraceIdentifyData libp2p_trace_identify = 94 [ json_name = "LIBP2P_TRACE_IDENTIFY" ];
+    // AdditionalEthV1EventsFastConfirmationData contains additional data about
+    // the eth v1 fast confirmation event.
+    AdditionalEthV1EventsFastConfirmationData eth_v1_events_fast_confirmation = 95 [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
+
     // AdditionalEthV2BeaconBlockAccessListData contains additional data on
     // block access list entries derived from beacon blocks.
-    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 95 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 96 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
 
     // EIP-7732 ePBS: Sentry SSE additional data
-    AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 96 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
-    AdditionalEthV1EventsPayloadAttestationData eth_v1_events_payload_attestation = 97 [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
-    AdditionalEthV1EventsExecutionPayloadBidData eth_v1_events_execution_payload_bid = 98 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
-    AdditionalEthV1EventsProposerPreferencesData eth_v1_events_proposer_preferences = 99 [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
+    AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 97 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
+    AdditionalEthV1EventsPayloadAttestationData eth_v1_events_payload_attestation = 98 [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV1EventsExecutionPayloadBidData eth_v1_events_execution_payload_bid = 99 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
+    AdditionalEthV1EventsProposerPreferencesData eth_v1_events_proposer_preferences = 100 [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Cannon additional data
-    AdditionalEthV2BeaconBlockPayloadAttestationData eth_v2_beacon_block_payload_attestation = 100 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
-    AdditionalEthV2BeaconBlockExecutionPayloadBidData eth_v2_beacon_block_execution_payload_bid = 101 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
+    AdditionalEthV2BeaconBlockPayloadAttestationData eth_v2_beacon_block_payload_attestation = 101 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV2BeaconBlockExecutionPayloadBidData eth_v2_beacon_block_execution_payload_bid = 102 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
     // EIP-7732 ePBS: LibP2P gossip additional data
-    AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData libp2p_trace_gossipsub_execution_payload_envelope = 102 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 103 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 104 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 105 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
+    AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData libp2p_trace_gossipsub_execution_payload_envelope = 103 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
+    AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 104 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
+    AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 105 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
+    AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 106 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Sentry SSE additional data (gossip + available variants)
-    AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 106 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
-    AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 107 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
+    AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 107 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
+    AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 108 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
 
     // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
     // (TYSM-instrumented). No beacon API equivalent today.
-    AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 108 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
-    AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 109 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
-    AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 110 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
+    AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 109 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
+    AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 110 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
+    AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 111 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2181,32 +2207,33 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
     EXECUTION_BLOCK_METRICS = 87;
     LIBP2P_TRACE_IDENTIFY = 88;
-    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 89;
+    BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION = 89;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 90;
 
     // EIP-7732 ePBS: Sentry SSE events
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 90;
-    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 91;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 92;
-    BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 93;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 100;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE = 101;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 91;
+    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 92;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 93;
+    BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 94;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 101;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE = 102;
 
     // EIP-7732 ePBS: Cannon derived events
-    BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 94;
-    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 95;
+    BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 95;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 96;
 
     // EIP-7732 ePBS: P2P gossip events
-    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE = 96;
-    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 97;
-    LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 98;
-    LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 99;
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE = 97;
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 98;
+    LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 99;
+    LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 100;
 
     // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
     // (TYSM-instrumented). No beacon API equivalent today. Captured by every
     // beacon node, not just proposers — multi-witness signal.
-    BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 102;
-    BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 103;
-    BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 104;
+    BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 103;
+    BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 104;
+    BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 105;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2514,47 +2541,49 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     ExecutionBlockMetrics execution_block_metrics = 209
         [ json_name = "EXECUTION_BLOCK_METRICS" ];
-    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 210
+    xatu.eth.v1.EventFastConfirmation eth_v1_events_fast_confirmation = 210
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
+    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 211
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
 
     // EIP-7732 ePBS: Sentry SSE events
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 211
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 212
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
-    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 212
+    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 213
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
-    xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 213
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 214
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
-    xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 214
+    xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 215
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Cannon derived events
-    xatu.eth.v1.PayloadAttestation eth_v2_beacon_block_payload_attestation = 215
+    xatu.eth.v1.PayloadAttestation eth_v2_beacon_block_payload_attestation = 216
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
-    xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 216
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 217
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
     // EIP-7732 ePBS: P2P gossip events (use gossipsub summary types)
-    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 217
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 218
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 218
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 219
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 219
+    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 220
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 220
+    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 221
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Sentry SSE events (gossip + available variants)
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 221
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 222
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
-    xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 222
+    xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 223
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
 
     // EIP-7732 ePBS: Synthesized observability events (TYSM-instrumented)
-    xatu.eth.v1.PayloadStatusResolved beacon_synthetic_payload_status_resolved = 223
+    xatu.eth.v1.PayloadStatusResolved beacon_synthetic_payload_status_resolved = 224
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
-    xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 224
+    xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 225
         [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
-    xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 225
+    xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 226
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
   };
 }

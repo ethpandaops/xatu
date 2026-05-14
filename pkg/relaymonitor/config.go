@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/ethpandaops/beacon/pkg/human"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
@@ -49,6 +49,9 @@ type Config struct {
 
 	// Consistency configuration for ensuring complete slot data
 	Consistency *ConsistencyConfig `yaml:"consistency"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -84,6 +87,10 @@ func (c *Config) Validate() error {
 		if err := c.Consistency.Validate(); err != nil {
 			return fmt.Errorf("invalid consistency config: %w", err)
 		}
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil
@@ -173,7 +180,7 @@ type ForwardFillConfig struct {
 	TrailDistance uint64 `yaml:"trailDistance" default:"4"`
 }
 
-func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
+func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {
 	sinks := make([]output.Sink, len(c.Outputs))
 
 	for i, out := range c.Outputs {
@@ -187,7 +194,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 			out.SinkType,
 			out.Config,
 			log,
-			out.FilterConfig,
+			&out.FilterConfig,
 			*out.ShippingMethod,
 		)
 		if err != nil {
@@ -201,7 +208,7 @@ func (c *Config) CreateSinks(log logrus.FieldLogger) ([]output.Sink, error) {
 }
 
 // ApplyOverrides applies any overrides to the config.
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}

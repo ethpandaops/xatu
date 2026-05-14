@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/go-co-op/gocron/v2"
+
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/execution"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/sirupsen/logrus"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const Type = "static"
@@ -25,7 +26,7 @@ type Static struct {
 	captureDelay   time.Duration
 	ethereumConfig *ethereum.Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	cache    *cache.SharedCache
 	peersMux sync.Mutex
@@ -34,7 +35,7 @@ type Static struct {
 	metrics *Metrics
 }
 
-func New(name string, config *Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (*Static, error) {
+func New(name string, config *Config, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log observability.ContextualLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}
@@ -91,7 +92,7 @@ func (s *Static) Start(ctx context.Context) error {
 
 						if peer != nil {
 							if err = peer.Stop(ctx); err != nil {
-								s.log.WithError(err).Warn("failed to stop peer")
+								s.log.WithError(err).WithContext(ctx).Warn("failed to stop peer")
 							}
 						}
 					}()
@@ -112,7 +113,7 @@ func (s *Static) Start(ctx context.Context) error {
 				retry.Attempts(0),
 				retry.Context(ctx),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					s.log.WithError(err).Debug("peer failed")
+					s.log.WithError(err).WithContext(ctx).Debug("peer failed")
 
 					return s.config.RetryInterval
 				}),

@@ -7,19 +7,21 @@ import (
 
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type EventsAttestation struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -30,7 +32,7 @@ type EventsAttestation struct {
 	id             uuid.UUID
 }
 
-func NewEventsAttestation(log logrus.FieldLogger, event *spec.VersionedAttestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) (*EventsAttestation, error) {
+func NewEventsAttestation(log observability.ContextualLogger, event *spec.VersionedAttestation, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) (*EventsAttestation, error) {
 	if event == nil {
 		return nil, fmt.Errorf("event is nil")
 	}
@@ -129,7 +131,7 @@ func (e *EventsAttestation) Decorate(ctx context.Context) (*xatu.DecoratedEvent,
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra attestation data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra attestation data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1EventsAttestationV2{
 			EthV1EventsAttestationV2: additionalData,
@@ -154,7 +156,7 @@ func (e *EventsAttestation) ShouldIgnore(ctx context.Context) (bool, error) {
 		e.log.WithFields(logrus.Fields{
 			"hash":                  hash,
 			"time_since_first_item": time.Since(item.Value()),
-		}).Debug("Duplicate attestation event received")
+		}).WithContext(ctx).Debug("Duplicate attestation event received")
 
 		return true, nil
 	}

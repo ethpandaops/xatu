@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsVoluntaryExitV2 struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsVoluntaryExitV2(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsVoluntaryExitV2 {
+func NewEventsVoluntaryExitV2(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsVoluntaryExitV2 {
 	return &EventsVoluntaryExitV2{
 		log:   log.WithField("event", EventsVoluntaryExitV2Type),
 		event: event,

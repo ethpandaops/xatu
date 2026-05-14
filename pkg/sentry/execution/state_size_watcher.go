@@ -7,6 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // StateSizeWatcher polls the execution client's debug_stateSize endpoint
@@ -16,7 +18,7 @@ import (
 // - "interval": Periodic polling at a configured interval
 type StateSizeWatcher struct {
 	client   *Client
-	log      logrus.FieldLogger
+	log      observability.ContextualLogger
 	config   *StateSizeConfig
 	wg       sync.WaitGroup
 	ctx      context.Context //nolint:containedctx // This is a derived context from the parent context.
@@ -27,8 +29,7 @@ type StateSizeWatcher struct {
 // NewStateSizeWatcher creates a new StateSizeWatcher instance.
 func NewStateSizeWatcher(
 	client *Client,
-	log logrus.FieldLogger,
-	config *StateSizeConfig,
+	log observability.ContextualLogger, config *StateSizeConfig,
 	callback func(context.Context, *DebugStateSizeResponse) error,
 ) *StateSizeWatcher {
 	return &StateSizeWatcher{
@@ -47,17 +48,17 @@ func (w *StateSizeWatcher) Start(parentCtx context.Context) error {
 
 	switch w.config.TriggerMode {
 	case "interval":
-		w.log.WithField("interval_seconds", w.config.IntervalSeconds).Info("Starting state size watcher in interval mode")
+		w.log.WithField("interval_seconds", w.config.IntervalSeconds).WithContext(parentCtx).Info("Starting state size watcher in interval mode")
 		w.startPeriodicPoller()
 	case "block":
-		w.log.Info("Starting state size watcher in block mode (subscribing to execution layer blocks)")
+		w.log.WithContext(parentCtx).Info("Starting state size watcher in block mode (subscribing to execution layer blocks)")
 
 		if err := w.startBlockSubscription(); err != nil {
 			return err
 		}
 	default:
 		// Default to "head" mode
-		w.log.Info("State size watcher initialized in head mode (will be triggered by consensus head events)")
+		w.log.WithContext(parentCtx).Info("State size watcher initialized in head mode (will be triggered by consensus head events)")
 	}
 
 	return nil
@@ -196,7 +197,7 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 func (w *StateSizeWatcher) fetchAndReport(ctx context.Context, blockIdentifier string) error {
 	result, err := w.client.DebugStateSize(ctx, blockIdentifier)
 	if err != nil {
-		w.log.WithError(err).Warn("Failed to fetch state size from execution client")
+		w.log.WithError(err).WithContext(ctx).Warn("Failed to fetch state size from execution client")
 
 		return err
 	}
@@ -204,10 +205,10 @@ func (w *StateSizeWatcher) fetchAndReport(ctx context.Context, blockIdentifier s
 	w.log.WithFields(logrus.Fields{
 		"block_number": result.BlockNumber,
 		"state_root":   result.StateRoot,
-	}).Debug("Fetched state size data")
+	}).WithContext(ctx).Debug("Fetched state size data")
 
 	if err := w.callback(ctx, result); err != nil {
-		w.log.WithError(err).Error("Failed to process state size data")
+		w.log.WithError(err).WithContext(ctx).Error("Failed to process state size data")
 
 		return err
 	}

@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // fakeSink is a minimal output.Sink suitable for benchmarking and

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconBlockExecutionTransaction struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconBlockExecutionTransaction(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlockExecutionTransaction {
+func NewBeaconBlockExecutionTransaction(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconBlockExecutionTransaction {
 	return &BeaconBlockExecutionTransaction{
 		log:   log.WithField("event", BeaconBlockExecutionTransactionType),
 		event: event,

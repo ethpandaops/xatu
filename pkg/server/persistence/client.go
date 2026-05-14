@@ -5,17 +5,18 @@ import (
 	"database/sql"
 
 	_ "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type Client struct {
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	config *Config
 
 	db *sql.DB
 }
 
-func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, log observability.ContextualLogger, conf *Config) (*Client, error) {
 	c := &Client{
 		log:    log,
 		config: conf,

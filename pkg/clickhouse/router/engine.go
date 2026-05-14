@@ -5,8 +5,8 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const logSampleInterval = 30 * time.Second
@@ -28,7 +28,7 @@ type Outcome struct {
 // Engine maps event names to registered routes and dispatches incoming
 // events to the appropriate route handlers.
 type Engine struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	// routesByEvent maps event names to the list of routes that handle
 	// that event. Most events have one route, but conditional routing
@@ -41,8 +41,7 @@ type Engine struct {
 
 // New creates a routing engine with the given routes.
 func New(
-	log logrus.FieldLogger,
-	routes []route.Route,
+	log observability.ContextualLogger, routes []route.Route,
 	disabledEvents []xatu.Event_Name,
 	metrics *telemetry.Metrics,
 ) *Engine {

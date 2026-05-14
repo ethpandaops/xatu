@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type Location struct {

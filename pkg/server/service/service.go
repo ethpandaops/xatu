@@ -5,14 +5,15 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/service/coordinator"
 	eventingester "github.com/ethpandaops/xatu/pkg/server/service/event-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
 )
 
 // GRPCService is a service that implements a single gRPC service as defined in
@@ -31,7 +32,7 @@ const (
 	ServiceTypeCoordinator   Type = coordinator.ServiceType
 )
 
-func CreateGRPCServices(ctx context.Context, log logrus.FieldLogger, cfg *Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider, healthServer *health.Server) ([]GRPCService, error) {
+func CreateGRPCServices(ctx context.Context, log observability.ContextualLogger, cfg *Config, clockDrift *time.Duration, p *persistence.Client, c store.Cache, g geoip.Provider, healthServer *health.Server) ([]GRPCService, error) {
 	services := []GRPCService{}
 
 	if cfg.EventIngester.Enabled {

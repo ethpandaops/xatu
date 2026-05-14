@@ -8,11 +8,6 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -21,6 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -33,7 +34,7 @@ type WithdrawalDeriverConfig struct {
 }
 
 type WithdrawalDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *WithdrawalDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -41,7 +42,7 @@ type WithdrawalDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewWithdrawalDeriver(log logrus.FieldLogger, config *WithdrawalDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
+func NewWithdrawalDeriver(log observability.ContextualLogger, config *WithdrawalDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *WithdrawalDeriver {
 	return &WithdrawalDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/withdrawal",
@@ -72,12 +73,12 @@ func (b *WithdrawalDeriver) OnEventsDerived(ctx context.Context, fn func(ctx con
 
 func (b *WithdrawalDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Withdrawal deriver disabled")
+		b.log.WithContext(ctx).Info("Withdrawal deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Withdrawal deriver enabled")
+	b.log.WithContext(ctx).Info("Withdrawal deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -124,7 +125,7 @@ func (b *WithdrawalDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					return "", err
 				}
@@ -151,12 +152,12 @@ func (b *WithdrawalDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -233,14 +234,9 @@ func (b *WithdrawalDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *WithdrawalDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"WithdrawalDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	httpingester "github.com/ethpandaops/xatu/pkg/server/service/http-ingester"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -89,7 +88,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) ApplyOverrides(o *Override, log logrus.FieldLogger) error {
+func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger) error {
 	if o == nil {
 		return nil
 	}

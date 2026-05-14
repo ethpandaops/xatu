@@ -10,13 +10,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 // Summary is a struct that holds the summary of the sentry.
 type Summary struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	printInterval time.Duration
 
 	beacon *ethereum.BeaconNode
@@ -27,7 +29,7 @@ type Summary struct {
 }
 
 // NewSummary creates a new summary with the given print interval.
-func NewSummary(log logrus.FieldLogger, printInterval time.Duration, beacon *ethereum.BeaconNode) *Summary {
+func NewSummary(log observability.ContextualLogger, printInterval time.Duration, beacon *ethereum.BeaconNode) *Summary {
 	return &Summary{
 		log:           log,
 		printInterval: printInterval,
@@ -36,7 +38,7 @@ func NewSummary(log logrus.FieldLogger, printInterval time.Duration, beacon *eth
 }
 
 func (s *Summary) Start(ctx context.Context) {
-	s.log.WithField("interval", s.printInterval).Info("Starting summary")
+	s.log.WithField("interval", s.printInterval).WithContext(ctx).Info("Starting summary")
 	ticker := time.NewTicker(s.printInterval)
 
 	for {

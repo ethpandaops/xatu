@@ -8,14 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	chwriter "github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	chrouter "github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func boolPtr(b bool) *bool { return &b }

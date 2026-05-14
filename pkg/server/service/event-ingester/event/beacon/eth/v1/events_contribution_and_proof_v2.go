@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsContributionAndProofV2 struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsContributionAndProofV2(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsContributionAndProofV2 {
+func NewEventsContributionAndProofV2(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsContributionAndProofV2 {
 	return &EventsContributionAndProofV2{
 		log:   log.WithField("event", EventsContributionAndProofV2Type),
 		event: event,

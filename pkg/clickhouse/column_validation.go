@@ -8,8 +8,9 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
-	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 )
 
 // ValidateColumns asserts that every column each registered route writes
@@ -46,7 +47,7 @@ func (w *Writer) ValidateColumns(ctx context.Context) error {
 
 	problems := findMissingColumns(expected, actual)
 	if len(problems) == 0 {
-		w.log.WithField("tables_checked", len(expected)).
+		w.log.WithField("tables_checked", len(expected)).WithContext(ctx).
 			Info("All registered route columns exist in ClickHouse")
 
 		return nil
@@ -58,11 +59,11 @@ func (w *Writer) ValidateColumns(ctx context.Context) error {
 			"missing_columns": p.missing,
 			"missing_count":   len(p.missing),
 			"database":        w.database,
-		}).Error("Registered route writes columns that the target table is missing — INSERTs to this table will fail")
+		}).WithContext(ctx).Error("Registered route writes columns that the target table is missing — INSERTs to this table will fail")
 	}
 
 	if !w.config.ShouldFailOnMissingTables() {
-		w.log.WithField("tables_with_missing_columns", len(problems)).
+		w.log.WithField("tables_with_missing_columns", len(problems)).WithContext(ctx).
 			Warn("Continuing despite column mismatch — INSERTs to affected tables will fail (failOnMissingTables is disabled)")
 
 		return nil

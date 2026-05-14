@@ -9,11 +9,6 @@ import (
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -23,6 +18,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -35,7 +36,7 @@ type ElaboratedAttestationDeriverConfig struct {
 }
 
 type ElaboratedAttestationDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *ElaboratedAttestationDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -43,7 +44,7 @@ type ElaboratedAttestationDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewElaboratedAttestationDeriver(log logrus.FieldLogger, config *ElaboratedAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ElaboratedAttestationDeriver {
+func NewElaboratedAttestationDeriver(log observability.ContextualLogger, config *ElaboratedAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ElaboratedAttestationDeriver {
 	return &ElaboratedAttestationDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/elaborated_attestation",
@@ -74,12 +75,12 @@ func (b *ElaboratedAttestationDeriver) OnEventsDerived(ctx context.Context, fn f
 
 func (b *ElaboratedAttestationDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Elaborated attestation deriver disabled")
+		b.log.WithContext(ctx).Info("Elaborated attestation deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Elaborated attestation deriver enabled")
+	b.log.WithContext(ctx).Info("Elaborated attestation deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -132,7 +133,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -166,12 +167,12 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -188,7 +189,7 @@ func (b *ElaboratedAttestationDeriver) processEpoch(ctx context.Context, epoch p
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).WithField("epoch", epoch).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithField("epoch", epoch).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return nil, err
 	}
@@ -234,14 +235,9 @@ func (b *ElaboratedAttestationDeriver) processSlot(ctx context.Context, slot pha
 
 // lookAhead attempts to pre-load any blocks that might be required for the epochs that are coming up.
 func (b *ElaboratedAttestationDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoch) {
-	_, span := observability.Tracer().Start(ctx,
-		"ElaboratedAttestationDeriver.lookAhead",
-	)
-	defer span.End()
-
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		b.log.WithError(err).Warn("Failed to look ahead at epoch")
+		b.log.WithError(err).WithContext(ctx).Warn("Failed to look ahead at epoch")
 
 		return
 	}

@@ -3,10 +3,11 @@ package node
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	noderecord "github.com/ethpandaops/xatu/pkg/proto/noderecord"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_node_record_consensus(t *testing.T) {

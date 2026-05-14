@@ -1,8 +1,9 @@
 package cannon
 
 import (
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type Metrics struct {

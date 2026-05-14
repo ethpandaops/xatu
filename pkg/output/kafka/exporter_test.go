@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	"github.com/IBM/sarama"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // mockProducer implements sarama.SyncProducer for testing.
@@ -54,7 +56,7 @@ func (m *mockProducer) AddMessageToTxn(msg *sarama.ConsumerMessage, groupId stri
 	return nil
 }
 
-func newTestLogger() logrus.FieldLogger {
+func newTestLogger() observability.ContextualLogger {
 	l := logrus.New()
 	l.SetLevel(logrus.DebugLevel)
 

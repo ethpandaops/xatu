@@ -13,8 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	xatu "github.com/ethpandaops/xatu/pkg/proto/xatu"
 	gomock "go.uber.org/mock/gomock"
+
+	xatu "github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // MockSink is a mock of Sink interface.

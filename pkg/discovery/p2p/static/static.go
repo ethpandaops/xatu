@@ -6,7 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/discovery"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const Type = "static"
@@ -18,10 +19,10 @@ type Static struct {
 	discV5  *discovery.DiscV5
 	handler func(ctx context.Context, node *enode.Node, source string) error
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 }
 
-func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log logrus.FieldLogger) (*Static, error) {
+func New(config *Config, handler func(ctx context.Context, node *enode.Node, source string) error, log observability.ContextualLogger) (*Static, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}

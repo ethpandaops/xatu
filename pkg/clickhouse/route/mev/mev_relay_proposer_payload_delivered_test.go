@@ -3,10 +3,11 @@ package mev
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	mevrelay "github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_mev_relay_proposer_payload_delivered(t *testing.T) {

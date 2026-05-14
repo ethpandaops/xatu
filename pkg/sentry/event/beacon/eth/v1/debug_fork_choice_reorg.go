@@ -4,17 +4,18 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type ForkChoiceReOrg struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	snapshot *ForkChoiceReOrgSnapshot
 
@@ -30,7 +31,7 @@ type ForkChoiceReOrgSnapshot struct {
 	Event        *xatuethv1.EventChainReorgV2
 }
 
-func NewForkChoiceReOrg(log logrus.FieldLogger, snapshot *ForkChoiceReOrgSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoiceReOrg {
+func NewForkChoiceReOrg(log observability.ContextualLogger, snapshot *ForkChoiceReOrgSnapshot, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ForkChoiceReOrg {
 	return &ForkChoiceReOrg{
 		log:        log.WithField("event", "BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_REORG_V2"),
 		snapshot:   snapshot,

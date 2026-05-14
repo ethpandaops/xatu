@@ -5,25 +5,28 @@ import (
 	"fmt"
 	"net"
 
-	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ItemExporter struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	conn   *grpc.ClientConn
 	client pb.CoordinatorClient
 }
 
-func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, error) {
-	var opts []grpc.DialOption
+func NewItemExporter(config *Config, log observability.ContextualLogger) (ItemExporter, error) {
+	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
+	}
 
 	if config.TLS {
 		host, _, err := net.SplitHostPort(config.Address)
@@ -50,7 +53,7 @@ func NewItemExporter(config *Config, log logrus.FieldLogger) (ItemExporter, erro
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*string) error {
-	e.log.WithField("records", len(items)).Debug("Sending batch of records to coordinator")
+	e.log.WithField("records", len(items)).WithContext(ctx).Debug("Sending batch of records to coordinator")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		return err
@@ -82,7 +85,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*string) error 
 		return err
 	}
 
-	e.log.WithField("response", rsp).Debug("Received response from Xatu sink")
+	e.log.WithField("response", rsp).WithContext(ctx).Debug("Received response from Xatu sink")
 
 	return nil
 }

@@ -3,11 +3,12 @@ package libp2p
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	libp2ppb "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_libp2p_connected(t *testing.T) {

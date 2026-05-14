@@ -12,6 +12,14 @@ import (
 
 	perrors "github.com/pkg/errors"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
@@ -20,13 +28,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/relaymonitor"
 	n "github.com/ethpandaops/xatu/pkg/server/service/coordinator/node"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 type Client struct {
 	xatu.UnimplementedCoordinatorServer
 
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	config        *Config
 	persistence   *persistence.Client
 	geoipProvider geoip.Provider
@@ -48,7 +49,7 @@ type Client struct {
 	healthServer *health.Server
 }
 
-func NewClient(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client, geoipProvider geoip.Provider, healthServer *health.Server) (*Client, error) {
+func NewClient(ctx context.Context, log observability.ContextualLogger, conf *Config, p *persistence.Client, geoipProvider geoip.Provider, healthServer *health.Server) (*Client, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%s: persistence is required", ServiceType)
 	}
@@ -79,7 +80,7 @@ func (c *Client) Name() string {
 }
 
 func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	c.log.Info("Starting module")
+	c.log.WithContext(ctx).Info("Starting module")
 
 	xatu.RegisterCoordinatorServer(grpcServer, c)
 
@@ -95,11 +96,11 @@ func (c *Client) Start(ctx context.Context, grpcServer *grpc.Server) error {
 func (c *Client) Stop(ctx context.Context) error {
 	if c.nodeRecord != nil {
 		if err := c.nodeRecord.Stop(ctx); err != nil {
-			c.log.WithError(err).Error("failed to shutdown node record processor")
+			c.log.WithError(err).WithContext(ctx).Error("failed to shutdown node record processor")
 		}
 	}
 
-	c.log.Info("Module stopped")
+	c.log.WithContext(ctx).Info("Module stopped")
 
 	c.healthServer.SetServingStatus(c.Name(), grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
@@ -138,7 +139,7 @@ func (c *Client) CreateNodeRecords(ctx context.Context, req *xatu.CreateNodeReco
 				if ip != nil {
 					geoipLookupResult, err := c.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 					if err != nil {
-						c.log.WithField("ip", *ipAddress).WithError(err).Warn("failed to lookup geoip data")
+						c.log.WithField("ip", *ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 					}
 
 					if geoipLookupResult != nil && !(geoipLookupResult.Longitude == 0 && geoipLookupResult.Latitude == 0) {

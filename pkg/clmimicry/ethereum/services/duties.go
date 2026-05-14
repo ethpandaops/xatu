@@ -13,11 +13,13 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type DutiesService struct {
 	beacon beacon.Node
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	beaconCommittees *ttlcache.Cache[phase0.Epoch, []*v1.BeaconCommittee]
 
@@ -38,7 +40,7 @@ type DutiesService struct {
 	lastSyncState bool
 }
 
-func NewDutiesService(log logrus.FieldLogger, sbeacon beacon.Node, metadata *MetadataService) DutiesService {
+func NewDutiesService(log observability.ContextualLogger, sbeacon beacon.Node, metadata *MetadataService) DutiesService {
 	return DutiesService{
 		beacon: sbeacon,
 		log:    log.WithField("module", "sentry/ethereum/duties"),
@@ -89,17 +91,17 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		retryOpts := []backoff.RetryOption{
 			backoff.WithBackOff(backoff.NewExponentialBackOff()),
 			backoff.WithNotify(func(err error, timer time.Duration) {
-				m.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to fetch epoch duties")
+				m.log.WithError(err).WithField("next_attempt", timer).WithContext(ctx).Warn("Failed to fetch epoch duties")
 			}),
 		}
 
 		if _, err := backoff.Retry(ctx, operation, retryOpts...); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch epoch duties")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch epoch duties")
 		}
 
 		for _, fn := range m.onReadyCallbacks {
 			if err := fn(ctx); err != nil {
-				m.log.WithError(err).Error("Failed to fire on ready callback")
+				m.log.WithError(err).WithContext(ctx).Error("Failed to fire on ready callback")
 			}
 		}
 	}()
@@ -113,7 +115,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		time.Sleep(500 * time.Millisecond)
 
 		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch required epoch duties after an epoch change")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch required epoch duties after an epoch change")
 		}
 
 		time.Sleep(15 * time.Second)
@@ -128,7 +130,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		time.Sleep(100 * time.Millisecond)
 
 		if err := m.fetchProposerDuties(ctx, phase0.Epoch(epoch.Number())); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch proposer duties")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch proposer duties")
 		}
 	})
 
@@ -139,11 +141,11 @@ func (m *DutiesService) Start(ctx context.Context) error {
 
 		m.log.
 			WithField("current_epoch", epoch.Number()).
-			WithField("next_epoch", epoch.Number()+1).
+			WithField("next_epoch", epoch.Number()+1).WithContext(ctx).
 			Debug("Fetching beacon committees for next epoch")
 
 		if err := m.fetchBeaconCommittee(ctx, phase0.Epoch(epoch.Number()+1), true); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch required epoch duties in anticipation of an epoch change")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch required epoch duties in anticipation of an epoch change")
 		}
 
 		//nolint:errcheck // We don't care about the error here
@@ -151,10 +153,10 @@ func (m *DutiesService) Start(ctx context.Context) error {
 	})
 
 	m.beacon.OnChainReOrg(ctx, func(ctx context.Context, ev *v1.ChainReorgEvent) error {
-		m.log.Info("Chain reorg detected - refetching beacon committees")
+		m.log.WithContext(ctx).Info("Chain reorg detected - refetching beacon committees")
 
 		if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
-			m.log.WithError(err).Warn("Failed to fetch required epoch duties")
+			m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch required epoch duties")
 		}
 
 		return nil
@@ -164,12 +166,12 @@ func (m *DutiesService) Start(ctx context.Context) error {
 		if ev.State.IsSyncing != m.lastSyncState {
 			m.log.WithFields(logrus.Fields{
 				"is_syncing": ev.State.IsSyncing,
-			}).Info("Sync status changed - refetching beacon committees")
+			}).WithContext(ctx).Info("Sync status changed - refetching beacon committees")
 
 			if err := m.fetchRequiredEpochDuties(ctx, true); err != nil {
 				m.log.
 					WithError(err).
-					WithField("is_syncing", ev.State.IsSyncing).
+					WithField("is_syncing", ev.State.IsSyncing).WithContext(ctx).
 					Warn("Failed to fetch required epoch duties after a sync status change")
 			}
 		}
@@ -277,7 +279,7 @@ func (m *DutiesService) fetchNiceToHaveEpochDuties(ctx context.Context) error {
 	for _, epoch := range m.NiceToHaveEpochDuties(ctx) {
 		if duties := m.beaconCommittees.Get(epoch); duties == nil {
 			if err := m.fetchBeaconCommittee(ctx, epoch); err != nil {
-				m.log.WithError(err).Debugf("Failed to fetch beacon committee for epoch %d", epoch)
+				m.log.WithError(err).WithContext(ctx).Debugf("Failed to fetch beacon committee for epoch %d", epoch)
 			}
 		}
 	}
@@ -316,12 +318,12 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	m.log.
 		WithField("epoch", epoch).
 		WithField("override_cache", overrideCache).
-		WithField("wallclock_epoch", wallclockEpoch.Number()).
+		WithField("wallclock_epoch", wallclockEpoch.Number()).WithContext(ctx).
 		Debug("Fetching beacon committee")
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", &epoch)
 	if err != nil {
-		m.log.WithError(err).Error("Failed to fetch beacon committees")
+		m.log.WithError(err).WithContext(ctx).Error("Failed to fetch beacon committees")
 
 		return err
 	}
@@ -345,12 +347,12 @@ func (m *DutiesService) fetchProposerDuties(ctx context.Context, epoch phase0.Ep
 
 	m.log.
 		WithField("epoch", epoch).
-		WithField("wallclock_epoch", wallclockEpoch.Number()).
+		WithField("wallclock_epoch", wallclockEpoch.Number()).WithContext(ctx).
 		Debug("Fetching proposer duties")
 
 	duties, err := m.beacon.FetchProposerDuties(ctx, epoch)
 	if err != nil {
-		m.log.WithError(err).Error("Failed to fetch proposer duties")
+		m.log.WithError(err).WithContext(ctx).Error("Failed to fetch proposer duties")
 
 		return err
 	}

@@ -9,11 +9,6 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -23,6 +18,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (
@@ -35,7 +36,7 @@ type BeaconCommitteeDeriverConfig struct {
 }
 
 type BeaconCommitteeDeriver struct {
-	log               logrus.FieldLogger
+	log               observability.ContextualLogger
 	cfg               *BeaconCommitteeDeriverConfig
 	iterator          *iterator.BackfillingCheckpoint
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
@@ -43,7 +44,7 @@ type BeaconCommitteeDeriver struct {
 	clientMeta        *xatu.ClientMeta
 }
 
-func NewBeaconCommitteeDeriver(log logrus.FieldLogger, config *BeaconCommitteeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconCommitteeDeriver {
+func NewBeaconCommitteeDeriver(log observability.ContextualLogger, config *BeaconCommitteeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconCommitteeDeriver {
 	return &BeaconCommitteeDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v1/beacon_committee",
@@ -74,12 +75,12 @@ func (b *BeaconCommitteeDeriver) OnEventsDerived(ctx context.Context, fn func(ct
 
 func (b *BeaconCommitteeDeriver) Start(ctx context.Context) error {
 	if !b.cfg.Enabled {
-		b.log.Info("Beacon committee deriver disabled")
+		b.log.WithContext(ctx).Info("Beacon committee deriver disabled")
 
 		return nil
 	}
 
-	b.log.Info("Beacon committee deriver enabled")
+	b.log.WithContext(ctx).Info("Beacon committee deriver enabled")
 
 	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -132,7 +133,7 @@ func (b *BeaconCommitteeDeriver) run(rctx context.Context) {
 				// Process the epoch
 				events, err := b.processEpoch(ctx, position.Next)
 				if err != nil {
-					b.log.WithError(err).Error("Failed to process epoch")
+					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
@@ -165,12 +166,12 @@ func (b *BeaconCommitteeDeriver) run(rctx context.Context) {
 			retryOpts := []backoff.RetryOption{
 				backoff.WithBackOff(bo),
 				backoff.WithNotify(func(err error, timer time.Duration) {
-					b.log.WithError(err).WithField("next_attempt", timer).Warn("Failed to process")
+					b.log.WithError(err).WithField("next_attempt", timer).WithContext(rctx).Warn("Failed to process")
 				}),
 			}
 
 			if _, err := backoff.Retry(rctx, operation, retryOpts...); err != nil {
-				b.log.WithError(err).Warn("Failed to process")
+				b.log.WithError(err).WithContext(rctx).Warn("Failed to process")
 			}
 		}
 	}
@@ -206,7 +207,7 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 	}
 
 	if len(uniqueEpochs) > 1 {
-		b.log.WithField("epochs", uniqueEpochs).Warn("Multiple epochs found")
+		b.log.WithField("epochs", uniqueEpochs).WithContext(ctx).Warn("Multiple epochs found")
 
 		return nil, errors.New("multiple epochs found")
 	}
@@ -224,7 +225,7 @@ func (b *BeaconCommitteeDeriver) processEpoch(ctx context.Context, epoch phase0.
 			b.log.
 				WithError(err).
 				WithField("slot", committee.Slot).
-				WithField("epoch", epoch).
+				WithField("epoch", epoch).WithContext(ctx).
 				Error("Failed to create event from beacon committee")
 
 			return nil, err
@@ -272,7 +273,7 @@ func (b *BeaconCommitteeDeriver) createEventFromBeaconCommittee(ctx context.Cont
 
 	additionalData, err := b.getAdditionalData(ctx, committee)
 	if err != nil {
-		b.log.WithError(err).Error("Failed to get extra beacon committee data")
+		b.log.WithError(err).WithContext(ctx).Error("Failed to get extra beacon committee data")
 
 		return nil, err
 	} else {

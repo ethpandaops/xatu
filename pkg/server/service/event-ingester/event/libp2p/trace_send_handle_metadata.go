@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceHandleMetadata struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceHandleMetadata(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceHandleMetadata {
+func NewTraceHandleMetadata(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceHandleMetadata {
 	return &TraceHandleMetadata{
 		log:   log.WithField("event", TraceHandleMetadataType),
 		event: event,

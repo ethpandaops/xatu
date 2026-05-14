@@ -27,7 +27,7 @@ func (w *Writer) ValidateTables(ctx context.Context, routeTableNames []string) e
 
 	missing := findMissingTables(expected, existing)
 	if len(missing) == 0 {
-		w.log.WithField("tables_checked", len(expected)).
+		w.log.WithField("tables_checked", len(expected)).WithContext(ctx).
 			Info("All registered route tables exist in ClickHouse")
 
 		return nil
@@ -38,13 +38,13 @@ func (w *Writer) ValidateTables(ctx context.Context, routeTableNames []string) e
 			"table":        table,
 			"table_suffix": w.config.TableSuffix,
 			"database":     w.database,
-		}).Warn("Registered route table does not exist in ClickHouse — " +
+		}).WithContext(ctx).Warn("Registered route table does not exist in ClickHouse — " +
 			"INSERTs to this table will be permanently dropped")
 	}
 
 	if !w.config.ShouldFailOnMissingTables() {
 		w.log.WithField("missing_count", len(missing)).
-			WithField("total_checked", len(expected)).
+			WithField("total_checked", len(expected)).WithContext(ctx).
 			Warn("Some registered route tables are missing — data for these " +
 				"tables will be silently dropped (failOnMissingTables is disabled)")
 

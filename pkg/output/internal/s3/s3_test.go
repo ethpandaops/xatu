@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
-	xs3 "github.com/ethpandaops/xatu/pkg/output/internal/s3"
 	miniogo "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/minio"
+
+	xs3 "github.com/ethpandaops/xatu/pkg/output/internal/s3"
 )
 
 func TestConfigValidate(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EngineAPIGetBlobs struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEngineAPIGetBlobs(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EngineAPIGetBlobs {
+func NewEngineAPIGetBlobs(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EngineAPIGetBlobs {
 	return &EngineAPIGetBlobs{
 		log:   log.WithField("event", EngineAPIGetBlobsType),
 		event: event,

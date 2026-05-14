@@ -9,11 +9,16 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -32,6 +37,7 @@ type groupMessage struct {
 	event      *xatu.DecoratedEvent
 	kafka      kafkaMessageMetadata
 	tables     []string
+	traceCtx   context.Context //nolint:containedctx // upstream trace context preserved for the CH write span
 }
 
 // eventGroup collects all successfully decoded messages for one event type.
@@ -40,7 +46,7 @@ type eventGroup struct {
 }
 
 type xatuClickHouseOutput struct {
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	encoding         string
 	router           *router.Engine
 	writer           Writer
@@ -121,9 +127,23 @@ func (o *xatuClickHouseOutput) WriteBatch(
 	// and error-attributed independently.
 	tableGroups := make(map[string]*eventGroup, 16)
 
+	propagator := otel.GetTextMapPropagator()
+	tracer := observability.Tracer()
+
 	for i, msg := range msgs {
 		kafka := kafkaMetadata(msg)
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
+
+		msgCtx := propagator.Extract(ctx, newBenthosHeaderCarrier(msg))
+		msgCtx, msgSpan := tracer.Start(msgCtx, "consumoor.HandleMessage",
+			trace.WithSpanKind(trace.SpanKindConsumer),
+			trace.WithAttributes(
+				attribute.String("messaging.system", "kafka"),
+				attribute.String("messaging.destination.name", kafka.Topic),
+				attribute.Int64("messaging.kafka.message.offset", kafka.Offset),
+				attribute.Int("messaging.kafka.partition", int(kafka.Partition)),
+			),
+		)
 
 		raw, err := msg.AsBytes()
 		if err != nil {
@@ -131,6 +151,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			if ok, suppressed := o.logSampler.Allow("read_bytes:" + kafka.Topic); ok {
 				entry := o.log.WithError(err).
+					WithContext(msgCtx).
 					WithField("topic", kafka.Topic).
 					WithField("partition", kafka.Partition).
 					WithField("offset", kafka.Offset)
@@ -141,13 +162,15 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				entry.Warn("Failed to read message bytes")
 			}
 
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason: rejectReasonDecode,
 				Err:    err.Error(),
 				Kafka:  kafka,
 			}); rejectErr != nil {
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
+
+			msgSpan.End()
 
 			continue
 		}
@@ -158,6 +181,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 			if ok, suppressed := o.logSampler.Allow("decode:" + kafka.Topic); ok {
 				entry := o.log.WithError(err).
+					WithContext(msgCtx).
 					WithField("topic", kafka.Topic).
 					WithField("partition", kafka.Partition).
 					WithField("offset", kafka.Offset)
@@ -168,7 +192,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				entry.Warn("Failed to decode message")
 			}
 
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason:  rejectReasonDecode,
 				Err:     err.Error(),
 				Payload: raw,
@@ -176,6 +200,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 			}); rejectErr != nil {
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
+
+			msgSpan.End()
 
 			continue
 		}
@@ -185,7 +211,7 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		outcome := o.router.Route(event)
 
 		if outcome.Status == router.StatusRejected {
-			if rejectErr := o.rejectMessage(ctx, &rejectedRecord{
+			if rejectErr := o.rejectMessage(msgCtx, &rejectedRecord{
 				Reason:    rejectReasonRouteRejected,
 				Err:       "route rejected message",
 				Payload:   raw,
@@ -194,6 +220,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 			}); rejectErr != nil {
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
+
+			msgSpan.End()
 
 			continue
 		}
@@ -205,6 +233,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 					event.GetEvent().GetName(),
 				),
 			)
+
+			msgSpan.End()
 
 			continue
 		}
@@ -222,8 +252,11 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				event:      event,
 				kafka:      kafka,
 				tables:     []string{result.Table},
+				traceCtx:   trace.ContextWithSpanContext(context.Background(), msgSpan.SpanContext()),
 			})
 		}
+
+		msgSpan.End()
 	}
 
 	for _, tg := range tableGroups {
@@ -288,6 +321,47 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 	}
 
+	links := make([]trace.Link, 0, len(g.messages))
+	seen := make(map[[24]byte]struct{}, len(g.messages))
+
+	for _, gm := range g.messages {
+		if gm.traceCtx == nil {
+			continue
+		}
+
+		sc := trace.SpanContextFromContext(gm.traceCtx)
+		if !sc.IsValid() {
+			continue
+		}
+
+		tid := sc.TraceID()
+		sid := sc.SpanID()
+
+		var key [24]byte
+
+		copy(key[:16], tid[:])
+		copy(key[16:], sid[:])
+
+		if _, dup := seen[key]; dup {
+			continue
+		}
+
+		seen[key] = struct{}{}
+
+		links = append(links, trace.Link{SpanContext: sc})
+	}
+
+	ctx, span := observability.Tracer().Start(ctx, "consumoor.WriteGroup",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithLinks(links...),
+		trace.WithAttributes(
+			attribute.String("db.system", "clickhouse"),
+			attribute.Int("messaging.batch.message_count", len(g.messages)),
+			attribute.Int("clickhouse.tables", len(tableEvents)),
+		),
+	)
+	defer span.End()
+
 	var (
 		allInvalidEvents []*xatu.DecoratedEvent
 		lastResult       *clickhouse.FlushResult
@@ -306,7 +380,7 @@ func (o *xatuClickHouseOutput) processGroup(
 				"max_attempts":  o.groupRetryMaxAttempts,
 				"delay":         delay,
 				"failed_tables": len(tableEvents),
-			}).Warn("Retrying failed tables with backoff")
+			}).WithContext(ctx).Warn("Retrying failed tables with backoff")
 
 			o.metrics.GroupRetries().WithLabelValues(
 				g.messages[0].event.GetEvent().GetName().String(),
@@ -391,7 +465,7 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 
 		o.log.WithError(err).
-			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).
+			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).WithContext(ctx).
 			Warn("Permanent write error during group flush")
 	} else {
 		for _, gm := range g.messages {

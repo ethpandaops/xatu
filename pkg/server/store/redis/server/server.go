@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const Type = "redis-server"
@@ -14,7 +15,7 @@ const Type = "redis-server"
 type Server struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	options *redis.Options
 	client  *redis.Client
@@ -22,7 +23,7 @@ type Server struct {
 	metrics *Metrics
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Server, error) {
+func New(config *Config, log observability.ContextualLogger) (*Server, error) {
 	options, err := redis.ParseURL(config.Address)
 	if err != nil {
 		return nil, err

@@ -18,15 +18,16 @@ import (
 	//nolint:gosec // only exposed if pprofAddr config is set
 	_ "net/http/pprof"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redpanda-data/benthos/v4/public/service"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/redpanda-data/benthos/v4/public/service"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // topicStream pairs a discovered Kafka topic with its dedicated Benthos stream.
@@ -40,8 +41,8 @@ type topicStream struct {
 // Benthos stream and consumer group while sharing a single ClickHouse
 // writer for efficient connection reuse.
 type Consumoor struct {
-	log       logrus.FieldLogger
-	parentLog logrus.FieldLogger
+	log       observability.ContextualLogger
+	parentLog observability.ContextualLogger
 	config    *Config
 
 	metrics    *telemetry.Metrics
@@ -62,8 +63,7 @@ type Consumoor struct {
 // New creates a new Consumoor service. Call Start() to run it.
 func New(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	config *Config,
+	log observability.ContextualLogger, config *Config,
 	overrides *Override,
 ) (*Consumoor, error) {
 	config.ApplyOverrides(overrides)
@@ -229,7 +229,7 @@ func (c *Consumoor) Start(ctx context.Context) error {
 		return fmt.Errorf("starting clickhouse writer: %w", err)
 	}
 
-	c.log.WithField("streams", len(c.streams)).
+	c.log.WithField("streams", len(c.streams)).WithContext(ctx).
 		Info("Consumoor started (per-topic benthos streams)")
 
 	// errgroup provides fail-fast: if any goroutine (stream, metrics
@@ -255,7 +255,7 @@ func (c *Consumoor) Start(ctx context.Context) error {
 
 	for _, ts := range c.streams {
 		g.Go(func() error {
-			c.log.WithField("topic", ts.topic).Info("Starting stream")
+			c.log.WithField("topic", ts.topic).WithContext(ctx).Info("Starting stream")
 
 			if err := ts.stream.Run(gCtx); err != nil && !errors.Is(err, context.Canceled) {
 				return fmt.Errorf("running stream for topic %q: %w", ts.topic, err)
@@ -328,19 +328,19 @@ func (c *Consumoor) stopHTTPServers(_ context.Context) {
 // stopWriter drains the shared ClickHouse writer. Must be called after
 // all streams have fully exited to guarantee no in-flight writes.
 func (c *Consumoor) stopWriter(ctx context.Context) {
-	c.log.Info("Stopping consumoor")
+	c.log.WithContext(ctx).Info("Stopping consumoor")
 
 	if c.lagMonitor != nil {
 		if err := c.lagMonitor.Stop(); err != nil {
-			c.log.WithError(err).Error("Error stopping lag monitor")
+			c.log.WithError(err).WithContext(ctx).Error("Error stopping lag monitor")
 		}
 	}
 
 	if err := c.writer.Stop(ctx); err != nil {
-		c.log.WithError(err).Error("Error stopping clickhouse writer")
+		c.log.WithError(err).WithContext(ctx).Error("Error stopping clickhouse writer")
 	}
 
-	c.log.Info("Consumoor stopped")
+	c.log.WithContext(ctx).Info("Consumoor stopped")
 }
 
 // healthResponse is the JSON body returned by health check endpoints.
@@ -381,7 +381,7 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 	sm.HandleFunc("/healthz", c.handleHealthz)
 	sm.HandleFunc("/readyz", c.handleReadyz)
 
-	c.log.WithField("addr", c.config.MetricsAddr).Info("Starting metrics server")
+	c.log.WithField("addr", c.config.MetricsAddr).WithContext(ctx).Info("Starting metrics server")
 
 	srv := &http.Server{
 		Addr:              c.config.MetricsAddr,
@@ -409,7 +409,7 @@ func (c *Consumoor) startMetrics(ctx context.Context) error {
 func (c *Consumoor) watchTopics(ctx context.Context, g *errgroup.Group) {
 	interval := c.config.Kafka.TopicRefreshInterval
 
-	c.log.WithField("interval", interval).
+	c.log.WithField("interval", interval).WithContext(ctx).
 		Info("Starting topic discovery watcher")
 
 	// Seed from activeTopics so topics appearing between New() and the
@@ -426,7 +426,7 @@ func (c *Consumoor) watchTopics(ctx context.Context, g *errgroup.Group) {
 	for {
 		select {
 		case <-ctx.Done():
-			c.log.Info("Topic discovery watcher stopped")
+			c.log.WithContext(ctx).Info("Topic discovery watcher stopped")
 
 			return
 		case <-ticker.C:
@@ -445,7 +445,7 @@ func (c *Consumoor) discoverAndDiff(
 ) map[string]struct{} {
 	topics, err := source.DiscoverTopics(ctx, &c.config.Kafka)
 	if err != nil {
-		c.log.WithError(err).Warn("Topic discovery failed")
+		c.log.WithError(err).WithContext(ctx).Warn("Topic discovery failed")
 
 		return previous
 	}
@@ -460,7 +460,7 @@ func (c *Consumoor) discoverAndDiff(
 	// Find newly appeared topics and start streams for them.
 	for _, t := range topics {
 		if _, ok := previous[t]; !ok {
-			c.log.WithField("topic", t).
+			c.log.WithField("topic", t).WithContext(ctx).
 				Info("Discovered new topic matching pattern")
 			c.startTopicStream(ctx, g, t)
 		}
@@ -469,7 +469,7 @@ func (c *Consumoor) discoverAndDiff(
 	// Find disappeared topics.
 	for t := range previous {
 		if _, ok := current[t]; !ok {
-			c.log.WithField("topic", t).
+			c.log.WithField("topic", t).WithContext(ctx).
 				Warn("Previously matched topic no longer found")
 		}
 	}
@@ -504,7 +504,7 @@ func (c *Consumoor) startTopicStream(
 		c.log.WithField("topic", topic).
 			WithField("outputBatchCount", topicKafkaCfg.OutputBatchCount).
 			WithField("outputBatchPeriod", topicKafkaCfg.OutputBatchPeriod).
-			WithField("maxInFlight", topicKafkaCfg.MaxInFlight).
+			WithField("maxInFlight", topicKafkaCfg.MaxInFlight).WithContext(ctx).
 			Info("Applied per-topic batch overrides for dynamically discovered topic")
 	}
 
@@ -524,7 +524,7 @@ func (c *Consumoor) startTopicStream(
 	)
 	if err != nil {
 		c.log.WithError(err).
-			WithField("topic", topic).
+			WithField("topic", topic).WithContext(ctx).
 			Error("Failed to create stream for dynamically discovered topic")
 
 		c.mu.Lock()
@@ -540,11 +540,11 @@ func (c *Consumoor) startTopicStream(
 
 	c.metrics.OutputMaxInFlight().WithLabelValues(topic).Set(float64(topicKafkaCfg.MaxInFlight))
 
-	c.log.WithField("topic", topic).
+	c.log.WithField("topic", topic).WithContext(ctx).
 		Info("Starting stream for dynamically discovered topic")
 
 	if c.lagMonitor != nil {
-		c.log.WithField("topic", topic).
+		c.log.WithField("topic", topic).WithContext(ctx).
 			Warn("Dynamically discovered topic will not have consumer lag monitoring — restart to include it")
 	}
 

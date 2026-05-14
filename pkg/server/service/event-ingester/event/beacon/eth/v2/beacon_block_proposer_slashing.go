@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type BeaconBlockProposerSlashing struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconBlockProposerSlashing(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconBlockProposerSlashing {
+func NewBeaconBlockProposerSlashing(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconBlockProposerSlashing {
 	return &BeaconBlockProposerSlashing{
 		log:   log.WithField("event", BeaconBlockProposerSlashingType),
 		event: event,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EngineNewPayload struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEngineNewPayload(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EngineNewPayload {
+func NewEngineNewPayload(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EngineNewPayload {
 	return &EngineNewPayload{
 		log:   log.WithField("event", EngineNewPayloadType),
 		event: event,

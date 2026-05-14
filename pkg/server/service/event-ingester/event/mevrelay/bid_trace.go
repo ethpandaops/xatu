@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type BidTraceBuilderBlockSubmission struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBidTraceBuilderBlockSubmission(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BidTraceBuilderBlockSubmission {
+func NewBidTraceBuilderBlockSubmission(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BidTraceBuilderBlockSubmission {
 	return &BidTraceBuilderBlockSubmission{
 		log:   log.WithField("event", BidTraceBuilderBlockSubmissionType),
 		event: event,

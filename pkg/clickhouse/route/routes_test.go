@@ -8,15 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	tabledefs "github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestRegistryCoversAllKnownEvents(t *testing.T) {

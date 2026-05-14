@@ -7,11 +7,11 @@ go 1.26.2
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Hold go-ethereum at bal-devnet-3 build (older than what prysm requires).
-// Prysm's go.mod requests v1.17.2 release, but ethcore's mimicry client uses
-// the older eth.NewPeer signature, so the bal-devnet-3 pre-release pin is
-// what actually builds cleanly across the dep tree.
-replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.2-0.20260324190457-8f361e342cb9
+// Pin go-ethereum to bal-devnet-6 — the EL branch deployed on glamsterdam-devnet-3
+// per ethpandaops/glamsterdam-devnets ansible inventory. Carries the latest BAL
+// (EIP-7928) refinements plus Amsterdam slot-number support (EIP-7843) needed for
+// Gloas. ethcore was bumped to match the new 5-arg eth.NewPeer signature.
+replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
 
 require (
 	github.com/ClickHouse/ch-go v0.71.0
@@ -22,9 +22,9 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.3-0.20260506230850-230c6a5e11cf
-	github.com/ethpandaops/beacon v0.68.1-0.20260513233739-0260912e4454
-	github.com/ethpandaops/ethcore v0.0.0-20260513234517-4e1b5fbbc61b
+	github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
+	github.com/ethpandaops/beacon v0.68.1-0.20260514003136-ddfa77007153
+	github.com/ethpandaops/ethcore v0.0.0-20260514003726-f67d7a6e9f91
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ethpandaops/go-eth2-client v0.1.2
 	github.com/failsafe-go/failsafe-go v0.9.6

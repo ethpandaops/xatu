@@ -181,6 +181,12 @@ message EventBlockGossip {
   string block = 2;
 }
 
+message EventFastConfirmation {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  string block = 2;
+}
+
 message EventDataColumnSidecar {
   google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 

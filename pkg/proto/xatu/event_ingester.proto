@@ -538,6 +538,28 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsFastConfirmationData {
+    // Epoch contains the epoch information for the confirmed block.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the confirmed block.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the
+    // confirmation, relative to the start of the confirmed block's slot.
+    PropagationV2 propagation = 3;
+
+    // WallclockSlot is the wall clock slot at which the sentry received
+    // the confirmation event. The confirmed block's slot (above) is
+    // typically a past slot, so this is needed to know when the
+    // confirmation actually arrived.
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // WallclockEpoch is the wall clock epoch at which the sentry received
+    // the confirmation event.
+    EpochV2 wallclock_epoch = 5 [ json_name = "wallclock_epoch" ];
+  }
+
   message AdditionalEthV1EventsVoluntaryExitData {
     // Epoch contains the epoch information for the voluntary exit.
     Epoch epoch = 1;
@@ -1763,6 +1785,9 @@ message ClientMeta {
     // AdditionalEthV2BeaconBlockSyncAggregateData contains additional data about the sync aggregate.
     AdditionalEthV2BeaconBlockSyncAggregateData eth_v2_beacon_block_sync_aggregate = 93 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     AdditionalLibP2PTraceIdentifyData libp2p_trace_identify = 94 [ json_name = "LIBP2P_TRACE_IDENTIFY" ];
+    // AdditionalEthV1EventsFastConfirmationData contains additional data about
+    // the eth v1 fast confirmation event.
+    AdditionalEthV1EventsFastConfirmationData eth_v1_events_fast_confirmation = 95 [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -1982,6 +2007,7 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 86;
     EXECUTION_BLOCK_METRICS = 87;
     LIBP2P_TRACE_IDENTIFY = 88;
+    BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION = 89;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2289,6 +2315,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
     ExecutionBlockMetrics execution_block_metrics = 209
         [ json_name = "EXECUTION_BLOCK_METRICS" ];
+    xatu.eth.v1.EventFastConfirmation eth_v1_events_fast_confirmation = 210
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
   };
 }
 

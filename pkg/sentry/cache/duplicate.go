@@ -10,6 +10,7 @@ type DuplicateCache struct {
 	BeaconETHV1EventsAttestation          *ttlcache.Cache[string, time.Time]
 	BeaconETHV1EventsBlock                *ttlcache.Cache[string, time.Time]
 	BeaconETHV1EventsBlockGossip          *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsFastConfirmation     *ttlcache.Cache[string, time.Time]
 	BeaconETHV1EventsChainReorg           *ttlcache.Cache[string, time.Time]
 	BeaconETHV1EventsFinalizedCheckpoint  *ttlcache.Cache[string, time.Time]
 	BeaconETHV1EventsHead                 *ttlcache.Cache[string, time.Time]
@@ -42,6 +43,9 @@ func NewDuplicateCache() *DuplicateCache {
 			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
 		),
 		BeaconETHV1EventsBlockGossip: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsFastConfirmation: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
 		),
 		BeaconETHV1EventsChainReorg: ttlcache.New(
@@ -90,6 +94,7 @@ func (d *DuplicateCache) Start() {
 	go d.BeaconETHV1EventsAttestation.Start()
 	go d.BeaconETHV1EventsBlock.Start()
 	go d.BeaconETHV1EventsBlockGossip.Start()
+	go d.BeaconETHV1EventsFastConfirmation.Start()
 	go d.BeaconETHV1EventsChainReorg.Start()
 	go d.BeaconETHV1EventsFinalizedCheckpoint.Start()
 	go d.BeaconETHV1EventsHead.Start()

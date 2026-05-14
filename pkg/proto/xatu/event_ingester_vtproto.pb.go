@@ -2510,6 +2510,89 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) MarshalToSizedBufferVT
 	return len(dAtA) - i, nil
 }
 
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.WallclockEpoch != nil {
+		size, err := m.WallclockEpoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.WallclockSlot != nil {
+		size, err := m.WallclockSlot.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Propagation != nil {
+		size, err := m.Propagation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Slot != nil {
+		size, err := m.Slot.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ClientMeta_AdditionalEthV1EventsVoluntaryExitData) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -9453,6 +9536,27 @@ func (m *ClientMeta_Libp2PTraceIdentify) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
+func (m *ClientMeta_EthV1EventsFastConfirmation) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1EventsFastConfirmation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1EventsFastConfirmation != nil {
+		size, err := m.EthV1EventsFastConfirmation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x5
+		i--
+		dAtA[i] = 0xfa
+	}
+	return len(dAtA) - i, nil
+}
 func (m *ServerMeta_Event) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -12629,6 +12733,27 @@ func (m *DecoratedEvent_ExecutionBlockMetrics) MarshalToSizedBufferVT(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DecoratedEvent_EthV1EventsFastConfirmation) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1EventsFastConfirmation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1EventsFastConfirmation != nil {
+		size, err := m.EthV1EventsFastConfirmation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xd
+		i--
+		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_CreateEventsRequest = sync.Pool{
 	New: func() interface{} {
@@ -13478,6 +13603,32 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) ReturnToVTPool() {
 }
 func ClientMeta_AdditionalEthV1EventsBlockGossipDataFromVTPool() *ClientMeta_AdditionalEthV1EventsBlockGossipData {
 	return vtprotoPool_ClientMeta_AdditionalEthV1EventsBlockGossipData.Get().(*ClientMeta_AdditionalEthV1EventsBlockGossipData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1EventsFastConfirmationData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1EventsFastConfirmationData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Propagation.ReturnToVTPool()
+		m.WallclockSlot.ReturnToVTPool()
+		m.WallclockEpoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1EventsFastConfirmationData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1EventsFastConfirmationDataFromVTPool() *ClientMeta_AdditionalEthV1EventsFastConfirmationData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1EventsFastConfirmationData.Get().(*ClientMeta_AdditionalEthV1EventsFastConfirmationData)
 }
 
 var vtprotoPool_ClientMeta_AdditionalEthV1EventsVoluntaryExitData = sync.Pool{
@@ -15600,6 +15751,9 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceIdentify); ok {
 			oneof.Libp2PTraceIdentify.ReturnToVTPool()
 		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsFastConfirmation); ok {
+			oneof.EthV1EventsFastConfirmation.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -16312,6 +16466,9 @@ func (m *DecoratedEvent) ResetVT() {
 		}
 		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionBlockMetrics); ok {
 			oneof.ExecutionBlockMetrics.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsFastConfirmation); ok {
+			oneof.EthV1EventsFastConfirmation.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -17267,6 +17424,36 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) SizeVT() (n int) {
 	}
 	if m.Propagation != nil {
 		l = m.Propagation.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Slot != nil {
+		l = m.Slot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Propagation != nil {
+		l = m.Propagation.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WallclockSlot != nil {
+		l = m.WallclockSlot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WallclockEpoch != nil {
+		l = m.WallclockEpoch.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -20137,6 +20324,18 @@ func (m *ClientMeta_Libp2PTraceIdentify) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *ClientMeta_EthV1EventsFastConfirmation) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1EventsFastConfirmation != nil {
+		l = m.EthV1EventsFastConfirmation.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *ServerMeta_Event) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -21703,6 +21902,18 @@ func (m *DecoratedEvent_ExecutionBlockMetrics) SizeVT() (n int) {
 	_ = l
 	if m.ExecutionBlockMetrics != nil {
 		l = m.ExecutionBlockMetrics.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1EventsFastConfirmation) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1EventsFastConfirmation != nil {
+		l = m.EthV1EventsFastConfirmation.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -28406,6 +28617,237 @@ func (m *ClientMeta_AdditionalEthV1EventsBlockGossipData) UnmarshalVT(dAtA []byt
 				m.Propagation = PropagationV2FromVTPool()
 			}
 			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1EventsFastConfirmationData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1EventsFastConfirmationData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1EventsFastConfirmationData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Slot == nil {
+				m.Slot = SlotV2FromVTPool()
+			}
+			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Propagation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Propagation == nil {
+				m.Propagation = PropagationV2FromVTPool()
+			}
+			if err := m.Propagation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WallclockSlot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WallclockSlot == nil {
+				m.WallclockSlot = SlotV2FromVTPool()
+			}
+			if err := m.WallclockSlot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WallclockEpoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WallclockEpoch == nil {
+				m.WallclockEpoch = EpochV2FromVTPool()
+			}
+			if err := m.WallclockEpoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -45339,6 +45781,47 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 				m.AdditionalData = &ClientMeta_Libp2PTraceIdentify{Libp2PTraceIdentify: v}
 			}
 			iNdEx = postIndex
+		case 95:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsFastConfirmation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsFastConfirmation); ok {
+				if err := oneof.EthV1EventsFastConfirmation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1EventsFastConfirmationDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1EventsFastConfirmation{EthV1EventsFastConfirmation: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -52328,6 +52811,47 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Data = &DecoratedEvent_ExecutionBlockMetrics{ExecutionBlockMetrics: v}
+			}
+			iNdEx = postIndex
+		case 210:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsFastConfirmation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsFastConfirmation); ok {
+				if err := oneof.EthV1EventsFastConfirmation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := v1.EventFastConfirmationFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1EventsFastConfirmation{EthV1EventsFastConfirmation: v}
 			}
 			iNdEx = postIndex
 		default:

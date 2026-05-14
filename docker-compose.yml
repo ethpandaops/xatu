@@ -240,129 +240,6 @@ services:
       - prometheus-data:/prometheus
       - ./deploy/local/docker-compose/prometheus.yaml:/etc/prometheus/prometheus.yml
 
-  xatu-init-kafka:
-    profiles:
-      - ""
-    image: confluentinc/cp-kafka:latest
-    hostname: xatu-init-kafka
-    container_name: xatu-init-kafka
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - |
-        # Topics that need larger message sizes (10MB)
-        large_message_topics=(
-          "beacon-api-eth-v1-beacon-blob-sidecar"
-          "beacon-api-eth-v1-debug-fork-choice"
-          "beacon-api-eth-v1-debug-fork-choice-reorg"
-          "beacon-api-eth-v1-debug-fork-choice-reorg-v2"
-          "beacon-api-eth-v1-debug-fork-choice-v2"
-          "beacon-api-eth-v2-beacon-block"
-          "beacon-api-eth-v2-beacon-block-v2"
-          "beacon-api-eth-v2-beacon-block-execution-transaction"
-          "mempool-transaction-v2"
-        )
-
-        # Regular topics
-        regular_topics=(
-          "beacon-api-eth-v1-beacon-committee"
-          "beacon-api-eth-v1-events-attestation"
-          "beacon-api-eth-v1-events-attestation-v2"
-          "beacon-api-eth-v1-events-blob-sidecar"
-          "beacon-api-eth-v1-events-block"
-          "beacon-api-eth-v1-events-block-v2"
-          "beacon-api-eth-v1-events-block-gossip"
-          "beacon-api-eth-v1-events-chain-reorg"
-          "beacon-api-eth-v1-events-chain-reorg-v2"
-          "beacon-api-eth-v1-events-contribution-and-proof"
-          "beacon-api-eth-v1-events-contribution-and-proof-v2"
-          "beacon-api-eth-v1-events-data-column-sidecar"
-          "beacon-api-eth-v1-events-finalized-checkpoint"
-          "beacon-api-eth-v1-events-finalized-checkpoint-v2"
-          "beacon-api-eth-v1-events-head"
-          "beacon-api-eth-v1-events-head-v2"
-          "beacon-api-eth-v1-events-voluntary-exit"
-          "beacon-api-eth-v1-events-voluntary-exit-v2"
-          "beacon-api-eth-v1-proposer-duty"
-          "beacon-api-eth-v1-validator-attestation-data"
-          "beacon-api-eth-v2-beacon-block-attester-slashing"
-          "beacon-api-eth-v2-beacon-block-bls-to-execution-change"
-          "beacon-api-eth-v2-beacon-block-deposit"
-          "beacon-api-eth-v2-beacon-block-proposer-slashing"
-          "beacon-api-eth-v2-beacon-block-voluntary-exit"
-          "beacon-api-eth-v2-beacon-block-withdrawal"
-          "beacon-api-eth-v2-beacon-block-elaborated-attestation"
-          "beacon-p2p-attestation"
-          "mempool-transaction"
-          "libp2p-trace-connected"
-          "libp2p-trace-disconnected"
-          "libp2p-trace-add-peer"
-          "libp2p-trace-remove-peer"
-          "libp2p-trace-recv-rpc"
-          "libp2p-trace-send-rpc"
-          "libp2p-trace-drop-rpc"
-          "libp2p-trace-join"
-          "libp2p-trace-leave"
-          "libp2p-trace-graft"
-          "libp2p-trace-prune"
-          "libp2p-trace-deliver-message"
-          "libp2p-trace-reject-message"
-          "libp2p-trace-publish-message"
-          "libp2p-trace-duplicate-message"
-          "libp2p-trace-handle-metadata"
-          "libp2p-trace-handle-status"
-          "libp2p-trace-gossipsub-beacon-block"
-          "libp2p-trace-gossipsub-beacon-attestation"
-          "libp2p-trace-gossipsub-aggregate-and-proof"
-          "libp2p-trace-gossipsub-blob-sidecar"
-          "libp2p-trace-gossipsub-data-column-sidecar"
-          "libp2p-trace-synthetic-heartbeat"
-          "libp2p-trace-identify"
-          "libp2p-trace-rpc-meta-control-prune"
-          "libp2p-trace-rpc-meta-control-graft"
-          "libp2p-trace-rpc-meta-control-idontwant"
-          "libp2p-trace-rpc-meta-control-iwant"
-          "libp2p-trace-rpc-meta-control-ihave"
-          "libp2p-trace-rpc-meta-subscription"
-          "libp2p-trace-rpc-meta-message"
-          "libp2p-trace-rpc-data-column-custody-probe"
-          "beacon-api-eth-v1-beacon-validators"
-          "mev-relay-bid-trace-builder-block-submission"
-          "mev-relay-proposer-payload-delivered"
-          "beacon-api-eth-v3-validator-block"
-          "mev-relay-validator-registration"
-          "node-record-consensus"
-          "node-record-execution"
-          "consensus-engine-api-new-payload"
-          "consensus-engine-api-get-blobs"
-          "execution-engine-new-payload"
-          "execution-engine-get-blobs"
-          "beacon-api-eth-v1-beacon-sync-committee"
-          "beacon-api-eth-v2-beacon-block-sync-aggregate"
-          "execution-block-metrics"
-          "execution-block-metrics"
-        )
-
-        # Create topics with 10MB message size limit
-        for topic in "$${large_message_topics[@]}"; do
-          echo "Creating topic with 10MB message limit: $$topic";
-          kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=delete --config retention.ms=259200000 --config compression.type=snappy --config segment.bytes=536870912 --config max.message.bytes=10485760 --topic "$$topic"
-        done
-
-        # Create regular topics
-        for topic in "$${regular_topics[@]}"; do
-          echo "Creating topic: $$topic";
-          kafka-topics --create --if-not-exists --bootstrap-server xatu-kafka:29092 --partitions 1 --replication-factor 1 --config cleanup.policy=delete --config retention.ms=259200000 --config compression.type=snappy --config segment.bytes=536870912 --topic "$$topic"
-        done
-
-        sleep 3;
-    depends_on:
-      xatu-kafka:
-        condition: service_healthy
-    networks:
-      - xatu-net
-
   xatu-kafka-storage-format:
     profiles:
       - ""
@@ -413,6 +290,15 @@ services:
       # Message size limits - 10MB
       KAFKA_MESSAGE_MAX_BYTES: 10485760
       KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
+      # Auto-create topics on first publish using these defaults so we don't drift
+      # against a hardcoded topic list when new event types are added.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_MS: 259200000
+      KAFKA_LOG_SEGMENT_BYTES: 536870912
+      KAFKA_COMPRESSION_TYPE: producer
+      KAFKA_LOG_CLEANUP_POLICY: delete
     ports:
       - "${KAFKA_ADDRESS:-127.0.0.1}:${KAFKA_PORT:-29092}:29092"
       - "${KAFKA_BROKER_ADDRESS:-127.0.0.1}:${KAFKA_BROKER_PORT:-9092}:9092"
@@ -466,8 +352,6 @@ services:
       xatu-clickhouse-02:
         condition: service_healthy
       xatu-clickhouse-migrator:
-        condition: service_completed_successfully
-      xatu-init-kafka:
         condition: service_completed_successfully
 
   xatu-vector-logs-init:

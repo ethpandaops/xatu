@@ -5,7 +5,7 @@ kafka:
   brokers:
     - xatu-kafka:29092
   topics:
-    - ".+"
+    - "^xatu-protobuf-.+"
   consumerGroup: xatu-consumoor-local
   encoding: protobuf
   offsetDefault: earliest

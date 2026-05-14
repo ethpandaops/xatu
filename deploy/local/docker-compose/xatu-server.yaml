@@ -81,7 +81,7 @@ services:
         shippingMethod: async
         config:
           brokers: xatu-kafka:29092
-          topicPattern: "${event-name}"
+          topicPattern: "xatu-protobuf-${event-name}"
           encoding: protobuf
           compression: snappy
           requiredAcks: leader

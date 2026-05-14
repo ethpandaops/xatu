@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -39,7 +40,7 @@ func NewItemExporter(
 
 // ExportItems sends a batch of decorated events to Kafka.
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
-	_, span := observability.Tracer().Start(ctx,
+	ctx, span := observability.Tracer().Start(ctx,
 		"KafkaItemExporter.ExportItems",
 		trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))),
 	)
@@ -66,8 +67,10 @@ func (e ItemExporter) Shutdown(_ context.Context) error {
 	return e.client.Close()
 }
 
-func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	msgs := make([]*sarama.ProducerMessage, 0, len(items))
+
+	propagator := otel.GetTextMapPropagator()
 
 	for _, p := range items {
 		r, err := e.config.MarshalEvent(p)
@@ -84,6 +87,8 @@ func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEv
 			Key:   routingKey,
 			Value: eventPayload,
 		}
+
+		propagator.Inject(ctx, newSaramaHeaderCarrier(&m.Headers))
 
 		msgByteSize := m.ByteSize(2)
 		if msgByteSize > e.config.MaxMessageBytes {

@@ -19,6 +19,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	"github.com/ethpandaops/xatu/pkg/server/store"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 	ocodes "go.opentelemetry.io/otel/codes"
 	"google.golang.org/grpc/metadata"
@@ -85,7 +86,7 @@ func (i *Ingester) Start(ctx context.Context) error {
 
 	i.server = &http.Server{
 		Addr:              i.config.Addr,
-		Handler:           mux,
+		Handler:           otelhttp.NewHandler(mux, "http-ingester"),
 		ReadHeaderTimeout: 30 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      60 * time.Second,

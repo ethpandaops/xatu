@@ -12,8 +12,12 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -121,9 +125,23 @@ func (o *xatuClickHouseOutput) WriteBatch(
 	// and error-attributed independently.
 	tableGroups := make(map[string]*eventGroup, 16)
 
+	propagator := otel.GetTextMapPropagator()
+	tracer := observability.Tracer()
+
 	for i, msg := range msgs {
 		kafka := kafkaMetadata(msg)
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
+
+		msgCtx := propagator.Extract(ctx, newBenthosHeaderCarrier(msg))
+		_, msgSpan := tracer.Start(msgCtx, "consumoor.HandleMessage",
+			trace.WithSpanKind(trace.SpanKindConsumer),
+			trace.WithAttributes(
+				attribute.String("messaging.system", "kafka"),
+				attribute.String("messaging.destination.name", kafka.Topic),
+				attribute.Int64("messaging.kafka.message.offset", kafka.Offset),
+				attribute.Int("messaging.kafka.partition", int(kafka.Partition)),
+			),
+		)
 
 		raw, err := msg.AsBytes()
 		if err != nil {
@@ -148,6 +166,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 			}); rejectErr != nil {
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
+
+			msgSpan.End()
 
 			continue
 		}
@@ -177,6 +197,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
 
+			msgSpan.End()
+
 			continue
 		}
 
@@ -195,6 +217,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				batchErr = addBatchFailure(batchErr, msgs, i, rejectErr)
 			}
 
+			msgSpan.End()
+
 			continue
 		}
 
@@ -205,6 +229,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 					event.GetEvent().GetName(),
 				),
 			)
+
+			msgSpan.End()
 
 			continue
 		}
@@ -224,6 +250,8 @@ func (o *xatuClickHouseOutput) WriteBatch(
 				tables:     []string{result.Table},
 			})
 		}
+
+		msgSpan.End()
 	}
 
 	for _, tg := range tableGroups {

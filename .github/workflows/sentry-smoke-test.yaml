@@ -114,24 +114,19 @@ jobs:
           sleep 2
         done
 
-        # xatu-server forwards sentry-logs events to xatu-vector-http-kafka:9005.
-        # Compose returns once the container is "Started", but Vector binds the
-        # HTTP source ~1s later, racing with the inject step below.
-        # Probe the actual HTTP source. The Docker port can accept TCP before
-        # Vector has finished binding the source, which drops the one-shot
-        # sentry-logs test batch.
-        echo "Waiting for xatu-vector-http-kafka to accept HTTP on host :9055..."
+        # xatu-consumoor reads from kafka and writes to clickhouse. The
+        # downstream "Verify ClickHouse has data" step polls with retries,
+        # so settling time for kafka topic auto-create + consumoor
+        # discovery (~60s topic refresh) is absorbed there.
+        echo "Waiting for xatu-consumoor to be running..."
         for i in $(seq 1 30); do
-          if printf '{"event":{"name":"XATU_SMOKE_READY_PROBE"}}\n' | curl --fail --silent --show-error --max-time 2 \
-            -H 'Content-Type: application/x-ndjson' \
-            --data-binary @- \
-            http://127.0.0.1:9055 >/dev/null; then
-            echo "xatu-vector-http-kafka is listening."
+          if [ "$(docker inspect -f '{{.State.Status}}' xatu-consumoor 2>/dev/null)" = "running" ]; then
+            echo "xatu-consumoor is running."
             break
           fi
           if [ "$i" -eq 30 ]; then
-            echo "::error::xatu-vector-http-kafka failed to accept HTTP on host :9055"
-            docker logs xatu-vector-http-kafka 2>&1 | tail -50
+            echo "::error::xatu-consumoor failed to start"
+            docker logs xatu-consumoor 2>&1 | tail -50
             exit 1
           fi
           echo "  attempt $i/30..."
@@ -258,7 +253,9 @@ jobs:
             echo "=== Final xatu-server logs ==="
             docker logs xatu-server 2>&1 | tail -50 || echo "Container not found"
             echo "=== Kafka topics ==="
-            docker exec xatu-kafka kafka-topics --list --bootstrap-server localhost:9092 2>/dev/null | grep execution || echo "No execution topics"
+            docker exec xatu-kafka kafka-topics --list --bootstrap-server localhost:9092 2>/dev/null | grep xatu-protobuf || echo "No xatu-protobuf topics"
+            echo "=== xatu-consumoor logs ==="
+            docker logs xatu-consumoor 2>&1 | tail -50 || echo "Container not found"
             exit 1
           fi
           sleep 5

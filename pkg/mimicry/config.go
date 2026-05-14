@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
@@ -38,6 +39,9 @@ type Config struct {
 
 	// CaptureDelay is the Delay before capturing transactions from a peer
 	CaptureDelay time.Duration `yaml:"captureDelay" default:"3m"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -57,6 +61,10 @@ func (c *Config) Validate() error {
 		if err := output.Validate(); err != nil {
 			return fmt.Errorf("output %s: %w", output.Name, err)
 		}
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

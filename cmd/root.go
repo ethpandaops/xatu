@@ -4,17 +4,18 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
-	log           = logrus.New()
+	log           = newRootLogger()
 	logLevelFlag  string
 	logFormatFlag string
 
 	defaultLogLevel  = "info"
-	defaultLogFormat = "text"
+	defaultLogFormat = "json"
 
 	metricsAddrFlag = "metrics-addr"
 )
@@ -43,6 +44,17 @@ func init() {
 }
 
 func initCommon() {
+}
+
+// newRootLogger constructs the package-level logger with the OTel
+// trace-context hook attached so log entries carrying a span emit
+// trace_id and span_id fields.
+func newRootLogger() *logrus.Logger {
+	l := logrus.New()
+
+	observability.InstallTraceContextHook(l)
+
+	return l
 }
 
 func getLogger(configLevel, configFormat string) *logrus.Logger {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/discovery/coordinator"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/sirupsen/logrus"
@@ -23,6 +24,9 @@ type Config struct {
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -38,6 +42,10 @@ func (c *Config) Validate() error {
 		if err := output.Validate(); err != nil {
 			return fmt.Errorf("output %s: %w", output.Name, err)
 		}
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("tracing config error: %w", err)
 	}
 
 	return nil

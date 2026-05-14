@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethpandaops/xatu/pkg/clmimicry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 )
@@ -37,6 +38,9 @@ type Config struct {
 
 	// Sharding is the configuration for event sharding
 	Sharding ShardingConfig `yaml:"sharding"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -60,6 +64,10 @@ func (c *Config) Validate() error {
 
 	if err := c.validateSharding(); err != nil {
 		return fmt.Errorf("invalid sharding config: %w", err)
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

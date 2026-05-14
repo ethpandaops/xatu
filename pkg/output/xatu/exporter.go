@@ -36,6 +36,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 	log = log.WithField("output_name", name).WithField("output_type", SinkType)
 
 	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
 		grpc.WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor, retry.UnaryClientInterceptor()),
 		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
 	}

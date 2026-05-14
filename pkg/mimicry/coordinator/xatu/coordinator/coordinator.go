@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -58,7 +59,9 @@ func NewCoordinator(ctx context.Context, name string, config *Config, log logrus
 		return nil, err
 	}
 
-	var opts []grpc.DialOption
+	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
+	}
 
 	if config.TLS {
 		host, _, err := net.SplitHostPort(config.Address)

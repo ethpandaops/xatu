@@ -24,7 +24,6 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/networks"
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -36,10 +35,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"gopkg.in/yaml.v3"
 )
 
@@ -232,36 +229,6 @@ func (s *Sentry) Start(ctx context.Context) error {
 		WithField("version", xatu.Full()).
 		WithField("id", s.id.String()).
 		Info("Starting Xatu in sentry mode")
-
-	// Start tracing if enabled
-	if s.Config.Tracing.Enabled {
-		s.log.Info("Tracing enabled")
-
-		res, err := observability.NewResource(xatu.WithModule(xatu.ModuleName_SENTRY), xatu.Short())
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing resource")
-		}
-
-		opts := []trace.TracerProviderOption{
-			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(s.Config.Tracing.Sampling.Rate))),
-		}
-
-		tracer, err := observability.NewHTTPTraceProvider(ctx,
-			res,
-			s.Config.Tracing.AsOTelOpts(),
-			opts...,
-		)
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing provider")
-		}
-
-		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
-		if err != nil {
-			return perrors.Wrap(err, "failed to setup tracing SDK")
-		}
-
-		s.shutdownFuncs = append(s.shutdownFuncs, shutdown)
-	}
 
 	if err := s.startBeaconCommitteesWatcher(ctx); err != nil {
 		return err

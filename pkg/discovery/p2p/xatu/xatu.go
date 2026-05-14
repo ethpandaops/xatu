@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethpandaops/ethcore/pkg/discovery"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/sirupsen/logrus"
@@ -71,7 +72,9 @@ func New(ctx context.Context, config *Config, handler func(ctx context.Context, 
 		}).Info("Applied network configuration from URL")
 	}
 
-	var opts []grpc.DialOption
+	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
+	}
 
 	if config.TLS {
 		host, _, err := net.SplitHostPort(config.Address)

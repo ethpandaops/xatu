@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
@@ -36,7 +37,9 @@ func New(config *Config, log logrus.FieldLogger) (*Client, error) {
 		return nil, err
 	}
 
-	var opts []grpc.DialOption
+	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
+	}
 
 	if config.TLS {
 		host, _, err := net.SplitHostPort(config.Address)

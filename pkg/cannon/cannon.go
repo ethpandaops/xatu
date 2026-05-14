@@ -25,7 +25,6 @@ import (
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -34,7 +33,6 @@ import (
 	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Cannon struct {
@@ -140,36 +138,6 @@ func (c *Cannon) ApplyOverrideBeforeStartAfterCreation(ctx context.Context) erro
 }
 
 func (c *Cannon) Start(ctx context.Context) error {
-	// Start tracing if enabled
-	if c.Config.Tracing.Enabled {
-		c.log.Info("Tracing enabled")
-
-		res, err := observability.NewResource(xatu.WithModule(xatu.ModuleName_CANNON), xatu.Short())
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing resource")
-		}
-
-		opts := []trace.TracerProviderOption{
-			trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(c.Config.Tracing.Sampling.Rate))),
-		}
-
-		tracer, err := observability.NewHTTPTraceProvider(ctx,
-			res,
-			c.Config.Tracing.AsOTelOpts(),
-			opts...,
-		)
-		if err != nil {
-			return perrors.Wrap(err, "failed to create tracing provider")
-		}
-
-		shutdown, err := observability.SetupOTelSDK(ctx, tracer)
-		if err != nil {
-			return perrors.Wrap(err, "failed to setup tracing SDK")
-		}
-
-		c.shutdownFuncs = append(c.shutdownFuncs, shutdown)
-	}
-
 	if err := c.ServeMetrics(ctx); err != nil {
 		return err
 	}

@@ -139,3 +139,10 @@ outputs:
     compression: snappy
     requiredAcks: leader
     partitioning: random
+
+tracing:
+  enabled: false
+  endpoint: localhost:4318
+  insecure: true
+  sampling:
+    rate: 0.01

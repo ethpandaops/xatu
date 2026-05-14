@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethpandaops/beacon/pkg/human"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
@@ -49,6 +50,9 @@ type Config struct {
 
 	// Consistency configuration for ensuring complete slot data
 	Consistency *ConsistencyConfig `yaml:"consistency"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 func (c *Config) Validate() error {
@@ -84,6 +88,10 @@ func (c *Config) Validate() error {
 		if err := c.Consistency.Validate(); err != nil {
 			return fmt.Errorf("invalid consistency config: %w", err)
 		}
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

@@ -649,20 +649,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
-		// fast_confirmation does not have a dedicated OnFastConfirmation
-		// publisher in ethpandaops/beacon yet, so we tap the raw event
-		// channel and dispatch ourselves. The beacon library publishes the
-		// raw event before bailing on the topic-specific switch.
-		s.beacon.Node().OnEvent(ctx, func(ctx context.Context, ev *eth2v1.Event) error {
-			if ev.Topic != "fast_confirmation" {
-				return nil
-			}
-
-			data, ok := ev.Data.(*eth2v1.FastConfirmationEvent)
-			if !ok {
-				return fmt.Errorf("invalid fast_confirmation event data type %T", ev.Data)
-			}
-
+		s.beacon.Node().OnFastConfirmation(ctx, func(ctx context.Context, ev *eth2v1.FastConfirmationEvent) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)
@@ -673,8 +660,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 			event := v1.NewEventsFastConfirmation(
 				s.log,
 				&v1.FastConfirmationData{
-					Slot:  uint64(data.Slot),
-					Block: xatuethv1.RootAsString(data.Block),
+					Slot:  uint64(ev.Slot),
+					Block: xatuethv1.RootAsString(ev.Block),
 				},
 				now,
 				s.beacon,

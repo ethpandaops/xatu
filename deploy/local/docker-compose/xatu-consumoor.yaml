@@ -10,6 +10,7 @@ kafka:
   encoding: protobuf
   offsetDefault: earliest
   commitInterval: 5s
+  topicRefreshInterval: 10s
   outputBatchCount: 1000
   outputBatchPeriod: 1s
   maxInFlight: 16

@@ -1,0 +1,19 @@
+logging: "info"
+metricsAddr: ":9090"
+
+kafka:
+  brokers:
+    - xatu-kafka:29092
+  topics:
+    - ".+"
+  consumerGroup: xatu-consumoor-local
+  encoding: protobuf
+  offsetDefault: earliest
+  commitInterval: 5s
+  outputBatchCount: 1000
+  outputBatchPeriod: 1s
+  maxInFlight: 16
+
+clickhouse:
+  dsn: "clickhouse://default:__CLICKHOUSE_PASSWORD__@xatu-clickhouse-01:9000/default"
+  failOnMissingTables: false

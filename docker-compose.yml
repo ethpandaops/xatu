@@ -435,83 +435,29 @@ services:
       retries: 10
       start_period: 30s
 
-  xatu-vector-http-kafka:
+  xatu-consumoor:
     profiles:
       - ""
-    image: timberio/vector:0.37.1-alpine
-    container_name: xatu-vector-http-kafka
-    volumes:
-      - ./deploy/local/docker-compose/vector-http-kafka.yaml:/etc/vector/vector.yaml
-    environment:
-      KAFKA_BROKERS: "xatu-kafka:29092"
+    container_name: xatu-consumoor
+    hostname: xatu-consumoor
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        sed "s|__CLICKHOUSE_PASSWORD__|$$CLICKHOUSE_PASSWORD|g" \
+          /etc/xatu-consumoor/config-template.yaml \
+          > /etc/xatu-consumoor/config.yaml &&
+        exec /xatu consumoor --config /etc/xatu-consumoor/config.yaml
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "${VECTOR_HTTP_KAFKA_ADDRESS:-127.0.0.1}:${VECTOR_HTTP_KAFKA_PORT:-9055}:9005"
-    networks:
-      - xatu-net
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
-    depends_on:
-      xatu-kafka:
-        condition: service_healthy
-      xatu-init-kafka:
-        condition: service_completed_successfully
-
-  xatu-vector-kafka-clickhouse:
-    profiles:
-      - ""
-    image: timberio/vector:0.37.1-alpine
-    container_name: xatu-vector-kafka-clickhouse
-    volumes:
-      - ./deploy/local/docker-compose/vector-kafka-clickhouse.yaml:/etc/vector/vector.yaml
-    networks:
-      - xatu-net
-    ports:
-      - "${VECTOR_KAFKA_CLICKHOUSE_ADDRESS:-127.0.0.1}:${VECTOR_KAFKA_CLICKHOUSE_PORT:-8686}:8686"
+      - "${CONSUMOOR_METRICS_ADDRESS:-127.0.0.1}:${CONSUMOOR_METRICS_PORT:-9098}:9090"
     environment:
-      CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
-      KAFKA_BROKERS: "xatu-kafka:29092"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
-    depends_on:
-      xatu-kafka:
-        condition: service_healthy
-      xatu-clickhouse-01:
-        condition: service_healthy
-      xatu-clickhouse-02:
-        condition: service_healthy
-      xatu-clickhouse-migrator:
-        condition: service_completed_successfully
-      xatu-init-kafka:
-        condition: service_completed_successfully
-  xatu-vector-kafka-clickhouse-libp2p:
-    profiles:
-      - ""
-    image: timberio/vector:0.37.1-alpine
     volumes:
-      - ./deploy/local/docker-compose/vector-kafka-clickhouse-libp2p.yaml:/etc/vector/vector.yaml
+      - ./deploy/local/docker-compose/xatu-consumoor.yaml:/etc/xatu-consumoor/config-template.yaml:ro
     networks:
       - xatu-net
-    environment:
-      CLICKHOUSE_ENDPOINT: "xatu-clickhouse-01:8123"
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
-      KAFKA_BROKERS: "xatu-kafka:29092"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8686/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
     depends_on:
       xatu-kafka:
         condition: service_healthy
